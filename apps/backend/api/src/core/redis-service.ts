@@ -268,6 +268,63 @@ export class RedisService {
     return await this.redis.smembers(key);
   }
 
+  /**
+   * Set WebSocket subscription for a specific service
+   */
+  async setWebSocketSubscription(
+    userId: string, 
+    tenantId: string, 
+    sessionId: string, 
+    service: string, 
+    preferences: any
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const key = `websocket_subscription:${tenantId}:${userId}:${sessionId}:${service}`;
+      await this.redis.setex(key, 3600, JSON.stringify(preferences)); // Cache for 1 hour
+    } catch (error) {
+      logger.warn('🔴 Failed to set WebSocket subscription', { error, userId, tenantId, sessionId, service });
+    }
+  }
+
+  /**
+   * Get WebSocket subscription preferences
+   */
+  async getWebSocketSubscription(
+    userId: string, 
+    tenantId: string, 
+    sessionId: string, 
+    service: string
+  ): Promise<any | null> {
+    if (!this.isRedisAvailable || !this.redis) return null;
+    try {
+      const key = `websocket_subscription:${tenantId}:${userId}:${sessionId}:${service}`;
+      const data = await this.redis.get(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      logger.warn('🔴 Failed to get WebSocket subscription', { error, userId, tenantId, sessionId, service });
+      return null;
+    }
+  }
+
+  /**
+   * Remove WebSocket subscription
+   */
+  async removeWebSocketSubscription(
+    userId: string, 
+    tenantId: string, 
+    sessionId: string, 
+    service: string
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const key = `websocket_subscription:${tenantId}:${userId}:${sessionId}:${service}`;
+      await this.redis.del(key);
+    } catch (error) {
+      logger.warn('🔴 Failed to remove WebSocket subscription', { error, userId, tenantId, sessionId, service });
+    }
+  }
+
   // ==================== RATE LIMITING ====================
 
   /**

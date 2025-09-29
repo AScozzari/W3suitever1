@@ -147,6 +147,16 @@ export class WebSocketService {
           this.handleNotificationRead(sessionId, message.notificationId);
           break;
 
+        case 'subscribe_hr_shifts':
+          // Client wants to receive shift assignment updates
+          this.handleHRShiftSubscription(sessionId, message.storeIds);
+          break;
+
+        case 'unsubscribe_hr_shifts':
+          // Client wants to stop receiving shift assignment updates
+          this.handleHRShiftUnsubscription(sessionId);
+          break;
+
         default:
           logger.warn('🌐 Unknown WebSocket message type', { type: message.type, sessionId });
       }
@@ -402,6 +412,183 @@ export class WebSocketService {
       });
 
     }, 15000); // Every 15 seconds
+  }
+
+  /**
+   * Handle HR shift subscription requests
+   */
+  private async handleHRShiftSubscription(sessionId: string, storeIds: string[]): Promise<void> {
+    const client = this.clients.get(sessionId);
+    if (!client) return;
+
+    // Store subscription preferences in Redis
+    await redisService.setWebSocketSubscription(
+      client.userId, 
+      client.tenantId, 
+      sessionId, 
+      'hr_shifts', 
+      { storeIds }
+    );
+
+    this.sendToClient(sessionId, {
+      type: 'hr_shifts_subscription_confirmed',
+      storeIds,
+      timestamp: new Date().toISOString()
+    });
+
+    logger.debug('🌐 HR shifts subscription registered', { sessionId, storeIds });
+  }
+
+  /**
+   * Handle HR shift unsubscription requests
+   */
+  private async handleHRShiftUnsubscription(sessionId: string): Promise<void> {
+    const client = this.clients.get(sessionId);
+    if (!client) return;
+
+    await redisService.removeWebSocketSubscription(
+      client.userId, 
+      client.tenantId, 
+      sessionId, 
+      'hr_shifts'
+    );
+
+    this.sendToClient(sessionId, {
+      type: 'hr_shifts_unsubscribed',
+      timestamp: new Date().toISOString()
+    });
+
+    logger.debug('🌐 HR shifts unsubscription processed', { sessionId });
+  }
+
+  /**
+   * Broadcast shift assignment changes to subscribed clients
+   */
+  async broadcastShiftUpdate(
+    tenantId: string,
+    updateType: 'assignment_created' | 'assignment_updated' | 'assignment_deleted' | 'shift_created' | 'shift_updated' | 'shift_deleted',
+    data: {
+      shiftId?: string;
+      assignmentId?: string;
+      employeeId?: string;
+      storeId?: string;
+      date?: string;
+      assignment?: any;
+      shift?: any;
+      conflicts?: any[];
+    }
+  ): Promise<void> {
+    try {
+      // Get all clients subscribed to HR shifts for this tenant
+      const tenantClients = Array.from(this.clients.values()).filter(
+        client => client.tenantId === tenantId
+      );
+
+      if (tenantClients.length === 0) {
+        logger.debug('🌐 No WebSocket clients for shift update broadcast', { tenantId });
+        return;
+      }
+
+      // Filter clients based on store subscription
+      const subscribedClients = [];
+      for (const client of tenantClients) {
+        const subscription = await redisService.getWebSocketSubscription(
+          client.userId, 
+          client.tenantId, 
+          client.sessionId, 
+          'hr_shifts'
+        );
+
+        // If client is subscribed to HR shifts and has access to the store
+        if (subscription && (!data.storeId || !subscription.storeIds || subscription.storeIds.includes(data.storeId))) {
+          subscribedClients.push(client);
+        }
+      }
+
+      if (subscribedClients.length === 0) {
+        logger.debug('🌐 No subscribed clients for shift update', { tenantId, updateType, storeId: data.storeId });
+        return;
+      }
+
+      const message = {
+        type: 'hr_shift_update',
+        updateType,
+        data: {
+          ...data,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      // Send to all subscribed clients
+      for (const client of subscribedClients) {
+        this.sendToClient(client.sessionId, message);
+      }
+
+      logger.debug('🌐 Shift update broadcasted via WebSocket', {
+        tenantId,
+        updateType,
+        clientsCount: subscribedClients.length,
+        storeId: data.storeId
+      });
+
+    } catch (error) {
+      logger.error('🌐 Failed to broadcast shift update', { error, tenantId, updateType });
+    }
+  }
+
+  /**
+   * Broadcast conflict detection results
+   */
+  async broadcastConflictUpdate(
+    tenantId: string,
+    conflicts: any[],
+    affectedEmployees: string[],
+    storeId?: string
+  ): Promise<void> {
+    try {
+      const tenantClients = Array.from(this.clients.values()).filter(
+        client => client.tenantId === tenantId
+      );
+
+      const subscribedClients = [];
+      for (const client of tenantClients) {
+        const subscription = await redisService.getWebSocketSubscription(
+          client.userId, 
+          client.tenantId, 
+          client.sessionId, 
+          'hr_shifts'
+        );
+
+        if (subscription && (!storeId || !subscription.storeIds || subscription.storeIds.includes(storeId))) {
+          subscribedClients.push(client);
+        }
+      }
+
+      if (subscribedClients.length === 0) return;
+
+      const message = {
+        type: 'hr_conflicts_update',
+        data: {
+          conflicts,
+          affectedEmployees,
+          storeId,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      for (const client of subscribedClients) {
+        this.sendToClient(client.sessionId, message);
+      }
+
+      logger.debug('🌐 Conflicts update broadcasted', {
+        tenantId,
+        clientsCount: subscribedClients.length,
+        conflictsCount: conflicts.length
+      });
+
+    } catch (error) {
+      logger.error('🌐 Failed to broadcast conflicts update', { error, tenantId });
+    }
   }
 
   /**

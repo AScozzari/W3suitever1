@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
+import { webSocketService } from '../core/websocket-service';
 
 const router = Router();
 
@@ -92,6 +93,18 @@ router.post('/shifts/:id/assign', requirePermission('hr.shifts.manage'), async (
     // Assign user to shift using existing storage function
     const result = await hrStorage.assignUserToShift(tenantId, shiftId, userId);
 
+    // Broadcast real-time update via WebSocket
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_created', {
+        assignmentId: result.id,
+        shiftId,
+        employeeId: userId,
+        assignment: result
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
     res.json({
       success: true,
       assignment: result
@@ -119,6 +132,18 @@ router.post('/shifts/:id/unassign', requirePermission('hr.shifts.manage'), async
 
     // Remove user from shift using existing storage function
     const result = await hrStorage.unassignUserFromShift(tenantId, shiftId, userId);
+
+    // Broadcast real-time update via WebSocket
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_deleted', {
+        assignmentId: result.id,
+        shiftId,
+        employeeId: userId,
+        assignment: result
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
 
     res.json({
       success: true,

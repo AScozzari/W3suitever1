@@ -4,11 +4,14 @@ import { queryClient } from '@/lib/queryClient';
 import { useTenantContext } from '@/hooks/useTenantContext';
 
 interface WebSocketEvent {
-  type: 'new_notification' | 'notification_read' | 'notification_update' | 'connection_established' | 'pong';
+  type: 'new_notification' | 'notification_read' | 'notification_update' | 'connection_established' | 'pong' | 
+        'hr_shift_update' | 'hr_conflicts_update' | 'hr_shifts_subscription_confirmed' | 'hr_shifts_unsubscribed';
   notification?: any;
   notificationId?: string;
   sessionId?: string;
   timestamp?: string;
+  updateType?: 'assignment_created' | 'assignment_updated' | 'assignment_deleted' | 'shift_created' | 'shift_updated' | 'shift_deleted';
+  data?: any;
 }
 
 interface UseWebSocketOptions {
@@ -16,10 +19,12 @@ interface UseWebSocketOptions {
   userId?: string;
   onNotification?: (notification: any) => void;
   onConnectionChange?: (connected: boolean) => void;
+  onShiftUpdate?: (update: WebSocketEvent) => void;
+  onConflictUpdate?: (conflicts: any[]) => void;
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const { enabled = true, userId = 'demo-user', onNotification, onConnectionChange } = options;
+  const { enabled = true, userId = 'demo-user', onNotification, onConnectionChange, onShiftUpdate, onConflictUpdate } = options;
   const { tenantId } = useTenantContext();
   
   const [isConnected, setIsConnected] = useState(false);
@@ -99,6 +104,27 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
             case 'pong':
               console.log('🌐 [WS] Pong received');
+              break;
+
+            case 'hr_shift_update':
+              console.log('🌐 [WS] HR shift update received:', data.updateType);
+              // Invalidate HR-related queries
+              queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+              onShiftUpdate?.(data);
+              break;
+
+            case 'hr_conflicts_update':
+              console.log('🌐 [WS] HR conflicts update received:', data.data?.conflicts?.length || 0, 'conflicts');
+              onConflictUpdate?.(data.data?.conflicts || []);
+              break;
+
+            case 'hr_shifts_subscription_confirmed':
+              console.log('🌐 [WS] HR shifts subscription confirmed:', data);
+              break;
+
+            case 'hr_shifts_unsubscribed':
+              console.log('🌐 [WS] HR shifts unsubscribed');
               break;
 
             default:
@@ -208,6 +234,19 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
   };
 
+  const subscribeToHRShifts = (storeIds: string[] = []) => {
+    return sendMessage({
+      type: 'subscribe_hr_shifts',
+      storeIds
+    });
+  };
+
+  const unsubscribeFromHRShifts = () => {
+    return sendMessage({
+      type: 'unsubscribe_hr_shifts'
+    });
+  };
+
   // Connect on mount and when enabled/tenantId changes
   useEffect(() => {
     if (enabled && tenantId) {
@@ -226,6 +265,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     disconnect,
     sendMessage,
     markNotificationRead,
-    subscribeToCategories
+    subscribeToCategories,
+    subscribeToHRShifts,
+    unsubscribeFromHRShifts
   };
 }

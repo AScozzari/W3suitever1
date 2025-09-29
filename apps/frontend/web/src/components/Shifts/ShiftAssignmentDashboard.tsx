@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { cn } from '@/lib/utils';
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -145,6 +146,66 @@ export default function ShiftAssignmentDashboard({
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // ==================== WEBSOCKET REAL-TIME SYNC ====================
+
+  const { isConnected, subscribeToHRShifts } = useWebSocket({
+    enabled: true,
+    onShiftUpdate: useCallback((update) => {
+      // Handle real-time shift updates
+      switch (update.updateType) {
+        case 'assignment_created':
+          toast({
+            title: '✅ Assegnazione Creata',
+            description: 'Nuovo turno assegnato in tempo reale',
+            duration: 3000,
+          });
+          
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+          break;
+
+        case 'assignment_deleted':
+          toast({
+            title: '🗑️ Assegnazione Rimossa',
+            description: 'Assegnazione turno rimossa in tempo reale',
+            duration: 3000,
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+          break;
+
+        case 'assignment_updated':
+          queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+          break;
+
+        case 'shift_created':
+        case 'shift_updated':
+        case 'shift_deleted':
+          queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+          break;
+      }
+    }, [queryClient, toast]),
+    
+    onConflictUpdate: useCallback((conflicts) => {
+      if (conflicts.length > 0) {
+        toast({
+          title: '⚠️ Conflitti Rilevati',
+          description: `${conflicts.length} conflitto${conflicts.length > 1 ? 'i' : ''} rilevato${conflicts.length > 1 ? 'i' : ''} in tempo reale`,
+          variant: 'destructive',
+          duration: 5000,
+        });
+      }
+    }, [toast])
+  });
+
+  // Subscribe to HR shifts on component mount
+  React.useEffect(() => {
+    if (isConnected) {
+      subscribeToHRShifts([storeId]); // Subscribe to this store's updates
+    }
+  }, [isConnected, subscribeToHRShifts, storeId]);
 
   // ==================== DATA FETCHING ====================
 
