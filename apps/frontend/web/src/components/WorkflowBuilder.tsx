@@ -420,10 +420,10 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         </div>
 
         {isNodePaletteOpen && (
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
-              {/* Search and Filters */}
-              <div className="space-y-4 mb-6">
+          <div className="flex-1 flex flex-col">
+            {/* Search and Filters - Fixed Area */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="space-y-4">
                 {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -449,8 +449,12 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="space-y-6">
+            </div>
+            
+            {/* Node List - Scrollable Area */}
+            <ScrollArea className="flex-1">
+              <div className="p-4">
+                <div className="space-y-6">
                 {/* Action Nodes */}
                 {(selectedCategory === 'all' || selectedCategory === 'action') && (
                 <div>
@@ -592,8 +596,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                 </div>
                 </>
                 )}
+                </div>
               </div>
-            </div>
+            </ScrollArea>
           </div>
         )}
       </div>
