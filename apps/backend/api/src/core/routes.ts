@@ -3659,6 +3659,477 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== SHIFT TEMPLATES API ====================
+  
+  // Get shift templates
+  app.get('/api/hr/shift-templates', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftTemplates } = await import('../db/schema/w3suite.js');
+      
+      const templates = await db.select()
+        .from(shiftTemplates)
+        .where(and(
+          eq(shiftTemplates.tenantId, tenantId),
+          eq(shiftTemplates.isActive, true)
+        ))
+        .orderBy(desc(shiftTemplates.createdAt));
+      
+      res.json(templates);
+    } catch (error) {
+      handleApiError(error, res, 'recupero template turni');
+    }
+  });
+  
+  // Create shift template (Manager only)
+  app.post('/api/hr/shift-templates', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftTemplates, insertShiftTemplateSchema } = await import('../db/schema/w3suite.js');
+      
+      // Validate request body
+      const validatedData = insertShiftTemplateSchema.safeParse({
+        ...req.body,
+        tenantId
+      });
+      
+      if (!validatedData.success) {
+        return res.status(400).json({
+          error: 'invalid_data',
+          message: 'Dati template non validi',
+          details: validatedData.error.issues
+        });
+      }
+      
+      const templateData = {
+        ...validatedData.data,
+        tenantId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const [newTemplate] = await db.insert(shiftTemplates)
+        .values(templateData)
+        .returning();
+      
+      res.status(201).json(newTemplate);
+    } catch (error) {
+      handleApiError(error, res, 'creazione template turno');
+    }
+  });
+
+  // ==================== SHIFT ASSIGNMENTS API ====================
+  
+  // Get shift assignments (Manager only)
+  app.get('/api/hr/shift-assignments', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { storeId, startDate, endDate, userId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftAssignments, shifts, users, stores } = await import('../db/schema/w3suite.js');
+      
+      let conditions = [eq(shiftAssignments.tenantId, tenantId)];
+      
+      // Ensure all joined tables are filtered by tenant
+      let joinConditions = [
+        and(eq(shifts.tenantId, tenantId)),
+        and(eq(users.tenantId, tenantId)),
+        and(eq(stores.tenantId, tenantId))
+      ];
+      
+      if (storeId) {
+        conditions.push(eq(shifts.storeId, storeId));
+      }
+      
+      if (userId) {
+        conditions.push(eq(shiftAssignments.userId, userId));
+      }
+      
+      if (startDate && endDate) {
+        conditions.push(
+          and(
+            gte(shifts.date, startDate),
+            lte(shifts.date, endDate)
+          )
+        );
+      }
+      
+      const assignments = await db.select({
+        id: shiftAssignments.id,
+        shiftId: shiftAssignments.shiftId,
+        userId: shiftAssignments.userId,
+        status: shiftAssignments.status,
+        assignedAt: shiftAssignments.assignedAt,
+        confirmedAt: shiftAssignments.confirmedAt,
+        notes: shiftAssignments.notes,
+        // Shift details
+        shiftName: shifts.name,
+        shiftDate: shifts.date,
+        shiftStartTime: shifts.startTime,
+        shiftEndTime: shifts.endTime,
+        shiftType: shifts.shiftType,
+        // User details
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+        userEmail: users.email,
+        // Store details
+        storeName: stores.nome,
+        storeCode: stores.code
+      })
+      .from(shiftAssignments)
+      .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .leftJoin(users, eq(shiftAssignments.userId, users.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(...conditions))
+      .orderBy(desc(shifts.date), desc(shifts.startTime));
+      
+      res.json(assignments);
+    } catch (error) {
+      handleApiError(error, res, 'recupero assegnazioni turni');
+    }
+  });
+  
+  // Create shift assignment (Manager only)
+  app.post('/api/hr/shift-assignments', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const createdBy = req.user?.id;
+      
+      if (!tenantId || !createdBy) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftAssignments, insertShiftAssignmentSchema } = await import('../db/schema/w3suite.js');
+      
+      // Validate request body
+      const validatedData = insertShiftAssignmentSchema.safeParse({
+        ...req.body,
+        tenantId
+      });
+      
+      if (!validatedData.success) {
+        return res.status(400).json({
+          error: 'invalid_data',
+          message: 'Dati assegnazione non validi',
+          details: validatedData.error.issues
+        });
+      }
+      
+      const assignmentData = {
+        ...validatedData.data,
+        tenantId,
+        createdBy,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const [newAssignment] = await db.insert(shiftAssignments)
+        .values(assignmentData)
+        .returning();
+      
+      res.status(201).json(newAssignment);
+    } catch (error) {
+      handleApiError(error, res, 'creazione assegnazione turno');
+    }
+  });
+  
+  // Update assignment status (Manager only)
+  app.put('/api/hr/shift-assignments/:id/status', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status, notes } = req.body;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftAssignments } = await import('../db/schema/w3suite.js');
+      
+      const updateData: any = {
+        status,
+        notes,
+        updatedAt: new Date()
+      };
+      
+      if (status === 'confirmed') {
+        updateData.confirmedAt = new Date();
+        updateData.confirmedBy = req.user?.id;
+      }
+      
+      const [updated] = await db.update(shiftAssignments)
+        .set(updateData)
+        .where(and(
+          eq(shiftAssignments.id, id),
+          eq(shiftAssignments.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Assegnazione non trovata'
+        });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento stato assegnazione');
+    }
+  });
+
+  // ==================== MY SHIFTS API (Employee View) ====================
+  
+  // Get current user's shifts (Employee view - MyPortal)
+  app.get('/api/hr/my-shifts', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const { startDate, endDate, status } = req.query;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftAssignments, shifts, stores } = await import('../db/schema/w3suite.js');
+      
+      let conditions = [
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, userId), // Employee can only see their own shifts
+        eq(shifts.tenantId, tenantId), // Ensure shifts table is tenant-filtered
+        eq(stores.tenantId, tenantId)  // Ensure stores table is tenant-filtered
+      ];
+      
+      if (startDate && endDate) {
+        conditions.push(
+          and(
+            gte(shifts.date, startDate),
+            lte(shifts.date, endDate)
+          )
+        );
+      }
+      
+      if (status) {
+        conditions.push(eq(shiftAssignments.status, status));
+      }
+      
+      const myShifts = await db.select({
+        id: shiftAssignments.id,
+        shiftId: shiftAssignments.shiftId,
+        status: shiftAssignments.status,
+        assignedAt: shiftAssignments.assignedAt,
+        confirmedAt: shiftAssignments.confirmedAt,
+        notes: shiftAssignments.notes,
+        customStartTime: shiftAssignments.customStartTime,
+        customEndTime: shiftAssignments.customEndTime,
+        // Shift details
+        shiftName: shifts.name,
+        shiftDate: shifts.date,
+        shiftStartTime: shifts.startTime,
+        shiftEndTime: shifts.endTime,
+        shiftType: shifts.shiftType,
+        shiftColor: shifts.color,
+        // Store details
+        storeName: stores.nome,
+        storeCode: stores.code,
+        storeAddress: stores.address
+      })
+      .from(shiftAssignments)
+      .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(...conditions))
+      .orderBy(desc(shifts.date), desc(shifts.startTime));
+      
+      res.json(myShifts);
+    } catch (error) {
+      handleApiError(error, res, 'recupero miei turni');
+    }
+  });
+  
+  // Confirm shift assignment (Employee action)
+  app.post('/api/hr/my-shifts/:id/confirm', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.view'), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { shiftAssignments } = await import('../db/schema/w3suite.js');
+      
+      const [updated] = await db.update(shiftAssignments)
+        .set({
+          status: 'confirmed',
+          confirmedAt: new Date(),
+          confirmedBy: userId,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(shiftAssignments.id, id),
+          eq(shiftAssignments.tenantId, tenantId),
+          eq(shiftAssignments.userId, userId) // Employee can only confirm their own shifts
+        ))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Assegnazione non trovata'
+        });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      handleApiError(error, res, 'conferma turno');
+    }
+  });
+
+  // ==================== SHIFT MATCHING API (Smart Clock-in) ====================
+  
+  // Get shift context for clock-in (Smart matching)
+  app.get('/api/hr/shifts/match/:clockId', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.clock'), async (req: any, res) => {
+    try {
+      const { clockId } = req.params;
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      // Get clock-in record to extract location and time
+      const { timeTracking } = await import('../db/schema/w3suite.js');
+      
+      const clockRecord = await db.select()
+        .from(timeTracking)
+        .where(and(
+          eq(timeTracking.id, clockId),
+          eq(timeTracking.tenantId, tenantId),
+          eq(timeTracking.userId, userId)
+        ))
+        .limit(1);
+      
+      if (!clockRecord[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Timbratura non trovata'
+        });
+      }
+      
+      const clock = clockRecord[0];
+      const clockTime = new Date(clock.clockIn);
+      const clockDate = clockTime.toISOString().split('T')[0];
+      
+      // Find matching shift assignments for user on this date
+      const { shiftAssignments, shifts, stores } = await import('../db/schema/w3suite.js');
+      
+      const matchingShifts = await db.select({
+        assignmentId: shiftAssignments.id,
+        shiftId: shifts.id,
+        shiftName: shifts.name,
+        shiftDate: shifts.date,
+        shiftStartTime: shifts.startTime,
+        shiftEndTime: shifts.endTime,
+        shiftType: shifts.shiftType,
+        storeId: shifts.storeId,
+        storeName: stores.nome,
+        storeAddress: stores.address,
+        assignmentStatus: shiftAssignments.status,
+        customStartTime: shiftAssignments.customStartTime,
+        customEndTime: shiftAssignments.customEndTime
+      })
+      .from(shiftAssignments)
+      .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, userId),
+        eq(shifts.date, clockDate)
+      ));
+      
+      // Calculate match scoring for each shift
+      const shiftMatches = matchingShifts.map(shift => {
+        const expectedStart = new Date(`${shift.shiftDate}T${shift.shiftStartTime}`);
+        const timeDiff = Math.abs(clockTime.getTime() - expectedStart.getTime()) / (1000 * 60); // minutes
+        
+        let matchScore = 100;
+        
+        // Deduct points for time difference
+        if (timeDiff > 60) matchScore -= 50; // More than 1 hour off
+        else if (timeDiff > 30) matchScore -= 30; // 30-60 minutes off
+        else if (timeDiff > 15) matchScore -= 15; // 15-30 minutes off
+        else if (timeDiff > 5) matchScore -= 5;   // 5-15 minutes off
+        
+        return {
+          ...shift,
+          matchScore,
+          timeDifferenceMinutes: timeDiff,
+          isEarly: clockTime < expectedStart,
+          isLate: clockTime > expectedStart
+        };
+      });
+      
+      // Sort by match score (best match first)
+      shiftMatches.sort((a, b) => b.matchScore - a.matchScore);
+      
+      res.json({
+        clockRecord: {
+          id: clock.id,
+          clockTime: clock.clockIn,
+          storeId: clock.storeId,
+          trackingMethod: clock.trackingMethod,
+          geoLocation: clock.geoLocation
+        },
+        potentialShifts: shiftMatches,
+        bestMatch: shiftMatches[0] || null,
+        totalMatches: shiftMatches.length
+      });
+    } catch (error) {
+      handleApiError(error, res, 'matching turno con timbratura');
+    }
+  });
+
   // ==================== HR DOCUMENTS API ====================
 
   // Configure multer for file uploads

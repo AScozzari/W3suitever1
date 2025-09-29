@@ -2615,27 +2615,27 @@ export const insertAITrainingSessionSchema = createInsertSchema(aiTrainingSessio
 export type InsertAITrainingSession = z.infer<typeof insertAITrainingSessionSchema>;
 export type AITrainingSession = typeof aiTrainingSessions.$inferSelect;
 
-// ==================== SHIFT MANAGEMENT TABLES ====================
+// ==================== SHIFT ASSIGNMENT EXTENSIONS ====================
 
-// Shift Templates - Template orari riutilizzabili
-export const shiftTemplates = w3suiteSchema.table("shift_templates", {
+// Shift Assignments - Estensione per assignment individuali user+turno+store+data
+export const shiftAssignments = w3suiteSchema.table("shift_assignments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   
-  // Template identification
-  name: varchar("name", { length: 200 }).notNull(),
-  description: text("description"),
-  category: varchar("category", { length: 50 }).default("standard"), // 'morning', 'afternoon', 'night', 'split'
+  // Links to existing shift system
+  shiftId: uuid("shift_id").notNull().references(() => shifts.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
   
-  // Basic settings
-  totalHours: integer("total_hours").notNull(), // Total hours per shift
-  daysOfWeek: jsonb("days_of_week").default([]), // [1,2,3,4,5] for Mon-Fri
-  color: varchar("color", { length: 7 }).default("#3b82f6"), // Hex color for calendar display
+  // Assignment status and tracking
+  status: varchar("status", { length: 20 }).default("assigned"), // 'assigned', 'confirmed', 'completed', 'no_show', 'cancelled'
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  confirmedAt: timestamp("confirmed_at"),
+  confirmedBy: varchar("confirmed_by").references(() => users.id),
   
-  // Status and metadata
-  isActive: boolean("is_active").default(true),
-  isArchived: boolean("is_archived").default(false),
-  usageCount: integer("usage_count").default(0),
+  // Override fields (optional modifications to shift)
+  customStartTime: timestamp("custom_start_time"),
+  customEndTime: timestamp("custom_end_time"),
+  notes: text("notes"),
   
   // Audit fields
   createdAt: timestamp("created_at").defaultNow(),
@@ -2643,105 +2643,42 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   createdBy: varchar("created_by").references(() => users.id),
   updatedBy: varchar("updated_by").references(() => users.id),
 }, (table) => [
-  index("shift_templates_tenant_idx").on(table.tenantId),
-  index("shift_templates_active_idx").on(table.tenantId, table.isActive),
-  uniqueIndex("shift_templates_name_unique").on(table.tenantId, table.name),
-]);
-
-// Shift Time Slots - Fasce orarie del template (1:N relationship)
-export const shiftTimeSlots = w3suiteSchema.table("shift_time_slots", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  templateId: uuid("template_id").notNull().references(() => shiftTemplates.id, { onDelete: 'cascade' }),
-  
-  // Time slot definition
-  startTime: varchar("start_time", { length: 5 }).notNull(), // "08:00" format
-  endTime: varchar("end_time", { length: 5 }).notNull(),     // "16:00" format
-  breakDuration: integer("break_duration").default(0),       // Minutes of break
-  order: integer("order").notNull().default(1),              // Order within template
-  
-  // Slot metadata
-  name: varchar("name", { length: 100 }), // Optional name like "Morning", "Afternoon"
-  
-  // Audit fields
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("shift_time_slots_tenant_idx").on(table.tenantId),
-  index("shift_time_slots_template_idx").on(table.templateId),
-  index("shift_time_slots_order_idx").on(table.templateId, table.order),
-]);
-
-// Shift Assignments - Abbinamenti risorsa+turno+store+data
-export const shiftAssignments = w3suiteSchema.table("shift_assignments", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  
-  // Assignment relationships
-  userId: varchar("user_id").notNull().references(() => users.id),        // Employee assigned
-  templateId: uuid("template_id").notNull().references(() => shiftTemplates.id),
-  storeId: uuid("store_id").notNull().references(() => stores.id),        // Store location
-  
-  // Schedule details
-  assignedDate: date("assigned_date").notNull(),                          // Date of the shift
-  status: varchar("status", { length: 20 }).default("assigned"),          // 'assigned', 'confirmed', 'completed', 'no_show', 'cancelled'
-  
-  // Override fields (optional modifications to template)
-  customStartTime: varchar("custom_start_time", { length: 5 }),           // Override template start
-  customEndTime: varchar("custom_end_time", { length: 5 }),               // Override template end
-  notes: text("notes"),                                                    // Manager or employee notes
-  
-  // Tracking fields
-  confirmedAt: timestamp("confirmed_at"),                                  // When employee confirmed
-  confirmedBy: varchar("confirmed_by").references(() => users.id),
-  completedAt: timestamp("completed_at"),                                  // When shift was completed
-  
-  // Audit fields
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: varchar("created_by").references(() => users.id),            // Manager who assigned
-  updatedBy: varchar("updated_by").references(() => users.id),
-}, (table) => [
   index("shift_assignments_tenant_idx").on(table.tenantId),
   index("shift_assignments_user_idx").on(table.userId),
-  index("shift_assignments_store_idx").on(table.storeId),
-  index("shift_assignments_date_idx").on(table.assignedDate),
-  index("shift_assignments_user_date_idx").on(table.userId, table.assignedDate),
-  index("shift_assignments_store_date_idx").on(table.storeId, table.assignedDate),
-  uniqueIndex("shift_assignments_unique").on(table.tenantId, table.userId, table.storeId, table.assignedDate),
+  index("shift_assignments_shift_idx").on(table.shiftId),
+  index("shift_assignments_status_idx").on(table.status),
+  uniqueIndex("shift_assignments_unique").on(table.shiftId, table.userId),
 ]);
 
-// Shift Attendance - Timbrature effettive vs pianificate
+// Shift Attendance - Tracking timbrature vs turni assegnati
 export const shiftAttendance = w3suiteSchema.table("shift_attendance", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   
-  // Linked assignment
+  // Links to assignment
   assignmentId: uuid("assignment_id").notNull().references(() => shiftAssignments.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id),
   
   // Attendance tracking
-  clockInTime: timestamp("clock_in_time"),                                // Actual clock in
-  clockOutTime: timestamp("clock_out_time"),                             // Actual clock out
-  plannedStartTime: timestamp("planned_start_time").notNull(),           // Expected start from assignment
-  plannedEndTime: timestamp("planned_end_time").notNull(),               // Expected end from assignment
+  clockInTime: timestamp("clock_in_time"),
+  clockOutTime: timestamp("clock_out_time"),
   
-  // Attendance analysis
-  totalWorkedMinutes: integer("total_worked_minutes"),                    // Calculated worked time
-  overtimeMinutes: integer("overtime_minutes").default(0),               // Minutes over planned
-  lateMinutes: integer("late_minutes").default(0),                       // Minutes late to start
-  earlyLeaveMinutes: integer("early_leave_minutes").default(0),          // Minutes left early
+  // Planned vs actual analytics
+  totalWorkedMinutes: integer("total_worked_minutes"),
+  overtimeMinutes: integer("overtime_minutes").default(0),
+  lateMinutes: integer("late_minutes").default(0),
+  earlyLeaveMinutes: integer("early_leave_minutes").default(0),
   
   // Status tracking
   attendanceStatus: varchar("attendance_status", { length: 20 }).default("pending"), // 'pending', 'present', 'late', 'absent', 'partial'
-  noShowReason: varchar("no_show_reason", { length: 100 }),              // Reason if no-show
+  noShowReason: varchar("no_show_reason", { length: 100 }),
   
-  // Location verification (GPS/geofencing)
-  clockInLocation: jsonb("clock_in_location"),                           // { lat, lng, address }
+  // Location verification
+  clockInLocation: jsonb("clock_in_location"),
   clockOutLocation: jsonb("clock_out_location"),
   locationVerified: boolean("location_verified").default(false),
   
-  // Manager actions
+  // Manager adjustments
   managerAdjustment: boolean("manager_adjustment").default(false),
   adjustmentReason: text("adjustment_reason"),
   adjustedBy: varchar("adjusted_by").references(() => users.id),
@@ -2754,35 +2691,17 @@ export const shiftAttendance = w3suiteSchema.table("shift_attendance", {
   index("shift_attendance_tenant_idx").on(table.tenantId),
   index("shift_attendance_user_idx").on(table.userId),
   index("shift_attendance_assignment_idx").on(table.assignmentId),
-  index("shift_attendance_date_idx").on(table.plannedStartTime),
   index("shift_attendance_status_idx").on(table.attendanceStatus),
   uniqueIndex("shift_attendance_unique").on(table.assignmentId),
 ]);
 
-// Insert Schemas and Types for Shift Management
-export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({ 
-  id: true, 
-  createdAt: true,
-  updatedAt: true,
-  usageCount: true
-});
-export type InsertShiftTemplate = z.infer<typeof insertShiftTemplateSchema>;
-export type ShiftTemplate = typeof shiftTemplates.$inferSelect;
-
-export const insertShiftTimeSlotSchema = createInsertSchema(shiftTimeSlots).omit({ 
-  id: true, 
-  createdAt: true,
-  updatedAt: true 
-});
-export type InsertShiftTimeSlot = z.infer<typeof insertShiftTimeSlotSchema>;
-export type ShiftTimeSlot = typeof shiftTimeSlots.$inferSelect;
-
+// Insert Schemas and Types for Shift Extensions
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({ 
   id: true, 
   createdAt: true,
   updatedAt: true,
-  confirmedAt: true,
-  completedAt: true
+  assignedAt: true,
+  confirmedAt: true
 });
 export type InsertShiftAssignment = z.infer<typeof insertShiftAssignmentSchema>;
 export type ShiftAssignment = typeof shiftAssignments.$inferSelect;
