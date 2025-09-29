@@ -150,36 +150,62 @@ export class RedisService {
     notificationId: string;
     data: any;
   }): Promise<void> {
+    if (!this.isRedisAvailable || !this.publisher) {
+      logger.warn('🔴 Redis not available, skipping notification publish', { 
+        tenantId: notificationEvent.tenantId,
+        notificationId: notificationEvent.notificationId 
+      });
+      return;
+    }
+
     const channel = `notifications:${notificationEvent.tenantId}`;
-    await this.publisher.publish(channel, JSON.stringify(notificationEvent));
     
-    logger.debug('🔴 Notification published', {
-      channel,
-      type: notificationEvent.type,
-      notificationId: notificationEvent.notificationId
-    });
+    try {
+      await this.publisher.publish(channel, JSON.stringify(notificationEvent));
+      
+      logger.debug('🔴 Notification published', {
+        channel,
+        type: notificationEvent.type,
+        notificationId: notificationEvent.notificationId
+      });
+    } catch (error) {
+      logger.error('🔴 Failed to publish notification', { 
+        channel, 
+        notificationId: notificationEvent.notificationId,
+        error 
+      });
+    }
   }
 
   /**
    * Subscribe to notification events for a tenant
    */
   async subscribeToNotifications(tenantId: string, callback: (event: any) => void): Promise<void> {
+    if (!this.isRedisAvailable || !this.subscriber) {
+      logger.warn('🔴 Redis not available, skipping notification subscription', { tenantId });
+      return;
+    }
+
     const channel = `notifications:${tenantId}`;
     
-    await this.subscriber.subscribe(channel);
-    
-    this.subscriber.on('message', (receivedChannel, message) => {
-      if (receivedChannel === channel) {
-        try {
-          const event = JSON.parse(message);
-          callback(event);
-        } catch (error) {
-          logger.error('🔴 Failed to parse notification event', { error, message });
+    try {
+      await this.subscriber.subscribe(channel);
+      
+      this.subscriber.on('message', (receivedChannel, message) => {
+        if (receivedChannel === channel) {
+          try {
+            const event = JSON.parse(message);
+            callback(event);
+          } catch (error) {
+            logger.error('🔴 Failed to parse notification event', { error, message });
+          }
         }
-      }
-    });
+      });
 
-    logger.info('🔴 Subscribed to notification channel', { channel });
+      logger.info('🔴 Subscribed to notification channel', { channel });
+    } catch (error) {
+      logger.error('🔴 Failed to subscribe to notification channel', { channel, error });
+    }
   }
 
   // ==================== NOTIFICATION QUEUE ====================

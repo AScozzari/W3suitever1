@@ -41,13 +41,20 @@ export class WebSocketService {
     this.wss.on('connection', this.handleConnection.bind(this));
     this.startHeartbeat();
 
-    // Subscribe to Redis notification events
-    await this.subscribeToNotificationEvents();
-
-    logger.info('🌐 WebSocket Service initialized', {
-      path: '/ws/notifications',
-      environment: config.NODE_ENV
-    });
+    // Subscribe to Redis notification events (graceful fallback if Redis not available)
+    try {
+      await this.subscribeToNotificationEvents();
+      logger.info('🌐 WebSocket Service initialized with Redis subscription', {
+        path: '/ws/notifications',
+        environment: config.NODE_ENV
+      });
+    } catch (error) {
+      logger.warn('🌐 WebSocket Service initialized without Redis (fallback mode)', {
+        path: '/ws/notifications',
+        environment: config.NODE_ENV,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   /**
@@ -274,13 +281,22 @@ export class WebSocketService {
    * Subscribe to Redis notification events
    */
   private async subscribeToNotificationEvents(): Promise<void> {
-    // Subscribe to all tenant channels (pattern matching)
-    const tenants = ['00000000-0000-0000-0000-000000000001']; // TODO: Get from database
+    try {
+      // Subscribe to all tenant channels (pattern matching)
+      const tenants = ['00000000-0000-0000-0000-000000000001']; // TODO: Get from database
 
-    for (const tenantId of tenants) {
-      await redisService.subscribeToNotifications(tenantId, (event) => {
-        this.handleRedisNotificationEvent(event);
+      for (const tenantId of tenants) {
+        await redisService.subscribeToNotifications(tenantId, (event) => {
+          this.handleRedisNotificationEvent(event);
+        });
+      }
+
+      logger.info('🌐 Successfully subscribed to Redis notification events', { 
+        tenantsCount: tenants.length 
       });
+    } catch (error) {
+      logger.error('🌐 Failed to subscribe to Redis notification events', { error });
+      throw error; // Re-throw to be caught by the caller
     }
   }
 
