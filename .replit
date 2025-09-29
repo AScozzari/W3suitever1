@@ -163,10 +163,11 @@ localPort = 40181
 localPort = 40191
 
 [[ports]]
-localPort = 40379
+localPort = 40231
+externalPort = 3000
 
 [[ports]]
-localPort = 40427
+localPort = 40379
 
 [[ports]]
 localPort = 40785
