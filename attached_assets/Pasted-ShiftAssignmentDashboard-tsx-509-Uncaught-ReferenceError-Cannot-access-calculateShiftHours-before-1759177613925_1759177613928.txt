@@ -1,0 +1,127 @@
+ShiftAssignmentDashboard.tsx:509 Uncaught ReferenceError: Cannot access 'calculateShiftHours' before initialization
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:509:43)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9690aaab:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9690aaab:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9690aaab:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9690aaab:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9690aaab:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9690aaab:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9690aaab:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=9690aaab:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=9690aaab:19137:13)
+ShiftAssignmentDashboard @ ShiftAssignmentDashboard.tsx:509
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9690aaab:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9690aaab:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9690aaab:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9690aaab:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9690aaab:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9690aaab:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9690aaab:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9690aaab:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9690aaab:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9690aaab:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-29T20:26:31.493Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-29T20:26:31.494Z'}
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-29T20:26:31.495Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-29T20:26:31.495Z'}
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+ShiftAssignmentDashboard.tsx:509 Uncaught ReferenceError: Cannot access 'calculateShiftHours' before initialization
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:509:43)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9690aaab:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9690aaab:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9690aaab:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9690aaab:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9690aaab:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9690aaab:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9690aaab:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=9690aaab:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=9690aaab:19137:13)
+ShiftAssignmentDashboard @ ShiftAssignmentDashboard.tsx:509
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9690aaab:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9690aaab:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9690aaab:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9690aaab:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9690aaab:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9690aaab:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9690aaab:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9690aaab:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9690aaab:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9690aaab:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9690aaab:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+hook.js:608 The above error occurred in the <ShiftAssignmentDashboard> component:
+
+    at ShiftAssignmentDashboard (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Shifts/ShiftAssignmentDashboard.tsx:82:3)
+    at div
+    at _c9 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:99:12)
+    at div
+    at _c (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:19:11)
+    at div
+    at ShiftsSection
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at HRManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx:75:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:504:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9690aaab:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9690aaab:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:175:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9690aaab:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9690aaab:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9690aaab:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=9690aaab:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=9690aaab:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=9690aaab:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=9690aaab:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+chunk-ZHRYBLGQ.js?v=9690aaab:9129 Uncaught ReferenceError: Cannot access 'calculateShiftHours' before initialization
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:509:43)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9690aaab:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9690aaab:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9690aaab:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9690aaab:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=9690aaab:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=9690aaab:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=9690aaab:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=9690aaab:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=9690aaab:18879:28)
+ShiftAssignmentDashboard @ ShiftAssignmentDashboard.tsx:509
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9690aaab:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9690aaab:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9690aaab:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9690aaab:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9690aaab:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9690aaab:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9690aaab:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9690aaab:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=RMqefJUq2I0o' failed: 
+setupWebSocket @ client:536Understand this error
+client:560 [vite] server connection lost. Polling for restart...

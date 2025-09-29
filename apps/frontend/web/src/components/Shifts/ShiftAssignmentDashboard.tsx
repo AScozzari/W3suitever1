@@ -209,72 +209,31 @@ export default function ShiftAssignmentDashboard({
 
   // ==================== DATA FETCHING ====================
 
-  // Get staff members - using HR specific endpoint with real database data
+  // Get staff members - using users endpoint with tenant shell context
   const { data: staffMembers = [], isLoading: staffLoading } = useQuery({
-    queryKey: ['/api/hr/employees', storeId],
-    queryFn: async () => {
-      try {
-        const response = await fetch('/api/hr/employees', {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-tenant-id': 'demo-tenant' // Use demo tenant for development
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch employees');
-        }
-        const employees = await response.json();
-        
-        // Transform to match expected interface and filter by store
-        return employees
-          .filter((emp: any) => !storeId || emp.storeId === storeId)
-          .map((emp: any) => ({
-            id: emp.id,
-            firstName: emp.firstName || 'Nome',
-            lastName: emp.lastName || 'Cognome', 
-            email: emp.email || 'email@example.com',
-            avatar: emp.profileImageUrl,
-            role: emp.role || emp.role_name || emp.position || 'Dipendente', // Use real role data
-            skills: emp.skills || [], // Will be enhanced later
-            weeklyHours: emp.weeklyHours || 40,
-            maxWeeklyHours: emp.maxWeeklyHours || 48,
-            availability: emp.status === 'active' ? 'available' : 'busy',
-            preferredShifts: emp.preferredShifts || [],
-            currentAssignments: emp.currentAssignments || [],
-            storeId: emp.storeId || emp.primary_store_id
-          }));
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-        // Fallback to users endpoint if HR endpoint fails
-        const response = await fetch('/api/users', {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-tenant-id': 'demo-tenant'
-          }
-        });
-        if (!response.ok) return [];
-        const users = await response.json();
-        
-        return users
-          .filter((user: any) => !storeId || user.storeId === storeId)
-          .map((user: any) => ({
-            id: user.id,
-            firstName: user.firstName || 'Nome',
-            lastName: user.lastName || 'Cognome',
-            email: user.email || 'email@example.com', 
-            avatar: user.profileImageUrl,
-            role: user.role || user.role_name || user.position || 'Dipendente',
-            skills: [],
-            weeklyHours: 40,
-            maxWeeklyHours: 48,
-            availability: user.status === 'active' ? 'available' : 'busy',
-            preferredShifts: [],
-            currentAssignments: [],
-            storeId: user.storeId || user.primary_store_id
-          }));
-      }
-    },
-    enabled: true // Always enabled to load real data
+    queryKey: ['/api/users', { storeId }],
+    enabled: !!storeId, // Only fetch if storeId is provided
+    staleTime: 30000,
+    select: (users: any[]) => {
+      // Transform and filter users to match StaffMember interface
+      return users
+        .filter((user: any) => !storeId || user.storeId === storeId)
+        .map((user: any) => ({
+          id: user.id,
+          firstName: user.firstName || 'Nome',
+          lastName: user.lastName || 'Cognome',
+          email: user.email || 'email@example.com',
+          avatar: user.profileImageUrl,
+          role: user.role || user.role_name || user.position || 'Dipendente',
+          skills: user.skills || [],
+          weeklyHours: user.weeklyHours || 40,
+          maxWeeklyHours: user.maxWeeklyHours || 48,
+          availability: user.status === 'active' ? 'available' : 'busy',
+          preferredShifts: user.preferredShifts || [],
+          currentAssignments: user.currentAssignments || [],
+          storeId: user.storeId || user.primary_store_id
+        }));
+    }
   });
 
   // Get shifts for selected week

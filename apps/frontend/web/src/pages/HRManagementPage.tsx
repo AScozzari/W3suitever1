@@ -1335,7 +1335,7 @@ const HRManagementPage: React.FC = () => {
         </CardHeader>
         <CardContent className="w-full max-w-full overflow-x-auto p-0">
           <ShiftAssignmentDashboard
-            storeId={selectedStore?.id || ""}
+            storeId={selectedStore?.id || undefined}
             selectedWeek={selectedDate}
             onAssignShift={async (shiftId: string, employeeIds: string[]) => {
               try {
