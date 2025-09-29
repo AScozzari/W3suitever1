@@ -462,8 +462,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             </div>
             
             {/* Node List - Scrollable Area */}
-            <ScrollArea className="flex-1 min-h-0 overflow-y-auto">
-              <div className="p-4">
+            <ScrollArea className="flex-1 h-full">
+              <div className="p-4 pb-8">
                 <div className="space-y-6">
                 {/* Action Nodes */}
                 {(selectedCategory === 'all' || selectedCategory === 'action') && (
@@ -486,21 +486,21 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                       .map((node) => (
                       <div
                         key={node.id}
-                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
                         draggable
                         onDragStart={(e) => onDragStart(e, node.id)}
                         data-testid={`node-palette-${node.id}`}
                       >
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-start gap-3">
                           <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
                             style={{ backgroundColor: node.color }}
                           >
                             <span className="text-xs">A</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
-                            <p className="text-xs text-gray-600 truncate">{node.description}</p>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
                           </div>
                         </div>
 
@@ -534,21 +534,21 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                       .map((node) => (
                       <div
                         key={node.id}
-                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
                         draggable
                         onDragStart={(e) => onDragStart(e, node.id)}
                         data-testid={`node-palette-${node.id}`}
                       >
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-start gap-3">
                           <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
                             style={{ backgroundColor: node.color }}
                           >
                             <span className="text-xs">T</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
-                            <p className="text-xs text-gray-600 truncate">{node.description}</p>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
                           </div>
                         </div>
 
@@ -583,20 +583,20 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                       .map((node) => (
                       <div
                         key={node.id}
-                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
                         draggable
                         onDragStart={(e) => onDragStart(e, node.id)}
                         data-testid={`node-palette-${node.id}`}
                       >
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-start gap-3">
                           <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-gradient-to-r from-windtre-orange to-windtre-purple"
                           >
                             <span className="text-xs">AI</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
-                            <p className="text-xs text-gray-600 truncate">{node.description}</p>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
                           </div>
                         </div>
 
