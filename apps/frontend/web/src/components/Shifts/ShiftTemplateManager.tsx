@@ -181,9 +181,6 @@ export default function ShiftTemplateManager({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Template Turni</h2>
-          <p className="text-sm text-muted-foreground">
-            Crea e gestisci template ricorrenti per generare turni automaticamente
-          </p>
         </div>
         <Button 
           onClick={() => setIsCreateModalOpen(true)}

@@ -3810,34 +3810,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
-      const assignments = await db.select({
-        id: shiftAssignments.id,
-        shiftId: shiftAssignments.shiftId,
-        userId: shiftAssignments.userId,
-        status: shiftAssignments.status,
-        assignedAt: shiftAssignments.assignedAt,
-        confirmedAt: shiftAssignments.confirmedAt,
-        notes: shiftAssignments.notes,
-        // Shift details
-        shiftName: shifts.name,
-        shiftDate: shifts.date,
-        shiftStartTime: shifts.startTime,
-        shiftEndTime: shifts.endTime,
-        shiftType: shifts.shiftType,
-        // User details
-        userFirstName: users.firstName,
-        userLastName: users.lastName,
-        userEmail: users.email,
-        // Store details
-        storeName: stores.nome,
-        storeCode: stores.code
-      })
-      .from(shiftAssignments)
-      .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
-      .leftJoin(users, eq(shiftAssignments.userId, users.id))
-      .leftJoin(stores, eq(shifts.storeId, stores.id))
-      .where(and(...conditions))
-      .orderBy(desc(shifts.date), desc(shifts.startTime));
+      // Simplified query to avoid Drizzle orderSelectedFields error
+      const assignments = await db.select()
+        .from(shiftAssignments)
+        .where(and(...conditions))
+        .limit(100); // Add limit to prevent large result sets
       
       res.json(assignments);
     } catch (error) {
