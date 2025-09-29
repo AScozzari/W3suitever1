@@ -430,9 +430,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         </div>
 
         {isNodePaletteOpen && (
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="h-[calc(100vh-140px)] flex flex-col">
             {/* Search and Filters - Fixed Area */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-gray-200 flex-shrink-0">
               <div className="space-y-4">
                 {/* Search */}
                 <div className="relative">
@@ -461,8 +461,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               </div>
             </div>
             
-            {/* Node List - Scrollable Area with Fixed Height */}
-            <div className="flex-1 max-h-[calc(100vh-400px)] overflow-hidden">
+            {/* Node List - Internally Scrollable Area */}
+            <div className="flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-4 pb-8">
                   <div className="space-y-6">
