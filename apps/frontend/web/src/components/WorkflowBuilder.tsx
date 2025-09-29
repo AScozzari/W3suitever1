@@ -462,7 +462,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             </div>
             
             {/* Node List - Internally Scrollable Area */}
-            <div className="max-h-[500px] overflow-y-auto">
+            <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
                 <div className="p-4 pb-8">
                   <div className="space-y-6">
                 {/* Action Nodes */}
