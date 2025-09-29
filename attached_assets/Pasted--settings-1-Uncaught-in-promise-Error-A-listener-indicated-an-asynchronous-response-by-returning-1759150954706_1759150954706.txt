@@ -1,0 +1,50 @@
+
+settings:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+
+client:736 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+App.tsx:79 [APP-ROUTER] 📍 Route matched with params: 
+{0: 'staging', 1: 'workflow-management', tenant: 'staging', *: 'workflow-management'}
+App.tsx:88 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:89 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+App.tsx:79 [APP-ROUTER] 📍 Route matched with params: 
+{0: 'staging', 1: 'workflow-management', tenant: 'staging', *: 'workflow-management'}
+App.tsx:88 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:89 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+client:736 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+client:736 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+hook.js:608 Warning: Encountered two children with the same key, `M`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. Error Component Stack
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at aside (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:68:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:114:50)
+    at AuthenticatedRoute (TenantShell.tsx:338:72)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+121
+hook.js:608 Warning: Encountered two children with the same key, `M`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. Error Component Stack
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at aside (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:68:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:114:50)
+    at AuthenticatedRoute (TenantShell.tsx:338:72)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
