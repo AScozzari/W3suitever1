@@ -1328,7 +1328,7 @@ const HRManagementPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <ShiftAssignmentDashboard
-            storeId={selectedStore || ''}
+            storeId=""
             selectedWeek={new Date()}
             onAssignShift={async (shiftId: string, employeeIds: string[]) => {
               try {
