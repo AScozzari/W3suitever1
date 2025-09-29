@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, Copy, Edit, Trash, Plus, FileText, Clock, Users, RefreshCw } from 'lucide-react';
+import { CalendarIcon, Copy, Edit, Trash, Plus, Clock, Users, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import ShiftTemplateModal from './ShiftTemplateModal';
 
 interface ShiftTemplate {
   id: string;
@@ -65,73 +62,24 @@ export default function ShiftTemplateManager({
   const [selectedTemplate, setSelectedTemplate] = useState<ShiftTemplate | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const [isDeletingTemplate, setIsDeletingTemplate] = useState<string | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<ShiftTemplate | null>(null);
   const [applyDateRange, setApplyDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
   }>({ from: undefined, to: undefined });
   
-  const [newTemplate, setNewTemplate] = useState<Partial<ShiftTemplate>>({
-    name: '',
-    pattern: 'weekly',
-    defaultStartTime: '09:00',
-    defaultEndTime: '17:00',
-    defaultRequiredStaff: 2,
-    defaultBreakMinutes: 30,
-    rules: { daysOfWeek: [1, 2, 3, 4, 5] }
-  });
-  
   const { toast } = useToast();
   
-  const handleCreateTemplate = async () => {
-    if (!newTemplate.name) {
-      toast({
-        title: "Nome richiesto",
-        description: "Inserisci un nome per il template",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsCreatingTemplate(true);
-    try {
-      const response = await fetch('/api/hr/shift-templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTemplate)
-      });
-      
-      if (!response.ok) throw new Error('Failed to create template');
-      
-      toast({
-        title: "Template creato",
-        description: "Il template è stato salvato con successo"
-      });
-      
-      setIsCreateModalOpen(false);
-      setNewTemplate({
-        name: '',
-        pattern: 'weekly',
-        defaultStartTime: '09:00',
-        defaultEndTime: '17:00',
-        defaultRequiredStaff: 2,
-        defaultBreakMinutes: 30,
-        rules: { daysOfWeek: [1, 2, 3, 4, 5] }
-      });
-      
-      // Refresh page to show new template
-      window.location.reload();
-    } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Impossibile creare il template",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreatingTemplate(false);
-    }
+  const handleCloseModal = () => {
+    setIsCreateModalOpen(false);
+    setEditingTemplate(null);
+  };
+  
+  const handleEditTemplate = (template: ShiftTemplate) => {
+    setEditingTemplate(template);
+    setIsCreateModalOpen(true);
   };
   
   const handleApplyTemplate = async () => {
@@ -263,6 +211,7 @@ export default function ShiftTemplateManager({
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => handleEditTemplate(template)}
             data-testid={`button-edit-${template.id}`}
           >
             <Edit className="h-4 w-4" />
@@ -340,137 +289,12 @@ export default function ShiftTemplateManager({
         </TabsContent>
       </Tabs>
       
-      {/* Create Template Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Crea Nuovo Template</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Nome Template</Label>
-                <Input
-                  id="name"
-                  value={newTemplate.name}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                  placeholder="es. Turno Mattina Standard"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pattern">Pattern</Label>
-                <Select
-                  value={newTemplate.pattern}
-                  onValueChange={(v) => setNewTemplate({ ...newTemplate, pattern: v as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PATTERN_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Descrizione</Label>
-              <Input
-                id="description"
-                value={newTemplate.description}
-                onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
-                placeholder="Descrizione opzionale"
-              />
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="startTime">Ora Inizio</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={newTemplate.defaultStartTime}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, defaultStartTime: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime">Ora Fine</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={newTemplate.defaultEndTime}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, defaultEndTime: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="requiredStaff">Staff Richiesto</Label>
-                <Input
-                  id="requiredStaff"
-                  type="number"
-                  min="1"
-                  value={newTemplate.defaultRequiredStaff}
-                  onChange={(e) => setNewTemplate({ 
-                    ...newTemplate, 
-                    defaultRequiredStaff: parseInt(e.target.value) 
-                  })}
-                />
-              </div>
-            </div>
-            
-            {newTemplate.pattern === 'weekly' && (
-              <div>
-                <Label>Giorni della Settimana</Label>
-                <div className="flex gap-2 mt-2">
-                  {DAYS_OF_WEEK.map(day => (
-                    <label
-                      key={day.value}
-                      className="flex items-center gap-1 cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={newTemplate.rules?.daysOfWeek?.includes(day.value)}
-                        onCheckedChange={(checked: boolean) => {
-                          const days = newTemplate.rules?.daysOfWeek || [];
-                          setNewTemplate({
-                            ...newTemplate,
-                            rules: {
-                              ...newTemplate.rules,
-                              daysOfWeek: checked
-                                ? [...days, day.value]
-                                : days.filter(d => d !== day.value)
-                            }
-                          });
-                        }}
-                      />
-                      <span className="text-sm">{day.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-              Annulla
-            </Button>
-            <Button 
-              onClick={handleCreateTemplate} 
-              disabled={isCreatingTemplate}
-              className="bg-gradient-to-r from-orange-500 to-orange-600"
-            >
-              {isCreatingTemplate ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4 mr-2" />
-              )}
-              {isCreatingTemplate ? 'Creando...' : 'Crea Template'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Advanced Template Modal */}
+      <ShiftTemplateModal
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseModal}
+        template={editingTemplate}
+      />
       
       {/* Apply Template Modal */}
       <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
