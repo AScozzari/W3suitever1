@@ -392,7 +392,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   return (
     <div className="flex h-full w-full bg-gray-50">
       {/* Node Palette Sidebar */}
-      <div className={`${isNodePaletteOpen ? 'w-80' : 'w-12'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col`}>
+      <div className={`${isNodePaletteOpen ? 'w-96' : 'w-12'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col`}>
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Node Library</h3>
