@@ -1,0 +1,176 @@
+[TENANT-PROVIDER] 🏢 Tenant updated from session: 
+{id: '00000000-0000-0000-0000-000000000001', name: 'Demo Organization', code: 'DEMO001', plan: 'Enterprise', isActive: true}
+WorkflowBuilder.tsx:279 ✨ Node dropped at position: 
+{x: 384, y: 238.21875}
+workflowStore.ts:141 🏪 STORE: Adding node: 
+{id: 'approve-request-1759139013892', type: 'action', position: {…}, data: {…}, draggable: true, …}
+workflowStore.ts:143 🏪 BEFORE ADD: nodes count = 0
+workflowStore.ts:145 🏪 AFTER ADD: nodes count = 1
+workflowStore.ts:148 🏪 FINAL STATE: nodes = 
+[{…}]
+client:736 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+37
+hook.js:608 [React Flow]: It seems that you are trying to drag a node that is not initialized. Please use onNodesChange as explained in the docs. Help: https://reactflow.dev/error#015
+WorkflowBuilder.tsx:217 🎛️ Opening config panel for node: approve-request-1759139013892
+hook.js:608 Warning: You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`. Error Component Stack
+    at input (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:74:35)
+    at Layout (Layout.tsx:68:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:114:50)
+    at AuthenticatedRoute (TenantShell.tsx:338:72)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+hook.js:608 Warning: You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`. Error Component Stack
+    at textarea (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:74:35)
+    at Layout (Layout.tsx:68:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:114:50)
+    at AuthenticatedRoute (TenantShell.tsx:338:72)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+WorkflowBuilder.tsx:279 ✨ Node dropped at position: 
+{x: 330.608, y: 493.642}
+workflowStore.ts:141 🏪 STORE: Adding node: 
+{id: 'ai-decision-1759139029420', type: 'ai', position: {…}, data: {…}, draggable: true, …}
+workflowStore.ts:143 🏪 BEFORE ADD: nodes count = 1
+workflowStore.ts:145 🏪 AFTER ADD: nodes count = 2
+workflowStore.ts:148 🏪 FINAL STATE: nodes = 
+(2) [{…}, {…}]
+WorkflowBuilder.tsx:217 🎛️ Opening config panel for node: ai-decision-1759139029420
+WorkflowBuilder.tsx:747 Warning: React has detected a change in the order of Hooks called by WorkflowBuilderContent. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://reactjs.org/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+1. useRef                     useRef
+2. useContext                 useContext
+3. useMemo                    useMemo
+4. useMemo                    useMemo
+5. useContext                 useContext
+6. useMemo                    useMemo
+7. useContext                 useContext
+8. useContext                 useContext
+9. useRef                     useRef
+10. useMemo                   useMemo
+11. useSyncExternalStore      useSyncExternalStore
+12. useEffect                 useEffect
+13. useDebugValue             useDebugValue
+14. useDebugValue             useDebugValue
+15. useMemo                   useMemo
+16. useMemo                   useMemo
+17. useCallback               useCallback
+18. useCallback               useCallback
+19. useSyncExternalStore      useSyncExternalStore
+20. useDebugValue             useDebugValue
+21. useContext                useContext
+22. useContext                useContext
+23. useContext                useContext
+24. useEffect                 useEffect
+25. useState                  useState
+26. useCallback               useCallback
+27. useSyncExternalStore      useSyncExternalStore
+28. useEffect                 useEffect
+29. useState                  useState
+30. useEffect                 useEffect
+31. useCallback               useCallback
+32. useCallback               useCallback
+33. useContext                useContext
+34. useState                  useState
+35. useEffect                 useEffect
+36. useCallback               useCallback
+37. useSyncExternalStore      useSyncExternalStore
+38. useCallback               useCallback
+39. useState                  useState
+40. useEffect                 useEffect
+41. useCallback               useCallback
+42. useCallback               useCallback
+43. useContext                useContext
+44. useState                  useState
+45. useEffect                 useEffect
+46. useCallback               useCallback
+47. useSyncExternalStore      useSyncExternalStore
+48. useCallback               useCallback
+49. useEffect                 useEffect
+50. useState                  useState
+51. useState                  useState
+52. useState                  useState
+53. useState                  useState
+54. useState                  useState
+55. useEffect                 useEffect
+56. useCallback               useCallback
+57. useCallback               useCallback
+58. useCallback               useCallback
+59. useCallback               useCallback
+60. useCallback               useCallback
+61. useCallback               useCallback
+62. useCallback               useCallback
+63. useCallback               useCallback
+64. useCallback               useCallback
+65. useCallback               useCallback
+66. useState                  useState
+67. useState                  useState
+68. undefined                 useState
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ Error Component Stack
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:74:35)
+    at Layout (Layout.tsx:68:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:114:50)
+    at AuthenticatedRoute (TenantShell.tsx:338:72)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+chunk-ZHRYBLGQ.js?v=ae4c037d:11678 Uncaught Error: Rendered more hooks than during the previous render.
+    at WorkflowBuilder.tsx:747:45
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:922:14)
+chunk-ZHRYBLGQ.js?v=ae4c037d:11678 Uncaught Error: Rendered more hooks than during the previous render.
+    at WorkflowBuilder.tsx:747:45
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:922:14)
+hook.js:608 The above error occurred in the <WorkflowBuilderContent> component:
+
+    at WorkflowBuilderContent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/WorkflowBuilder.tsx:60:35)
+    at BatchProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@xyflow_react.js?v=ae4c037d:5970:36)
+    at ReactFlowProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@xyflow_react.js?v=ae4c037d:8027:44)
+    at WorkflowBuilder
+    at div
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:92:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:491:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=ae4c037d:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=ae4c037d:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:175:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=ae4c037d:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=ae4c037d:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=ae4c037d:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=ae4c037d:11678 Uncaught Error: Rendered more hooks than during the previous render.
+    at WorkflowBuilder.tsx:747:45
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:922:14)
