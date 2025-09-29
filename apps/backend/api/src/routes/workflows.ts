@@ -719,15 +719,15 @@ router.get('/requests', async (req, res) => {
     const limitNum = parseInt(limit as string);
     const offset = (pageNum - 1) * limitNum;
 
-    // Build where conditions
-    let whereConditions = [eq(universalRequests.tenantId, tenantId)];
+    // Build where conditions - Fixed type casting
+    let whereConditions = [eq(universalRequests.tenantId, tenantId as string)];
     
-    if (department) {
-      whereConditions.push(eq(universalRequests.department, department as string));
+    if (department && typeof department === 'string') {
+      whereConditions.push(sql`${universalRequests.department} = ${department}`);
     }
     
-    if (status) {
-      whereConditions.push(eq(universalRequests.status, status as string));
+    if (status && typeof status === 'string') {
+      whereConditions.push(sql`${universalRequests.status} = ${status}`);
     }
     
     if (category) {
@@ -830,15 +830,15 @@ router.post('/requests', rbacMiddleware, async (req, res) => {
     const requestData = validation.data;
 
     // 🎯 DEPARTMENTAL CONSTRAINT: Validate that department aligns with workflow category
-    if (requestData.workflowInstanceId) {
+    if (requestData.workflow_instance_id) {
       const [workflowInstance] = await db
         .select({ 
           category: workflowInstances.category 
         })
         .from(workflowInstances)
         .where(and(
-          eq(workflowInstances.id, requestData.workflowInstanceId),
-          eq(workflowInstances.tenantId, tenantId)
+          eq(workflowInstances.id, requestData.workflow_instance_id),
+          sql`${workflowInstances.tenantId} = ${tenantId}`
         ));
 
       if (!workflowInstance) {
@@ -864,9 +864,8 @@ router.post('/requests', rbacMiddleware, async (req, res) => {
     const [newRequest] = await db
       .insert(universalRequests)
       .values({
-        ...requestData,
-        createdBy: userId,
-        updatedBy: userId
+        ...requestData
+        // Note: createdBy/updatedBy are auto-handled by schema defaults
       })
       .returning();
 
@@ -1112,7 +1111,7 @@ router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), a
     }
 
     // Initialize AI services
-    const aiRegistry = new AIRegistryService();
+    const aiRegistry = new AIRegistryService(db);
     const workflowAI = new WorkflowAIConnector(aiRegistry);
 
     // Execute AI routing
@@ -1465,69 +1464,57 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       ORDER BY date DESC
     `);
 
-    // 🎯 Category Performance - Fixed SQL syntax
-    const categoryStats = await db
-      .select({
-        category: workflowTemplates.category,
-        totalInstances: count(workflowInstances.id),
-        completed: sql<number>`COUNT(CASE WHEN ${workflowInstances.currentStatus} = 'completed' THEN 1 END)`,
-        running: sql<number>`COUNT(CASE WHEN ${workflowInstances.currentStatus} = 'in_progress' THEN 1 END)`,
-        failed: sql<number>`COUNT(CASE WHEN ${workflowInstances.currentStatus} = 'failed' THEN 1 END)`,
-        avgCompletionTime: sql<number>`AVG(EXTRACT(EPOCH FROM (${workflowInstances.completedAt} - ${workflowInstances.startedAt})))`
-      })
-      .from(workflowTemplates)
-      .leftJoin(workflowInstances, eq(workflowInstances.templateId, workflowTemplates.id))
-      .where(and(
-        eq(workflowTemplates.tenantId, tenantId),
-        or(
-          sql`${workflowInstances.createdAt} >= NOW() - make_interval(days => ${parseInt(period as string, 10)})`,
-          sql`${workflowInstances.createdAt} IS NULL`
-        )
-      ))
-      .groupBy(workflowTemplates.category)
-      .orderBy(sql`totalInstances DESC`);
+    // 🎯 Category Performance - Fixed with raw SQL (snake_case)
+    const categoryStats = await db.execute(sql`
+      SELECT 
+        wt.category,
+        COUNT(wi.id) as total_instances,
+        COUNT(CASE WHEN wi.current_status = 'completed' THEN 1 END) as completed,
+        COUNT(CASE WHEN wi.current_status = 'in_progress' THEN 1 END) as running,
+        COUNT(CASE WHEN wi.current_status = 'failed' THEN 1 END) as failed,
+        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_completion_time
+      FROM workflow_templates wt
+      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
+      WHERE wt.tenant_id = ${tenantId}
+        AND (wi.created_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)}) OR wi.created_at IS NULL)
+      GROUP BY wt.category
+      ORDER BY total_instances DESC
+    `);
 
-    // ⚡ Most Active Templates - Fixed SQL syntax  
-    const activeTemplates = await db
-      .select({
-        name: workflowTemplates.name,
-        category: workflowTemplates.category,
-        instancesCount: count(workflowInstances.id),
-        avgDuration: sql<number>`AVG(EXTRACT(EPOCH FROM (${workflowInstances.completedAt} - ${workflowInstances.startedAt})))`,
-        lastUsed: sql<Date>`MAX(${workflowInstances.lastActivityAt})`
-      })
-      .from(workflowTemplates)
-      .leftJoin(workflowInstances, eq(workflowInstances.templateId, workflowTemplates.id))
-      .where(and(
-        eq(workflowTemplates.tenantId, tenantId),
-        or(
-          sql`${workflowInstances.createdAt} >= NOW() - make_interval(days => ${parseInt(period as string, 10)})`,
-          sql`${workflowInstances.createdAt} IS NULL`
-        )
-      ))
-      .groupBy(workflowTemplates.id, workflowTemplates.name, workflowTemplates.category)
-      .orderBy(sql`instancesCount DESC`)
-      .limit(10);
+    // ⚡ Most Active Templates - Fixed with raw SQL (snake_case)
+    const activeTemplates = await db.execute(sql`
+      SELECT 
+        wt.name,
+        wt.category,
+        COUNT(wi.id) as instances_count,
+        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_duration,
+        MAX(wi.last_activity_at) as last_used
+      FROM workflow_templates wt
+      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
+      WHERE wt.tenant_id = ${tenantId}
+        AND (wi.created_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)}) OR wi.created_at IS NULL)
+      GROUP BY wt.id, wt.name, wt.category
+      ORDER BY instances_count DESC
+      LIMIT 10
+    `);
 
-    // 🕒 Hourly Distribution - Fixed SQL syntax
-    const hourlyDistribution = await db
-      .select({
-        hour: sql<number>`EXTRACT(HOUR FROM ${workflowInstances.startedAt})`,
-        instancesStarted: count()
-      })
-      .from(workflowInstances)
-      .where(and(
-        eq(workflowInstances.tenantId, tenantId),
-        sql`${workflowInstances.startedAt} >= NOW() - make_interval(days => ${parseInt(period as string, 10)})`
-      ))
-      .groupBy(sql`EXTRACT(HOUR FROM ${workflowInstances.startedAt})`)
-      .orderBy(sql`hour`);
+    // 🕒 Hourly Distribution - Fixed with raw SQL (snake_case)
+    const hourlyDistribution = await db.execute(sql`
+      SELECT 
+        EXTRACT(HOUR FROM wi.started_at) as hour,
+        COUNT(*) as instances_started
+      FROM workflow_instances wi
+      WHERE wi.tenant_id = ${tenantId}
+        AND wi.started_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)})
+      GROUP BY EXTRACT(HOUR FROM wi.started_at)
+      ORDER BY hour
+    `);
 
     const analyticsData = {
       performance: performanceStats.rows,
-      categoryStats: categoryStats,
-      activeTemplates: activeTemplates,
-      hourlyDistribution: hourlyDistribution,
+      categoryStats: categoryStats.rows,
+      activeTemplates: activeTemplates.rows,
+      hourlyDistribution: hourlyDistribution.rows,
       period: parseInt(period as string),
       generatedAt: new Date().toISOString()
     };
@@ -1536,7 +1523,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       tenantId,
       period,
       performanceDataPoints: performanceStats.rows.length,
-      categoriesAnalyzed: categoryStats.length,
+      categoriesAnalyzed: categoryStats.rows.length,
       userId: req.user?.id
     });
 
