@@ -1447,7 +1447,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
 
     await setTenantContext(tenantId);
 
-    // 📈 Performance Analytics
+    // 📈 Performance Analytics - Fixed parameter binding
     const performanceStats = await db.execute(sql`
       SELECT 
         DATE_TRUNC('day', we.started_at) as date,
@@ -1455,12 +1455,12 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
         AVG(we.duration) as avg_duration,
         MIN(we.duration) as min_duration,
         MAX(we.duration) as max_duration,
-        COUNT(CASE WHEN we.status = 'completed' THEN 1 END) as successful,
+        COUNT(CASE WHEN we.status = 'success' THEN 1 END) as successful,
         COUNT(CASE WHEN we.status = 'failed' THEN 1 END) as failed
       FROM workflow_executions we
       JOIN workflow_instances wi ON wi.id = we.instance_id
       WHERE wi.tenant_id = ${tenantId}
-        AND we.started_at >= NOW() - INTERVAL '${period} days'
+        AND we.started_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)})
       GROUP BY DATE_TRUNC('day', we.started_at)
       ORDER BY date DESC
     `);
@@ -1480,7 +1480,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       .where(and(
         eq(workflowTemplates.tenantId, tenantId),
         or(
-          sql`${workflowInstances.createdAt} >= NOW() - INTERVAL '${sql.raw(period as string)} days'`,
+          sql`${workflowInstances.createdAt} >= NOW() - make_interval(days => ${parseInt(period as string, 10)})`,
           sql`${workflowInstances.createdAt} IS NULL`
         )
       ))
@@ -1501,7 +1501,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       .where(and(
         eq(workflowTemplates.tenantId, tenantId),
         or(
-          sql`${workflowInstances.createdAt} >= NOW() - INTERVAL '${sql.raw(period as string)} days'`,
+          sql`${workflowInstances.createdAt} >= NOW() - make_interval(days => ${parseInt(period as string, 10)})`,
           sql`${workflowInstances.createdAt} IS NULL`
         )
       ))
@@ -1518,7 +1518,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       .from(workflowInstances)
       .where(and(
         eq(workflowInstances.tenantId, tenantId),
-        sql`${workflowInstances.startedAt} >= NOW() - INTERVAL '${sql.raw(period as string)} days'`
+        sql`${workflowInstances.startedAt} >= NOW() - make_interval(days => ${parseInt(period as string, 10)})`
       ))
       .groupBy(sql`EXTRACT(HOUR FROM ${workflowInstances.startedAt})`)
       .orderBy(sql`hour`);
