@@ -1,6 +1,6 @@
 // WebSocket Hook for Real-time Notifications
 import { useEffect, useRef, useState } from 'react';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, getCurrentTenantId } from '@/lib/queryClient';
 
 interface WebSocketEvent {
   type: 'new_notification' | 'notification_read' | 'notification_update' | 'connection_established' | 'pong' | 
@@ -23,8 +23,13 @@ interface UseWebSocketOptions {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const { enabled = true, userId = 'demo-user', onNotification, onConnectionChange, onShiftUpdate, onConflictUpdate } = options;
-  const tenantId = 'demo-tenant'; // TODO: Get from auth context when available
+  const { enabled = true, userId, onNotification, onConnectionChange, onShiftUpdate, onConflictUpdate } = options;
+  
+  // Get tenant ID from current context
+  const tenantId = getCurrentTenantId();
+  
+  // Get user ID from localStorage or use tenant-based default
+  const currentUserId = userId || localStorage.getItem('demo_user') || 'admin-user';
   
   const [isConnected, setIsConnected] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -46,7 +51,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       // Create WebSocket URL (same-origin for both dev and prod)
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host; // Use same origin as current page
-      const wsUrl = `${protocol}//${host}/ws/notifications?userId=${encodeURIComponent(userId)}&tenantId=${encodeURIComponent(tenantId)}&token=dev-token`;
+      const wsUrl = `${protocol}//${host}/ws/notifications?userId=${encodeURIComponent(currentUserId)}&tenantId=${encodeURIComponent(tenantId || '')}&token=dev-token`;
 
       console.log('🌐 [WS] Connecting to:', wsUrl);
 

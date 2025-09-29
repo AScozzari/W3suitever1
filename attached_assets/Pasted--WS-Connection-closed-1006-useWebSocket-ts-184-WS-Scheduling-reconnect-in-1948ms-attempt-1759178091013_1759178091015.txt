@@ -1,0 +1,78 @@
+🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1948ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=iobbl2So7-Lb' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1152ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1476ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1560ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1821ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1337ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1469ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1966ms (attempt 1)
+useWebSocket.ts:51 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token
+useWebSocket.ts:53 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=demo-user&tenantId=demo-tenant&token=dev-token' failed: 
+connect @ useWebSocket.ts:53
+(anonymous) @ useWebSocket.ts:188Understand this error
+useWebSocket.ts:155 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:155Understand this error
+useWebSocket.ts:138 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:184 🌐 [WS] Scheduling reconnect in 1601ms (attempt 1)

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -883,7 +882,7 @@ export default function ShiftAssignmentDashboard({
         </div>
 
         {/* Gantt Chart */}
-        <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="relative bg-white rounded-lg border border-gray-200 overflow-x-auto">
           {/* Timeline Header */}
           <div className="sticky top-0 z-10 bg-white border-b">
             {/* Days Header */}
@@ -919,7 +918,7 @@ export default function ShiftAssignmentDashboard({
           </div>
 
           {/* Staff Rows */}
-          <ScrollArea className="h-96">
+          <div className="h-96 overflow-y-auto">
             {filteredStaff.map(employee => (
               <div key={employee.id} className="flex border-b hover:bg-gray-50 h-16">
                 {/* Employee Info */}
@@ -1031,7 +1030,7 @@ export default function ShiftAssignmentDashboard({
                 ))}
               </div>
             ))}
-          </ScrollArea>
+          </div>
         </div>
       </div>
     );
