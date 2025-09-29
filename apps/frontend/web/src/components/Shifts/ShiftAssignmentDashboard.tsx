@@ -887,9 +887,9 @@ export default function ShiftAssignmentDashboard({
           <div className="sticky top-0 z-10 bg-white border-b">
             {/* Days Header */}
             <div className="flex border-b bg-gray-100">
-              <div className="w-48 p-3 font-semibold border-r bg-white">Dipendenti</div>
+              <div className="w-32 sm:w-40 lg:w-48 p-3 font-semibold border-r bg-white flex-shrink-0">Dipendenti</div>
               {weekDays.map(day => (
-                <div key={day.toISOString()} className="flex-1 text-center p-2 border-r font-medium min-w-0">
+                <div key={day.toISOString()} className="flex-1 text-center p-2 border-r font-medium min-w-[80px] sm:min-w-[100px]">
                   <div className="text-sm">{format(day, 'EEE', { locale: it })}</div>
                   <div className="text-xs text-gray-500">{format(day, 'd MMM', { locale: it })}</div>
                 </div>
@@ -898,9 +898,9 @@ export default function ShiftAssignmentDashboard({
 
             {/* Time Slots Header */}
             <div className="flex border-b bg-gray-50">
-              <div className="w-48 border-r bg-white"></div>
+              <div className="w-32 sm:w-40 lg:w-48 border-r bg-white flex-shrink-0"></div>
               {weekDays.map(day => (
-                <div key={day.toISOString()} className="flex-1 border-r min-w-0">
+                <div key={day.toISOString()} className="flex-1 border-r min-w-[80px] sm:min-w-[100px]">
                   <div className="flex text-xs">
                     {timeSlots.map((time, index) => (
                       <div 
@@ -922,29 +922,29 @@ export default function ShiftAssignmentDashboard({
             {filteredStaff.map(employee => (
               <div key={employee.id} className="flex border-b hover:bg-gray-50 h-16">
                 {/* Employee Info */}
-                <div className="w-48 p-3 border-r flex items-center space-x-3 bg-white sticky left-0 z-5">
+                <div className="w-32 sm:w-40 lg:w-48 p-2 sm:p-3 border-r flex items-center space-x-2 sm:space-x-3 bg-white sticky left-0 z-5 flex-shrink-0">
                   <Checkbox
                     checked={selectedEmployees.has(employee.id)}
                     onCheckedChange={(checked) => handleEmployeeSelection(employee.id, !!checked)}
                     data-testid={`checkbox-employee-${employee.id}`}
                   />
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
                     <AvatarImage src={employee.avatar} />
                     <AvatarFallback>
                       {employee.firstName[0]}{employee.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm truncate">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-xs sm:text-sm truncate">
                       {employee.firstName} {employee.lastName}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">{employee.role}</div>
+                    <div className="text-xs text-gray-500 truncate hidden sm:block">{employee.role}</div>
                   </div>
                 </div>
 
                 {/* Timeline Days */}
                 {weekDays.map(day => (
-                  <div key={day.toISOString()} className="flex-1 border-r relative min-w-0">
+                  <div key={day.toISOString()} className="flex-1 border-r relative min-w-[80px] sm:min-w-[100px]">
                     {/* Time Grid Background */}
                     <div className="absolute inset-0 flex">
                       {timeSlots.map((time, index) => (
@@ -1045,7 +1045,7 @@ export default function ShiftAssignmentDashboard({
       <div className="space-y-4">
         {/* Filter and Search Bar */}
         <div className="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex-1 min-w-64">
+          <div className="flex-1 min-w-[200px] sm:min-w-64">
             <Input
               placeholder="Cerca dipendente, turno o skill..."
               value={searchQuery}
