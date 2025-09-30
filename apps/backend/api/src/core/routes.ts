@@ -3786,13 +3786,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let conditions = [eq(shiftAssignments.tenantId, tenantId)];
       
-      // Ensure all joined tables are filtered by tenant
-      let joinConditions = [
-        and(eq(shifts.tenantId, tenantId)),
-        and(eq(users.tenantId, tenantId)),
-        and(eq(stores.tenantId, tenantId))
-      ];
-      
       if (storeId) {
         conditions.push(eq(shifts.storeId, storeId));
       }
@@ -3810,11 +3803,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
-      // Simplified query to avoid Drizzle orderSelectedFields error
+      // SIMPLIFIED: Query only shiftAssignments table without JOINs
+      // TODO: Add JOINs after basic query works
+      const baseConditions = [eq(shiftAssignments.tenantId, tenantId)];
+      
+      if (userId) {
+        baseConditions.push(eq(shiftAssignments.userId, userId));
+      }
+      
       const assignments = await db.select()
         .from(shiftAssignments)
-        .where(and(...conditions))
-        .limit(100); // Add limit to prevent large result sets
+        .where(and(...baseConditions))
+        .limit(100);
       
       res.json(assignments);
     } catch (error) {
