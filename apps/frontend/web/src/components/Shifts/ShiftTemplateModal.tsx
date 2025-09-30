@@ -28,7 +28,9 @@ import { Plus, Trash2, Clock, AlertTriangle, CheckCircle, Save, Store as StoreIc
 const timeSlotSchema = z.object({
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)'),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)'),
-  breakMinutes: z.number().min(0, 'Pausa non può essere negativa').max(480, 'Pausa troppo lunga (max 8h)').optional()
+  breakMinutes: z.number().min(0, 'Pausa non può essere negativa').max(480, 'Pausa troppo lunga (max 8h)').optional(),
+  clockInToleranceMinutes: z.number().min(0, 'Tolleranza non può essere negativa').max(60, 'Tolleranza massima 60 minuti').optional(),
+  clockOutToleranceMinutes: z.number().min(0, 'Tolleranza non può essere negativa').max(60, 'Tolleranza massima 60 minuti').optional()
 }).refine((data) => {
   const start = new Date(`2000-01-01T${data.startTime}`);
   const end = new Date(`2000-01-01T${data.endTime}`);
@@ -146,10 +148,12 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         { 
           startTime: template.defaultStartTime, 
           endTime: template.defaultEndTime, 
-          breakMinutes: template.defaultBreakMinutes || 30 
+          breakMinutes: template.defaultBreakMinutes || 30,
+          clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
+          clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
         }
       ] : [
-        { startTime: '09:00', endTime: '17:00', breakMinutes: 30 }
+        { startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
       ]),
       // Map legacy rules.daysOfWeek to new format
       daysOfWeek: template?.daysOfWeek || template?.rules?.daysOfWeek || [1, 2, 3, 4, 5],
@@ -185,13 +189,15 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         defaultEndTime: data.timeSlots[0]?.endTime || '17:00',
         defaultRequiredStaff: 2, // Default staff
         defaultBreakMinutes: data.timeSlots[0]?.breakMinutes || 30,
+        clockInToleranceMinutes: data.timeSlots[0]?.clockInToleranceMinutes || 15,
+        clockOutToleranceMinutes: data.timeSlots[0]?.clockOutToleranceMinutes || 15,
         rules: {
           daysOfWeek: data.daysOfWeek
         },
         isActive: data.isActive,
         notes: data.notes,
         color: data.color,
-        timeSlots: data.timeSlots // ✅ Now sending full timeSlots array to backend
+        timeSlots: data.timeSlots // ✅ Now sending full timeSlots array to backend (includes tolerances)
       };
       
       return await apiRequest(endpoint, {
@@ -248,7 +254,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       return;
     }
     
-    append({ startTime: '09:00', endTime: '17:00', breakMinutes: 30 });
+    append({ startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 });
   };
 
   const removeTimeSlot = (index: number) => {
@@ -558,6 +564,53 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                                 placeholder="30"
                                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                                 data-testid={`input-break-${index}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {/* Tolerance Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                      <FormField
+                        control={form.control}
+                        name={`timeSlots.${index}.clockInToleranceMinutes`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tolleranza Clock-In (minuti)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                min="0"
+                                max="60"
+                                placeholder="15"
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                data-testid={`input-clockin-tolerance-${index}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name={`timeSlots.${index}.clockOutToleranceMinutes`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tolleranza Clock-Out (minuti)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                min="0"
+                                max="60"
+                                placeholder="15"
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                data-testid={`input-clockout-tolerance-${index}`}
                               />
                             </FormControl>
                             <FormMessage />
