@@ -1071,6 +1071,10 @@ export const shifts = w3suiteSchema.table("shifts", {
   endTime: timestamp("end_time").notNull(),
   breakMinutes: integer("break_minutes").default(0),
   
+  // Attendance tolerance (minutes)
+  clockInToleranceMinutes: integer("clock_in_tolerance_minutes").default(15),
+  clockOutToleranceMinutes: integer("clock_out_tolerance_minutes").default(15),
+  
   // Staffing
   requiredStaff: integer("required_staff").notNull(),
   assignedUsers: jsonb("assigned_users").default([]), // [userId1, userId2, ...]
@@ -1350,6 +1354,125 @@ export const insertShiftAttendanceSchema = createInsertSchema(shiftAttendance).o
 });
 export type InsertShiftAttendance = z.infer<typeof insertShiftAttendanceSchema>;
 export type ShiftAttendance = typeof shiftAttendance.$inferSelect;
+
+// ==================== ATTENDANCE ANOMALIES ====================
+// Tracks attendance/timeclock anomalies for supervisor review
+export const attendanceAnomalies = w3suiteSchema.table("attendance_anomalies", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  attendanceId: uuid("attendance_id").references(() => shiftAttendance.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  shiftId: uuid("shift_id").references(() => shifts.id),
+  storeId: uuid("store_id").references(() => stores.id),
+  
+  // Anomaly classification
+  anomalyType: varchar("anomaly_type", { length: 50 }).notNull(), 
+  // late_clock_in, early_clock_out, wrong_store, no_shift_assigned, overtime_unapproved, missing_clock_out
+  
+  severity: varchar("severity", { length: 20 }).notNull().default("medium"), // low, medium, high, critical
+  
+  // Anomaly details
+  expectedValue: text("expected_value"), // JSON string with expected data
+  actualValue: text("actual_value"), // JSON string with actual data
+  deviationMinutes: integer("deviation_minutes"), // Time deviation if applicable
+  deviationMeters: integer("deviation_meters"), // Location deviation if applicable
+  
+  // Detection
+  detectedAt: timestamp("detected_at").defaultNow(),
+  detectionMethod: varchar("detection_method", { length: 20 }).default("automatic"), // automatic, manual, system
+  
+  // Resolution
+  resolutionStatus: varchar("resolution_status", { length: 20 }).notNull().default("pending"), 
+  // pending, acknowledged, resolved, dismissed, escalated
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  resolutionNotes: text("resolution_notes"),
+  resolutionAction: varchar("resolution_action", { length: 50 }), // approved, corrected, penalized, excused
+  
+  // Notification
+  notifiedSupervisor: boolean("notified_supervisor").default(false),
+  notifiedAt: timestamp("notified_at"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("attendance_anomalies_tenant_idx").on(table.tenantId),
+  index("attendance_anomalies_user_idx").on(table.userId),
+  index("attendance_anomalies_store_idx").on(table.storeId),
+  index("attendance_anomalies_type_idx").on(table.anomalyType),
+  index("attendance_anomalies_severity_idx").on(table.severity),
+  index("attendance_anomalies_status_idx").on(table.resolutionStatus),
+  index("attendance_anomalies_detected_idx").on(table.detectedAt),
+]);
+
+export const insertAttendanceAnomalySchema = createInsertSchema(attendanceAnomalies).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  detectedAt: true
+});
+export type InsertAttendanceAnomaly = z.infer<typeof insertAttendanceAnomalySchema>;
+export type AttendanceAnomaly = typeof attendanceAnomalies.$inferSelect;
+
+// ==================== RESOURCE AVAILABILITY ====================
+// Tracks employee availability for shift assignment (vacation, sick leave, etc)
+export const resourceAvailability = w3suiteSchema.table("resource_availability", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Availability period
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  
+  // Availability status
+  availabilityStatus: varchar("availability_status", { length: 30 }).notNull(), 
+  // available, vacation, sick_leave, personal_leave, training, unavailable, restricted
+  
+  // Reason and justification
+  reasonType: varchar("reason_type", { length: 50 }), // approved_leave, medical, personal, scheduled_off
+  reasonDescription: text("reason_description"),
+  leaveRequestId: uuid("leave_request_id"), // Link to HR leave request if applicable
+  
+  // Time constraints
+  isFullDay: boolean("is_full_day").default(true),
+  startTime: timestamp("start_time"), // If partial day
+  endTime: timestamp("end_time"), // If partial day
+  
+  // Approval tracking
+  approvalStatus: varchar("approval_status", { length: 20 }).default("approved"), // pending, approved, rejected
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  // Impact on scheduling
+  blocksShiftAssignment: boolean("blocks_shift_assignment").default(true),
+  showInSchedule: boolean("show_in_schedule").default(true),
+  
+  // Metadata
+  notes: text("notes"),
+  metadata: jsonb("metadata").default({}),
+  
+  // Audit
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("resource_availability_tenant_idx").on(table.tenantId),
+  index("resource_availability_user_idx").on(table.userId),
+  index("resource_availability_date_range_idx").on(table.startDate, table.endDate),
+  index("resource_availability_status_idx").on(table.availabilityStatus),
+  index("resource_availability_approval_idx").on(table.approvalStatus),
+  index("resource_availability_blocking_idx").on(table.blocksShiftAssignment),
+]);
+
+export const insertResourceAvailabilitySchema = createInsertSchema(resourceAvailability).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertResourceAvailability = z.infer<typeof insertResourceAvailabilitySchema>;
+export type ResourceAvailability = typeof resourceAvailability.$inferSelect;
 
 // ==================== HR DOCUMENTS ====================
 export const hrDocuments = w3suiteSchema.table("hr_documents", {
@@ -1755,11 +1878,30 @@ export const shiftAssignmentsRelations = relations(shiftAssignments, ({ one, man
 }));
 
 // Shift Attendance Relations
-export const shiftAttendanceRelations = relations(shiftAttendance, ({ one }) => ({
+export const shiftAttendanceRelations = relations(shiftAttendance, ({ one, many }) => ({
   tenant: one(tenants, { fields: [shiftAttendance.tenantId], references: [tenants.id] }),
   assignment: one(shiftAssignments, { fields: [shiftAttendance.assignmentId], references: [shiftAssignments.id] }),
   timeTracking: one(timeTracking, { fields: [shiftAttendance.timeTrackingId], references: [timeTracking.id] }),
   reviewedByUser: one(users, { fields: [shiftAttendance.reviewedBy], references: [users.id] }),
+  anomalies: many(attendanceAnomalies),
+}));
+
+// Attendance Anomalies Relations
+export const attendanceAnomaliesRelations = relations(attendanceAnomalies, ({ one }) => ({
+  tenant: one(tenants, { fields: [attendanceAnomalies.tenantId], references: [tenants.id] }),
+  attendance: one(shiftAttendance, { fields: [attendanceAnomalies.attendanceId], references: [shiftAttendance.id] }),
+  user: one(users, { fields: [attendanceAnomalies.userId], references: [users.id] }),
+  shift: one(shifts, { fields: [attendanceAnomalies.shiftId], references: [shifts.id] }),
+  store: one(stores, { fields: [attendanceAnomalies.storeId], references: [stores.id] }),
+  resolvedByUser: one(users, { fields: [attendanceAnomalies.resolvedBy], references: [users.id] }),
+}));
+
+// Resource Availability Relations
+export const resourceAvailabilityRelations = relations(resourceAvailability, ({ one }) => ({
+  tenant: one(tenants, { fields: [resourceAvailability.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [resourceAvailability.userId], references: [users.id] }),
+  approvedByUser: one(users, { fields: [resourceAvailability.approvedBy], references: [users.id] }),
+  createdByUser: one(users, { fields: [resourceAvailability.createdBy], references: [users.id] }),
 }));
 
 // HR Documents Relations
