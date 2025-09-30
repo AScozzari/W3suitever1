@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
   Calendar, Clock, Users, AlertTriangle, CheckCircle, X, Search, 
   Filter, Download, Settings, Eye, EyeOff, MoreHorizontal,
@@ -136,7 +137,7 @@ export default function ShiftAssignmentDashboard({
   const [draggedEmployee, setDraggedEmployee] = useState<string | null>(null);
   const [draggedData, setDraggedData] = useState<any>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'gantt' | 'grid'>('gantt');
+  const [viewMode, setViewMode] = useState<'gantt' | 'grid' | 'board'>('board');
   const [timelineZoom, setTimelineZoom] = useState<'hours' | 'quarter' | 'half'>('hours');
   const [timelineStartHour, setTimelineStartHour] = useState(6); // Start from 6 AM
   const [timelineEndHour, setTimelineEndHour] = useState(22); // End at 10 PM
@@ -1839,18 +1840,147 @@ export default function ShiftAssignmentDashboard({
           </Button>
         )}
         
-        {/* Tabs for Gantt/Grid Switch */}
-        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'gantt' | 'grid')}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+        {/* Tabs for View Mode Switch */}
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'gantt' | 'grid' | 'board')}>
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="board" data-testid="tab-board">
+              <Users className="w-4 h-4 mr-2" />
+              Assegnazione
+            </TabsTrigger>
             <TabsTrigger value="gantt" data-testid="tab-gantt">
               <Calendar className="w-4 h-4 mr-2" />
-              Vista Gantt
+              Gantt
             </TabsTrigger>
             <TabsTrigger value="grid" data-testid="tab-grid">
-              <Users className="w-4 h-4 mr-2" />
-              Vista Grid
+              <Calendar className="w-4 h-4 mr-2" />
+              Griglia
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="board" className="mt-0" data-testid="board-view">
+            <div className="flex gap-4 h-[calc(100vh-300px)]">
+              {/* Left Panel: Template Slots by Day */}
+              <Card className="flex-1 overflow-hidden" data-testid="panel-shifts">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Turni della Settimana
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-y-auto h-full">
+                  {(shiftsLoading || staffLoading) ? (
+                    <div className="flex items-center justify-center h-64">
+                      <Clock className="w-12 h-12 animate-spin text-blue-500" />
+                    </div>
+                  ) : (
+                    <Accordion type="multiple" defaultValue={['day-0']} className="w-full">
+                      {weekDays.map((day, index) => {
+                        const dayShifts = shifts.filter(s => isSameDay(parseISO(s.date), day));
+                        return (
+                          <AccordionItem key={index} value={`day-${index}`}>
+                            <AccordionTrigger className="hover:no-underline" data-testid={`accordion-day-${index}`}>
+                              <div className="flex items-center justify-between w-full pr-4">
+                                <span className="font-semibold">{format(day, 'EEEE d MMM', { locale: it })}</span>
+                                <Badge variant="secondary">{dayShifts.length} turni</Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 pt-2">
+                                {dayShifts.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground text-center py-4">Nessun turno previsto</p>
+                                ) : (
+                                  dayShifts.map(shift => (
+                                    <div
+                                      key={shift.id}
+                                      className="p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                                      data-testid={`shift-slot-${shift.id}`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <p className="font-medium">{shift.title}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {shift.startTime} - {shift.endTime}
+                                          </p>
+                                        </div>
+                                        <Badge 
+                                          className={cn(
+                                            shift.assignedStaff >= shift.requiredStaff 
+                                              ? 'bg-green-500' 
+                                              : 'bg-orange-500'
+                                          )}
+                                        >
+                                          {shift.assignedStaff}/{shift.requiredStaff}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Right Panel: Available Employees */}
+              <Card className="w-80 overflow-hidden" data-testid="panel-employees">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="w-5 h-5 mr-2" />
+                    Dipendenti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-y-auto h-full">
+                  {staffLoading ? (
+                    <div className="flex items-center justify-center h-64">
+                      <Clock className="w-12 h-12 animate-spin text-blue-500" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredStaff.map(staff => (
+                        <div
+                          key={staff.id}
+                          className="p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                          data-testid={`employee-card-${staff.id}`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback>
+                                {`${staff.firstName?.[0] || ''}${staff.lastName?.[0] || ''}`}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {staff.firstName} {staff.lastName}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {staff.role || 'Nessun ruolo'}
+                              </p>
+                            </div>
+                            <Badge 
+                              variant="outline"
+                              className={cn(
+                                staff.availability === 'available' && 'bg-green-50 border-green-300',
+                                staff.availability === 'busy' && 'bg-red-50 border-red-300',
+                                staff.availability === 'leave' && 'bg-orange-50 border-orange-300'
+                              )}
+                            >
+                              {staff.availability === 'available' && '✓'}
+                              {staff.availability === 'busy' && '✗'}
+                              {staff.availability === 'leave' && '⚠'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="gantt" className="mt-0">
             <Card>
