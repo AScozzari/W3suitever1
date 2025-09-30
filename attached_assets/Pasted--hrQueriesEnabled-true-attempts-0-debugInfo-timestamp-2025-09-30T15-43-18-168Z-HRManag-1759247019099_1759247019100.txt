@@ -1,0 +1,345 @@
+{hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T15:43:18.168Z'}
+HRManagementPage.tsx:97 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T15:43:18.169Z
+HRManagementPage.tsx:107 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T15:43:18.169Z'}
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflow-templates?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+onSubscribe @ @tanstack_react-query.js?v=bceaa3d2:1335
+subscribe @ @tanstack_react-query.js?v=bceaa3d2:24
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bceaa3d2:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/universal-requests?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/documents 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1544ms (attempt 1)
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflow-templates?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+onSubscribe @ @tanstack_react-query.js?v=bceaa3d2:1335
+subscribe @ @tanstack_react-query.js?v=bceaa3d2:24
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bceaa3d2:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/universal-requests?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/documents 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1875ms (attempt 1)
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflow-templates?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+onSubscribe @ @tanstack_react-query.js?v=bceaa3d2:1335
+subscribe @ @tanstack_react-query.js?v=bceaa3d2:24
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bceaa3d2:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/universal-requests?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/documents 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+setOptions @ @tanstack_react-query.js?v=bceaa3d2:1392
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bceaa3d2:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bceaa3d2:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bceaa3d2:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts 502 (Bad Gateway)
