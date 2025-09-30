@@ -641,12 +641,12 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       <FormItem>
                         <FormLabel>Primary Supervisor</FormLabel>
                         <FormControl>
-                          <Select value={field.value || ""} onValueChange={(value) => field.onChange(value === "" ? null : value)}>
+                          <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? null : value)}>
                             <SelectTrigger data-testid="select-primary-supervisor">
                               <SelectValue placeholder="Select primary supervisor" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No supervisor</SelectItem>
+                              <SelectItem value="none">No supervisor</SelectItem>
                               {users.map((user: any) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   <div className="flex items-center justify-between w-full">
