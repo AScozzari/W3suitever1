@@ -1142,4 +1142,55 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
   }
 });
 
+// GET /api/hr/attendance/logs - Get attendance/timbrature records with filters
+router.get('/attendance/logs', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, userId, date, status } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const targetDate = date ? new Date(date as string) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Build filters
+    const filters = [
+      eq(shiftAttendance.tenantId, tenantId),
+      gte(shiftAttendance.scheduledStartTime, startOfDay),
+      lte(shiftAttendance.scheduledEndTime, endOfDay)
+    ];
+
+    if (storeId) filters.push(eq(shiftAttendance.storeId, storeId as string));
+    if (userId) filters.push(eq(shiftAttendance.userId, userId as string));
+    if (status) filters.push(eq(shiftAttendance.attendanceStatus, status as string));
+
+    const records = await db.query.shiftAttendance.findMany({
+      where: and(...filters),
+      with: {
+        user: {
+          columns: { id: true, fullName: true }
+        },
+        store: {
+          columns: { id: true, name: true }
+        }
+      },
+      orderBy: (shiftAttendance, { desc }) => [desc(shiftAttendance.scheduledStartTime)]
+    });
+
+    res.json({
+      success: true,
+      records,
+      total: records.length
+    });
+  } catch (error) {
+    console.error('Error fetching attendance logs:', error);
+    res.status(500).json({ error: 'Failed to fetch attendance logs' });
+  }
+});
+
 export default router;

@@ -1757,6 +1757,309 @@ const HRManagementPage: React.FC = () => {
     </div>
   );
 
+  // ==================== ATTENDANCE & ANOMALIES SECTION ====================
+
+  const AttendanceSection = () => {
+    const [filters, setFilters] = useState({ storeId: '', userId: '', status: 'pending', severity: 'all' });
+    
+    const { data: anomalies, isLoading: loadingAnomalies } = useQuery({
+      queryKey: ['/api/hr/attendance/anomalies', filters],
+      enabled: hrQueriesEnabled,
+      staleTime: 30000
+    });
+
+    // Fetch timbrature/attendance logs
+    const { data: attendanceResponse, isLoading: loadingAttendance } = useQuery({
+      queryKey: ['/api/hr/attendance/logs', filters],
+      enabled: hrQueriesEnabled,
+      staleTime: 30000
+    });
+
+    const attendanceData = attendanceResponse?.records || [];
+
+    return (
+      <div className="space-y-6">
+        {/* Timbrature DataTable */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Timbrature Presenze
+            </CardTitle>
+            <CardDescription>Registro timbrature dipendenti</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingAttendance ? (
+              <Skeleton className="h-64 w-full" data-testid="skeleton-attendance-table" />
+            ) : (
+              <div className="rounded-md border" data-testid="attendance-table">
+                <table className="w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="p-3 text-left text-sm font-medium">Dipendente</th>
+                      <th className="p-3 text-left text-sm font-medium">Negozio</th>
+                      <th className="p-3 text-left text-sm font-medium">Clock In</th>
+                      <th className="p-3 text-left text-sm font-medium">Clock Out</th>
+                      <th className="p-3 text-left text-sm font-medium">Stato</th>
+                      <th className="p-3 text-left text-sm font-medium">Deviazione</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(attendanceData || []).map((record: any, i: number) => (
+                      <tr key={record.id || i} className="border-t" data-testid={`attendance-row-${i}`}>
+                        <td className="p-3 text-sm" data-testid={`attendance-user-${i}`}>{record.user?.fullName || '-'}</td>
+                        <td className="p-3 text-sm" data-testid={`attendance-store-${i}`}>{record.store?.name || '-'}</td>
+                        <td className="p-3 text-sm" data-testid={`attendance-clockin-${i}`}>
+                          {record.actualStartTime ? new Date(record.actualStartTime).toLocaleTimeString() : '-'}
+                        </td>
+                        <td className="p-3 text-sm" data-testid={`attendance-clockout-${i}`}>
+                          {record.actualEndTime ? new Date(record.actualEndTime).toLocaleTimeString() : '-'}
+                        </td>
+                        <td className="p-3" data-testid={`attendance-status-${i}`}>
+                          <Badge variant={record.isOnTime ? 'default' : 'destructive'}>
+                            {record.attendanceStatus}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm" data-testid={`attendance-deviation-${i}`}>
+                          {record.startDeviationMinutes ? `${record.startDeviationMinutes} min` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Anomalies Section */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              Anomalie Presenze
+            </CardTitle>
+            <CardDescription>Anomalie rilevate e da risolvere</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingAnomalies ? (
+              <Skeleton className="h-64 w-full" data-testid="skeleton-anomalies" />
+            ) : (
+              <div className="space-y-4">
+                <Alert className="bg-blue-50 border-blue-200" data-testid="anomaly-summary">
+                  <AlertCircle className="w-4 h-4 text-blue-600" />
+                  <AlertDescription>
+                    {anomalies?.summary.total || 0} anomalie rilevate - 
+                    <strong className="ml-1">{anomalies?.summary.byStatus.pending || 0} in attesa</strong>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid gap-4">
+                  {anomalies?.anomalies.map((anomaly: any, i: number) => (
+                    <Card key={anomaly.id} className="border-l-4" style={{
+                      borderLeftColor: anomaly.severity === 'critical' ? '#ef4444' : 
+                                      anomaly.severity === 'high' ? '#f59e0b' : '#94a3b8'
+                    }} data-testid={`anomaly-card-${i}`}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={anomaly.severity === 'critical' ? 'destructive' : 'default'} data-testid={`anomaly-type-${i}`}>
+                                {anomaly.anomalyType.replace(/_/g, ' ')}
+                              </Badge>
+                              <span className="text-sm text-slate-600" data-testid={`anomaly-user-${i}`}>{anomaly.user?.fullName}</span>
+                              <span className="text-sm text-slate-400" data-testid={`anomaly-store-${i}`}>{anomaly.store?.name}</span>
+                            </div>
+                            <p className="text-sm text-slate-600 mt-2" data-testid={`anomaly-deviation-${i}`}>
+                              Deviazione: {anomaly.deviationMinutes} minuti
+                            </p>
+                            <p className="text-xs text-slate-400" data-testid={`anomaly-time-${i}`}>
+                              {new Date(anomaly.detectedAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <Button variant="outline" size="sm" data-testid={`button-resolve-${i}`}>Risolvi</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  // ==================== STORE COVERAGE SECTION ====================
+
+  const StoreCoverageSection = () => {
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedStore, setSelectedStore] = useState('all');
+
+    const { data: coverage, isLoading } = useQuery({
+      queryKey: ['/api/hr/attendance/store-coverage', { date: selectedDate, storeId: selectedStore }],
+      enabled: hrQueriesEnabled,
+      staleTime: 60000
+    });
+
+    // Generate hourly heatmap data
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+    const heatmapData = hours.map(hour => {
+      const shiftsInHour = (coverage?.coverage || []).filter((shift: any) => {
+        const start = new Date(shift.time.start).getHours();
+        const end = new Date(shift.time.end).getHours();
+        return hour >= start && hour < end;
+      });
+      const avgCoverage = shiftsInHour.length > 0 
+        ? shiftsInHour.reduce((sum: number, s: any) => sum + s.staffing.coverageRate, 0) / shiftsInHour.length 
+        : 0;
+      return { hour, coverage: avgCoverage, shifts: shiftsInHour.length };
+    });
+
+    const getHeatColor = (coverage: number) => {
+      if (coverage >= 100) return 'bg-green-500';
+      if (coverage >= 80) return 'bg-green-300';
+      if (coverage >= 60) return 'bg-yellow-300';
+      if (coverage >= 40) return 'bg-orange-300';
+      if (coverage > 0) return 'bg-red-300';
+      return 'bg-slate-100';
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Hourly Heatmap */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Heatmap Copertura Oraria
+            </CardTitle>
+            <CardDescription>Visualizzazione copertura per fasce orarie</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-24 w-full" data-testid="skeleton-heatmap" />
+            ) : (
+              <div className="space-y-2" data-testid="coverage-heatmap">
+                <div className="grid grid-cols-24 gap-1">
+                  {heatmapData.map((data, i) => (
+                    <div 
+                      key={i}
+                      className={`h-12 ${getHeatColor(data.coverage)} rounded hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer`}
+                      title={`${data.hour}:00 - ${data.coverage.toFixed(0)}% copertura (${data.shifts} turni)`}
+                      data-testid={`heatmap-hour-${i}`}
+                    >
+                      <div className="text-[8px] text-center pt-1 font-medium">{data.hour}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-end gap-4 text-xs text-slate-500">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-300 rounded"></div>
+                    <span>&lt;40%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-300 rounded"></div>
+                    <span>60-80%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-300 rounded"></div>
+                    <span>80-100%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    <span>100%+</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* KPI Cards */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              KPI Copertura
+            </CardTitle>
+            <CardDescription>Metriche principali copertura turni</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-32 w-full" data-testid="skeleton-kpi" />
+            ) : (
+              <div className="grid grid-cols-4 gap-4">
+                <Card className="bg-blue-50" data-testid="kpi-total-shifts">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-blue-600" data-testid="value-total-shifts">{coverage?.summary.totalShifts || 0}</div>
+                    <p className="text-sm text-blue-600">Turni Totali</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-50" data-testid="kpi-fully-staffed">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-green-600" data-testid="value-fully-staffed">{coverage?.summary.fullyStaffed || 0}</div>
+                    <p className="text-sm text-green-600">Completamente Coperti</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-orange-50" data-testid="kpi-critical">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-orange-600" data-testid="value-critical-shifts">{coverage?.summary.criticalShifts || 0}</div>
+                    <p className="text-sm text-orange-600">Sotto Soglia Critica</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-50" data-testid="kpi-average">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-purple-600" data-testid="value-avg-coverage">
+                      {Math.round(coverage?.summary.averageCoverageRate || 0)}%
+                    </div>
+                    <p className="text-sm text-purple-600">Copertura Media</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Shift List */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20">
+          <CardHeader>
+            <CardTitle>Dettaglio Turni</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-64 w-full" data-testid="skeleton-shifts" />
+            ) : (
+              <div className="space-y-3">
+                {coverage?.coverage.map((shift: any, i: number) => (
+                  <Card key={shift.shiftId} className="bg-white/50" data-testid={`shift-card-${i}`}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium" data-testid={`shift-name-${i}`}>{shift.shiftName}</h4>
+                          <p className="text-sm text-slate-600" data-testid={`shift-store-${i}`}>{shift.storeName}</p>
+                          <p className="text-xs text-slate-400" data-testid={`shift-time-${i}`}>
+                            {new Date(shift.time.start).toLocaleTimeString()} - {new Date(shift.time.end).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold" data-testid={`shift-staffing-${i}`}>{shift.staffing.present}/{shift.staffing.required}</div>
+                          <Progress value={shift.staffing.coverageRate} className="w-24 mt-2" data-testid={`progress-coverage-${i}`} />
+                          <p className="text-xs text-slate-500 mt-1" data-testid={`shift-rate-${i}`}>{Math.round(shift.staffing.coverageRate)}%</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   // ==================== MONITORING SECTION ====================
 
   const MonitoringSection = () => {
@@ -2095,6 +2398,8 @@ const HRManagementPage: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'requests', label: 'Richieste', icon: FileText },
     { id: 'shifts', label: 'Turni', icon: Calendar },
+    { id: 'attendance', label: 'Presenze & Anomalie', icon: Clock },
+    { id: 'coverage', label: 'Copertura Negozi', icon: MapPin },
     { id: 'monitoring', label: 'Monitoring', icon: Activity },
     { id: 'documents', label: 'Documenti', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: Brain },
@@ -2109,6 +2414,10 @@ const HRManagementPage: React.FC = () => {
         return <RequestsSection />;
       case 'shifts':
         return <ShiftsSection />;
+      case 'attendance':
+        return <AttendanceSection />;
+      case 'coverage':
+        return <StoreCoverageSection />;
       case 'monitoring':
         return <MonitoringSection />;
       case 'documents':
