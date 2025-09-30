@@ -7,7 +7,6 @@ import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
-import ShiftFilters, { ShiftFiltersState } from '@/components/Shifts/ShiftFilters';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -125,13 +124,6 @@ const HRManagementPage: React.FC = () => {
     userIds: string[];
     message?: string;
   }>({ documentId: '', userIds: [] });
-
-  // Shift Filters Global State
-  const [shiftFilters, setShiftFilters] = useState<ShiftFiltersState>({
-    storeId: null,
-    startDate: null,
-    endDate: null
-  });
 
   // ==================== DATA QUERIES ====================
   
@@ -1306,14 +1298,11 @@ const HRManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 1. Shift Filters - Global filters sticky top */}
-      <ShiftFilters onChange={setShiftFilters} />
-
-      {/* 2. Professional HR Calendar - Priority: Calendar FIRST! */}
+      {/* 1. Professional HR Calendar with its own filters */}
       <HRCalendar 
-        storeId={shiftFilters.storeId}
-        startDate={shiftFilters.startDate}
-        endDate={shiftFilters.endDate}
+        storeId={selectedStore?.id}
+        startDate={null}
+        endDate={null}
       />
 
       {/* 3. Shift Template Manager */}
@@ -1357,7 +1346,7 @@ const HRManagementPage: React.FC = () => {
         </CardHeader>
         <CardContent className="p-0">
           <ShiftAssignmentDashboard
-            storeId={shiftFilters.storeId || undefined}
+            storeId={selectedStore?.id}
             selectedWeek={selectedDate}
             onAssignShift={async (shiftId: string, employeeIds: string[]) => {
               try {
