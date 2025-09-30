@@ -132,8 +132,6 @@ export default function ShiftAssignmentDashboard({
   const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('all');
-  const [filterAvailability, setFilterAvailability] = useState<string>('all');
   const [showConflicts, setShowConflicts] = useState(true);
   const [draggedEmployee, setDraggedEmployee] = useState<string | null>(null);
   const [draggedData, setDraggedData] = useState<any>(null);
@@ -312,12 +310,6 @@ export default function ShiftAssignmentDashboard({
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   }, [weekStart]);
 
-  // Get unique roles from real staff data for filter dropdown
-  const availableRoles = useMemo(() => {
-    const roles = Array.from(new Set(staffMembers.map(staff => staff.role).filter(Boolean)));
-    return roles.sort();
-  }, [staffMembers]);
-
   const filteredStaff = useMemo(() => {
     return staffMembers.filter(staff => {
       const matchesSearch = searchQuery === '' || 
@@ -325,12 +317,9 @@ export default function ShiftAssignmentDashboard({
         (staff.role && staff.role.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (staff.email && staff.email.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesRole = filterRole === 'all' || staff.role === filterRole;
-      const matchesAvailability = filterAvailability === 'all' || staff.availability === filterAvailability;
-      
-      return matchesSearch && matchesRole && matchesAvailability;
+      return matchesSearch;
     });
-  }, [staffMembers, searchQuery, filterRole, filterAvailability]);
+  }, [staffMembers, searchQuery]);
 
   const conflictDetection = useMemo(() => {
     const conflicts: ConflictDetection[] = [];
@@ -1581,9 +1570,9 @@ export default function ShiftAssignmentDashboard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="mb-4">
           {/* Search */}
-          <div className="relative">
+          <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Cerca dipendenti..."
@@ -1592,37 +1581,6 @@ export default function ShiftAssignmentDashboard({
               className="pl-10"
               data-testid="input-search-employees"
             />
-          </div>
-
-          {/* Role Filter */}
-          <div>
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              data-testid="select-filter-role"
-            >
-              <option value="all">Tutti i ruoli</option>
-              {availableRoles.map(role => (
-                <option key={role} value={role}>{role}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Availability Filter */}
-          <div>
-            <select
-              value={filterAvailability}
-              onChange={(e) => setFilterAvailability(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              data-testid="select-filter-availability"
-            >
-              <option value="all">Tutte le disponibilità</option>
-              <option value="available">Disponibile</option>
-              <option value="leave">In ferie</option>
-              <option value="training">In formazione</option>
-              <option value="busy">Occupato</option>
-            </select>
           </div>
         </div>
 
