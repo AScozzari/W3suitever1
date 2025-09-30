@@ -3782,41 +3782,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set tenant context for RLS
       await setTenantContext(tenantId);
       
-      const { shiftAssignments, shifts, users, stores } = await import('../db/schema/w3suite.js');
+      // WORKAROUND: Use raw SQL to bypass Drizzle ORM bug with shiftAssignments
+      // TODO: Investigate Drizzle "Cannot convert undefined or null to object" error
+      const rawQuery = sql`
+        SELECT 
+          sa.*,
+          json_build_object(
+            'id', s.id,
+            'date', s.date,
+            'startTime', s.start_time,
+            'endTime', s.end_time,
+            'role', s.role,
+            'storeId', s.store_id,
+            'status', s.status
+          ) as shift,
+          json_build_object(
+            'id', u.id,
+            'email', u.email,
+            'firstName', u.first_name,
+            'lastName', u.last_name
+          ) as user,
+          json_build_object(
+            'id', st.id,
+            'name', st.name,
+            'code', st.code
+          ) as store
+        FROM w3suite.shift_assignments sa
+        LEFT JOIN w3suite.shifts s ON sa.shift_id = s.id
+        LEFT JOIN w3suite.users u ON sa.user_id = u.id
+        LEFT JOIN w3suite.stores st ON s.store_id = st.id
+        WHERE sa.tenant_id = ${tenantId}::uuid
+        ${userId ? sql`AND sa.user_id = ${userId}::uuid` : sql``}
+        ${storeId ? sql`AND s.store_id = ${storeId}::uuid` : sql``}
+        ${startDate && endDate ? sql`AND s.date >= ${startDate}::date AND s.date <= ${endDate}::date` : sql``}
+        LIMIT 100
+      `;
       
-      let conditions = [eq(shiftAssignments.tenantId, tenantId)];
+      const result = await db.execute(rawQuery);
       
-      if (storeId) {
-        conditions.push(eq(shifts.storeId, storeId));
-      }
-      
-      if (userId) {
-        conditions.push(eq(shiftAssignments.userId, userId));
-      }
-      
-      if (startDate && endDate) {
-        conditions.push(
-          and(
-            gte(shifts.date, startDate),
-            lte(shifts.date, endDate)
-          )
-        );
-      }
-      
-      // SIMPLIFIED: Query only shiftAssignments table without JOINs
-      // TODO: Add JOINs after basic query works
-      const baseConditions = [eq(shiftAssignments.tenantId, tenantId)];
-      
-      if (userId) {
-        baseConditions.push(eq(shiftAssignments.userId, userId));
-      }
-      
-      const assignments = await db.select()
-        .from(shiftAssignments)
-        .where(and(...baseConditions))
-        .limit(100);
-      
-      res.json(assignments);
+      res.json(result.rows);
     } catch (error) {
       handleApiError(error, res, 'recupero assegnazioni turni');
     }
