@@ -1050,6 +1050,12 @@ export default function ShiftAssignmentDashboard({
       addDays(startOfWeek(selectedWeek, { weekStartsOn: 1 }), i)
     );
 
+    // Calculate unassigned shifts for this view
+    const unassignedShifts = (shifts as any[]).filter((shift: any) => {
+      const assignedCount = (assignments as any[]).filter((a: any) => a.shiftId === shift.id).length;
+      return assignedCount < shift.requiredStaff;
+    });
+
     return (
       <div className="space-y-4">
         {/* Filter and Search Bar */}
@@ -1064,6 +1070,7 @@ export default function ShiftAssignmentDashboard({
             />
           </div>
           <Button 
+            type="button"
             variant="outline" 
             onClick={() => setSelectedShifts(new Set())}
             data-testid="button-clear-selection"
@@ -1072,6 +1079,7 @@ export default function ShiftAssignmentDashboard({
             Pulisci Selezione
           </Button>
           <Button 
+            type="button"
             onClick={handleBulkAssign}
             disabled={selectedShifts.size === 0 || selectedEmployees.size === 0}
             data-testid="button-bulk-assign"
