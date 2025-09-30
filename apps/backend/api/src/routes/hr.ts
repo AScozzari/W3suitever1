@@ -1160,7 +1160,7 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
     const shiftsQuery = await db.query.shifts.findMany({
       where: and(
         eq(shifts.tenantId, tenantId),
-        ...(storeId ? [eq(shifts.storeId, storeId as string)] : [])
+        ...(storeId && storeId !== 'all' ? [eq(shifts.storeId, storeId as string)] : [])
       ),
       with: {
         assignments: {
