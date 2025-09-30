@@ -1,0 +1,213 @@
+ [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1759237748964-pzwm4z4sg', timestamp: '2025-09-30T13:09:08.965Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1759237748964-pzwm4z4sg
+queryClient.ts:342  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?storeId=50000000-0000-0000-0000-000000000008 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+queryFn @ HRCalendar.tsx:90
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-09-30T13:09:09.090Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-09-30T13:09:09.090Z'}
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?0=5&1=0&2=0&3=0&4=0&5=0&6=0&7=0&8=-&9=0&10=0&11=0&12=0&13=-&14=0&15=0&16=0&17=0&18=-&19=0&20=0&21=0&22=0&23=-&24=0&25=0&26=0&27=0&28=0&29=0&30=0&31=0&32=0&33=0&34=0&35=8 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1493ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1759237751021-v2pp370bc', timestamp: '2025-09-30T13:09:11.021Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1759237751021-v2pp370bc
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-09-30T13:09:11.152Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-09-30T13:09:11.152Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1027ms (attempt 1)
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:09:12.409Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:09:12.409Z'}
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:09:12.409Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:09:12.409Z'}
+useWebSocket.ts:211 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: WebSocket is closed before the connection is established.
+disconnect @ useWebSocket.ts:211
+(anonymous) @ useWebSocket.ts:262
+safelyCallDestroy @ chunk-ZHRYBLGQ.js?v=94b3638f:16748
+commitHookEffectListUnmount @ chunk-ZHRYBLGQ.js?v=94b3638f:16875
+commitPassiveUnmountInsideDeletedTreeOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18283
+commitPassiveUnmountEffectsInsideOfDeletedTree_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18245
+commitPassiveUnmountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18181
+commitPassiveUnmountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18169
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19489
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this warning
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1350ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1759237754276-yaw0q7sa3', timestamp: '2025-09-30T13:09:14.277Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1759237754276-yaw0q7sa3
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=KmAGhCW4LY6T' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:09:28.090Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:09:28.091Z'}
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:09:28.091Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:09:28.091Z'}
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4

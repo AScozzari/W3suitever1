@@ -47,6 +47,11 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [eventModalMode, setEventModalMode] = useState<'create' | 'edit'>('create');
+  
+  // ✅ Task 13: State for day detail modal
+  const [showDayDetailModal, setShowDayDetailModal] = useState(false);
+  const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
+  const [dayDetailStoreFilter, setDayDetailStoreFilter] = useState<string>('all');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -68,6 +73,12 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   // Query per dipendenti
   const { data: employees = [], error: employeesError } = useQuery({
     queryKey: ['/api/users'],
+    enabled: hrQueryReadiness.enabled,
+  });
+
+  // ✅ Task 13: Query per stores (per filtro nel modal)
+  const { data: stores = [] } = useQuery({
+    queryKey: ['/api/stores'],
     enabled: hrQueryReadiness.enabled,
   });
 
@@ -219,28 +230,12 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     }
   }
 
-  // Gestione click su data (con arrotondamento orari)
+  // ✅ Task 13: Gestione click su data - apre modal dettaglio giorno
   const handleDateClick = useCallback((arg: any) => {
-    const startDate = new Date(arg.date);
-    
-    // Arrotonda all'ora più vicina
-    const minutes = startDate.getMinutes();
-    if (minutes < 30) {
-      startDate.setMinutes(0, 0, 0);
-    } else {
-      startDate.setMinutes(0, 0, 0);
-      startDate.setHours(startDate.getHours() + 1);
-    }
-    
-    const endDate = new Date(startDate);
-    endDate.setHours(startDate.getHours() + 8); // Turno di default 8 ore
-
-    form.setValue('start', startDate.toISOString().slice(0, 16));
-    form.setValue('end', endDate.toISOString().slice(0, 16));
-    setEventModalMode('create');
-    setSelectedEvent(null);
-    setShowEventModal(true);
-  }, [form]);
+    setSelectedDayDate(new Date(arg.date));
+    setDayDetailStoreFilter('all');
+    setShowDayDetailModal(true);
+  }, []);
 
   // ✅ FASE 1.2 FIX: Gestione click su evento - legge dalla struttura unificata
   const handleEventClick = useCallback((arg: any) => {
@@ -328,6 +323,57 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       createEventMutation.mutate(data);
     }
   };
+
+  // ✅ Task 13: Calcola risorse in turno per il giorno selezionato
+  const dayDetailResources = useMemo(() => {
+    if (!selectedDayDate) return [];
+    
+    const dayStart = new Date(selectedDayDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(selectedDayDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const now = new Date();
+    
+    // Filtra eventi del giorno
+    const dayEvents = calendarEvents.filter((event: any) => {
+      const eventStart = new Date(event.start);
+      return eventStart >= dayStart && eventStart <= dayEnd;
+    });
+    
+    // Filtra per store se selezionato
+    const filteredEvents = dayDetailStoreFilter === 'all' 
+      ? dayEvents 
+      : dayEvents.filter((event: any) => event.extendedProps?.metadata?.storeId === dayDetailStoreFilter);
+    
+    // Mappa a struttura risorsa con status
+    return filteredEvents.map((event: any) => {
+      const eventStart = new Date(event.start);
+      const eventEnd = event.end ? new Date(event.end) : eventStart;
+      
+      let status: 'past' | 'present' | 'future' = 'future';
+      if (eventEnd < now) {
+        status = 'past';
+      } else if (eventStart <= now && eventEnd >= now) {
+        status = 'present';
+      }
+      
+      const employee = (employees as any[]).find((e: any) => e.id === event.resourceId);
+      const store = (stores as any[]).find((s: any) => s.id === event.extendedProps?.metadata?.storeId);
+      
+      return {
+        id: event.id,
+        title: event.title,
+        employeeName: employee ? `${employee.firstName} ${employee.lastName}` : 'Risorsa',
+        storeName: store?.nome || 'N/A',
+        storeId: event.extendedProps?.metadata?.storeId,
+        startTime: eventStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        endTime: eventEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        status,
+        type: event.extendedProps?.type || 'unknown',
+      };
+    });
+  }, [selectedDayDate, calendarEvents, dayDetailStoreFilter, employees, stores]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -636,6 +682,113 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ Task 13: Modal Dettaglio Giorno - Risorse in Turno */}
+      <Dialog open={showDayDetailModal} onOpenChange={setShowDayDetailModal}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-3">
+              <Calendar className="w-5 h-5 text-orange-500" />
+              <span>
+                Risorse in Turno - {selectedDayDate?.toLocaleDateString('it-IT', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {/* Filtro Punto Vendita */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Filtra per Punto Vendita</label>
+              <Select value={dayDetailStoreFilter} onValueChange={setDayDetailStoreFilter}>
+                <SelectTrigger data-testid="select-store-filter">
+                  <SelectValue placeholder="Tutti i punti vendita" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i punti vendita</SelectItem>
+                  {(stores as any[]).map((store: any) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Lista Risorse */}
+            {dayDetailResources.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessuna risorsa in turno per questo giorno</p>
+                {dayDetailStoreFilter !== 'all' && (
+                  <p className="text-sm mt-2">Prova a rimuovere il filtro punto vendita</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Trovate {dayDetailResources.length} risorse in turno
+                </p>
+                {dayDetailResources.map((resource: any) => (
+                  <Card key={resource.id} className="border-l-4" style={{
+                    borderLeftColor: 
+                      resource.status === 'past' ? 'hsl(var(--muted))' :
+                      resource.status === 'present' ? 'hsl(142, 76%, 36%)' :
+                      'hsl(217, 91%, 60%)'
+                  }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className="font-semibold">{resource.employeeName}</h4>
+                            <Badge variant={
+                              resource.status === 'past' ? 'secondary' :
+                              resource.status === 'present' ? 'default' :
+                              'outline'
+                            } data-testid={`badge-status-${resource.status}`}>
+                              {resource.status === 'past' ? 'Passato' :
+                               resource.status === 'present' ? 'In Corso' :
+                               'Futuro'}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4" />
+                              <span>{resource.startTime} - {resource.endTime}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Users className="w-4 h-4" />
+                              <span>{resource.title}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">Punto Vendita:</span>
+                              <span>{resource.storeName}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDayDetailModal(false)}
+              data-testid="button-close-day-detail"
+            >
+              Chiudi
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

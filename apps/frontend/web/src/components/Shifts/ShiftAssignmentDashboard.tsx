@@ -144,6 +144,14 @@ export default function ShiftAssignmentDashboard({
   const [timelineEndHour, setTimelineEndHour] = useState(22); // End at 10 PM
   const [showHelperPanel, setShowHelperPanel] = useState(true);
   
+  // ✅ Task 14: Filtri PdV + Date
+  const [storeFilter, setStoreFilter] = useState<string>(storeId || 'all');
+  const [startDateFilter, setStartDateFilter] = useState<string>(format(selectedWeek, 'yyyy-MM-dd'));
+  const [endDateFilter, setEndDateFilter] = useState<string>(format(addDays(selectedWeek, 6), 'yyyy-MM-dd'));
+  
+  // ✅ Task 15: Selezione template turno
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -209,15 +217,42 @@ export default function ShiftAssignmentDashboard({
 
   // ==================== DATA FETCHING ====================
 
+  // ✅ Task 14: Query per stores (per filtro PdV)
+  const { data: stores = [] } = useQuery({
+    queryKey: ['/api/stores'],
+    staleTime: 60000,
+  });
+
+  // ✅ Task 15: Query per shift templates
+  const { data: shiftTemplates = [] } = useQuery({
+    queryKey: ['/api/hr/shift-templates'],
+    staleTime: 60000,
+  });
+
+  // ✅ Task 15: Filtra templates per PdV selezionato
+  const filteredTemplates = useMemo(() => {
+    if (storeFilter === 'all') return shiftTemplates;
+    return (shiftTemplates as any[]).filter((template: any) => 
+      template.storeId === storeFilter || template.isGlobal
+    );
+  }, [shiftTemplates, storeFilter]);
+
+  // ✅ Task 15: Template selezionato (dettaglio fasce orarie)
+  const selectedTemplate = useMemo(() => {
+    if (!selectedTemplateId) return null;
+    return (shiftTemplates as any[]).find((t: any) => t.id === selectedTemplateId);
+  }, [shiftTemplates, selectedTemplateId]);
+
   // Get staff members - using users endpoint with tenant shell context
   const { data: staffMembers = [], isLoading: staffLoading } = useQuery({
-    queryKey: ['/api/users', { storeId }],
-    enabled: !!storeId, // Only fetch if storeId is provided
+    queryKey: ['/api/users', { storeId: storeFilter !== 'all' ? storeFilter : storeId }],
+    enabled: !!storeId || storeFilter !== 'all', // Only fetch if storeId is provided
     staleTime: 30000,
     select: (users: any[]) => {
       // Transform and filter users to match StaffMember interface
+      const activeStoreId = storeFilter !== 'all' ? storeFilter : storeId;
       return users
-        .filter((user: any) => !storeId || user.storeId === storeId)
+        .filter((user: any) => !activeStoreId || user.storeId === activeStoreId)
         .map((user: any) => ({
           id: user.id,
           firstName: user.firstName || 'Nome',
@@ -1358,6 +1393,156 @@ export default function ShiftAssignmentDashboard({
     );
   };
 
+  // ✅ Task 14: Render Filtri Card - PdV + Date sempre visibili in alto
+  const renderFiltersCard = () => (
+    <Card className="mb-4 w-full backdrop-blur-md bg-white/10 border-white/20">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center text-lg">
+          <Filter className="w-5 h-5 mr-2 text-orange-500" />
+          Filtri Turni & Template
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          {/* Filtro Punto Vendita */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Punto Vendita</label>
+            <Select value={storeFilter} onValueChange={(value) => {
+              setStoreFilter(value);
+              setSelectedTemplateId(null); // Reset template quando cambia PdV
+            }}>
+              <SelectTrigger data-testid="select-store-filter-dashboard">
+                <SelectValue placeholder="Seleziona punto vendita" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i punti vendita</SelectItem>
+                {(stores as any[]).map((store: any) => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Data Inizio */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Data Inizio</label>
+            <Input
+              type="date"
+              value={startDateFilter}
+              onChange={(e) => setStartDateFilter(e.target.value)}
+              data-testid="input-start-date"
+            />
+          </div>
+
+          {/* Data Fine */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Data Fine</label>
+            <Input
+              type="date"
+              value={endDateFilter}
+              onChange={(e) => setEndDateFilter(e.target.value)}
+              data-testid="input-end-date"
+            />
+          </div>
+
+          {/* ✅ Task 15: Template Turno */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Template Turno</label>
+            <Select 
+              value={selectedTemplateId || ''} 
+              onValueChange={(value) => setSelectedTemplateId(value || null)}
+              disabled={storeFilter === 'all'}
+            >
+              <SelectTrigger data-testid="select-shift-template">
+                <SelectValue placeholder="Seleziona template" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nessun template</SelectItem>
+                {filteredTemplates.map((template: any) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Button Applica Filtri */}
+          <div>
+            <Button
+              onClick={() => {
+                // Trigger data refresh with new filters
+                queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+                toast({
+                  title: 'Filtri applicati',
+                  description: `Caricamento turni per ${storeFilter === 'all' ? 'tutti i punti vendita' : 'punto vendita selezionato'}`,
+                });
+              }}
+              className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+              data-testid="button-apply-filters"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Applica Filtri
+            </Button>
+          </div>
+        </div>
+
+        {/* ✅ Task 15: Fasce Orarie Template Selezionato */}
+        {selectedTemplate && (
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <h4 className="font-semibold text-sm mb-3 flex items-center">
+              <Clock className="w-4 h-4 mr-2 text-blue-600" />
+              Fasce Orarie: {selectedTemplate.name}
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="bg-white dark:bg-slate-800">
+                  Inizio: {selectedTemplate.startTime}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="bg-white dark:bg-slate-800">
+                  Fine: {selectedTemplate.endTime}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="bg-white dark:bg-slate-800">
+                  Durata: {selectedTemplate.duration || 'N/A'}h
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="bg-white dark:bg-slate-800">
+                  Tipo: {selectedTemplate.shiftType || 'Standard'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Info Badge filtri attivi */}
+        {storeFilter !== 'all' && (
+          <div className="mt-3 flex items-center space-x-2">
+            <Badge variant="secondary">
+              Filtrato per: {(stores as any[]).find((s: any) => s.id === storeFilter)?.nome || 'Punto Vendita'}
+            </Badge>
+            <Badge variant="outline">
+              {startDateFilter} → {endDateFilter}
+            </Badge>
+            {selectedTemplate && (
+              <Badge className="bg-blue-500">
+                Template: {selectedTemplate.name}
+              </Badge>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   const renderControlPanel = () => (
     <Card className="mb-6 w-full max-w-full">
       <CardHeader className="w-full max-w-full">
@@ -1619,6 +1804,9 @@ export default function ShiftAssignmentDashboard({
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        {/* ✅ Task 14: Filtri PdV + Date */}
+        {renderFiltersCard()}
+        
         {renderControlPanel()}
         
         {/* 📚 GUIDA RAPIDA - Helper Panel */}
