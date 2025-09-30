@@ -276,13 +276,24 @@ export default function ShiftAssignmentDashboard({
   const weekEnd = addDays(weekStart, 6);
   
   const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/hr/shifts', { storeId, startDate: format(weekStart, 'yyyy-MM-dd') }],
-    enabled: !!storeId
+    queryKey: ['/api/hr/shifts', { 
+      storeId: storeFilter,
+      startDate: format(weekStart, 'yyyy-MM-dd'),
+      endDate: format(weekEnd, 'yyyy-MM-dd'),
+      templateId: selectedTemplateId || undefined
+    }],
+    enabled: !!storeId // Only fetch if component has valid storeId prop
   });
 
   // Get existing assignments
   const { data: assignments = [] } = useQuery({
-    queryKey: ['/api/hr/shift-assignments', { storeId, startDate: format(weekStart, 'yyyy-MM-dd') }]
+    queryKey: ['/api/hr/shift-assignments', { 
+      storeId: storeFilter,
+      startDate: format(weekStart, 'yyyy-MM-dd'),
+      endDate: format(weekEnd, 'yyyy-MM-dd'),
+      templateId: selectedTemplateId || undefined
+    }],
+    enabled: !!storeId // Only fetch if component has valid storeId prop
   });
 
   // ==================== UTILITY FUNCTIONS ====================
