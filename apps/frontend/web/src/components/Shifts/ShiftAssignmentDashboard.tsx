@@ -1904,10 +1904,11 @@ export default function ShiftAssignmentDashboard({
                                         </div>
                                         <Badge 
                                           className={cn(
-                                            shift.assignedStaff >= shift.requiredStaff 
-                                              ? 'bg-green-500' 
-                                              : 'bg-orange-500'
+                                            shift.assignedStaff === 0 && 'bg-red-500',
+                                            shift.assignedStaff > 0 && shift.assignedStaff < shift.requiredStaff && 'bg-orange-500',
+                                            shift.assignedStaff >= shift.requiredStaff && 'bg-green-500'
                                           )}
+                                          data-testid={`badge-coverage-${shift.id}`}
                                         >
                                           {shift.assignedStaff}/{shift.requiredStaff}
                                         </Badge>
