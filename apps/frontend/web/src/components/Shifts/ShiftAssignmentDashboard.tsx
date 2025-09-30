@@ -1451,15 +1451,15 @@ export default function ShiftAssignmentDashboard({
           <div className="space-y-2">
             <label className="text-sm font-medium">Template Turno</label>
             <Select 
-              value={selectedTemplateId || ''} 
-              onValueChange={(value) => setSelectedTemplateId(value || null)}
+              value={selectedTemplateId || 'none'} 
+              onValueChange={(value) => setSelectedTemplateId(value === 'none' ? null : value)}
               disabled={storeFilter === 'all'}
             >
               <SelectTrigger data-testid="select-shift-template">
                 <SelectValue placeholder="Seleziona template" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nessun template</SelectItem>
+                <SelectItem value="none">Nessun template</SelectItem>
                 {filteredTemplates.map((template: any) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name}
