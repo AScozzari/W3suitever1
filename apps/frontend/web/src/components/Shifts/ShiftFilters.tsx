@@ -35,29 +35,10 @@ export default function ShiftFilters({ onChange }: Props) {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
-  // Fetch stores for dropdown
+  // Fetch stores for dropdown (using real API with auth)
   const { data: stores, isLoading: storesLoading } = useQuery({
-    queryKey: ['/api/stores'],
-    queryFn: async () => {
-      const response = await fetch('/api/stores');
-      if (!response.ok) return [];
-      return response.json();
-    }
-  });
-
-  // Fetch conflicts count for badge (only when filters are complete)
-  const { data: conflicts } = useQuery({
-    queryKey: ['/api/hr/conflicts', storeId, startDate, endDate],
-    queryFn: async () => {
-      if (!storeId || !startDate || !endDate) return null;
-      const response = await fetch(
-        `/api/hr/conflicts?storeId=${storeId}&startDate=${format(startDate, 'yyyy-MM-dd')}&endDate=${format(endDate, 'yyyy-MM-dd')}`
-      );
-      if (!response.ok) return null;
-      return response.json();
-    },
-    enabled: !!storeId && !!startDate && !!endDate,
-    refetchInterval: 30000 // Refresh every 30s
+    queryKey: ['/api/stores']
+    // Uses default queryFn with proper auth headers from queryClient
   });
 
   // Calculate if date range is valid (max 7 days)
@@ -237,22 +218,6 @@ export default function ShiftFilters({ onChange }: Props) {
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
               <CalendarIcon className="w-3 h-3 mr-1" />
               {dateRangeDays} {dateRangeDays === 1 ? 'giorno' : 'giorni'} selezionati
-            </Badge>
-          )}
-
-          {/* Conflicts Badge */}
-          {conflicts && (
-            <Badge 
-              variant="outline" 
-              className={`${
-                conflicts.typeA?.length > 0 
-                  ? 'bg-red-50 text-red-700 border-red-200' 
-                  : 'bg-green-50 text-green-700 border-green-200'
-              }`}
-              data-testid="badge-conflicts"
-            >
-              <AlertTriangle className="w-3 h-3 mr-1" />
-              {conflicts.typeA?.length || 0} conflitti rilevati
             </Badge>
           )}
         </div>
