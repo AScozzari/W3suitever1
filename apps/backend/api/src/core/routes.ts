@@ -3799,6 +3799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // WORKAROUND: Use raw SQL to bypass Drizzle ORM bug with shiftAssignments
       // TODO: Investigate Drizzle "Cannot convert undefined or null to object" error
+      // NOTE: shift_assignments ID columns are varchar, but shifts.store_id/stores.id are uuid
       const rawQuery = sql`
         SELECT 
           sa.*,
@@ -3826,8 +3827,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN w3suite.shifts s ON sa.shift_id = s.id
         LEFT JOIN w3suite.users u ON sa.user_id = u.id
         LEFT JOIN w3suite.stores st ON s.store_id = st.id
-        WHERE sa.tenant_id = ${tenantId}::uuid
-        ${userId ? sql`AND sa.user_id = ${userId}::uuid` : sql``}
+        WHERE sa.tenant_id = ${tenantId}
+        ${userId ? sql`AND sa.user_id = ${userId}` : sql``}
         ${storeId ? sql`AND s.store_id = ${storeId}::uuid` : sql``}
         ${startDate && endDate ? sql`AND s.date >= ${startDate}::date AND s.date <= ${endDate}::date` : sql``}
         LIMIT 100
