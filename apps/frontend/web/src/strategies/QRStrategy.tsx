@@ -264,6 +264,18 @@ function QRPanel({ isActive, isLoading, context, onAction, compact, strategy }: 
   const [generationCount, setGenerationCount] = useState<number>(strategy.getGenerationCount());
   const qrRef = useRef<HTMLDivElement>(null);
 
+  // 🔧 FIX: Attiva la strategy quando viene selezionato un punto vendita
+  useEffect(() => {
+    if (context.selectedStore && !code) {
+      strategy.prepare(context).then(() => {
+        setCode(strategy.getCurrentCode());
+        setTimeRemaining(strategy.getTimeRemaining());
+        setIsExpired(!strategy.isCodeValid());
+        setGenerationCount(strategy.getGenerationCount());
+      });
+    }
+  }, [context.selectedStore?.id]);
+
   useEffect(() => {
     if (!isActive) return;
 
