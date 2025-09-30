@@ -100,8 +100,12 @@ export class WebSocketService {
 
       this.clients.set(sessionId, client);
 
-      // Register session in Redis
-      await redisService.registerWebSocketSession(userId, tenantId, sessionId);
+      // Register session in Redis (graceful fallback if Redis not available)
+      try {
+        await redisService.registerWebSocketSession(userId, tenantId, sessionId);
+      } catch (redisError) {
+        logger.debug('🌐 Redis session registration failed (fallback mode)', { sessionId });
+      }
 
       // Setup client event handlers
       ws.on('message', (data) => this.handleMessage(sessionId, data));
@@ -180,8 +184,12 @@ export class WebSocketService {
     if (!client) return;
 
     try {
-      // Unregister session from Redis
-      await redisService.removeWebSocketSession(client.userId, client.tenantId, sessionId);
+      // Unregister session from Redis (graceful fallback if Redis not available)
+      try {
+        await redisService.removeWebSocketSession(client.userId, client.tenantId, sessionId);
+      } catch (redisError) {
+        logger.debug('🌐 Redis session removal failed (fallback mode)', { sessionId });
+      }
 
       this.clients.delete(sessionId);
 
@@ -236,8 +244,16 @@ export class WebSocketService {
     }
   ): Promise<void> {
     try {
-      // Get user's active sessions
-      const activeSessions = await redisService.getWebSocketSessions(userId, tenantId);
+      // Get user's active sessions (with Redis fallback)
+      let activeSessions: string[] = [];
+      try {
+        activeSessions = await redisService.getWebSocketSessions(userId, tenantId);
+      } catch (redisError) {
+        // Fallback: use all connected client session IDs
+        activeSessions = Array.from(this.clients.values())
+          .filter(c => c.userId === userId && c.tenantId === tenantId)
+          .map(c => c.sessionId);
+      }
 
       // Find connected clients
       const userClients = Array.from(this.clients.values()).filter(
@@ -375,14 +391,18 @@ export class WebSocketService {
     const client = this.clients.get(sessionId);
     if (!client) return;
 
-    // Publish read event to Redis
-    await redisService.publishNotification({
-      type: 'notification_read',
-      tenantId: client.tenantId,
-      userId: client.userId,
-      notificationId,
-      data: { readAt: new Date().toISOString() }
-    });
+    // Publish read event to Redis (graceful fallback if not available)
+    try {
+      await redisService.publishNotification({
+        type: 'notification_read',
+        tenantId: client.tenantId,
+        userId: client.userId,
+        notificationId,
+        data: { readAt: new Date().toISOString() }
+      });
+    } catch (redisError) {
+      logger.debug('🌐 Redis notification publish failed (fallback mode)', { sessionId });
+    }
   }
 
   /**
@@ -437,14 +457,18 @@ export class WebSocketService {
     const client = this.clients.get(sessionId);
     if (!client) return;
 
-    // Store subscription preferences in Redis
-    await redisService.setWebSocketSubscription(
-      client.userId, 
-      client.tenantId, 
-      sessionId, 
-      'hr_shifts', 
-      { storeIds }
-    );
+    // Store subscription preferences in Redis (graceful fallback if not available)
+    try {
+      await redisService.setWebSocketSubscription(
+        client.userId, 
+        client.tenantId, 
+        sessionId, 
+        'hr_shifts', 
+        { storeIds }
+      );
+    } catch (redisError) {
+      logger.debug('🌐 Redis subscription storage failed (fallback mode)', { sessionId });
+    }
 
     this.sendToClient(sessionId, {
       type: 'hr_shifts_subscription_confirmed',
@@ -462,12 +486,16 @@ export class WebSocketService {
     const client = this.clients.get(sessionId);
     if (!client) return;
 
-    await redisService.removeWebSocketSubscription(
-      client.userId, 
-      client.tenantId, 
-      sessionId, 
-      'hr_shifts'
-    );
+    try {
+      await redisService.removeWebSocketSubscription(
+        client.userId, 
+        client.tenantId, 
+        sessionId, 
+        'hr_shifts'
+      );
+    } catch (redisError) {
+      logger.debug('🌐 Redis unsubscription failed (fallback mode)', { sessionId });
+    }
 
     this.sendToClient(sessionId, {
       type: 'hr_shifts_unsubscribed',
@@ -505,15 +533,21 @@ export class WebSocketService {
         return;
       }
 
-      // Filter clients based on store subscription
+      // Filter clients based on store subscription (with Redis fallback)
       const subscribedClients = [];
       for (const client of tenantClients) {
-        const subscription = await redisService.getWebSocketSubscription(
-          client.userId, 
-          client.tenantId, 
-          client.sessionId, 
-          'hr_shifts'
-        );
+        let subscription = null;
+        try {
+          subscription = await redisService.getWebSocketSubscription(
+            client.userId, 
+            client.tenantId, 
+            client.sessionId, 
+            'hr_shifts'
+          );
+        } catch (redisError) {
+          // Fallback: assume all clients are subscribed when Redis is unavailable
+          subscription = { storeIds: [] };
+        }
 
         // If client is subscribed to HR shifts and has access to the store
         if (subscription && (!data.storeId || !subscription.storeIds || subscription.storeIds.includes(data.storeId))) {
@@ -568,12 +602,18 @@ export class WebSocketService {
 
       const subscribedClients = [];
       for (const client of tenantClients) {
-        const subscription = await redisService.getWebSocketSubscription(
-          client.userId, 
-          client.tenantId, 
-          client.sessionId, 
-          'hr_shifts'
-        );
+        let subscription = null;
+        try {
+          subscription = await redisService.getWebSocketSubscription(
+            client.userId, 
+            client.tenantId, 
+            client.sessionId, 
+            'hr_shifts'
+          );
+        } catch (redisError) {
+          // Fallback: assume all clients are subscribed when Redis is unavailable
+          subscription = { storeIds: [] };
+        }
 
         if (subscription && (!storeId || !subscription.storeIds || subscription.storeIds.includes(storeId))) {
           subscribedClients.push(client);
