@@ -1,0 +1,60 @@
+HRManagementPage.tsx:107 🔍 [HR-DEBUG] Query readiness status: 
+Object
+hook.js:377 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T09:20:21.410Z
+hook.js:377 🔍 [HR-DEBUG] Query readiness status: 
+Object
+HRManagementPage.tsx:97 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T09:20:21.455Z
+HRManagementPage.tsx:107 🔍 [HR-DEBUG] Query readiness status: 
+Object
+hook.js:377 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T09:20:21.456Z
+hook.js:377 🔍 [HR-DEBUG] Query readiness status: 
+Object
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+hook.js:377 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+ShiftAssignmentDashboard.tsx:1281 Uncaught ReferenceError: unassignedShifts is not defined
+    at renderGridView (ShiftAssignmentDashboard.tsx:1281:37)
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:1645:18)
+HRManagementPage.tsx:97 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T09:20:21.597Z
+HRManagementPage.tsx:107 🔍 [HR-DEBUG] Query readiness status: 
+Object
+hook.js:377 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T09:20:21.598Z
+hook.js:377 🔍 [HR-DEBUG] Query readiness status: 
+Object
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+hook.js:377 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+ShiftAssignmentDashboard.tsx:1281 Uncaught ReferenceError: unassignedShifts is not defined
+    at renderGridView (ShiftAssignmentDashboard.tsx:1281:37)
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:1645:18)
+hook.js:608 The above error occurred in the <ShiftAssignmentDashboard> component:
+
+    at ShiftAssignmentDashboard (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Shifts/ShiftAssignmentDashboard.tsx:82:3)
+    at div
+    at _c9 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:99:12)
+    at div
+    at _c (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:19:11)
+    at div
+    at ShiftsSection
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at HRManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx:76:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:504:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:175:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=94b3638f:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=94b3638f:9129 Uncaught ReferenceError: unassignedShifts is not defined
+    at renderGridView (ShiftAssignmentDashboard.tsx:1281:37)
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:1645:18)
