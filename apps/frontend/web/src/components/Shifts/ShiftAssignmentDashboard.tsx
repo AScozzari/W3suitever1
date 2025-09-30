@@ -1366,15 +1366,6 @@ export default function ShiftAssignmentDashboard({
               {showConflicts ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               Conflitti
             </Button>
-            <Button
-              variant={viewMode === 'gantt' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode(viewMode === 'gantt' ? 'grid' : 'gantt')}
-              data-testid="button-toggle-view"
-            >
-              <Calendar className="w-4 h-4 mr-1" />
-              {viewMode === 'gantt' ? 'Gantt' : 'Grid'}
-            </Button>
           </div>
         </div>
       </CardHeader>
@@ -1612,34 +1603,50 @@ export default function ShiftAssignmentDashboard({
 
   return (
     <TooltipProvider>
-      <div className="space-y-6 w-full max-w-full">
+      <div className="space-y-6">
         {renderControlPanel()}
         
-        {viewMode === 'gantt' ? (
-          <Card className="w-full max-w-full">
-            <CardHeader className="w-full max-w-full">
-              <CardTitle className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Vista Timeline Gantt - Settimana {format(selectedWeek, 'd MMM', { locale: it })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="w-full max-w-full overflow-x-auto">
-              {renderGanttTimeline()}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="w-full max-w-full">
-            <CardHeader className="w-full max-w-full">
-              <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Vista Grid - Gestione Assegnazioni
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="w-full max-w-full overflow-x-auto">
-              {renderGridView()}
-            </CardContent>
-          </Card>
-        )}
+        {/* Tabs for Gantt/Grid Switch */}
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'gantt' | 'grid')}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="gantt" data-testid="tab-gantt">
+              <Calendar className="w-4 h-4 mr-2" />
+              Vista Gantt
+            </TabsTrigger>
+            <TabsTrigger value="grid" data-testid="tab-grid">
+              <Users className="w-4 h-4 mr-2" />
+              Vista Grid
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="gantt" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Timeline Gantt - Settimana {format(selectedWeek, 'd MMM', { locale: it })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                {renderGanttTimeline()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="grid" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Grid Assegnazioni
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                {renderGridView()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </TooltipProvider>
   );
