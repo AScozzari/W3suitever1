@@ -1202,14 +1202,14 @@ export type ShiftTimeSlot = typeof shiftTimeSlots.$inferSelect;
 // ==================== SHIFT ASSIGNMENTS ====================
 // Enhanced many-to-many relationship for user-shift assignments with metadata
 export const shiftAssignments = w3suiteSchema.table("shift_assignments", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  shiftId: uuid("shift_id").notNull().references(() => shifts.id, { onDelete: 'cascade' }),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  shiftId: varchar("shift_id").notNull().references(() => shifts.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // Assignment details
   assignmentType: varchar("assignment_type", { length: 20 }).notNull().default("manual"), // manual, auto, template
-  timeSlotId: uuid("time_slot_id").references(() => shiftTimeSlots.id), // Specific time slot assignment
+  timeSlotId: varchar("time_slot_id").references(() => shiftTimeSlots.id), // Specific time slot assignment
   
   // Assignment metadata
   assignedAt: timestamp("assigned_at").defaultNow(),
@@ -1273,7 +1273,7 @@ export type ShiftAssignment = typeof shiftAssignments.$inferSelect;
 export const shiftAttendance = w3suiteSchema.table("shift_attendance", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  assignmentId: uuid("assignment_id").notNull().references(() => shiftAssignments.id, { onDelete: 'cascade' }),
+  assignmentId: varchar("assignment_id").notNull().references(() => shiftAssignments.id, { onDelete: 'cascade' }),
   timeTrackingId: uuid("time_tracking_id").references(() => timeTracking.id),
   
   // Attendance status
