@@ -1,0 +1,187 @@
+
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+onSubscribe @ @tanstack_react-query.js?v=94b3638f:1335
+subscribe @ @tanstack_react-query.js?v=94b3638f:24
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=94b3638f:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=94b3638f:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin-user
+TenantContext.tsx:100 [TENANT-PROVIDER] 🏢 Tenant updated from session: {id: '00000000-0000-0000-0000-000000000001', name: 'Demo Organization', code: 'DEMO001', plan: 'Enterprise', isActive: true}
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+fetch @ @tanstack_react-query.js?v=94b3638f:1449
+refetch @ @tanstack_react-query.js?v=94b3638f:1439
+onFocus @ @tanstack_react-query.js?v=94b3638f:998
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:2713
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:2712
+batch @ @tanstack_react-query.js?v=94b3638f:624
+onFocus @ @tanstack_react-query.js?v=94b3638f:2711
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:390
+onFocus @ @tanstack_react-query.js?v=94b3638f:389
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:376
+listener @ @tanstack_react-query.js?v=94b3638f:347Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=94b3638f:1097
+run @ @tanstack_react-query.js?v=94b3638f:795
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:816
+Promise.catch
+run @ @tanstack_react-query.js?v=94b3638f:799
+start @ @tanstack_react-query.js?v=94b3638f:838
+fetch @ @tanstack_react-query.js?v=94b3638f:1144
+executeFetch_fn @ @tanstack_react-query.js?v=94b3638f:1639
+fetch @ @tanstack_react-query.js?v=94b3638f:1449
+refetch @ @tanstack_react-query.js?v=94b3638f:1439
+onFocus @ @tanstack_react-query.js?v=94b3638f:998
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:2713
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:2712
+batch @ @tanstack_react-query.js?v=94b3638f:624
+onFocus @ @tanstack_react-query.js?v=94b3638f:2711
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:390
+onFocus @ @tanstack_react-query.js?v=94b3638f:389
+(anonymous) @ @tanstack_react-query.js?v=94b3638f:376
+listener @ @tanstack_react-query.js?v=94b3638f:347Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-09-30&storeId=all 500 (Internal Server Error)
