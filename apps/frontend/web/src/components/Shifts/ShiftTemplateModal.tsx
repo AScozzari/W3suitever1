@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 // UI Components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -26,25 +27,118 @@ import { Plus, Trash2, Clock, AlertTriangle, CheckCircle, Save, Store as StoreIc
 // ==================== TYPES & SCHEMAS ====================
 
 const timeSlotSchema = z.object({
+  segmentType: z.enum(['continuous', 'split']).default('continuous'),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)'),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)'),
+  // ✅ NEW: For split shifts
+  block2StartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
+  block2EndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
   breakMinutes: z.number().min(0, 'Pausa non può essere negativa').max(480, 'Pausa troppo lunga (max 8h)').optional(),
   clockInToleranceMinutes: z.number().min(0, 'Tolleranza non può essere negativa').max(60, 'Tolleranza massima 60 minuti').optional(),
   clockOutToleranceMinutes: z.number().min(0, 'Tolleranza non può essere negativa').max(60, 'Tolleranza massima 60 minuti').optional()
-}).refine((data) => {
-  const start = new Date(`2000-01-01T${data.startTime}`);
-  const end = new Date(`2000-01-01T${data.endTime}`);
-  
-  // Handle overnight shifts
-  if (end <= start) {
-    end.setDate(end.getDate() + 1);
+}).superRefine((data, ctx) => {
+  // Validate continuous shifts (allow overnight spans like 22:00-06:00)
+  if (data.segmentType === 'continuous') {
+    const start = new Date(`2000-01-01T${data.startTime}`);
+    let end = new Date(`2000-01-01T${data.endTime}`);
+    
+    // Handle overnight shifts
+    if (end <= start) {
+      end = new Date(`2000-01-02T${data.endTime}`);
+    }
+    
+    const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (diffHours < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La fascia deve durare almeno 1 ora',
+        path: ['endTime']
+      });
+    } else if (diffHours > 16) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La fascia non può superare 16 ore',
+        path: ['endTime']
+      });
+    }
   }
   
-  const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  return diffHours >= 1 && diffHours <= 16; // Min 1h, Max 16h
-}, {
-  message: 'Fascia oraria deve essere tra 1 e 16 ore',
-  path: ['endTime']
+  // Validate split shifts - both blocks same day, no overnight
+  if (data.segmentType === 'split') {
+    if (!data.block2StartTime || !data.block2EndTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Entrambi i blocchi sono obbligatori per una fascia spezzata',
+        path: ['block2StartTime']
+      });
+      return;
+    }
+    
+    // Parse all times (same day - no overnight for split shifts)
+    const block1Start = new Date(`2000-01-01T${data.startTime}`);
+    const block1End = new Date(`2000-01-01T${data.endTime}`);
+    const block2Start = new Date(`2000-01-01T${data.block2StartTime}`);
+    const block2End = new Date(`2000-01-01T${data.block2EndTime}`);
+    
+    // Block 1 cannot span overnight in split shifts
+    if (block1End <= block1Start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il primo blocco non può attraversare la mezzanotte nelle fasce spezzate',
+        path: ['endTime']
+      });
+    }
+    
+    // Block 2 cannot span overnight in split shifts
+    if (block2End <= block2Start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il secondo blocco non può attraversare la mezzanotte nelle fasce spezzate',
+        path: ['block2EndTime']
+      });
+    }
+    
+    // Validate Block 1 duration (min 1h, max 16h, same day)
+    const block1Hours = (block1End.getTime() - block1Start.getTime()) / (1000 * 60 * 60);
+    if (block1Hours < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il primo blocco deve durare almeno 1 ora',
+        path: ['endTime']
+      });
+    } else if (block1Hours > 16) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il primo blocco non può superare 16 ore',
+        path: ['endTime']
+      });
+    }
+    
+    // Validate Block 2 duration (min 1h, max 16h, same day)
+    const block2Hours = (block2End.getTime() - block2Start.getTime()) / (1000 * 60 * 60);
+    if (block2Hours < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il secondo blocco deve durare almeno 1 ora',
+        path: ['block2EndTime']
+      });
+    } else if (block2Hours > 16) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il secondo blocco non può superare 16 ore',
+        path: ['block2EndTime']
+      });
+    }
+    
+    // Validate Block 2 starts after Block 1 ends (same day, minimum break enforced)
+    if (block2Start.getTime() <= block1End.getTime()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Il secondo blocco deve iniziare dopo la fine del primo blocco (con pausa)',
+        path: ['block2StartTime']
+      });
+    }
+  }
 });
 
 const shiftTemplateSchema = z.object({
@@ -57,8 +151,7 @@ const shiftTemplateSchema = z.object({
   timeSlots: z.array(timeSlotSchema)
     .min(1, 'Almeno una fascia oraria richiesta')
     .max(5, 'Massimo 5 fasce orarie per template'),
-  daysOfWeek: z.array(z.number().min(0).max(6))
-    .min(1, 'Seleziona almeno un giorno della settimana'),
+  // ❌ REMOVED: daysOfWeek no longer needed (decided during assignment)
   color: z.string().optional(),
   isActive: z.boolean().default(true),
   notes: z.string().max(500, 'Note troppo lunghe (max 500 caratteri)').optional()
@@ -146,6 +239,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       // Map legacy format to new format for editing
       timeSlots: template?.timeSlots || (template?.defaultStartTime ? [
         { 
+          segmentType: 'continuous',
           startTime: template.defaultStartTime, 
           endTime: template.defaultEndTime, 
           breakMinutes: template.defaultBreakMinutes || 30,
@@ -153,10 +247,8 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
           clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
         }
       ] : [
-        { startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
+        { segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
       ]),
-      // Map legacy rules.daysOfWeek to new format
-      daysOfWeek: template?.daysOfWeek || template?.rules?.daysOfWeek || [1, 2, 3, 4, 5],
       color: template?.color || '#FF6900',
       isActive: template?.isActive ?? true,
       notes: template?.notes || ''
@@ -191,9 +283,6 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         defaultBreakMinutes: data.timeSlots[0]?.breakMinutes || 30,
         clockInToleranceMinutes: data.timeSlots[0]?.clockInToleranceMinutes || 15,
         clockOutToleranceMinutes: data.timeSlots[0]?.clockOutToleranceMinutes || 15,
-        rules: {
-          daysOfWeek: data.daysOfWeek
-        },
         isActive: data.isActive,
         notes: data.notes,
         color: data.color,
@@ -254,7 +343,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       return;
     }
     
-    append({ startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 });
+    append({ segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 });
   };
 
   const removeTimeSlot = (index: number) => {
@@ -286,11 +375,9 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   };
 
   const watchedTimeSlots = form.watch('timeSlots');
-  const watchedDaysOfWeek = form.watch('daysOfWeek');
   const watchedColor = form.watch('color');
   
   const totalHours = calculateTotalHours(watchedTimeSlots || []);
-  const totalDays = watchedDaysOfWeek?.length || 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -494,7 +581,10 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {fields.map((field, index) => (
+                {fields.map((field, index) => {
+                  const segmentType = form.watch(`timeSlots.${index}.segmentType`);
+                  
+                  return (
                   <div key={field.id} className="p-4 border rounded-lg bg-muted/30">
                     <div className="flex items-center justify-between mb-3">
                       <Label className="font-medium">Fascia {index + 1}</Label>
@@ -512,7 +602,51 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* ✅ NEW: Segment Type Selection */}
+                    <FormField
+                      control={form.control}
+                      name={`timeSlots.${index}.segmentType`}
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <FormLabel>Tipo Fascia</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Clear block2 fields when switching back to continuous
+                                if (value === 'continuous') {
+                                  form.setValue(`timeSlots.${index}.block2StartTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block2EndTime`, undefined);
+                                }
+                              }}
+                              value={field.value}
+                              className="flex gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="continuous" id={`continuous-${index}`} data-testid={`radio-continuous-${index}`} />
+                                <Label htmlFor={`continuous-${index}`} className="cursor-pointer font-normal">
+                                  Continua (es: 09:00-17:00)
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="split" id={`split-${index}`} data-testid={`radio-split-${index}`} />
+                                <Label htmlFor={`split-${index}`} className="cursor-pointer font-normal">
+                                  Spezzata (es: 09:00-13:00 + 15:00-19:00)
+                                </Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* First Block (always visible) */}
+                    <div className={cn("mb-3", segmentType === 'split' && "pb-3 border-b")}>
+                      {segmentType === 'split' && (
+                        <Label className="text-xs text-muted-foreground mb-2 block">Primo Blocco</Label>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name={`timeSlots.${index}.startTime`}
@@ -618,63 +752,63 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                         )}
                       />
                     </div>
+                    </div>
+                    
+                    {/* ✅ NEW: Second Block (only for split shifts) */}
+                    {segmentType === 'split' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground mb-2 block">Secondo Blocco</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.block2StartTime`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ora Inizio Blocco 2</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="time"
+                                    data-testid={`input-block2-start-time-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.block2EndTime`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ora Fine Blocco 2</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="time"
+                                    data-testid={`input-block2-end-time-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
                 
                 {/* Template Summary */}
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Riepilogo:</strong> {fields.length} fasce orarie, 
-                    totale {totalHours.toFixed(1)} ore per {totalDays} giorni/settimana
+                    <strong>Riepilogo:</strong> {fields.length} {fields.length === 1 ? 'fascia oraria' : 'fasce orarie'}, 
+                    totale {totalHours.toFixed(1)} ore
                   </AlertDescription>
                 </Alert>
-              </CardContent>
-            </Card>
-
-            {/* Days of Week Selection */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Giorni della Settimana</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Seleziona i giorni in cui applicare questo template
-                </p>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="daysOfWeek"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-7 gap-2">
-                        {DAYS_OF_WEEK.map((day) => (
-                          <label
-                            key={day.value}
-                            className="flex flex-col items-center gap-2 cursor-pointer"
-                          >
-                            <Checkbox
-                              checked={field.value?.includes(day.value)}
-                              onCheckedChange={(checked: boolean) => {
-                                const days = field.value || [];
-                                field.onChange(
-                                  checked
-                                    ? [...days, day.value]
-                                    : days.filter(d => d !== day.value)
-                                );
-                              }}
-                              data-testid={`checkbox-day-${day.value}`}
-                            />
-                            <div className="text-center">
-                              <div className="font-medium text-sm">{day.label}</div>
-                              <div className="text-xs text-muted-foreground">{day.fullName}</div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </CardContent>
             </Card>
 
