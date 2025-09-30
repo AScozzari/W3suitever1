@@ -476,6 +476,14 @@ export default function ShiftAssignmentDashboard({
     return conflicts;
   }, [assignments, filteredStaff, shifts, calculateShiftHours]);
 
+  // Calculate unassigned shifts (shifts with fewer assignments than required)
+  const unassignedShifts = useMemo(() => {
+    return shifts.filter(shift => {
+      const assignedCount = assignments.filter(a => a.shiftId === shift.id).length;
+      return assignedCount < shift.requiredStaff;
+    });
+  }, [shifts, assignments]);
+
   // ==================== EVENT HANDLERS ====================
 
   const handleShiftSelection = useCallback((shiftId: string, selected: boolean) => {
