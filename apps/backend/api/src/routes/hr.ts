@@ -1099,10 +1099,10 @@ router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (
       where: and(...conditions),
       with: {
         user: {
-          columns: { id: true, fullName: true, email: true }
+          columns: { id: true, firstName: true, lastName: true, email: true }
         },
         store: {
-          columns: { id: true, name: true }
+          columns: { id: true, nome: true }
         },
         attendance: true
       },
@@ -1166,7 +1166,7 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
         assignments: {
           with: {
             user: {
-              columns: { id: true, fullName: true }
+              columns: { id: true, firstName: true, lastName: true }
             },
             attendance: {
               where: and(
@@ -1177,7 +1177,7 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
           }
         },
         store: {
-          columns: { id: true, name: true }
+          columns: { id: true, nome: true }
         }
       }
     });
@@ -1194,7 +1194,7 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
         shiftId: shift.id,
         shiftName: shift.name,
         storeId: shift.storeId,
-        storeName: shift.store?.name,
+        storeName: shift.store?.nome,
         time: { start: shift.startTime, end: shift.endTime },
         staffing: {
           required: totalRequired,
@@ -1205,7 +1205,7 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
         },
         assignments: shift.assignments.map(a => ({
           userId: a.userId,
-          userName: a.user?.fullName,
+          userName: a.user ? `${a.user.firstName || ''} ${a.user.lastName || ''}`.trim() : undefined,
           status: a.status,
           attendance: a.attendance[0]
         }))
@@ -1262,10 +1262,10 @@ router.get('/attendance/logs', requirePermission('hr.shifts.read'), async (req: 
       where: and(...filters),
       with: {
         user: {
-          columns: { id: true, fullName: true }
+          columns: { id: true, firstName: true, lastName: true }
         },
         store: {
-          columns: { id: true, name: true }
+          columns: { id: true, nome: true }
         }
       },
       orderBy: (shiftAttendance, { desc }) => [desc(shiftAttendance.scheduledStartTime)]

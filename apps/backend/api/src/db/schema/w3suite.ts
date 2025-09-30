@@ -1276,6 +1276,10 @@ export const shiftAttendance = w3suiteSchema.table("shift_attendance", {
   assignmentId: varchar("assignment_id").notNull().references(() => shiftAssignments.id, { onDelete: 'cascade' }),
   timeTrackingId: uuid("time_tracking_id").references(() => timeTracking.id),
   
+  // Essential filtering fields
+  storeId: uuid("store_id").notNull().references(() => stores.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
   // Attendance status
   attendanceStatus: varchar("attendance_status", { length: 20 }).notNull().default("scheduled"), 
   // scheduled, present, late, absent, early_departure, overtime
@@ -1882,6 +1886,8 @@ export const shiftAttendanceRelations = relations(shiftAttendance, ({ one, many 
   tenant: one(tenants, { fields: [shiftAttendance.tenantId], references: [tenants.id] }),
   assignment: one(shiftAssignments, { fields: [shiftAttendance.assignmentId], references: [shiftAssignments.id] }),
   timeTracking: one(timeTracking, { fields: [shiftAttendance.timeTrackingId], references: [timeTracking.id] }),
+  store: one(stores, { fields: [shiftAttendance.storeId], references: [stores.id] }),
+  user: one(users, { fields: [shiftAttendance.userId], references: [users.id] }),
   reviewedByUser: one(users, { fields: [shiftAttendance.reviewedBy], references: [users.id] }),
   anomalies: many(attendanceAnomalies),
 }));
