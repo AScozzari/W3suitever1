@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,9 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarIcon, Copy, Edit, Archive, Plus, Clock, Users, RefreshCw, MoreHorizontal } from 'lucide-react';
+import { CalendarIcon, Copy, Edit, Archive, Plus, Clock, Users, RefreshCw, MoreHorizontal, Store as StoreIcon, Filter } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -22,6 +22,8 @@ interface ShiftTemplate {
   id: string;
   name: string;
   description?: string;
+  storeId?: string;
+  status?: 'active' | 'archived';
   pattern: 'daily' | 'weekly' | 'monthly' | 'custom';
   defaultStartTime: string;
   defaultEndTime: string;
@@ -75,7 +77,29 @@ export default function ShiftTemplateManager({
     to: Date | undefined;
   }>({ from: undefined, to: undefined });
   
+  const [storeFilter, setStoreFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
   const { toast } = useToast();
+  
+  // Fetch stores for filter dropdown
+  const { data: stores, isLoading: storesLoading } = useQuery({
+    queryKey: ['/api/stores'],
+    queryFn: async () => {
+      const response = await fetch('/api/stores');
+      if (!response.ok) return [];
+      return response.json();
+    }
+  });
+  
+  // Filter templates based on selected filters
+  const filteredTemplates = templates.filter(template => {
+    const matchesStore = storeFilter === 'all' || template.storeId === storeFilter;
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && template.isActive) ||
+      (statusFilter === 'archived' && !template.isActive);
+    return matchesStore && matchesStatus;
+  });
   
   const handleCloseModal = () => {
     setIsCreateModalOpen(false);
@@ -193,30 +217,94 @@ export default function ShiftTemplateManager({
       </div>
       
       {/* Template Filters */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">Tutti</TabsTrigger>
-          <TabsTrigger value="active">Attivi</TabsTrigger>
-          <TabsTrigger value="archived">Archiviati</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all" className="mt-4">
-          <Card className="windtre-glass-panel border-white/20">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-200">
-                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-
-                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Stato</TableHead>
-                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {templates.map((template) => (
+      <Card className="windtre-glass-panel border-white/20">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <Filter className="h-5 w-5 text-gray-500" />
+            <div className="flex gap-4 flex-1">
+              <div className="flex-1">
+                <Label className="text-sm mb-2 block">Punto Vendita</Label>
+                <Select value={storeFilter} onValueChange={setStoreFilter}>
+                  <SelectTrigger data-testid="filter-store">
+                    <SelectValue placeholder="Tutti i punti vendita" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i punti vendita</SelectItem>
+                    {stores?.map((store: any) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.nome || store.name} - {store.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <Label className="text-sm mb-2 block">Stato</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger data-testid="filter-status">
+                    <SelectValue placeholder="Tutti gli stati" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti gli stati</SelectItem>
+                    <SelectItem value="active">Attivo</SelectItem>
+                    <SelectItem value="archived">Archiviato</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {(storeFilter !== 'all' || statusFilter !== 'all') && (
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setStoreFilter('all');
+                      setStatusFilter('all');
+                    }}
+                    data-testid="button-clear-filters"
+                  >
+                    Pulisci Filtri
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+            <span>Risultati: {filteredTemplates.length} di {templates.length}</span>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Templates Table */}
+      <Card className="windtre-glass-panel border-white/20">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-gray-200">
+                <TableHead className="font-semibold text-gray-900">Nome</TableHead>
+                <TableHead className="font-semibold text-gray-900">Punto Vendita</TableHead>
+                <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
+                <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
+                <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
+                <TableHead className="font-semibold text-gray-900">Stato</TableHead>
+                <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTemplates.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    Nessun template trovato con i filtri selezionati
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTemplates.map((template) => {
+                  const storeName = stores?.find((s: any) => s.id === template.storeId)?.nome || 
+                                   stores?.find((s: any) => s.id === template.storeId)?.name || '-';
+                  
+                  return (
                     <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`template-row-${template.id}`}>
                       <TableCell>
                         <div>
@@ -224,6 +312,12 @@ export default function ShiftTemplateManager({
                           {template.description && (
                             <div className="text-sm text-gray-600">{template.description}</div>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <StoreIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{storeName}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -295,191 +389,14 @@ export default function ShiftTemplateManager({
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="active" className="mt-4">
-          <Card className="windtre-glass-panel border-white/20">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-200">
-                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-
-                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
-                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {templates.filter(t => t.isActive).map((template) => (
-                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`template-row-${template.id}`}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">{template.name}</div>
-                          {template.description && (
-                            <div className="text-sm text-gray-600">{template.description}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
-                          {template.defaultBreakMinutes && (
-                            <Badge variant="outline" className="text-xs ml-2">
-                              {template.defaultBreakMinutes}min pausa
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {template.rules?.daysOfWeek?.map(day => (
-                            <Badge key={day} variant="secondary" className="text-xs">
-                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
-                            </Badge>
-                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedTemplate(template);
-                              setIsApplyModalOpen(true);
-                            }}>
-                              <CalendarIcon className="h-4 w-4 mr-2" />
-                              Applica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleArchiveTemplate(template.id)}
-                              disabled={isDeletingTemplate === template.id}
-                            >
-                              {isDeletingTemplate === template.id ? (
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Archive className="h-4 w-4 mr-2" />
-                              )}
-                              Archivia
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="archived" className="mt-4">
-          <Card className="windtre-glass-panel border-white/20">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-200">
-                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Stato</TableHead>
-                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {templates.filter(t => !t.isActive).map((template) => (
-                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50 opacity-75" data-testid={`template-row-${template.id}`}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">{template.name}</div>
-                          {template.description && (
-                            <div className="text-sm text-gray-600">{template.description}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
-                          {template.defaultBreakMinutes && (
-                            <Badge variant="outline" className="text-xs ml-2">
-                              {template.defaultBreakMinutes}min pausa
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {template.rules?.daysOfWeek?.map(day => (
-                            <Badge key={day} variant="secondary" className="text-xs">
-                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
-                            </Badge>
-                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          Archiviato
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplica
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
       
       {/* Advanced Template Modal */}
       <ShiftTemplateModal

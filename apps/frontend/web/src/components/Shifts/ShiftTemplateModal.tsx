@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Icons
-import { Plus, Trash2, Clock, AlertTriangle, CheckCircle, Save } from 'lucide-react';
+import { Plus, Trash2, Clock, AlertTriangle, CheckCircle, Save, Store as StoreIcon } from 'lucide-react';
 
 // ==================== TYPES & SCHEMAS ====================
 
@@ -48,6 +50,8 @@ const shiftTemplateSchema = z.object({
     .min(3, 'Nome deve avere almeno 3 caratteri')
     .max(50, 'Nome troppo lungo (max 50 caratteri)'),
   description: z.string().max(200, 'Descrizione troppo lunga (max 200 caratteri)').optional(),
+  storeId: z.string().min(1, 'Seleziona un punto vendita'),
+  status: z.enum(['active', 'archived']).default('active'),
   timeSlots: z.array(timeSlotSchema)
     .min(1, 'Almeno una fascia oraria richiesta')
     .max(5, 'Massimo 5 fasce orarie per template'),
@@ -119,12 +123,24 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Fetch stores for dropdown
+  const { data: stores, isLoading: storesLoading } = useQuery({
+    queryKey: ['/api/stores'],
+    queryFn: async () => {
+      const response = await fetch('/api/stores');
+      if (!response.ok) return [];
+      return response.json();
+    }
+  });
+  
   // Initialize form with default values
   const form = useForm<ShiftTemplateFormData>({
     resolver: zodResolver(shiftTemplateSchema),
     defaultValues: {
       name: template?.name || '',
       description: template?.description || '',
+      storeId: template?.storeId || '',
+      status: template?.status || 'active',
       // Map legacy format to new format for editing
       timeSlots: template?.timeSlots || (template?.defaultStartTime ? [
         { 
@@ -162,6 +178,8 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       const enterpriseData = {
         name: data.name,
         description: data.description,
+        storeId: data.storeId,
+        status: data.status,
         pattern: 'weekly', // Default pattern
         defaultStartTime: data.timeSlots[0]?.startTime || '09:00',
         defaultEndTime: data.timeSlots[0]?.endTime || '17:00',
@@ -341,6 +359,67 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="storeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <StoreIcon className="w-4 h-4" />
+                          Punto Vendita *
+                        </FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={storesLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-template-store">
+                              <SelectValue placeholder="Seleziona punto vendita" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {stores?.map((store: any) => (
+                              <SelectItem key={store.id} value={store.id}>
+                                {store.nome || store.name} - {store.code}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stato Template</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex gap-4 pt-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="active" id="status-active" data-testid="radio-status-active" />
+                              <Label htmlFor="status-active" className="cursor-pointer">Attivo</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="archived" id="status-archived" data-testid="radio-status-archived" />
+                              <Label htmlFor="status-archived" className="cursor-pointer">Archiviato</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 

@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
+import { db } from '../db';
+import { users, userAssignments, shiftTemplates } from '../db/schema/w3suite';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -729,6 +732,66 @@ router.delete('/shift-templates/:id', requirePermission('hr.shifts.manage'), asy
   } catch (error) {
     console.error('Error archiving shift template:', error);
     res.status(500).json({ error: 'Failed to archive shift template' });
+  }
+});
+
+// GET /api/hr/shift-templates/:id/verify-coverage - Verify template coverage for store
+router.get('/shift-templates/:id/verify-coverage', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id: templateId } = req.params;
+    const { storeId } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    
+    if (!storeId) {
+      return res.status(400).json({ error: 'Store ID is required' });
+    }
+
+    // Get template to check defaultRequiredStaff
+    const template = await db.select()
+      .from(shiftTemplates)
+      .where(and(
+        eq(shiftTemplates.id, templateId),
+        eq(shiftTemplates.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!template || template.length === 0) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    const requiredStaff = template[0].defaultRequiredStaff || 1;
+
+    // Query available resources for store (users assigned to this store)
+    const availableResources = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      role: users.role
+    })
+      .from(users)
+      .where(and(
+        eq(users.tenantId, tenantId),
+        eq(users.status, 'attivo'),
+        eq(users.storeId, storeId as string)
+      ));
+
+    const availableCount = availableResources.length;
+    const sufficient = availableCount >= requiredStaff;
+
+    res.json({
+      available: availableCount,
+      required: requiredStaff,
+      sufficient,
+      resources: availableResources
+    });
+  } catch (error) {
+    console.error('Error verifying template coverage:', error);
+    res.status(500).json({ error: 'Failed to verify template coverage' });
   }
 });
 

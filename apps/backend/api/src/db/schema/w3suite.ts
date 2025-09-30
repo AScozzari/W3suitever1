@@ -1112,6 +1112,9 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   
+  // Store assignment (NEW: template belongs to specific store)
+  storeId: uuid("store_id").references(() => stores.id),
+  
   // Pattern configuration
   pattern: shiftPatternEnum("pattern").notNull(),
   rules: jsonb("rules").default({}), // Complex recurrence rules
@@ -1123,8 +1126,9 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   defaultSkills: jsonb("default_skills").default([]),
   defaultBreakMinutes: integer("default_break_minutes").default(30),
   
-  // Validity
+  // Validity and status
   isActive: boolean("is_active").default(true),
+  status: varchar("status", { length: 20 }).default("active"), // NEW: active | archived
   validFrom: date("valid_from"),
   validUntil: date("valid_until"),
   
@@ -1134,6 +1138,7 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
 }, (table) => [
   index("shift_templates_tenant_active_idx").on(table.tenantId, table.isActive),
   index("shift_templates_pattern_idx").on(table.pattern),
+  index("shift_templates_store_idx").on(table.storeId),
 ]);
 
 export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({ 
