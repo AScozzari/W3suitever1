@@ -2,8 +2,8 @@ import { Router, Request, Response } from 'express';
 import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
-import { db } from '../db';
-import { users, userAssignments, shiftTemplates } from '../db/schema/w3suite';
+import { db } from '../core/db';
+import { users, shiftTemplates } from '../db/schema/w3suite';
 import { eq, and } from 'drizzle-orm';
 
 const router = Router();

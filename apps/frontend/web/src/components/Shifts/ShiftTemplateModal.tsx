@@ -133,7 +133,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     }
   });
   
-  // Initialize form with default values
+  // Initialize form with default values (MUST be before form.watch!)
   const form = useForm<ShiftTemplateFormData>({
     resolver: zodResolver(shiftTemplateSchema),
     defaultValues: {
@@ -215,6 +215,21 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         variant: "destructive",
       });
     }
+  });
+
+  // Watch storeId for coverage verification (AFTER form initialization, ONLY in edit mode)
+  const selectedStoreId = template?.id ? form.watch('storeId') : null;
+  
+  // Fetch coverage verification when store is selected (ONLY for editing existing templates)
+  const { data: coverage, isLoading: coverageLoading } = useQuery({
+    queryKey: template?.id ? ['/api/hr/shift-templates', template.id, 'verify-coverage', selectedStoreId] : ['coverage-disabled'],
+    queryFn: async () => {
+      if (!template?.id || !selectedStoreId) return null;
+      const response = await fetch(`/api/hr/shift-templates/${template.id}/verify-coverage?storeId=${selectedStoreId}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!template?.id && !!selectedStoreId
   });
 
   // ==================== HANDLERS ====================
@@ -388,6 +403,32 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                             ))}
                           </SelectContent>
                         </Select>
+                        
+                        {/* Coverage Verification Badge */}
+                        {template?.id && selectedStoreId && coverage && !coverageLoading && (
+                          <div className="mt-2">
+                            {coverage.sufficient ? (
+                              <Badge 
+                                variant="outline" 
+                                className="bg-green-50 text-green-700 border-green-200"
+                                data-testid="badge-coverage-sufficient"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                {coverage.available} {coverage.available === 1 ? 'risorsa disponibile' : 'risorse disponibili'}
+                              </Badge>
+                            ) : (
+                              <Badge 
+                                variant="outline" 
+                                className="bg-amber-50 text-amber-700 border-amber-200"
+                                data-testid="badge-coverage-insufficient"
+                              >
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Solo {coverage.available} {coverage.available === 1 ? 'risorsa' : 'risorse'}, ne {coverage.required === 1 ? 'serve' : 'servono'} {coverage.required}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        
                         <FormMessage />
                       </FormItem>
                     )}
@@ -610,6 +651,17 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
               </CardContent>
             </Card>
 
+            {/* Coverage Warning */}
+            {template?.id && coverage && !coverage.sufficient && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Copertura risorse insufficiente:</strong> Il punto vendita selezionato ha solo {coverage.available} {coverage.available === 1 ? 'risorsa disponibile' : 'risorse disponibili'}, ma il template richiede {coverage.required} {coverage.required === 1 ? 'risorsa' : 'risorse'}. 
+                  Non è possibile salvare il template finché non vengono assegnate più risorse al punto vendita.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Form Errors Display */}
             {Object.keys(form.formState.errors).length > 0 && (
               <Alert variant="destructive">
@@ -639,7 +691,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
           </Button>
           <Button
             onClick={form.handleSubmit(handleSubmit)}
-            disabled={saveTemplateMutation.isPending}
+            disabled={saveTemplateMutation.isPending || (template?.id && coverage && !coverage.sufficient)}
             className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
             data-testid="button-save-template"
           >
