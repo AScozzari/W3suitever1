@@ -7,6 +7,7 @@ import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
+import ShiftFilters, { ShiftFiltersState } from '@/components/Shifts/ShiftFilters';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -124,6 +125,13 @@ const HRManagementPage: React.FC = () => {
     userIds: string[];
     message?: string;
   }>({ documentId: '', userIds: [] });
+
+  // Shift Filters Global State
+  const [shiftFilters, setShiftFilters] = useState<ShiftFiltersState>({
+    storeId: null,
+    startDate: null,
+    endDate: null
+  });
 
   // ==================== DATA QUERIES ====================
   
@@ -1298,7 +1306,13 @@ const HRManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Shift Template Manager */}
+      {/* 1. Shift Filters - Global filters sticky top */}
+      <ShiftFilters onChange={setShiftFilters} />
+
+      {/* 2. Professional HR Calendar - Priority: Calendar FIRST! */}
+      <HRCalendar />
+
+      {/* 3. Shift Template Manager */}
       <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
         <CardContent className="pt-6 w-full max-w-full overflow-x-auto">
           <ShiftTemplateManager 
@@ -1323,10 +1337,7 @@ const HRManagementPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Professional HR Calendar */}
-      <HRCalendar />
-
-      {/* Assignment Section */}
+      {/* 4. Assignment Section */}
       <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
         <CardHeader className="w-full max-w-full">
           <div className="flex items-center justify-between flex-wrap gap-2">
