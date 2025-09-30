@@ -141,7 +141,6 @@ export default function ShiftAssignmentDashboard({
   const [timelineZoom, setTimelineZoom] = useState<'hours' | 'quarter' | 'half'>('hours');
   const [timelineStartHour, setTimelineStartHour] = useState(6); // Start from 6 AM
   const [timelineEndHour, setTimelineEndHour] = useState(22); // End at 10 PM
-  const [showHelperPanel, setShowHelperPanel] = useState(true);
   
   // ✅ Task 14: Filtri PdV + Date
   const [storeFilter, setStoreFilter] = useState<string>(storeId || 'all');
@@ -1778,67 +1777,6 @@ export default function ShiftAssignmentDashboard({
         {renderFiltersCard()}
         
         {renderControlPanel()}
-        
-        {/* 📚 GUIDA RAPIDA - Helper Panel */}
-        {showHelperPanel && (
-          <Alert className="bg-blue-50 border-blue-200 relative">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-blue-100"
-              onClick={() => setShowHelperPanel(false)}
-              data-testid="button-close-helper"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <AlertTriangle className="h-5 w-5 text-blue-600" />
-            <AlertDescription>
-              <div className="font-semibold text-blue-900 mb-2">🎯 Come Assegnare i Turni - Guida Rapida</div>
-              <div className="space-y-2 text-sm text-blue-800">
-                <div className="flex items-start space-x-2">
-                  <span className="font-bold bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">1</span>
-                  <div>
-                    <strong>Seleziona Store e Settimana</strong>: Usa i filtri sopra per scegliere il negozio e la settimana da pianificare
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="font-bold bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">2</span>
-                  <div>
-                    <strong>Assegna Dipendenti ai Turni</strong>:
-                    <ul className="ml-4 mt-1 list-disc">
-                      <li><strong>Vista Gantt</strong>: Trascina le barre dei turni sulla timeline dei dipendenti</li>
-                      <li><strong>Vista Grid</strong>: Seleziona dipendenti e turni con le checkbox, poi clicca "Assegna Selezionati" nel menu azioni</li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span className="font-bold bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">3</span>
-                  <div>
-                    <strong>Controlla Conflitti</strong>: I turni con bordo rosso hanno conflitti (es. sovrapposizioni, straordinari). Passa il mouse per i dettagli
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-blue-300 flex items-center space-x-2 text-sm text-blue-700">
-                <CheckCircle className="w-4 h-4" />
-                <span><strong>Tip:</strong> I turni non ancora completamente assegnati sono mostrati sotto con un badge arancione</span>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-        {!showHelperPanel && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowHelperPanel(true)}
-            className="w-full"
-            data-testid="button-show-helper"
-          >
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Mostra Guida Rapida
-          </Button>
-        )}
         
         {/* Tabs for View Mode Switch */}
         <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'gantt' | 'grid' | 'board')}>
