@@ -3,8 +3,8 @@ import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
-import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts } from '../db/schema/w3suite';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability } from '../db/schema/w3suite';
+import { eq, and, gte, lte, inArray } from 'drizzle-orm';
 
 const router = Router();
 
@@ -94,6 +94,43 @@ router.post('/shifts/:id/assign', requirePermission('hr.shifts.manage'), async (
     
     if (!shiftId || !userIds.length) {
       return res.status(400).json({ error: 'Shift ID and User ID(s) are required' });
+    }
+
+    // Fetch shift details to get date
+    const [shift] = await db.select().from(shifts).where(eq(shifts.id, shiftId)).limit(1);
+    if (!shift) {
+      return res.status(404).json({ error: 'Shift not found' });
+    }
+
+    // ✅ TASK 12: Check resource_availability conflicts for each user
+    const conflicts = [];
+    for (const uid of userIds) {
+      const availabilityConflicts = await db.select()
+        .from(resourceAvailability)
+        .where(and(
+          eq(resourceAvailability.tenantId, tenantId),
+          eq(resourceAvailability.userId, uid),
+          eq(resourceAvailability.blocksShiftAssignment, true),
+          lte(resourceAvailability.startDate, shift.date),
+          gte(resourceAvailability.endDate, shift.date)
+        ));
+      
+      if (availabilityConflicts.length > 0) {
+        conflicts.push({
+          userId: uid,
+          reason: availabilityConflicts[0].reasonType || 'unavailable',
+          description: availabilityConflicts[0].reasonDescription || 'User unavailable',
+          startDate: availabilityConflicts[0].startDate,
+          endDate: availabilityConflicts[0].endDate
+        });
+      }
+    }
+
+    if (conflicts.length > 0) {
+      return res.status(400).json({
+        error: 'Cannot assign shifts due to resource availability conflicts',
+        conflicts
+      });
     }
 
     // Handle multiple assignments
@@ -205,6 +242,58 @@ router.post('/shifts/bulk-assign', requirePermission('hr.shifts.manage'), async 
           error: 'Each assignment must have shiftId and employeeIds array' 
         });
       }
+    }
+
+    // ✅ TASK 12: Check resource_availability conflicts for all assignments
+    const shiftIds = assignments.map(a => a.shiftId);
+    const shiftsData = await db.select().from(shifts).where(and(
+      eq(shifts.tenantId, tenantId),
+      // Use inArray for multiple shiftIds, otherwise use eq
+      shiftIds.length > 1 ? inArray(shifts.id, shiftIds) : eq(shifts.id, shiftIds[0])
+    ));
+
+    const shiftsMap = new Map(shiftsData.map(s => [s.id, s]));
+    const conflicts = [];
+
+    for (const assignment of assignments) {
+      const shift = shiftsMap.get(assignment.shiftId);
+      if (!shift) {
+        conflicts.push({
+          shiftId: assignment.shiftId,
+          error: 'Shift not found'
+        });
+        continue;
+      }
+
+      for (const uid of assignment.employeeIds) {
+        const availabilityConflicts = await db.select()
+          .from(resourceAvailability)
+          .where(and(
+            eq(resourceAvailability.tenantId, tenantId),
+            eq(resourceAvailability.userId, uid),
+            eq(resourceAvailability.blocksShiftAssignment, true),
+            lte(resourceAvailability.startDate, shift.date),
+            gte(resourceAvailability.endDate, shift.date)
+          ));
+
+        if (availabilityConflicts.length > 0) {
+          conflicts.push({
+            shiftId: assignment.shiftId,
+            userId: uid,
+            reason: availabilityConflicts[0].reasonType || 'unavailable',
+            description: availabilityConflicts[0].reasonDescription || 'User unavailable',
+            startDate: availabilityConflicts[0].startDate,
+            endDate: availabilityConflicts[0].endDate
+          });
+        }
+      }
+    }
+
+    if (conflicts.length > 0) {
+      return res.status(400).json({
+        error: 'Cannot assign shifts due to resource availability conflicts',
+        conflicts
+      });
     }
 
     // Process bulk assignments using new storage function
@@ -1190,6 +1279,94 @@ router.get('/attendance/logs', requirePermission('hr.shifts.read'), async (req: 
   } catch (error) {
     console.error('Error fetching attendance logs:', error);
     res.status(500).json({ error: 'Failed to fetch attendance logs' });
+  }
+});
+
+// ==================== HR REQUEST APPROVAL INTEGRATION ====================
+
+// POST /api/hr/requests/:id/approve - Approve HR request and create resource availability block
+router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.headers['x-user-id'] as string;
+    const { id } = req.params;
+    const { comments } = req.body;
+    
+    if (!tenantId || !userId) {
+      return res.status(400).json({ error: 'Tenant ID and User ID are required' });
+    }
+    
+    // Fetch the universal request
+    const [request] = await db.select()
+      .from(universalRequests)
+      .where(and(
+        eq(universalRequests.id, id),
+        eq(universalRequests.tenantId, tenantId)
+      ))
+      .limit(1);
+    
+    if (!request) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    
+    if (request.status === 'approved') {
+      return res.status(400).json({ error: 'Request already approved' });
+    }
+    
+    // Update approval chain
+    const approvalChain = (request.approvalChain as any[]) || [];
+    approvalChain.push({
+      approverId: userId,
+      status: 'approved',
+      timestamp: new Date(),
+      comments
+    });
+    
+    // Update universal request to approved
+    await db.update(universalRequests)
+      .set({
+        status: 'approved',
+        approvalChain,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+        updatedBy: userId
+      })
+      .where(eq(universalRequests.id, id));
+    
+    // If HR leave request with dates, create resource_availability block
+    if (request.department === 'hr' && request.category === 'leave' && request.startDate && request.endDate) {
+      const requestData = request.requestData as any || {};
+      
+      await db.insert(resourceAvailability).values({
+        tenantId,
+        userId: request.requesterId,
+        startDate: new Date(request.startDate).toISOString().split('T')[0],
+        endDate: new Date(request.endDate).toISOString().split('T')[0],
+        availabilityStatus: requestData.leaveType || 'vacation',
+        reasonType: 'approved_leave',
+        reasonDescription: request.description || '',
+        leaveRequestId: request.id,
+        isFullDay: requestData.isFullDay ?? true,
+        startTime: requestData.startTime ? new Date(requestData.startTime) : null,
+        endTime: requestData.endTime ? new Date(requestData.endTime) : null,
+        approvalStatus: 'approved',
+        approvedBy: userId,
+        approvedAt: new Date(),
+        blocksShiftAssignment: true, // ✅ Task 12: Block shift assignments
+        showInSchedule: true,
+        notes: comments || request.notes || '',
+        createdBy: userId
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Request approved successfully',
+      requestId: id
+    });
+  } catch (error) {
+    console.error('Error approving HR request:', error);
+    res.status(500).json({ error: 'Failed to approve HR request' });
   }
 });
 
