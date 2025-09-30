@@ -6,7 +6,7 @@ import {
   universalRequests,
   shifts,
   shiftTemplates,
-  shiftTimeSlots,
+  shiftTimeSlots as shiftTimeSlotsTable,
   timeTracking,
   hrDocuments,
   expenseReports,
@@ -23,7 +23,10 @@ import {
   InsertShiftTemplate,
   InsertShiftTimeSlot,
   InsertTimeTracking,
-} from "../db/schema";
+} from "../db/schema/w3suite";
+
+// Use alias for shift time slots to avoid any conflicts
+const shiftTimeSlots = shiftTimeSlotsTable;
 
 // Permission scopes for calendar events
 export enum CalendarScope {
