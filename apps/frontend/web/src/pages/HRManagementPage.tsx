@@ -1310,7 +1310,11 @@ const HRManagementPage: React.FC = () => {
       <ShiftFilters onChange={setShiftFilters} />
 
       {/* 2. Professional HR Calendar - Priority: Calendar FIRST! */}
-      <HRCalendar />
+      <HRCalendar 
+        storeId={shiftFilters.storeId}
+        startDate={shiftFilters.startDate}
+        endDate={shiftFilters.endDate}
+      />
 
       {/* 3. Shift Template Manager */}
       <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">

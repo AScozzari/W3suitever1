@@ -35,9 +35,12 @@ type ShiftEventForm = z.infer<typeof shiftEventSchema>;
 
 interface HRCalendarProps {
   className?: string;
+  storeId?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
-export default function HRCalendar({ className }: HRCalendarProps) {
+export default function HRCalendar({ className, storeId, startDate, endDate }: HRCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
   const [currentView, setCurrentView] = useState('dayGridMonth');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -72,6 +75,22 @@ export default function HRCalendar({ className }: HRCalendarProps) {
   const { data: backendEvents = [], isLoading: calendarLoading, error: calendarError } = useQuery({
     queryKey: ['/api/hr/calendar/events'],
     enabled: hrQueryReadiness.enabled,
+  });
+
+  // ✅ Task 8: Query shift assignments con filtri globali
+  const { data: shiftAssignments = [], isLoading: assignmentsLoading } = useQuery({
+    queryKey: ['/api/hr/shift-assignments', { storeId, startDate, endDate }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (storeId) params.append('storeId', storeId);
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      
+      const url = `/api/hr/shift-assignments${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await apiRequest(url);
+      return response;
+    },
+    enabled: hrQueryReadiness.enabled && Boolean(storeId),
   });
 
   // ✅ FASE 1.2: Mutation per creare eventi usando l'API unificata
@@ -140,7 +159,7 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     // ✅ FIX: Assicurati che backendEvents sia sempre un array
     const eventsArray = Array.isArray(backendEvents) ? backendEvents : [];
     
-    const mapped = eventsArray.map((event: any) => ({
+    const calendarEventsFromBackend = eventsArray.map((event: any) => ({
       id: event.id,
       title: event.title,
       start: event.startDate,
@@ -156,9 +175,33 @@ export default function HRCalendar({ className }: HRCalendarProps) {
         metadata: event.metadata,
       },
     }));
+
+    // ✅ Task 8: Trasforma shift assignments in eventi calendario
+    const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
+    const shiftAssignmentEvents = assignmentsArray.map((assignment: any) => ({
+      id: `assignment-${assignment.id}`,
+      title: assignment.template?.name || `Turno ${assignment.employee?.firstName || 'Risorsa'}`,
+      start: assignment.shiftDate,
+      end: assignment.shiftDate, // TODO: calcolare end da template startTime/endTime
+      resourceId: assignment.employeeId,
+      backgroundColor: assignment.hasConflict ? 'hsl(0, 84%, 60%)' : 'hsl(142, 76%, 36%)',
+      borderColor: assignment.hasConflict ? 'hsl(0, 84%, 60%)' : 'hsl(142, 76%, 36%)',
+      extendedProps: {
+        type: 'shift_assignment',
+        assignmentId: assignment.id,
+        template: assignment.template,
+        employee: assignment.employee,
+        store: assignment.store,
+        hasConflict: assignment.hasConflict,
+        metadata: {
+          templateId: assignment.templateId,
+          storeId: assignment.storeId,
+        },
+      },
+    }));
     
-    return mapped;
-  }, [backendEvents]);
+    return [...calendarEventsFromBackend, ...shiftAssignmentEvents];
+  }, [backendEvents, shiftAssignments]);
 
 
   // ✅ FASE 1.2: Colori per tutti i tipi di evento del calendario unificato
@@ -166,6 +209,7 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     switch (eventType) {
       case 'meeting': return 'hsl(var(--primary))'; // Brand primary
       case 'shift': return 'hsl(var(--success))'; // Verde per turni  
+      case 'shift_assignment': return 'hsl(142, 76%, 36%)'; // Verde per turni assegnati (Task 8)
       case 'time_off': return 'hsl(var(--warning))'; // Arancione per ferie
       case 'overtime': return 'hsl(var(--destructive))'; // Rosso per straordinari
       case 'training': return 'hsl(212, 100%, 50%)'; // Blu per formazione
@@ -374,11 +418,13 @@ export default function HRCalendar({ className }: HRCalendarProps) {
 
           {/* Calendario FullCalendar */}
           <div className="calendar-container bg-white dark:bg-slate-900 rounded-lg p-4 shadow-sm">
-            {calendarLoading ? (
+            {(calendarLoading || assignmentsLoading) ? (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                   <Clock className="w-12 h-12 mx-auto mb-4 text-slate-400 animate-spin" />
-                  <p className="text-slate-600 dark:text-slate-400">Caricamento calendario...</p>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Caricamento {assignmentsLoading ? 'turni assegnati' : 'calendario'}...
+                  </p>
                 </div>
               </div>
             ) : (
