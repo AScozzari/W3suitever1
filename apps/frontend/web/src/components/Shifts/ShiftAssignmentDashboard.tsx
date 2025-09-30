@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { 
   Calendar, Clock, Users, AlertTriangle, CheckCircle, X, Search, 
   Filter, Download, Settings, Eye, EyeOff, MoreHorizontal,
-  DragHandleDots2, UserCheck, UserX, Zap, ZoomIn, ZoomOut
+  GripVertical, UserCheck, UserX, Zap, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -65,7 +65,7 @@ interface Shift {
 }
 
 interface ConflictDetection {
-  type: 'overlap' | 'overtime' | 'skill_mismatch' | 'availability';
+  type: 'overlap' | 'overtime' | 'skill_mismatch' | 'availability' | 'rest_period' | 'double_shift' | 'overstaffing' | 'understaffing';
   severity: 'low' | 'medium' | 'high';
   message: string;
   affectedShifts: string[];
@@ -73,7 +73,7 @@ interface ConflictDetection {
 }
 
 interface Props {
-  storeId: string;
+  storeId?: string;
   selectedWeek: Date;
   onAssignShift: (shiftId: string, employeeIds: string[]) => Promise<void>;
   onUnassignShift: (shiftId: string, employeeIds: string[]) => Promise<void>;
@@ -142,7 +142,7 @@ export default function ShiftAssignmentDashboard({
   const [timelineStartHour, setTimelineStartHour] = useState(6); // Start from 6 AM
   const [timelineEndHour, setTimelineEndHour] = useState(22); // End at 10 PM
   
-  // ✅ Task 14: Filtri PdV + Date
+  // ✅ Task 14: Filtri PdV + Date (storeFilter now drives all queries)
   const [storeFilter, setStoreFilter] = useState<string>(storeId || 'all');
   const [startDateFilter, setStartDateFilter] = useState<string>(format(selectedWeek, 'yyyy-MM-dd'));
   const [endDateFilter, setEndDateFilter] = useState<string>(format(addDays(selectedWeek, 6), 'yyyy-MM-dd'));
@@ -209,9 +209,9 @@ export default function ShiftAssignmentDashboard({
   // Subscribe to HR shifts on component mount
   React.useEffect(() => {
     if (isConnected) {
-      subscribeToHRShifts([storeId]); // Subscribe to this store's updates
+      subscribeToHRShifts(storeFilter !== 'all' ? [storeFilter] : []); // Subscribe to filtered store's updates
     }
-  }, [isConnected, subscribeToHRShifts, storeId]);
+  }, [isConnected, subscribeToHRShifts, storeFilter]);
 
   // ==================== DATA FETCHING ====================
 
@@ -243,14 +243,13 @@ export default function ShiftAssignmentDashboard({
 
   // Get staff members - using users endpoint with tenant shell context
   const { data: staffMembers = [], isLoading: staffLoading } = useQuery({
-    queryKey: ['/api/users', { storeId: storeFilter !== 'all' ? storeFilter : storeId }],
-    enabled: !!storeId || storeFilter !== 'all', // Only fetch if storeId is provided
+    queryKey: ['/api/users', { storeId: storeFilter }],
+    enabled: storeFilter !== 'all', // Only fetch if specific store selected
     staleTime: 30000,
     select: (users: any[]) => {
       // Transform and filter users to match StaffMember interface
-      const activeStoreId = storeFilter !== 'all' ? storeFilter : storeId;
       return users
-        .filter((user: any) => !activeStoreId || user.storeId === activeStoreId)
+        .filter((user: any) => storeFilter === 'all' || !storeFilter || user.storeId === storeFilter)
         .map((user: any) => ({
           id: user.id,
           firstName: user.firstName || 'Nome',
@@ -280,7 +279,7 @@ export default function ShiftAssignmentDashboard({
       endDate: format(weekEnd, 'yyyy-MM-dd'),
       templateId: selectedTemplateId || undefined
     }],
-    enabled: !!storeId // Only fetch if component has valid storeId prop
+    enabled: storeFilter !== 'all' // Only fetch if specific store selected
   });
 
   // Get existing assignments
@@ -291,7 +290,7 @@ export default function ShiftAssignmentDashboard({
       endDate: format(weekEnd, 'yyyy-MM-dd'),
       templateId: selectedTemplateId || undefined
     }],
-    enabled: !!storeId // Only fetch if component has valid storeId prop
+    enabled: storeFilter !== 'all' // Only fetch if specific store selected
   });
 
   // ==================== UTILITY FUNCTIONS ====================

@@ -151,8 +151,8 @@ export interface IHRStorage {
   
   // Shift Templates
   getShiftTemplates(tenantId: string, isActive?: boolean): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]>;
-  createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
-  updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
+  createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
+  updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
   deleteShiftTemplate(id: string, tenantId: string): Promise<void>;
   applyShiftTemplate(templateId: string, storeId: string, startDate: Date, endDate: Date, tenantId: string): Promise<Shift[]>;
   
@@ -853,7 +853,7 @@ export class HRStorage implements IHRStorage {
     return templatesWithSlots;
   }
   
-  async createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
+  async createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
     return await db.transaction(async (tx) => {
       // Create the template
       const { timeSlots, ...templateData } = data;
@@ -868,9 +868,23 @@ export class HRStorage implements IHRStorage {
         const timeSlotData = timeSlots.map((slot, index) => ({
           templateId: template.id,
           tenantId: template.tenantId,
+          name: slot.name || `Fascia ${index + 1}`,
           startTime: slot.startTime,
           endTime: slot.endTime,
-          breakMinutes: slot.breakMinutes || 30,
+          segmentType: slot.segmentType || 'continuous',
+          block2StartTime: slot.block2StartTime || slot.block2Start || null,
+          block2EndTime: slot.block2EndTime || slot.block2End || null,
+          breakMinutes: slot.breakMinutes || 0,
+          clockInTolerance: slot.clockInTolerance || 15,
+          clockOutTolerance: slot.clockOutTolerance || 15,
+          requiredStaff: slot.requiredStaff || 1,
+          skills: slot.skills || [],
+          isBreak: slot.isBreak || false,
+          minStaff: slot.minStaff || null,
+          maxStaff: slot.maxStaff || null,
+          priority: slot.priority || 1,
+          color: slot.color || null,
+          notes: slot.notes || null,
           slotOrder: index + 1
         }));
         
@@ -887,7 +901,7 @@ export class HRStorage implements IHRStorage {
     });
   }
   
-  async updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
+  async updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
     return await db.transaction(async (tx) => {
       // Update the template
       const { timeSlots, ...templateData } = data;
@@ -913,9 +927,23 @@ export class HRStorage implements IHRStorage {
           const timeSlotData = timeSlots.map((slot, index) => ({
             templateId: id,
             tenantId: updated.tenantId,
+            name: slot.name || `Fascia ${index + 1}`,
             startTime: slot.startTime,
             endTime: slot.endTime,
-            breakMinutes: slot.breakMinutes || 30,
+            segmentType: slot.segmentType || 'continuous',
+            block2StartTime: slot.block2StartTime || slot.block2Start || null,
+            block2EndTime: slot.block2EndTime || slot.block2End || null,
+            breakMinutes: slot.breakMinutes || 0,
+            clockInTolerance: slot.clockInTolerance || 15,
+            clockOutTolerance: slot.clockOutTolerance || 15,
+            requiredStaff: slot.requiredStaff || 1,
+            skills: slot.skills || [],
+            isBreak: slot.isBreak || false,
+            minStaff: slot.minStaff || null,
+            maxStaff: slot.maxStaff || null,
+            priority: slot.priority || 1,
+            color: slot.color || null,
+            notes: slot.notes || null,
             slotOrder: index + 1
           }));
           
