@@ -191,7 +191,7 @@ export default function ShiftEditorModal({
       
       onClose();
     } catch (error) {
-      console.error('Error saving shift:', error);
+      // Error is already shown via toast from parent component
     } finally {
       setLoading(false);
     }
