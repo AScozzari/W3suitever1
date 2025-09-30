@@ -1298,7 +1298,7 @@ const HRManagementPage: React.FC = () => {
   // ==================== SHIFTS SECTION ====================
 
   const ShiftsSection = () => (
-    <div className="space-y-6 w-full max-w-full">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestione Turni</h2>
@@ -1317,8 +1317,8 @@ const HRManagementPage: React.FC = () => {
       />
 
       {/* 3. Shift Template Manager */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
-        <CardContent className="pt-6 w-full max-w-full overflow-x-auto">
+      <Card className="backdrop-blur-md bg-white/10 border-white/20">
+        <CardContent className="pt-6">
           <ShiftTemplateManager 
             templates={shiftTemplates} 
             storeId="" 
@@ -1341,12 +1341,12 @@ const HRManagementPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* 4. Assignment Section */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
-        <CardHeader className="w-full max-w-full">
+      {/* 4. Assignment Section - Gantt & Grid Views */}
+      <Card className="backdrop-blur-md bg-white/10 border-white/20">
+        <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <CardTitle>Assegnazione Turni</CardTitle>
+              <CardTitle>Assegnazione Turni - Vista Gantt & Grid</CardTitle>
               <CardDescription>Assegna turni alle risorse con controllo conflitti</CardDescription>
             </div>
             <Badge variant="secondary" className="bg-green-100 text-green-800 flex-shrink-0">
@@ -1355,9 +1355,9 @@ const HRManagementPage: React.FC = () => {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="w-full max-w-full overflow-x-auto p-0">
+        <CardContent className="p-0">
           <ShiftAssignmentDashboard
-            storeId={selectedStore?.id || undefined}
+            storeId={shiftFilters.storeId || undefined}
             selectedWeek={selectedDate}
             onAssignShift={async (shiftId: string, employeeIds: string[]) => {
               try {
