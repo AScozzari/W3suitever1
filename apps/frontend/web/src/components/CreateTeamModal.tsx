@@ -49,19 +49,19 @@ const DEPARTMENTS = {
 
 // 🎯 Team types mapping
 const TEAM_TYPES = {
-  'functional': { label: 'Functional', description: 'Department-specific teams' },
-  'cross_functional': { label: 'Cross-Functional', description: 'Multi-department teams' },
-  'project': { label: 'Project', description: 'Temporary project teams' },
-  'temporary': { label: 'Temporary', description: 'Short-term teams' },
-  'specialized': { label: 'Specialized', description: 'Expert/specialist teams' }
+  'functional': { label: 'Funzionale', description: 'Team specifici per dipartimento' },
+  'cross_functional': { label: 'Cross-Funzionale', description: 'Team multi-dipartimento' },
+  'project': { label: 'Progetto', description: 'Team temporanei per progetto' },
+  'temporary': { label: 'Temporaneo', description: 'Team a breve termine' },
+  'specialized': { label: 'Specializzato', description: 'Team di esperti/specialisti' }
 };
 
 // 🎯 Form validation schema
 const createTeamSchema = z.object({
-  name: z.string().min(1, 'Team name is required').max(200, 'Name too long'),
+  name: z.string().min(1, 'Il nome del team è obbligatorio').max(200, 'Nome troppo lungo'),
   description: z.string().optional(),
   teamType: z.enum(['functional', 'cross_functional', 'project', 'temporary', 'specialized']),
-  assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'At least one department is required'),
+  assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'È richiesto almeno un dipartimento'),
   userMembers: z.array(z.string()).default([]),
   roleMembers: z.array(z.string()).default([]),
   primarySupervisor: z.string().nullable().optional(),
@@ -161,8 +161,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
       toast({
-        title: 'Team Created',
-        description: 'New team created successfully',
+        title: 'Team Creato',
+        description: 'Nuovo team creato con successo',
       });
       onOpenChange(false);
       form.reset();
@@ -170,8 +170,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to create team',
+        title: 'Errore',
+        description: 'Creazione del team fallita',
         variant: 'destructive'
       });
     }
@@ -188,8 +188,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
       toast({
-        title: 'Team Updated',
-        description: 'Team updated successfully',
+        title: 'Team Aggiornato',
+        description: 'Team aggiornato con successo',
       });
       onOpenChange(false);
       form.reset();
@@ -197,8 +197,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to update team',
+        title: 'Errore',
+        description: 'Aggiornamento del team fallito',
         variant: 'destructive'
       });
     }
@@ -222,8 +222,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   // 🎯 Handle form errors
   const onFormError = (errors: any) => {
     toast({
-      title: 'Validation Error',
-      description: 'Please check all required fields',
+      title: 'Errore di Validazione',
+      description: 'Controlla tutti i campi obbligatori',
       variant: 'destructive'
     });
   };
@@ -261,7 +261,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   // 🎯 Workflow assignment helpers
   const selectedAssignments = form.watch('workflowAssignments');
   
-  const addWorkflowAssignment = (department: string, templateId: string) => {
+  const addWorkflowAssignment = (department: 'hr' | 'finance' | 'sales' | 'operations' | 'support' | 'crm', templateId: string) => {
     const current = selectedAssignments;
     const exists = current.find(a => a.department === department && a.templateId === templateId);
     if (!exists) {
@@ -270,13 +270,13 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     }
   };
 
-  const removeWorkflowAssignment = (department: string, templateId: string) => {
+  const removeWorkflowAssignment = (department: 'hr' | 'finance' | 'sales' | 'operations' | 'support' | 'crm', templateId: string) => {
     const current = selectedAssignments;
     const updated = current.filter(a => !(a.department === department && a.templateId === templateId));
     form.setValue('workflowAssignments', updated);
   };
 
-  const toggleAutoAssign = (department: string, templateId: string) => {
+  const toggleAutoAssign = (department: 'hr' | 'finance' | 'sales' | 'operations' | 'support' | 'crm', templateId: string) => {
     const current = selectedAssignments;
     const updated = current.map(a => 
       a.department === department && a.templateId === templateId
@@ -319,10 +319,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-windtre-orange" />
-            {editTeam ? 'Edit Team' : 'Create New Team'}
+            {editTeam ? 'Modifica Team' : 'Crea Nuovo Team'}
           </DialogTitle>
           <DialogDescription>
-            {editTeam ? 'Edit team details and update assignments' : 'Create a new team and assign it to departments for workflow management'}
+            {editTeam ? 'Modifica i dettagli del team e aggiorna le assegnazioni' : 'Crea un nuovo team e assegnalo ai dipartimenti per la gestione dei workflow'}
           </DialogDescription>
         </DialogHeader>
 
@@ -359,7 +359,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Info className="w-5 h-5 text-windtre-purple" />
-                    <h3 className="text-lg font-semibold">Basic Information</h3>
+                    <h3 className="text-lg font-semibold">Informazioni di Base</h3>
                   </div>
 
                   <FormField
@@ -367,10 +367,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Team Name *</FormLabel>
+                        <FormLabel>Nome Team *</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Enter team name" 
+                            placeholder="Inserisci nome team" 
                             {...field} 
                             data-testid="input-team-name"
                           />
@@ -385,16 +385,16 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Descrizione</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Describe the team's purpose and responsibilities" 
+                            placeholder="Descrivi lo scopo e le responsabilità del team" 
                             {...field} 
                             data-testid="textarea-team-description"
                           />
                         </FormControl>
                         <FormDescription>
-                          Optional description of team's purpose and goals
+                          Descrizione opzionale dello scopo e degli obiettivi del team
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -406,11 +406,11 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     name="teamType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Team Type *</FormLabel>
+                        <FormLabel>Tipo Team *</FormLabel>
                         <FormControl>
                           <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger data-testid="select-team-type">
-                              <SelectValue placeholder="Select team type" />
+                              <SelectValue placeholder="Seleziona tipo team" />
                             </SelectTrigger>
                             <SelectContent>
                               {Object.entries(TEAM_TYPES).map(([key, type]) => (
@@ -436,7 +436,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Building2 className="w-5 h-5 text-windtre-orange" />
-                    <h3 className="text-lg font-semibold">Department Assignment</h3>
+                    <h3 className="text-lg font-semibold">Assegnazione Dipartimento</h3>
                   </div>
 
                   <FormField
@@ -444,9 +444,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     name="assignedDepartments"
                     render={() => (
                       <FormItem>
-                        <FormLabel>Assigned Departments *</FormLabel>
+                        <FormLabel>Dipartimenti Assegnati *</FormLabel>
                         <FormDescription>
-                          Select which departments this team will handle workflows for
+                          Seleziona i dipartimenti per cui questo team gestirà i workflow
                         </FormDescription>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                           {Object.entries(DEPARTMENTS).map(([key, dept]) => {
@@ -471,7 +471,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                       {dept.label}
                                     </div>
                                     {isSelected && (
-                                      <div className="text-sm text-green-600">✓ Selected</div>
+                                      <div className="text-sm text-green-600">✓ Selezionato</div>
                                     )}
                                   </div>
                                 </div>
@@ -482,7 +482,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         
                         {selectedDepartments.length > 0 && (
                           <div className="mt-4">
-                            <div className="text-sm font-medium text-gray-700 mb-2">Selected Departments:</div>
+                            <div className="text-sm font-medium text-gray-700 mb-2">Dipartimenti Selezionati:</div>
                             <div className="flex flex-wrap gap-2">
                               {selectedDepartments.map((dept) => (
                                 <Badge 
@@ -516,7 +516,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="w-5 h-5 text-windtre-purple" />
-                    <h3 className="text-lg font-semibold">Team Members</h3>
+                    <h3 className="text-lg font-semibold">Membri del Team</h3>
                   </div>
 
                   {/* 🎯 Effective Members Preview */}
@@ -631,7 +631,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Shield className="w-5 h-5 text-windtre-orange" />
-                    <h3 className="text-lg font-semibold">Supervisors</h3>
+                    <h3 className="text-lg font-semibold">Supervisori</h3>
                   </div>
 
                   <FormField
@@ -724,7 +724,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Settings className="w-5 h-5 text-windtre-orange" />
-                    <h3 className="text-lg font-semibold">Workflow Template Assignment</h3>
+                    <h3 className="text-lg font-semibold">Assegnazione Template Workflow</h3>
                   </div>
 
                   <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
@@ -867,7 +867,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 disabled={currentStep === 1}
                 data-testid="button-previous-step"
               >
-                Previous
+                Indietro
               </Button>
 
               <div className="flex items-center gap-2">
@@ -879,7 +879,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     className="bg-windtre-orange hover:bg-windtre-orange/90"
                     data-testid="button-next-step"
                   >
-                    Next
+                    Avanti
                   </Button>
                 ) : (
                   <Button
@@ -891,12 +891,12 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     {(createTeamMutation.isPending || updateTeamMutation.isPending) ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {editTeam ? 'Updating...' : 'Creating...'}
+                        {editTeam ? 'Aggiornamento...' : 'Creazione...'}
                       </>
                     ) : (
                       <>
                         <Save className="w-4 h-4 mr-2" />
-                        {editTeam ? 'Update Team' : 'Create Team'}
+                        {editTeam ? 'Aggiorna Team' : 'Crea Team'}
                       </>
                     )}
                   </Button>
