@@ -2347,9 +2347,11 @@ export const teams = w3suiteSchema.table("teams", {
   userMembers: text("user_members").array().default([]), // Array of user IDs
   roleMembers: text("role_members").array().default([]), // Array of role IDs (tutti gli utenti con questi ruoli)
   
-  // Supervisor configuration (RBAC validated)
-  primarySupervisor: varchar("primary_supervisor").references(() => users.id), // Supervisor principale
-  secondarySupervisors: text("secondary_supervisors").array().default([]), // Co-supervisors
+  // Supervisor configuration (RBAC validated) - Hybrid User/Role support
+  primarySupervisorUser: varchar("primary_supervisor_user").references(() => users.id), // Primary supervisor (user-based)
+  primarySupervisorRole: uuid("primary_supervisor_role").references(() => roles.id), // Primary supervisor (role-based)
+  secondarySupervisorUsers: text("secondary_supervisor_users").array().default([]), // Secondary supervisors (user-based, VARCHAR array)
+  secondarySupervisorRoles: uuid("secondary_supervisor_roles").array().default([]), // Secondary supervisors (role-based, UUID array)
   requiredSupervisorPermission: varchar("required_supervisor_permission", { length: 200 }).default("team.manage"),
   
   // Team scope and permissions
@@ -2370,7 +2372,8 @@ export const teams = w3suiteSchema.table("teams", {
   updatedBy: varchar("updated_by").references(() => users.id),
 }, (table) => [
   index("teams_tenant_active_idx").on(table.tenantId, table.isActive),
-  index("teams_supervisor_idx").on(table.primarySupervisor),
+  index("teams_primary_supervisor_user_idx").on(table.primarySupervisorUser),
+  index("teams_primary_supervisor_role_idx").on(table.primarySupervisorRole),
   uniqueIndex("teams_name_unique").on(table.tenantId, table.name),
 ]);
 

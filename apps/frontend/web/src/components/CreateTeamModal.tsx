@@ -64,8 +64,10 @@ const createTeamSchema = z.object({
   assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'È richiesto almeno un dipartimento'),
   userMembers: z.array(z.string()).default([]),
   roleMembers: z.array(z.string()).default([]),
-  primarySupervisor: z.string().nullable().optional(),
-  secondarySupervisors: z.array(z.string()).default([]),
+  primarySupervisorUser: z.string().nullable().optional(),
+  primarySupervisorRole: z.string().nullable().optional(),
+  secondarySupervisorUsers: z.array(z.string()).default([]),
+  secondarySupervisorRoles: z.array(z.string()).default([]),
   workflowAssignments: z.array(z.object({
     department: z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm']),
     templateId: z.string(),
@@ -97,8 +99,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     assignedDepartments: [],
     userMembers: [],
     roleMembers: [],
-    primarySupervisor: null,
-    secondarySupervisors: [],
+    primarySupervisorUser: null,
+    primarySupervisorRole: null,
+    secondarySupervisorUsers: [],
+    secondarySupervisorRoles: [],
     workflowAssignments: [],
     isActive: true
   };
@@ -120,8 +124,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           assignedDepartments: editTeam.assignedDepartments || [],
           userMembers: editTeam.userMembers || [],
           roleMembers: editTeam.roleMembers || [],
-          primarySupervisor: editTeam.primarySupervisor || null,
-          secondarySupervisors: editTeam.secondarySupervisors || [],
+          primarySupervisorUser: editTeam.primarySupervisorUser || null,
+          primarySupervisorRole: editTeam.primarySupervisorRole || null,
+          secondarySupervisorUsers: editTeam.secondarySupervisorUsers || [],
+          secondarySupervisorRoles: editTeam.secondarySupervisorRoles || [],
           workflowAssignments: editTeam.workflowAssignments || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
         };
@@ -209,7 +215,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     // Clean data for backend - convert null to undefined for optional fields
     const processedData = {
       ...data,
-      primarySupervisor: data.primarySupervisor || undefined
+      primarySupervisorUser: data.primarySupervisorUser || undefined,
+      primarySupervisorRole: data.primarySupervisorRole || undefined
     };
     
     if (editTeam) {
@@ -634,54 +641,192 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <h3 className="text-lg font-semibold">Supervisori</h3>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="primarySupervisor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Supervisor</FormLabel>
-                        <FormControl>
-                          <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? null : value)}>
-                            <SelectTrigger data-testid="select-primary-supervisor">
-                              <SelectValue placeholder="Select primary supervisor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">No supervisor</SelectItem>
-                              {users.map((user: any) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  <div className="flex items-center justify-between w-full">
-                                    <span>{user.name}</span>
-                                    <Badge variant="outline" className="ml-2">
-                                      {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}
-                                    </Badge>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormDescription>
-                          Main supervisor responsible for team oversight
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* 🎯 PRIMARY SUPERVISOR SECTION */}
+                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Primary Supervisor</h4>
+                    <p className="text-xs text-gray-600">
+                      Main supervisor responsible for team oversight
+                    </p>
+                  </div>
 
+                  {/* Primary Supervisor - User */}
                   <div>
-                    <h4 className="text-md font-medium mb-3">Secondary Supervisors</h4>
+                    <h4 className="text-md font-medium mb-1">Supervisore Utente</h4>
                     <p className="text-sm text-gray-600 mb-3">
-                      Additional supervisors who can support team management
+                      Seleziona un utente specifico come supervisore principale
                     </p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {users.map((user: any) => {
-                        const secondarySupervisors = form.watch('secondarySupervisors');
-                        const isSelected = secondarySupervisors.includes(user.id);
-                        const isPrimary = form.watch('primarySupervisor') === user.id;
+                        const primaryUser = form.watch('primarySupervisorUser');
+                        const primaryRole = form.watch('primarySupervisorRole');
+                        const isSelected = primaryUser === user.id;
+                        const isDisabled = !!primaryRole; // Disabled if role is selected
                         
                         return (
                           <div
                             key={user.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isDisabled
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              if (!isDisabled) {
+                                form.setValue('primarySupervisorUser', isSelected ? null : user.id);
+                              }
+                            }}
+                            data-testid={`primary-supervisor-user-${user.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">
+                                  {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
+                                    ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                    : 'No Dept'}
+                                </Badge>
+                                {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Primary Supervisor - Role */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Supervisore per Ruolo</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Seleziona un ruolo - tutti gli utenti con questo ruolo saranno supervisori principali
+                    </p>
+                    <div className="space-y-2">
+                      {roles.map((role: any) => {
+                        const primaryRole = form.watch('primarySupervisorRole');
+                        const primaryUser = form.watch('primarySupervisorUser');
+                        const isSelected = primaryRole === role.id;
+                        const isDisabled = !!primaryUser; // Disabled if user is selected
+                        
+                        return (
+                          <div
+                            key={role.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isDisabled
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-windtre-orange/10 border-windtre-orange text-windtre-orange'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              if (!isDisabled) {
+                                form.setValue('primarySupervisorRole', isSelected ? null : role.id);
+                              }
+                            }}
+                            data-testid={`primary-supervisor-role-${role.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{role.name}</div>
+                                <div className="text-sm text-gray-500">{role.description}</div>
+                              </div>
+                              {isSelected && <Shield className="w-4 h-4 text-green-600" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator className="my-8" />
+
+                  {/* 🎯 SECONDARY SUPERVISORS SECTION */}
+                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Secondary Supervisors</h4>
+                    <p className="text-xs text-gray-600">
+                      Additional supervisors who can support team management
+                    </p>
+                  </div>
+
+                  {/* Secondary Supervisors - Users */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Supervisori Utente</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Seleziona utenti specifici come supervisori aggiuntivi
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {users.map((user: any) => {
+                        const secondaryUsers = form.watch('secondarySupervisorUsers');
+                        const primaryUser = form.watch('primarySupervisorUser');
+                        const isSelected = secondaryUsers.includes(user.id);
+                        const isPrimary = primaryUser === user.id;
+                        
+                        return (
+                          <div
+                            key={user.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isPrimary
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              if (!isPrimary) {
+                                const current = secondaryUsers;
+                                const updated = current.includes(user.id)
+                                  ? current.filter(id => id !== user.id)
+                                  : [...current, user.id];
+                                form.setValue('secondarySupervisorUsers', updated);
+                              }
+                            }}
+                            data-testid={`secondary-supervisor-user-${user.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">
+                                  {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
+                                    ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                    : 'No Dept'}
+                                </Badge>
+                                {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
+                                {isSelected && !isPrimary && <UserCheck className="w-4 h-4 text-green-600" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Secondary Supervisors - Roles */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Supervisori per Ruolo</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Seleziona ruoli - tutti gli utenti con questi ruoli saranno supervisori aggiuntivi
+                    </p>
+                    <div className="space-y-2">
+                      {roles.map((role: any) => {
+                        const secondaryRoles = form.watch('secondarySupervisorRoles');
+                        const primaryRole = form.watch('primarySupervisorRole');
+                        const isSelected = secondaryRoles.includes(role.id);
+                        const isPrimary = primaryRole === role.id;
+                        
+                        return (
+                          <div
+                            key={role.id}
                             className={`p-3 rounded-lg border cursor-pointer transition-all ${
                               isPrimary
                                 ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
@@ -691,22 +836,21 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             }`}
                             onClick={() => {
                               if (!isPrimary) {
-                                const current = secondarySupervisors;
-                                const updated = current.includes(user.id)
-                                  ? current.filter(id => id !== user.id)
-                                  : [...current, user.id];
-                                form.setValue('secondarySupervisors', updated);
+                                const current = secondaryRoles;
+                                const updated = current.includes(role.id)
+                                  ? current.filter(id => id !== role.id)
+                                  : [...current, role.id];
+                                form.setValue('secondarySupervisorRoles', updated);
                               }
                             }}
-                            data-testid={`secondary-supervisor-${user.id}`}
+                            data-testid={`secondary-supervisor-role-${role.id}`}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="font-medium">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
+                                <div className="font-medium">{role.name}</div>
+                                <div className="text-sm text-gray-500">{role.description}</div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
                                 {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
                                 {isSelected && !isPrimary && <Shield className="w-4 h-4 text-green-600" />}
                               </div>
