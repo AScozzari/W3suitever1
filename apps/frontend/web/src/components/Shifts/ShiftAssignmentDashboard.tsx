@@ -1698,7 +1698,32 @@ export default function ShiftAssignmentDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                {renderGanttTimeline()}
+                {(shiftsLoading || staffLoading) ? (
+                  <div className="flex items-center justify-center h-64 text-gray-500">
+                    <div className="text-center">
+                      <Clock className="w-12 h-12 mx-auto mb-4 animate-spin text-blue-500" />
+                      <p>Caricamento dati...</p>
+                    </div>
+                  </div>
+                ) : (shifts.length === 0 || filteredStaff.length === 0) ? (
+                  <div className="flex items-center justify-center h-64 text-gray-500">
+                    <div className="text-center space-y-4">
+                      <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                        <AlertTriangle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-700">Nessun dato disponibile</h3>
+                        <p className="text-sm mt-2">
+                          {shifts.length === 0 && 'Non ci sono turni per questa settimana. '}
+                          {filteredStaff.length === 0 && 'Non ci sono dipendenti disponibili. '}
+                        </p>
+                        <p className="text-sm mt-1 text-blue-600">
+                          Controlla i filtri o seleziona un altro negozio/settimana.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : renderGanttTimeline()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1712,7 +1737,32 @@ export default function ShiftAssignmentDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                {renderGridView()}
+                {(shiftsLoading || staffLoading) ? (
+                  <div className="flex items-center justify-center h-64 text-gray-500">
+                    <div className="text-center">
+                      <Clock className="w-12 h-12 mx-auto mb-4 animate-spin text-blue-500" />
+                      <p>Caricamento dati...</p>
+                    </div>
+                  </div>
+                ) : (shifts.length === 0 || filteredStaff.length === 0) ? (
+                  <div className="flex items-center justify-center h-64 text-gray-500">
+                    <div className="text-center space-y-4">
+                      <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                        <AlertTriangle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-700">Nessun dato disponibile</h3>
+                        <p className="text-sm mt-2">
+                          {shifts.length === 0 && 'Non ci sono turni per questa settimana. '}
+                          {filteredStaff.length === 0 && 'Non ci sono dipendenti disponibili. '}
+                        </p>
+                        <p className="text-sm mt-1 text-blue-600">
+                          Controlla i filtri o seleziona un altro negozio/settimana.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : renderGridView()}
               </CardContent>
             </Card>
           </TabsContent>
