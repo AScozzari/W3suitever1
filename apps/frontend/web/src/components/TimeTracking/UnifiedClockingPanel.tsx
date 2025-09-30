@@ -115,7 +115,7 @@ export default function UnifiedClockingPanel({
   onClockIn, 
   onClockOut,
   enabledStrategies,
-  defaultStrategy = '', // ✅ PROGRESSIVE DISCLOSURE: No auto-selection, requires explicit PDV → method choice
+  defaultStrategy, // ✅ PROGRESSIVE DISCLOSURE: No auto-selection, requires explicit PDV → method choice
   className 
 }: UnifiedClockingPanelProps) {
   const { toast } = useToast();
@@ -179,7 +179,7 @@ export default function UnifiedClockingPanel({
 
   // 🔥 CRITICAL FIX: Declare state variables BEFORE using them in hooks
   const [selectedStoreId, setSelectedStoreId] = useState<string>(''); // ✅ FIX: Empty by default
-  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType>(''); // ✅ FIX: Empty by default
+  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType | ''>(''); // ✅ FIX: Empty by default
 
   // ✅ NEW: Hook for loading timetracking methods available for selected PDV
   const {
@@ -248,9 +248,10 @@ export default function UnifiedClockingPanel({
   // ✅ FIX: Re-prepare QR strategy when store changes or QR is selected
   useEffect(() => {
     if (strategiesState.selectedStrategy?.type === 'qr' && context.selectedStore) {
+      console.log('[QR-FIX] Preparing QR strategy with store:', context.selectedStore.id);
       strategiesActions.prepareStrategy(context);
     }
-  }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id, strategiesActions, context]);
+  }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id]);
 
   // ✅ NEW: Filter strategies based on PDV configuration + HR Management
   const availableStrategyConfigs = React.useMemo(() => {
@@ -289,7 +290,10 @@ export default function UnifiedClockingPanel({
     }
     
     const success = await strategiesActions.selectStrategy(strategyType);
-    if (success && context) {
+    
+    // ✅ FIX: For QR strategy, let the useEffect handle preparation when store is ready
+    // This ensures context.selectedStore is populated before prepare() is called
+    if (success && context && strategyType !== 'qr') {
       try {
         await strategiesActions.prepareStrategy(context);
         if (strategyType === 'gps' && strategiesState.prepareResult?.success) {
