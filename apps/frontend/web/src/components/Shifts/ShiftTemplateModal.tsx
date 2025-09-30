@@ -625,13 +625,13 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="continuous" id={`continuous-${index}`} data-testid={`radio-continuous-${index}`} />
                                 <Label htmlFor={`continuous-${index}`} className="cursor-pointer font-normal">
-                                  Continua (es: 09:00-17:00)
+                                  Continua
                                 </Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="split" id={`split-${index}`} data-testid={`radio-split-${index}`} />
                                 <Label htmlFor={`split-${index}`} className="cursor-pointer font-normal">
-                                  Spezzata (es: 09:00-13:00 + 15:00-19:00)
+                                  Spezzata
                                 </Label>
                               </div>
                             </RadioGroup>
@@ -646,7 +646,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       {segmentType === 'split' && (
                         <Label className="text-xs text-muted-foreground mb-2 block">Primo Blocco</Label>
                       )}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name={`timeSlots.${index}.startTime`}
@@ -676,75 +676,6 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                                 {...field}
                                 type="time"
                                 data-testid={`input-end-time-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name={`timeSlots.${index}.breakMinutes`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Pausa (minuti)</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="number"
-                                min="0"
-                                max="480"
-                                placeholder="30"
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                data-testid={`input-break-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    {/* Tolerance Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                      <FormField
-                        control={form.control}
-                        name={`timeSlots.${index}.clockInToleranceMinutes`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tolleranza Clock-In (minuti)</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="number"
-                                min="0"
-                                max="60"
-                                placeholder="15"
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                data-testid={`input-clockin-tolerance-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name={`timeSlots.${index}.clockOutToleranceMinutes`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tolleranza Clock-Out (minuti)</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="number"
-                                min="0"
-                                max="60"
-                                placeholder="15"
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                data-testid={`input-clockout-tolerance-${index}`}
                               />
                             </FormControl>
                             <FormMessage />
@@ -797,6 +728,77 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                         </div>
                       </div>
                     )}
+                    
+                    {/* Pausa e Tolleranze (alla fine per entrambi i tipi) */}
+                    <div className="mt-4 pt-4 border-t space-y-4">
+                      <FormField
+                        control={form.control}
+                        name={`timeSlots.${index}.breakMinutes`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pausa (minuti)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                min="0"
+                                max="480"
+                                placeholder="30"
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                data-testid={`input-break-${index}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`timeSlots.${index}.clockInToleranceMinutes`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tolleranza Clock-In (minuti)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="0"
+                                  max="60"
+                                  placeholder="15"
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  data-testid={`input-clockin-tolerance-${index}`}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name={`timeSlots.${index}.clockOutToleranceMinutes`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tolleranza Clock-Out (minuti)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="0"
+                                  max="60"
+                                  placeholder="15"
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  data-testid={`input-clockout-tolerance-${index}`}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
                   );
                 })}
