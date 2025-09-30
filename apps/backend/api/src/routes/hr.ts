@@ -3,8 +3,8 @@ import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
-import { users, shiftTemplates } from '../db/schema/w3suite';
-import { eq, and } from 'drizzle-orm';
+import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts } from '../db/schema/w3suite';
+import { eq, and, gte, lte } from 'drizzle-orm';
 
 const router = Router();
 
@@ -824,6 +824,321 @@ router.get('/shifts', requirePermission('hr.shifts.read'), async (req: Request, 
   } catch (error) {
     console.error('Error fetching shifts:', error);
     res.status(500).json({ error: 'Failed to fetch shifts' });
+  }
+});
+
+// ==================== ATTENDANCE & CLOCK-IN ====================
+
+// POST /api/hr/attendance/clock-in - Record employee clock-in with shift validation
+router.post('/attendance/clock-in', requirePermission('hr.timbrature.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { userId, storeId, clockInTime, location } = req.body;
+    
+    if (!tenantId || !userId || !storeId) {
+      return res.status(400).json({ error: 'Tenant ID, user ID, and store ID are required' });
+    }
+
+    const clockIn = clockInTime ? new Date(clockInTime) : new Date();
+    
+    // Find shift assignment for this user at clock-in time
+    // Must filter by time window to get the correct shift
+    const assignments = await db.query.shiftAssignments.findMany({
+      where: and(
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, userId),
+        eq(shiftAssignments.status, 'assigned')
+      ),
+      with: {
+        shift: true
+      }
+    });
+    
+    // Find the shift that covers the clock-in time
+    const assignment = assignments.find(a => {
+      if (!a.shift) return false;
+      const shiftStart = new Date(a.shift.startTime);
+      const shiftEnd = new Date(a.shift.endTime);
+      const tolerance = (a.shift.clockInToleranceMinutes || 15) * 60 * 1000; // Convert to ms
+      
+      // Check if clock-in is within shift window + tolerance
+      return clockIn.getTime() >= (shiftStart.getTime() - tolerance) && 
+             clockIn.getTime() <= shiftEnd.getTime();
+    });
+
+    if (!assignment || !assignment.shift) {
+      // No shift assigned - create anomaly
+      const anomaly = await db.insert(attendanceAnomalies).values({
+        tenantId,
+        userId,
+        storeId,
+        anomalyType: 'no_shift_assigned',
+        severity: 'high',
+        actualValue: JSON.stringify({ clockInTime: clockIn, storeId }),
+        detectedAt: new Date(),
+        detectionMethod: 'automatic',
+        resolutionStatus: 'pending'
+      }).returning();
+
+      return res.status(400).json({
+        success: false,
+        error: 'No shift assigned for this time',
+        anomaly: anomaly[0]
+      });
+    }
+
+    const shift = assignment.shift;
+    
+    // Validate store match
+    if (shift.storeId !== storeId) {
+      const anomaly = await db.insert(attendanceAnomalies).values({
+        tenantId,
+        userId,
+        shiftId: shift.id,
+        storeId,
+        attendanceId: null,
+        anomalyType: 'wrong_store',
+        severity: 'critical',
+        expectedValue: JSON.stringify({ storeId: shift.storeId }),
+        actualValue: JSON.stringify({ storeId }),
+        detectedAt: new Date(),
+        detectionMethod: 'automatic',
+        resolutionStatus: 'pending'
+      }).returning();
+
+      return res.status(400).json({
+        success: false,
+        error: 'Store mismatch - clocking in at wrong location',
+        anomaly: anomaly[0]
+      });
+    }
+
+    // Calculate time deviation
+    const expectedStart = new Date(shift.startTime);
+    const deviationMs = clockIn.getTime() - expectedStart.getTime();
+    const deviationMinutes = Math.round(deviationMs / 60000);
+    
+    const tolerance = shift.clockInToleranceMinutes || 15;
+    const isOnTime = Math.abs(deviationMinutes) <= tolerance;
+    
+    // Create attendance record
+    const attendance = await db.insert(shiftAttendance).values({
+      tenantId,
+      assignmentId: assignment.id,
+      attendanceStatus: isOnTime ? 'present' : (deviationMinutes > 0 ? 'late' : 'early'),
+      scheduledStartTime: expectedStart,
+      scheduledEndTime: new Date(shift.endTime),
+      actualStartTime: clockIn,
+      startDeviationMinutes: deviationMinutes,
+      scheduledMinutes: Math.round((new Date(shift.endTime).getTime() - expectedStart.getTime()) / 60000),
+      isOnTime,
+      isCompliantDuration: true,
+      requiresApproval: !isOnTime,
+      clockInLocation: location,
+      isLocationCompliant: true,
+      processingStatus: 'processed'
+    }).returning();
+
+    // If late or early beyond tolerance, create anomaly
+    if (!isOnTime) {
+      await db.insert(attendanceAnomalies).values({
+        tenantId,
+        attendanceId: attendance[0].id,
+        userId,
+        shiftId: shift.id,
+        storeId,
+        anomalyType: deviationMinutes > 0 ? 'late_clock_in' : 'early_clock_in',
+        severity: Math.abs(deviationMinutes) > tolerance * 2 ? 'high' : 'medium',
+        expectedValue: JSON.stringify({ time: expectedStart, toleranceMinutes: tolerance }),
+        actualValue: JSON.stringify({ time: clockIn }),
+        deviationMinutes: Math.abs(deviationMinutes),
+        detectedAt: new Date(),
+        detectionMethod: 'automatic',
+        resolutionStatus: 'pending',
+        notifiedSupervisor: false
+      });
+    }
+
+    res.json({
+      success: true,
+      attendance: attendance[0],
+      validation: {
+        isOnTime,
+        deviationMinutes,
+        toleranceMinutes: tolerance,
+        requiresApproval: !isOnTime
+      },
+      shift: {
+        id: shift.id,
+        name: shift.name,
+        expectedStart: expectedStart,
+        expectedEnd: shift.endTime
+      }
+    });
+  } catch (error) {
+    console.error('Error recording clock-in:', error);
+    res.status(500).json({ error: 'Failed to record clock-in' });
+  }
+});
+
+// GET /api/hr/attendance/anomalies - Get attendance anomalies with filters
+router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, userId, status, severity, startDate, endDate } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [eq(attendanceAnomalies.tenantId, tenantId)];
+    
+    if (storeId) {
+      conditions.push(eq(attendanceAnomalies.storeId, storeId as string));
+    }
+    if (userId) {
+      conditions.push(eq(attendanceAnomalies.userId, userId as string));
+    }
+    if (status) {
+      conditions.push(eq(attendanceAnomalies.resolutionStatus, status as string));
+    }
+    if (severity) {
+      conditions.push(eq(attendanceAnomalies.severity, severity as string));
+    }
+
+    const anomalies = await db.query.attendanceAnomalies.findMany({
+      where: and(...conditions),
+      with: {
+        user: {
+          columns: { id: true, fullName: true, email: true }
+        },
+        store: {
+          columns: { id: true, name: true }
+        },
+        attendance: true
+      },
+      orderBy: (anomalies, { desc }) => [desc(anomalies.detectedAt)],
+      limit: 100
+    });
+
+    const summary = {
+      total: anomalies.length,
+      bySeverity: {
+        critical: anomalies.filter(a => a.severity === 'critical').length,
+        high: anomalies.filter(a => a.severity === 'high').length,
+        medium: anomalies.filter(a => a.severity === 'medium').length,
+        low: anomalies.filter(a => a.severity === 'low').length
+      },
+      byStatus: {
+        pending: anomalies.filter(a => a.resolutionStatus === 'pending').length,
+        acknowledged: anomalies.filter(a => a.resolutionStatus === 'acknowledged').length,
+        resolved: anomalies.filter(a => a.resolutionStatus === 'resolved').length
+      },
+      byType: anomalies.reduce((acc, a) => {
+        acc[a.anomalyType] = (acc[a.anomalyType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    };
+
+    res.json({
+      success: true,
+      anomalies,
+      summary
+    });
+  } catch (error) {
+    console.error('Error fetching anomalies:', error);
+    res.status(500).json({ error: 'Failed to fetch anomalies' });
+  }
+});
+
+// GET /api/hr/attendance/store-coverage - Get store coverage analysis
+router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, date } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const targetDate = date ? new Date(date as string) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get all shifts for the day
+    const shiftsQuery = await db.query.shifts.findMany({
+      where: and(
+        eq(shifts.tenantId, tenantId),
+        ...(storeId ? [eq(shifts.storeId, storeId as string)] : [])
+      ),
+      with: {
+        assignments: {
+          with: {
+            user: {
+              columns: { id: true, fullName: true }
+            },
+            attendance: {
+              where: and(
+                gte(shiftAttendance.scheduledStartTime, startOfDay),
+                lte(shiftAttendance.scheduledEndTime, endOfDay)
+              )
+            }
+          }
+        },
+        store: {
+          columns: { id: true, name: true }
+        }
+      }
+    });
+
+    // Calculate coverage metrics
+    const coverage = shiftsQuery.map(shift => {
+      const totalRequired = shift.requiredStaff;
+      const totalAssigned = shift.assignments.length;
+      const totalPresent = shift.assignments.filter(a => 
+        a.attendance.some(att => att.attendanceStatus === 'present' || att.attendanceStatus === 'late')
+      ).length;
+      
+      return {
+        shiftId: shift.id,
+        shiftName: shift.name,
+        storeId: shift.storeId,
+        storeName: shift.store?.name,
+        time: { start: shift.startTime, end: shift.endTime },
+        staffing: {
+          required: totalRequired,
+          assigned: totalAssigned,
+          present: totalPresent,
+          missing: totalRequired - totalPresent,
+          coverageRate: totalRequired > 0 ? (totalPresent / totalRequired) * 100 : 0
+        },
+        assignments: shift.assignments.map(a => ({
+          userId: a.userId,
+          userName: a.user?.fullName,
+          status: a.status,
+          attendance: a.attendance[0]
+        }))
+      };
+    });
+
+    const summary = {
+      totalShifts: shiftsQuery.length,
+      averageCoverageRate: coverage.reduce((sum, c) => sum + c.staffing.coverageRate, 0) / (coverage.length || 1),
+      criticalShifts: coverage.filter(c => c.staffing.coverageRate < 80).length,
+      fullyStaffed: coverage.filter(c => c.staffing.coverageRate >= 100).length
+    };
+
+    res.json({
+      success: true,
+      date: targetDate,
+      coverage,
+      summary
+    });
+  } catch (error) {
+    console.error('Error fetching store coverage:', error);
+    res.status(500).json({ error: 'Failed to fetch store coverage' });
   }
 });
 
