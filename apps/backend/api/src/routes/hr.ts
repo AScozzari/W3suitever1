@@ -1156,12 +1156,17 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
+    // Build query conditions - ensure UUIDs are properly typed
+    const conditions = [eq(shifts.tenantId, sql`${tenantId}::uuid`)];
+    
+    // Only add storeId filter if valid UUID is provided
+    if (storeId && storeId !== 'all') {
+      conditions.push(eq(shifts.storeId, sql`${storeId}::uuid`));
+    }
+
     // Get all shifts for the day
     const shiftsQuery = await db.query.shifts.findMany({
-      where: and(
-        eq(shifts.tenantId, tenantId),
-        ...(storeId && storeId !== 'all' ? [eq(shifts.storeId, storeId as string)] : [])
-      ),
+      where: and(...conditions),
       with: {
         assignments: {
           with: {

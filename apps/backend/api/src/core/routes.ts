@@ -3782,9 +3782,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate UUID parameters to prevent SQL type errors
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
-      // If storeId is malformed or not a valid UUID, ignore it
-      if (storeId && (typeof storeId !== 'string' || !uuidRegex.test(storeId))) {
-        console.warn('[HR-ASSIGNMENTS] Invalid storeId format, ignoring:', storeId);
+      // If storeId is 'all' or malformed or not a valid UUID, ignore it
+      if (storeId && (storeId === 'all' || typeof storeId !== 'string' || !uuidRegex.test(storeId))) {
+        console.warn('[HR-ASSIGNMENTS] Invalid storeId format or "all" value, ignoring:', storeId);
         storeId = undefined;
       }
       
