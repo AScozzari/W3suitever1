@@ -1,0 +1,194 @@
+WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1389ms (attempt 1)
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:33:45.570Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:33:45.570Z'}
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:33:45.571Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:33:45.571Z'}
+HRManagementPage.tsx:2146 Uncaught ReferenceError: RefreshCw is not defined
+    at MonitoringSection (HRManagementPage.tsx:2146:18)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=94b3638f:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=94b3638f:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=94b3638f:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=94b3638f:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=94b3638f:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=94b3638f:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=94b3638f:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=94b3638f:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=94b3638f:19137:13)
+MonitoringSection @ HRManagementPage.tsx:2146
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=94b3638f:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=94b3638f:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=94b3638f:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=94b3638f:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=94b3638f:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=94b3638f:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=94b3638f:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=94b3638f:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=94b3638f:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=94b3638f:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:33:45.586Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:33:45.586Z'}
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-30T13:33:45.587Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-30T13:33:45.587Z'}
+HRManagementPage.tsx:2146 Uncaught ReferenceError: RefreshCw is not defined
+    at MonitoringSection (HRManagementPage.tsx:2146:18)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=94b3638f:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=94b3638f:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=94b3638f:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=94b3638f:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=94b3638f:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=94b3638f:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=94b3638f:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=94b3638f:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=94b3638f:19137:13)
+MonitoringSection @ HRManagementPage.tsx:2146
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=94b3638f:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=94b3638f:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=94b3638f:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=94b3638f:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=94b3638f:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=94b3638f:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=94b3638f:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=94b3638f:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=94b3638f:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=94b3638f:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=94b3638f:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+hook.js:608 The above error occurred in the <MonitoringSection> component:
+
+    at MonitoringSection (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx?t=1759237993540:4270:55)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at HRManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx?t=1759237993540:78:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1759237993540:504:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1759237993540:175:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1759237993540:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=94b3638f:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=94b3638f:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=94b3638f:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=94b3638f:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=94b3638f:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=94b3638f:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=94b3638f:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=94b3638f:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=94b3638f:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=94b3638f:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=94b3638f:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+chunk-ZHRYBLGQ.js?v=94b3638f:9129 Uncaught ReferenceError: RefreshCw is not defined
+    at MonitoringSection (HRManagementPage.tsx:2146:18)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=94b3638f:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=94b3638f:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=94b3638f:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=94b3638f:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=94b3638f:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=94b3638f:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=94b3638f:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=94b3638f:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=94b3638f:18879:28)
+MonitoringSection @ HRManagementPage.tsx:2146
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=94b3638f:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=94b3638f:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=94b3638f:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=94b3638f:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=94b3638f:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=94b3638f:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=94b3638f:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=94b3638f:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=94b3638f:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=94b3638f:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=94b3638f:18627Understand this error
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1989ms (attempt 1)
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1332ms (attempt 1)
+2useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1369ms (attempt 1)
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1153ms (attempt 1)
+2useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1449ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1493ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1531ms (attempt 1)
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting
