@@ -3773,10 +3773,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/shift-assignments', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
-      const { storeId, startDate, endDate, userId } = req.query;
+      let { storeId, startDate, endDate, userId } = req.query;
       
       if (!tenantId) {
         return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Validate UUID parameters to prevent SQL type errors
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // If storeId is malformed or not a valid UUID, ignore it
+      if (storeId && (typeof storeId !== 'string' || !uuidRegex.test(storeId))) {
+        console.warn('[HR-ASSIGNMENTS] Invalid storeId format, ignoring:', storeId);
+        storeId = undefined;
+      }
+      
+      // If userId is malformed or not a valid UUID, ignore it
+      if (userId && (typeof userId !== 'string' || !uuidRegex.test(userId))) {
+        console.warn('[HR-ASSIGNMENTS] Invalid userId format, ignoring:', userId);
+        userId = undefined;
       }
       
       // Set tenant context for RLS
