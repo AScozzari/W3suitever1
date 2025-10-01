@@ -283,7 +283,7 @@ export default function ShiftAssignmentDashboard({
   });
 
   // Get existing assignments
-  const { data: assignments = [] } = useQuery({
+  const { data: assignmentsResponse } = useQuery({
     queryKey: ['/api/hr/shift-assignments', { 
       storeId: storeFilter,
       startDate: format(weekStart, 'yyyy-MM-dd'),
@@ -292,6 +292,9 @@ export default function ShiftAssignmentDashboard({
     }],
     enabled: storeFilter !== 'all' // Only fetch if specific store selected
   });
+  
+  // Extract items array from response object
+  const assignments = assignmentsResponse?.items || [];
 
   // ==================== UTILITY FUNCTIONS ====================
 
