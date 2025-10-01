@@ -74,15 +74,8 @@ export class WebhookService {
         logger.warn('🪝 Webhook event already processed (duplicate)', {
           source: event.source,
           eventId: event.eventId,
-          tenantId: event.tenantId
-        });
-        
-        // Store duplicate event for audit trail
-        await this.storeWebhookEvent({
-          ...event,
-          signatureValid: undefined,
-          status: 'skipped',
-          processingError: 'Duplicate event (already processed)'
+          tenantId: event.tenantId,
+          note: 'Prevented by deduplication check'
         });
         
         return {
@@ -109,13 +102,20 @@ export class WebhookService {
             error: validation.error
           });
 
-          // Store failed event for audit
-          await this.storeWebhookEvent({
-            ...event,
-            signatureValid: false,
-            status: 'failed',
-            processingError: `Signature validation failed: ${validation.error}`
-          });
+          // Store failed event for audit (with race condition protection)
+          try {
+            await this.storeWebhookEvent({
+              ...event,
+              signatureValid: false,
+              status: 'failed',
+              processingError: `Signature validation failed: ${validation.error}`
+            });
+          } catch (insertError: any) {
+            // Ignore duplicate constraint violations (race condition)
+            if (!(insertError?.code === '23505' || insertError?.message?.includes('duplicate key'))) {
+              throw insertError;
+            }
+          }
 
           return {
             success: false,
@@ -124,12 +124,34 @@ export class WebhookService {
         }
       }
 
-      // STEP 3: Store event in database
-      const storedEvent = await this.storeWebhookEvent({
-        ...event,
-        signatureValid,
-        status: 'pending'
-      });
+      // STEP 3: Store event in database (with race condition protection)
+      let storedEvent;
+      try {
+        storedEvent = await this.storeWebhookEvent({
+          ...event,
+          signatureValid,
+          status: 'pending'
+        });
+      } catch (insertError: any) {
+        // Check if it's a unique constraint violation (race condition)
+        if (insertError?.code === '23505' || insertError?.message?.includes('duplicate key')) {
+          logger.warn('🪝 Duplicate event detected during insert (race condition)', {
+            source: event.source,
+            eventId: event.eventId,
+            tenantId: event.tenantId,
+            note: 'Protected by unique constraint'
+          });
+          
+          return {
+            success: true,
+            message: 'Event already processed (duplicate)',
+            eventId: event.eventId
+          };
+        }
+        
+        // Re-throw if it's a different error
+        throw insertError;
+      }
 
       // STEP 4: Queue for async processing with Redis fallback
       const priority = event.priority || 'medium';
