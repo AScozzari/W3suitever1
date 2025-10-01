@@ -8434,12 +8434,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clockInTime = new Date();
       const [clockInEntry] = await db.insert(timeTracking).values({
         tenantId,
-        employeeId: userId,
+        userId: userId,
         storeId: decoded.storeId,
         clockIn: clockInTime,
-        method: 'qr',
-        status: 'pending',
-        metadata: {
+        trackingMethod: 'qr',
+        status: 'active',
+        deviceInfo: {
           jti: decoded.jti,
           userAgent: req.get('user-agent'),
           ip: req.ip
@@ -8466,6 +8466,308 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         error: 'Failed to process QR check-in' 
+      });
+    }
+  });
+
+  // QR Action Dispatcher (clock-out, break-start, break-end)
+  app.post('/api/hr/time-tracking/qr-action', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.clock'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const { token, action } = req.body;
+
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      if (!token || !action) {
+        return res.status(400).json({ error: 'Token and action are required' });
+      }
+
+      // Validate action type
+      const validActions = ['clock-in', 'clock-out', 'break-start', 'break-end'];
+      if (!validActions.includes(action)) {
+        return res.status(400).json({ 
+          success: false,
+          error: `Invalid action. Must be one of: ${validActions.join(', ')}` 
+        });
+      }
+
+      // Verify JWT signature and expiry
+      let decoded: any;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET, { 
+          algorithms: ['HS256'],
+          clockTolerance: 5
+        });
+      } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+          return res.status(400).json({ 
+            success: false,
+            error: 'QR code expired. Please request a new one.' 
+          });
+        }
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid QR code' 
+        });
+      }
+
+      // Validate token structure
+      if (!decoded.jti || !decoded.tenantId || !decoded.storeId) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid token format' 
+        });
+      }
+
+      // Verify tenant matches
+      if (decoded.tenantId !== tenantId) {
+        return res.status(403).json({ 
+          success: false,
+          error: 'Invalid tenant' 
+        });
+      }
+
+      // Anti-replay: Check if token already used
+      if (usedQRTokens.has(decoded.jti)) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'QR code already used' 
+        });
+      }
+
+      // Mark token as used
+      usedQRTokens.set(decoded.jti, decoded.exp * 1000);
+
+      // Verify user is assigned to this store
+      await setTenantContext(tenantId);
+      const userStore = await db.select().from(userStores).where(
+        and(
+          eq(userStores.userId, userId),
+          eq(userStores.storeId, decoded.storeId)
+        )
+      ).limit(1);
+
+      if (!userStore || userStore.length === 0) {
+        return res.status(403).json({ 
+          success: false,
+          error: 'You are not authorized to perform this action at this store' 
+        });
+      }
+
+      // Get store name for response
+      const [storeData] = await db.select({ name: stores.name }).from(stores).where(
+        eq(stores.id, decoded.storeId)
+      ).limit(1);
+
+      // Execute action
+      let result: any;
+      const timestamp = new Date();
+
+      switch (action) {
+        case 'clock-in': {
+          // Check for existing active clock-in
+          const existing = await db.select().from(timeTracking).where(
+            and(
+              eq(timeTracking.tenantId, tenantId),
+              eq(timeTracking.userId, userId),
+              isNull(timeTracking.clockOut)
+            )
+          ).limit(1);
+
+          if (existing && existing.length > 0) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'You already have an active clock-in. Please clock out first.' 
+            });
+          }
+
+          const [entry] = await db.insert(timeTracking).values({
+            tenantId,
+            userId: userId,
+            storeId: decoded.storeId,
+            clockIn: timestamp,
+            trackingMethod: 'qr',
+            status: 'active',
+            deviceInfo: {
+              jti: decoded.jti,
+              userAgent: req.get('user-agent'),
+              ip: req.ip
+            }
+          }).returning();
+
+          result = {
+            id: entry.id,
+            action: 'clock-in',
+            storeId: decoded.storeId,
+            storeName: storeData?.name || 'Unknown',
+            timestamp: timestamp.toISOString()
+          };
+          break;
+        }
+
+        case 'clock-out': {
+          // Find active clock-in
+          const [activeEntry] = await db.select().from(timeTracking).where(
+            and(
+              eq(timeTracking.tenantId, tenantId),
+              eq(timeTracking.userId, userId),
+              eq(timeTracking.storeId, decoded.storeId),
+              isNull(timeTracking.clockOut)
+            )
+          ).orderBy(desc(timeTracking.clockIn)).limit(1);
+
+          if (!activeEntry) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'No active clock-in found for this store' 
+            });
+          }
+
+          // Calculate duration
+          const clockInTime = new Date(activeEntry.clockIn);
+          const totalMinutes = Math.floor((timestamp.getTime() - clockInTime.getTime()) / 60000);
+
+          const [updated] = await db.update(timeTracking)
+            .set({ 
+              clockOut: timestamp,
+              totalMinutes,
+              status: 'completed'
+            })
+            .where(eq(timeTracking.id, activeEntry.id))
+            .returning();
+
+          result = {
+            id: updated.id,
+            action: 'clock-out',
+            storeId: decoded.storeId,
+            storeName: storeData?.name || 'Unknown',
+            timestamp: timestamp.toISOString(),
+            totalMinutes
+          };
+          break;
+        }
+
+        case 'break-start': {
+          // Find active clock-in
+          const [activeEntry] = await db.select().from(timeTracking).where(
+            and(
+              eq(timeTracking.tenantId, tenantId),
+              eq(timeTracking.userId, userId),
+              eq(timeTracking.storeId, decoded.storeId),
+              isNull(timeTracking.clockOut)
+            )
+          ).orderBy(desc(timeTracking.clockIn)).limit(1);
+
+          if (!activeEntry) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'No active clock-in found. Please clock in first.' 
+            });
+          }
+
+          // Check if there's already an active break
+          const breaks = (activeEntry.breaks as any[]) || [];
+          const hasActiveBreak = breaks.some(b => b.start && !b.end);
+          
+          if (hasActiveBreak) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'Break already in progress. Please end current break first.' 
+            });
+          }
+
+          // Add new break
+          const newBreak = { start: timestamp.toISOString(), end: null, duration: 0 };
+          const updatedBreaks = [...breaks, newBreak];
+
+          await db.update(timeTracking)
+            .set({ breaks: updatedBreaks })
+            .where(eq(timeTracking.id, activeEntry.id));
+
+          result = {
+            id: activeEntry.id,
+            action: 'break-start',
+            storeId: decoded.storeId,
+            storeName: storeData?.name || 'Unknown',
+            timestamp: timestamp.toISOString()
+          };
+          break;
+        }
+
+        case 'break-end': {
+          // Find active clock-in
+          const [activeEntry] = await db.select().from(timeTracking).where(
+            and(
+              eq(timeTracking.tenantId, tenantId),
+              eq(timeTracking.userId, userId),
+              eq(timeTracking.storeId, decoded.storeId),
+              isNull(timeTracking.clockOut)
+            )
+          ).orderBy(desc(timeTracking.clockIn)).limit(1);
+
+          if (!activeEntry) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'No active clock-in found' 
+            });
+          }
+
+          // Find active break
+          const breaks = (activeEntry.breaks as any[]) || [];
+          const activeBreakIndex = breaks.findIndex(b => b.start && !b.end);
+          
+          if (activeBreakIndex === -1) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'No active break found. Please start a break first.' 
+            });
+          }
+
+          // Update break with end time and duration
+          const activeBreak = breaks[activeBreakIndex];
+          const breakStart = new Date(activeBreak.start);
+          const breakDuration = Math.floor((timestamp.getTime() - breakStart.getTime()) / 60000);
+          
+          breaks[activeBreakIndex] = {
+            ...activeBreak,
+            end: timestamp.toISOString(),
+            duration: breakDuration
+          };
+
+          // Calculate total break minutes
+          const totalBreakMinutes = breaks.reduce((sum, b) => sum + (b.duration || 0), 0);
+
+          await db.update(timeTracking)
+            .set({ 
+              breaks,
+              breakMinutes: totalBreakMinutes
+            })
+            .where(eq(timeTracking.id, activeEntry.id));
+
+          result = {
+            id: activeEntry.id,
+            action: 'break-end',
+            storeId: decoded.storeId,
+            storeName: storeData?.name || 'Unknown',
+            timestamp: timestamp.toISOString(),
+            breakDuration
+          };
+          break;
+        }
+      }
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('QR action error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to process QR action' 
       });
     }
   });
