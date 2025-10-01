@@ -547,7 +547,7 @@ const nearbyStoresQuerySchema = z.object({
 // Zod validation schema for enhanced clock-in with geofencing
 const clockInBodySchema = z.object({
   storeId: z.string().uuid(),
-  trackingMethod: z.enum(['badge', 'nfc', 'app', 'gps', 'manual', 'biometric']),
+  trackingMethod: z.enum(['badge', 'nfc', 'app', 'gps', 'manual', 'biometric', 'qr', 'smart', 'web']),
   geoLocation: z.object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),

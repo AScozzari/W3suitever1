@@ -7,6 +7,7 @@ import {
   shifts,
   shiftTemplates,
   shiftTimeSlots as shiftTimeSlotsTable,
+  shiftAssignments,
   timeTracking,
   hrDocuments,
   expenseReports,
@@ -17,6 +18,7 @@ import {
   Shift,
   ShiftTemplate,
   ShiftTimeSlot,
+  ShiftAssignment,
   TimeTracking,
   InsertCalendarEvent,
   InsertShift,
@@ -777,7 +779,12 @@ export class HRStorage implements IHRStorage {
       .values(data)
       .returning();
     
-    return result[0];
+    const timeTrackingEntry = result[0];
+    
+    // Auto-match with shift assignments (tolleranza: ±30 minuti)
+    await this.autoMatchShiftAssignment(timeTrackingEntry);
+    
+    return timeTrackingEntry;
   }
   
   // Get active time tracking session for user
@@ -823,7 +830,142 @@ export class HRStorage implements IHRStorage {
       .where(eq(timeTracking.id, trackingId))
       .returning();
     
-    return result[0];
+    const updatedEntry = result[0];
+    
+    // Auto-match clock-out with shift assignments
+    await this.autoMatchShiftAssignment(updatedEntry);
+    
+    return updatedEntry;
+  }
+  
+  // Auto-match time tracking with shift assignments
+  private async autoMatchShiftAssignment(timeTrackingEntry: TimeTracking): Promise<void> {
+    const TOLERANCE_MINUTES = 30; // Tolleranza di ±30 minuti
+    
+    // Se è un clock-out e già ha shiftId, aggiorna direttamente quell'assignment
+    if (timeTrackingEntry.clockOut && timeTrackingEntry.shiftId) {
+      await this.updateAssignmentForClockOut(timeTrackingEntry);
+      return;
+    }
+    
+    // Altrimenti è un clock-in: cerca shift assignment da matchare
+    const clockInTime = new Date(timeTrackingEntry.clockIn);
+    const windowStart = new Date(clockInTime.getTime() - TOLERANCE_MINUTES * 60000);
+    const windowEnd = new Date(clockInTime.getTime() + TOLERANCE_MINUTES * 60000);
+    
+    // Cerca shift assignments che matchano (con storeId constraint)
+    const matchingAssignments = await db.select()
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, timeTrackingEntry.tenantId),
+        eq(shiftAssignments.userId, timeTrackingEntry.userId),
+        eq(shifts.storeId, timeTrackingEntry.storeId), // CRITICAL: match by store
+        or(
+          eq(shiftAssignments.status, 'assigned'),
+          eq(shiftAssignments.status, 'confirmed')
+        ),
+        isNull(shiftAssignments.actualClockIn), // Guard: only match if not already matched
+        gte(shiftAssignments.expectedClockIn, windowStart),
+        lte(shiftAssignments.expectedClockIn, windowEnd)
+      ))
+      .orderBy(sql`ABS(EXTRACT(EPOCH FROM (${shiftAssignments.expectedClockIn} - ${sql`'${clockInTime.toISOString()}'::timestamp`})))`)
+      .limit(1); // Take only the closest match
+    
+    if (matchingAssignments.length === 0) {
+      console.log(`[AUTO-MATCH] No matching shift assignment found for user ${timeTrackingEntry.userId} at store ${timeTrackingEntry.storeId} at ${clockInTime.toISOString()}`);
+      return;
+    }
+    
+    // Take the closest match
+    const assignment = matchingAssignments[0].shift_assignments;
+    
+    // Calcola deviazioni
+    const expectedClockIn = new Date(assignment.expectedClockIn!);
+    const clockInDeviationMinutes = Math.floor((clockInTime.getTime() - expectedClockIn.getTime()) / 60000);
+    
+    const updateData: any = {
+      actualClockIn: clockInTime,
+      clockInDeviationMinutes,
+      updatedAt: new Date()
+    };
+    
+    // Se c'è anche clock-out, aggiorna anche quello
+    if (timeTrackingEntry.clockOut && assignment.expectedClockOut) {
+      const clockOutTime = new Date(timeTrackingEntry.clockOut);
+      const expectedClockOut = new Date(assignment.expectedClockOut);
+      const clockOutDeviationMinutes = Math.floor((clockOutTime.getTime() - expectedClockOut.getTime()) / 60000);
+      
+      updateData.actualClockOut = clockOutTime;
+      updateData.clockOutDeviationMinutes = clockOutDeviationMinutes;
+      updateData.status = 'completed';
+      
+      // Calcola compliance (es: entro 5 minuti di tolleranza)
+      const isCompliant = Math.abs(clockInDeviationMinutes) <= 5 && Math.abs(clockOutDeviationMinutes) <= 5;
+      updateData.isCompliant = isCompliant;
+    }
+    
+    // Aggiorna shift assignment
+    await db.update(shiftAssignments)
+      .set(updateData)
+      .where(eq(shiftAssignments.id, assignment.id));
+    
+    console.log(`[AUTO-MATCH] ✅ Matched time tracking ${timeTrackingEntry.id} with shift assignment ${assignment.id} (deviation: ${clockInDeviationMinutes} min)`);
+    
+    // Aggiorna anche il shiftId nel time tracking entry
+    await db.update(timeTracking)
+      .set({ shiftId: assignment.shiftId })
+      .where(eq(timeTracking.id, timeTrackingEntry.id));
+  }
+  
+  // Update shift assignment for clock-out
+  private async updateAssignmentForClockOut(timeTrackingEntry: TimeTracking): Promise<void> {
+    if (!timeTrackingEntry.shiftId || !timeTrackingEntry.clockOut) {
+      return;
+    }
+    
+    // Trova l'assignment per questo shift
+    const assignments = await db.select()
+      .from(shiftAssignments)
+      .where(and(
+        eq(shiftAssignments.shiftId, timeTrackingEntry.shiftId),
+        eq(shiftAssignments.userId, timeTrackingEntry.userId)
+      ))
+      .limit(1);
+    
+    if (assignments.length === 0) {
+      console.log(`[AUTO-MATCH] No assignment found for clock-out: shift ${timeTrackingEntry.shiftId}, user ${timeTrackingEntry.userId}`);
+      return;
+    }
+    
+    const assignment = assignments[0];
+    
+    if (!assignment.expectedClockOut) {
+      console.log(`[AUTO-MATCH] Assignment ${assignment.id} has no expectedClockOut, skipping clock-out update`);
+      return;
+    }
+    
+    // Calcola deviazione clock-out
+    const clockOutTime = new Date(timeTrackingEntry.clockOut);
+    const expectedClockOut = new Date(assignment.expectedClockOut);
+    const clockOutDeviationMinutes = Math.floor((clockOutTime.getTime() - expectedClockOut.getTime()) / 60000);
+    
+    // Calcola compliance (tolleranza ±5 minuti)
+    const clockInDeviation = assignment.clockInDeviationMinutes || 0;
+    const isCompliant = Math.abs(clockInDeviation) <= 5 && Math.abs(clockOutDeviationMinutes) <= 5;
+    
+    // Aggiorna assignment con clock-out
+    await db.update(shiftAssignments)
+      .set({
+        actualClockOut: clockOutTime,
+        clockOutDeviationMinutes,
+        status: 'completed',
+        isCompliant,
+        updatedAt: new Date()
+      })
+      .where(eq(shiftAssignments.id, assignment.id));
+    
+    console.log(`[AUTO-MATCH] ✅ Updated assignment ${assignment.id} with clock-out (deviation: ${clockOutDeviationMinutes} min)`);
   }
   
   async getTimeTrackingForUser(userId: string, dateRange: DateRange): Promise<TimeTrackingEntryDTO[]> {
