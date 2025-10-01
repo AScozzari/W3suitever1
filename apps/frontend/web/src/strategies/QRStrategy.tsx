@@ -266,15 +266,20 @@ function QRPanel({ isActive, isLoading, context, onAction, compact, strategy }: 
 
   // 🔧 FIX: Attiva la strategy quando viene selezionato un punto vendita
   useEffect(() => {
-    if (context.selectedStore && !code) {
+    if (context.selectedStore) {
+      console.log('[QR-PANEL] Store detected, preparing QR:', context.selectedStore.id);
       strategy.prepare(context).then(() => {
-        setCode(strategy.getCurrentCode());
+        const newCode = strategy.getCurrentCode();
+        console.log('[QR-PANEL] QR code generated:', newCode);
+        setCode(newCode);
         setTimeRemaining(strategy.getTimeRemaining());
         setIsExpired(!strategy.isCodeValid());
         setGenerationCount(strategy.getGenerationCount());
+      }).catch(err => {
+        console.error('[QR-PANEL] Failed to prepare strategy:', err);
       });
     }
-  }, [context.selectedStore?.id]);
+  }, [context.selectedStore?.id, strategy]);
 
   useEffect(() => {
     if (!isActive) return;
