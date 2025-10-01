@@ -28,7 +28,11 @@ const router = Router();
 router.post('/:tenantId/:source', async (req: Request, res: Response) => {
   try {
     const { tenantId, source } = req.params;
-    const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+    
+    // Parse body from Buffer (express.raw()) to object
+    const bodyBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
+    const bodyString = bodyBuffer.toString('utf8');
+    const parsedBody = JSON.parse(bodyString);
 
     // Extract event metadata from provider-specific formats
     let eventId: string;
@@ -38,28 +42,28 @@ router.post('/:tenantId/:source', async (req: Request, res: Response) => {
     // Provider-specific event extraction
     switch (source.toLowerCase()) {
       case 'stripe':
-        eventId = req.body.id || `stripe-${Date.now()}`;
-        eventType = req.body.type || 'unknown';
-        priority = getStripePriority(req.body.type);
+        eventId = parsedBody.id || `stripe-${Date.now()}`;
+        eventType = parsedBody.type || 'unknown';
+        priority = getStripePriority(parsedBody.type);
         break;
 
       case 'twilio':
-        eventId = req.body.MessageSid || req.body.SmsSid || `twilio-${Date.now()}`;
-        eventType = req.body.SmsStatus || req.body.MessageStatus || 'sms.status';
+        eventId = parsedBody.MessageSid || parsedBody.SmsSid || `twilio-${Date.now()}`;
+        eventType = parsedBody.SmsStatus || parsedBody.MessageStatus || 'sms.status';
         priority = 'high'; // SMS delivery is usually time-sensitive
         break;
 
       case 'github':
-        eventId = req.body.delivery || `github-${Date.now()}`;
+        eventId = parsedBody.delivery || `github-${Date.now()}`;
         eventType = req.headers['x-github-event'] as string || 'push';
         priority = getGitHubPriority(eventType);
         break;
 
       default:
         // Generic webhook
-        eventId = req.body.id || req.body.event_id || `${source}-${Date.now()}`;
-        eventType = req.body.type || req.body.event_type || req.body.event || 'webhook.received';
-        priority = req.body.priority || 'medium';
+        eventId = parsedBody.id || parsedBody.event_id || `${source}-${Date.now()}`;
+        eventType = parsedBody.type || parsedBody.event_type || parsedBody.event || 'webhook.received';
+        priority = parsedBody.priority || 'medium';
     }
 
     // Get signature from appropriate header
@@ -85,7 +89,7 @@ router.post('/:tenantId/:source', async (req: Request, res: Response) => {
       source,
       eventId,
       eventType,
-      payload: req.body,
+      payload: parsedBody,
       signature,
       headers: req.headers as Record<string, any>,
       priority

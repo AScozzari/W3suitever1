@@ -880,7 +880,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     rolling: true // Reset expiration on each request
   }));
 
-  // Apply JSON body parser for all routes
+  // Import raw body middleware for webhook signature validation
+  const { rawBodyMiddleware } = await import('../middleware/raw-body.js');
+  
+  // Apply raw body middleware ONLY for webhook routes (before JSON parsing)
+  // This preserves raw body for HMAC signature validation
+  app.use('/api/webhooks', rawBodyMiddleware, express.raw({ type: '*/*' }));
+  
+  // Apply JSON body parser for all other routes
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 

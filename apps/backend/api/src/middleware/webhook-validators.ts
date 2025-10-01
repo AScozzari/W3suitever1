@@ -55,8 +55,11 @@ export function validateStripeSignature(config: WebhookValidationConfig) {
         return res.status(401).json({ error: 'Stripe webhook timestamp too old' });
       }
 
-      // Compute expected signature
-      const signedPayload = `${timestamp}.${req.body}`;
+      // Get raw body (required for signature validation)
+      const rawBody = req.rawBody?.toString('utf8') || JSON.stringify(req.body);
+      
+      // Compute expected signature using raw body
+      const signedPayload = `${timestamp}.${rawBody}`;
       const expectedSignature = crypto
         .createHmac('sha256', config.signingSecret)
         .update(signedPayload, 'utf8')
@@ -96,23 +99,28 @@ export function validateTwilioSignature(config: WebhookValidationConfig) {
         return res.status(401).json({ error: 'Missing Twilio signature' });
       }
 
-      // Twilio signs the full URL + all POST parameters sorted alphabetically
-      const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      // Twilio signs the full URL (without query string) + all POST + query parameters sorted alphabetically
+      const urlWithoutQuery = `${req.protocol}://${req.get('host')}${req.path}`;
       
-      // For Twilio, we need to reconstruct the signed payload
-      // URL + sorted query params
-      const params = new URLSearchParams();
+      // Collect all parameters (POST body + query string)
+      const allParams: Record<string, string> = {};
       
-      // Add all POST body params
+      // Add POST body params
       if (typeof req.body === 'object' && !Array.isArray(req.body)) {
-        Object.keys(req.body)
-          .sort()
-          .forEach(key => {
-            params.append(key, req.body[key]);
-          });
+        Object.keys(req.body).forEach(key => {
+          allParams[key] = String(req.body[key]);
+        });
       }
-
-      const signedPayload = url + params.toString();
+      
+      // Add query string params
+      Object.keys(req.query).forEach(key => {
+        allParams[key] = String(req.query[key]);
+      });
+      
+      // Sort params alphabetically and construct signed payload
+      const sortedKeys = Object.keys(allParams).sort();
+      const paramString = sortedKeys.map(key => `${key}${allParams[key]}`).join('');
+      const signedPayload = urlWithoutQuery + paramString;
 
       // Compute expected signature (SHA1)
       const expectedSignature = crypto
@@ -166,10 +174,13 @@ export function validateGitHubSignature(config: WebhookValidationConfig) {
 
       const receivedSignature = signature.substring(7); // Remove 'sha256=' prefix
 
-      // Compute expected signature
+      // Get raw body (required for signature validation)
+      const rawBody = req.rawBody?.toString('utf8') || JSON.stringify(req.body);
+
+      // Compute expected signature using raw body
       const expectedSignature = crypto
         .createHmac('sha256', config.signingSecret)
-        .update(req.body, 'utf8')
+        .update(rawBody, 'utf8')
         .digest('hex');
 
       // Timing-safe comparison
@@ -218,10 +229,13 @@ export function validateGenericHmacSignature(config: WebhookValidationConfig & {
         ? signatureHeader.substring(headerPrefix.length)
         : signatureHeader;
 
-      // Compute expected signature
+      // Get raw body (required for signature validation)
+      const rawBody = req.rawBody?.toString('utf8') || JSON.stringify(req.body);
+
+      // Compute expected signature using raw body
       const expectedSignature = crypto
         .createHmac(algorithm, config.signingSecret)
-        .update(req.body, 'utf8')
+        .update(rawBody, 'utf8')
         .digest('hex');
 
       // Timing-safe comparison

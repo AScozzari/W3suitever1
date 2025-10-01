@@ -26,6 +26,7 @@ W3 Suite is a multi-tenant enterprise platform that offers a comprehensive busin
 - HR: calendarEvents, shifts, leaveRequests, timeTracking
 - AI: aiSettings, aiConversations, aiUsageLogs
 - notifications, structuredLogs, entityLogs
+- webhookEvents, webhookSignatures (centralized webhook system)
 
 // 🌐 PUBLIC SCHEMA - Reference Data (NO RLS)
 - brands, channels, commercialAreas, drivers
@@ -202,6 +203,7 @@ The project employs an enterprise monorepo structure, separating `W3 Suite` (ten
 - **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
 - **Unified Notification System**: Real-time notifications across 7 business categories with Redis + WebSocket architecture and PostgreSQL fallback.
 - **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management, including clock-in/out matching, deviation tracking, compliance rules, and overwrite protection.
+- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support (Stripe, Twilio, GitHub, Generic), HMAC signature validation with timing-safe comparison, Redis queue with fallback mode, 4-tier priority worker (critical/high/medium/low) with exponential backoff retry logic, automatic workflow engine integration via pattern matching on event types, complete audit trail with `webhook_events` and `webhook_signatures` tables, RBAC-protected management endpoints, and zero external dependencies (no frameworks like Svix).
 
 # External Dependencies
 
