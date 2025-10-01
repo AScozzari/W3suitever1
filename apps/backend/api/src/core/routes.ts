@@ -2909,7 +2909,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(teams.isActive, true)
         ));
       
-      res.json(teamsData);
+      // Map database fields to frontend camelCase format
+      const mappedTeams = teamsData.map(team => ({
+        ...team,
+        primarySupervisor: team.primarySupervisorUser || null,
+        primarySupervisorRole: team.primarySupervisorRole || null,
+        secondarySupervisorUsers: team.secondarySupervisorUsers || [],
+        secondarySupervisorRoles: team.secondarySupervisorRoles || [],
+        userMembers: team.userMembers || [],
+        roleMembers: team.roleMembers || []
+      }));
+      
+      res.json(mappedTeams);
     } catch (error) {
       handleApiError(error, res, 'recupero teams');
     }
