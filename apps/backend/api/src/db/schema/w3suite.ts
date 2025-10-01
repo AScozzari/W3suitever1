@@ -2496,6 +2496,94 @@ export const workflowExecutions = w3suiteSchema.table("workflow_executions", {
   index("workflow_executions_started_idx").on(table.startedAt),
 ]);
 
+// ==================== WEBHOOK SYSTEM TABLES ====================
+
+// Webhook Events - Centralized webhook event log with audit trail
+export const webhookEvents = w3suiteSchema.table("webhook_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Event identification
+  eventId: varchar("event_id", { length: 255 }).notNull(), // Provider's event ID (for deduplication)
+  eventType: varchar("event_type", { length: 100 }).notNull(), // 'payment.succeeded', 'sms.delivered', etc.
+  source: varchar("source", { length: 100 }).notNull(), // 'stripe', 'twilio', 'github', 'custom'
+  
+  // Event data
+  payload: jsonb("payload").notNull(), // Full webhook payload
+  headers: jsonb("headers").default({}), // HTTP headers from webhook request
+  signature: text("signature"), // Webhook signature for validation
+  signatureValid: boolean("signature_valid"), // Validation result
+  
+  // Processing status
+  status: varchar("status", { length: 50 }).default('pending').notNull(), // 'pending', 'processing', 'completed', 'failed', 'skipped'
+  processingError: text("processing_error"), // Error message if failed
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  
+  // Workflow trigger mapping
+  workflowTriggerId: uuid("workflow_trigger_id").references(() => workflowTriggers.id), // Matched workflow trigger
+  workflowInstanceId: uuid("workflow_instance_id").references(() => workflowInstances.id), // Created workflow instance
+  
+  // Timing
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+  nextRetryAt: timestamp("next_retry_at"),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("webhook_events_tenant_idx").on(table.tenantId),
+  index("webhook_events_event_id_idx").on(table.eventId),
+  index("webhook_events_event_type_idx").on(table.eventType),
+  index("webhook_events_source_idx").on(table.source),
+  index("webhook_events_status_idx").on(table.status),
+  index("webhook_events_received_idx").on(table.receivedAt),
+  index("webhook_events_next_retry_idx").on(table.nextRetryAt),
+  uniqueIndex("webhook_events_unique").on(table.tenantId, table.source, table.eventId), // Prevent duplicates
+]);
+
+// Webhook Signatures - Provider signature configuration per tenant
+export const webhookSignatures = w3suiteSchema.table("webhook_signatures", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Provider identification
+  provider: varchar("provider", { length: 100 }).notNull(), // 'stripe', 'twilio', 'github', 'custom'
+  providerName: varchar("provider_name", { length: 200 }).notNull(), // Display name
+  description: text("description"),
+  
+  // Signature configuration
+  signingSecret: text("signing_secret").notNull(), // Encrypted webhook secret
+  validationAlgorithm: varchar("validation_algorithm", { length: 50 }).default('hmac-sha256').notNull(), // 'hmac-sha256', 'hmac-sha512', 'rsa'
+  signatureHeader: varchar("signature_header", { length: 100 }).default('x-webhook-signature'), // Header containing signature
+  timestampHeader: varchar("timestamp_header", { length: 100 }), // Header for timestamp (replay protection)
+  
+  // Validation settings
+  toleranceWindowSeconds: integer("tolerance_window_seconds").default(300), // 5 min replay protection
+  requireTimestamp: boolean("require_timestamp").default(false),
+  
+  // RBAC Integration
+  requiredPermission: varchar("required_permission", { length: 200 }).default('webhooks.receive.*'), // Permission to receive webhooks
+  allowedEventTypes: text("allowed_event_types").array().default([]), // Whitelist of event types (empty = all)
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  lastUsed: timestamp("last_used"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("webhook_signatures_tenant_idx").on(table.tenantId),
+  index("webhook_signatures_provider_idx").on(table.provider),
+  index("webhook_signatures_active_idx").on(table.isActive),
+  uniqueIndex("webhook_signatures_unique").on(table.tenantId, table.provider),
+]);
+
 // Insert Schemas and Types for new workflow tables
 export const insertWorkflowActionSchema = createInsertSchema(workflowActions).omit({ 
   id: true, 
@@ -2559,6 +2647,22 @@ export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutio
 });
 export type InsertWorkflowExecution = z.infer<typeof insertWorkflowExecutionSchema>;
 export type WorkflowExecution = typeof workflowExecutions.$inferSelect;
+
+export const insertWebhookEventSchema = createInsertSchema(webhookEvents).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+
+export const insertWebhookSignatureSchema = createInsertSchema(webhookSignatures).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWebhookSignature = z.infer<typeof insertWebhookSignatureSchema>;
+export type WebhookSignature = typeof webhookSignatures.$inferSelect;
 
 // ==================== NOTIFICATION SYSTEM RELATIONS ====================
 
