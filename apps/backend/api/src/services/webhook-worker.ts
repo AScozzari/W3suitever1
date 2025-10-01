@@ -50,6 +50,14 @@ export class WebhookWorker {
   }
 
   /**
+   * Static method to process a webhook event (for fallback poller)
+   */
+  static async processEvent(queuedEvent: any): Promise<void> {
+    const worker = new WebhookWorker();
+    return worker.processWebhookEvent(queuedEvent);
+  }
+
+  /**
    * Process a single webhook event
    */
   private async processWebhookEvent(queuedEvent: any): Promise<void> {

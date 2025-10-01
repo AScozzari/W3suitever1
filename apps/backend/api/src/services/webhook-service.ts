@@ -107,8 +107,10 @@ export class WebhookService {
         status: 'pending'
       });
 
-      // STEP 4: Queue for async processing (CRITICAL - must succeed)
+      // STEP 4: Queue for async processing with Redis fallback
       const priority = event.priority || 'medium';
+      let queuedSuccessfully = false;
+      
       try {
         await redisService.queueWebhookEvent({
           id: storedEvent.id,
@@ -120,16 +122,30 @@ export class WebhookService {
           signature: event.signature,
           headers: event.headers
         });
+        queuedSuccessfully = true;
       } catch (queueError) {
-        // Queue failed - do NOT mark as processed to allow provider retry
-        logger.error('❌ Failed to queue webhook event, allowing retry', {
+        // Redis queue failed - use DB fallback mode
+        logger.warn('⚠️ Redis queue unavailable, using DB fallback mode', {
           error: queueError instanceof Error ? queueError.message : String(queueError),
           eventId: storedEvent.id,
           source: event.source,
-          tenantId: event.tenantId
+          tenantId: event.tenantId,
+          note: 'Event saved in DB with pending status, background poller will process'
         });
-
-        throw queueError; // Re-throw to trigger error response to provider
+        
+        // Update event metadata to indicate fallback mode
+        await db.update(webhookEvents)
+          .set({ 
+            metadata: { 
+              queueFallback: true, 
+              redisError: queueError instanceof Error ? queueError.message : String(queueError),
+              fallbackTimestamp: new Date().toISOString()
+            } 
+          })
+          .where(eq(webhookEvents.id, storedEvent.id));
+        
+        // Do NOT throw - event is safely stored in DB for background processing
+        queuedSuccessfully = false;
       }
 
       // STEP 5: Mark as received (best-effort, non-blocking)
@@ -161,13 +177,16 @@ export class WebhookService {
         eventType: event.eventType,
         tenantId: event.tenantId,
         signatureValid,
-        priority
+        priority,
+        queuedSuccessfully
       });
 
       return {
         success: true,
         eventId: storedEvent.id,
-        message: 'Event queued for processing'
+        message: queuedSuccessfully 
+          ? 'Event queued for processing' 
+          : 'Event stored for processing (fallback mode)'
       };
 
     } catch (error) {
