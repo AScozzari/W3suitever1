@@ -48,17 +48,41 @@ export class WebhookService {
       });
 
       // STEP 1: Check deduplication (prevent processing same event twice)
-      const isDuplicate = await redisService.checkWebhookDeduplication(
-        event.tenantId,
-        event.source,
-        event.eventId
-      );
+      // Try Redis first (fast), fallback to DB if Redis unavailable
+      let isDuplicate = false;
+      
+      try {
+        isDuplicate = await redisService.checkWebhookDeduplication(
+          event.tenantId,
+          event.source,
+          event.eventId
+        );
+      } catch (redisError) {
+        // Redis unavailable - fallback to DB check
+        logger.warn('⚠️ Redis deduplication unavailable, checking DB', {
+          error: redisError instanceof Error ? redisError.message : String(redisError)
+        });
+        
+        isDuplicate = await this.checkDatabaseDeduplication(
+          event.tenantId,
+          event.source,
+          event.eventId
+        );
+      }
 
       if (isDuplicate) {
         logger.warn('🪝 Webhook event already processed (duplicate)', {
           source: event.source,
           eventId: event.eventId,
           tenantId: event.tenantId
+        });
+        
+        // Store duplicate event for audit trail
+        await this.storeWebhookEvent({
+          ...event,
+          signatureValid: undefined,
+          status: 'skipped',
+          processingError: 'Duplicate event (already processed)'
         });
         
         return {
@@ -203,6 +227,29 @@ export class WebhookService {
         error: `Webhook processing failed: ${errorMessage}`
       };
     }
+  }
+
+  /**
+   * 🔍 Check database for duplicate events (fallback when Redis unavailable)
+   */
+  private static async checkDatabaseDeduplication(
+    tenantId: string,
+    source: string,
+    eventId: string
+  ): Promise<boolean> {
+    const existing = await db
+      .select()
+      .from(webhookEvents)
+      .where(
+        and(
+          eq(webhookEvents.tenantId, tenantId),
+          eq(webhookEvents.source, source),
+          eq(webhookEvents.eventId, eventId)
+        )
+      )
+      .limit(1);
+
+    return existing.length > 0;
   }
 
   /**

@@ -157,7 +157,8 @@ export class WebhookWorker {
           }
         );
 
-        await redisService.markWebhookProcessed(tenantId, source, queuedEvent.eventId, 86400);
+        // DO NOT mark as processed - allow retry or manual fix
+        // Redis key will remain absent, provider can retry
         return;
       }
 
