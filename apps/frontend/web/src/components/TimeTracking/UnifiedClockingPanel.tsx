@@ -244,14 +244,7 @@ export default function UnifiedClockingPanel({
   }, []);
 
   // ❌ REMOVED: Auto-select first store - now requires explicit user selection for progressive disclosure
-
-  // ✅ FIX: Re-prepare QR strategy when store changes or QR is selected
-  useEffect(() => {
-    if (strategiesState.selectedStrategy?.type === 'qr' && context.selectedStore) {
-      strategiesActions.prepareStrategy(context);
-    }
-  }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id]);
-
+  
   // ✅ NEW: Filter strategies based on PDV configuration + HR Management
   const availableStrategyConfigs = React.useMemo(() => {
     // First filter by HR Management permissions
