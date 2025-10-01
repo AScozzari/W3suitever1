@@ -2912,12 +2912,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Map database fields to frontend camelCase format
       const mappedTeams = teamsData.map(team => ({
         ...team,
-        primarySupervisor: team.primarySupervisorUser || null,
+        // Map snake_case DB fields to camelCase for frontend
+        teamType: team.teamType || 'functional',
+        // Parse assignedDepartments - can be string, array or null
+        assignedDepartments: Array.isArray(team.assignedDepartments) 
+          ? team.assignedDepartments 
+          : (team.assignedDepartments && team.assignedDepartments !== '' 
+            ? team.assignedDepartments.split(',').map((d: string) => d.trim())
+            : []),
+        userMembers: Array.isArray(team.userMembers) ? team.userMembers : [],
+        roleMembers: Array.isArray(team.roleMembers) ? team.roleMembers : [],
+        primarySupervisorUser: team.primarySupervisorUser || null,
         primarySupervisorRole: team.primarySupervisorRole || null,
-        secondarySupervisorUsers: team.secondarySupervisorUsers || [],
-        secondarySupervisorRoles: team.secondarySupervisorRoles || [],
-        userMembers: team.userMembers || [],
-        roleMembers: team.roleMembers || []
+        secondarySupervisorUsers: Array.isArray(team.secondarySupervisorUsers) ? team.secondarySupervisorUsers : [],
+        secondarySupervisorRoles: Array.isArray(team.secondarySupervisorRoles) ? team.secondarySupervisorRoles : [],
+        // workflowAssignments doesn't exist in DB yet - always return empty array
+        workflowAssignments: [],
+        // Also provide legacy field for backward compatibility
+        primarySupervisor: team.primarySupervisorUser || null
       }));
       
       res.json(mappedTeams);
