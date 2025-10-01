@@ -20,6 +20,7 @@ import {
   timeTracking,
   hrDocuments,
   expenseReports,
+  storesTimetrackingMethods,
   // AI System tables
   aiSettings,
   aiUsageLogs,
