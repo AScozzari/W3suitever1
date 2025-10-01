@@ -3896,7 +3896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ) as user,
           json_build_object(
             'id', st.id,
-            'name', st.name,
+            'name', st.nome,
             'code', st.code
           ) as store
         FROM w3suite.shift_assignments sa
