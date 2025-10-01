@@ -2352,10 +2352,10 @@ export const teams = w3suiteSchema.table("teams", {
   roleMembers: text("role_members").array().default([]), // Array of role IDs (tutti gli utenti con questi ruoli)
   
   // Supervisor configuration (RBAC validated) - Hybrid User/Role support
-  primarySupervisorUser: varchar("primary_supervisor_user").references(() => users.id), // Primary supervisor (user-based)
-  primarySupervisorRole: uuid("primary_supervisor_role").references(() => roles.id), // Primary supervisor (role-based)
-  secondarySupervisorUsers: text("secondary_supervisor_users").array().default([]), // Secondary supervisors (user-based, VARCHAR array)
-  secondarySupervisorRoles: uuid("secondary_supervisor_roles").array().default([]), // Secondary supervisors (role-based, UUID array)
+  primarySupervisorUser: varchar("primary_supervisor_user").references(() => users.id, { onDelete: 'set null' }), // Primary supervisor (user-based)
+  primarySupervisorRole: uuid("primary_supervisor_role").references(() => roles.id, { onDelete: 'set null' }), // Primary supervisor (role-based)
+  secondarySupervisorUser: varchar("secondary_supervisor_user").references(() => users.id, { onDelete: 'set null' }), // Secondary supervisor (single user, optional)
+  secondarySupervisorRoles: uuid("secondary_supervisor_roles").array().default([]), // Secondary supervisors (role-based, UUID array - kept for compatibility)
   requiredSupervisorPermission: varchar("required_supervisor_permission", { length: 200 }).default("team.manage"),
   
   // Team scope and permissions

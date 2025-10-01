@@ -2924,12 +2924,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roleMembers: Array.isArray(team.roleMembers) ? team.roleMembers : [],
         primarySupervisorUser: team.primarySupervisorUser || null,
         primarySupervisorRole: team.primarySupervisorRole || null,
-        secondarySupervisorUsers: Array.isArray(team.secondarySupervisorUsers) ? team.secondarySupervisorUsers : [],
+        secondarySupervisorUser: team.secondarySupervisorUser || null, // Changed from array to single user
         secondarySupervisorRoles: Array.isArray(team.secondarySupervisorRoles) ? team.secondarySupervisorRoles : [],
         // workflowAssignments doesn't exist in DB yet - always return empty array
         workflowAssignments: [],
-        // Also provide legacy field for backward compatibility
-        primarySupervisor: team.primarySupervisorUser || null
+        // Legacy compatibility fields
+        primarySupervisor: team.primarySupervisorUser || null,
+        secondarySupervisorUsers: team.secondarySupervisorUser ? [team.secondarySupervisorUser] : [] // Legacy array format
       }));
       
       res.json(mappedTeams);
@@ -2948,8 +2949,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
+      // ✅ Backward compatibility: Handle legacy secondarySupervisorUsers array
+      const requestData = { ...req.body };
+      
+      // If legacy array format is present, convert to single user
+      if (requestData.secondarySupervisorUsers && Array.isArray(requestData.secondarySupervisorUsers)) {
+        const legacyArray = requestData.secondarySupervisorUsers;
+        const newSingle = requestData.secondarySupervisorUser;
+        
+        // Conflict check: both formats present with different values
+        if (newSingle && legacyArray.length > 0 && legacyArray[0] !== newSingle) {
+          return res.status(400).json({ 
+            error: 'Conflitto: secondarySupervisorUsers e secondarySupervisorUser hanno valori diversi' 
+          });
+        }
+        
+        // Map first element of array to single field
+        requestData.secondarySupervisorUser = legacyArray.length > 0 ? legacyArray[0] : null;
+        delete requestData.secondarySupervisorUsers; // Remove legacy field
+      }
+
       const validatedData = insertTeamSchema.parse({
-        ...req.body,
+        ...requestData,
         tenantId,
         createdBy: userId
       });
@@ -2974,8 +2995,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
+      // ✅ Backward compatibility: Handle legacy secondarySupervisorUsers array
+      const requestData = { ...req.body };
+      
+      // If legacy array format is present, convert to single user
+      if (requestData.secondarySupervisorUsers && Array.isArray(requestData.secondarySupervisorUsers)) {
+        const legacyArray = requestData.secondarySupervisorUsers;
+        const newSingle = requestData.secondarySupervisorUser;
+        
+        // Conflict check: both formats present with different values
+        if (newSingle && legacyArray.length > 0 && legacyArray[0] !== newSingle) {
+          return res.status(400).json({ 
+            error: 'Conflitto: secondarySupervisorUsers e secondarySupervisorUser hanno valori diversi' 
+          });
+        }
+        
+        // Map first element of array to single field
+        requestData.secondarySupervisorUser = legacyArray.length > 0 ? legacyArray[0] : null;
+        delete requestData.secondarySupervisorUsers; // Remove legacy field
+      }
+
+      // ✅ Validate update data with Zod schema (partial to allow optional fields)
+      const validatedData = insertTeamSchema.partial().parse(requestData);
+
       const updateData = {
-        ...req.body,
+        ...validatedData,
         updatedBy: userId,
         updatedAt: new Date()
       };

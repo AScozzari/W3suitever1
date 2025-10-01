@@ -66,7 +66,7 @@ const createTeamSchema = z.object({
   roleMembers: z.array(z.string()).default([]),
   primarySupervisorUser: z.string().nullable().optional(),
   primarySupervisorRole: z.string().nullable().optional(),
-  secondarySupervisorUsers: z.array(z.string()).default([]),
+  secondarySupervisorUser: z.string().nullable().optional(), // Changed from array to single user
   secondarySupervisorRoles: z.array(z.string()).default([]),
   workflowAssignments: z.array(z.object({
     department: z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm']),
@@ -74,6 +74,67 @@ const createTeamSchema = z.object({
     autoAssign: z.boolean().default(true)
   })).default([]),
   isActive: z.boolean().default(true)
+}).refine((data) => {
+  // ✅ Validation: Members cannot be supervisors
+  const members = data.userMembers;
+  const primarySup = data.primarySupervisorUser;
+  const secondarySup = data.secondarySupervisorUser;
+  
+  // Check if primary supervisor is in members
+  if (primarySup && members.includes(primarySup)) {
+    return false;
+  }
+  
+  // Check if secondary supervisor is in members
+  if (secondarySup && members.includes(secondarySup)) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Un membro del team non può essere anche supervisore dello stesso team",
+  path: ["userMembers"] // Show error on members field
+}).refine((data) => {
+  // ✅ Validation: Primary and secondary supervisors cannot be the same user
+  const primarySup = data.primarySupervisorUser;
+  const secondarySup = data.secondarySupervisorUser;
+  
+  if (primarySup && secondarySup && primarySup === secondarySup) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Il supervisore principale e il secondo supervisore non possono essere la stessa persona",
+  path: ["secondarySupervisorUser"]
+}).refine((data) => {
+  // ✅ Validation: XOR between primarySupervisorUser and primarySupervisorRole
+  const hasUserPrimary = !!data.primarySupervisorUser;
+  const hasRolePrimary = !!data.primarySupervisorRole;
+  
+  // Both cannot be set at the same time (mutual exclusion enforced by UI but validated here too)
+  if (hasUserPrimary && hasRolePrimary) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Puoi selezionare solo un supervisore principale (utente O ruolo, non entrambi)",
+  path: ["primarySupervisorUser"]
+}).refine((data) => {
+  // ✅ Validation: XOR between secondarySupervisorUser and secondarySupervisorRoles
+  const hasUserSecondary = !!data.secondarySupervisorUser;
+  const hasRoleSecondary = data.secondarySupervisorRoles.length > 0;
+  
+  // Both cannot be set at the same time
+  if (hasUserSecondary && hasRoleSecondary) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Puoi selezionare solo un supervisore secondario (utente O ruoli, non entrambi)",
+  path: ["secondarySupervisorUser"]
 });
 
 type CreateTeamData = z.infer<typeof createTeamSchema>;
@@ -101,7 +162,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     roleMembers: [],
     primarySupervisorUser: null,
     primarySupervisorRole: null,
-    secondarySupervisorUsers: [],
+    secondarySupervisorUser: null, // Changed from array to single user
     secondarySupervisorRoles: [],
     workflowAssignments: [],
     isActive: true
@@ -126,7 +187,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           roleMembers: editTeam.roleMembers || [],
           primarySupervisorUser: editTeam.primarySupervisorUser || null,
           primarySupervisorRole: editTeam.primarySupervisorRole || null,
-          secondarySupervisorUsers: editTeam.secondarySupervisorUsers || [],
+          // Handle both old (array) and new (single) format for backward compatibility
+          secondarySupervisorUser: editTeam.secondarySupervisorUser || 
+            (editTeam.secondarySupervisorUsers && editTeam.secondarySupervisorUsers[0]) || null,
           secondarySupervisorRoles: editTeam.secondarySupervisorRoles || [],
           workflowAssignments: editTeam.workflowAssignments || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
@@ -659,8 +722,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       {users.map((user: any) => {
                         const primaryUser = form.watch('primarySupervisorUser');
                         const primaryRole = form.watch('primarySupervisorRole');
+                        const userMembers = form.watch('userMembers');
                         const isSelected = primaryUser === user.id;
-                        const isDisabled = !!primaryRole; // Disabled if role is selected
+                        const isMember = userMembers.includes(user.id);
+                        const isDisabled = !!primaryRole || isMember; // Disabled if role is selected OR user is a member
                         
                         return (
                           <div
@@ -675,6 +740,13 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             onClick={() => {
                               if (!isDisabled) {
                                 form.setValue('primarySupervisorUser', isSelected ? null : user.id);
+                              } else if (isMember && !primaryRole) {
+                                // Show conflict warning for members
+                                toast({
+                                  title: '⚠️ Conflitto Rilevato',
+                                  description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                  variant: 'destructive'
+                                });
                               }
                             }}
                             data-testid={`primary-supervisor-user-${user.id}`}
@@ -690,6 +762,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                     ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
                                     : 'No Dept'}
                                 </Badge>
+                                {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
                                 {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
                               </div>
                             </div>
@@ -746,44 +819,49 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
                   <Separator className="my-8" />
 
-                  {/* 🎯 SECONDARY SUPERVISORS SECTION */}
+                  {/* 🎯 SECONDARY SUPERVISOR SECTION - Single User Only (Optional) */}
                   <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
-                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Secondary Supervisors</h4>
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Secondo Supervisore (Opzionale)</h4>
                     <p className="text-xs text-gray-600">
-                      Additional supervisors who can support team management
+                      Seleziona un ulteriore utente come supervisore di supporto per questo team
                     </p>
                   </div>
 
-                  {/* Secondary Supervisors - Users */}
+                  {/* Secondary Supervisor - Single User */}
                   <div>
-                    <h4 className="text-md font-medium mb-1">Supervisori Utente</h4>
+                    <h4 className="text-md font-medium mb-1">Secondo Supervisore Utente</h4>
                     <p className="text-sm text-gray-600 mb-3">
-                      Seleziona utenti specifici come supervisori aggiuntivi
+                      Seleziona un utente specifico come secondo supervisore (opzionale)
                     </p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {users.map((user: any) => {
-                        const secondaryUsers = form.watch('secondarySupervisorUsers');
+                        const secondaryUser = form.watch('secondarySupervisorUser');
                         const primaryUser = form.watch('primarySupervisorUser');
-                        const isSelected = secondaryUsers.includes(user.id);
+                        const userMembers = form.watch('userMembers');
+                        const isSelected = secondaryUser === user.id;
                         const isPrimary = primaryUser === user.id;
+                        const isMember = userMembers.includes(user.id);
                         
                         return (
                           <div
                             key={user.id}
                             className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isPrimary
+                              (isPrimary || isMember)
                                 ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
                                 : isSelected
                                   ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
                                   : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                             }`}
                             onClick={() => {
-                              if (!isPrimary) {
-                                const current = secondaryUsers;
-                                const updated = current.includes(user.id)
-                                  ? current.filter(id => id !== user.id)
-                                  : [...current, user.id];
-                                form.setValue('secondarySupervisorUsers', updated);
+                              if (!isPrimary && !isMember) {
+                                form.setValue('secondarySupervisorUser', isSelected ? null : user.id);
+                              } else if (isMember) {
+                                // Show conflict warning
+                                toast({
+                                  title: '⚠️ Conflitto Rilevato',
+                                  description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                  variant: 'destructive'
+                                });
                               }
                             }}
                             data-testid={`secondary-supervisor-user-${user.id}`}
@@ -800,59 +878,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                     : 'No Dept'}
                                 </Badge>
                                 {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
-                                {isSelected && !isPrimary && <UserCheck className="w-4 h-4 text-green-600" />}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Secondary Supervisors - Roles */}
-                  <div>
-                    <h4 className="text-md font-medium mb-1">Supervisori per Ruolo</h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Seleziona ruoli - tutti gli utenti con questi ruoli saranno supervisori aggiuntivi
-                    </p>
-                    <div className="space-y-2">
-                      {roles.map((role: any) => {
-                        const secondaryRoles = form.watch('secondarySupervisorRoles');
-                        const primaryRole = form.watch('primarySupervisorRole');
-                        const isSelected = secondaryRoles.includes(role.id);
-                        const isPrimary = primaryRole === role.id;
-                        
-                        return (
-                          <div
-                            key={role.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isPrimary
-                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                                : isSelected
-                                  ? 'bg-windtre-orange/10 border-windtre-orange text-windtre-orange'
-                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            onClick={() => {
-                              if (!isPrimary) {
-                                const current = secondaryRoles;
-                                const updated = current.includes(role.id)
-                                  ? current.filter(id => id !== role.id)
-                                  : [...current, role.id];
-                                form.setValue('secondarySupervisorRoles', updated);
-                              }
-                            }}
-                            data-testid={`secondary-supervisor-role-${role.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{role.name}</div>
-                                <div className="text-sm text-gray-500">{role.description}</div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
-                                {isSelected && !isPrimary && <Shield className="w-4 h-4 text-green-600" />}
+                                {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
+                                {isSelected && !isPrimary && !isMember && <UserCheck className="w-4 h-4 text-green-600" />}
                               </div>
                             </div>
                           </div>
