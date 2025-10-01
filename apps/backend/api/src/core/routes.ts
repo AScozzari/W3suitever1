@@ -8266,6 +8266,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== QR CODE TIME TRACKING (SECURE) ====================
+
+  // In-memory anti-replay cache for used QR tokens
+  const usedQRTokens = new Map<string, number>();
+  
+  // Cleanup expired tokens every minute
+  setInterval(() => {
+    const now = Date.now();
+    for (const [jti, expiry] of usedQRTokens.entries()) {
+      if (now > expiry) {
+        usedQRTokens.delete(jti);
+      }
+    }
+  }, 60000);
+
+  // Generate signed QR token for store
+  app.get('/api/hr/time-tracking/qr-token', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { storeId } = req.query;
+
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      if (!storeId) {
+        return res.status(400).json({ error: 'Store ID is required' });
+      }
+
+      // Verify store belongs to tenant
+      await setTenantContext(tenantId);
+      const store = await db.select().from(stores).where(
+        and(eq(stores.id, storeId as string), eq(stores.tenantId, tenantId))
+      ).limit(1);
+
+      if (!store || store.length === 0) {
+        return res.status(404).json({ error: 'Store not found' });
+      }
+
+      // Generate secure token (30 second expiry)
+      const jti = Math.random().toString(36).substr(2, 16);
+      const now = Math.floor(Date.now() / 1000);
+      const exp = now + 30; // 30 seconds
+
+      const tokenPayload = {
+        jti,
+        tenantId,
+        storeId,
+        iat: now,
+        exp
+      };
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { algorithm: 'HS256' });
+      
+      // Generate URL for QR code
+      const baseUrl = req.protocol + '://' + req.get('host');
+      const qrUrl = `${baseUrl}/qr-checkin?token=${token}`;
+
+      res.json({ 
+        token, 
+        url: qrUrl,
+        expiresAt: exp * 1000,
+        storeId 
+      });
+    } catch (error) {
+      console.error('Generate QR token error:', error);
+      res.status(500).json({ error: 'Failed to generate QR token' });
+    }
+  });
+
+  // Process QR check-in (authenticated)
+  app.post('/api/hr/time-tracking/qr-checkin', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.clock'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const { token } = req.body;
+
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      if (!token) {
+        return res.status(400).json({ error: 'Token is required' });
+      }
+
+      // Verify JWT signature and expiry
+      let decoded: any;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET, { 
+          algorithms: ['HS256'],
+          clockTolerance: 5 // 5 second clock skew tolerance
+        });
+      } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+          return res.status(400).json({ 
+            success: false,
+            error: 'QR code expired. Please request a new one.' 
+          });
+        }
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid QR code' 
+        });
+      }
+
+      // Validate token structure
+      if (!decoded.jti || !decoded.tenantId || !decoded.storeId) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid token format' 
+        });
+      }
+
+      // Verify tenant matches
+      if (decoded.tenantId !== tenantId) {
+        return res.status(403).json({ 
+          success: false,
+          error: 'Invalid tenant' 
+        });
+      }
+
+      // Anti-replay: Check if token already used
+      if (usedQRTokens.has(decoded.jti)) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'QR code already used' 
+        });
+      }
+
+      // Mark token as used (with expiry for cleanup)
+      usedQRTokens.set(decoded.jti, decoded.exp * 1000);
+
+      // Verify user is assigned to this store
+      await setTenantContext(tenantId);
+      const userStore = await db.select().from(userStores).where(
+        and(
+          eq(userStores.userId, userId),
+          eq(userStores.storeId, decoded.storeId)
+        )
+      ).limit(1);
+
+      if (!userStore || userStore.length === 0) {
+        return res.status(403).json({ 
+          success: false,
+          error: 'You are not authorized to clock in at this store' 
+        });
+      }
+
+      // Check if user already has active clock-in
+      const existingClockIn = await db.select().from(timeTracking).where(
+        and(
+          eq(timeTracking.tenantId, tenantId),
+          eq(timeTracking.employeeId, userId),
+          isNull(timeTracking.clockOut)
+        )
+      ).limit(1);
+
+      if (existingClockIn && existingClockIn.length > 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'You already have an active clock-in. Please clock out first.' 
+        });
+      }
+
+      // Perform clock-in
+      const clockInTime = new Date();
+      const [clockInEntry] = await db.insert(timeTracking).values({
+        tenantId,
+        employeeId: userId,
+        storeId: decoded.storeId,
+        clockIn: clockInTime,
+        method: 'qr',
+        status: 'pending',
+        metadata: {
+          jti: decoded.jti,
+          userAgent: req.get('user-agent'),
+          ip: req.ip
+        }
+      }).returning();
+
+      // Get store name for response
+      const [storeData] = await db.select({ name: stores.name }).from(stores).where(
+        eq(stores.id, decoded.storeId)
+      ).limit(1);
+
+      res.json({
+        success: true,
+        data: {
+          id: clockInEntry.id,
+          storeId: decoded.storeId,
+          storeName: storeData?.name || 'Unknown',
+          timestamp: clockInTime.toISOString(),
+          method: 'qr'
+        }
+      });
+    } catch (error) {
+      console.error('QR check-in error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to process QR check-in' 
+      });
+    }
+  });
+
   // ==================== HR ANALYTICS ROUTES ====================
   
   // Dashboard Metrics

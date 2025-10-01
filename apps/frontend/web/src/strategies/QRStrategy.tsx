@@ -188,19 +188,34 @@ export class QRStrategy extends BaseStrategy {
   // ==================== QR-SPECIFIC METHODS ====================
 
   private async generateQRCode(storeId: string): Promise<void> {
-    const timestamp = Date.now();
-    const nonce = Math.random().toString(36).substr(2, 9);
-    const code = `W3-${storeId}-${timestamp}-${nonce}`;
-    
-    this.currentCode = code;
-    this.expiresAt = timestamp + this.tokenLifetime;
-    this.generationCount++;
-    
-    this.log('info', 'QR code generated', {
-      code,
-      expiresAt: this.expiresAt,
-      generationCount: this.generationCount
-    });
+    try {
+      // Fetch server-signed token
+      const response = await fetch(`/api/hr/time-tracking/qr-token?storeId=${storeId}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate QR token: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      this.currentCode = data.url; // Server-generated URL with signed token
+      this.expiresAt = data.expiresAt;
+      this.generationCount++;
+      
+      this.log('info', 'QR code generated from server', {
+        url: data.url,
+        expiresAt: this.expiresAt,
+        generationCount: this.generationCount
+      });
+    } catch (error) {
+      this.log('error', 'Failed to generate QR code', { error });
+      throw error;
+    }
   }
 
   private startAutoRegeneration(storeId: string): void {

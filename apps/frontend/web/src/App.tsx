@@ -7,6 +7,7 @@ import { TenantShell } from "./components/TenantShell";
 // Import pages that don't need tenant context
 import NotFound from "./pages/NotFound";
 import HRManagementPage from "./pages/HRManagementPage";
+import QRCheckinPage from "./pages/QRCheckinPage";
 
 /**
  * 🎯 NEW APP ARCHITECTURE - Automatic Tenant Management
@@ -52,6 +53,11 @@ function Router() {
   
   return (
     <Switch>
+      {/* 🎯 QR CHECK-IN - Public route for QR code scanning */}
+      <Route path="/qr-checkin">
+        <QRCheckinPage />
+      </Route>
+      
       {/* 🎯 WORKFLOW DIRECT ACCESS - Smart redirect to tenant */}
       <Route path="/workflows">
         {() => {
