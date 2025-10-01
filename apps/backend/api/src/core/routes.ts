@@ -3769,29 +3769,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== SHIFT ASSIGNMENTS API ====================
   
-  // Get shift assignments (Manager only)
-  app.get('/api/hr/shift-assignments', tenantMiddleware, rbacMiddleware, requirePermission('hr.shifts.manage'), async (req: any, res) => {
+  // Get shift assignments with RBAC-enforced filtering
+  app.get('/api/hr/shift-assignments', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
+      const currentUserId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
       let { storeId, startDate, endDate, userId } = req.query;
       
-      if (!tenantId) {
+      if (!tenantId || !currentUserId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
       
-      // Validate UUID parameters to prevent SQL type errors
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      // Import CalendarScope and permissions
+      const { CalendarScope, CALENDAR_PERMISSIONS } = await import('./hr-storage.js');
       
-      // If storeId is 'all' or malformed or not a valid UUID, ignore it
-      if (storeId && (storeId === 'all' || typeof storeId !== 'string' || !uuidRegex.test(storeId))) {
-        console.warn('[HR-ASSIGNMENTS] Invalid storeId format or "all" value, ignoring:', storeId);
-        storeId = undefined;
+      // Get user's calendar permissions based on role
+      const rolePermissions = CALENDAR_PERMISSIONS[userRole as keyof typeof CALENDAR_PERMISSIONS] || CALENDAR_PERMISSIONS.USER;
+      const canViewScopes = rolePermissions.view || [CalendarScope.OWN];
+      
+      // Determine effective scope
+      let effectiveScope = CalendarScope.OWN;
+      if (canViewScopes.includes(CalendarScope.TENANT)) {
+        effectiveScope = CalendarScope.TENANT;
+      } else if (canViewScopes.includes(CalendarScope.STORE)) {
+        effectiveScope = CalendarScope.STORE;
       }
       
-      // If userId is malformed or not a valid UUID, ignore it
-      if (userId && (typeof userId !== 'string' || !uuidRegex.test(userId))) {
-        console.warn('[HR-ASSIGNMENTS] Invalid userId format, ignoring:', userId);
-        userId = undefined;
+      // Validate and enforce scope-based filters
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // RBAC Enforcement: Coerce filters based on scope
+      if (effectiveScope === CalendarScope.OWN) {
+        // Force userId to current user, ignore all other filters
+        userId = currentUserId;
+        storeId = undefined;
+      } else if (effectiveScope === CalendarScope.STORE) {
+        // For store scope, validate storeId or default to user's primary store
+        const { userStores } = await import('../db/schema/w3suite.js');
+        
+        if (storeId && storeId !== 'all' && typeof storeId === 'string' && uuidRegex.test(storeId)) {
+          // Verify user has access to this store
+          const userStoreAccess = await db.select({ storeId: userStores.storeId })
+            .from(userStores)
+            .where(and(
+              eq(userStores.userId, currentUserId),
+              eq(userStores.storeId, storeId)
+            ))
+            .limit(1);
+          
+          if (userStoreAccess.length === 0) {
+            return res.status(403).json({ 
+              error: 'forbidden', 
+              message: 'Non hai accesso a questo punto vendita' 
+            });
+          }
+        } else {
+          // Default to user's primary store from userStores table
+          const userStoresList = await db.select({ storeId: userStores.storeId })
+            .from(userStores)
+            .where(eq(userStores.userId, currentUserId))
+            .limit(1);
+          
+          if (userStoresList.length > 0 && userStoresList[0].storeId) {
+            storeId = userStoresList[0].storeId;
+          } else {
+            return res.status(403).json({ 
+              error: 'forbidden', 
+              message: 'Nessun punto vendita assegnato' 
+            });
+          }
+        }
+        
+        // For store scope, allow userId filter (must be employee of selected store)
+        if (userId && typeof userId === 'string' && uuidRegex.test(userId)) {
+          // Verify userId belongs to the selected store
+          const userInStore = await db.select({ storeId: userStores.storeId })
+            .from(userStores)
+            .where(and(
+              eq(userStores.userId, userId),
+              eq(userStores.storeId, storeId)
+            ))
+            .limit(1);
+          
+          if (userInStore.length === 0) {
+            return res.status(403).json({ 
+              error: 'forbidden', 
+              message: 'L\'utente selezionato non appartiene a questo punto vendita' 
+            });
+          }
+        } else {
+          userId = undefined;
+        }
+      } else if (effectiveScope === CalendarScope.TENANT) {
+        // For tenant scope (admin/HR), allow all filters
+        if (storeId && (storeId === 'all' || !uuidRegex.test(storeId))) {
+          storeId = undefined;
+        }
+        if (userId && !uuidRegex.test(userId)) {
+          userId = undefined;
+        }
       }
       
       // Set tenant context for RLS
@@ -3830,12 +3907,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ${userId ? sql`AND sa.user_id = ${userId}` : sql``}
         ${storeId ? sql`AND s.store_id = ${storeId}::uuid` : sql``}
         ${startDate && endDate ? sql`AND s.date >= ${startDate}::date AND s.date <= ${endDate}::date` : sql``}
-        LIMIT 100
+        ORDER BY s.date DESC, s.start_time DESC
+        LIMIT 500
       `;
       
       const result = await db.execute(rawQuery);
       
-      res.json(result.rows);
+      res.json({
+        items: result.rows,
+        total: result.rows.length,
+        effectiveScope,
+        appliedFilters: {
+          storeId: storeId || null,
+          userId: userId || null,
+          startDate: startDate || null,
+          endDate: endDate || null
+        }
+      });
     } catch (error) {
       handleApiError(error, res, 'recupero assegnazioni turni');
     }
