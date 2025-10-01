@@ -116,6 +116,7 @@ export class RedisService {
    * Get cached unread count
    */
   async getCachedUnreadCount(userId: string, tenantId: string): Promise<number | null> {
+    if (!this.isRedisAvailable || !this.redis) return null;
     const key = `unread_count:${tenantId}:${userId}`;
     const count = await this.redis.get(key);
     return count ? parseInt(count, 10) : null;
@@ -125,6 +126,7 @@ export class RedisService {
    * Invalidate user's notification cache
    */
   async invalidateUserNotificationCache(userId: string, tenantId: string): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
     const patterns = [
       `unread_count:${tenantId}:${userId}`,
       `notifications:${tenantId}:${userId}:*`
@@ -221,6 +223,7 @@ export class RedisService {
     priority: 'low' | 'medium' | 'high' | 'critical';
     data: any;
   }): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
     const queueKey = `notification_queue:${notification.priority}`;
     
     await this.redis.lpush(queueKey, JSON.stringify({
@@ -238,6 +241,10 @@ export class RedisService {
    * Process notification queue (for background workers)
    */
   async processNotificationQueue(priority: 'low' | 'medium' | 'high' | 'critical', processorFn: (notification: any) => Promise<void>): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) {
+      logger.warn('🔴 Redis not available, notification queue processing skipped', { priority });
+      return;
+    }
     const queueKey = `notification_queue:${priority}`;
     
     while (true) {
@@ -273,6 +280,7 @@ export class RedisService {
    * Register WebSocket session for user
    */
   async registerWebSocketSession(userId: string, tenantId: string, sessionId: string): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
     const key = `websocket_sessions:${tenantId}:${userId}`;
     await this.redis.sadd(key, sessionId);
     await this.redis.expire(key, 3600); // Expire in 1 hour
@@ -282,6 +290,7 @@ export class RedisService {
    * Remove WebSocket session
    */
   async removeWebSocketSession(userId: string, tenantId: string, sessionId: string): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
     const key = `websocket_sessions:${tenantId}:${userId}`;
     await this.redis.srem(key, sessionId);
   }
@@ -290,6 +299,7 @@ export class RedisService {
    * Get active WebSocket sessions for user
    */
   async getWebSocketSessions(userId: string, tenantId: string): Promise<string[]> {
+    if (!this.isRedisAvailable || !this.redis) return [];
     const key = `websocket_sessions:${tenantId}:${userId}`;
     return await this.redis.smembers(key);
   }
@@ -357,6 +367,7 @@ export class RedisService {
    * Check rate limit for notifications
    */
   async checkRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+    if (!this.isRedisAvailable || !this.redis) return true; // Allow if Redis down
     const current = await this.redis.incr(key);
     
     if (current === 1) {
@@ -623,6 +634,221 @@ export class RedisService {
     const crypto = require('crypto');
     const hashContent = additional ? `${content}:${additional}` : content;
     return crypto.createHash('sha256').update(hashContent).digest('hex').substring(0, 16);
+  }
+
+  // ==================== WEBHOOK QUEUE SYSTEM ====================
+
+  /**
+   * Queue webhook event for async processing
+   * Uses priority-based queues: critical > high > medium > low
+   */
+  async queueWebhookEvent(event: {
+    id: string;
+    tenantId: string;
+    eventType: string;
+    source: string;
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    payload: any;
+    signature?: string;
+    headers?: Record<string, any>;
+  }): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) {
+      logger.warn('🔴 Redis not available, webhook event cannot be queued', { 
+        eventId: event.id,
+        eventType: event.eventType 
+      });
+      return;
+    }
+
+    try {
+      const queueKey = `webhook_queue:${event.priority}`;
+      
+      await this.redis.lpush(queueKey, JSON.stringify({
+        ...event,
+        queuedAt: new Date().toISOString()
+      }));
+
+      logger.debug('🪝 Webhook event queued', {
+        eventId: event.id,
+        eventType: event.eventType,
+        source: event.source,
+        priority: event.priority,
+        tenantId: event.tenantId
+      });
+    } catch (error) {
+      logger.error('🔴 Failed to queue webhook event', { 
+        error: error instanceof Error ? error.message : String(error),
+        eventId: event.id,
+        eventType: event.eventType
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Process webhook queue with blocking pop (for background workers)
+   * @param priority Queue priority to process
+   * @param processorFn Async function to process each webhook event
+   * @param timeout Timeout in seconds for brpop (default 5)
+   */
+  async processWebhookQueue(
+    priority: 'low' | 'medium' | 'high' | 'critical', 
+    processorFn: (event: any) => Promise<void>,
+    timeout: number = 5
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) {
+      logger.warn('🔴 Redis not available, webhook queue processing skipped', { priority });
+      return;
+    }
+
+    const queueKey = `webhook_queue:${priority}`;
+    
+    while (true) {
+      try {
+        const result = await this.redis.brpop(queueKey, timeout);
+        
+        if (result) {
+          const [, eventJson] = result;
+          const event = JSON.parse(eventJson);
+          
+          logger.debug('🪝 Processing webhook event from queue', {
+            eventId: event.id,
+            eventType: event.eventType,
+            source: event.source,
+            priority
+          });
+          
+          await processorFn(event);
+          
+          logger.debug('🪝 Webhook event processed successfully', {
+            eventId: event.id,
+            eventType: event.eventType,
+            priority
+          });
+        }
+      } catch (error) {
+        logger.error('🔴 Error processing webhook queue', {
+          error: error instanceof Error ? error.message : String(error),
+          priority
+        });
+        
+        // Wait before retrying to avoid tight error loop
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
+  /**
+   * Check if webhook event already processed (deduplication)
+   * Uses Redis SET with TTL for fast lookup
+   */
+  async checkWebhookDeduplication(
+    tenantId: string, 
+    source: string, 
+    eventId: string
+  ): Promise<boolean> {
+    if (!this.isRedisAvailable || !this.redis) return false;
+    
+    try {
+      const key = `webhook_dedup:${tenantId}:${source}:${eventId}`;
+      const exists = await this.redis.exists(key);
+      return exists === 1;
+    } catch (error) {
+      logger.warn('🔴 Failed to check webhook deduplication', { 
+        error, 
+        tenantId, 
+        source, 
+        eventId 
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Mark webhook event as processed (for deduplication)
+   * Sets key with 24h TTL
+   */
+  async markWebhookProcessed(
+    tenantId: string, 
+    source: string, 
+    eventId: string,
+    ttlSeconds: number = 86400 // 24 hours default
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    
+    try {
+      const key = `webhook_dedup:${tenantId}:${source}:${eventId}`;
+      await this.redis.setex(key, ttlSeconds, '1');
+      
+      logger.debug('🪝 Webhook marked as processed', {
+        tenantId,
+        source,
+        eventId,
+        ttl: ttlSeconds
+      });
+    } catch (error) {
+      logger.warn('🔴 Failed to mark webhook as processed', { 
+        error, 
+        tenantId, 
+        source, 
+        eventId 
+      });
+    }
+  }
+
+  /**
+   * Get webhook queue statistics for monitoring
+   */
+  async getWebhookQueueStats(): Promise<{
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+  }> {
+    if (!this.isRedisAvailable || !this.redis) {
+      return { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
+    }
+
+    try {
+      const [critical, high, medium, low] = await Promise.all([
+        this.redis.llen('webhook_queue:critical'),
+        this.redis.llen('webhook_queue:high'),
+        this.redis.llen('webhook_queue:medium'),
+        this.redis.llen('webhook_queue:low')
+      ]);
+
+      const total = critical + high + medium + low;
+
+      return { critical, high, medium, low, total };
+    } catch (error) {
+      logger.warn('🔴 Failed to get webhook queue stats', { error });
+      return { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
+    }
+  }
+
+  /**
+   * Clear webhook queue (for testing/debugging)
+   */
+  async clearWebhookQueue(priority?: 'low' | 'medium' | 'high' | 'critical'): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+
+    try {
+      if (priority) {
+        await this.redis.del(`webhook_queue:${priority}`);
+        logger.info('🪝 Webhook queue cleared', { priority });
+      } else {
+        await Promise.all([
+          this.redis.del('webhook_queue:critical'),
+          this.redis.del('webhook_queue:high'),
+          this.redis.del('webhook_queue:medium'),
+          this.redis.del('webhook_queue:low')
+        ]);
+        logger.info('🪝 All webhook queues cleared');
+      }
+    } catch (error) {
+      logger.warn('🔴 Failed to clear webhook queue', { error, priority });
+    }
   }
 
   // ==================== CLEANUP ====================
