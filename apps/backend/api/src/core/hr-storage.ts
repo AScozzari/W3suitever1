@@ -28,6 +28,37 @@ import {
 // Use alias for shift time slots to avoid any conflicts
 const shiftTimeSlots = shiftTimeSlotsTable;
 
+// DTO for Time Tracking Entries with joined user and store info
+export interface TimeTrackingEntryDTO {
+  // Time tracking fields
+  id: string;
+  tenantId: string;
+  userId: string;
+  storeId: string;
+  clockIn: Date;
+  clockOut: Date | null;
+  breaks: any;
+  trackingMethod: string;
+  shiftId: string | null;
+  totalMinutes: number | null;
+  breakMinutes: number | null;
+  overtimeMinutes: number | null;
+  status: string;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  
+  // Joined user info
+  userFirstName: string | null;
+  userLastName: string | null;
+  userEmail: string | null;
+  
+  // Joined store info
+  storeName: string | null;
+  storeCode: string | null;
+}
+
 // Permission scopes for calendar events
 export enum CalendarScope {
   OWN = 'own',
@@ -795,14 +826,54 @@ export class HRStorage implements IHRStorage {
     return result[0];
   }
   
-  async getTimeTrackingForUser(userId: string, dateRange: DateRange): Promise<TimeTracking[]> {
-    return await db.select()
+  async getTimeTrackingForUser(userId: string, dateRange: DateRange): Promise<TimeTrackingEntryDTO[]> {
+    // Safe date range handling with proper fallbacks
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    
+    const startDate = (dateRange as any)?.start || startOfToday;
+    const endDate = (dateRange as any)?.end || endOfToday;
+    
+    const results = await db.select({
+      // Time tracking fields
+      id: timeTracking.id,
+      tenantId: timeTracking.tenantId,
+      userId: timeTracking.userId,
+      storeId: timeTracking.storeId,
+      clockIn: timeTracking.clockIn,
+      clockOut: timeTracking.clockOut,
+      breaks: timeTracking.breaks,
+      trackingMethod: timeTracking.trackingMethod,
+      shiftId: timeTracking.shiftId,
+      totalMinutes: timeTracking.totalMinutes,
+      breakMinutes: timeTracking.breakMinutes,
+      overtimeMinutes: timeTracking.overtimeMinutes,
+      status: timeTracking.status,
+      approvedBy: timeTracking.approvedBy,
+      approvedAt: timeTracking.approvedAt,
+      createdAt: timeTracking.createdAt,
+      updatedAt: timeTracking.updatedAt,
+      
+      // User info (joined)
+      userFirstName: users.firstName,
+      userLastName: users.lastName,
+      userEmail: users.email,
+      
+      // Store info (joined)
+      storeName: stores.nome,
+      storeCode: stores.code,
+    })
       .from(timeTracking)
+      .leftJoin(users, eq(timeTracking.userId, users.id))
+      .leftJoin(stores, eq(timeTracking.storeId, stores.id))
       .where(and(
         eq(timeTracking.userId, userId),
-        between(timeTracking.clockIn, (dateRange as any).start || new Date(), (dateRange as any).end || new Date())
+        between(timeTracking.clockIn, startDate, endDate)
       ))
       .orderBy(desc(timeTracking.clockIn));
+    
+    return results as TimeTrackingEntryDTO[];
   }
   
   // Permissions

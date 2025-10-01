@@ -1769,14 +1769,12 @@ const HRManagementPage: React.FC = () => {
       staleTime: 30000
     });
 
-    // Fetch timbrature/attendance logs
-    const { data: attendanceResponse, isLoading: loadingAttendance } = useQuery({
-      queryKey: ['/api/hr/attendance/logs', filters],
+    // Fetch timbrature/attendance logs (from time tracking entries)
+    const { data: attendanceData = [], isLoading: loadingAttendance } = useQuery<any[]>({
+      queryKey: ['/api/hr/time-tracking/entries', filters],
       enabled: hrQueriesEnabled,
       staleTime: 30000
     });
-
-    const attendanceData = attendanceResponse?.records || [];
 
     return (
       <div className="space-y-6">
@@ -1806,26 +1804,52 @@ const HRManagementPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(attendanceData || []).map((record: any, i: number) => (
-                      <tr key={record.id || i} className="border-t" data-testid={`attendance-row-${i}`}>
-                        <td className="p-3 text-sm" data-testid={`attendance-user-${i}`}>{record.user?.fullName || '-'}</td>
-                        <td className="p-3 text-sm" data-testid={`attendance-store-${i}`}>{record.store?.name || '-'}</td>
-                        <td className="p-3 text-sm" data-testid={`attendance-clockin-${i}`}>
-                          {record.actualStartTime ? new Date(record.actualStartTime).toLocaleTimeString() : '-'}
-                        </td>
-                        <td className="p-3 text-sm" data-testid={`attendance-clockout-${i}`}>
-                          {record.actualEndTime ? new Date(record.actualEndTime).toLocaleTimeString() : '-'}
-                        </td>
-                        <td className="p-3" data-testid={`attendance-status-${i}`}>
-                          <Badge variant={record.isOnTime ? 'default' : 'destructive'}>
-                            {record.attendanceStatus}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-sm" data-testid={`attendance-deviation-${i}`}>
-                          {record.startDeviationMinutes ? `${record.startDeviationMinutes} min` : '-'}
-                        </td>
-                      </tr>
-                    ))}
+                    {(attendanceData || []).map((record: any, i: number) => {
+                      const userName = record.userFirstName && record.userLastName 
+                        ? `${record.userFirstName} ${record.userLastName}` 
+                        : record.userEmail || '-';
+                      
+                      const getStatusVariant = (status: string) => {
+                        switch (status) {
+                          case 'completed': return 'default';
+                          case 'active': return 'secondary';
+                          case 'disputed': return 'destructive';
+                          case 'edited': return 'outline';
+                          default: return 'default';
+                        }
+                      };
+                      
+                      const getStatusLabel = (status: string) => {
+                        const labels: any = {
+                          'active': 'In corso',
+                          'completed': 'Completato',
+                          'disputed': 'Contestato',
+                          'edited': 'Modificato'
+                        };
+                        return labels[status] || status;
+                      };
+                      
+                      return (
+                        <tr key={record.id || i} className="border-t" data-testid={`attendance-row-${i}`}>
+                          <td className="p-3 text-sm" data-testid={`attendance-user-${i}`}>{userName}</td>
+                          <td className="p-3 text-sm" data-testid={`attendance-store-${i}`}>{record.storeName || record.storeCode || '-'}</td>
+                          <td className="p-3 text-sm" data-testid={`attendance-clockin-${i}`}>
+                            {record.clockIn ? new Date(record.clockIn).toLocaleString('it-IT') : '-'}
+                          </td>
+                          <td className="p-3 text-sm" data-testid={`attendance-clockout-${i}`}>
+                            {record.clockOut ? new Date(record.clockOut).toLocaleString('it-IT') : 'In corso'}
+                          </td>
+                          <td className="p-3" data-testid={`attendance-status-${i}`}>
+                            <Badge variant={getStatusVariant(record.status)}>
+                              {getStatusLabel(record.status)}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm" data-testid={`attendance-deviation-${i}`}>
+                            {record.overtimeMinutes ? `+${record.overtimeMinutes} min` : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
