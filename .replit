@@ -177,7 +177,6 @@ localPort = 40379
 
 [[ports]]
 localPort = 40591
-externalPort = 3002
 
 [[ports]]
 localPort = 40785
@@ -247,7 +246,6 @@ localPort = 44401
 
 [[ports]]
 localPort = 44583
-externalPort = 3001
 
 [[ports]]
 localPort = 44719
@@ -278,7 +276,6 @@ localPort = 46461
 
 [[ports]]
 localPort = 46511
-externalPort = 3003
 
 [[ports]]
 localPort = 46513
