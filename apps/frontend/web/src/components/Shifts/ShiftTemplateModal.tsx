@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Icons
-import { Plus, Trash2, Clock, AlertTriangle, CheckCircle, Save, Store as StoreIcon } from 'lucide-react';
+import { Plus, X, Trash2, Clock, AlertTriangle, CheckCircle, Save, Store as StoreIcon } from 'lucide-react';
 
 // ==================== TYPES & SCHEMAS ====================
 
@@ -377,6 +377,9 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     name: 'timeSlots'
   });
 
+  // Track active block count for each time slot (1-4)
+  const [blockCounts, setBlockCounts] = useState<Record<number, number>>({});
+
   // Create/Update mutation
   const saveTemplateMutation = useMutation({
     mutationFn: async (data: ShiftTemplateFormData) => {
@@ -473,6 +476,95 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     }
     
     remove(index);
+    // Remove block count tracking for this slot
+    setBlockCounts((prev) => {
+      const newCounts = { ...prev };
+      delete newCounts[index];
+      // Reindex remaining slots
+      const reindexed: Record<number, number> = {};
+      Object.keys(newCounts).forEach((key) => {
+        const keyNum = parseInt(key);
+        if (keyNum > index) {
+          reindexed[keyNum - 1] = newCounts[keyNum];
+        } else if (keyNum < index) {
+          reindexed[keyNum] = newCounts[keyNum];
+        }
+      });
+      return reindexed;
+    });
+  };
+
+  // Add a block to a time slot (up to 4 blocks total)
+  const addBlock = (slotIndex: number) => {
+    const currentCount = blockCounts[slotIndex] || 1;
+    if (currentCount >= 4) {
+      toast({
+        title: "Limite Raggiunto",
+        description: "Massimo 4 blocchi per fascia oraria",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newCount = currentCount + 1;
+    setBlockCounts((prev) => ({
+      ...prev,
+      [slotIndex]: newCount
+    }));
+    
+    // Update segmentType automatically based on block count
+    const segmentTypeMap: Record<number, 'continuous' | 'split' | 'triple' | 'quad'> = {
+      1: 'continuous',
+      2: 'split',
+      3: 'triple',
+      4: 'quad'
+    };
+    form.setValue(`timeSlots.${slotIndex}.segmentType`, segmentTypeMap[newCount]);
+  };
+
+  // Remove a block from a time slot (minimum 1 block)
+  const removeBlock = (slotIndex: number, blockNumber: number) => {
+    const currentCount = blockCounts[slotIndex] || 1;
+    if (currentCount <= 1) {
+      toast({
+        title: "Operazione Non Consentita",
+        description: "Almeno un blocco è richiesto",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Clear the block fields being removed
+    if (blockNumber === 2) {
+      form.setValue(`timeSlots.${slotIndex}.block2StartTime`, undefined);
+      form.setValue(`timeSlots.${slotIndex}.block2EndTime`, undefined);
+    } else if (blockNumber === 3) {
+      form.setValue(`timeSlots.${slotIndex}.block3StartTime`, undefined);
+      form.setValue(`timeSlots.${slotIndex}.block3EndTime`, undefined);
+    } else if (blockNumber === 4) {
+      form.setValue(`timeSlots.${slotIndex}.block4StartTime`, undefined);
+      form.setValue(`timeSlots.${slotIndex}.block4EndTime`, undefined);
+    }
+    
+    const newCount = currentCount - 1;
+    setBlockCounts((prev) => ({
+      ...prev,
+      [slotIndex]: newCount
+    }));
+    
+    // Update segmentType automatically based on block count
+    const segmentTypeMap: Record<number, 'continuous' | 'split' | 'triple' | 'quad'> = {
+      1: 'continuous',
+      2: 'split',
+      3: 'triple',
+      4: 'quad'
+    };
+    form.setValue(`timeSlots.${slotIndex}.segmentType`, segmentTypeMap[newCount]);
+  };
+
+  // Get the number of active blocks for a slot
+  const getBlockCount = (slotIndex: number) => {
+    return blockCounts[slotIndex] || 1;
   };
 
   const calculateTotalHours = (timeSlots: any[]) => {
@@ -698,8 +790,6 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
               </CardHeader>
               <CardContent className="space-y-4">
                 {fields.map((field, index) => {
-                  const segmentType = form.watch(`timeSlots.${index}.segmentType`);
-                  
                   return (
                   <div key={field.id} className="p-4 border rounded-lg bg-muted/30">
                     <div className="flex items-center justify-between mb-3">
@@ -718,74 +808,11 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       )}
                     </div>
                     
-                    {/* ✅ NEW: Segment Type Selection */}
-                    <FormField
-                      control={form.control}
-                      name={`timeSlots.${index}.segmentType`}
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel>Tipo Fascia</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                // Clear block fields based on segment type
-                                if (value === 'continuous') {
-                                  form.setValue(`timeSlots.${index}.block2StartTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block2EndTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block3StartTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block3EndTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block4StartTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block4EndTime`, undefined);
-                                } else if (value === 'split') {
-                                  form.setValue(`timeSlots.${index}.block3StartTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block3EndTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block4StartTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block4EndTime`, undefined);
-                                } else if (value === 'triple') {
-                                  form.setValue(`timeSlots.${index}.block4StartTime`, undefined);
-                                  form.setValue(`timeSlots.${index}.block4EndTime`, undefined);
-                                }
-                              }}
-                              value={field.value}
-                              className="grid grid-cols-2 gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="continuous" id={`continuous-${index}`} data-testid={`radio-continuous-${index}`} />
-                                <Label htmlFor={`continuous-${index}`} className="cursor-pointer font-normal">
-                                  Continua (1 blocco)
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="split" id={`split-${index}`} data-testid={`radio-split-${index}`} />
-                                <Label htmlFor={`split-${index}`} className="cursor-pointer font-normal">
-                                  Spezzata (2 blocchi)
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="triple" id={`triple-${index}`} data-testid={`radio-triple-${index}`} />
-                                <Label htmlFor={`triple-${index}`} className="cursor-pointer font-normal">
-                                  Triple (3 blocchi)
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="quad" id={`quad-${index}`} data-testid={`radio-quad-${index}`} />
-                                <Label htmlFor={`quad-${index}`} className="cursor-pointer font-normal">
-                                  Quad (4 blocchi)
-                                </Label>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {/* First Block (always visible) */}
-                    <div className={cn("mb-3", (segmentType !== 'continuous') && "pb-3 border-b")}>
-                      {(segmentType !== 'continuous') && (
-                        <Label className="text-xs text-muted-foreground mb-2 block">Primo Blocco</Label>
-                      )}
+                    {/* Dynamic Blocks - First Block (always visible) */}
+                    <div className="mb-3 pb-3 border-b">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-xs text-muted-foreground">Blocco 1</Label>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -825,10 +852,22 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                     </div>
                     </div>
                     
-                    {/* Second Block (for split, triple, quad) */}
-                    {(segmentType === 'split' || segmentType === 'triple' || segmentType === 'quad') && (
-                      <div className="mt-4 pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground mb-2 block">Secondo Blocco</Label>
+                    {/* Second Block (dynamic) */}
+                    {getBlockCount(index) >= 2 && (
+                      <div className="mt-3 pt-3 border-t">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-xs text-muted-foreground">Blocco 2</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBlock(index, 2)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 px-2"
+                            data-testid={`button-remove-block2-${index}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
@@ -869,10 +908,22 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       </div>
                     )}
                     
-                    {/* Third Block (for triple, quad) */}
-                    {(segmentType === 'triple' || segmentType === 'quad') && (
-                      <div className="mt-4 pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground mb-2 block">Terzo Blocco</Label>
+                    {/* Third Block (dynamic) */}
+                    {getBlockCount(index) >= 3 && (
+                      <div className="mt-3 pt-3 border-t">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-xs text-muted-foreground">Blocco 3</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBlock(index, 3)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 px-2"
+                            data-testid={`button-remove-block3-${index}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
@@ -913,10 +964,22 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       </div>
                     )}
                     
-                    {/* Fourth Block (for quad only) */}
-                    {segmentType === 'quad' && (
-                      <div className="mt-4 pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground mb-2 block">Quarto Blocco</Label>
+                    {/* Fourth Block (dynamic) */}
+                    {getBlockCount(index) >= 4 && (
+                      <div className="mt-3 pt-3 border-t">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-xs text-muted-foreground">Blocco 4</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBlock(index, 4)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 px-2"
+                            data-testid={`button-remove-block4-${index}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
@@ -954,6 +1017,23 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                             )}
                           />
                         </div>
+                      </div>
+                    )}
+                    
+                    {/* Add Block Button */}
+                    {getBlockCount(index) < 4 && (
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addBlock(index)}
+                          className="w-full"
+                          data-testid={`button-add-block-${index}`}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Aggiungi Blocco
+                        </Button>
                       </div>
                     )}
                     
