@@ -856,7 +856,7 @@ export class HRStorage implements IHRStorage {
     // Cerca shift assignments che matchano (con storeId constraint)
     const matchingAssignments = await db.select()
       .from(shiftAssignments)
-      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .innerJoin(shifts, sql`${shiftAssignments.shiftId}::uuid = ${shifts.id}`)
       .where(and(
         eq(shiftAssignments.tenantId, timeTrackingEntry.tenantId),
         eq(shiftAssignments.userId, timeTrackingEntry.userId),
