@@ -1,13 +1,14 @@
-// QR Check-in Page - Handles QR code scanning from generic QR apps
+// QR Check-in Page - Handles QR code scanning with multiple actions
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Clock, Coffee, LogOut, LogIn } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
 
-type CheckinStatus = 'loading' | 'success' | 'error' | 'expired' | 'auth_required';
+type CheckinStatus = 'loading' | 'success' | 'error' | 'expired' | 'auth_required' | 'choose_action';
+type QRAction = 'clock-in' | 'clock-out' | 'break-start' | 'break-end';
 
 export default function QRCheckinPage() {
   const [, navigate] = useLocation();
@@ -16,6 +17,7 @@ export default function QRCheckinPage() {
   const [message, setMessage] = useState<string>('');
   const [details, setDetails] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<QRAction>('clock-in');
 
   // Check if user is authenticated
   const { data: user } = useQuery({
@@ -42,32 +44,49 @@ export default function QRCheckinPage() {
       return;
     }
 
-    // Process QR check-in
-    processQRCheckin(tokenParam);
+    // Try automatic clock-in first
+    processQRAction(tokenParam, 'clock-in');
   }, [user]);
 
-  const processQRCheckin = async (qrToken: string) => {
+  const processQRAction = async (qrToken: string, action: QRAction) => {
     try {
       setStatus('loading');
-      setMessage('Elaborazione QR code in corso...');
+      setActionType(action);
+      
+      const actionMessages = {
+        'clock-in': 'Timbratura ingresso in corso...',
+        'clock-out': 'Timbratura uscita in corso...',
+        'break-start': 'Inizio pausa in corso...',
+        'break-end': 'Fine pausa in corso...'
+      };
+      
+      setMessage(actionMessages[action]);
 
-      const response = await fetch('/api/hr/time-tracking/qr-checkin', {
+      const response = await fetch('/api/hr/time-tracking/qr-action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ token: qrToken })
+        body: JSON.stringify({ token: qrToken, action })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         setStatus('success');
-        setMessage('Timbratura effettuata con successo!');
+        
+        const successMessages = {
+          'clock-in': 'Ingresso registrato con successo!',
+          'clock-out': 'Uscita registrata con successo!',
+          'break-start': 'Pausa iniziata!',
+          'break-end': 'Pausa terminata!'
+        };
+        
+        setMessage(successMessages[action]);
         setDetails(data.data);
         
-        // Redirect to my-portal after 3 seconds (dynamic tenant)
+        // Redirect to my-portal after 3 seconds
         setTimeout(() => {
           const tenantSlug = localStorage.getItem('currentTenant') || 'staging';
           navigate(`/${tenantSlug}/my-portal`);
@@ -76,7 +95,11 @@ export default function QRCheckinPage() {
         // Check error type
         const errorMsg = data.error || 'Errore durante la timbratura';
         
-        if (errorMsg.includes('expired') || errorMsg.includes('scaduto')) {
+        // If clock-in failed because already clocked in, show action choices
+        if (action === 'clock-in' && errorMsg.includes('already have an active clock-in')) {
+          setStatus('choose_action');
+          setMessage('Sei già in servizio. Scegli un\'azione:');
+        } else if (errorMsg.includes('expired') || errorMsg.includes('scaduto')) {
           setStatus('expired');
           setMessage('QR code scaduto. Richiedi un nuovo codice.');
         } else if (response.status === 401) {
@@ -100,6 +123,12 @@ export default function QRCheckinPage() {
     navigate(`/${tenantSlug}/login?return=${returnUrl}`);
   };
 
+  const handleActionChoice = (action: QRAction) => {
+    if (token) {
+      processQRAction(token, action);
+    }
+  };
+
   const getIcon = () => {
     switch (status) {
       case 'loading':
@@ -110,6 +139,8 @@ export default function QRCheckinPage() {
         return <Clock className="h-16 w-16 text-orange-500" />;
       case 'auth_required':
         return <XCircle className="h-16 w-16 text-yellow-500" />;
+      case 'choose_action':
+        return <Clock className="h-16 w-16 text-blue-500" />;
       case 'error':
         return <XCircle className="h-16 w-16 text-red-500" />;
     }
@@ -118,15 +149,17 @@ export default function QRCheckinPage() {
   const getStatusColor = () => {
     switch (status) {
       case 'success':
-        return 'bg-green-50 border-green-200';
+        return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800';
       case 'expired':
-        return 'bg-orange-50 border-orange-200';
+        return 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800';
       case 'auth_required':
-        return 'bg-yellow-50 border-yellow-200';
+        return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800';
+      case 'choose_action':
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
       case 'error':
-        return 'bg-red-50 border-red-200';
+        return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
       default:
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
     }
   };
 
@@ -139,9 +172,10 @@ export default function QRCheckinPage() {
           </div>
           <CardTitle className="text-2xl">
             {status === 'loading' && 'Elaborazione...'}
-            {status === 'success' && 'Timbratura Completata'}
+            {status === 'success' && 'Operazione Completata'}
             {status === 'expired' && 'QR Code Scaduto'}
             {status === 'auth_required' && 'Accesso Richiesto'}
+            {status === 'choose_action' && 'Scegli Azione'}
             {status === 'error' && 'Errore'}
           </CardTitle>
         </CardHeader>
@@ -155,8 +189,18 @@ export default function QRCheckinPage() {
 
           {details && (
             <div className="space-y-2 text-sm">
-              <p><strong>Negozio:</strong> {details.storeName}</p>
-              <p><strong>Orario:</strong> {new Date(details.timestamp).toLocaleString('it-IT')}</p>
+              {details.storeName && <p><strong>Negozio:</strong> {details.storeName}</p>}
+              {details.timestamp && (
+                <p><strong>Orario:</strong> {new Date(details.timestamp).toLocaleString('it-IT')}</p>
+              )}
+              {details.action && (
+                <p><strong>Azione:</strong> {
+                  details.action === 'clock-in' ? 'Ingresso' :
+                  details.action === 'clock-out' ? 'Uscita' :
+                  details.action === 'break-start' ? 'Inizio Pausa' :
+                  details.action === 'break-end' ? 'Fine Pausa' : details.action
+                }</p>
+              )}
               <p><strong>Metodo:</strong> QR Code</p>
             </div>
           )}
@@ -165,6 +209,38 @@ export default function QRCheckinPage() {
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Reindirizzamento al portale in corso...
             </p>
+          )}
+
+          {status === 'choose_action' && (
+            <div className="grid grid-cols-1 gap-3">
+              <Button
+                onClick={() => handleActionChoice('clock-out')}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                data-testid="button-clock-out"
+              >
+                <LogOut className="h-4 w-4" />
+                Timbratura Uscita
+              </Button>
+              <Button
+                onClick={() => handleActionChoice('break-start')}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                data-testid="button-break-start"
+              >
+                <Coffee className="h-4 w-4" />
+                Inizio Pausa
+              </Button>
+              <Button
+                onClick={() => handleActionChoice('break-end')}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                data-testid="button-break-end"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Fine Pausa
+              </Button>
+            </div>
           )}
 
           {status === 'auth_required' && (
