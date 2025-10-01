@@ -339,7 +339,21 @@ function fsmReducer(
       break;
   }
 
-  // Process FSM events
+  // ✅ FIX: Handle context-only updates (no state transition required)
+  // These events update context without changing FSM state
+  switch (action.type) {
+    case TimeAttendanceEvent.SELECT_METHOD:
+      newContext.selectedMethod = action.payload.method;
+      newContext.isMethodValid = true;
+      break;
+      
+    case TimeAttendanceEvent.SELECT_STORE:
+      newContext.selectedStore = action.payload.store;
+      newContext.isStoreValid = true;
+      break;
+  }
+
+  // Process FSM events that require state transitions
   const transition = FSM_TRANSITIONS.find(t => 
     t.from === currentState && t.event === action.type
   );
@@ -347,17 +361,8 @@ function fsmReducer(
   if (transition) {
     newState = transition.to;
     
-    // Update context based on events
+    // Update context based on events that change state
     switch (action.type) {
-      case TimeAttendanceEvent.SELECT_METHOD:
-        newContext.selectedMethod = action.payload.method;
-        newContext.isMethodValid = true;
-        break;
-        
-      case TimeAttendanceEvent.SELECT_STORE:
-        newContext.selectedStore = action.payload.store;
-        newContext.isStoreValid = true;
-        break;
         
       case TimeAttendanceEvent.CLOCK_IN_ATTEMPT:
         newContext.clockInData = action.payload.clockInData;

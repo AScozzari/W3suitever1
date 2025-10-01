@@ -247,16 +247,10 @@ export default function UnifiedClockingPanel({
 
   // ✅ FIX: Re-prepare QR strategy when store changes or QR is selected
   useEffect(() => {
-    console.log('[QR-EFFECT] Strategy:', strategiesState.selectedStrategy?.type, 'Store:', context.selectedStore?.id);
     if (strategiesState.selectedStrategy?.type === 'qr' && context.selectedStore) {
-      console.log('[QR-FIX] Preparing QR strategy with store:', context.selectedStore.id);
-      strategiesActions.prepareStrategy(context).then(() => {
-        console.log('[QR-FIX] QR strategy prepared successfully');
-      }).catch(err => {
-        console.error('[QR-FIX] Failed to prepare QR strategy:', err);
-      });
+      strategiesActions.prepareStrategy(context);
     }
-  }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id, strategiesActions, context]);
+  }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id]);
 
   // ✅ NEW: Filter strategies based on PDV configuration + HR Management
   const availableStrategyConfigs = React.useMemo(() => {
@@ -319,16 +313,11 @@ export default function UnifiedClockingPanel({
 
   // Handler cambio store
   const handleStoreChange = (storeId: string) => {
-    console.log('[STORE-CHANGE] User selected store:', storeId);
     setSelectedStoreId(storeId);
     const store = nearbyStores.find(s => s.id === storeId);
     if (store) {
-      console.log('[STORE-CHANGE] Store found, updating FSM context:', store.name, store.id);
       setSelectedStore(store);
       selectStore(store);
-      console.log('[STORE-CHANGE] FSM selectStore called');
-    } else {
-      console.error('[STORE-CHANGE] Store not found in nearbyStores:', storeId);
     }
   };
 
