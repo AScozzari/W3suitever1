@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { setupOAuth2Server } from "./oauth2-server";
 import { workflowRoutes } from "../routes/workflows";
 import hrRoutes from "../routes/hr";
+import webhookRoutes from "../routes/webhooks";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1098,6 +1099,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Apply tenant middleware to all other API routes
     tenantMiddleware(req, res, next);
   });
+
+  // ==================== WEBHOOK ROUTES ====================
+  // Public webhook receiver + authenticated management endpoints
+  app.use('/api/webhooks', webhookRoutes);
 
   // ==================== WORKFLOW MANAGEMENT ROUTES ====================
   // Register workflow management API routes with authentication and tenant middleware
