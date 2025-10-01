@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform offering a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a WindTre glassmorphism design, OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system provides centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust platform catering to diverse business needs.
+W3 Suite is a multi-tenant enterprise platform that offers a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a WindTre glassmorphism design, OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system provides centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust platform catering to diverse business needs.
 
 # User Preferences
 
@@ -176,7 +176,7 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project employs an enterprise monorepo structure, separating `W3 Suite` (tenant-facing applications) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, directs traffic to internal services, including frontend and backend applications for both W3 Suite and Brand Interface.
+The project employs an enterprise monorepo structure, separating `W3 Suite` (tenant-facing applications) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, directs traffic to internal services.
 
 ## Monorepo Structure:
 - **`apps/`**: Contains frontend/backend services, workers, and edge renderers.
@@ -198,9 +198,10 @@ The project employs an enterprise monorepo structure, separating `W3 Suite` (ten
 - **Data Architecture Patterns**:
     - **Brand Base + Tenant Override**: For collaboratively managed entities (e.g., Suppliers, Products).
     - **Brand-Only**: For Brand-controlled entities (e.g., Stores, Legal Entities) with tenant read-only access.
-- **Universal Workflow System**: A comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, and event-driven state machines. Key features include a visual workflow builder, team-based supervision, progressive approval chains with escalation, dynamic runtime resolution, and audit trails.
+- **Universal Workflow System**: A comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails.
 - **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
-- **Unified Notification System**: Real-time notifications across 7 business categories (CRM, Finance, HR, Sales, Support, Operations, Marketing) with stable color-coded badges. It uses a hybrid Redis + WebSocket architecture with automatic PostgreSQL fallback for graceful degradation. `w3suite.notifications` table is extended for comprehensive management.
+- **Unified Notification System**: Real-time notifications across 7 business categories with Redis + WebSocket architecture and PostgreSQL fallback.
+- **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management, including clock-in/out matching, deviation tracking, compliance rules, and overwrite protection.
 
 # External Dependencies
 
