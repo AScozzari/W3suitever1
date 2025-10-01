@@ -20,7 +20,7 @@ export class WebhookWorker {
 
   /**
    * Start the webhook worker
-   * Runs in infinite loop consuming events from Redis queue
+   * Runs in infinite loop consuming events from Redis queue with auto-restart
    */
   async start(): Promise<void> {
     if (this.isRunning) {
@@ -31,14 +31,43 @@ export class WebhookWorker {
     this.isRunning = true;
     logger.info('🪝 Webhook worker started', { priority: this.priority });
 
-    // Process queue with callback
-    await redisService.processWebhookQueue(
-      this.priority,
-      async (event) => {
-        await this.processWebhookEvent(event);
-      },
-      5 // 5 second timeout
-    );
+    // Continuous loop with error handling and auto-restart
+    while (this.isRunning) {
+      try {
+        // Process queue with callback
+        await redisService.processWebhookQueue(
+          this.priority,
+          async (event) => {
+            await this.processWebhookEvent(event);
+          },
+          5 // 5 second timeout
+        );
+
+        // If processWebhookQueue exits (e.g., Redis unavailable), retry after delay
+        logger.warn('🪝 Webhook queue processing exited, retrying in 5s...', {
+          priority: this.priority
+        });
+        await this.sleep(5000);
+
+      } catch (error) {
+        logger.error('🪝 Webhook worker error, retrying in 10s...', {
+          priority: this.priority,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        
+        // Wait before retry (exponential backoff could be added here)
+        await this.sleep(10000);
+      }
+    }
+
+    logger.info('🪝 Webhook worker stopped gracefully', { priority: this.priority });
+  }
+
+  /**
+   * Sleep helper for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
