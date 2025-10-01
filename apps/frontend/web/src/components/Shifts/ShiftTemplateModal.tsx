@@ -27,12 +27,16 @@ import { Plus, Trash2, Clock, AlertTriangle, CheckCircle, Save, Store as StoreIc
 // ==================== TYPES & SCHEMAS ====================
 
 const timeSlotSchema = z.object({
-  segmentType: z.enum(['continuous', 'split']).default('continuous'),
+  segmentType: z.enum(['continuous', 'split', 'triple', 'quad']).default('continuous'),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)'),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)'),
-  // ✅ NEW: For split shifts
+  // ✅ Multi-block support (up to 4 blocks)
   block2StartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
   block2EndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
+  block3StartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
+  block3EndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
+  block4StartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
+  block4EndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato orario non valido (HH:MM)').optional(),
   breakMinutes: z.number().min(0, 'Pausa non può essere negativa').max(480, 'Pausa troppo lunga (max 8h)').optional(),
   clockInToleranceMinutes: z.number().min(0, 'Tolleranza non può essere negativa').max(60, 'Tolleranza massima 60 minuti').optional(),
   clockOutToleranceMinutes: z.number().min(0, 'Tolleranza non può essere negativa').max(60, 'Tolleranza massima 60 minuti').optional()
@@ -63,80 +67,93 @@ const timeSlotSchema = z.object({
     }
   }
   
-  // Validate split shifts - both blocks same day, no overnight
-  if (data.segmentType === 'split') {
-    if (!data.block2StartTime || !data.block2EndTime) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Entrambi i blocchi sono obbligatori per una fascia spezzata',
-        path: ['block2StartTime']
-      });
-      return;
+  // Validate multi-block shifts (split, triple, quad) - all blocks same day, no overnight
+  if (data.segmentType !== 'continuous') {
+    const blocks: Array<{start: string, end: string, label: string, startPath: string[], endPath: string[]}> = [
+      { start: data.startTime, end: data.endTime, label: 'primo', startPath: ['startTime'], endPath: ['endTime'] }
+    ];
+    
+    // Add blocks based on segment type
+    if (data.segmentType === 'split' || data.segmentType === 'triple' || data.segmentType === 'quad') {
+      if (!data.block2StartTime || !data.block2EndTime) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Il secondo blocco è obbligatorio per fasce ${data.segmentType === 'split' ? 'spezzate' : data.segmentType === 'triple' ? 'triple' : 'quad'}`,
+          path: ['block2StartTime']
+        });
+        return;
+      }
+      blocks.push({ start: data.block2StartTime, end: data.block2EndTime, label: 'secondo', startPath: ['block2StartTime'], endPath: ['block2EndTime'] });
     }
     
-    // Parse all times (same day - no overnight for split shifts)
-    const block1Start = new Date(`2000-01-01T${data.startTime}`);
-    const block1End = new Date(`2000-01-01T${data.endTime}`);
-    const block2Start = new Date(`2000-01-01T${data.block2StartTime}`);
-    const block2End = new Date(`2000-01-01T${data.block2EndTime}`);
-    
-    // Block 1 cannot span overnight in split shifts
-    if (block1End <= block1Start) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il primo blocco non può attraversare la mezzanotte nelle fasce spezzate',
-        path: ['endTime']
-      });
+    if (data.segmentType === 'triple' || data.segmentType === 'quad') {
+      if (!data.block3StartTime || !data.block3EndTime) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Il terzo blocco è obbligatorio per fasce ${data.segmentType === 'triple' ? 'triple' : 'quad'}`,
+          path: ['block3StartTime']
+        });
+        return;
+      }
+      blocks.push({ start: data.block3StartTime, end: data.block3EndTime, label: 'terzo', startPath: ['block3StartTime'], endPath: ['block3EndTime'] });
     }
     
-    // Block 2 cannot span overnight in split shifts
-    if (block2End <= block2Start) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il secondo blocco non può attraversare la mezzanotte nelle fasce spezzate',
-        path: ['block2EndTime']
-      });
+    if (data.segmentType === 'quad') {
+      if (!data.block4StartTime || !data.block4EndTime) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Il quarto blocco è obbligatorio per fasce quad',
+          path: ['block4StartTime']
+        });
+        return;
+      }
+      blocks.push({ start: data.block4StartTime, end: data.block4EndTime, label: 'quarto', startPath: ['block4StartTime'], endPath: ['block4EndTime'] });
     }
     
-    // Validate Block 1 duration (min 1h, max 16h, same day)
-    const block1Hours = (block1End.getTime() - block1Start.getTime()) / (1000 * 60 * 60);
-    if (block1Hours < 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il primo blocco deve durare almeno 1 ora',
-        path: ['endTime']
-      });
-    } else if (block1Hours > 16) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il primo blocco non può superare 16 ore',
-        path: ['endTime']
-      });
-    }
-    
-    // Validate Block 2 duration (min 1h, max 16h, same day)
-    const block2Hours = (block2End.getTime() - block2Start.getTime()) / (1000 * 60 * 60);
-    if (block2Hours < 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il secondo blocco deve durare almeno 1 ora',
-        path: ['block2EndTime']
-      });
-    } else if (block2Hours > 16) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il secondo blocco non può superare 16 ore',
-        path: ['block2EndTime']
-      });
-    }
-    
-    // Validate Block 2 starts after Block 1 ends (same day, minimum break enforced)
-    if (block2Start.getTime() <= block1End.getTime()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Il secondo blocco deve iniziare dopo la fine del primo blocco (con pausa)',
-        path: ['block2StartTime']
-      });
+    // Validate each block
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      const blockStart = new Date(`2000-01-01T${block.start}`);
+      const blockEnd = new Date(`2000-01-01T${block.end}`);
+      
+      // Block cannot span overnight in multi-block shifts
+      if (blockEnd <= blockStart) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Il ${block.label} blocco non può attraversare la mezzanotte`,
+          path: block.endPath
+        });
+        continue;
+      }
+      
+      // Validate block duration (min 1h, max 16h)
+      const blockHours = (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
+      if (blockHours < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Il ${block.label} blocco deve durare almeno 1 ora`,
+          path: block.endPath
+        });
+      } else if (blockHours > 16) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Il ${block.label} blocco non può superare 16 ore`,
+          path: block.endPath
+        });
+      }
+      
+      // Validate that each block starts after the previous one ends (with break)
+      if (i > 0) {
+        const prevBlock = blocks[i - 1];
+        const prevBlockEnd = new Date(`2000-01-01T${prevBlock.end}`);
+        if (blockStart.getTime() <= prevBlockEnd.getTime()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Il ${block.label} blocco deve iniziare dopo la fine del ${prevBlock.label} blocco (con pausa)`,
+            path: block.startPath
+          });
+        }
+      }
     }
   }
 });
@@ -201,11 +218,27 @@ const shiftTemplateSchema = z.object({
         label: 'primo blocco'
       });
       
-      // Add second block if split shift (split shifts cannot be overnight by definition)
-      if (slot1.segmentType === 'split' && slot1.block2StartTime && slot1.block2EndTime) {
+      // Add additional blocks for multi-block shifts (cannot be overnight by definition)
+      if ((slot1.segmentType === 'split' || slot1.segmentType === 'triple' || slot1.segmentType === 'quad') && 
+          slot1.block2StartTime && slot1.block2EndTime) {
         slot1Blocks.push({
           intervals: getIntervals(slot1.block2StartTime, slot1.block2EndTime, false),
           label: 'secondo blocco'
+        });
+      }
+      
+      if ((slot1.segmentType === 'triple' || slot1.segmentType === 'quad') && 
+          slot1.block3StartTime && slot1.block3EndTime) {
+        slot1Blocks.push({
+          intervals: getIntervals(slot1.block3StartTime, slot1.block3EndTime, false),
+          label: 'terzo blocco'
+        });
+      }
+      
+      if (slot1.segmentType === 'quad' && slot1.block4StartTime && slot1.block4EndTime) {
+        slot1Blocks.push({
+          intervals: getIntervals(slot1.block4StartTime, slot1.block4EndTime, false),
+          label: 'quarto blocco'
         });
       }
       
@@ -219,11 +252,27 @@ const shiftTemplateSchema = z.object({
         label: 'primo blocco'
       });
       
-      // Add second block if split shift
-      if (slot2.segmentType === 'split' && slot2.block2StartTime && slot2.block2EndTime) {
+      // Add additional blocks for multi-block shifts
+      if ((slot2.segmentType === 'split' || slot2.segmentType === 'triple' || slot2.segmentType === 'quad') && 
+          slot2.block2StartTime && slot2.block2EndTime) {
         slot2Blocks.push({
           intervals: getIntervals(slot2.block2StartTime, slot2.block2EndTime, false),
           label: 'secondo blocco'
+        });
+      }
+      
+      if ((slot2.segmentType === 'triple' || slot2.segmentType === 'quad') && 
+          slot2.block3StartTime && slot2.block3EndTime) {
+        slot2Blocks.push({
+          intervals: getIntervals(slot2.block3StartTime, slot2.block3EndTime, false),
+          label: 'terzo blocco'
+        });
+      }
+      
+      if (slot2.segmentType === 'quad' && slot2.block4StartTime && slot2.block4EndTime) {
+        slot2Blocks.push({
+          intervals: getIntervals(slot2.block4StartTime, slot2.block4EndTime, false),
+          label: 'quarto blocco'
         });
       }
       
@@ -680,25 +729,49 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                             <RadioGroup
                               onValueChange={(value) => {
                                 field.onChange(value);
-                                // Clear block2 fields when switching back to continuous
+                                // Clear block fields based on segment type
                                 if (value === 'continuous') {
                                   form.setValue(`timeSlots.${index}.block2StartTime`, undefined);
                                   form.setValue(`timeSlots.${index}.block2EndTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block3StartTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block3EndTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block4StartTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block4EndTime`, undefined);
+                                } else if (value === 'split') {
+                                  form.setValue(`timeSlots.${index}.block3StartTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block3EndTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block4StartTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block4EndTime`, undefined);
+                                } else if (value === 'triple') {
+                                  form.setValue(`timeSlots.${index}.block4StartTime`, undefined);
+                                  form.setValue(`timeSlots.${index}.block4EndTime`, undefined);
                                 }
                               }}
                               value={field.value}
-                              className="flex gap-4"
+                              className="grid grid-cols-2 gap-4"
                             >
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="continuous" id={`continuous-${index}`} data-testid={`radio-continuous-${index}`} />
                                 <Label htmlFor={`continuous-${index}`} className="cursor-pointer font-normal">
-                                  Continua
+                                  Continua (1 blocco)
                                 </Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="split" id={`split-${index}`} data-testid={`radio-split-${index}`} />
                                 <Label htmlFor={`split-${index}`} className="cursor-pointer font-normal">
-                                  Spezzata
+                                  Spezzata (2 blocchi)
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="triple" id={`triple-${index}`} data-testid={`radio-triple-${index}`} />
+                                <Label htmlFor={`triple-${index}`} className="cursor-pointer font-normal">
+                                  Triple (3 blocchi)
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="quad" id={`quad-${index}`} data-testid={`radio-quad-${index}`} />
+                                <Label htmlFor={`quad-${index}`} className="cursor-pointer font-normal">
+                                  Quad (4 blocchi)
                                 </Label>
                               </div>
                             </RadioGroup>
@@ -709,8 +782,8 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                     />
                     
                     {/* First Block (always visible) */}
-                    <div className={cn("mb-3", segmentType === 'split' && "pb-3 border-b")}>
-                      {segmentType === 'split' && (
+                    <div className={cn("mb-3", (segmentType !== 'continuous') && "pb-3 border-b")}>
+                      {(segmentType !== 'continuous') && (
                         <Label className="text-xs text-muted-foreground mb-2 block">Primo Blocco</Label>
                       )}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -752,8 +825,8 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                     </div>
                     </div>
                     
-                    {/* ✅ NEW: Second Block (only for split shifts) */}
-                    {segmentType === 'split' && (
+                    {/* Second Block (for split, triple, quad) */}
+                    {(segmentType === 'split' || segmentType === 'triple' || segmentType === 'quad') && (
                       <div className="mt-4 pt-4 border-t">
                         <Label className="text-xs text-muted-foreground mb-2 block">Secondo Blocco</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -786,6 +859,94 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                                     {...field}
                                     type="time"
                                     data-testid={`input-block2-end-time-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Third Block (for triple, quad) */}
+                    {(segmentType === 'triple' || segmentType === 'quad') && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground mb-2 block">Terzo Blocco</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.block3StartTime`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ora Inizio Blocco 3</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="time"
+                                    data-testid={`input-block3-start-time-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.block3EndTime`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ora Fine Blocco 3</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="time"
+                                    data-testid={`input-block3-end-time-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Fourth Block (for quad only) */}
+                    {segmentType === 'quad' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Label className="text-xs text-muted-foreground mb-2 block">Quarto Blocco</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.block4StartTime`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ora Inizio Blocco 4</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="time"
+                                    data-testid={`input-block4-start-time-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.block4EndTime`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ora Fine Blocco 4</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="time"
+                                    data-testid={`input-block4-end-time-${index}`}
                                   />
                                 </FormControl>
                                 <FormMessage />

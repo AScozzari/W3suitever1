@@ -1168,11 +1168,15 @@ export const shiftTimeSlots = w3suiteSchema.table("shift_time_slots", {
   startTime: varchar("start_time", { length: 5 }).notNull(), // HH:MM format
   endTime: varchar("end_time", { length: 5 }).notNull(), // HH:MM format
   
-  // ✅ NEW: Split shift support (turno spezzato)
-  segmentType: varchar("segment_type", { length: 20 }).notNull().default("continuous"), // continuous | split
-  block2StartTime: varchar("block2_start_time", { length: 5 }), // For split shifts only
-  block2EndTime: varchar("block2_end_time", { length: 5 }), // For split shifts only
-  breakMinutes: integer("break_minutes").default(0), // Break duration (applies to both types)
+  // ✅ NEW: Multi-block shift support (up to 4 blocks)
+  segmentType: varchar("segment_type", { length: 20 }).notNull().default("continuous"), // continuous | split | triple | quad
+  block2StartTime: varchar("block2_start_time", { length: 5 }), // For multi-block shifts
+  block2EndTime: varchar("block2_end_time", { length: 5 }), // For multi-block shifts
+  block3StartTime: varchar("block3_start_time", { length: 5 }), // For triple/quad shifts
+  block3EndTime: varchar("block3_end_time", { length: 5 }), // For triple/quad shifts
+  block4StartTime: varchar("block4_start_time", { length: 5 }), // For quad shifts only
+  block4EndTime: varchar("block4_end_time", { length: 5 }), // For quad shifts only
+  breakMinutes: integer("break_minutes").default(0), // Break duration (applies to all types)
   clockInTolerance: integer("clock_in_tolerance").default(15), // Minutes tolerance for clock-in
   clockOutTolerance: integer("clock_out_tolerance").default(15), // Minutes tolerance for clock-out
   
