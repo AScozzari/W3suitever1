@@ -980,7 +980,7 @@ export const timeTracking = w3suiteSchema.table("time_tracking", {
   encryptedAt: timestamp("encrypted_at"), // When data was encrypted
   
   // Shift association
-  shiftId: uuid("shift_id"), // Reference to planned shift
+  shiftId: uuid("shift_id").references(() => shifts.id), // FK to planned shift
   
   // Calculated fields
   totalMinutes: integer("total_minutes"),
