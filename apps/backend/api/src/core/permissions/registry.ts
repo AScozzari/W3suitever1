@@ -315,6 +315,35 @@ export const PERMISSIONS = {
       monitor: 'ai.admin.monitor',
       configure: 'ai.admin.configure'
     }
+  },
+
+  // ==================== WEBHOOKS ====================
+  webhooks: {
+    receive: {
+      all: 'webhooks.receive.*',
+      stripe: 'webhooks.receive.stripe',
+      twilio: 'webhooks.receive.twilio',
+      github: 'webhooks.receive.github',
+      custom: 'webhooks.receive.custom'
+    },
+    manage: {
+      view: 'webhooks.manage.view',
+      create: 'webhooks.manage.create',
+      edit: 'webhooks.manage.edit',
+      delete: 'webhooks.manage.delete',
+      configure: 'webhooks.manage.configure'
+    },
+    events: {
+      view: 'webhooks.events.view',
+      retry: 'webhooks.events.retry',
+      delete: 'webhooks.events.delete'
+    },
+    signatures: {
+      view: 'webhooks.signatures.view',
+      create: 'webhooks.signatures.create',
+      edit: 'webhooks.signatures.edit',
+      delete: 'webhooks.signatures.delete'
+    }
   }
 } as const;
 
@@ -346,7 +375,7 @@ export const ROLE_TEMPLATES = {
     code: 'admin',
     name: 'Amministratore',
     description: 'Accesso completo a tutte le funzionalità del sistema',
-    permissions: getAllPermissions() // Tutti i permessi (include AI)
+    permissions: getAllPermissions() // Tutti i permessi (include AI e Webhooks)
   },
 
   // FINANCE - Gestione finanziaria e contabile
@@ -420,6 +449,9 @@ export const ROLE_TEMPLATES = {
       PERMISSIONS.ai.usage.analytics,
       PERMISSIONS.ai.chat.use,
       PERMISSIONS.ai.conversations.view,
+      // Webhooks - View only for monitoring
+      PERMISSIONS.webhooks.events.view,
+      PERMISSIONS.webhooks.manage.view,
       // Settings organizzazione
       PERMISSIONS.settings.view,
       PERMISSIONS.settings.organization.view,

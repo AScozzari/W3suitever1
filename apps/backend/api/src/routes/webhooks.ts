@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { WebhookService } from '../services/webhook-service.js';
 import { logger } from '../core/logger.js';
 import { z } from 'zod';
+import { rbacMiddleware, requirePermission } from '../middleware/tenant.js';
 
 const router = Router();
 
@@ -131,7 +132,7 @@ router.post('/:tenantId/:source', async (req: Request, res: Response) => {
  * 
  * Query webhook events for a tenant
  */
-router.get('/:tenantId/events', async (req: Request, res: Response) => {
+router.get('/:tenantId/events', rbacMiddleware, requirePermission('webhooks.events.view'), async (req: Request, res: Response) => {
   try {
     const { tenantId } = req.params;
     const { source, eventType, status, limit } = req.query;
@@ -165,7 +166,7 @@ router.get('/:tenantId/events', async (req: Request, res: Response) => {
  * 🔍 Get Single Webhook Event
  * GET /api/webhooks/:tenantId/events/:eventId
  */
-router.get('/:tenantId/events/:eventId', async (req: Request, res: Response) => {
+router.get('/:tenantId/events/:eventId', rbacMiddleware, requirePermission('webhooks.events.view'), async (req: Request, res: Response) => {
   try {
     const { tenantId, eventId } = req.params;
 
@@ -197,7 +198,7 @@ router.get('/:tenantId/events/:eventId', async (req: Request, res: Response) => 
  * ⚙️ Webhook Signature Config Management
  * GET /api/webhooks/:tenantId/signatures
  */
-router.get('/:tenantId/signatures', async (req: Request, res: Response) => {
+router.get('/:tenantId/signatures', rbacMiddleware, requirePermission('webhooks.signatures.view'), async (req: Request, res: Response) => {
   try {
     const { tenantId } = req.params;
 
@@ -239,7 +240,7 @@ const createSignatureSchema = z.object({
   allowedEventTypes: z.array(z.string()).default([])
 });
 
-router.post('/:tenantId/signatures', async (req: Request, res: Response) => {
+router.post('/:tenantId/signatures', rbacMiddleware, requirePermission('webhooks.signatures.create'), async (req: Request, res: Response) => {
   try {
     const { tenantId } = req.params;
     
@@ -283,7 +284,7 @@ router.post('/:tenantId/signatures', async (req: Request, res: Response) => {
  * ⚙️ Update Webhook Signature Config
  * PATCH /api/webhooks/:tenantId/signatures/:signatureId
  */
-router.patch('/:tenantId/signatures/:signatureId', async (req: Request, res: Response) => {
+router.patch('/:tenantId/signatures/:signatureId', rbacMiddleware, requirePermission('webhooks.signatures.edit'), async (req: Request, res: Response) => {
   try {
     const { tenantId, signatureId } = req.params;
 
@@ -327,7 +328,7 @@ router.patch('/:tenantId/signatures/:signatureId', async (req: Request, res: Res
  * ⚙️ Delete Webhook Signature Config
  * DELETE /api/webhooks/:tenantId/signatures/:signatureId
  */
-router.delete('/:tenantId/signatures/:signatureId', async (req: Request, res: Response) => {
+router.delete('/:tenantId/signatures/:signatureId', rbacMiddleware, requirePermission('webhooks.signatures.delete'), async (req: Request, res: Response) => {
   try {
     const { tenantId, signatureId } = req.params;
 
