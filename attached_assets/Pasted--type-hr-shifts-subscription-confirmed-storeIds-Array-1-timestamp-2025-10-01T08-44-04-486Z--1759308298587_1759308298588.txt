@@ -1,0 +1,94 @@
+{type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-10-01T08:44:04.486Z'}
+queryClient.ts:342  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?storeId=50000000-0000-0000-0000-000000000008 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+queryFn @ HRCalendar.tsx:101
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+onSubscribe @ @tanstack_react-query.js?v=bceaa3d2:1335
+subscribe @ @tanstack_react-query.js?v=bceaa3d2:24
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bceaa3d2:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?storeId=50000000-0000-0000-0000-000000000008&startDate=2025-09-29&endDate=2025-10-05 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+onSubscribe @ @tanstack_react-query.js?v=bceaa3d2:1335
+subscribe @ @tanstack_react-query.js?v=bceaa3d2:24
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bceaa3d2:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18627Understand this error
+queryClient.ts:342  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?storeId=50000000-0000-0000-0000-000000000008 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+queryFn @ HRCalendar.tsx:101
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bceaa3d2:799
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+onSubscribe @ @tanstack_react-query.js?v=bceaa3d2:1335
+subscribe @ @tanstack_react-query.js?v=bceaa3d2:24
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bceaa3d2:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bceaa3d2:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bceaa3d2:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bceaa3d2:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?storeId=50000000-0000-0000-0000-000000000008&startDate=2025-09-29&endDate=2025-10-05 500 (Internal Server Error)

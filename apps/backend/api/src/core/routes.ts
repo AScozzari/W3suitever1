@@ -3798,8 +3798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await setTenantContext(tenantId);
       
       // WORKAROUND: Use raw SQL to bypass Drizzle ORM bug with shiftAssignments
-      // TODO: Investigate Drizzle "Cannot convert undefined or null to object" error
-      // NOTE: shift_assignments ID columns are varchar, but shifts.store_id/stores.id are uuid
+      // NOTE: shift_assignments uses VARCHAR IDs, shifts/stores use UUID - explicit casts required
       const rawQuery = sql`
         SELECT 
           sa.*,
@@ -3808,7 +3807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'date', s.date,
             'startTime', s.start_time,
             'endTime', s.end_time,
-            'role', s.role,
+            'shiftType', s.shift_type,
             'storeId', s.store_id,
             'status', s.status
           ) as shift,
@@ -3824,10 +3823,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'code', st.code
           ) as store
         FROM w3suite.shift_assignments sa
-        LEFT JOIN w3suite.shifts s ON sa.shift_id = s.id
+        LEFT JOIN w3suite.shifts s ON sa.shift_id::uuid = s.id
         LEFT JOIN w3suite.users u ON sa.user_id = u.id
         LEFT JOIN w3suite.stores st ON s.store_id = st.id
-        WHERE sa.tenant_id = ${tenantId}
+        WHERE sa.tenant_id::uuid = ${tenantId}::uuid
         ${userId ? sql`AND sa.user_id = ${userId}` : sql``}
         ${storeId ? sql`AND s.store_id = ${storeId}::uuid` : sql``}
         ${startDate && endDate ? sql`AND s.date >= ${startDate}::date AND s.date <= ${endDate}::date` : sql``}
