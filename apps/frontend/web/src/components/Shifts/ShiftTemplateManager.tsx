@@ -18,24 +18,27 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import ShiftTemplateModal from './ShiftTemplateModal';
 
+interface TimeSlot {
+  segmentType: 'continuous' | 'split';
+  startTime: string;
+  endTime: string;
+  block2StartTime?: string;
+  block2EndTime?: string;
+  breakMinutes?: number;
+  clockInToleranceMinutes?: number;
+  clockOutToleranceMinutes?: number;
+}
+
 interface ShiftTemplate {
   id: string;
   name: string;
   description?: string;
   storeId?: string;
   status?: 'active' | 'archived';
-  pattern: 'daily' | 'weekly' | 'monthly' | 'custom';
-  defaultStartTime: string;
-  defaultEndTime: string;
-  defaultRequiredStaff: number;
-  defaultBreakMinutes?: number;
-  defaultSkills?: string[];
-  rules?: {
-    daysOfWeek?: number[];
-    datesOfMonth?: number[];
-    customPattern?: string;
-  };
+  timeSlots: TimeSlot[];
+  color?: string;
   isActive: boolean;
+  notes?: string;
 }
 
 interface Props {
@@ -43,23 +46,6 @@ interface Props {
   storeId: string;
   onApplyTemplate: (templateId: string, startDate: Date, endDate: Date) => Promise<void>;
 }
-
-const DAYS_OF_WEEK = [
-  { value: 1, label: 'Lun' },
-  { value: 2, label: 'Mar' },
-  { value: 3, label: 'Mer' },
-  { value: 4, label: 'Gio' },
-  { value: 5, label: 'Ven' },
-  { value: 6, label: 'Sab' },
-  { value: 0, label: 'Dom' }
-];
-
-const PATTERN_OPTIONS = [
-  { value: 'daily', label: 'Giornaliero', description: 'Ripeti ogni giorno' },
-  { value: 'weekly', label: 'Settimanale', description: 'Ripeti giorni specifici della settimana' },
-  { value: 'monthly', label: 'Mensile', description: 'Ripeti date specifiche del mese' },
-  { value: 'custom', label: 'Personalizzato', description: 'Pattern personalizzato' }
-];
 
 export default function ShiftTemplateManager({
   templates,
@@ -286,8 +272,6 @@ export default function ShiftTemplateManager({
                 <TableHead className="font-semibold text-gray-900">Nome</TableHead>
                 <TableHead className="font-semibold text-gray-900">Punto Vendita</TableHead>
                 <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
-                <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-                <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
                 <TableHead className="font-semibold text-gray-900">Stato</TableHead>
                 <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
               </TableRow>
@@ -295,7 +279,7 @@ export default function ShiftTemplateManager({
             <TableBody>
               {filteredTemplates.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                     Nessun template trovato con i filtri selezionati
                   </TableCell>
                 </TableRow>
@@ -321,30 +305,32 @@ export default function ShiftTemplateManager({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
-                          {template.defaultBreakMinutes && (
-                            <Badge variant="outline" className="text-xs ml-2">
-                              {template.defaultBreakMinutes}min pausa
-                            </Badge>
+                        <div className="space-y-2">
+                          {template.timeSlots?.map((slot, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <div className="text-sm">
+                                {slot.segmentType === 'split' ? (
+                                  <>
+                                    <span className="font-medium">{slot.startTime} - {slot.endTime}</span>
+                                    <span className="text-gray-400 mx-1">+</span>
+                                    <span className="font-medium">{slot.block2StartTime} - {slot.block2EndTime}</span>
+                                    <Badge variant="outline" className="text-xs ml-2">Spezzato</Badge>
+                                  </>
+                                ) : (
+                                  <span className="font-medium">{slot.startTime} - {slot.endTime}</span>
+                                )}
+                                {slot.breakMinutes !== undefined && slot.breakMinutes > 0 && (
+                                  <Badge variant="outline" className="text-xs ml-2">
+                                    {slot.breakMinutes}min pausa
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )) || (
+                            <span className="text-sm text-gray-400">Nessuna fascia definita</span>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {template.rules?.daysOfWeek?.map(day => (
-                            <Badge key={day} variant="secondary" className="text-xs">
-                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
-                            </Badge>
-                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={template.isActive ? "default" : "secondary"}>
@@ -457,16 +443,23 @@ export default function ShiftTemplateManager({
             {selectedTemplate && (
               <div className="bg-muted p-3 rounded-lg">
                 <h4 className="font-medium mb-2">Riepilogo Template</h4>
-                <div className="space-y-1 text-sm">
-                  <div>Orario: {selectedTemplate.defaultStartTime} - {selectedTemplate.defaultEndTime}</div>
-                  <div>Staff richiesto: {selectedTemplate.defaultRequiredStaff}</div>
-                  {selectedTemplate.rules?.daysOfWeek && (
-                    <div>
-                      Giorni: {selectedTemplate.rules.daysOfWeek.map(day => 
-                        DAYS_OF_WEEK.find(d => d.value === day)?.label
-                      ).join(', ')}
+                <div className="space-y-2 text-sm">
+                  {selectedTemplate.timeSlots?.map((slot, idx) => (
+                    <div key={idx}>
+                      <strong>Fascia {idx + 1}:</strong>{' '}
+                      {slot.segmentType === 'split' ? (
+                        <>
+                          {slot.startTime} - {slot.endTime} + {slot.block2StartTime} - {slot.block2EndTime}
+                          {' '}(Spezzato)
+                        </>
+                      ) : (
+                        <>{slot.startTime} - {slot.endTime}</>
+                      )}
+                      {slot.breakMinutes && slot.breakMinutes > 0 && (
+                        <> - {slot.breakMinutes}min pausa</>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             )}
