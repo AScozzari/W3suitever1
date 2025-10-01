@@ -156,28 +156,95 @@ const shiftTemplateSchema = z.object({
   isActive: z.boolean().default(true),
   notes: z.string().max(500, 'Note troppo lunghe (max 500 caratteri)').optional()
 }).superRefine((data, ctx) => {
-  // Business Logic Validation: Check for overlapping time slots
+  // Business Logic Validation: Check for overlapping time slots (including split shift blocks)
+  // Uses minute-based, 24h-cycle aware algorithm to handle overnight shifts correctly
+  
+  // Convert HH:MM to minutes since midnight (0-1439)
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+  
+  // Convert a time block to interval(s) - overnight blocks become two intervals
+  const getIntervals = (startTime: string, endTime: string, isOvernight: boolean): Array<{start: number, end: number}> => {
+    const start = timeToMinutes(startTime);
+    const end = timeToMinutes(endTime);
+    
+    if (isOvernight && end <= start) {
+      // Split into two intervals: [start, 1440) and [0, end)
+      return [
+        { start, end: 1440 },
+        { start: 0, end }
+      ];
+    }
+    
+    return [{ start, end }];
+  };
+  
+  // Check if two intervals overlap (strict: touching at endpoints is NOT overlap)
+  const intervalsOverlap = (a: {start: number, end: number}, b: {start: number, end: number}): boolean => {
+    return a.start < b.end && b.start < a.end;
+  };
+  
   for (let i = 0; i < data.timeSlots.length; i++) {
     for (let j = i + 1; j < data.timeSlots.length; j++) {
       const slot1 = data.timeSlots[i];
       const slot2 = data.timeSlots[j];
       
-      const start1 = new Date(`2000-01-01T${slot1.startTime}`);
-      const end1 = new Date(`2000-01-01T${slot1.endTime}`);
-      const start2 = new Date(`2000-01-01T${slot2.startTime}`);
-      const end2 = new Date(`2000-01-01T${slot2.endTime}`);
+      // Collect all time blocks for slot1 with their intervals
+      const slot1Blocks: Array<{intervals: Array<{start: number, end: number}>, label: string}> = [];
       
-      // Handle overnight shifts
-      if (end1 <= start1) end1.setDate(end1.getDate() + 1);
-      if (end2 <= start2) end2.setDate(end2.getDate() + 1);
+      const isSlot1Overnight = slot1.segmentType === 'continuous' && 
+                               timeToMinutes(slot1.endTime) <= timeToMinutes(slot1.startTime);
+      slot1Blocks.push({
+        intervals: getIntervals(slot1.startTime, slot1.endTime, isSlot1Overnight),
+        label: 'primo blocco'
+      });
       
-      // Check overlap (allow contiguous slots where end1 === start2)
-      if ((start1 < end2 && start2 < end1) && !(end1.getTime() === start2.getTime() || end2.getTime() === start1.getTime())) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Sovrapposizione tra fasce orarie ${i + 1} e ${j + 1}`,
-          path: ['timeSlots', i, 'startTime']
+      // Add second block if split shift (split shifts cannot be overnight by definition)
+      if (slot1.segmentType === 'split' && slot1.block2StartTime && slot1.block2EndTime) {
+        slot1Blocks.push({
+          intervals: getIntervals(slot1.block2StartTime, slot1.block2EndTime, false),
+          label: 'secondo blocco'
         });
+      }
+      
+      // Collect all time blocks for slot2 with their intervals
+      const slot2Blocks: Array<{intervals: Array<{start: number, end: number}>, label: string}> = [];
+      
+      const isSlot2Overnight = slot2.segmentType === 'continuous' && 
+                               timeToMinutes(slot2.endTime) <= timeToMinutes(slot2.startTime);
+      slot2Blocks.push({
+        intervals: getIntervals(slot2.startTime, slot2.endTime, isSlot2Overnight),
+        label: 'primo blocco'
+      });
+      
+      // Add second block if split shift
+      if (slot2.segmentType === 'split' && slot2.block2StartTime && slot2.block2EndTime) {
+        slot2Blocks.push({
+          intervals: getIntervals(slot2.block2StartTime, slot2.block2EndTime, false),
+          label: 'secondo blocco'
+        });
+      }
+      
+      // Check all combinations of blocks and their intervals
+      for (const block1 of slot1Blocks) {
+        for (const block2 of slot2Blocks) {
+          // Check each interval of block1 against each interval of block2
+          for (const interval1 of block1.intervals) {
+            for (const interval2 of block2.intervals) {
+              if (intervalsOverlap(interval1, interval2)) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: `Sovrapposizione tra fascia ${i + 1} (${block1.label}) e fascia ${j + 1} (${block2.label})`,
+                  path: ['timeSlots', i, 'startTime']
+                });
+                // Exit early once overlap is found for this block pair
+                return;
+              }
+            }
+          }
+        }
       }
     }
   }
