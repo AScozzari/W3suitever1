@@ -128,6 +128,82 @@ export const calendarEventCategoryEnum = pgEnum('calendar_event_category', [
   'sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing'
 ]);
 
+// ==================== TASK MANAGEMENT SYSTEM ENUMS ====================
+export const taskStatusEnum = pgEnum('task_status', [
+  'todo', 
+  'in_progress', 
+  'review', 
+  'done', 
+  'archived'
+]);
+
+export const taskPriorityEnum = pgEnum('task_priority', [
+  'low', 
+  'medium', 
+  'high', 
+  'urgent'
+]);
+
+export const taskAssignmentRoleEnum = pgEnum('task_assignment_role', [
+  'assignee', 
+  'watcher'
+]);
+
+export const taskDependencyTypeEnum = pgEnum('task_dependency_type', [
+  'blocks', 
+  'blocked_by', 
+  'related'
+]);
+
+// ==================== CHAT SYSTEM ENUMS ====================
+export const chatChannelTypeEnum = pgEnum('chat_channel_type', [
+  'team', 
+  'dm', 
+  'task_thread', 
+  'general'
+]);
+
+export const chatMemberRoleEnum = pgEnum('chat_member_role', [
+  'owner', 
+  'admin', 
+  'member'
+]);
+
+export const chatNotificationPreferenceEnum = pgEnum('chat_notification_preference', [
+  'all', 
+  'mentions', 
+  'none'
+]);
+
+// ==================== ACTIVITY FEED ENUMS ====================
+export const activityFeedCategoryEnum = pgEnum('activity_feed_category', [
+  'TASK', 
+  'WORKFLOW', 
+  'HR', 
+  'CRM', 
+  'WEBHOOK', 
+  'SYSTEM'
+]);
+
+export const activityFeedPriorityEnum = pgEnum('activity_feed_priority', [
+  'low', 
+  'normal', 
+  'high'
+]);
+
+export const activityFeedActorTypeEnum = pgEnum('activity_feed_actor_type', [
+  'user', 
+  'system', 
+  'webhook'
+]);
+
+export const activityFeedInteractionTypeEnum = pgEnum('activity_feed_interaction_type', [
+  'like', 
+  'comment', 
+  'share', 
+  'bookmark'
+]);
+
 
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
@@ -2582,6 +2658,368 @@ export const webhookSignatures = w3suiteSchema.table("webhook_signatures", {
   index("webhook_signatures_provider_idx").on(table.provider),
   index("webhook_signatures_active_idx").on(table.isActive),
   uniqueIndex("webhook_signatures_unique").on(table.tenantId, table.provider),
+]);
+
+// ==================== TASK MANAGEMENT SYSTEM TABLES ====================
+
+// Tasks - Core task entity
+export const tasks = w3suiteSchema.table("tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Basic Info
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  status: taskStatusEnum("status").default('todo').notNull(),
+  priority: taskPriorityEnum("priority").default('medium').notNull(),
+  
+  // Ownership & Visibility
+  creatorId: varchar("creator_id").notNull().references(() => users.id),
+  departmentId: uuid("department_id"),
+  
+  // Dates
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  startDate: timestamp("start_date"),
+  completedAt: timestamp("completed_at"),
+  archivedAt: timestamp("archived_at"),
+  
+  // Progress & Tracking
+  estimatedHours: real("estimated_hours"),
+  actualHours: real("actual_hours"),
+  completionPercentage: integer("completion_percentage").default(0),
+  
+  // Categorization
+  tags: text("tags").array().default([]),
+  customFields: jsonb("custom_fields").default({}),
+  
+  // Workflow Integration (OPTIONAL)
+  linkedWorkflowInstanceId: uuid("linked_workflow_instance_id").references(() => workflowInstances.id),
+  linkedWorkflowTeamId: uuid("linked_workflow_team_id").references(() => teams.id),
+  triggeredByWorkflowStepId: uuid("triggered_by_workflow_step_id"),
+  
+  // Recurrence
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: jsonb("recurrence_rule"),
+  parentRecurringTaskId: uuid("parent_recurring_task_id"),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+}, (table) => [
+  index("tasks_tenant_idx").on(table.tenantId),
+  index("tasks_creator_idx").on(table.tenantId, table.creatorId),
+  index("tasks_status_idx").on(table.tenantId, table.status),
+  index("tasks_department_idx").on(table.tenantId, table.departmentId),
+  index("tasks_due_date_idx").on(table.tenantId, table.dueDate),
+  index("tasks_workflow_idx").on(table.linkedWorkflowInstanceId),
+]);
+
+// Task Assignments - Assignees & Watchers (many-to-many)
+export const taskAssignments = w3suiteSchema.table("task_assignments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: taskAssignmentRoleEnum("role").notNull(),
+  
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  
+  // Notification preferences
+  notifyOnUpdate: boolean("notify_on_update").default(true),
+  notifyOnComment: boolean("notify_on_comment").default(true),
+}, (table) => [
+  uniqueIndex("task_assignments_unique").on(table.taskId, table.userId, table.role),
+  index("task_assignments_user_idx").on(table.userId, table.role),
+  index("task_assignments_task_idx").on(table.taskId),
+]);
+
+// Task Checklist Items - Subtasks with granular assignment
+export const taskChecklistItems = w3suiteSchema.table("task_checklist_items", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  position: integer("position").notNull(),
+  
+  // Granular Assignment (NULL = all task assignees)
+  assignedToUserId: varchar("assigned_to_user_id").references(() => users.id),
+  
+  // Dates
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  completedBy: varchar("completed_by").references(() => users.id),
+  
+  // Status
+  isCompleted: boolean("is_completed").default(false),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+}, (table) => [
+  index("checklist_task_idx").on(table.taskId, table.position),
+  index("checklist_assigned_idx").on(table.assignedToUserId),
+  index("checklist_due_date_idx").on(table.dueDate),
+]);
+
+// Task Comments - Discussion threads
+export const taskComments = w3suiteSchema.table("task_comments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  
+  // Threading (optional)
+  parentCommentId: uuid("parent_comment_id"),
+  
+  // Mentions
+  mentionedUserIds: varchar("mentioned_user_ids").array().default([]),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isEdited: boolean("is_edited").default(false),
+  deletedAt: timestamp("deleted_at"),
+}, (table) => [
+  index("comments_task_idx").on(table.taskId, table.createdAt),
+  index("comments_user_idx").on(table.userId),
+]);
+
+// Task Time Logs - Time tracking
+export const taskTimeLogs = w3suiteSchema.table("task_time_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  userId: varchar("user_id").notNull().references(() => users.id),
+  checklistItemId: uuid("checklist_item_id").references(() => taskChecklistItems.id, { onDelete: 'set null' }),
+  
+  startedAt: timestamp("started_at").notNull(),
+  endedAt: timestamp("ended_at"),
+  duration: integer("duration"),
+  
+  description: text("description"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("time_logs_task_idx").on(table.taskId, table.userId),
+  index("time_logs_user_idx").on(table.userId, table.startedAt),
+  index("time_logs_running_idx").on(table.userId, table.endedAt),
+]);
+
+// Task Dependencies - Task relationships
+export const taskDependencies = w3suiteSchema.table("task_dependencies", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  dependsOnTaskId: uuid("depends_on_task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  dependencyType: taskDependencyTypeEnum("dependency_type").default('blocks').notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+}, (table) => [
+  uniqueIndex("task_dependencies_unique").on(table.taskId, table.dependsOnTaskId),
+  index("task_dependencies_task_idx").on(table.taskId),
+  index("task_dependencies_depends_idx").on(table.dependsOnTaskId),
+]);
+
+// Task Attachments - File uploads
+export const taskAttachments = w3suiteSchema.table("task_attachments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  fileName: varchar("file_name", { length: 500 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  objectStorageKey: text("object_storage_key").notNull(),
+  
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+}, (table) => [
+  index("attachments_task_idx").on(table.taskId),
+  index("attachments_user_idx").on(table.uploadedBy),
+]);
+
+// Task Templates - Quick create & recurring tasks
+export const taskTemplates = w3suiteSchema.table("task_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  departmentId: uuid("department_id"),
+  
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Template Configuration (JSON)
+  templateData: jsonb("template_data").notNull(),
+  
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  
+  // Recurrence
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: jsonb("recurrence_rule"),
+  lastInstantiatedAt: timestamp("last_instantiated_at"),
+  
+  isActive: boolean("is_active").default(true),
+}, (table) => [
+  index("templates_tenant_idx").on(table.tenantId, table.isActive),
+  index("templates_department_idx").on(table.departmentId),
+]);
+
+// ==================== CHAT SYSTEM TABLES ====================
+
+// Chat Channels - Team channels, DMs, task threads
+export const chatChannels = w3suiteSchema.table("chat_channels", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  name: varchar("name", { length: 200 }),
+  description: text("description"),
+  channelType: chatChannelTypeEnum("channel_type").notNull(),
+  
+  // References
+  teamId: uuid("team_id").references(() => teams.id),
+  taskId: uuid("task_id").references(() => tasks.id),
+  
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  
+  isArchived: boolean("is_archived").default(false),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+}, (table) => [
+  index("channels_tenant_idx").on(table.tenantId, table.channelType),
+  index("channels_task_idx").on(table.taskId),
+  index("channels_team_idx").on(table.teamId),
+]);
+
+// Chat Channel Members - Who can access channels
+export const chatChannelMembers = w3suiteSchema.table("chat_channel_members", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: uuid("channel_id").notNull().references(() => chatChannels.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  role: chatMemberRoleEnum("role").default('member').notNull(),
+  
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  lastReadAt: timestamp("last_read_at"),
+  
+  notificationPreference: chatNotificationPreferenceEnum("notification_preference").default('all').notNull(),
+}, (table) => [
+  uniqueIndex("channel_members_unique").on(table.channelId, table.userId),
+  index("channel_members_user_idx").on(table.userId),
+]);
+
+// Chat Messages - Real-time messaging
+export const chatMessages = w3suiteSchema.table("chat_messages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: uuid("channel_id").notNull().references(() => chatChannels.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  
+  // Threading
+  parentMessageId: uuid("parent_message_id"),
+  
+  // Mentions & Reactions
+  mentionedUserIds: varchar("mentioned_user_ids").array().default([]),
+  reactions: jsonb("reactions").default({}),
+  
+  // Attachments
+  attachments: jsonb("attachments").default([]),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isEdited: boolean("is_edited").default(false),
+  deletedAt: timestamp("deleted_at"),
+}, (table) => [
+  index("messages_channel_idx").on(table.channelId, table.createdAt),
+  index("messages_user_idx").on(table.userId),
+  index("messages_parent_idx").on(table.parentMessageId),
+]);
+
+// Chat Typing Indicators - Real-time typing status
+export const chatTypingIndicators = w3suiteSchema.table("chat_typing_indicators", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: uuid("channel_id").notNull().references(() => chatChannels.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+}, (table) => [
+  uniqueIndex("typing_unique").on(table.channelId, table.userId),
+  index("typing_expires_idx").on(table.expiresAt),
+]);
+
+// ==================== ACTIVITY FEED TABLES ====================
+
+// Activity Feed Events - Business events stream
+export const activityFeedEvents = w3suiteSchema.table("activity_feed_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  eventType: varchar("event_type", { length: 100 }).notNull(),
+  category: activityFeedCategoryEnum("category").notNull(),
+  
+  // Actor
+  actorUserId: varchar("actor_user_id").references(() => users.id),
+  actorType: activityFeedActorTypeEnum("actor_type").default('user').notNull(),
+  
+  // Target Entity
+  targetEntityType: varchar("target_entity_type", { length: 100 }),
+  targetEntityId: uuid("target_entity_id"),
+  
+  // Content
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  
+  // Data
+  eventData: jsonb("event_data").default({}),
+  
+  // Visibility
+  departmentId: uuid("department_id"),
+  visibleToUserIds: varchar("visible_to_user_ids").array(),
+  
+  // Metadata
+  priority: activityFeedPriorityEnum("priority").default('normal').notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+}, (table) => [
+  index("feed_tenant_idx").on(table.tenantId, table.createdAt),
+  index("feed_category_idx").on(table.tenantId, table.category),
+  index("feed_actor_idx").on(table.actorUserId),
+  index("feed_target_idx").on(table.targetEntityType, table.targetEntityId),
+  index("feed_department_idx").on(table.departmentId),
+]);
+
+// Activity Feed Interactions - Likes, comments, shares
+export const activityFeedInteractions = w3suiteSchema.table("activity_feed_interactions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: uuid("event_id").notNull().references(() => activityFeedEvents.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  interactionType: activityFeedInteractionTypeEnum("interaction_type").notNull(),
+  
+  // For comments
+  commentContent: text("comment_content"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("interactions_event_idx").on(table.eventId, table.interactionType),
+  index("interactions_user_idx").on(table.userId),
+  uniqueIndex("interactions_like_unique").on(table.eventId, table.userId, table.interactionType),
 ]);
 
 // Insert Schemas and Types for new workflow tables
