@@ -201,7 +201,8 @@ export const activityFeedInteractionTypeEnum = pgEnum('activity_feed_interaction
   'like', 
   'comment', 
   'share', 
-  'bookmark'
+  'bookmark',
+  'hide'
 ]);
 
 
@@ -2675,7 +2676,7 @@ export const tasks = w3suiteSchema.table("tasks", {
   
   // Ownership & Visibility
   creatorId: varchar("creator_id").notNull().references(() => users.id),
-  departmentId: uuid("department_id"),
+  department: departmentEnum("department"),
   
   // Dates
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -2710,7 +2711,7 @@ export const tasks = w3suiteSchema.table("tasks", {
   index("tasks_tenant_idx").on(table.tenantId),
   index("tasks_creator_idx").on(table.tenantId, table.creatorId),
   index("tasks_status_idx").on(table.tenantId, table.status),
-  index("tasks_department_idx").on(table.tenantId, table.departmentId),
+  index("tasks_department_idx").on(table.tenantId, table.department),
   index("tasks_due_date_idx").on(table.tenantId, table.dueDate),
   index("tasks_workflow_idx").on(table.linkedWorkflowInstanceId),
 ]);
@@ -2719,6 +2720,7 @@ export const tasks = w3suiteSchema.table("tasks", {
 export const taskAssignments = w3suiteSchema.table("task_assignments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   role: taskAssignmentRoleEnum("role").notNull(),
   
@@ -2732,6 +2734,7 @@ export const taskAssignments = w3suiteSchema.table("task_assignments", {
   uniqueIndex("task_assignments_unique").on(table.taskId, table.userId, table.role),
   index("task_assignments_user_idx").on(table.userId, table.role),
   index("task_assignments_task_idx").on(table.taskId),
+  index("task_assignments_tenant_idx").on(table.tenantId),
 ]);
 
 // Task Checklist Items - Subtasks with granular assignment
@@ -2852,7 +2855,7 @@ export const taskAttachments = w3suiteSchema.table("task_attachments", {
 export const taskTemplates = w3suiteSchema.table("task_templates", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  departmentId: uuid("department_id"),
+  department: departmentEnum("department"),
   
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
@@ -2872,7 +2875,7 @@ export const taskTemplates = w3suiteSchema.table("task_templates", {
   isActive: boolean("is_active").default(true),
 }, (table) => [
   index("templates_tenant_idx").on(table.tenantId, table.isActive),
-  index("templates_department_idx").on(table.departmentId),
+  index("templates_department_idx").on(table.department),
 ]);
 
 // ==================== CHAT SYSTEM TABLES ====================
@@ -2988,7 +2991,7 @@ export const activityFeedEvents = w3suiteSchema.table("activity_feed_events", {
   eventData: jsonb("event_data").default({}),
   
   // Visibility
-  departmentId: uuid("department_id"),
+  department: departmentEnum("department"),
   visibleToUserIds: varchar("visible_to_user_ids").array(),
   
   // Metadata
@@ -3001,13 +3004,14 @@ export const activityFeedEvents = w3suiteSchema.table("activity_feed_events", {
   index("feed_category_idx").on(table.tenantId, table.category),
   index("feed_actor_idx").on(table.actorUserId),
   index("feed_target_idx").on(table.targetEntityType, table.targetEntityId),
-  index("feed_department_idx").on(table.departmentId),
+  index("feed_department_idx").on(table.department),
 ]);
 
 // Activity Feed Interactions - Likes, comments, shares
 export const activityFeedInteractions = w3suiteSchema.table("activity_feed_interactions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   eventId: uuid("event_id").notNull().references(() => activityFeedEvents.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   
   interactionType: activityFeedInteractionTypeEnum("interaction_type").notNull(),
@@ -3019,6 +3023,7 @@ export const activityFeedInteractions = w3suiteSchema.table("activity_feed_inter
 }, (table) => [
   index("interactions_event_idx").on(table.eventId, table.interactionType),
   index("interactions_user_idx").on(table.userId),
+  index("interactions_tenant_idx").on(table.tenantId),
   uniqueIndex("interactions_like_unique").on(table.eventId, table.userId, table.interactionType),
 ]);
 
@@ -3557,3 +3562,124 @@ export const insertAITrainingSessionSchema = createInsertSchema(aiTrainingSessio
 });
 export type InsertAITrainingSession = z.infer<typeof insertAITrainingSessionSchema>;
 export type AITrainingSession = typeof aiTrainingSessions.$inferSelect;
+
+// ==================== TASK SYSTEM INSERT SCHEMAS ====================
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+  archivedAt: true,
+  actualHours: true,
+  completionPercentage: true
+});
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
+
+export const insertTaskAssignmentSchema = createInsertSchema(taskAssignments).omit({ 
+  id: true, 
+  assignedAt: true
+});
+export type InsertTaskAssignment = z.infer<typeof insertTaskAssignmentSchema>;
+export type TaskAssignment = typeof taskAssignments.$inferSelect;
+
+export const insertTaskChecklistItemSchema = createInsertSchema(taskChecklistItems).omit({ 
+  id: true, 
+  createdAt: true,
+  completedAt: true,
+  completedBy: true
+});
+export type InsertTaskChecklistItem = z.infer<typeof insertTaskChecklistItemSchema>;
+export type TaskChecklistItem = typeof taskChecklistItems.$inferSelect;
+
+export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  isEdited: true,
+  deletedAt: true
+});
+export type InsertTaskComment = z.infer<typeof insertTaskCommentSchema>;
+export type TaskComment = typeof taskComments.$inferSelect;
+
+export const insertTaskTimeLogSchema = createInsertSchema(taskTimeLogs).omit({ 
+  id: true, 
+  createdAt: true,
+  duration: true
+});
+export type InsertTaskTimeLog = z.infer<typeof insertTaskTimeLogSchema>;
+export type TaskTimeLog = typeof taskTimeLogs.$inferSelect;
+
+export const insertTaskDependencySchema = createInsertSchema(taskDependencies).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertTaskDependency = z.infer<typeof insertTaskDependencySchema>;
+export type TaskDependency = typeof taskDependencies.$inferSelect;
+
+export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ 
+  id: true, 
+  uploadedAt: true
+});
+export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;
+export type TaskAttachment = typeof taskAttachments.$inferSelect;
+
+export const insertTaskTemplateSchema = createInsertSchema(taskTemplates).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  lastInstantiatedAt: true
+});
+export type InsertTaskTemplate = z.infer<typeof insertTaskTemplateSchema>;
+export type TaskTemplate = typeof taskTemplates.$inferSelect;
+
+// ==================== CHAT SYSTEM INSERT SCHEMAS ====================
+
+export const insertChatChannelSchema = createInsertSchema(chatChannels).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertChatChannel = z.infer<typeof insertChatChannelSchema>;
+export type ChatChannel = typeof chatChannels.$inferSelect;
+
+export const insertChatChannelMemberSchema = createInsertSchema(chatChannelMembers).omit({ 
+  id: true, 
+  joinedAt: true,
+  lastReadAt: true
+});
+export type InsertChatChannelMember = z.infer<typeof insertChatChannelMemberSchema>;
+export type ChatChannelMember = typeof chatChannelMembers.$inferSelect;
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  isEdited: true,
+  deletedAt: true
+});
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+
+export const insertChatTypingIndicatorSchema = createInsertSchema(chatTypingIndicators).omit({ 
+  id: true, 
+  startedAt: true
+});
+export type InsertChatTypingIndicator = z.infer<typeof insertChatTypingIndicatorSchema>;
+export type ChatTypingIndicator = typeof chatTypingIndicators.$inferSelect;
+
+// ==================== ACTIVITY FEED INSERT SCHEMAS ====================
+
+export const insertActivityFeedEventSchema = createInsertSchema(activityFeedEvents).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertActivityFeedEvent = z.infer<typeof insertActivityFeedEventSchema>;
+export type ActivityFeedEvent = typeof activityFeedEvents.$inferSelect;
+
+export const insertActivityFeedInteractionSchema = createInsertSchema(activityFeedInteractions).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertActivityFeedInteraction = z.infer<typeof insertActivityFeedInteractionSchema>;
+export type ActivityFeedInteraction = typeof activityFeedInteractions.$inferSelect;
