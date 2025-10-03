@@ -2124,13 +2124,15 @@ export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
 // ✅ ENTERPRISE CENTRALIZZAZIONE: Tabella unica per tutte le richieste aziendali
 
 // Department Enum - Categorizzazione per dipartimenti aziendali
+// ✅ SOURCE OF TRUTH: public.department (7 values including marketing)
 export const departmentEnum = pgEnum('department', [
   'hr',           // Human Resources (ferie, permessi, congedi)
   'operations',   // Operazioni (manutenzione, logistics, inventory)
   'support',      // Support IT (accessi, hardware, software)
+  'finance',      // Finanza (expenses, budgets, payments)
   'crm',          // Customer Relations (complaints, escalations)
   'sales',        // Vendite (discount approvals, contract changes)
-  'finance'       // Finanza (expenses, budgets, payments)
+  'marketing'     // Marketing (campaigns, content, branding)
 ]);
 
 // Universal Request Status - Stati unificati per tutte le categorie
