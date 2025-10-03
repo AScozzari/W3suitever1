@@ -138,10 +138,16 @@ export const taskStatusEnum = pgEnum('task_status', [
 ]);
 
 export const taskPriorityEnum = pgEnum('task_priority', [
-  'low', 
-  'medium', 
-  'high', 
-  'urgent'
+  'low',      // Bassa importanza strategica
+  'medium',   // Importanza media
+  'high'      // Alta importanza strategica
+]);
+
+export const taskUrgencyEnum = pgEnum('task_urgency', [
+  'low',      // Non urgente (settimane)
+  'medium',   // Moderatamente urgente (giorni)
+  'high',     // Urgente (ore/1 giorno)
+  'critical'  // Critico (immediato)
 ]);
 
 export const taskAssignmentRoleEnum = pgEnum('task_assignment_role', [
@@ -2675,6 +2681,7 @@ export const tasks = w3suiteSchema.table("tasks", {
   description: text("description"),
   status: taskStatusEnum("status").default('todo').notNull(),
   priority: taskPriorityEnum("priority").default('medium').notNull(),
+  urgency: taskUrgencyEnum("urgency").default('medium').notNull(),
   
   // Ownership & Visibility
   creatorId: varchar("creator_id").notNull().references(() => users.id),
