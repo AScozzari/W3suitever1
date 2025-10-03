@@ -27,9 +27,11 @@ import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export interface TaskFiltersState {
+  role?: 'assignee' | 'creator' | 'watcher';
   status?: string;
   priority?: string;
-  assignedTo?: string;
+  urgency?: string;
+  department?: string;
   dueDateFrom?: Date;
   dueDateTo?: Date;
   tags?: string[];
@@ -44,13 +46,20 @@ export interface TaskFiltersProps {
   className?: string;
 }
 
+const roleOptions = [
+  { value: 'all', label: 'Tutti i ruoli' },
+  { value: 'assignee', label: 'Assegnato' },
+  { value: 'creator', label: 'Creatore' },
+  { value: 'watcher', label: 'Osservatore' },
+];
+
 const statusOptions = [
   { value: 'all', label: 'Tutti gli stati' },
   { value: 'todo', label: 'Da fare' },
   { value: 'in_progress', label: 'In corso' },
-  { value: 'in_review', label: 'In revisione' },
-  { value: 'completed', label: 'Completato' },
-  { value: 'cancelled', label: 'Annullato' },
+  { value: 'review', label: 'In revisione' },
+  { value: 'done', label: 'Completato' },
+  { value: 'archived', label: 'Archiviato' },
 ];
 
 const priorityOptions = [
@@ -58,7 +67,25 @@ const priorityOptions = [
   { value: 'low', label: 'Bassa' },
   { value: 'medium', label: 'Media' },
   { value: 'high', label: 'Alta' },
-  { value: 'urgent', label: 'Urgente' },
+];
+
+const urgencyOptions = [
+  { value: 'all', label: 'Tutte le urgenze' },
+  { value: 'low', label: 'Non urgente' },
+  { value: 'medium', label: 'Moderata' },
+  { value: 'high', label: 'Urgente' },
+  { value: 'critical', label: 'Critica' },
+];
+
+const departmentOptions = [
+  { value: 'all', label: 'Tutti i dipartimenti' },
+  { value: 'hr', label: 'Risorse Umane' },
+  { value: 'operations', label: 'Operazioni' },
+  { value: 'support', label: 'Supporto' },
+  { value: 'finance', label: 'Finanza' },
+  { value: 'crm', label: 'CRM' },
+  { value: 'sales', label: 'Vendite' },
+  { value: 'marketing', label: 'Marketing' },
 ];
 
 export function TaskFilters({
@@ -113,6 +140,38 @@ export function TaskFilters({
           <div className="space-y-4">
             <div>
               <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" />
+                Il Mio Ruolo
+              </h4>
+              <Select
+                value={filters.role || 'all'}
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    clearFilter('role');
+                  } else {
+                    onChange({ ...filters, role: value as any });
+                  }
+                }}
+              >
+                <SelectTrigger data-testid="select-role">
+                  <SelectValue placeholder="Seleziona ruolo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roleOptions.map((option) => (
+                    <SelectItem 
+                      key={option.value} 
+                      value={option.value}
+                      data-testid={`select-option-role-${option.value}`}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-gray-500" />
                 Stato
               </h4>
@@ -143,30 +202,96 @@ export function TaskFilters({
               </Select>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <Flag className="h-4 w-4 text-gray-500" />
+                  Priorità
+                </h4>
+                <Select
+                  value={filters.priority || 'all'}
+                  onValueChange={(value) => {
+                    if (value === 'all') {
+                      clearFilter('priority');
+                    } else {
+                      onChange({ ...filters, priority: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger data-testid="select-priority">
+                    <SelectValue placeholder="Priorità" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem 
+                        key={option.value} 
+                        value={option.value}
+                        data-testid={`select-option-priority-${option.value}`}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <Flag className="h-4 w-4 text-gray-500" />
+                  Urgenza
+                </h4>
+                <Select
+                  value={filters.urgency || 'all'}
+                  onValueChange={(value) => {
+                    if (value === 'all') {
+                      clearFilter('urgency');
+                    } else {
+                      onChange({ ...filters, urgency: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger data-testid="select-urgency">
+                    <SelectValue placeholder="Urgenza" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {urgencyOptions.map((option) => (
+                      <SelectItem 
+                        key={option.value} 
+                        value={option.value}
+                        data-testid={`select-option-urgency-${option.value}`}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
               <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                 <Flag className="h-4 w-4 text-gray-500" />
-                Priorità
+                Dipartimento
               </h4>
               <Select
-                value={filters.priority || 'all'}
+                value={filters.department || 'all'}
                 onValueChange={(value) => {
                   if (value === 'all') {
-                    clearFilter('priority');
+                    clearFilter('department');
                   } else {
-                    onChange({ ...filters, priority: value });
+                    onChange({ ...filters, department: value });
                   }
                 }}
               >
-                <SelectTrigger data-testid="select-priority">
-                  <SelectValue placeholder="Seleziona priorità" />
+                <SelectTrigger data-testid="select-department">
+                  <SelectValue placeholder="Seleziona dipartimento" />
                 </SelectTrigger>
                 <SelectContent>
-                  {priorityOptions.map((option) => (
+                  {departmentOptions.map((option) => (
                     <SelectItem 
                       key={option.value} 
                       value={option.value}
-                      data-testid={`select-option-priority-${option.value}`}
+                      data-testid={`select-option-department-${option.value}`}
                     >
                       {option.label}
                     </SelectItem>
@@ -286,6 +411,19 @@ export function TaskFilters({
         </PopoverContent>
       </Popover>
 
+      {filters.role && (
+        <Badge variant="secondary" className="gap-1" data-testid="badge-active-role">
+          Ruolo: {roleOptions.find(o => o.value === filters.role)?.label}
+          <button
+            onClick={() => clearFilter('role')}
+            className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+            data-testid="button-remove-role"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      )}
+
       {filters.status && (
         <Badge variant="secondary" className="gap-1" data-testid="badge-active-status">
           Stato: {statusOptions.find(o => o.value === filters.status)?.label}
@@ -306,6 +444,32 @@ export function TaskFilters({
             onClick={() => clearFilter('priority')}
             className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
             data-testid="button-remove-priority"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      )}
+
+      {filters.urgency && (
+        <Badge variant="secondary" className="gap-1" data-testid="badge-active-urgency">
+          Urgenza: {urgencyOptions.find(o => o.value === filters.urgency)?.label}
+          <button
+            onClick={() => clearFilter('urgency')}
+            className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+            data-testid="button-remove-urgency"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      )}
+
+      {filters.department && (
+        <Badge variant="secondary" className="gap-1" data-testid="badge-active-department">
+          Dipartimento: {departmentOptions.find(o => o.value === filters.department)?.label}
+          <button
+            onClick={() => clearFilter('department')}
+            className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+            data-testid="button-remove-department"
           >
             <X className="h-3 w-3" />
           </button>
