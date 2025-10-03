@@ -65,6 +65,7 @@ export class TaskService {
       role?: 'assignee' | 'watcher';
       status?: string;
       priority?: string;
+      urgency?: string;
       department?: string;
       limit?: number;
       offset?: number;
@@ -84,6 +85,23 @@ export class TaskService {
       return [];
     }
 
+    // Smart Priority Score
+    const priorityScore = sql`
+      CASE ${tasks.urgency}
+        WHEN 'critical' THEN 40
+        WHEN 'high' THEN 30
+        WHEN 'medium' THEN 20
+        WHEN 'low' THEN 10
+        ELSE 0
+      END +
+      CASE ${tasks.priority}
+        WHEN 'high' THEN 9
+        WHEN 'medium' THEN 6
+        WHEN 'low' THEN 3
+        ELSE 0
+      END
+    `;
+
     let query = db
       .select()
       .from(tasks)
@@ -92,9 +110,10 @@ export class TaskService {
         inArray(tasks.id, taskIds),
         filters?.status ? eq(tasks.status, filters.status as any) : undefined,
         filters?.priority ? eq(tasks.priority, filters.priority as any) : undefined,
+        filters?.urgency ? eq(tasks.urgency, filters.urgency as any) : undefined,
         filters?.department ? eq(tasks.department, filters.department as any) : undefined
       ))
-      .orderBy(desc(tasks.createdAt));
+      .orderBy(desc(priorityScore), desc(tasks.createdAt));
 
     if (filters?.limit) {
       query = query.limit(filters.limit);
@@ -727,6 +746,7 @@ export class TaskService {
     filters?: {
       status?: string;
       priority?: string;
+      urgency?: string;
       assignedUserId?: string;
       createdByUserId?: string;
       department?: string;
@@ -739,6 +759,24 @@ export class TaskService {
       offset?: number;
     }
   ): Promise<Task[]> {
+    // Smart Priority Score: urgency*10 + priority*3
+    // critical/high = 40+9=49 (TOP), urgent/medium = 30+6=36, etc.
+    const priorityScore = sql`
+      CASE ${tasks.urgency}
+        WHEN 'critical' THEN 40
+        WHEN 'high' THEN 30
+        WHEN 'medium' THEN 20
+        WHEN 'low' THEN 10
+        ELSE 0
+      END +
+      CASE ${tasks.priority}
+        WHEN 'high' THEN 9
+        WHEN 'medium' THEN 6
+        WHEN 'low' THEN 3
+        ELSE 0
+      END
+    `;
+
     let query = db
       .select()
       .from(tasks)
@@ -746,13 +784,14 @@ export class TaskService {
         eq(tasks.tenantId, tenantId),
         filters?.status ? eq(tasks.status, filters.status as any) : undefined,
         filters?.priority ? eq(tasks.priority, filters.priority as any) : undefined,
+        filters?.urgency ? eq(tasks.urgency, filters.urgency as any) : undefined,
         filters?.createdByUserId ? eq(tasks.creatorId, filters.createdByUserId) : undefined,
         filters?.department ? eq(tasks.department, filters.department as any) : undefined,
         filters?.linkedWorkflowInstanceId ? eq(tasks.linkedWorkflowInstanceId, filters.linkedWorkflowInstanceId) : undefined,
         filters?.dueBefore ? lte(tasks.dueDate, new Date(filters.dueBefore)) : undefined,
         filters?.dueAfter ? gte(tasks.dueDate, new Date(filters.dueAfter)) : undefined
       ))
-      .orderBy(desc(tasks.createdAt));
+      .orderBy(desc(priorityScore), desc(tasks.createdAt));
 
     if (filters?.limit) {
       query = query.limit(filters.limit);

@@ -29,11 +29,12 @@ const createTaskBodySchema = insertTaskSchema;
 const updateTaskBodySchema = insertTaskSchema.partial();
 
 const taskFiltersSchema = z.object({
-  status: z.enum(['todo', 'in_progress', 'review', 'blocked', 'completed', 'cancelled']).optional(),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+  urgency: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   assignedUserId: z.string().uuid().optional(),
   createdByUserId: z.string().uuid().optional(),
-  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+  department: z.enum(['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing']).optional(),
   linkedWorkflowInstanceId: z.string().uuid().optional(),
   dueBefore: z.string().datetime().optional(),
   dueAfter: z.string().datetime().optional(),
