@@ -25,8 +25,8 @@ const router = express.Router();
 router.use(tenantMiddleware);
 router.use(rbacMiddleware);
 
-const createTaskBodySchema = insertTaskSchema;
-const updateTaskBodySchema = insertTaskSchema.partial();
+const createTaskBodySchema = insertTaskSchema.omit({ tenantId: true });
+const updateTaskBodySchema = insertTaskSchema.omit({ tenantId: true }).partial();
 
 const taskFiltersSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']).optional(),
@@ -205,7 +205,8 @@ router.get('/tasks/:id/assignments', requirePermission('task.read'), async (req:
 });
 
 const createChecklistItemBodySchema = insertTaskChecklistItemSchema.omit({ 
-  taskId: true
+  taskId: true,
+  tenantId: true
 });
 
 router.post('/tasks/:id/checklist', requirePermission('task.update'), async (req: Request, res: Response) => {
@@ -274,7 +275,8 @@ router.get('/tasks/:id/checklist', requirePermission('task.read'), async (req: R
 
 const createCommentBodySchema = insertTaskCommentSchema.omit({ 
   taskId: true,
-  userId: true
+  authorId: true,
+  tenantId: true
 });
 
 router.post('/tasks/:id/comments', requirePermission('task.comment'), async (req: Request, res: Response) => {
@@ -288,7 +290,7 @@ router.post('/tasks/:id/comments', requirePermission('task.comment'), async (req
       ...parsed,
       taskId,
       tenantId,
-      userId
+      authorId: userId
     } as InsertTaskComment);
     
     res.status(201).json(comment);
@@ -312,7 +314,8 @@ router.get('/tasks/:id/comments', requirePermission('task.read'), async (req: Re
 
 const createTimeLogBodySchema = insertTaskTimeLogSchema.omit({ 
   taskId: true,
-  userId: true
+  userId: true,
+  tenantId: true
 });
 
 router.post('/tasks/:id/time-logs', requirePermission('task.time-log'), async (req: Request, res: Response) => {
@@ -349,7 +352,8 @@ router.get('/tasks/:id/time-logs', requirePermission('task.read'), async (req: R
 });
 
 const createDependencyBodySchema = insertTaskDependencySchema.omit({ 
-  taskId: true
+  taskId: true,
+  tenantId: true
 });
 
 router.post('/tasks/:id/dependencies', requirePermission('task.update'), async (req: Request, res: Response) => {
@@ -399,7 +403,8 @@ router.get('/tasks/:id/dependencies', requirePermission('task.read'), async (req
 
 const createAttachmentBodySchema = insertTaskAttachmentSchema.omit({ 
   taskId: true,
-  uploadedBy: true
+  uploadedBy: true,
+  tenantId: true
 });
 
 router.post('/tasks/:id/attachments', requirePermission('task.update'), async (req: Request, res: Response) => {
@@ -450,7 +455,8 @@ router.get('/tasks/:id/attachments', requirePermission('task.read'), async (req:
 });
 
 const createTemplateBodySchema = insertTaskTemplateSchema.omit({ 
-  createdBy: true
+  createdBy: true,
+  tenantId: true
 });
 
 router.post('/task-templates', requirePermission('task-template.create'), async (req: Request, res: Response) => {
