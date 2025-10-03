@@ -22,7 +22,7 @@ export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeC
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="windtre-glass-panel max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="windtre-modal-panel max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-windtre-dark">
             🎛️ Configurazione Nodo: {node.data.title || node.data.id}
@@ -53,16 +53,19 @@ export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeC
  * 🤖 AI Decision Node Configuration
  */
 function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+  // Schema-based defaults to prevent crash on undefined config
   const config = node.data.config || {};
-  
-  const [prompt, setPrompt] = useState(config.prompt || 'Analizza i seguenti dati e prendi una decisione: {{input}}');
-  const [outputs, setOutputs] = useState(config.outputs || [
+  const fallbackDefaults = config.fallback || { timeout: 30000, defaultPath: 'manual_review' };
+  const outputsDefaults = config.outputs || [
     { condition: 'approve', path: 'approve' },
     { condition: 'reject', path: 'reject' },
     { condition: 'escalate', path: 'escalate' }
-  ]);
-  const [timeout, setTimeout] = useState(config.fallback?.timeout || 30000);
-  const [defaultPath, setDefaultPath] = useState(config.fallback?.defaultPath || 'manual_review');
+  ];
+  
+  const [prompt, setPrompt] = useState(config.prompt || 'Analizza i seguenti dati e prendi una decisione: {{input}}');
+  const [outputs, setOutputs] = useState(outputsDefaults);
+  const [timeout, setTimeout] = useState(fallbackDefaults.timeout || 30000);
+  const [defaultPath, setDefaultPath] = useState(fallbackDefaults.defaultPath || 'manual_review');
 
   const handleSave = useCallback(() => {
     const updatedConfig = {

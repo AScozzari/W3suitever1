@@ -280,6 +280,23 @@ body.loaded {
   border-color: var(--glass-border-brand);
 }
 
+/* Modal Panel - NO TRANSFORM on hover to prevent jitter */
+.windtre-modal-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.windtre-modal-panel:hover {
+  background: var(--glass-bg-heavy);
+  box-shadow: var(--glass-hover-shadow);
+  border-color: var(--glass-border-brand);
+}
+
 .windtre-brand-accent {
   background: var(--brand-glass-gradient);
   border: 1px solid var(--glass-border-brand);
