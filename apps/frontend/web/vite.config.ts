@@ -25,8 +25,14 @@ export default defineConfig({
     hmr: {
       port: 24678
     },
-    // Removed proxy configuration since nginx handles API routing
-    // When frontend is served through nginx on port 5000, 
-    // nginx proxies /api/* to backend on localhost:3004
+    // Proxy API requests to backend during development
+    // In production, nginx handles this routing
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3004',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });
