@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform that offers a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a WindTre glassmorphism design, OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system provides centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust platform catering to diverse business needs.
+W3 Suite is a multi-tenant enterprise platform designed to provide a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a distinctive WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system enables centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and robust platform addressing diverse business needs.
 
 # User Preferences
 
@@ -177,33 +177,32 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project employs an enterprise monorepo structure, separating `W3 Suite` (tenant-facing applications) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, directs traffic to internal services.
+The project utilizes an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, routes traffic.
 
 ## Monorepo Structure:
-- **`apps/`**: Contains frontend/backend services, workers, and edge renderers.
-- **`packages/`**: Hosts shared libraries (UI, tokens, SDK, DWH, CMS).
-- **`db/`**: Dedicated to database migration scripts.
+- **`apps/`**: Frontend/backend services, workers, edge renderers.
+- **`packages/`**: Shared libraries (UI, tokens, SDK, DWH, CMS).
+- **`db/`**: Database migration scripts.
 
 ## UI/UX Design:
-- **Glassmorphism WindTre Design System**: Utilizes WindTre branding, colors, and glassmorphism effects.
+- **Glassmorphism WindTre Design System**: Incorporates WindTre branding, colors, and glassmorphism effects.
 - **Component-First Approach**: Leverages `shadcn/ui` for consistency and accessibility, extended with CSS variables and Tailwind CSS.
 - **Typography**: Uses Inter (primary) and JetBrains Mono (monospaced).
 - **Branding**: Supports tenant-customizable logos and color schemes.
 
 ## Technical Implementations:
-- **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) for data isolation and management.
+- **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) for data isolation.
 - **Security**: OAuth2/OIDC with MFA, JWTs, PostgreSQL Row Level Security (RLS) for multitenancy, and granular Role-Based Access Control (RBAC).
 - **Multitenancy**: Achieved via RLS, a `TenantProvider`, and global unique constraints.
 - **Organizational Hierarchy**: Manages relationships among TENANTs, Legal Entities, Sales Points, and Users.
 - **Brand Interface Features**: Centralized Super Admin, cross-tenant campaign/pricing management, and event propagation via BullMQ.
-- **Data Architecture Patterns**:
-    - **Brand Base + Tenant Override**: For collaboratively managed entities (e.g., Suppliers, Products).
-    - **Brand-Only**: For Brand-controlled entities (e.g., Stores, Legal Entities) with tenant read-only access.
-- **Universal Workflow System**: A comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails.
+- **Data Architecture Patterns**: Brand Base + Tenant Override for collaborative entities; Brand-Only for Brand-controlled entities.
+- **Universal Workflow System**: Comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails.
 - **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
 - **Unified Notification System**: Real-time notifications across 7 business categories with Redis + WebSocket architecture and PostgreSQL fallback.
 - **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management, including clock-in/out matching, deviation tracking, compliance rules, and overwrite protection.
-- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support (Stripe, Twilio, GitHub, Generic), raw body capture for HMAC signature validation with timing-safe comparison, Redis queue with automatic DB fallback mode (background poller processes pending events when Redis unavailable), 4-tier priority worker (critical/high/medium/low) with continuous loop and auto-restart on errors, DB-based deduplication with unique constraint on (tenantId, source, eventId) preventing race conditions (duplicates logged but not stored), failed events NOT marked as processed (allows provider retry), automatic workflow engine integration via pattern matching with workflow instance ID persistence to webhook_events table, complete audit trail with `webhook_events` and `webhook_signatures` tables, RBAC-protected management endpoints, and zero external dependencies (no frameworks like Svix).
+- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, raw body capture for HMAC signature validation, Redis queue with automatic DB fallback, 4-tier priority worker, DB-based deduplication, integration with workflow engine, complete audit trail, and RBAC-protected management endpoints.
+- **Task Management System**: Comprehensive flexible task system with optional workflow integration, 8 database tables, 35+ RBAC-protected API endpoints (CRUD, assignments, comments, time tracking, dependencies, templates, bulk operations), and a feature-rich frontend.
 
 # External Dependencies
 
