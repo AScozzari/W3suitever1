@@ -73,16 +73,15 @@ export interface TaskDetailProps {
 const statusConfig = {
   todo: { label: 'Da fare', variant: 'secondary' as const },
   in_progress: { label: 'In corso', variant: 'default' as const },
-  in_review: { label: 'In revisione', variant: 'outline' as const },
-  completed: { label: 'Completato', variant: 'default' as const },
-  cancelled: { label: 'Annullato', variant: 'destructive' as const },
+  review: { label: 'In revisione', variant: 'outline' as const },
+  done: { label: 'Completato', variant: 'default' as const },
+  archived: { label: 'Archiviato', variant: 'secondary' as const },
 };
 
 const priorityConfig = {
   low: { label: 'Bassa', color: 'text-gray-600 bg-gray-100' },
   medium: { label: 'Media', color: 'text-blue-600 bg-blue-100' },
   high: { label: 'Alta', color: 'text-orange-600 bg-orange-100' },
-  urgent: { label: 'Urgente', color: 'text-red-600 bg-red-100' },
 };
 
 export function TaskDetailDialog({
@@ -99,7 +98,7 @@ export function TaskDetailDialog({
   const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
 
   const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'completed';
+  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
 
   const checklistCompleted = task.checklist?.filter(item => item.completed).length || 0;
   const checklistTotal = task.checklist?.length || 0;
