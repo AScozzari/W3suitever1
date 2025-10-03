@@ -721,4 +721,184 @@ export class TaskService {
       ))
       .orderBy(desc(taskTemplates.createdAt));
   }
+
+  static async getTasks(
+    tenantId: string,
+    filters?: {
+      status?: string;
+      priority?: string;
+      assignedUserId?: string;
+      createdByUserId?: string;
+      department?: string;
+      linkedWorkflowInstanceId?: string;
+      dueBefore?: string;
+      dueAfter?: string;
+      tags?: string[];
+      search?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<Task[]> {
+    let query = db
+      .select()
+      .from(tasks)
+      .where(and(
+        eq(tasks.tenantId, tenantId),
+        filters?.status ? eq(tasks.status, filters.status as any) : undefined,
+        filters?.priority ? eq(tasks.priority, filters.priority as any) : undefined,
+        filters?.createdByUserId ? eq(tasks.creatorId, filters.createdByUserId) : undefined,
+        filters?.department ? eq(tasks.department, filters.department as any) : undefined,
+        filters?.linkedWorkflowInstanceId ? eq(tasks.linkedWorkflowInstanceId, filters.linkedWorkflowInstanceId) : undefined,
+        filters?.dueBefore ? lte(tasks.dueDate, new Date(filters.dueBefore)) : undefined,
+        filters?.dueAfter ? gte(tasks.dueDate, new Date(filters.dueAfter)) : undefined
+      ))
+      .orderBy(desc(tasks.createdAt));
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+    if (filters?.offset) {
+      query = query.offset(filters.offset);
+    }
+
+    return query;
+  }
+
+  static async getMyTasks(userId: string, tenantId: string): Promise<Task[]> {
+    return this.getTasksForUser(userId, tenantId, { role: 'assignee' });
+  }
+
+  static async getCreatedByMe(userId: string, tenantId: string): Promise<Task[]> {
+    return this.getTasksCreatedByUser(userId, tenantId);
+  }
+
+  static async getWatchingTasks(userId: string, tenantId: string): Promise<Task[]> {
+    return this.getTasksForUser(userId, tenantId, { role: 'watcher' });
+  }
+
+  static async logTime(timeLogData: InsertTaskTimeLog): Promise<TaskTimeLog> {
+    const [timeLog] = await db
+      .insert(taskTimeLogs)
+      .values(timeLogData)
+      .returning();
+
+    await this.updateActualHours(timeLog.taskId, timeLogData.tenantId);
+
+    logger.info('⏱️ Time logged', { 
+      taskId: timeLog.taskId, 
+      userId: timeLog.userId,
+      duration: timeLog.endedAt && timeLog.startedAt 
+        ? (timeLog.endedAt.getTime() - timeLog.startedAt.getTime()) / (1000 * 60 * 60) 
+        : 0
+    });
+
+    return timeLog;
+  }
+
+  static async createTaskFromTemplate(
+    templateId: string,
+    tenantId: string,
+    overrides?: Partial<InsertTask>
+  ): Promise<Task> {
+    return this.instantiateTemplate(templateId, tenantId, overrides);
+  }
+
+  static async bulkCreateTasks(tasksData: InsertTask[]): Promise<Task[]> {
+    return db.transaction(async (tx) => {
+      const createdTasks = await tx
+        .insert(tasks)
+        .values(tasksData)
+        .returning();
+
+      logger.info('📋 Bulk tasks created', { count: createdTasks.length });
+      return createdTasks;
+    });
+  }
+
+  static async bulkUpdateTasks(
+    taskIds: string[],
+    tenantId: string,
+    updates: Partial<InsertTask>
+  ): Promise<Task[]> {
+    return db.transaction(async (tx) => {
+      const existingTasks = await tx
+        .select()
+        .from(tasks)
+        .where(and(
+          inArray(tasks.id, taskIds),
+          eq(tasks.tenantId, tenantId)
+        ));
+
+      if (existingTasks.length !== taskIds.length) {
+        throw new Error('Some tasks not found or access denied');
+      }
+
+      const updatedTasks = await tx
+        .update(tasks)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(and(
+          inArray(tasks.id, taskIds),
+          eq(tasks.tenantId, tenantId)
+        ))
+        .returning();
+
+      logger.info('📋 Bulk tasks updated', { count: updatedTasks.length });
+      return updatedTasks;
+    });
+  }
+
+  static async bulkDeleteTasks(taskIds: string[], tenantId: string): Promise<void> {
+    return db.transaction(async (tx) => {
+      const existingTasks = await tx
+        .select()
+        .from(tasks)
+        .where(and(
+          inArray(tasks.id, taskIds),
+          eq(tasks.tenantId, tenantId)
+        ));
+
+      if (existingTasks.length !== taskIds.length) {
+        throw new Error('Some tasks not found or access denied');
+      }
+
+      await tx
+        .delete(taskAttachments)
+        .where(inArray(taskAttachments.taskId, taskIds));
+
+      await tx
+        .delete(taskDependencies)
+        .where(or(
+          inArray(taskDependencies.taskId, taskIds),
+          inArray(taskDependencies.dependsOnTaskId, taskIds)
+        ));
+
+      await tx
+        .delete(taskAssignments)
+        .where(inArray(taskAssignments.taskId, taskIds));
+
+      await tx
+        .delete(taskChecklistItems)
+        .where(inArray(taskChecklistItems.taskId, taskIds));
+
+      await tx
+        .delete(taskTimeLogs)
+        .where(inArray(taskTimeLogs.taskId, taskIds));
+
+      await tx
+        .delete(taskComments)
+        .where(inArray(taskComments.taskId, taskIds));
+
+      await tx
+        .delete(tasks)
+        .where(and(
+          inArray(tasks.id, taskIds),
+          eq(tasks.tenantId, tenantId)
+        ));
+
+      logger.info('📋 Bulk tasks deleted', { count: taskIds.length });
+    });
+  }
 }

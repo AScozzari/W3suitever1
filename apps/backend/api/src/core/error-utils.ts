@@ -272,3 +272,13 @@ export function validateUUIDParam(uuid: string, paramName: string, res: Response
   }
   return true;
 }
+
+/**
+ * Parse and validate UUID parameter, throwing error if invalid
+ */
+export function parseUUIDParam(uuid: string, paramName: string): string {
+  if (!validateUUID(uuid)) {
+    throw new Error(`Invalid ${paramName}: must be a valid UUID`);
+  }
+  return uuid;
+}

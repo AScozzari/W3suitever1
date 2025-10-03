@@ -135,6 +135,24 @@ export const PERMISSIONS = {
     }
   },
 
+  // ==================== TASK MANAGEMENT ====================
+  task: {
+    read: 'task.read',
+    create: 'task.create',
+    update: 'task.update',
+    delete: 'task.delete',
+    assign: 'task.assign',
+    comment: 'task.comment',
+    timeLog: 'task.time-log'
+  },
+
+  taskTemplate: {
+    read: 'task-template.read',
+    create: 'task-template.create',
+    update: 'task-template.update',
+    delete: 'task-template.delete'
+  },
+
   // ==================== FINANCE ====================
   finance: {
     invoices: {
