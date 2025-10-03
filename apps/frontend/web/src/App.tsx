@@ -79,6 +79,17 @@ function Router() {
         }}
       </Route>
       
+      {/* 🎯 TASKS DIRECT ACCESS - Smart redirect to tenant */}
+      <Route path="/tasks">
+        {() => {
+          console.log('[TASKS-REDIRECT] 📍 Direct tasks access');
+          const lastTenant = localStorage.getItem('currentTenant') || 'staging';
+          const targetUrl = `/${lastTenant}/tasks`;
+          console.log(`[TASKS-REDIRECT] 🔄 Redirecting to: ${targetUrl}`);
+          return <Redirect to={targetUrl} />;
+        }}
+      </Route>
+      
       {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto */}
       <Route path="/:tenant/*?">
         {(params) => {
@@ -86,7 +97,7 @@ function Router() {
           const tenantSlug = params.tenant;
           
           // Validation tenant slug - Exclude reserved paths
-          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api' || tenantSlug === 'workflows') {
+          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api' || tenantSlug === 'workflows' || tenantSlug === 'tasks') {
             console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
             return <NotFound />;
           }
