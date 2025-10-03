@@ -25,7 +25,7 @@ import {
   type InsertTaskTemplate,
   type TaskTemplate
 } from '../db/schema/w3suite';
-import { eq, and, or, desc, asc, sql, inArray, isNull } from 'drizzle-orm';
+import { eq, and, or, desc, asc, sql, inArray, isNull, lte, gte } from 'drizzle-orm';
 import { logger } from '../core/logger';
 
 export class TaskService {

@@ -1118,8 +1118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== TASK MANAGEMENT ROUTES ====================
   // Register task management API routes with authentication and tenant middleware
-  app.use('/api/tasks', taskRoutes);
-  app.use('/api/task-templates', taskRoutes);
+  app.use('/api', taskRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
