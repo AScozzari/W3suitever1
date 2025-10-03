@@ -27,14 +27,7 @@ export interface KanbanTask {
   linkedWorkflowInstanceId?: string | null;
 }
 
-export interface KanbanBoardProps {
-  tasks: KanbanTask[];
-  onTaskClick?: (task: KanbanTask) => void;
-  onStatusChange?: (taskId: string, status: string) => void;
-  className?: string;
-}
-
-interface Column {
+export interface Column {
   id: string;
   title: string;
   status: string;
@@ -43,7 +36,16 @@ interface Column {
   bgColor: string;
 }
 
-const columns: Column[] = [
+export interface KanbanBoardProps {
+  tasks: KanbanTask[];
+  columns?: Column[];
+  onTaskClick?: (task: KanbanTask) => void;
+  onStatusChange?: (taskId: string, status: string) => void;
+  className?: string;
+}
+
+// Default columns for Task Management (aligned with DB enums)
+export const DEFAULT_TASK_COLUMNS: Column[] = [
   {
     id: 'todo',
     title: 'Da fare',
@@ -61,57 +63,60 @@ const columns: Column[] = [
     bgColor: 'bg-blue-50',
   },
   {
-    id: 'in_review',
+    id: 'review',
     title: 'In revisione',
-    status: 'in_review',
+    status: 'review',
     icon: AlertCircle,
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
   },
   {
-    id: 'completed',
+    id: 'done',
     title: 'Completato',
-    status: 'completed',
+    status: 'done',
     icon: CheckCircle2,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
   },
   {
-    id: 'cancelled',
-    title: 'Annullato',
-    status: 'cancelled',
+    id: 'archived',
+    title: 'Archiviato',
+    status: 'archived',
     icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-gray-400',
+    bgColor: 'bg-gray-100',
   },
 ];
 
 export function KanbanBoard({
   tasks,
+  columns = DEFAULT_TASK_COLUMNS,
   onTaskClick,
   onStatusChange,
   className
 }: KanbanBoardProps) {
   const tasksByStatus = useMemo(() => {
-    const grouped: Record<string, KanbanTask[]> = {
-      todo: [],
-      in_progress: [],
-      in_review: [],
-      completed: [],
-      cancelled: [],
-    };
+    // Dynamically initialize grouped object based on provided columns
+    const grouped: Record<string, KanbanTask[]> = {};
+    columns.forEach(col => {
+      grouped[col.status] = [];
+    });
 
     tasks.forEach((task) => {
-      const status = task.status || 'todo';
+      const status = task.status || columns[0]?.status || 'todo';
       if (grouped[status]) {
         grouped[status].push(task);
       } else {
-        grouped.todo.push(task);
+        // Fallback to first column if status not found
+        const fallbackStatus = columns[0]?.status || 'todo';
+        if (grouped[fallbackStatus]) {
+          grouped[fallbackStatus].push(task);
+        }
       }
     });
 
     return grouped;
-  }, [tasks]);
+  }, [tasks, columns]);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId);
