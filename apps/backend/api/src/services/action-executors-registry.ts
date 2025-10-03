@@ -537,6 +537,140 @@ export class GenericActionExecutor implements ActionExecutor {
   }
 }
 
+/**
+ * 📋 TASK ACTION EXECUTOR
+ * Handles task creation, assignment and updates within workflows
+ */
+export class TaskActionExecutor implements ActionExecutor {
+  executorId = 'task-action-executor';
+  description = 'Creates, assigns and updates tasks from workflow';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📋 [EXECUTOR] Executing task action', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const action = config.action || 'create';
+      const { TaskService } = await import('./task-service');
+
+      if (!context?.tenantId) {
+        throw new Error('Tenant ID is required for task actions');
+      }
+
+      // CREATE TASK
+      if (action === 'create') {
+        const taskData = {
+          tenantId: context.tenantId,
+          title: config.title || inputData?.title || 'Workflow Task',
+          description: config.description || inputData?.description,
+          status: config.status || 'todo',
+          priority: config.priority || 'medium',
+          urgency: config.urgency || 'medium',
+          department: config.department,
+          creatorId: context.requesterId,
+          dueDate: config.dueDate ? new Date(config.dueDate) : undefined,
+          linkedWorkflowInstanceId: context.instanceId
+        };
+
+        const task = await TaskService.createTask(taskData);
+
+        // Auto-assign if specified
+        if (config.assignToRole || config.assignToUser) {
+          const assigneeId = config.assignToUser || context.requesterId;
+          await TaskService.assignTask(
+            task.id,
+            context.tenantId,
+            assigneeId,
+            'assignee'
+          );
+        }
+
+        return {
+          success: true,
+          message: `Task created successfully: ${task.title}`,
+          data: {
+            taskId: task.id,
+            title: task.title,
+            status: task.status,
+            createdAt: task.createdAt
+          }
+        };
+      }
+
+      // ASSIGN TASK
+      if (action === 'assign') {
+        const taskId = config.taskId || inputData?.taskId;
+        const assigneeId = config.assignToUser || inputData?.assignToUser;
+        
+        if (!taskId || !assigneeId) {
+          throw new Error('Task ID and assignee are required for assignment');
+        }
+
+        await TaskService.assignTask(
+          taskId,
+          context.tenantId,
+          assigneeId,
+          config.role || 'assignee'
+        );
+
+        return {
+          success: true,
+          message: `Task assigned successfully to user ${assigneeId}`,
+          data: {
+            taskId,
+            assigneeId,
+            role: config.role || 'assignee'
+          }
+        };
+      }
+
+      // UPDATE TASK STATUS
+      if (action === 'update_status') {
+        const taskId = config.taskId || inputData?.taskId;
+        const newStatus = config.newStatus || inputData?.status;
+        
+        if (!taskId || !newStatus) {
+          throw new Error('Task ID and new status are required for update');
+        }
+
+        const updated = await TaskService.updateTask(
+          taskId,
+          context.tenantId,
+          { status: newStatus }
+        );
+
+        return {
+          success: true,
+          message: `Task status updated to ${newStatus}`,
+          data: {
+            taskId: updated.id,
+            oldStatus: config.oldStatus,
+            newStatus: updated.status,
+            updatedAt: updated.updatedAt
+          }
+        };
+      }
+
+      throw new Error(`Unknown task action: ${action}`);
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Task action failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to execute task action',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -560,6 +694,7 @@ export class ActionExecutorsRegistry {
     this.register(new DecisionEvaluator());
     this.register(new AiDecisionExecutor());
     this.register(new FormTriggerExecutor());
+    this.register(new TaskActionExecutor());
     this.register(new GenericActionExecutor());
 
     logger.info('🎯 [REGISTRY] Registered default action executors', {
