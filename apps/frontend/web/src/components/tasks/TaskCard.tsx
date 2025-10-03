@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { PriorityUrgencyBadge } from './PriorityUrgencyBadge';
 import { 
   CheckCircle2, 
   Circle, 
@@ -11,7 +12,7 @@ import {
   User,
   MoreVertical,
   AlertCircle,
-  Flag
+  Archive
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -23,7 +24,8 @@ export interface TaskCardProps {
     title: string;
     description?: string | null;
     status: string;
-    priority: string;
+    priority: 'low' | 'medium' | 'high';
+    urgency?: 'low' | 'medium' | 'high' | 'critical';
     dueDate?: Date | string | null;
     createdAt: Date | string;
     assigneeCount?: number;
@@ -42,16 +44,9 @@ export interface TaskCardProps {
 const statusConfig = {
   todo: { label: 'Da fare', variant: 'secondary' as const, icon: Circle },
   in_progress: { label: 'In corso', variant: 'default' as const, icon: Clock },
-  in_review: { label: 'In revisione', variant: 'outline' as const, icon: AlertCircle },
-  completed: { label: 'Completato', variant: 'default' as const, icon: CheckCircle2 },
-  cancelled: { label: 'Annullato', variant: 'destructive' as const, icon: Circle },
-};
-
-const priorityConfig = {
-  low: { label: 'Bassa', color: 'text-gray-500', bg: 'bg-gray-100' },
-  medium: { label: 'Media', color: 'text-blue-600', bg: 'bg-blue-50' },
-  high: { label: 'Alta', color: 'text-orange-600', bg: 'bg-orange-50' },
-  urgent: { label: 'Urgente', color: 'text-red-600', bg: 'bg-red-50' },
+  review: { label: 'In revisione', variant: 'outline' as const, icon: AlertCircle },
+  done: { label: 'Completato', variant: 'default' as const, icon: CheckCircle2 },
+  archived: { label: 'Archiviato', variant: 'secondary' as const, icon: Archive },
 };
 
 export function TaskCard({ 
@@ -62,11 +57,11 @@ export function TaskCard({
   className 
 }: TaskCardProps) {
   const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
-  const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = status.icon;
+  const urgency = task.urgency || 'medium';
 
   const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'completed';
+  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
   
   const createdDate = new Date(task.createdAt);
   const createdAgo = formatDistanceToNow(createdDate, { addSuffix: true, locale: it });
@@ -136,9 +131,12 @@ export function TaskCard({
           </div>
         </div>
 
-        <Badge variant={priority.bg as any} className={cn('text-xs', priority.color)}>
-          {priority.label}
-        </Badge>
+        <PriorityUrgencyBadge 
+          priority={task.priority}
+          urgency={urgency as any}
+          size="sm"
+          showLabels={false}
+        />
       </div>
     );
   }
@@ -202,14 +200,11 @@ export function TaskCard({
 
       <CardContent className="pt-0">
         <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-3">
-          <div className={cn(
-            'flex items-center gap-1.5 px-2 py-1 rounded',
-            priority.bg,
-            priority.color
-          )}>
-            <Flag className="h-3.5 w-3.5" />
-            <span className="font-medium">{priority.label}</span>
-          </div>
+          <PriorityUrgencyBadge 
+            priority={task.priority}
+            urgency={urgency as any}
+            size="md"
+          />
 
           {dueDate && (
             <div className={cn(
