@@ -111,6 +111,57 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
         fallback: 'success'
       }
     }
+  },
+  {
+    id: 'create-task',
+    name: 'Create Task',
+    description: 'Create a new task with title, description, priority and urgency',
+    category: 'action',
+    icon: 'CheckSquare',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      action: 'create',
+      title: '',
+      description: '',
+      status: 'todo',
+      priority: 'medium',
+      urgency: 'medium',
+      department: null,
+      assignToUser: null
+    }
+  },
+  {
+    id: 'assign-task',
+    name: 'Assign Task',
+    description: 'Assign existing task to user or role',
+    category: 'action',
+    icon: 'UserPlus',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      action: 'assign',
+      taskId: '',
+      assignToUser: '',
+      role: 'assignee'
+    }
+  },
+  {
+    id: 'update-task-status',
+    name: 'Update Task Status',
+    description: 'Change task status (todo, in_progress, review, done, archived)',
+    category: 'action',
+    icon: 'RefreshCw',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      action: 'update_status',
+      taskId: '',
+      newStatus: 'in_progress'
+    }
   }
 ];
 
@@ -132,6 +183,63 @@ export const TRIGGER_NODES: BaseNodeDefinition[] = [
       validation: {
         required: true,
         schema: 'default'
+      }
+    }
+  },
+  {
+    id: 'task-created',
+    name: 'Task Created',
+    description: 'Trigger workflow when a new task is created',
+    category: 'trigger',
+    icon: 'PlusSquare',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      eventType: 'task_created',
+      source: 'tasks',
+      filters: {
+        department: null,
+        priority: null,
+        createdBy: null
+      }
+    }
+  },
+  {
+    id: 'task-status-changed',
+    name: 'Task Status Changed',
+    description: 'Trigger workflow when task status changes',
+    category: 'trigger',
+    icon: 'GitBranch',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      eventType: 'task_status_changed',
+      source: 'tasks',
+      filters: {
+        fromStatus: null,
+        toStatus: null,
+        department: null
+      }
+    }
+  },
+  {
+    id: 'task-assigned',
+    name: 'Task Assigned',
+    description: 'Trigger workflow when task is assigned to user',
+    category: 'trigger',
+    icon: 'UserCheck',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      eventType: 'task_assigned',
+      source: 'tasks',
+      filters: {
+        assignedTo: null,
+        role: 'assignee',
+        department: null
       }
     }
   }
@@ -206,7 +314,13 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   'decision-evaluator': 'decision-evaluator',
   'generic-action': 'generic-action-executor',
   'form-trigger': 'form-trigger-executor',
-  'ai-decision': 'ai-decision-executor'
+  'ai-decision': 'ai-decision-executor',
+  'create-task': 'task-action-executor',
+  'assign-task': 'task-action-executor',
+  'update-task-status': 'task-action-executor',
+  'task-created': 'task-trigger-executor',
+  'task-status-changed': 'task-trigger-executor',
+  'task-assigned': 'task-trigger-executor'
 } as const;
 
 export type NodeId = keyof typeof NODE_TO_EXECUTOR_MAPPING;
