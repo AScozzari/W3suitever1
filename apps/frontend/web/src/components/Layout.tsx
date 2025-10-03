@@ -12,7 +12,7 @@ import {
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
-  LogOut, HelpCircle, MapPin, UserCircle, Store
+  LogOut, HelpCircle, MapPin, UserCircle, Store, ListTodo
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
@@ -465,6 +465,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Menu items con path normalizzati - SOLUZIONE CLEAN
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
+    { id: 'tasks', label: 'Tasks', icon: ListTodo, path: '/tasks' },
     { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
     { id: 'ai', label: 'AI Tools', icon: Zap, path: '/settings' },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase, path: '/magazzino' },
