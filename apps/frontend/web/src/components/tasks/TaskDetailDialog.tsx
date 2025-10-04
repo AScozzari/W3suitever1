@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle2,
   Circle,
@@ -26,6 +30,9 @@ import {
   Trash2,
   Play,
   Pause,
+  Plus,
+  X,
+  Check,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -92,7 +99,12 @@ export function TaskDetailDialog({
   onDelete,
   onStatusChange,
 }: TaskDetailProps) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('details');
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [newItemTitle, setNewItemTitle] = useState('');
+  const [isAddingItem, setIsAddingItem] = useState(false);
   
   const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
   const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
@@ -111,6 +123,62 @@ export function TaskDetailDialog({
     }
     return sum;
   }, 0) || 0;
+
+  // Checklist mutations
+  const toggleChecklistItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      return apiRequest(`/api/tasks/${task.id}/checklist/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isCompleted: true }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id] });
+    },
+  });
+
+  const updateChecklistItemMutation = useMutation({
+    mutationFn: async ({ itemId, title }: { itemId: string; title: string }) => {
+      return apiRequest(`/api/tasks/${task.id}/checklist/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      setEditingItemId(null);
+      toast({ title: 'Item aggiornato' });
+    },
+  });
+
+  const deleteChecklistItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      return apiRequest(`/api/tasks/${task.id}/checklist/${itemId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({ title: 'Item eliminato' });
+    },
+  });
+
+  const addChecklistItemMutation = useMutation({
+    mutationFn: async (title: string) => {
+      const position = (task.checklist?.length || 0) + 1;
+      return apiRequest(`/api/tasks/${task.id}/checklist`, {
+        method: 'POST',
+        body: JSON.stringify({ title, position }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      setNewItemTitle('');
+      setIsAddingItem(false);
+      toast({ title: 'Item aggiunto' });
+    },
+  });
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -301,13 +369,8 @@ export function TaskDetailDialog({
             </TabsContent>
 
             <TabsContent value="checklist" className="space-y-3 mt-0">
-              {checklistTotal === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <ListChecks className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p>Nessun elemento nella checklist</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
+              <div className="space-y-2">
+                {checklistTotal > 0 && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
                       <span>Progresso</span>
@@ -324,29 +387,164 @@ export function TaskDetailDialog({
                       />
                     </div>
                   </div>
+                )}
 
-                  {task.checklist?.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-200"
-                      data-testid={`checklist-item-${item.id}`}
+                {task.checklist?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors group"
+                    data-testid={`checklist-item-${item.id}`}
+                  >
+                    <button
+                      onClick={() => toggleChecklistItemMutation.mutate(item.id)}
+                      className="flex-shrink-0"
+                      data-testid={`button-toggle-${item.id}`}
                     >
                       {item.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" data-testid={`icon-completed-${item.id}`} />
+                        <CheckCircle2 className="h-5 w-5 text-green-600" data-testid={`icon-completed-${item.id}`} />
                       ) : (
-                        <Circle className="h-5 w-5 text-gray-400 flex-shrink-0" data-testid={`icon-pending-${item.id}`} />
+                        <Circle className="h-5 w-5 text-gray-400 hover:text-gray-600" data-testid={`icon-pending-${item.id}`} />
                       )}
-                      <span className={cn(
-                        'flex-1 text-sm',
-                        item.completed && 'line-through text-gray-500'
-                      )}
-                      data-testid={`text-checklist-title-${item.id}`}>
-                        {item.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    </button>
+                    
+                    {editingItemId === item.id ? (
+                      <div className="flex-1 flex items-center gap-2">
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              updateChecklistItemMutation.mutate({ itemId: item.id, title: editTitle });
+                            } else if (e.key === 'Escape') {
+                              setEditingItemId(null);
+                            }
+                          }}
+                          className="h-8"
+                          autoFocus
+                          data-testid={`input-edit-${item.id}`}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={() => updateChecklistItemMutation.mutate({ itemId: item.id, title: editTitle })}
+                          data-testid={`button-save-${item.id}`}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setEditingItemId(null)}
+                          data-testid={`button-cancel-${item.id}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span
+                          className={cn(
+                            'flex-1 text-sm cursor-pointer',
+                            item.completed && 'line-through text-gray-500'
+                          )}
+                          onDoubleClick={() => {
+                            setEditingItemId(item.id);
+                            setEditTitle(item.title);
+                          }}
+                          data-testid={`text-checklist-title-${item.id}`}
+                        >
+                          {item.title}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            setEditingItemId(item.id);
+                            setEditTitle(item.title);
+                          }}
+                          data-testid={`button-edit-${item.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => deleteChecklistItemMutation.mutate(item.id)}
+                          data-testid={`button-delete-${item.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {isAddingItem ? (
+                  <div className="flex items-center gap-2 p-3 rounded-lg border border-blue-500">
+                    <Circle className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <Input
+                      value={newItemTitle}
+                      onChange={(e) => setNewItemTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newItemTitle.trim()) {
+                          addChecklistItemMutation.mutate(newItemTitle);
+                        } else if (e.key === 'Escape') {
+                          setIsAddingItem(false);
+                          setNewItemTitle('');
+                        }
+                      }}
+                      placeholder="Nuovo elemento..."
+                      className="h-8"
+                      autoFocus
+                      data-testid="input-new-item"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={() => newItemTitle.trim() && addChecklistItemMutation.mutate(newItemTitle)}
+                      disabled={!newItemTitle.trim()}
+                      data-testid="button-save-new-item"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        setIsAddingItem(false);
+                        setNewItemTitle('');
+                      }}
+                      data-testid="button-cancel-new-item"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setIsAddingItem(true)}
+                    data-testid="button-add-item"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Aggiungi elemento
+                  </Button>
+                )}
+                
+                {checklistTotal === 0 && !isAddingItem && (
+                  <div className="text-center py-8 text-gray-500">
+                    <ListChecks className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">Nessun elemento nella checklist</p>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4 mt-0">
