@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PriorityUrgencyBadge } from './PriorityUrgencyBadge';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -48,6 +49,8 @@ export interface TasksDataTableProps {
   currentUserId: string;
   onTaskClick?: (task: Task) => void;
   className?: string;
+  selectedTaskIds?: string[];
+  onSelectionChange?: (taskIds: string[]) => void;
 }
 
 const statusConfig = {
@@ -72,10 +75,30 @@ export function TasksDataTable({
   tasks,
   currentUserId,
   onTaskClick,
-  className
+  className,
+  selectedTaskIds = [],
+  onSelectionChange,
 }: TasksDataTableProps) {
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSelectAll = (checked: boolean) => {
+    if (onSelectionChange) {
+      onSelectionChange(checked ? tasks.map(t => t.id) : []);
+    }
+  };
+
+  const handleSelectTask = (taskId: string, checked: boolean) => {
+    if (onSelectionChange) {
+      const newSelection = checked
+        ? [...selectedTaskIds, taskId]
+        : selectedTaskIds.filter(id => id !== taskId);
+      onSelectionChange(newSelection);
+    }
+  };
+
+  const allSelected = tasks.length > 0 && selectedTaskIds.length === tasks.length;
+  const someSelected = selectedTaskIds.length > 0 && selectedTaskIds.length < tasks.length;
 
   const determineUserRole = (task: Task): TaskWithRole['userRole'] => {
     if (task.createdBy?.id === currentUserId) return 'creator';
@@ -154,6 +177,17 @@ export function TasksDataTable({
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectionChange && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Seleziona tutti"
+                  data-testid="checkbox-select-all"
+                  className={someSelected ? "opacity-50" : ""}
+                />
+              </TableHead>
+            )}
             <TableHead className="w-12">
               <span className="sr-only">Stato</span>
             </TableHead>
@@ -239,6 +273,16 @@ export function TasksDataTable({
                 className="cursor-pointer hover:bg-gray-50"
                 data-testid={`row-task-${task.id}`}
               >
+                {onSelectionChange && (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedTaskIds.includes(task.id)}
+                      onCheckedChange={(checked) => handleSelectTask(task.id, checked as boolean)}
+                      aria-label={`Seleziona ${task.title}`}
+                      data-testid={`checkbox-task-${task.id}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <StatusIcon className={cn('h-5 w-5', statusInfo.color)} />
                 </TableCell>

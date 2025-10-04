@@ -11,6 +11,7 @@ import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
 import { TaskDetailDialog } from '@/components/tasks/TaskDetailDialog';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
 import { TemplateSelector } from '@/components/tasks/TemplateSelector';
+import { BulkActionsBar } from '@/components/tasks/BulkActionsBar';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { EmptyState } from '@w3suite/frontend-kit/components/blocks';
 import { ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -59,6 +60,7 @@ export default function TasksPage() {
   const [filters, setFilters] = useState<TaskFiltersState>({});
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
 
   const { data: tasks = [], isLoading, error } = useQuery<Task[]>({
     queryKey: ['/api/tasks', filters],
@@ -212,9 +214,16 @@ export default function TasksPage() {
             tasks={filteredTasks}
             currentUserId={user?.id || ''}
             onTaskClick={handleTaskClick}
+            selectedTaskIds={selectedTaskIds}
+            onSelectionChange={setSelectedTaskIds}
           />
         )}
       </div>
+
+      <BulkActionsBar
+        selectedTaskIds={selectedTaskIds}
+        onClearSelection={() => setSelectedTaskIds([])}
+      />
 
       {selectedTask && (
         <TaskDetailDialog
