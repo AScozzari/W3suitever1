@@ -319,11 +319,17 @@ router.get('/tasks/:id/comments', requirePermission('task.read'), async (req: Re
   }
 });
 
-const createTimeLogBodySchema = insertTaskTimeLogSchema.omit({ 
-  taskId: true,
-  userId: true,
-  tenantId: true
-});
+const createTimeLogBodySchema = insertTaskTimeLogSchema
+  .omit({ 
+    taskId: true,
+    userId: true,
+    tenantId: true
+  })
+  .partial({ startedAt: true })
+  .transform((data) => ({
+    ...data,
+    startedAt: data.startedAt || new Date()
+  }));
 
 router.post('/tasks/:id/time-logs', requirePermission('task.time-log'), async (req: Request, res: Response) => {
   try {
