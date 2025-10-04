@@ -444,6 +444,19 @@ router.get('/tasks/:id/dependencies', requirePermission('task.read'), async (req
   }
 });
 
+router.get('/tasks/:id/activity', requirePermission('task.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.id, 'Task ID');
+    
+    const activity = await TaskService.getTaskActivity(taskId, tenantId);
+    
+    res.json(activity);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch task activity');
+  }
+});
+
 const createAttachmentBodySchema = insertTaskAttachmentSchema.omit({ 
   taskId: true,
   uploadedBy: true,

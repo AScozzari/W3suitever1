@@ -8,6 +8,7 @@ import {
   taskDependencies, 
   taskAttachments, 
   taskTemplates,
+  entityLogs,
   type InsertTask,
   type Task,
   type InsertTaskAssignment,
@@ -23,7 +24,8 @@ import {
   type InsertTaskAttachment,
   type TaskAttachment,
   type InsertTaskTemplate,
-  type TaskTemplate
+  type TaskTemplate,
+  type EntityLog
 } from '../db/schema/w3suite';
 import { eq, and, or, desc, asc, sql, inArray, isNull, lte, gte } from 'drizzle-orm';
 import { logger } from '../core/logger';
@@ -939,5 +941,25 @@ export class TaskService {
 
       logger.info('📋 Bulk tasks deleted', { count: taskIds.length });
     });
+  }
+
+  static async getTaskActivity(taskId: string, tenantId: string): Promise<EntityLog[]> {
+    try {
+      const activityLogs = await db
+        .select()
+        .from(entityLogs)
+        .where(and(
+          eq(entityLogs.entityType, 'task'),
+          eq(entityLogs.entityId, taskId),
+          eq(entityLogs.tenantId, tenantId)
+        ))
+        .orderBy(desc(entityLogs.createdAt));
+      
+      logger.info('📋 Task activity retrieved', { taskId, count: activityLogs.length });
+      return activityLogs;
+    } catch (error) {
+      logger.error('❌ Failed to get task activity', { error, taskId });
+      throw error;
+    }
   }
 }
