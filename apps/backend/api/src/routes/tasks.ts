@@ -364,6 +364,36 @@ router.get('/tasks/:id/time-logs', requirePermission('task.read'), async (req: R
   }
 });
 
+router.post('/tasks/:id/timer/start', requirePermission('task.time-log'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.id, 'Task ID');
+    const userId = req.user!.id;
+    const { description } = req.body;
+    
+    const timeLog = await TaskService.startTimer(taskId, tenantId, userId, description);
+    
+    res.status(201).json(timeLog);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to start timer');
+  }
+});
+
+router.post('/tasks/:id/timer/stop/:logId', requirePermission('task.time-log'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.id, 'Task ID');
+    const userId = req.user!.id;
+    const logId = parseUUIDParam(req.params.logId, 'Log ID');
+    
+    const timeLog = await TaskService.stopTimer(logId, tenantId, userId);
+    
+    res.json(timeLog);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to stop timer');
+  }
+});
+
 const createDependencyBodySchema = insertTaskDependencySchema.omit({ 
   taskId: true,
   tenantId: true

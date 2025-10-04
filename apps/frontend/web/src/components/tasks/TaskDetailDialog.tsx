@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useTenant } from '@/contexts/TenantContext';
 import {
   CheckCircle2,
   Circle,
@@ -100,11 +101,16 @@ export function TaskDetailDialog({
   onStatusChange,
 }: TaskDetailProps) {
   const { toast } = useToast();
+  const { user } = useTenant();
   const [activeTab, setActiveTab] = useState('details');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [newItemTitle, setNewItemTitle] = useState('');
   const [isAddingItem, setIsAddingItem] = useState(false);
+
+  const activeTimer = task.timeTracking?.find(log => 
+    !log.endTime && log.userId === user?.id
+  );
   
   const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
   const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
@@ -180,15 +186,70 @@ export function TaskDetailDialog({
     },
   });
 
+  const startTimerMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/tasks/${task.id}/timer/start`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id] });
+      toast({ title: 'Timer avviato' });
+    },
+  });
+
+  const stopTimerMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      return apiRequest(`/api/tasks/${task.id}/timer/stop/${logId}`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', task.id] });
+      toast({ title: 'Timer fermato' });
+    },
+  });
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-xl font-semibold mb-2">
-                {task.title}
-              </DialogTitle>
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <DialogTitle className="text-xl font-semibold">
+                  {task.title}
+                </DialogTitle>
+                {activeTimer ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => stopTimerMutation.mutate(activeTimer.id)}
+                    disabled={stopTimerMutation.isPending}
+                    className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                    data-testid="button-stop-timer"
+                  >
+                    <Pause className="h-4 w-4 mr-2" />
+                    Stop Timer
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => startTimerMutation.mutate()}
+                    disabled={startTimerMutation.isPending}
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    data-testid="button-start-timer"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Timer
+                  </Button>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={status.variant} data-testid="badge-status">
                   {status.label}
