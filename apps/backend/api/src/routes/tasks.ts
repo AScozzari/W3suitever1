@@ -275,7 +275,7 @@ router.get('/tasks/:id/checklist', requirePermission('task.read'), async (req: R
 
 const createCommentBodySchema = insertTaskCommentSchema.omit({ 
   taskId: true,
-  authorId: true,
+  userId: true,
   tenantId: true
 });
 
@@ -290,7 +290,7 @@ router.post('/tasks/:id/comments', requirePermission('task.comment'), async (req
       ...parsed,
       taskId,
       tenantId,
-      authorId: userId
+      userId
     } as InsertTaskComment);
     
     res.status(201).json(comment);

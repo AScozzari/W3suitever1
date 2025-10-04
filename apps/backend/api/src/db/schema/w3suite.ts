@@ -2761,17 +2761,19 @@ export const taskChecklistItems = w3suiteSchema.table("task_checklist_items", {
   
   // Dates
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
   completedAt: timestamp("completed_at"),
   completedBy: varchar("completed_by").references(() => users.id),
   
   // Status
   isCompleted: boolean("is_completed").default(false),
   
-  // Metadata (removed: dueDate not in DB, metadata removed)
+  // Metadata
+  metadata: jsonb("metadata").default({}),
 }, (table) => [
   index("checklist_task_idx").on(table.taskId, table.position),
   index("checklist_assigned_idx").on(table.assignedToUserId),
+  index("checklist_due_date_idx").on(table.dueDate),
 ]);
 
 // Task Comments - Discussion threads
@@ -2780,7 +2782,7 @@ export const taskComments = w3suiteSchema.table("task_comments", {
   taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   
-  authorId: varchar("author_id").notNull().references(() => users.id), // DB usa author_id
+  userId: varchar("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   
   // Threading (optional)
@@ -2791,11 +2793,11 @@ export const taskComments = w3suiteSchema.table("task_comments", {
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  isInternal: boolean("is_internal").default(false), // DB column presente
-  // Removed: isEdited, deletedAt (not in DB)
+  isEdited: boolean("is_edited").default(false),
+  deletedAt: timestamp("deleted_at"),
 }, (table) => [
   index("comments_task_idx").on(table.taskId, table.createdAt),
-  index("comments_author_idx").on(table.authorId),
+  index("comments_user_idx").on(table.userId),
 ]);
 
 // Task Time Logs - Time tracking
