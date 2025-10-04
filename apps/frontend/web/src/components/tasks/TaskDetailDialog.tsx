@@ -126,10 +126,10 @@ export function TaskDetailDialog({
 
   // Checklist mutations
   const toggleChecklistItemMutation = useMutation({
-    mutationFn: async (itemId: string) => {
+    mutationFn: async ({ itemId, currentCompleted }: { itemId: string; currentCompleted: boolean }) => {
       return apiRequest(`/api/tasks/${task.id}/checklist/${itemId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ isCompleted: true }),
+        body: JSON.stringify({ isCompleted: !currentCompleted }),
       });
     },
     onSuccess: () => {
@@ -396,7 +396,7 @@ export function TaskDetailDialog({
                     data-testid={`checklist-item-${item.id}`}
                   >
                     <button
-                      onClick={() => toggleChecklistItemMutation.mutate(item.id)}
+                      onClick={() => toggleChecklistItemMutation.mutate({ itemId: item.id, currentCompleted: item.completed })}
                       className="flex-shrink-0"
                       data-testid={`button-toggle-${item.id}`}
                     >

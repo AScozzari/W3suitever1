@@ -38,6 +38,7 @@ interface Task {
   watchers?: Array<{ id: string; name: string }>;
   createdBy?: { id: string; name: string };
   tags?: string[];
+  checklistProgress?: { completed: number; total: number };
 }
 
 interface TaskWithRole extends Task {
@@ -292,6 +293,26 @@ export function TasksDataTable({
                     {task.description && (
                       <div className="text-sm text-gray-500 line-clamp-1 mt-1">
                         {task.description}
+                      </div>
+                    )}
+                    {task.checklistProgress && task.checklistProgress.total > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              task.checklistProgress.completed === task.checklistProgress.total
+                                ? "bg-green-500"
+                                : "bg-blue-500"
+                            )}
+                            style={{
+                              width: `${task.checklistProgress.total > 0 ? (task.checklistProgress.completed / task.checklistProgress.total) * 100 : 0}%`
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          {task.checklistProgress.completed}/{task.checklistProgress.total}
+                        </span>
                       </div>
                     )}
                   </div>
