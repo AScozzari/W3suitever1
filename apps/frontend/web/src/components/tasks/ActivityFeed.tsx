@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
@@ -98,7 +99,23 @@ export function ActivityFeed({ taskId }: ActivityFeedProps) {
   const { data: activityLogs = [], isLoading, isError, refetch } = useQuery<EntityLog[]>({
     queryKey: ['/api/tasks', taskId, 'activity'],
     queryFn: () => apiRequest(`/api/tasks/${taskId}/activity`),
+    refetchInterval: 30000, // Auto-refetch every 30s for real-time updates
+    refetchOnWindowFocus: true, // Refetch when tab becomes visible
   });
+
+  // Subscribe to manual invalidation events (e.g., when task is updated)
+  useEffect(() => {
+    const handleTaskUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', taskId, 'activity'] });
+    };
+
+    // Listen for custom task update events
+    window.addEventListener(`task-updated-${taskId}`, handleTaskUpdate);
+
+    return () => {
+      window.removeEventListener(`task-updated-${taskId}`, handleTaskUpdate);
+    };
+  }, [taskId]);
 
   if (isLoading) {
     return (
