@@ -38,6 +38,7 @@ import {
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { DependenciesGraph } from './DependenciesGraph';
 
 export interface TaskDetailProps {
   task: {
@@ -76,6 +77,7 @@ export interface TaskDetailProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onStatusChange?: (status: string) => void;
+  availableTasks?: Array<{ id: string; title: string; status: string; priority: string }>;
 }
 
 const statusConfig = {
@@ -99,9 +101,10 @@ export function TaskDetailDialog({
   onEdit,
   onDelete,
   onStatusChange,
+  availableTasks = [],
 }: TaskDetailProps) {
   const { toast } = useToast();
-  const { user } = useTenant();
+  const { currentUser } = useTenant();
   const [activeTab, setActiveTab] = useState('details');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -109,7 +112,7 @@ export function TaskDetailDialog({
   const [isAddingItem, setIsAddingItem] = useState(false);
 
   const activeTimer = task.timeTracking?.find(log => 
-    !log.endTime && log.userId === user?.id
+    !log.endTime && log.userId === currentUser?.id
   );
   
   const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
@@ -309,6 +312,10 @@ export function TaskDetailDialog({
             <TabsTrigger value="attachments" data-testid="tab-attachments">
               <Paperclip className="h-4 w-4 mr-2" />
               Allegati ({task.attachments?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="dependencies" data-testid="tab-dependencies">
+              <Link2 className="h-4 w-4 mr-2" />
+              Dipendenze
             </TabsTrigger>
             <TabsTrigger value="activity" data-testid="tab-activity">
               <Activity className="h-4 w-4 mr-2" />
@@ -670,6 +677,13 @@ export function TaskDetailDialog({
                   </div>
                 ))
               )}
+            </TabsContent>
+
+            <TabsContent value="dependencies" className="mt-0">
+              <DependenciesGraph 
+                taskId={task.id} 
+                availableTasks={availableTasks}
+              />
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-3 mt-0">

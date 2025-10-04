@@ -54,7 +54,7 @@ interface Task {
 
 export default function TasksPage() {
   const { toast } = useToast();
-  const { user } = useTenant();
+  const { currentUser } = useTenant();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<TaskFiltersState>({});
@@ -212,7 +212,7 @@ export default function TasksPage() {
         ) : (
           <TasksDataTable
             tasks={filteredTasks}
-            currentUserId={user?.id || ''}
+            currentUserId={currentUser?.id || ''}
             onTaskClick={handleTaskClick}
             selectedTaskIds={selectedTaskIds}
             onSelectionChange={setSelectedTaskIds}
@@ -230,6 +230,7 @@ export default function TasksPage() {
           task={selectedTask}
           open={!!selectedTask}
           onClose={handleCloseDetail}
+          availableTasks={tasks as Array<{ id: string; title: string; status: string; priority: string }>}
         />
       )}
 
