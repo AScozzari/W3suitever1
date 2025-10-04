@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DependenciesGraph } from './DependenciesGraph';
+import { ActivityFeed } from './ActivityFeed';
 
 export interface TaskDetailProps {
   task: {
@@ -687,10 +688,7 @@ export function TaskDetailDialog({
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-3 mt-0">
-              <div className="text-center py-12 text-gray-500">
-                <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>Log attività disponibile a breve</p>
-              </div>
+              <ActivityFeed taskId={task.id} />
             </TabsContent>
           </div>
         </Tabs>
