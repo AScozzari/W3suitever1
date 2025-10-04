@@ -10,6 +10,7 @@ import { TasksDataTable } from '@/components/tasks/TasksDataTable';
 import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
 import { TaskDetailDialog } from '@/components/tasks/TaskDetailDialog';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
+import { TemplateSelector } from '@/components/tasks/TemplateSelector';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { EmptyState } from '@w3suite/frontend-kit/components/blocks';
 import { ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -152,13 +153,16 @@ export default function TasksPage() {
                 Gestisci tutte le tue attività in un'unica vista unificata
               </p>
             </div>
-            <Button 
-              onClick={() => setIsCreateDialogOpen(true)}
-              data-testid="button-create-task"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Task
-            </Button>
+            <div className="flex items-center gap-2">
+              <TemplateSelector />
+              <Button 
+                onClick={() => setIsCreateDialogOpen(true)}
+                data-testid="button-create-task"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Task
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
