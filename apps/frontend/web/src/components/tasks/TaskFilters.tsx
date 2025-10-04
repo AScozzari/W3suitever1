@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -14,17 +14,26 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 import { 
   Filter, 
   X, 
   Calendar as CalendarIcon,
   Flag,
   CheckCircle2,
-  User
+  User,
+  Save,
+  Bookmark
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+
+interface FilterPreset {
+  id: string;
+  name: string;
+  filters: TaskFiltersState;
+}
 
 export interface TaskFiltersState {
   role?: 'assignee' | 'creator' | 'watcher';
@@ -32,6 +41,7 @@ export interface TaskFiltersState {
   priority?: string;
   urgency?: string;
   department?: string;
+  assignedTo?: string;
   dueDateFrom?: Date;
   dueDateTo?: Date;
   tags?: string[];
@@ -96,6 +106,29 @@ export function TaskFilters({
   className
 }: TaskFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [presets, setPresets] = useState<FilterPreset[]>([]);
+  const [presetName, setPresetName] = useState('');
+  const [showSavePreset, setShowSavePreset] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('task-filter-presets');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const rehydrated = parsed.map((preset: FilterPreset) => ({
+          ...preset,
+          filters: {
+            ...preset.filters,
+            dueDateFrom: preset.filters.dueDateFrom ? new Date(preset.filters.dueDateFrom) : undefined,
+            dueDateTo: preset.filters.dueDateTo ? new Date(preset.filters.dueDateTo) : undefined,
+          }
+        }));
+        setPresets(rehydrated);
+      } catch (e) {
+        console.error('Failed to load presets', e);
+      }
+    }
+  }, []);
 
   const activeFiltersCount = Object.values(filters).filter(v => {
     if (Array.isArray(v)) return v.length > 0;
@@ -111,6 +144,33 @@ export function TaskFilters({
 
   const clearAllFilters = () => {
     onChange({});
+  };
+
+  const savePreset = () => {
+    if (!presetName.trim()) return;
+    
+    const newPreset: FilterPreset = {
+      id: Date.now().toString(),
+      name: presetName.trim(),
+      filters: { ...filters }
+    };
+    
+    const updatedPresets = [...presets, newPreset];
+    setPresets(updatedPresets);
+    localStorage.setItem('task-filter-presets', JSON.stringify(updatedPresets));
+    setPresetName('');
+    setShowSavePreset(false);
+  };
+
+  const loadPreset = (preset: FilterPreset) => {
+    onChange(preset.filters);
+    setIsOpen(false);
+  };
+
+  const deletePreset = (presetId: string) => {
+    const updatedPresets = presets.filter(p => p.id !== presetId);
+    setPresets(updatedPresets);
+    localStorage.setItem('task-filter-presets', JSON.stringify(updatedPresets));
   };
 
   return (
@@ -138,6 +198,87 @@ export function TaskFilters({
         </PopoverTrigger>
         <PopoverContent className="w-80" align="start">
           <div className="space-y-4">
+            {presets.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <Bookmark className="h-4 w-4 text-gray-500" />
+                  Preset Salvati
+                </h4>
+                <div className="space-y-1">
+                  {presets.map((preset) => (
+                    <div 
+                      key={preset.id} 
+                      className="flex items-center justify-between gap-2 p-2 rounded hover:bg-gray-50"
+                    >
+                      <button
+                        onClick={() => loadPreset(preset)}
+                        className="flex-1 text-left text-sm font-medium text-gray-700 hover:text-gray-900"
+                        data-testid={`button-load-preset-${preset.id}`}
+                      >
+                        {preset.name}
+                      </button>
+                      <button
+                        onClick={() => deletePreset(preset.id)}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        data-testid={`button-delete-preset-${preset.id}`}
+                      >
+                        <X className="h-3 w-3 text-gray-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeFiltersCount > 0 && !showSavePreset && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSavePreset(true)}
+                className="w-full"
+                data-testid="button-show-save-preset"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Salva Preset
+              </Button>
+            )}
+
+            {showSavePreset && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <Save className="h-4 w-4 text-gray-500" />
+                  Nuovo Preset
+                </h4>
+                <Input
+                  placeholder="Nome preset..."
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && savePreset()}
+                  data-testid="input-preset-name"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={savePreset}
+                    disabled={!presetName.trim()}
+                    data-testid="button-save-preset"
+                  >
+                    Salva
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowSavePreset(false);
+                      setPresetName('');
+                    }}
+                    data-testid="button-cancel-preset"
+                  >
+                    Annulla
+                  </Button>
+                </div>
+              </div>
+            )}
             <div>
               <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
