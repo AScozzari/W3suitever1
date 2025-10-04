@@ -204,10 +204,17 @@ router.get('/tasks/:id/assignments', requirePermission('task.read'), async (req:
   }
 });
 
-const createChecklistItemBodySchema = insertTaskChecklistItemSchema.omit({ 
-  taskId: true,
-  tenantId: true
-});
+const createChecklistItemBodySchema = insertTaskChecklistItemSchema
+  .omit({ 
+    taskId: true,
+    tenantId: true
+  })
+  .extend({
+    dueDate: z.preprocess(
+      (val) => val ? new Date(val as string) : undefined,
+      z.date().optional()
+    ).optional()
+  });
 
 router.post('/tasks/:id/checklist', requirePermission('task.update'), async (req: Request, res: Response) => {
   try {
