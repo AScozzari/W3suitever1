@@ -2347,7 +2347,7 @@ export const workflowTriggers = w3suiteSchema.table("workflow_triggers", {
 // Workflow Templates - Definizione visual workflow (reusable templates)
 export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  tenantId: uuid("tenant_id").references(() => tenants.id), // NULL per global templates
   
   // Template identification
   name: varchar("name", { length: 200 }).notNull(),
@@ -2359,6 +2359,14 @@ export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
   nodes: jsonb("nodes").notNull(), // Array of workflow nodes with positions
   edges: jsonb("edges").notNull(), // Array of connections between nodes
   viewport: jsonb("viewport").default({ x: 0, y: 0, zoom: 1 }), // Canvas viewport
+  
+  // 🌐 BRAND INTERFACE - Global Template Management
+  isGlobal: boolean("is_global").default(false).notNull(), // Template visibile a tutti i tenant
+  isSystem: boolean("is_system").default(false).notNull(), // Template di sistema (non modificabile)
+  isDeletable: boolean("is_deletable").default(true).notNull(), // Può essere cancellato
+  isCustomizable: boolean("is_customizable").default(true).notNull(), // Tenant può duplicare/customizzare
+  createdByBrand: boolean("created_by_brand").default(false).notNull(), // Creato da Brand Admin
+  globalVersionId: uuid("global_version_id"), // ID template globale originale (per tenant customizzati)
   
   // Template settings
   isPublic: boolean("is_public").default(false), // Can be shared across tenants
@@ -2379,6 +2387,9 @@ export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
   index("workflow_templates_category_idx").on(table.category),
   index("workflow_templates_type_idx").on(table.templateType),
   index("workflow_templates_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("workflow_templates_global_idx").on(table.isGlobal), // Index per query global templates
+  index("workflow_templates_system_idx").on(table.isSystem), // Index per system templates
+  index("workflow_templates_global_version_idx").on(table.globalVersionId), // Index per customized templates
   uniqueIndex("workflow_templates_name_unique").on(table.tenantId, table.name),
 ]);
 
@@ -2579,6 +2590,53 @@ export const workflowExecutions = w3suiteSchema.table("workflow_executions", {
   index("workflow_executions_executor_idx").on(table.executorId),
   index("workflow_executions_status_idx").on(table.status),
   index("workflow_executions_started_idx").on(table.startedAt),
+]);
+
+// 🔄 WORKFLOW STEP EXECUTIONS - Idempotency & Retry Tracking (ASYNC EXECUTION ENGINE)
+export const workflowStepExecutions = w3suiteSchema.table("workflow_step_executions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Step execution identification
+  instanceId: uuid("instance_id").notNull().references(() => workflowInstances.id, { onDelete: 'cascade' }),
+  stepId: varchar("step_id", { length: 100 }).notNull(), // Node ID from ReactFlow
+  stepName: varchar("step_name", { length: 200 }), // Human-readable step name
+  
+  // 🔑 IDEMPOTENCY KEY - Prevents duplicate executions
+  idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull().unique(), // SHA256(instanceId + stepId + attemptNumber)
+  attemptNumber: integer("attempt_number").default(1).notNull(), // Retry attempt counter
+  
+  // Execution status
+  status: varchar("status", { length: 50 }).default('pending').notNull(), // 'pending', 'running', 'completed', 'failed', 'compensated'
+  
+  // Execution data
+  inputData: jsonb("input_data").default({}), // Input parameters for step
+  outputData: jsonb("output_data").default({}), // Result/output from step
+  errorDetails: jsonb("error_details").default({}), // { message, stack, code, recoverable }
+  
+  // Timing & Performance
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  durationMs: integer("duration_ms"), // Execution duration in milliseconds
+  
+  // Retry & Compensation Logic
+  retryCount: integer("retry_count").default(0), // Number of retries performed
+  maxRetries: integer("max_retries").default(3), // Max retry attempts
+  nextRetryAt: timestamp("next_retry_at"), // Scheduled next retry
+  compensationExecuted: boolean("compensation_executed").default(false), // Rollback performed
+  compensationData: jsonb("compensation_data").default({}), // Compensation action details
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}), // Additional context
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("workflow_step_executions_instance_idx").on(table.instanceId),
+  index("workflow_step_executions_step_idx").on(table.stepId),
+  index("workflow_step_executions_status_idx").on(table.status),
+  index("workflow_step_executions_idempotency_idx").on(table.idempotencyKey),
+  index("workflow_step_executions_retry_idx").on(table.nextRetryAt),
+  uniqueIndex("workflow_step_executions_unique").on(table.instanceId, table.stepId, table.attemptNumber),
 ]);
 
 // ==================== WEBHOOK SYSTEM TABLES ====================

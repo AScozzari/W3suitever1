@@ -6,6 +6,7 @@ import { exec, spawn, ChildProcess } from "child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { registerRoutes } from "./core/routes.js";
 import { seedCommercialAreas } from "./core/seed-areas.js";
+import { startWorkflowWorker, stopWorkflowWorker } from "./queue/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -279,9 +280,19 @@ async function startBackendOnly() {
   // Crea il server HTTP
   const httpServer = await registerRoutes(app);
 
+  // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ worker
+  try {
+    startWorkflowWorker();
+    console.log('✅ Workflow execution worker started');
+  } catch (error) {
+    console.warn('⚠️  Workflow worker failed to start (Redis may not be available):', error);
+    console.warn('🔄 Workflow execution will run synchronously');
+  }
+
   // Pure backend mode - clean shutdown without frontend processes
-  const gracefulShutdown = () => {
+  const gracefulShutdown = async () => {
     console.log("🛑 W3 Suite backend shutting down (pure backend mode)");
+    await stopWorkflowWorker();
     process.exit(0);
   };
 
@@ -396,12 +407,22 @@ async function startBackend() {
     console.warn('🔄 Notifications will use database polling fallback');
   }
 
+  // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ worker
+  try {
+    startWorkflowWorker();
+    console.log('✅ Workflow execution worker started');
+  } catch (error) {
+    console.warn('⚠️  Workflow worker failed to start (Redis may not be available):', error);
+    console.warn('🔄 Workflow execution will run synchronously');
+  }
+
   // API-only backend - frontend apps handle their own routing
   // Only serve API, OAuth2, and well-known endpoints
 
   // W3 Suite backend cleanup - conditionally manage frontend processes
-  const gracefulBackendShutdown = () => {
+  const gracefulBackendShutdown = async () => {
     console.log("🚫 W3 Suite backend shutting down");
+    await stopWorkflowWorker();
     
     // Only manage frontend processes if in embedded nginx mode
     if (ENABLE_EMBEDDED_NGINX) {

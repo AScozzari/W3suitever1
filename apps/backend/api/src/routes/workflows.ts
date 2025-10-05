@@ -16,6 +16,7 @@ import { eq, and, or, desc, asc, like, count, sql, inArray, not } from 'drizzle-
 import {
   workflowTemplates,
   workflowInstances,
+  workflowStepExecutions,
   universalRequests,
   teams,
   teamWorkflowAssignments,
@@ -1451,6 +1452,284 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       success: false,
       error: 'Internal server error',
       message: 'An unexpected error occurred while retrieving analytics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== ASYNC WORKFLOW EXECUTION ENDPOINTS ====================
+
+router.post('/instances/:id/execute', rbacMiddleware, requirePermission('workflow.execute'), async (req, res) => {
+  try {
+    const { id: instanceId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { isRedisAvailable } = await import('../queue/index.js');
+    const redisAvailable = await isRedisAvailable();
+
+    if (!redisAvailable) {
+      return res.status(503).json({
+        success: false,
+        error: 'Async workflow execution unavailable',
+        message: 'Redis is not available. Async workflow execution requires Redis. Please configure REDIS_URL environment variable or use synchronous workflow engine.',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const instance = await db.query.workflowInstances.findFirst({
+      where: and(
+        eq(workflowInstances.id, instanceId),
+        eq(workflowInstances.tenantId, tenantId)
+      ),
+      with: {
+        template: {
+          with: {
+            steps: true
+          }
+        }
+      }
+    });
+
+    if (!instance) {
+      return res.status(404).json({
+        success: false,
+        error: 'Workflow instance not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { enqueueWorkflowStep } = await import('../queue/index.js');
+    
+    const steps = (instance.template as any)?.steps || [];
+    const enqueuedSteps = [];
+
+    for (const step of steps) {
+      const job = await enqueueWorkflowStep({
+        instanceId: instance.id,
+        tenantId,
+        stepId: step.nodeId,
+        stepName: step.name,
+        attemptNumber: 1,
+        inputData: step.config || {}
+      });
+
+      enqueuedSteps.push({
+        stepId: step.nodeId,
+        stepName: step.name,
+        jobId: job.id
+      });
+    }
+
+    await db
+      .update(workflowInstances)
+      .set({
+        currentStatus: 'executing',
+        startedAt: new Date(),
+        updatedBy: userId
+      })
+      .where(eq(workflowInstances.id, instanceId));
+
+    logger.info('Workflow execution started', {
+      instanceId,
+      tenantId,
+      stepsEnqueued: enqueuedSteps.length,
+      userId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        instanceId,
+        status: 'executing',
+        stepsEnqueued: enqueuedSteps.length,
+        steps: enqueuedSteps
+      },
+      message: 'Workflow execution started',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<{
+      instanceId: string;
+      status: string;
+      stepsEnqueued: number;
+      steps: any[];
+    }>);
+
+  } catch (error: any) {
+    logger.error('Error starting workflow execution', { error, instanceId: req.params.id });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+router.get('/instances/:id/executions', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const { id: instanceId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const executions = await db.query.workflowStepExecutions.findMany({
+      where: and(
+        eq(workflowStepExecutions.instanceId, instanceId),
+        eq(workflowStepExecutions.tenantId, tenantId)
+      ),
+      orderBy: (executions, { asc }) => [asc(executions.createdAt)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: executions,
+      message: 'Step executions retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof executions>);
+
+  } catch (error) {
+    logger.error('Error retrieving step executions', { error, instanceId: req.params.id });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+router.post('/instances/:id/steps/:stepId/retry', rbacMiddleware, requirePermission('workflow.execute'), async (req, res) => {
+  try {
+    const { id: instanceId, stepId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { isRedisAvailable } = await import('../queue/index.js');
+    const redisAvailable = await isRedisAvailable();
+
+    if (!redisAvailable) {
+      return res.status(503).json({
+        success: false,
+        error: 'Async workflow execution unavailable',
+        message: 'Redis is not available. Cannot retry step without Redis.',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const latestExecution = await db.query.workflowStepExecutions.findFirst({
+      where: and(
+        eq(workflowStepExecutions.instanceId, instanceId),
+        eq(workflowStepExecutions.stepId, stepId),
+        eq(workflowStepExecutions.tenantId, tenantId)
+      ),
+      orderBy: (executions, { desc }) => [desc(executions.attemptNumber)]
+    });
+
+    if (!latestExecution) {
+      return res.status(404).json({
+        success: false,
+        error: 'Step execution not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { enqueueWorkflowStep } = await import('../queue/index.js');
+
+    const nextAttempt = (latestExecution.attemptNumber || 0) + 1;
+
+    const job = await enqueueWorkflowStep({
+      instanceId,
+      tenantId,
+      stepId,
+      stepName: latestExecution.stepName || stepId,
+      attemptNumber: nextAttempt,
+      inputData: latestExecution.inputData as Record<string, any> || {}
+    });
+
+    logger.info('Step retry enqueued', {
+      instanceId,
+      stepId,
+      attemptNumber: nextAttempt,
+      jobId: job.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        instanceId,
+        stepId,
+        attemptNumber: nextAttempt,
+        jobId: job.id
+      },
+      message: 'Step retry enqueued successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<{
+      instanceId: string;
+      stepId: string;
+      attemptNumber: number;
+      jobId: string | undefined;
+    }>);
+
+  } catch (error: any) {
+    logger.error('Error retrying step', { error, instanceId: req.params.id, stepId: req.params.stepId });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+router.get('/queue/metrics', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const { isRedisAvailable, getQueueMetrics } = await import('../queue/index.js');
+    const redisAvailable = await isRedisAvailable();
+
+    if (!redisAvailable) {
+      return res.status(503).json({
+        success: false,
+        error: 'Queue metrics unavailable',
+        message: 'Redis is not available. Queue metrics require Redis.',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const metrics = await getQueueMetrics();
+
+    res.status(200).json({
+      success: true,
+      data: metrics,
+      message: 'Queue metrics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof metrics>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving queue metrics', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
