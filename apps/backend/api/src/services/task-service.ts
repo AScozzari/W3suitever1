@@ -48,6 +48,65 @@ export class TaskService {
     }
   }
 
+  static async createTaskComplete(data: {
+    task: InsertTask;
+    assigneeIds?: string[];
+    watcherIds?: string[];
+    checklistItems?: Array<{ title: string; assignedToUserId?: string; position: number }>;
+  }): Promise<Task> {
+    return await db.transaction(async (tx) => {
+      const [task] = await tx
+        .insert(tasks)
+        .values(data.task)
+        .returning();
+
+      const assignmentsToInsert: InsertTaskAssignment[] = [
+        ...(data.assigneeIds || []).map(userId => ({
+          taskId: task.id,
+          userId,
+          role: 'assignee' as const,
+          tenantId: task.tenantId,
+          assignedBy: data.task.createdBy || task.tenantId,
+        })),
+        ...(data.watcherIds || []).map(userId => ({
+          taskId: task.id,
+          userId,
+          role: 'watcher' as const,
+          tenantId: task.tenantId,
+          assignedBy: data.task.createdBy || task.tenantId,
+        })),
+      ];
+
+      if (assignmentsToInsert.length > 0) {
+        await tx.insert(taskAssignments).values(assignmentsToInsert);
+      }
+
+      if (data.checklistItems && data.checklistItems.length > 0) {
+        const checklistToInsert: InsertTaskChecklistItem[] = data.checklistItems.map(item => ({
+          taskId: task.id,
+          tenantId: task.tenantId,
+          title: item.title,
+          assignedToUserId: item.assignedToUserId,
+          position: item.position,
+          isCompleted: false,
+        }));
+
+        await tx.insert(taskChecklistItems).values(checklistToInsert);
+      }
+
+      logger.info('📋 Task created (complete)', { 
+        taskId: task.id, 
+        title: task.title, 
+        assignees: data.assigneeIds?.length || 0,
+        watchers: data.watcherIds?.length || 0,
+        checklistItems: data.checklistItems?.length || 0,
+        tenantId: task.tenantId 
+      });
+
+      return task;
+    });
+  }
+
   static async getTaskById(taskId: string, tenantId: string): Promise<Task | null> {
     const [task] = await db
       .select()

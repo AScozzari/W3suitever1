@@ -78,38 +78,15 @@ export default function TasksPage() {
     mutationFn: async (data: any) => {
       const { assignees, watchers, checklistItems, ...taskData } = data;
       
-      const createdTask = await apiRequest('/api/tasks', {
+      return apiRequest('/api/tasks/complete', {
         method: 'POST',
-        body: JSON.stringify(taskData),
+        body: JSON.stringify({
+          task: taskData,
+          assignees: assignees || [],
+          watchers: watchers || [],
+          checklistItems: checklistItems || [],
+        }),
       });
-
-      const taskId = createdTask.id;
-
-      const assignmentPromises = [
-        ...(assignees || []).map((userId: string) =>
-          apiRequest(`/api/tasks/${taskId}/assignments`, {
-            method: 'POST',
-            body: JSON.stringify({ userId, role: 'assignee' }),
-          })
-        ),
-        ...(watchers || []).map((userId: string) =>
-          apiRequest(`/api/tasks/${taskId}/assignments`, {
-            method: 'POST',
-            body: JSON.stringify({ userId, role: 'watcher' }),
-          })
-        ),
-      ];
-
-      const checklistPromises = (checklistItems || []).map((item: any) =>
-        apiRequest(`/api/tasks/${taskId}/checklist`, {
-          method: 'POST',
-          body: JSON.stringify(item),
-        })
-      );
-
-      await Promise.all([...assignmentPromises, ...checklistPromises]);
-
-      return createdTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });

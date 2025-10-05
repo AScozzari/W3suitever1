@@ -113,6 +113,43 @@ router.get('/tasks/:id', requirePermission('task.read'), async (req: Request, re
   }
 });
 
+router.post('/tasks/complete', requirePermission('task.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const { task: taskData, assignees, watchers, checklistItems } = req.body;
+    
+    if (!taskData || typeof taskData !== 'object') {
+      return res.status(400).json({ error: 'Task data is required' });
+    }
+    
+    const taskBodySchema = insertTaskSchema.omit({ 
+      id: true, 
+      tenantId: true, 
+      createdBy: true, 
+      createdAt: true, 
+      updatedAt: true 
+    });
+    const parsedTask = taskBodySchema.parse(taskData);
+    
+    const task = await TaskService.createTaskComplete({
+      task: {
+        ...parsedTask,
+        tenantId,
+        createdBy: userId,
+      } as InsertTask,
+      assigneeIds: Array.isArray(assignees) ? assignees : [],
+      watcherIds: Array.isArray(watchers) ? watchers : [],
+      checklistItems: Array.isArray(checklistItems) ? checklistItems : [],
+    });
+    
+    res.status(201).json(task);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to create complete task');
+  }
+});
+
 router.post('/tasks', requirePermission('task.create'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
