@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -140,6 +140,8 @@ export function TaskFormDialog({
   const [watchers, setWatchers] = useState<string[]>([]);
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
+  
+  const prevOpenRef = useRef(false);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
@@ -161,10 +163,10 @@ export function TaskFormDialog({
   });
 
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       setActiveTab('details');
       
-      if (mode === 'edit' && (existingAssignees || existingWatchers || existingChecklistItems)) {
+      if (mode === 'edit') {
         setAssignees(existingAssignees || []);
         setWatchers(existingWatchers || []);
         setChecklistItems(existingChecklistItems || []);
@@ -186,7 +188,9 @@ export function TaskFormDialog({
         ...initialData,
       });
     }
-  }, [open, initialData, mode, existingAssignees, existingWatchers, existingChecklistItems, form]);
+    
+    prevOpenRef.current = open;
+  }, [open, mode, initialData, existingAssignees, existingWatchers, existingChecklistItems, form]);
 
   const handleSubmit = async (data: TaskFormData) => {
     await onSubmit({
