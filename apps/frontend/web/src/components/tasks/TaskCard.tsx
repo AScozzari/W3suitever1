@@ -216,15 +216,23 @@ export function TaskCard({
       onClick={onClick}
       className={cn(
         'group relative overflow-hidden',
-        'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl',
-        'border-2 transition-all duration-300',
-        'hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 cursor-pointer',
+        'bg-white/90 dark:bg-gray-800/90 backdrop-blur-2xl',
+        'border-2 transition-all duration-500 ease-out',
+        'hover:shadow-2xl hover:shadow-orange-500/20 dark:hover:shadow-orange-500/40',
+        'hover:scale-[1.03] hover:-translate-y-2 cursor-pointer',
+        'hover:border-orange-400 dark:hover:border-orange-500',
+        'animate-in fade-in slide-in-from-bottom-4 duration-700',
         status.borderColor,
         className
       )}
     >
       <div className={cn(
-        'absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r opacity-80',
+        'absolute top-0 left-0 right-0 h-2 bg-gradient-to-r shadow-lg',
+        'animate-pulse',
+        priorityGradients[task.priority]
+      )} />
+      <div className={cn(
+        'absolute top-0 left-0 right-0 h-2 bg-gradient-to-r blur-sm opacity-60',
         priorityGradients[task.priority]
       )} />
 
@@ -257,12 +265,13 @@ export function TaskCard({
           <div className="flex items-start gap-2 flex-shrink-0">
             <Badge 
               className={cn(
-                'text-xs whitespace-nowrap font-semibold shadow-sm',
-                'bg-gradient-to-r',
+                'text-xs whitespace-nowrap font-semibold shadow-lg',
+                'bg-gradient-to-r backdrop-blur-sm',
                 status.gradient,
                 status.textColor,
-                'border',
-                status.borderColor
+                'border-2',
+                status.borderColor,
+                'animate-in fade-in duration-300'
               )}
               data-testid={`badge-status-${task.id}`}
             >
@@ -275,9 +284,9 @@ export function TaskCard({
                   size="sm"
                   data-testid={`button-menu-${task.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="h-8 w-8 p-0 transition-all duration-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:scale-110 hover:shadow-lg hover:shadow-orange-500/50 rounded-lg"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400 hover:text-orange-600" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-2">
@@ -356,54 +365,60 @@ export function TaskCard({
         </div>
 
         {task.checklistProgress && task.checklistProgress.total > 0 && (
-          <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200">
-            <div className="flex items-center justify-between text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">
-              <div className="flex items-center gap-1.5">
-                <CheckSquare className="h-3.5 w-3.5" />
-                <span>Checklist</span>
+          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-blue-900/30 dark:via-cyan-900/30 dark:to-blue-900/30 border-2 border-blue-300/50 shadow-lg shadow-blue-500/20 backdrop-blur-sm">
+            <div className="flex items-center justify-between text-xs font-bold text-blue-900 dark:text-blue-100 mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/20">
+                  <CheckSquare className="h-4 w-4 text-blue-600" />
+                </div>
+                <span>Checklist Progress</span>
               </div>
-              <span className="font-bold">
+              <span className="text-sm px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-700">
                 {task.checklistProgress.completed}/{task.checklistProgress.total}
               </span>
             </div>
-            <div className="relative w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 overflow-hidden">
+            <div className="relative w-full bg-blue-200/50 dark:bg-blue-800/50 rounded-full h-3 overflow-hidden shadow-inner">
               <div
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500 shadow-sm"
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-full transition-all duration-700 shadow-lg shadow-blue-500/50 animate-pulse"
+                style={{ width: `${checklistPercentage}%` }}
+              />
+              <div
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 rounded-full blur-sm opacity-60"
                 style={{ width: `${checklistPercentage}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between pt-3 border-t-2 border-gray-200/50 dark:border-gray-700/50">
           <div className="flex items-center gap-3 text-sm">
             {task.assigneeCount && task.assigneeCount > 0 && (
-              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium" data-testid={`text-assignees-${task.id}`}>
-                <div className="p-1 rounded bg-orange-100 dark:bg-orange-900/30">
-                  <User className="h-3.5 w-3.5 text-orange-600" />
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-assignees-${task.id}`}>
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/40 dark:to-orange-800/40 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-shadow">
+                  <User className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
-                <span>{task.assigneeCount}</span>
+                <span className="text-sm">{task.assigneeCount}</span>
               </div>
             )}
             {task.commentCount && task.commentCount > 0 && (
-              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium" data-testid={`text-comments-${task.id}`}>
-                <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/30">
-                  <MessageSquare className="h-3.5 w-3.5 text-blue-600" />
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-comments-${task.id}`}>
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
+                  <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span>{task.commentCount}</span>
+                <span className="text-sm">{task.commentCount}</span>
               </div>
             )}
             {task.attachmentCount && task.attachmentCount > 0 && (
-              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium" data-testid={`text-attachments-${task.id}`}>
-                <div className="p-1 rounded bg-purple-100 dark:bg-purple-900/30">
-                  <Paperclip className="h-3.5 w-3.5 text-purple-600" />
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-attachments-${task.id}`}>
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-shadow">
+                  <Paperclip className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
-                <span>{task.attachmentCount}</span>
+                <span className="text-sm">{task.attachmentCount}</span>
               </div>
             )}
           </div>
 
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{createdAgo}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold px-2 py-1 rounded-lg bg-gray-100/50 dark:bg-gray-800/50">{createdAgo}</span>
         </div>
 
         {task.tags && task.tags.length > 0 && (

@@ -153,18 +153,18 @@ export function KanbanBoard({
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     const target = e.currentTarget as HTMLElement;
-    target.classList.add('ring-2', 'ring-orange-500', 'ring-offset-2');
+    target.classList.add('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'dark:bg-orange-900/20', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     const target = e.currentTarget as HTMLElement;
-    target.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-2');
+    target.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'dark:bg-orange-900/20', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
   };
 
   const handleDrop = (e: React.DragEvent, newStatus: string) => {
     e.preventDefault();
     const target = e.currentTarget as HTMLElement;
-    target.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-2');
+    target.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'dark:bg-orange-900/20', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
     
     const taskId = e.dataTransfer.getData('taskId');
     
@@ -185,29 +185,31 @@ export function KanbanBoard({
         return (
           <div
             key={column.id}
-            className="flex-shrink-0 w-96"
+            className="flex-shrink-0 w-96 animate-in fade-in slide-in-from-bottom-8 duration-700"
+            style={{ animationDelay: `${columns.indexOf(column) * 150}ms` }}
             data-testid={`kanban-column-${column.id}`}
           >
-            <Card className="h-full flex flex-col border-2 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl overflow-hidden">
-              <div className={cn('absolute top-0 left-0 right-0 h-1 bg-gradient-to-r', column.gradient)} />
+            <Card className="h-full flex flex-col border-2 shadow-2xl hover:shadow-3xl transition-all duration-500 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl overflow-hidden hover:scale-[1.01]">
+              <div className={cn('absolute top-0 left-0 right-0 h-2 bg-gradient-to-r shadow-lg animate-pulse', column.gradient)} />
+              <div className={cn('absolute top-0 left-0 right-0 h-2 bg-gradient-to-r blur-md opacity-60', column.gradient)} />
               
-              <CardHeader className={cn('pb-4 pt-5 border-b-2 border-gray-200 dark:border-gray-700', column.bgColor)}>
+              <CardHeader className={cn('pb-4 pt-6 border-b-2 border-gray-200/50 dark:border-gray-700/50', 'bg-gradient-to-br backdrop-blur-xl', column.bgColor, 'shadow-inner')}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={cn('p-2 rounded-lg bg-white/90 dark:bg-gray-800/90 shadow-md', 'backdrop-blur-sm')}>
-                      <Icon className={cn('h-5 w-5', column.color)} />
+                    <div className={cn('p-2.5 rounded-xl bg-white/95 dark:bg-gray-800/95 shadow-xl backdrop-blur-sm', 'hover:scale-110 transition-transform duration-300', 'border-2 border-white/50')}>
+                      <Icon className={cn('h-6 w-6', column.color, 'drop-shadow-lg')} />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-bold">
+                      <CardTitle className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         {column.title}
                       </CardTitle>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-1">
                         {columnTasks.length} {columnTasks.length === 1 ? 'task' : 'tasks'}
                       </p>
                     </div>
                   </div>
                   <Badge 
-                    className={cn('shadow-md font-bold text-sm px-3 py-1', column.badgeColor)}
+                    className={cn('shadow-xl font-bold text-base px-4 py-1.5 rounded-xl animate-pulse', column.badgeColor, 'border-2 border-white/30')}
                     data-testid={`badge-count-${column.id}`}
                   >
                     {columnTasks.length}
