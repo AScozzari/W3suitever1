@@ -1893,6 +1893,212 @@ router.post('/recover-stalled', rbacMiddleware, requirePermission('workflow.mana
   }
 });
 
+// ==================== ANALYTICS ENDPOINTS ====================
+
+/**
+ * GET /api/workflows/analytics/trends
+ * Get execution trends over time
+ * 🔐 RBAC: workflow.view permission required
+ */
+router.get('/analytics/trends', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString(),
+      } as ApiErrorResponse);
+    }
+
+    const timeRange = req.query.timeRange as string || '30d';
+    const days = timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : 30;
+
+    const trends = await db.execute(sql`
+      WITH date_series AS (
+        SELECT generate_series(
+          CURRENT_DATE - INTERVAL '${sql.raw(days.toString())} days',
+          CURRENT_DATE,
+          '1 day'::interval
+        )::date AS date
+      )
+      SELECT 
+        ds.date::text AS date,
+        COALESCE(COUNT(*) FILTER (WHERE wse.status = 'completed'), 0)::int AS completed,
+        COALESCE(COUNT(*) FILTER (WHERE wse.status = 'failed'), 0)::int AS failed,
+        COALESCE(COUNT(*) FILTER (WHERE wse.status = 'running'), 0)::int AS running,
+        COALESCE(COUNT(*), 0)::int AS total
+      FROM date_series ds
+      LEFT JOIN ${workflowStepExecutions} wse
+        ON DATE(wse.started_at) = ds.date
+        AND wse.tenant_id = ${tenantId}
+      GROUP BY ds.date
+      ORDER BY ds.date DESC
+    `);
+
+    res.status(200).json({
+      success: true,
+      data: trends.rows,
+      message: 'Execution trends retrieved successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof trends.rows>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving execution trends', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/workflows/analytics/status-distribution
+ * Get distribution of workflow statuses
+ * 🔐 RBAC: workflow.view permission required
+ */
+router.get('/analytics/status-distribution', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString(),
+      } as ApiErrorResponse);
+    }
+
+    const distribution = await db.execute(sql`
+      SELECT 
+        status,
+        COUNT(*)::int AS count,
+        ROUND((COUNT(*) * 100.0 / SUM(COUNT(*)) OVER ()), 2) AS percentage
+      FROM ${workflowStepExecutions}
+      WHERE tenant_id = ${tenantId}
+      GROUP BY status
+      ORDER BY count DESC
+    `);
+
+    res.status(200).json({
+      success: true,
+      data: distribution.rows,
+      message: 'Status distribution retrieved successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof distribution.rows>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving status distribution', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/workflows/analytics/performance
+ * Get performance metrics by step
+ * 🔐 RBAC: workflow.view permission required
+ */
+router.get('/analytics/performance', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString(),
+      } as ApiErrorResponse);
+    }
+
+    const performance = await db.execute(sql`
+      SELECT 
+        step_name AS "stepName",
+        ROUND(AVG(duration_ms))::int AS "avgDuration",
+        MIN(duration_ms)::int AS "minDuration",
+        MAX(duration_ms)::int AS "maxDuration",
+        COUNT(*)::int AS executions
+      FROM ${workflowStepExecutions}
+      WHERE tenant_id = ${tenantId}
+        AND status = 'completed'
+        AND duration_ms IS NOT NULL
+      GROUP BY step_name
+      HAVING COUNT(*) >= 5
+      ORDER BY "avgDuration" DESC
+      LIMIT 20
+    `);
+
+    res.status(200).json({
+      success: true,
+      data: performance.rows,
+      message: 'Performance metrics retrieved successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof performance.rows>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving performance metrics', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/workflows/analytics/completion-rates
+ * Get completion rates by workflow step
+ * 🔐 RBAC: workflow.view permission required
+ */
+router.get('/analytics/completion-rates', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString(),
+      } as ApiErrorResponse);
+    }
+
+    const rates = await db.execute(sql`
+      SELECT 
+        step_id AS "stepId",
+        step_name AS "stepName",
+        ROUND((COUNT(*) FILTER (WHERE status = 'completed') * 100.0 / COUNT(*)), 2) AS "completionRate",
+        ROUND((COUNT(*) FILTER (WHERE status = 'failed') * 100.0 / COUNT(*)), 2) AS "failureRate",
+        COUNT(*)::int AS "totalExecutions"
+      FROM ${workflowStepExecutions}
+      WHERE tenant_id = ${tenantId}
+      GROUP BY step_id, step_name
+      HAVING COUNT(*) >= 5
+      ORDER BY "totalExecutions" DESC
+      LIMIT 20
+    `);
+
+    res.status(200).json({
+      success: true,
+      data: rates.rows,
+      message: 'Completion rates retrieved successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof rates.rows>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving completion rates', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== QUEUE METRICS ====================
 
 router.get('/queue/metrics', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
