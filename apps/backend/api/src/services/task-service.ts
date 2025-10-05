@@ -28,7 +28,7 @@ import {
   type TaskTemplate,
   type EntityLog
 } from '../db/schema/w3suite';
-import { eq, and, or, desc, asc, sql, inArray, isNull, lte, gte } from 'drizzle-orm';
+import { eq, and, or, desc, asc, sql, inArray, isNull, lte, gte, getTableColumns } from 'drizzle-orm';
 import { logger } from '../core/logger';
 
 export class TaskService {
@@ -896,7 +896,7 @@ export class TaskService {
       limit?: number;
       offset?: number;
     }
-  ): Promise<Task[]> {
+  ): Promise<any[]> {
     // Smart Priority Score: urgency*10 + priority*3
     // critical/high = 40+9=49 (TOP), urgent/medium = 30+6=36, etc.
     const priorityScore = sql`
@@ -915,9 +915,63 @@ export class TaskService {
       END
     `;
 
+    const assigneeCountSq = db
+      .select({ 
+        taskId: taskAssignments.taskId, 
+        count: sql<number>`count(*)::int`.as('count') 
+      })
+      .from(taskAssignments)
+      .where(eq(taskAssignments.role, 'assignee'))
+      .groupBy(taskAssignments.taskId)
+      .as('assignee_counts');
+
+    const commentCountSq = db
+      .select({ 
+        taskId: taskComments.taskId, 
+        count: sql<number>`count(*)::int`.as('count') 
+      })
+      .from(taskComments)
+      .groupBy(taskComments.taskId)
+      .as('comment_counts');
+
+    const attachmentCountSq = db
+      .select({ 
+        taskId: taskAttachments.taskId, 
+        count: sql<number>`count(*)::int`.as('count') 
+      })
+      .from(taskAttachments)
+      .groupBy(taskAttachments.taskId)
+      .as('attachment_counts');
+
+    const checklistStatsSq = db
+      .select({
+        taskId: taskChecklistItems.taskId,
+        total: sql<number>`count(*)::int`.as('total'),
+        completed: sql<number>`count(*) FILTER (WHERE ${taskChecklistItems.isCompleted} = true)::int`.as('completed')
+      })
+      .from(taskChecklistItems)
+      .groupBy(taskChecklistItems.taskId)
+      .as('checklist_stats');
+
     let query = db
-      .select()
+      .select({
+        ...getTableColumns(tasks),
+        assigneeCount: sql<number>`COALESCE(${assigneeCountSq.count}, 0)`,
+        commentCount: sql<number>`COALESCE(${commentCountSq.count}, 0)`,
+        attachmentCount: sql<number>`COALESCE(${attachmentCountSq.count}, 0)`,
+        checklistProgress: sql<any>`
+          CASE 
+            WHEN ${checklistStatsSq.total} > 0 
+            THEN json_build_object('completed', ${checklistStatsSq.completed}, 'total', ${checklistStatsSq.total})
+            ELSE NULL
+          END
+        `
+      })
       .from(tasks)
+      .leftJoin(assigneeCountSq, eq(tasks.id, assigneeCountSq.taskId))
+      .leftJoin(commentCountSq, eq(tasks.id, commentCountSq.taskId))
+      .leftJoin(attachmentCountSq, eq(tasks.id, attachmentCountSq.taskId))
+      .leftJoin(checklistStatsSq, eq(tasks.id, checklistStatsSq.taskId))
       .where(and(
         eq(tasks.tenantId, tenantId),
         filters?.status ? eq(tasks.status, filters.status as any) : undefined,
