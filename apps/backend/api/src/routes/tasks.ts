@@ -27,8 +27,22 @@ const router = express.Router();
 router.use(tenantMiddleware);
 router.use(rbacMiddleware);
 
-const createTaskBodySchema = insertTaskSchema.omit({ tenantId: true, creatorId: true });
-const updateTaskBodySchema = insertTaskSchema.omit({ tenantId: true, creatorId: true }).partial();
+const createTaskBodySchema = insertTaskSchema
+  .omit({ tenantId: true, creatorId: true })
+  .extend({
+    dueDate: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined).or(z.date().optional()),
+    startDate: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined).or(z.date().optional()),
+    completedAt: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined).or(z.date().optional()),
+  });
+
+const updateTaskBodySchema = insertTaskSchema
+  .omit({ tenantId: true, creatorId: true })
+  .extend({
+    dueDate: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined).or(z.date().optional()),
+    startDate: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined).or(z.date().optional()),
+    completedAt: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined).or(z.date().optional()),
+  })
+  .partial();
 
 const taskFiltersSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']).optional(),
@@ -156,11 +170,13 @@ router.post('/tasks/complete', requirePermission('task.create'), async (req: Req
 router.post('/tasks', requirePermission('task.create'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
     const parsed = createTaskBodySchema.parse(req.body);
     
     const task = await TaskService.createTask({
       ...parsed,
-      tenantId
+      tenantId,
+      creatorId: userId
     } as InsertTask);
     
     res.status(201).json(task);
