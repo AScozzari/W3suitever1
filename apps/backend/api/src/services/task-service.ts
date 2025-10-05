@@ -918,7 +918,7 @@ export class TaskService {
     const assigneeCountSq = db
       .select({ 
         taskId: taskAssignments.taskId, 
-        count: sql<number>`count(*)::int`.as('count') 
+        assigneeCount: sql<number>`count(*)::int`.as('assigneeCount') 
       })
       .from(taskAssignments)
       .where(eq(taskAssignments.role, 'assignee'))
@@ -928,7 +928,7 @@ export class TaskService {
     const commentCountSq = db
       .select({ 
         taskId: taskComments.taskId, 
-        count: sql<number>`count(*)::int`.as('count') 
+        commentCount: sql<number>`count(*)::int`.as('commentCount') 
       })
       .from(taskComments)
       .groupBy(taskComments.taskId)
@@ -937,7 +937,7 @@ export class TaskService {
     const attachmentCountSq = db
       .select({ 
         taskId: taskAttachments.taskId, 
-        count: sql<number>`count(*)::int`.as('count') 
+        attachmentCount: sql<number>`count(*)::int`.as('attachmentCount') 
       })
       .from(taskAttachments)
       .groupBy(taskAttachments.taskId)
@@ -956,9 +956,9 @@ export class TaskService {
     let query = db
       .select({
         ...getTableColumns(tasks),
-        assigneeCount: sql<number>`COALESCE(${assigneeCountSq.count}, 0)`,
-        commentCount: sql<number>`COALESCE(${commentCountSq.count}, 0)`,
-        attachmentCount: sql<number>`COALESCE(${attachmentCountSq.count}, 0)`,
+        assigneeCount: sql<number>`COALESCE(${assigneeCountSq.assigneeCount}, 0)`,
+        commentCount: sql<number>`COALESCE(${commentCountSq.commentCount}, 0)`,
+        attachmentCount: sql<number>`COALESCE(${attachmentCountSq.attachmentCount}, 0)`,
         checklistProgress: sql<any>`
           CASE 
             WHEN ${checklistStatsSq.total} > 0 
