@@ -86,6 +86,9 @@ export interface TaskFormDialogProps {
     checklistItems: ChecklistItem[];
   }) => Promise<void>;
   initialData?: Partial<TaskFormData>;
+  existingAssignees?: string[];
+  existingWatchers?: string[];
+  existingChecklistItems?: ChecklistItem[];
   mode?: 'create' | 'edit';
   isSubmitting?: boolean;
 }
@@ -126,6 +129,9 @@ export function TaskFormDialog({
   onClose,
   onSubmit,
   initialData,
+  existingAssignees,
+  existingWatchers,
+  existingChecklistItems,
   mode = 'create',
   isSubmitting = false,
 }: TaskFormDialogProps) {
@@ -157,24 +163,30 @@ export function TaskFormDialog({
   useEffect(() => {
     if (open) {
       setActiveTab('details');
-      if (initialData) {
-        form.reset({
-          title: '',
-          description: '',
-          status: 'todo',
-          priority: 'medium',
-          urgency: 'medium',
-          department: undefined,
-          dueDate: undefined,
-          tags: '',
-          ...initialData,
-        });
+      
+      if (mode === 'edit' && (existingAssignees || existingWatchers || existingChecklistItems)) {
+        setAssignees(existingAssignees || []);
+        setWatchers(existingWatchers || []);
+        setChecklistItems(existingChecklistItems || []);
+      } else {
         setAssignees([]);
         setWatchers([]);
         setChecklistItems([]);
       }
+      
+      form.reset({
+        title: '',
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        urgency: 'medium',
+        department: undefined,
+        dueDate: undefined,
+        tags: '',
+        ...initialData,
+      });
     }
-  }, [open, initialData, form]);
+  }, [open, initialData, mode, existingAssignees, existingWatchers, existingChecklistItems, form]);
 
   const handleSubmit = async (data: TaskFormData) => {
     await onSubmit({

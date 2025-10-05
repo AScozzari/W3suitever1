@@ -336,7 +336,10 @@ export default function TasksPage() {
                   onTaskClick={handleTaskClick}
                   onStatusChange={handleStatusChange}
                   onDuplicate={(taskId) => duplicateTaskMutation.mutate(taskId)}
-                  onEdit={handleTaskClick}
+                  onEdit={(taskId) => {
+                    const task = filteredTasks.find(t => t.id === taskId);
+                    if (task) handleTaskClick(task);
+                  }}
                   onDelete={(taskId) => {
                     if (confirm('Sei sicuro di voler eliminare questo task?')) {
                       updateTaskMutation.mutate({ taskId, updates: { status: 'archived' } });
