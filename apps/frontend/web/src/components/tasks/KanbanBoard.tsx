@@ -8,7 +8,8 @@ import {
   Circle,
   Clock,
   AlertCircle,
-  XCircle
+  XCircle,
+  Sparkles
 } from 'lucide-react';
 
 export interface KanbanTask {
@@ -35,6 +36,8 @@ export interface Column {
   icon: React.ComponentType<any>;
   color: string;
   bgColor: string;
+  gradient: string;
+  badgeColor: string;
 }
 
 export interface KanbanBoardProps {
@@ -45,47 +48,56 @@ export interface KanbanBoardProps {
   className?: string;
 }
 
-// Default columns for Task Management (aligned with DB enums)
 export const DEFAULT_TASK_COLUMNS: Column[] = [
   {
     id: 'todo',
     title: 'Da fare',
     status: 'todo',
     icon: Circle,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
+    color: 'text-gray-700',
+    bgColor: 'bg-gradient-to-br from-gray-100 to-gray-200',
+    gradient: 'from-gray-200 to-gray-300',
+    badgeColor: 'bg-gray-600 text-white',
   },
   {
     id: 'in_progress',
     title: 'In corso',
     status: 'in_progress',
     icon: Clock,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
+    color: 'text-blue-700',
+    bgColor: 'bg-gradient-to-br from-blue-100 to-cyan-100',
+    gradient: 'from-blue-400 to-cyan-400',
+    badgeColor: 'bg-blue-600 text-white',
   },
   {
     id: 'review',
     title: 'In revisione',
     status: 'review',
     icon: AlertCircle,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
+    color: 'text-orange-700',
+    bgColor: 'bg-gradient-to-br from-orange-100 to-amber-100',
+    gradient: 'from-orange-400 to-amber-400',
+    badgeColor: 'bg-orange-600 text-white',
   },
   {
     id: 'done',
     title: 'Completato',
     status: 'done',
     icon: CheckCircle2,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
+    color: 'text-green-700',
+    bgColor: 'bg-gradient-to-br from-green-100 to-emerald-100',
+    gradient: 'from-green-400 to-emerald-400',
+    badgeColor: 'bg-green-600 text-white',
   },
   {
     id: 'archived',
     title: 'Archiviato',
     status: 'archived',
     icon: XCircle,
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-100',
+    color: 'text-gray-500',
+    bgColor: 'bg-gradient-to-br from-gray-50 to-gray-100',
+    gradient: 'from-gray-300 to-gray-400',
+    badgeColor: 'bg-gray-500 text-white',
   },
 ];
 
@@ -97,7 +109,6 @@ export function KanbanBoard({
   className
 }: KanbanBoardProps) {
   const tasksByStatus = useMemo(() => {
-    // Dynamically initialize grouped object based on provided columns
     const grouped: Record<string, KanbanTask[]> = {};
     columns.forEach(col => {
       grouped[col.status] = [];
@@ -108,7 +119,6 @@ export function KanbanBoard({
       if (grouped[status]) {
         grouped[status].push(task);
       } else {
-        // Fallback to first column if status not found
         const fallbackStatus = columns[0]?.status || 'todo';
         if (grouped[fallbackStatus]) {
           grouped[fallbackStatus].push(task);
@@ -122,6 +132,11 @@ export function KanbanBoard({
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId);
     e.dataTransfer.effectAllowed = 'move';
+    (e.target as HTMLElement).style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.target as HTMLElement).style.opacity = '1';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -129,8 +144,22 @@ export function KanbanBoard({
     e.dataTransfer.dropEffect = 'move';
   };
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    const target = e.currentTarget as HTMLElement;
+    target.classList.add('ring-2', 'ring-orange-500', 'ring-offset-2');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-2');
+  };
+
   const handleDrop = (e: React.DragEvent, newStatus: string) => {
     e.preventDefault();
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-2');
+    
     const taskId = e.dataTransfer.getData('taskId');
     
     if (taskId && onStatusChange) {
@@ -140,7 +169,7 @@ export function KanbanBoard({
 
   return (
     <div 
-      className={cn('flex gap-4 overflow-x-auto pb-4', className)}
+      className={cn('flex gap-5 overflow-x-auto pb-6 px-1', className)}
       data-testid="kanban-board"
     >
       {columns.map((column) => {
@@ -150,21 +179,29 @@ export function KanbanBoard({
         return (
           <div
             key={column.id}
-            className="flex-shrink-0 w-80"
+            className="flex-shrink-0 w-96"
             data-testid={`kanban-column-${column.id}`}
           >
-            <Card className="h-full flex flex-col">
-              <CardHeader className={cn('pb-3', column.bgColor)}>
+            <Card className="h-full flex flex-col border-2 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl overflow-hidden">
+              <div className={cn('absolute top-0 left-0 right-0 h-1 bg-gradient-to-r', column.gradient)} />
+              
+              <CardHeader className={cn('pb-4 pt-5 border-b-2 border-gray-200 dark:border-gray-700', column.bgColor)}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className={cn('h-5 w-5', column.color)} />
-                    <CardTitle className="text-base font-semibold">
-                      {column.title}
-                    </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className={cn('p-2 rounded-lg bg-white/90 dark:bg-gray-800/90 shadow-md', 'backdrop-blur-sm')}>
+                      <Icon className={cn('h-5 w-5', column.color)} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold">
+                        {column.title}
+                      </CardTitle>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                        {columnTasks.length} {columnTasks.length === 1 ? 'task' : 'tasks'}
+                      </p>
+                    </div>
                   </div>
                   <Badge 
-                    variant="secondary" 
-                    className="ml-2"
+                    className={cn('shadow-md font-bold text-sm px-3 py-1', column.badgeColor)}
                     data-testid={`badge-count-${column.id}`}
                   >
                     {columnTasks.length}
@@ -173,14 +210,24 @@ export function KanbanBoard({
               </CardHeader>
 
               <CardContent
-                className="flex-1 p-3 space-y-3 overflow-y-auto min-h-[200px]"
+                className="flex-1 p-4 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/50 dark:to-gray-900/50"
                 onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, column.status)}
                 data-testid={`drop-zone-${column.id}`}
               >
                 {columnTasks.length === 0 ? (
-                  <div className="flex items-center justify-center h-32 text-sm text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                    Nessun task
+                  <div className="flex flex-col items-center justify-center h-64 text-center">
+                    <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                      <Sparkles className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Nessun task
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Trascina qui i task
+                    </p>
                   </div>
                 ) : (
                   columnTasks.map((task) => (
@@ -188,8 +235,9 @@ export function KanbanBoard({
                       key={task.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task.id)}
+                      onDragEnd={handleDragEnd}
                       data-testid={`draggable-task-${task.id}`}
-                      className="cursor-move"
+                      className="cursor-move transition-opacity"
                     >
                       <TaskCard
                         task={task}
