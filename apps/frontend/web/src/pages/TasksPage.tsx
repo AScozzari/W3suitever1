@@ -16,6 +16,7 @@ import { BulkActionsBar } from '@/components/tasks/BulkActionsBar';
 import { KanbanBoard } from '@/components/tasks/KanbanBoard';
 import { EisenhowerMatrix } from '@/components/tasks/EisenhowerMatrix';
 import { GanttChart } from '@/components/tasks/GanttChart';
+import { TaskAnalytics } from '@/components/tasks/TaskAnalytics';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { EmptyState } from '@w3suite/frontend-kit/components/blocks';
 import { ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -332,13 +333,8 @@ export default function TasksPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="analytics" className="flex-1 p-6 m-0">
-            <div className="flex items-center justify-center h-full">
-              <EmptyState
-                title="Task Analytics"
-                description="Dashboard analytics con metriche e grafici sarà disponibile a breve"
-              />
-            </div>
+          <TabsContent value="analytics" className="flex-1 p-6 m-0 overflow-y-auto">
+            <TaskAnalytics />
           </TabsContent>
         </Tabs>
       </div>

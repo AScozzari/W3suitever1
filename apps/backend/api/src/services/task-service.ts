@@ -9,6 +9,7 @@ import {
   taskAttachments, 
   taskTemplates,
   entityLogs,
+  users,
   type InsertTask,
   type Task,
   type InsertTaskAssignment,
@@ -959,6 +960,115 @@ export class TaskService {
       return activityLogs;
     } catch (error) {
       logger.error('❌ Failed to get task activity', { error, taskId });
+      throw error;
+    }
+  }
+
+  static async getTaskAnalytics(tenantId: string): Promise<any> {
+    try {
+      const allTasks = await db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.tenantId, tenantId));
+
+      const now = new Date();
+
+      const statusDistribution = allTasks.reduce((acc, task) => {
+        const status = task.status || 'todo';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const priorityDistribution = allTasks.reduce((acc, task) => {
+        const priority = task.priority || 'medium';
+        acc[priority] = (acc[priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const departmentDistribution = allTasks.reduce((acc, task) => {
+        const department = task.department || 'unassigned';
+        acc[department] = (acc[department] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const completedTasks = allTasks.filter(t => t.status === 'done');
+      const overdueTasks = allTasks.filter(t => 
+        t.dueDate && 
+        new Date(t.dueDate) < now && 
+        t.status !== 'done' && 
+        t.status !== 'archived'
+      );
+
+      const completionTrend: Record<string, number> = {};
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        const completedOnDay = completedTasks.filter(t => {
+          if (!t.updatedAt) return false;
+          const taskDate = new Date(t.updatedAt).toISOString().split('T')[0];
+          return taskDate === dateStr;
+        }).length;
+        completionTrend[dateStr] = completedOnDay;
+      }
+
+      const assigneeStats = await db
+        .select({
+          userId: taskAssignments.userId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(taskAssignments)
+        .innerJoin(tasks, eq(tasks.id, taskAssignments.taskId))
+        .where(and(
+          eq(tasks.tenantId, tenantId),
+          eq(taskAssignments.role, 'assignee')
+        ))
+        .groupBy(taskAssignments.userId)
+        .orderBy(desc(sql`count(*)`))
+        .limit(10);
+
+      const userIds = assigneeStats.map(s => s.userId);
+      const usersData = userIds.length > 0 ? await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(users)
+        .where(inArray(users.id, userIds)) : [];
+
+      const topAssignees = assigneeStats.map(stat => {
+        const user = usersData.find(u => u.id === stat.userId);
+        const userName = user 
+          ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown User'
+          : 'Unknown User';
+        return {
+          userId: stat.userId,
+          userName,
+          taskCount: stat.count,
+        };
+      });
+
+      logger.info('📊 Task analytics generated', { 
+        totalTasks: allTasks.length,
+        completed: completedTasks.length,
+        overdue: overdueTasks.length
+      });
+
+      return {
+        overview: {
+          totalTasks: allTasks.length,
+          completedTasks: completedTasks.length,
+          inProgressTasks: allTasks.filter(t => t.status === 'in_progress').length,
+          overdueTasks: overdueTasks.length,
+        },
+        statusDistribution,
+        priorityDistribution,
+        departmentDistribution,
+        completionTrend,
+        topAssignees,
+      };
+    } catch (error) {
+      logger.error('❌ Failed to get task analytics', { error });
       throw error;
     }
   }
