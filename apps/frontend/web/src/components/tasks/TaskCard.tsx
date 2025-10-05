@@ -140,8 +140,8 @@ export function TaskCard({
         onClick={onClick}
         className={cn(
           'group flex items-center gap-3 p-3 rounded-lg',
-          'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-2',
-          'hover:bg-white/90 hover:shadow-lg hover:scale-[1.02] cursor-pointer',
+          'bg-white/90 backdrop-blur-xl border-2',
+          'hover:bg-white hover:shadow-lg hover:scale-[1.02] cursor-pointer',
           'transition-all duration-200',
           status.borderColor,
           className
@@ -216,11 +216,11 @@ export function TaskCard({
       onClick={onClick}
       className={cn(
         'group relative overflow-hidden',
-        'bg-white/90 dark:bg-gray-800/90 backdrop-blur-2xl',
+        'bg-white/95 backdrop-blur-2xl',
         'border-2 transition-all duration-500 ease-out',
-        'hover:shadow-2xl hover:shadow-orange-500/20 dark:hover:shadow-orange-500/40',
+        'hover:shadow-2xl hover:shadow-orange-500/20',
         'hover:scale-[1.03] hover:-translate-y-2 cursor-pointer',
-        'hover:border-orange-400 dark:hover:border-orange-500',
+        'hover:border-orange-400',
         'animate-in fade-in slide-in-from-bottom-4 duration-700',
         status.borderColor,
         className
@@ -251,11 +251,11 @@ export function TaskCard({
             </button>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1.5 group-hover:text-orange-600 transition-colors">
+              <h3 className="text-base font-bold text-gray-900 mb-1.5 group-hover:text-orange-600 transition-colors">
                 {task.title}
               </h3>
               {task.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
                   {task.description}
                 </p>
               )}
@@ -284,19 +284,19 @@ export function TaskCard({
                   size="sm"
                   data-testid={`button-menu-${task.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-8 w-8 p-0 transition-all duration-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:scale-110 hover:shadow-lg hover:shadow-orange-500/50 rounded-lg"
+                  className="h-8 w-8 p-0 transition-all duration-300 hover:bg-orange-100 hover:scale-110 hover:shadow-lg hover:shadow-orange-500/50 rounded-lg"
                 >
-                  <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400 hover:text-orange-600" />
+                  <MoreVertical className="h-4 w-4 text-gray-600 hover:text-orange-600" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-2">
+              <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-xl border-2">
                 {onDuplicate && (
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
                       onDuplicate(task.id);
                     }}
-                    className="cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                    className="cursor-pointer hover:bg-orange-50"
                     data-testid={`menu-item-duplicate-${task.id}`}
                   >
                     <Copy className="mr-2 h-4 w-4 text-orange-600" />
@@ -309,7 +309,7 @@ export function TaskCard({
                       e.stopPropagation();
                       onEdit(task.id);
                     }}
-                    className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    className="cursor-pointer hover:bg-blue-50"
                     data-testid={`menu-item-edit-${task.id}`}
                   >
                     <Pencil className="mr-2 h-4 w-4 text-blue-600" />
@@ -323,7 +323,7 @@ export function TaskCard({
                       e.stopPropagation();
                       onDelete(task.id);
                     }}
-                    className="cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600"
+                    className="cursor-pointer hover:bg-red-50 text-red-600"
                     data-testid={`menu-item-delete-${task.id}`}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -365,8 +365,8 @@ export function TaskCard({
         </div>
 
         {task.checklistProgress && task.checklistProgress.total > 0 && (
-          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-blue-900/30 dark:via-cyan-900/30 dark:to-blue-900/30 border-2 border-blue-300/50 shadow-lg shadow-blue-500/20 backdrop-blur-sm">
-            <div className="flex items-center justify-between text-xs font-bold text-blue-900 dark:text-blue-100 mb-2.5">
+          <div className="p-3 rounded-xl bg-white/80 backdrop-blur-sm border-2 border-blue-300/50 shadow-lg shadow-blue-500/20">
+            <div className="flex items-center justify-between text-xs font-bold text-blue-900 mb-2.5">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-blue-500/20">
                   <CheckSquare className="h-4 w-4 text-blue-600" />
@@ -377,7 +377,7 @@ export function TaskCard({
                 {task.checklistProgress.completed}/{task.checklistProgress.total}
               </span>
             </div>
-            <div className="relative w-full bg-blue-200/50 dark:bg-blue-800/50 rounded-full h-3 overflow-hidden shadow-inner">
+            <div className="relative w-full bg-blue-200/50 rounded-full h-3 overflow-hidden shadow-inner">
               <div
                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-full transition-all duration-700 shadow-lg shadow-blue-500/50 animate-pulse"
                 style={{ width: `${checklistPercentage}%` }}
@@ -390,35 +390,35 @@ export function TaskCard({
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-3 border-t-2 border-gray-200/50 dark:border-gray-700/50">
+        <div className="flex items-center justify-between pt-3 border-t-2 border-gray-200/50">
           <div className="flex items-center gap-3 text-sm">
             {task.assigneeCount && task.assigneeCount > 0 && (
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-assignees-${task.id}`}>
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/40 dark:to-orange-800/40 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-shadow">
-                  <User className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              <div className="flex items-center gap-2 text-gray-700 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-assignees-${task.id}`}>
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-shadow">
+                  <User className="h-4 w-4 text-orange-600" />
                 </div>
                 <span className="text-sm">{task.assigneeCount}</span>
               </div>
             )}
             {task.commentCount && task.commentCount > 0 && (
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-comments-${task.id}`}>
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
-                  <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <div className="flex items-center gap-2 text-gray-700 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-comments-${task.id}`}>
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
+                  <MessageSquare className="h-4 w-4 text-blue-600" />
                 </div>
                 <span className="text-sm">{task.commentCount}</span>
               </div>
             )}
             {task.attachmentCount && task.attachmentCount > 0 && (
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-attachments-${task.id}`}>
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-shadow">
-                  <Paperclip className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center gap-2 text-gray-700 font-bold transition-all duration-300 hover:scale-110" data-testid={`text-attachments-${task.id}`}>
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-shadow">
+                  <Paperclip className="h-4 w-4 text-purple-600" />
                 </div>
                 <span className="text-sm">{task.attachmentCount}</span>
               </div>
             )}
           </div>
 
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold px-2 py-1 rounded-lg bg-gray-100/50 dark:bg-gray-800/50">{createdAgo}</span>
+          <span className="text-xs text-gray-500 font-semibold px-2 py-1 rounded-lg bg-gray-100/50">{createdAgo}</span>
         </div>
 
         {task.tags && task.tags.length > 0 && (
@@ -426,7 +426,7 @@ export function TaskCard({
             {task.tags.map((tag, index) => (
               <Badge
                 key={index}
-                className="text-xs bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 font-medium"
+                className="text-xs bg-white/80 backdrop-blur-sm text-gray-700 border border-gray-300 font-medium"
                 data-testid={`badge-tag-${index}`}
               >
                 <Tag className="h-2.5 w-2.5 mr-1" />
