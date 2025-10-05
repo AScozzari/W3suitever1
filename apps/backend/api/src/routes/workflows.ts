@@ -1701,6 +1701,200 @@ router.post('/instances/:id/steps/:stepId/retry', rbacMiddleware, requirePermiss
   }
 });
 
+// ==================== EVENT SOURCING & RECOVERY ====================
+
+/**
+ * GET /api/workflows/:id/events
+ * Get event history for a workflow instance
+ * 🔐 RBAC: workflow.view permission required
+ */
+router.get('/instances/:id/events', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const { id: instanceId } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const { eventSourcingService } = await import('../services/event-sourcing-service');
+    const result = await eventSourcingService.getEventHistory({
+      instanceId,
+      limit,
+      offset,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result.events,
+      pagination: {
+        total: result.total,
+        limit,
+        offset,
+        hasMore: offset + limit < result.total,
+      },
+      message: 'Event history retrieved successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof result.events>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving event history', { error, instanceId: req.params.id });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/workflows/:id/recover
+ * Manually trigger recovery for a workflow instance
+ * 🔐 RBAC: workflow.manage permission required
+ */
+router.post('/instances/:id/recover', rbacMiddleware, requirePermission('workflow.manage'), async (req, res) => {
+  try {
+    const { id: instanceId } = req.params;
+    const { recoveryService } = await import('../services/recovery-service');
+
+    logger.info('Manual recovery triggered', { instanceId, userId: req.user?.id });
+
+    const result = await recoveryService.recoverWorkflow(instanceId, {
+      maxStaleMinutes: 30,
+      autoResume: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: `Workflow recovered: ${result.action}`,
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof result>);
+
+  } catch (error: any) {
+    logger.error('Error recovering workflow', { error, instanceId: req.params.id });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/workflows/recovery-status
+ * Get recovery status overview for tenant
+ * 🔐 RBAC: workflow.view permission required
+ */
+router.get('/recovery-status', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString(),
+      } as ApiErrorResponse);
+    }
+
+    const { recoveryService } = await import('../services/recovery-service');
+    const status = await recoveryService.getRecoveryStatus(tenantId);
+
+    res.status(200).json({
+      success: true,
+      data: status,
+      message: 'Recovery status retrieved successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof status>);
+
+  } catch (error: any) {
+    logger.error('Error retrieving recovery status', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/workflows/:id/snapshot
+ * Create manual recovery checkpoint for a workflow instance
+ * 🔐 RBAC: workflow.manage permission required
+ */
+router.post('/instances/:id/snapshot', rbacMiddleware, requirePermission('workflow.manage'), async (req, res) => {
+  try {
+    const { id: instanceId } = req.params;
+    const { recoveryService } = await import('../services/recovery-service');
+
+    logger.info('Manual snapshot triggered', { instanceId, userId: req.user?.id });
+
+    await recoveryService.createRecoveryCheckpoint(instanceId);
+
+    res.status(200).json({
+      success: true,
+      data: { instanceId },
+      message: 'Recovery checkpoint created successfully',
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<{ instanceId: string }>);
+
+  } catch (error: any) {
+    logger.error('Error creating snapshot', { error, instanceId: req.params.id });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/workflows/recover-stalled
+ * Batch recovery of all stalled workflows for tenant
+ * 🔐 RBAC: workflow.manage permission required
+ */
+router.post('/recover-stalled', rbacMiddleware, requirePermission('workflow.manage'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString(),
+      } as ApiErrorResponse);
+    }
+
+    const { recoveryService } = await import('../services/recovery-service');
+
+    logger.info('Batch recovery triggered', { tenantId, userId: req.user?.id });
+
+    const results = await recoveryService.recoverStalledWorkflows(tenantId, {
+      maxStaleMinutes: parseInt(req.body.maxStaleMinutes) || 30,
+      batchSize: parseInt(req.body.batchSize) || 10,
+      autoResume: req.body.autoResume !== false,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: results,
+      message: `Batch recovery completed: ${results.length} workflows processed`,
+      timestamp: new Date().toISOString(),
+    } as ApiSuccessResponse<typeof results>);
+
+  } catch (error: any) {
+    logger.error('Error in batch recovery', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== QUEUE METRICS ====================
+
 router.get('/queue/metrics', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
   try {
     const { isRedisAvailable, getQueueMetrics } = await import('../queue/index.js');

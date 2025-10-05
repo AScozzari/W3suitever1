@@ -1,13 +1,15 @@
 import { Worker, Job } from 'bullmq';
 import { db } from '../core/db';
 import { workflowStepExecutions, workflowInstances } from '../db/schema/w3suite';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import {
   WorkflowJobData,
   StepExecutionResult,
   WORKFLOW_QUEUE_NAME,
   generateIdempotencyKey,
 } from './workflow-queue';
+import { eventSourcingService } from '../services/event-sourcing-service';
+import { recoveryService } from '../services/recovery-service';
 
 const REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
 
@@ -49,6 +51,19 @@ async function executeWorkflowStep(
         inputData,
         startedAt: new Date(),
       });
+      
+      // 🔄 EVENT SOURCING: Record step start
+      await eventSourcingService.recordEvent({
+        tenantId,
+        instanceId,
+        eventType: 'state_changed',
+        previousState: 'pending',
+        newState: 'running',
+        stepId,
+        eventData: { inputData },
+        causedBy: 'system',
+      }).catch(err => console.warn('[EVENT-SOURCING] Failed to record step start:', err.message));
+      
     } else {
       await db
         .update(workflowStepExecutions)
@@ -78,6 +93,36 @@ async function executeWorkflowStep(
           eq(workflowStepExecutions.tenantId, tenantId)
         )
       );
+
+    // 🔄 EVENT SOURCING: Record step completion
+    await eventSourcingService.recordEvent({
+      tenantId,
+      instanceId,
+      eventType: 'step_completed',
+      previousState: 'running',
+      newState: 'completed',
+      stepId,
+      eventData: { outputData, durationMs },
+      causedBy: 'system',
+    }).catch(err => console.warn('[EVENT-SOURCING] Failed to record step completion:', err.message));
+
+    // 📸 SNAPSHOT: Create recovery checkpoint every 5 completed steps
+    const completedStepsCount = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(workflowStepExecutions)
+      .where(
+        and(
+          eq(workflowStepExecutions.instanceId, instanceId),
+          eq(workflowStepExecutions.status, 'completed')
+        )
+      );
+
+    const count = Number(completedStepsCount[0]?.count || 0);
+    if (count > 0 && count % 5 === 0) {
+      console.log(`[EVENT-SOURCING] Creating snapshot for workflow ${instanceId} at ${count} steps`);
+      await recoveryService.createRecoveryCheckpoint(instanceId)
+        .catch(err => console.warn('[EVENT-SOURCING] Failed to create snapshot:', err.message));
+    }
 
     return {
       success: true,
@@ -109,6 +154,18 @@ async function executeWorkflowStep(
           eq(workflowStepExecutions.tenantId, tenantId)
         )
       );
+
+    // 🔄 EVENT SOURCING: Record step failure
+    await eventSourcingService.recordEvent({
+      tenantId,
+      instanceId,
+      eventType: 'step_failed',
+      previousState: 'running',
+      newState: 'failed',
+      stepId,
+      eventData: { errorDetails, durationMs },
+      causedBy: 'system',
+    }).catch(err => console.warn('[EVENT-SOURCING] Failed to record step failure:', err.message));
 
     throw error;
   }
