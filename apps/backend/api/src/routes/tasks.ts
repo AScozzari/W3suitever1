@@ -818,4 +818,14 @@ router.delete('/tasks/:taskId/checklist/:itemId', requirePermission('task.update
   }
 });
 
+router.get('/tasks/analytics', requirePermission('task.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const analytics = await TaskService.getTaskAnalytics(tenantId);
+    res.json(analytics);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch task analytics');
+  }
+});
+
 export default router;
