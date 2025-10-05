@@ -3230,6 +3230,32 @@ export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutio
 export type InsertWorkflowExecution = z.infer<typeof insertWorkflowExecutionSchema>;
 export type WorkflowExecution = typeof workflowExecutions.$inferSelect;
 
+export const insertWorkflowStepExecutionSchema = createInsertSchema(workflowStepExecutions).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  startedAt: true,
+  completedAt: true,
+  durationMs: true
+});
+export type InsertWorkflowStepExecution = z.infer<typeof insertWorkflowStepExecutionSchema>;
+export type WorkflowStepExecution = typeof workflowStepExecutions.$inferSelect;
+
+export const insertWorkflowStateEventSchema = createInsertSchema(workflowStateEvents).omit({ 
+  id: true, 
+  occurredAt: true,
+  processedAt: true
+});
+export type InsertWorkflowStateEvent = z.infer<typeof insertWorkflowStateEventSchema>;
+export type WorkflowStateEvent = typeof workflowStateEvents.$inferSelect;
+
+export const insertWorkflowStateSnapshotSchema = createInsertSchema(workflowStateSnapshots).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertWorkflowStateSnapshot = z.infer<typeof insertWorkflowStateSnapshotSchema>;
+export type WorkflowStateSnapshot = typeof workflowStateSnapshots.$inferSelect;
+
 export const insertWebhookEventSchema = createInsertSchema(webhookEvents).omit({ 
   id: true, 
   createdAt: true,
