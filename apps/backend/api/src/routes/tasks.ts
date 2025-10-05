@@ -184,6 +184,20 @@ router.patch('/tasks/:id', requirePermission('task.update'), async (req: Request
   }
 });
 
+router.post('/tasks/:id/duplicate', requirePermission('task.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    const taskId = parseUUIDParam(req.params.id, 'Task ID');
+    
+    const duplicatedTask = await TaskService.duplicateTask(taskId, tenantId, userId);
+    
+    res.status(201).json(duplicatedTask);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to duplicate task');
+  }
+});
+
 router.delete('/tasks/:id', requirePermission('task.delete'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;

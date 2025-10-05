@@ -66,14 +66,14 @@ export class TaskService {
           userId,
           role: 'assignee' as const,
           tenantId: task.tenantId,
-          assignedBy: data.task.createdBy || task.tenantId,
+          assignedBy: data.task.creatorId || task.tenantId,
         })),
         ...(data.watcherIds || []).map(userId => ({
           taskId: task.id,
           userId,
           role: 'watcher' as const,
           tenantId: task.tenantId,
-          assignedBy: data.task.createdBy || task.tenantId,
+          assignedBy: data.task.creatorId || task.tenantId,
         })),
       ];
 
@@ -104,6 +104,82 @@ export class TaskService {
       });
 
       return task;
+    });
+  }
+
+  static async duplicateTask(taskId: string, tenantId: string, userId: string): Promise<Task> {
+    return await db.transaction(async (tx) => {
+      const [originalTask] = await tx
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, taskId), eq(tasks.tenantId, tenantId)))
+        .limit(1);
+
+      if (!originalTask) {
+        throw new Error('Task not found');
+      }
+
+      const originalAssignments = await tx
+        .select()
+        .from(taskAssignments)
+        .where(and(
+          eq(taskAssignments.taskId, taskId),
+          eq(taskAssignments.tenantId, tenantId)
+        ));
+
+      const originalChecklist = await tx
+        .select()
+        .from(taskChecklistItems)
+        .where(and(
+          eq(taskChecklistItems.taskId, taskId),
+          eq(taskChecklistItems.tenantId, tenantId)
+        ));
+
+      const { id, createdAt, updatedAt, completedAt, ...taskData } = originalTask;
+      
+      const [duplicatedTask] = await tx
+        .insert(tasks)
+        .values({
+          ...taskData,
+          title: `${taskData.title} (Copia)`,
+          status: 'todo',
+          creatorId: userId,
+          tenantId,
+        })
+        .returning();
+
+      if (originalAssignments.length > 0) {
+        const newAssignments = originalAssignments.map(assignment => ({
+          taskId: duplicatedTask.id,
+          userId: assignment.userId,
+          role: assignment.role,
+          tenantId,
+          assignedBy: userId,
+        }));
+        await tx.insert(taskAssignments).values(newAssignments);
+      }
+
+      if (originalChecklist.length > 0) {
+        const newChecklist = originalChecklist.map(item => ({
+          taskId: duplicatedTask.id,
+          tenantId,
+          title: item.title,
+          description: item.description,
+          assignedToUserId: item.assignedToUserId,
+          position: item.position,
+          isCompleted: false,
+        }));
+        await tx.insert(taskChecklistItems).values(newChecklist);
+      }
+
+      logger.info('📋 Task duplicated', { 
+        originalId: taskId, 
+        duplicatedId: duplicatedTask.id,
+        title: duplicatedTask.title,
+        tenantId 
+      });
+
+      return duplicatedTask;
     });
   }
 
