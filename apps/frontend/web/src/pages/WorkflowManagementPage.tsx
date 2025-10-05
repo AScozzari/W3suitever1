@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics } from '../hooks/useWorkflowDashboard';
 import WorkflowBuilder from '../components/WorkflowBuilder';
+import { QueueMetricsPanel, WorkflowExecutionDrawer } from '@/components/workflow';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
 import '../styles/workflow-builder.css';
@@ -45,7 +46,8 @@ import {
   Shield,
   Calendar,
   CheckCircle,
-  XCircle
+  XCircle,
+  Activity
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -117,11 +119,16 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
-  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics'>(defaultView);
+  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'queue'>(defaultView);
   const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENTS | null>(null);
   const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  
+  // 🔄 Queue monitoring state
+  const [showExecutionDrawer, setShowExecutionDrawer] = useState(false);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+  const [selectedInstanceName, setSelectedInstanceName] = useState<string>('');
   
   // 🎯 Teams state management  
   const [searchTerm, setSearchTerm] = useState('');
@@ -361,7 +368,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               { id: 'builder', label: 'Workflow Builder', icon: Workflow },
               { id: 'timeline', label: 'Timeline', icon: FileText },
               { id: 'teams', label: 'Teams', icon: Users },
-              { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+              { id: 'queue', label: 'Queue Monitor', icon: Activity }
             ].map((tab) => (
               <Button
                 key={tab.id}
@@ -1871,8 +1879,54 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               )}
             </div>
           )}
+
+          {/* 🔄 QUEUE MONITOR VIEW - Async Workflow Execution */}
+          {activeView === 'queue' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Activity className="h-6 w-6 text-windtre-orange" />
+                Queue Monitor - Async Execution
+              </h2>
+
+              {/* Queue Metrics Panel */}
+              <div className="mb-6">
+                <QueueMetricsPanel />
+              </div>
+
+              {/* Recent Workflow Instances with Execution Tracking */}
+              <Card className="windtre-glass-panel border-white/20">
+                <CardHeader>
+                  <CardTitle className="text-windtre-purple">Recent Workflow Instances</CardTitle>
+                  <CardDescription>Click on any instance to view step executions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 text-windtre-orange mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Queue Monitoring Active</h3>
+                    <p className="text-gray-600 mb-4">
+                      Use the Queue Metrics above to monitor async workflow execution in real-time
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      💡 To view step executions for a specific workflow instance, use the API endpoint:<br />
+                      <code className="bg-gray-100 px-2 py-1 rounded mt-2 inline-block">
+                        GET /api/workflows/instances/:id/executions
+                      </code>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* 🔄 Workflow Execution Drawer */}
+      <WorkflowExecutionDrawer
+        open={showExecutionDrawer}
+        onOpenChange={setShowExecutionDrawer}
+        instanceId={selectedInstanceId}
+        instanceName={selectedInstanceName}
+      />
       </div>
     </Layout>
   );
