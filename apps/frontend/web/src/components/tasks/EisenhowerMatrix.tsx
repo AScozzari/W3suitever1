@@ -33,8 +33,8 @@ const quadrantConfig = {
     title: 'DO FIRST',
     subtitle: 'Urgente e Importante',
     icon: AlertCircle,
-    color: 'bg-red-50 border-red-200',
-    headerColor: 'bg-red-100 text-red-900',
+    color: 'bg-white/95 backdrop-blur-xl border-red-200',
+    headerColor: 'bg-gradient-to-br from-red-50 to-red-100/80 text-red-900',
     iconColor: 'text-red-600',
     priority: 'high' as const,
     urgency: ['critical', 'high'] as const,
@@ -43,8 +43,8 @@ const quadrantConfig = {
     title: 'SCHEDULE',
     subtitle: 'Importante ma Non Urgente',
     icon: Clock,
-    color: 'bg-orange-50 border-orange-200',
-    headerColor: 'bg-orange-100 text-orange-900',
+    color: 'bg-white/95 backdrop-blur-xl border-orange-200',
+    headerColor: 'bg-gradient-to-br from-orange-50 to-orange-100/80 text-orange-900',
     iconColor: 'text-orange-600',
     priority: 'high' as const,
     urgency: ['medium', 'low'] as const,
@@ -53,8 +53,8 @@ const quadrantConfig = {
     title: 'DELEGATE',
     subtitle: 'Urgente ma Non Importante',
     icon: Zap,
-    color: 'bg-yellow-50 border-yellow-200',
-    headerColor: 'bg-yellow-100 text-yellow-900',
+    color: 'bg-white/95 backdrop-blur-xl border-yellow-200',
+    headerColor: 'bg-gradient-to-br from-yellow-50 to-yellow-100/80 text-yellow-900',
     iconColor: 'text-yellow-600',
     priority: 'medium' as const,
     urgency: ['critical', 'high'] as const,
@@ -63,8 +63,8 @@ const quadrantConfig = {
     title: 'ELIMINATE',
     subtitle: 'Né Urgente né Importante',
     icon: Trash2,
-    color: 'bg-gray-50 border-gray-200',
-    headerColor: 'bg-gray-100 text-gray-900',
+    color: 'bg-white/95 backdrop-blur-xl border-gray-200',
+    headerColor: 'bg-gradient-to-br from-gray-50 to-gray-100/80 text-gray-900',
     iconColor: 'text-gray-600',
     priority: 'low' as const,
     urgency: ['medium', 'low'] as const,
@@ -148,16 +148,16 @@ export function EisenhowerMatrix({ tasks, onTaskClick, onTaskMove }: EisenhowerM
       <div
         key={quadrant}
         className={cn(
-          'border-2 rounded-lg overflow-hidden flex flex-col transition-all',
+          'border-2 rounded-lg overflow-hidden flex flex-col transition-all shadow-lg',
           config.color,
-          isDragOver && 'ring-4 ring-blue-400 ring-opacity-50 scale-[1.02]'
+          isDragOver && 'ring-4 ring-orange-500 ring-opacity-50 scale-[1.02] shadow-xl shadow-orange-500/30'
         )}
         onDragOver={(e) => handleDragOver(e, quadrant)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, quadrant)}
         data-testid={`quadrant-${quadrant}`}
       >
-        <div className={cn('p-4', config.headerColor)}>
+        <div className={cn('p-4 backdrop-blur-sm', config.headerColor)}>
           <div className="flex items-center gap-2 mb-1">
             <Icon className={cn('h-5 w-5', config.iconColor)} />
             <h3 className="font-bold text-lg">{config.title}</h3>
@@ -170,7 +170,7 @@ export function EisenhowerMatrix({ tasks, onTaskClick, onTaskMove }: EisenhowerM
 
         <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[300px]">
           {quadrantTasks.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-full text-gray-500 text-sm">
               Nessun task in questo quadrante
             </div>
           ) : (

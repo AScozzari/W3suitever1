@@ -153,18 +153,18 @@ export function KanbanBoard({
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     const target = e.currentTarget as HTMLElement;
-    target.classList.add('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'dark:bg-orange-900/20', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
+    target.classList.add('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     const target = e.currentTarget as HTMLElement;
-    target.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'dark:bg-orange-900/20', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
+    target.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
   };
 
   const handleDrop = (e: React.DragEvent, newStatus: string) => {
     e.preventDefault();
     const target = e.currentTarget as HTMLElement;
-    target.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'dark:bg-orange-900/20', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
+    target.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'bg-orange-50/50', 'shadow-2xl', 'shadow-orange-500/50', 'scale-[1.02]');
     
     const taskId = e.dataTransfer.getData('taskId');
     
@@ -189,21 +189,21 @@ export function KanbanBoard({
             style={{ animationDelay: `${columns.indexOf(column) * 150}ms` }}
             data-testid={`kanban-column-${column.id}`}
           >
-            <Card className="h-full flex flex-col border-2 shadow-2xl hover:shadow-3xl transition-all duration-500 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl overflow-hidden hover:scale-[1.01]">
+            <Card className="h-full flex flex-col border-2 shadow-2xl hover:shadow-3xl transition-all duration-500 bg-white/95 backdrop-blur-2xl overflow-hidden hover:scale-[1.01]">
               <div className={cn('absolute top-0 left-0 right-0 h-2 bg-gradient-to-r shadow-lg animate-pulse', column.gradient)} />
               <div className={cn('absolute top-0 left-0 right-0 h-2 bg-gradient-to-r blur-md opacity-60', column.gradient)} />
               
-              <CardHeader className={cn('pb-4 pt-6 border-b-2 border-gray-200/50 dark:border-gray-700/50', 'bg-gradient-to-br backdrop-blur-xl', column.bgColor, 'shadow-inner')}>
+              <CardHeader className={cn('pb-4 pt-6 border-b-2 border-gray-200/50', 'bg-gradient-to-br backdrop-blur-xl', column.bgColor, 'shadow-inner')}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={cn('p-2.5 rounded-xl bg-white/95 dark:bg-gray-800/95 shadow-xl backdrop-blur-sm', 'hover:scale-110 transition-transform duration-300', 'border-2 border-white/50')}>
+                    <div className={cn('p-2.5 rounded-xl bg-white/95 shadow-xl backdrop-blur-sm', 'hover:scale-110 transition-transform duration-300', 'border-2 border-white/50')}>
                       <Icon className={cn('h-6 w-6', column.color, 'drop-shadow-lg')} />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                      <CardTitle className="text-lg font-bold text-gray-900">
                         {column.title}
                       </CardTitle>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-xs font-semibold text-gray-600 mt-1">
                         {columnTasks.length} {columnTasks.length === 1 ? 'task' : 'tasks'}
                       </p>
                     </div>
@@ -218,7 +218,7 @@ export function KanbanBoard({
               </CardHeader>
 
               <CardContent
-                className="flex-1 p-4 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/50 dark:to-gray-900/50"
+                className="flex-1 p-4 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/30"
                 onDragOver={handleDragOver}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -227,13 +227,13 @@ export function KanbanBoard({
               >
                 {columnTasks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-64 text-center">
-                    <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                    <div className="p-4 rounded-full bg-white/80 backdrop-blur-sm border-2 border-gray-200 mb-4">
                       <Sparkles className="h-8 w-8 text-gray-400" />
                     </div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <p className="text-sm font-medium text-gray-600">
                       Nessun task
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       Trascina qui i task
                     </p>
                   </div>

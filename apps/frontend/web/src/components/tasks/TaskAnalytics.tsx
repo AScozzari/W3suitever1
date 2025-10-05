@@ -110,13 +110,13 @@ export function TaskAnalytics() {
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <Card className="p-6" data-testid="metric-total">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg hover:shadow-xl transition-shadow" data-testid="metric-total">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Totale Tasks</p>
               <p className="text-3xl font-bold text-gray-900">{analytics.overview.totalTasks}</p>
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md">
               <CheckCircle2 className="h-6 w-6 text-blue-600" />
             </div>
           </div>
@@ -127,37 +127,37 @@ export function TaskAnalytics() {
           </div>
         </Card>
 
-        <Card className="p-6" data-testid="metric-completed">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg hover:shadow-xl transition-shadow" data-testid="metric-completed">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Completati</p>
               <p className="text-3xl font-bold text-green-600">{analytics.overview.completedTasks}</p>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg">
+            <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow-md">
               <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6" data-testid="metric-progress">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg hover:shadow-xl transition-shadow" data-testid="metric-progress">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">In Corso</p>
               <p className="text-3xl font-bold text-blue-600">{analytics.overview.inProgressTasks}</p>
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md">
               <Clock className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </Card>
 
-        <Card className="p-6" data-testid="metric-overdue">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg hover:shadow-xl transition-shadow" data-testid="metric-overdue">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Scaduti</p>
               <p className="text-3xl font-bold text-red-600">{analytics.overview.overdueTasks}</p>
             </div>
-            <div className="p-3 bg-red-50 rounded-lg">
+            <div className="p-3 bg-gradient-to-br from-red-50 to-red-100 rounded-lg shadow-md">
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
           </div>
@@ -165,7 +165,7 @@ export function TaskAnalytics() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <Card className="p-6">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             Distribuzione per Stato
           </h3>
@@ -190,7 +190,7 @@ export function TaskAnalytics() {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
             Top Assegnatari
@@ -199,7 +199,7 @@ export function TaskAnalytics() {
             {analytics.topAssignees.slice(0, 5).map((assignee, index) => (
               <div
                 key={assignee.userId}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                 data-testid={`assignee-${index}`}
               >
                 <div className="flex items-center gap-3">
@@ -217,7 +217,7 @@ export function TaskAnalytics() {
         </Card>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Trend Completamento (Ultimi 14 giorni)
         </h3>
@@ -241,7 +241,7 @@ export function TaskAnalytics() {
       </Card>
 
       {departmentData.length > 0 && (
-        <Card className="p-6">
+        <Card className="p-6 bg-white/95 backdrop-blur-xl border-2 shadow-lg">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Users className="h-5 w-5 text-gray-600" />
             Distribuzione per Dipartimento

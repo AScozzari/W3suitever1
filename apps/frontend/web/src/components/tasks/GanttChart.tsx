@@ -101,7 +101,7 @@ export function GanttChart({ tasks, onTaskClick }: GanttChartProps) {
           <Button variant="outline" size="sm" onClick={handleToday} data-testid="button-today">
             Oggi
           </Button>
-          <div className="px-4 py-2 bg-gray-100 rounded-md font-medium text-sm">
+          <div className="px-4 py-2 bg-white/90 backdrop-blur-sm border-2 border-gray-200 rounded-lg font-bold text-sm shadow-sm">
             {format(currentMonth, 'MMMM yyyy', { locale: it })}
           </div>
           <Button variant="outline" size="sm" onClick={handleNextMonth} data-testid="button-next-month">
@@ -110,9 +110,9 @@ export function GanttChart({ tasks, onTaskClick }: GanttChartProps) {
         </div>
       </div>
 
-      <div className="flex-1 border border-gray-200 rounded-lg overflow-hidden flex flex-col bg-white">
-        <div className="flex border-b border-gray-200 bg-gray-50">
-          <div className="w-64 p-3 font-semibold text-sm text-gray-700 border-r border-gray-200 flex-shrink-0">
+      <div className="flex-1 border-2 border-gray-200 rounded-lg overflow-hidden flex flex-col bg-white/95 backdrop-blur-xl shadow-lg">
+        <div className="flex border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/50 backdrop-blur-sm">
+          <div className="w-64 p-3 font-semibold text-sm text-gray-900 border-r-2 border-gray-200 flex-shrink-0">
             Task
           </div>
           <div className="flex-1 flex overflow-x-auto">
@@ -155,10 +155,10 @@ export function GanttChart({ tasks, onTaskClick }: GanttChartProps) {
               return (
                 <div
                   key={task.id}
-                  className="flex border-b border-gray-100 hover:bg-gray-50 group"
+                  className="flex border-b border-gray-100 hover:bg-white/80 hover:backdrop-blur-sm group transition-all"
                   data-testid={`gantt-row-${task.id}`}
                 >
-                  <div className="w-64 p-3 border-r border-gray-200 flex-shrink-0 flex items-center gap-2">
+                  <div className="w-64 p-3 border-r-2 border-gray-200 flex-shrink-0 flex items-center gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-900 truncate">
                         {task.title}
