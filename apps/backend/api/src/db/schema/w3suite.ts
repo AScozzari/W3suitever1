@@ -2639,6 +2639,78 @@ export const workflowStepExecutions = w3suiteSchema.table("workflow_step_executi
   uniqueIndex("workflow_step_executions_unique").on(table.instanceId, table.stepId, table.attemptNumber),
 ]);
 
+// ==================== WORKFLOW DURABILITY & EVENT SOURCING ====================
+
+// Workflow State Events - Event sourcing for durable workflow execution
+export const workflowStateEvents = w3suiteSchema.table("workflow_state_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Event identification
+  instanceId: uuid("instance_id").notNull().references(() => workflowInstances.id, { onDelete: 'cascade' }),
+  eventType: varchar("event_type", { length: 100 }).notNull(), // 'state_changed', 'step_completed', 'step_failed', 'workflow_paused', 'workflow_resumed'
+  eventSequence: integer("event_sequence").notNull(), // Ordered sequence for replay
+  
+  // State snapshot
+  previousState: varchar("previous_state", { length: 50 }), // Previous workflow status
+  newState: varchar("new_state", { length: 50 }).notNull(), // New workflow status
+  
+  // Event data
+  stepId: varchar("step_id", { length: 100 }), // Related step if applicable
+  eventData: jsonb("event_data").default({}), // Complete event payload
+  metadata: jsonb("metadata").default({}), // Additional context
+  
+  // Causation tracking
+  causedBy: varchar("caused_by", { length: 50 }), // 'user', 'system', 'timer', 'webhook'
+  userId: varchar("user_id").references(() => users.id),
+  
+  // Timestamp
+  occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  
+  // Recovery tracking
+  isProcessed: boolean("is_processed").default(true), // False for pending replay
+  processedAt: timestamp("processed_at").defaultNow(),
+}, (table) => [
+  index("workflow_state_events_instance_idx").on(table.instanceId),
+  index("workflow_state_events_sequence_idx").on(table.instanceId, table.eventSequence),
+  index("workflow_state_events_type_idx").on(table.eventType),
+  index("workflow_state_events_occurred_idx").on(table.occurredAt),
+  uniqueIndex("workflow_state_events_unique").on(table.instanceId, table.eventSequence),
+]);
+
+// Workflow State Snapshots - Periodic checkpoints for fast recovery
+export const workflowStateSnapshots = w3suiteSchema.table("workflow_state_snapshots", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Snapshot identification
+  instanceId: uuid("instance_id").notNull().references(() => workflowInstances.id, { onDelete: 'cascade' }),
+  snapshotSequence: integer("snapshot_sequence").notNull(), // Incrementing snapshot number
+  eventSequenceAt: integer("event_sequence_at").notNull(), // Last event sequence included in snapshot
+  
+  // Complete state snapshot
+  workflowState: jsonb("workflow_state").notNull(), // Full workflow state at this point
+  executionContext: jsonb("execution_context").default({}), // Runtime context variables
+  completedSteps: text("completed_steps").array().default([]), // Array of completed step IDs
+  pendingSteps: text("pending_steps").array().default([]), // Array of pending step IDs
+  
+  // Snapshot metadata
+  currentStatus: varchar("current_status", { length: 50 }).notNull(),
+  currentStepId: varchar("current_step_id", { length: 100 }),
+  
+  // Performance tracking
+  snapshotSizeBytes: integer("snapshot_size_bytes"), // Size for cleanup decisions
+  
+  // Timestamps
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"), // Auto-cleanup old snapshots
+}, (table) => [
+  index("workflow_state_snapshots_instance_idx").on(table.instanceId),
+  index("workflow_state_snapshots_sequence_idx").on(table.instanceId, table.snapshotSequence),
+  index("workflow_state_snapshots_created_idx").on(table.createdAt),
+  uniqueIndex("workflow_state_snapshots_unique").on(table.instanceId, table.snapshotSequence),
+]);
+
 // ==================== WEBHOOK SYSTEM TABLES ====================
 
 // Webhook Events - Centralized webhook event log with audit trail
