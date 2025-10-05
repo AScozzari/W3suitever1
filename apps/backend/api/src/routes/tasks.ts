@@ -96,6 +96,16 @@ router.get('/tasks/watching', requirePermission('task.read'), async (req: Reques
   }
 });
 
+router.get('/tasks/analytics', requirePermission('task.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const analytics = await TaskService.getTaskAnalytics(tenantId);
+    res.json(analytics);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch task analytics');
+  }
+});
+
 router.get('/tasks/:id', requirePermission('task.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
@@ -815,16 +825,6 @@ router.delete('/tasks/:taskId/checklist/:itemId', requirePermission('task.update
     res.status(204).send();
   } catch (error) {
     handleApiError(error, res, 'Failed to delete checklist item');
-  }
-});
-
-router.get('/tasks/analytics', requirePermission('task.read'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.tenant!.id;
-    const analytics = await TaskService.getTaskAnalytics(tenantId);
-    res.json(analytics);
-  } catch (error) {
-    handleApiError(error, res, 'Failed to fetch task analytics');
   }
 });
 
