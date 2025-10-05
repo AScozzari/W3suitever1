@@ -5,6 +5,7 @@ import { handleApiError, validateRequestBody, parseUUIDParam } from '../core/err
 import { z } from 'zod';
 import {
   insertTaskSchema,
+  insertTaskAssignmentSchema,
   insertTaskChecklistItemSchema,
   insertTaskCommentSchema,
   insertTaskTimeLogSchema,
@@ -12,6 +13,7 @@ import {
   insertTaskAttachmentSchema,
   insertTaskTemplateSchema,
   InsertTask,
+  InsertTaskAssignment,
   InsertTaskChecklistItem,
   InsertTaskComment,
   InsertTaskTimeLog,
@@ -627,6 +629,141 @@ router.get('/tasks/analytics', requirePermission('task.read'), async (req: Reque
     res.json(analytics);
   } catch (error) {
     handleApiError(error, res, 'Failed to fetch task analytics');
+  }
+});
+
+router.get('/tasks/:taskId/assignments', requirePermission('task.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.taskId, 'Task ID');
+    
+    const assignments = await TaskService.getTaskAssignments(taskId, tenantId);
+    res.json(assignments);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch task assignments');
+  }
+});
+
+router.post('/tasks/:taskId/assignments', requirePermission('task.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.taskId, 'Task ID');
+    const userId = req.user!.id;
+    
+    const bodySchema = insertTaskAssignmentSchema.omit({ 
+      taskId: true, 
+      tenantId: true, 
+      assignedBy: true, 
+      assignedAt: true 
+    });
+    const parsed = bodySchema.parse(req.body);
+    
+    const assignment = await TaskService.createTaskAssignment({
+      ...parsed,
+      taskId,
+      tenantId,
+      assignedBy: userId
+    } as InsertTaskAssignment);
+    
+    res.status(201).json(assignment);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to create task assignment');
+  }
+});
+
+router.delete('/tasks/:taskId/assignments/:userId/:role', requirePermission('task.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.taskId, 'Task ID');
+    const userId = req.params.userId;
+    const role = req.params.role as 'assignee' | 'watcher';
+    
+    if (role !== 'assignee' && role !== 'watcher') {
+      return res.status(400).json({ error: 'Invalid role. Must be assignee or watcher' });
+    }
+    
+    await TaskService.deleteTaskAssignment(taskId, userId, role, tenantId);
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to delete task assignment');
+  }
+});
+
+router.get('/tasks/:taskId/checklist', requirePermission('task.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.taskId, 'Task ID');
+    
+    const items = await TaskService.getChecklistItems(taskId, tenantId);
+    res.json(items);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch checklist items');
+  }
+});
+
+router.post('/tasks/:taskId/checklist', requirePermission('task.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const taskId = parseUUIDParam(req.params.taskId, 'Task ID');
+    
+    const bodySchema = insertTaskChecklistItemSchema.omit({ 
+      taskId: true, 
+      tenantId: true 
+    });
+    const parsed = bodySchema.parse(req.body);
+    
+    const item = await TaskService.createChecklistItem({
+      ...parsed,
+      taskId,
+      tenantId
+    } as InsertTaskChecklistItem);
+    
+    res.status(201).json(item);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to create checklist item');
+  }
+});
+
+router.put('/tasks/:taskId/checklist/:itemId', requirePermission('task.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const itemId = parseUUIDParam(req.params.itemId, 'Item ID');
+    
+    const bodySchema = insertTaskChecklistItemSchema.omit({ 
+      taskId: true, 
+      tenantId: true 
+    }).partial();
+    const parsed = bodySchema.parse(req.body);
+    
+    const item = await TaskService.updateChecklistItem(itemId, tenantId, parsed);
+    res.json(item);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to update checklist item');
+  }
+});
+
+router.put('/tasks/:taskId/checklist/:itemId/toggle', requirePermission('task.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const itemId = parseUUIDParam(req.params.itemId, 'Item ID');
+    const userId = req.user!.id;
+    
+    const item = await TaskService.toggleChecklistItem(itemId, tenantId, userId);
+    res.json(item);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to toggle checklist item');
+  }
+});
+
+router.delete('/tasks/:taskId/checklist/:itemId', requirePermission('task.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const itemId = parseUUIDParam(req.params.itemId, 'Item ID');
+    
+    await TaskService.deleteChecklistItem(itemId, tenantId);
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to delete checklist item');
   }
 });
 

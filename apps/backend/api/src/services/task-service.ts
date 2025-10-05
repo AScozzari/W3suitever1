@@ -944,6 +944,166 @@ export class TaskService {
     });
   }
 
+  static async createTaskAssignment(assignmentData: InsertTaskAssignment): Promise<TaskAssignment> {
+    try {
+      const [assignment] = await db
+        .insert(taskAssignments)
+        .values(assignmentData)
+        .returning();
+      
+      logger.info('👤 Task assignment created', { 
+        taskId: assignment.taskId, 
+        userId: assignment.userId, 
+        role: assignment.role 
+      });
+      return assignment;
+    } catch (error) {
+      logger.error('❌ Failed to create task assignment', { error, assignmentData });
+      throw error;
+    }
+  }
+
+  static async getTaskAssignments(taskId: string, tenantId: string): Promise<TaskAssignment[]> {
+    try {
+      const assignments = await db
+        .select()
+        .from(taskAssignments)
+        .where(and(
+          eq(taskAssignments.taskId, taskId),
+          eq(taskAssignments.tenantId, tenantId)
+        ));
+      
+      return assignments;
+    } catch (error) {
+      logger.error('❌ Failed to get task assignments', { error, taskId });
+      throw error;
+    }
+  }
+
+  static async deleteTaskAssignment(taskId: string, userId: string, role: 'assignee' | 'watcher', tenantId: string): Promise<void> {
+    try {
+      await db
+        .delete(taskAssignments)
+        .where(and(
+          eq(taskAssignments.taskId, taskId),
+          eq(taskAssignments.userId, userId),
+          eq(taskAssignments.role, role),
+          eq(taskAssignments.tenantId, tenantId)
+        ));
+      
+      logger.info('👤 Task assignment deleted', { taskId, userId, role });
+    } catch (error) {
+      logger.error('❌ Failed to delete task assignment', { error, taskId, userId, role });
+      throw error;
+    }
+  }
+
+  static async createChecklistItem(itemData: InsertTaskChecklistItem): Promise<TaskChecklistItem> {
+    try {
+      const [item] = await db
+        .insert(taskChecklistItems)
+        .values(itemData)
+        .returning();
+      
+      logger.info('✅ Checklist item created', { taskId: item.taskId, itemId: item.id, title: item.title });
+      return item;
+    } catch (error) {
+      logger.error('❌ Failed to create checklist item', { error, itemData });
+      throw error;
+    }
+  }
+
+  static async getChecklistItems(taskId: string, tenantId: string): Promise<TaskChecklistItem[]> {
+    try {
+      const items = await db
+        .select()
+        .from(taskChecklistItems)
+        .where(and(
+          eq(taskChecklistItems.taskId, taskId),
+          eq(taskChecklistItems.tenantId, tenantId)
+        ))
+        .orderBy(asc(taskChecklistItems.position));
+      
+      return items;
+    } catch (error) {
+      logger.error('❌ Failed to get checklist items', { error, taskId });
+      throw error;
+    }
+  }
+
+  static async updateChecklistItem(itemId: string, tenantId: string, updates: Partial<InsertTaskChecklistItem>): Promise<TaskChecklistItem> {
+    try {
+      const [updatedItem] = await db
+        .update(taskChecklistItems)
+        .set(updates)
+        .where(and(
+          eq(taskChecklistItems.id, itemId),
+          eq(taskChecklistItems.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (!updatedItem) {
+        throw new Error('Checklist item not found');
+      }
+
+      logger.info('✅ Checklist item updated', { itemId, updates });
+      return updatedItem;
+    } catch (error) {
+      logger.error('❌ Failed to update checklist item', { error, itemId, updates });
+      throw error;
+    }
+  }
+
+  static async toggleChecklistItem(itemId: string, tenantId: string, userId: string): Promise<TaskChecklistItem> {
+    try {
+      const [item] = await db
+        .select()
+        .from(taskChecklistItems)
+        .where(and(
+          eq(taskChecklistItems.id, itemId),
+          eq(taskChecklistItems.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (!item) {
+        throw new Error('Checklist item not found');
+      }
+
+      const isCompleted = !item.isCompleted;
+      const [updatedItem] = await db
+        .update(taskChecklistItems)
+        .set({
+          isCompleted,
+          completedAt: isCompleted ? new Date() : null,
+          completedBy: isCompleted ? userId : null,
+        })
+        .where(eq(taskChecklistItems.id, itemId))
+        .returning();
+
+      logger.info('✅ Checklist item toggled', { itemId, isCompleted });
+      return updatedItem;
+    } catch (error) {
+      logger.error('❌ Failed to toggle checklist item', { error, itemId });
+      throw error;
+    }
+  }
+
+  static async deleteChecklistItem(itemId: string, tenantId: string): Promise<void> {
+    try {
+      await db
+        .delete(taskChecklistItems)
+        .where(and(
+          eq(taskChecklistItems.id, itemId),
+          eq(taskChecklistItems.tenantId, tenantId)
+        ));
+      
+      logger.info('✅ Checklist item deleted', { itemId });
+    } catch (error) {
+      logger.error('❌ Failed to delete checklist item', { error, itemId });
+      throw error;
+    }
+  }
+
   static async getTaskActivity(taskId: string, tenantId: string): Promise<EntityLog[]> {
     try {
       const activityLogs = await db
