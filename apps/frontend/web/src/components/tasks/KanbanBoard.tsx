@@ -45,6 +45,9 @@ export interface KanbanBoardProps {
   columns?: Column[];
   onTaskClick?: (task: KanbanTask) => void;
   onStatusChange?: (taskId: string, status: string) => void;
+  onDuplicate?: (taskId: string) => void;
+  onEdit?: (taskId: string) => void;
+  onDelete?: (taskId: string) => void;
   className?: string;
 }
 
@@ -106,6 +109,9 @@ export function KanbanBoard({
   columns = DEFAULT_TASK_COLUMNS,
   onTaskClick,
   onStatusChange,
+  onDuplicate,
+  onEdit,
+  onDelete,
   className
 }: KanbanBoardProps) {
   const tasksByStatus = useMemo(() => {
@@ -244,6 +250,9 @@ export function KanbanBoard({
                         variant="default"
                         onClick={() => onTaskClick?.(task)}
                         onStatusChange={(status) => onStatusChange?.(task.id, status)}
+                        onDuplicate={onDuplicate}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
                       />
                     </div>
                   ))

@@ -1,6 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { PriorityUrgencyBadge } from './PriorityUrgencyBadge';
 import { 
   CheckCircle2, 
@@ -14,7 +21,10 @@ import {
   Archive,
   CheckSquare,
   Tag,
-  Zap
+  Zap,
+  Copy,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -40,6 +50,9 @@ export interface TaskCardProps {
   variant?: 'default' | 'compact';
   onClick?: () => void;
   onStatusChange?: (status: string) => void;
+  onDuplicate?: (taskId: string) => void;
+  onEdit?: (taskId: string) => void;
+  onDelete?: (taskId: string) => void;
   className?: string;
 }
 
@@ -97,6 +110,9 @@ export function TaskCard({
   variant = 'default',
   onClick,
   onStatusChange,
+  onDuplicate,
+  onEdit,
+  onDelete,
   className 
 }: TaskCardProps) {
   const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
@@ -252,15 +268,61 @@ export function TaskCard({
             >
               {status.label}
             </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              data-testid={`button-menu-${task.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid={`button-menu-${task.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-2">
+                {onDuplicate && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicate(task.id);
+                    }}
+                    className="cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                    data-testid={`menu-item-duplicate-${task.id}`}
+                  >
+                    <Copy className="mr-2 h-4 w-4 text-orange-600" />
+                    <span className="font-medium">Duplica task</span>
+                  </DropdownMenuItem>
+                )}
+                {onEdit && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(task.id);
+                    }}
+                    className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    data-testid={`menu-item-edit-${task.id}`}
+                  >
+                    <Pencil className="mr-2 h-4 w-4 text-blue-600" />
+                    <span className="font-medium">Modifica</span>
+                  </DropdownMenuItem>
+                )}
+                {(onDuplicate || onEdit) && onDelete && <DropdownMenuSeparator />}
+                {onDelete && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(task.id);
+                    }}
+                    className="cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600"
+                    data-testid={`menu-item-delete-${task.id}`}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span className="font-medium">Elimina</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>

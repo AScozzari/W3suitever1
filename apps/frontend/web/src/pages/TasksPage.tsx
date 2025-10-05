@@ -128,6 +128,28 @@ export default function TasksPage() {
     },
   });
 
+  const duplicateTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      return apiRequest(`/api/tasks/${taskId}/duplicate`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({
+        title: '✅ Task duplicato',
+        description: 'Il task è stato duplicato con successo',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile duplicare il task',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: any }) => {
       return apiRequest(`/api/tasks/${taskId}`, {
@@ -313,6 +335,13 @@ export default function TasksPage() {
                   tasks={filteredTasks}
                   onTaskClick={handleTaskClick}
                   onStatusChange={handleStatusChange}
+                  onDuplicate={(taskId) => duplicateTaskMutation.mutate(taskId)}
+                  onEdit={handleTaskClick}
+                  onDelete={(taskId) => {
+                    if (confirm('Sei sicuro di voler eliminare questo task?')) {
+                      updateTaskMutation.mutate({ taskId, updates: { status: 'archived' } });
+                    }
+                  }}
                 />
               ) : (
                 <GanttChart
