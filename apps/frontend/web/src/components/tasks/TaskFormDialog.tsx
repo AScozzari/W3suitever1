@@ -252,9 +252,9 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-        <DialogHeader className="px-6 py-5 border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-purple-600 bg-clip-text text-transparent">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 bg-white/95 backdrop-blur-xl border-gray-200 overflow-hidden">
+        <DialogHeader className="px-6 py-5 border-b border-gray-200 bg-white/90 backdrop-blur-xl">
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] bg-clip-text text-transparent">
             {mode === 'create' ? '✨ Crea nuovo task' : '📝 Modifica task'}
           </DialogTitle>
         </DialogHeader>
@@ -262,17 +262,17 @@ export function TaskFormDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="mx-6 mt-4 grid w-auto grid-cols-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50">
+              <TabsList className="mx-6 mt-4 grid w-auto grid-cols-3 bg-white/90 backdrop-blur-xl border border-gray-200">
                 <TabsTrigger 
                   value="details" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6900] data-[state=active]:to-[#7B2CBF] data-[state=active]:text-white transition-all"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Dettagli
                 </TabsTrigger>
                 <TabsTrigger 
                   value="people" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6900] data-[state=active]:to-[#7B2CBF] data-[state=active]:text-white transition-all"
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Persone
@@ -284,7 +284,7 @@ export function TaskFormDialog({
                 </TabsTrigger>
                 <TabsTrigger 
                   value="checklist" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6900] data-[state=active]:to-[#7B2CBF] data-[state=active]:text-white transition-all"
                 >
                   <CheckSquare className="h-4 w-4 mr-2" />
                   Checklist
@@ -298,7 +298,7 @@ export function TaskFormDialog({
 
               <ScrollArea className="flex-1 px-6">
                 <TabsContent value="details" className="space-y-6 mt-6 pb-6">
-                  <div className="p-5 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200/50 shadow-lg transition-all hover:shadow-xl">
+                  <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg transition-all hover:shadow-xl">
                     <FormField
                       control={form.control}
                       name="title"
@@ -343,7 +343,7 @@ export function TaskFormDialog({
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-5 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200/50 shadow-lg">
+                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
                       <FormField
                         control={form.control}
                         name="status"
@@ -370,7 +370,7 @@ export function TaskFormDialog({
                       />
                     </div>
 
-                    <div className="p-5 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200/50 shadow-lg">
+                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
                       <FormField
                         control={form.control}
                         name="department"
@@ -398,8 +398,8 @@ export function TaskFormDialog({
                     </div>
                   </div>
 
-                  <div className="p-5 rounded-xl bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-900/20 dark:to-purple-900/20 backdrop-blur-xl border border-orange-200/50 shadow-lg">
-                    <h3 className="text-sm font-bold mb-4 text-orange-900 dark:text-orange-100">⚡ Priorità & Urgenza (Eisenhower Matrix)</h3>
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-orange-50 to-purple-50 backdrop-blur-xl border border-orange-200 shadow-lg">
+                    <h3 className="text-sm font-bold mb-4 text-orange-900">⚡ Priorità & Urgenza (Eisenhower Matrix)</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -458,7 +458,7 @@ export function TaskFormDialog({
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-5 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200/50 shadow-lg">
+                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
                       <FormField
                         control={form.control}
                         name="dueDate"
@@ -506,7 +506,7 @@ export function TaskFormDialog({
                       />
                     </div>
 
-                    <div className="p-5 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200/50 shadow-lg">
+                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
                       <FormField
                         control={form.control}
                         name="tags"
@@ -533,22 +533,22 @@ export function TaskFormDialog({
                 </TabsContent>
 
                 <TabsContent value="people" className="space-y-6 mt-6 pb-6">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 backdrop-blur-xl border-2 border-orange-300/50 shadow-xl">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 backdrop-blur-xl border-2 border-orange-300 shadow-xl">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-2 rounded-lg bg-orange-500 text-white">
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-orange-900 dark:text-orange-100">Assegnatari</h3>
-                        <p className="text-sm text-orange-700 dark:text-orange-300">Persone responsabili del task</p>
+                        <h3 className="text-lg font-bold text-orange-900">Assegnatari</h3>
+                        <p className="text-sm text-orange-700">Persone responsabili del task</p>
                       </div>
                     </div>
-                    <ScrollArea className="max-h-60 rounded-lg bg-white/70 dark:bg-gray-900/70 border p-4">
+                    <ScrollArea className="max-h-60 rounded-lg bg-white/90 backdrop-blur-xl border border-gray-200 p-4">
                       <div className="space-y-3">
                         {users.map((user) => (
                           <div
                             key={user.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-100/50 dark:hover:bg-orange-900/20 transition-all cursor-pointer"
+                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-100/50 transition-all cursor-pointer"
                             onClick={() => toggleAssignee(user.id)}
                           >
                             <Checkbox
@@ -577,22 +577,22 @@ export function TaskFormDialog({
                     )}
                   </div>
 
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 backdrop-blur-xl border-2 border-purple-300/50 shadow-xl">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 backdrop-blur-xl border-2 border-purple-300 shadow-xl">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-2 rounded-lg bg-purple-500 text-white">
                         <Eye className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100">Osservatori</h3>
-                        <p className="text-sm text-purple-700 dark:text-purple-300">Persone che ricevono notifiche</p>
+                        <h3 className="text-lg font-bold text-purple-900">Osservatori</h3>
+                        <p className="text-sm text-purple-700">Persone che ricevono notifiche</p>
                       </div>
                     </div>
-                    <ScrollArea className="max-h-60 rounded-lg bg-white/70 dark:bg-gray-900/70 border p-4">
+                    <ScrollArea className="max-h-60 rounded-lg bg-white/90 backdrop-blur-xl border border-gray-200 p-4">
                       <div className="space-y-3">
                         {users.map((user) => (
                           <div
                             key={user.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-100/50 dark:hover:bg-purple-900/20 transition-all cursor-pointer"
+                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-100/50 transition-all cursor-pointer"
                             onClick={() => toggleWatcher(user.id)}
                           >
                             <Checkbox
@@ -623,14 +623,14 @@ export function TaskFormDialog({
                 </TabsContent>
 
                 <TabsContent value="checklist" className="space-y-4 mt-6 pb-6">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 backdrop-blur-xl border-2 border-blue-300/50 shadow-xl">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 backdrop-blur-xl border-2 border-blue-300 shadow-xl">
                     <div className="flex items-center gap-3 mb-5">
                       <div className="p-2 rounded-lg bg-blue-500 text-white">
                         <CheckSquare className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100">Checklist Subtask</h3>
-                        <p className="text-sm text-blue-700 dark:text-blue-300">Suddividi il task in step più piccoli</p>
+                        <h3 className="text-lg font-bold text-blue-900">Checklist Subtask</h3>
+                        <p className="text-sm text-blue-700">Suddividi il task in step più piccoli</p>
                       </div>
                     </div>
 
@@ -664,11 +664,11 @@ export function TaskFormDialog({
                         {checklistItems.map((item, index) => (
                           <div
                             key={index}
-                            className="flex items-center gap-3 p-4 bg-white/80 dark:bg-gray-900/80 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all"
+                            className="flex items-center gap-3 p-4 bg-white/90 backdrop-blur-xl rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all"
                             data-testid={`checklist-item-${index}`}
                           >
                             <div className="flex-1 flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-300">
+                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
                                 {index + 1}
                               </div>
                               <span className="flex-1 text-sm font-medium">{item.title}</span>
@@ -713,7 +713,7 @@ export function TaskFormDialog({
               </ScrollArea>
             </Tabs>
 
-            <div className="px-6 py-4 border-t bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-gray-200 bg-white/90 backdrop-blur-xl flex justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -727,7 +727,7 @@ export function TaskFormDialog({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-orange-500 to-purple-500 hover:from-orange-600 hover:to-purple-600 text-white font-semibold px-6 shadow-lg"
+                className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] hover:from-[#FF6900]/90 hover:to-[#7B2CBF]/90 text-white font-semibold px-6 shadow-lg"
                 data-testid="button-submit-task"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
