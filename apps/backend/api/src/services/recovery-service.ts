@@ -41,7 +41,7 @@ export class RecoveryService {
       .where(
         and(
           eq(workflowInstances.tenantId, tenantId),
-          eq(workflowInstances.status, 'running'),
+          eq(workflowInstances.currentStatus, 'running'),
           lt(workflowInstances.updatedAt, staleThreshold)
         )
       )
@@ -68,7 +68,7 @@ export class RecoveryService {
         throw new Error(`Workflow instance ${instanceId} not found`);
       }
 
-      const previousState = instance.status;
+      const previousState = instance.currentStatus || 'unknown';
 
       // Rebuild state from events
       const recoveredState = await eventSourcingService.rebuildState(instanceId);
@@ -94,8 +94,8 @@ export class RecoveryService {
       await db
         .update(workflowInstances)
         .set({
-          status: recoveredState.status,
-          currentState: recoveredState,
+          currentStatus: recoveredState.status,
+          workflowData: recoveredState,
           updatedAt: new Date(),
         })
         .where(eq(workflowInstances.id, instanceId));
@@ -206,12 +206,13 @@ export class RecoveryService {
       discrepancies.push('No event history available for verification');
     } else {
       // Compare states
-      if (instance.status !== eventSourcedState.status) {
-        discrepancies.push(`Status mismatch: DB=${instance.status}, Events=${eventSourcedState.status}`);
+      if (instance.currentStatus !== eventSourcedState.status) {
+        discrepancies.push(`Status mismatch: DB=${instance.currentStatus}, Events=${eventSourcedState.status}`);
       }
 
       // Compare completed steps
-      const dbCompletedSteps = instance.currentState?.completedSteps || [];
+      const dbWorkflowData = instance.workflowData as any || {};
+      const dbCompletedSteps = dbWorkflowData.completedSteps || [];
       const eventCompletedSteps = eventSourcedState.completedSteps || [];
 
       if (JSON.stringify(dbCompletedSteps.sort()) !== JSON.stringify(eventCompletedSteps.sort())) {
@@ -221,7 +222,7 @@ export class RecoveryService {
 
     return {
       isValid: discrepancies.length === 0,
-      dbState: instance.currentState,
+      dbState: instance.workflowData,
       eventSourcedState,
       discrepancies,
     };
@@ -257,16 +258,17 @@ export class RecoveryService {
     const completedSteps = completedExecutions.map(e => e.stepId);
 
     // Get pending steps (all steps in template minus completed)
-    // For simplicity, we'll use the instance's current state if available
-    const pendingSteps = instance.currentState?.pendingSteps || [];
+    // For simplicity, we'll use the instance's workflow data if available
+    const workflowData = instance.workflowData as any || {};
+    const pendingSteps = workflowData.pendingSteps || [];
 
     const workflowState: WorkflowState = {
-      status: instance.status,
-      currentStepId: instance.currentState?.currentStepId,
+      status: instance.currentStatus || 'pending',
+      currentStepId: instance.currentStepId || undefined,
       completedSteps,
       pendingSteps,
-      executionContext: instance.currentState?.executionContext || {},
-      metadata: instance.currentState?.metadata || {},
+      executionContext: workflowData.executionContext || {},
+      metadata: instance.metadata as any || {},
     };
 
     // Create snapshot
@@ -318,7 +320,7 @@ export class RecoveryService {
       .where(
         and(
           eq(workflowInstances.tenantId, tenantId),
-          eq(workflowInstances.status, 'running')
+          eq(workflowInstances.currentStatus, 'running')
         )
       );
 
@@ -334,7 +336,7 @@ export class RecoveryService {
         .orderBy(workflowInstances.updatedAt)
         .limit(1);
 
-      oldestStalled = oldestResult?.updatedAt;
+      oldestStalled = oldestResult?.updatedAt || undefined;
     }
 
     return {
