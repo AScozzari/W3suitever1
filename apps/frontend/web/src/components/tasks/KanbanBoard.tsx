@@ -16,7 +16,8 @@ export interface KanbanTask {
   title: string;
   description?: string | null;
   status: string;
-  priority: string;
+  priority: 'low' | 'medium' | 'high';
+  urgency?: 'low' | 'medium' | 'high' | 'critical';
   dueDate?: Date | string | null;
   createdAt: Date | string;
   assigneeCount?: number;

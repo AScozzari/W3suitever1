@@ -5,13 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon } from 'lucide-react';
 import { TasksDataTable } from '@/components/tasks/TasksDataTable';
 import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
 import { TaskDetailDialog } from '@/components/tasks/TaskDetailDialog';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
 import { TemplateSelector } from '@/components/tasks/TemplateSelector';
 import { BulkActionsBar } from '@/components/tasks/BulkActionsBar';
+import { KanbanBoard } from '@/components/tasks/KanbanBoard';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { EmptyState } from '@w3suite/frontend-kit/components/blocks';
 import { ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -21,7 +23,8 @@ interface Task {
   title: string;
   description?: string | null;
   status: string;
-  priority: string;
+  priority: 'low' | 'medium' | 'high';
+  urgency?: 'low' | 'medium' | 'high' | 'critical';
   dueDate?: Date | string | null;
   createdAt: Date | string;
   updatedAt?: Date | string;
@@ -61,6 +64,8 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'list' | 'board' | 'matrix' | 'analytics'>('list');
+  const [boardView, setBoardView] = useState<'kanban' | 'gantt'>('kanban');
 
   const { data: tasks = [], isLoading, error } = useQuery<Task[]>({
     queryKey: ['/api/tasks', filters],
@@ -189,35 +194,124 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        {isLoading ? (
-          <LoadingState variant="spinner" message="Caricamento tasks..." />
-        ) : filteredTasks.length === 0 ? (
-          <EmptyState
-            title={searchQuery || Object.keys(filters).length > 0 ? "Nessun task trovato" : "Nessun task"}
-            description={
-              searchQuery || Object.keys(filters).length > 0
-                ? "Prova a modificare i filtri di ricerca"
-                : "Inizia creando il tuo primo task"
-            }
-            primaryAction={
-              searchQuery || Object.keys(filters).length > 0
-                ? undefined
-                : {
-                    label: 'Crea Task',
-                    onClick: () => setIsCreateDialogOpen(true)
-                  }
-            }
-          />
-        ) : (
-          <TasksDataTable
-            tasks={filteredTasks}
-            currentUserId={currentUser?.id || ''}
-            onTaskClick={handleTaskClick}
-            selectedTaskIds={selectedTaskIds}
-            onSelectionChange={setSelectedTaskIds}
-          />
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="h-full flex flex-col">
+          <div className="border-b border-gray-200 bg-white px-6">
+            <TabsList className="bg-transparent border-b-0 h-12">
+              <TabsTrigger value="list" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-list">
+                <List className="h-4 w-4 mr-2" />
+                Lista
+              </TabsTrigger>
+              <TabsTrigger value="board" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-board">
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Board
+              </TabsTrigger>
+              <TabsTrigger value="matrix" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-matrix">
+                <Grid2X2 className="h-4 w-4 mr-2" />
+                Matrice
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="list" className="flex-1 p-6 m-0">
+            {isLoading ? (
+              <LoadingState variant="spinner" message="Caricamento tasks..." />
+            ) : filteredTasks.length === 0 ? (
+              <EmptyState
+                title={searchQuery || Object.keys(filters).length > 0 ? "Nessun task trovato" : "Nessun task"}
+                description={
+                  searchQuery || Object.keys(filters).length > 0
+                    ? "Prova a modificare i filtri di ricerca"
+                    : "Inizia creando il tuo primo task"
+                }
+                primaryAction={
+                  searchQuery || Object.keys(filters).length > 0
+                    ? undefined
+                    : {
+                        label: 'Crea Task',
+                        onClick: () => setIsCreateDialogOpen(true)
+                      }
+                }
+              />
+            ) : (
+              <TasksDataTable
+                tasks={filteredTasks}
+                currentUserId={currentUser?.id || ''}
+                onTaskClick={handleTaskClick}
+                selectedTaskIds={selectedTaskIds}
+                onSelectionChange={setSelectedTaskIds}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="board" className="flex-1 m-0 flex flex-col">
+            <div className="border-b border-gray-200 bg-white px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={boardView === 'kanban' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setBoardView('kanban')}
+                  data-testid="button-view-kanban"
+                >
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Kanban
+                </Button>
+                <Button
+                  variant={boardView === 'gantt' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setBoardView('gantt')}
+                  data-testid="button-view-gantt"
+                >
+                  <GanttIcon className="h-4 w-4 mr-2" />
+                  Gantt
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto p-6">
+              {boardView === 'kanban' ? (
+                isLoading ? (
+                  <LoadingState variant="spinner" message="Caricamento board..." />
+                ) : (
+                  <KanbanBoard
+                    tasks={filteredTasks}
+                    onTaskClick={handleTaskClick}
+                    onStatusChange={handleStatusChange}
+                  />
+                )
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <EmptyState
+                    title="Gantt Chart"
+                    description="La vista Gantt sarà disponibile a breve"
+                  />
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="matrix" className="flex-1 p-6 m-0">
+            <div className="flex items-center justify-center h-full">
+              <EmptyState
+                title="Eisenhower Matrix"
+                description="La matrice delle priorità sarà disponibile a breve"
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="flex-1 p-6 m-0">
+            <div className="flex items-center justify-center h-full">
+              <EmptyState
+                title="Task Analytics"
+                description="Dashboard analytics con metriche e grafici sarà disponibile a breve"
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <BulkActionsBar
