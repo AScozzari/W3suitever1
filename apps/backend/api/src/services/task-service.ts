@@ -251,7 +251,7 @@ export class TaskService {
         filters?.urgency ? eq(tasks.urgency, filters.urgency as any) : undefined,
         filters?.department ? eq(tasks.department, filters.department as any) : undefined
       ))
-      .orderBy(desc(priorityScore), desc(tasks.createdAt));
+      .orderBy(desc(priorityScore), desc(tasks.createdAt)) as any;
 
     if (filters?.limit) {
       query = query.limit(filters.limit);
@@ -280,7 +280,7 @@ export class TaskService {
         eq(tasks.creatorId, userId),
         filters?.status ? eq(tasks.status, filters.status as any) : undefined
       ))
-      .orderBy(desc(tasks.createdAt));
+      .orderBy(desc(tasks.createdAt)) as any;
 
     if (filters?.limit) {
       query = query.limit(filters.limit);
@@ -368,21 +368,6 @@ export class TaskService {
     logger.info('👤 User unassigned from task', { taskId, userId, role });
   }
 
-  static async getTaskAssignments(
-    taskId: string,
-    tenantId: string,
-    role?: 'assignee' | 'watcher'
-  ): Promise<TaskAssignment[]> {
-    return db
-      .select()
-      .from(taskAssignments)
-      .where(and(
-        eq(taskAssignments.taskId, taskId),
-        eq(taskAssignments.tenantId, tenantId),
-        role ? eq(taskAssignments.role, role) : undefined
-      ));
-  }
-
   static async addChecklistItem(
     itemData: InsertTaskChecklistItem
   ): Promise<TaskChecklistItem> {
@@ -395,99 +380,6 @@ export class TaskService {
 
     logger.info('✅ Checklist item added', { taskId: itemData.taskId, itemId: item.id });
     return item;
-  }
-
-  static async updateChecklistItem(
-    itemId: string,
-    tenantId: string,
-    updates: Partial<InsertTaskChecklistItem>
-  ): Promise<TaskChecklistItem> {
-    const [item] = await db
-      .update(taskChecklistItems)
-      .set(updates)
-      .where(and(
-        eq(taskChecklistItems.id, itemId),
-        eq(taskChecklistItems.tenantId, tenantId)
-      ))
-      .returning();
-
-    if (!item) {
-      throw new Error('Checklist item not found');
-    }
-
-    await this.recalculateProgress(item.taskId, tenantId);
-
-    return item;
-  }
-
-  static async toggleChecklistItem(
-    itemId: string,
-    tenantId: string,
-    userId: string
-  ): Promise<TaskChecklistItem> {
-    const [current] = await db
-      .select()
-      .from(taskChecklistItems)
-      .where(and(
-        eq(taskChecklistItems.id, itemId),
-        eq(taskChecklistItems.tenantId, tenantId)
-      ))
-      .limit(1);
-
-    if (!current) {
-      throw new Error('Checklist item not found');
-    }
-
-    const [updated] = await db
-      .update(taskChecklistItems)
-      .set({
-        isCompleted: !current.isCompleted,
-        completedAt: !current.isCompleted ? new Date() : null,
-        completedBy: !current.isCompleted ? userId : null
-      })
-      .where(eq(taskChecklistItems.id, itemId))
-      .returning();
-
-    await this.recalculateProgress(current.taskId, tenantId);
-
-    logger.info('✅ Checklist item toggled', { 
-      itemId, 
-      isCompleted: updated.isCompleted 
-    });
-
-    return updated;
-  }
-
-  static async deleteChecklistItem(itemId: string, tenantId: string): Promise<void> {
-    const [item] = await db
-      .select()
-      .from(taskChecklistItems)
-      .where(and(
-        eq(taskChecklistItems.id, itemId),
-        eq(taskChecklistItems.tenantId, tenantId)
-      ))
-      .limit(1);
-
-    if (!item) return;
-
-    await db
-      .delete(taskChecklistItems)
-      .where(eq(taskChecklistItems.id, itemId));
-
-    await this.recalculateProgress(item.taskId, tenantId);
-
-    logger.info('✅ Checklist item deleted', { itemId });
-  }
-
-  static async getChecklistItems(taskId: string, tenantId: string): Promise<TaskChecklistItem[]> {
-    return db
-      .select()
-      .from(taskChecklistItems)
-      .where(and(
-        eq(taskChecklistItems.taskId, taskId),
-        eq(taskChecklistItems.tenantId, tenantId)
-      ))
-      .orderBy(asc(taskChecklistItems.position));
   }
 
   private static async recalculateProgress(
@@ -983,7 +875,7 @@ export class TaskService {
         filters?.dueBefore ? lte(tasks.dueDate, new Date(filters.dueBefore)) : undefined,
         filters?.dueAfter ? gte(tasks.dueDate, new Date(filters.dueAfter)) : undefined
       ))
-      .orderBy(desc(priorityScore), desc(tasks.createdAt));
+      .orderBy(desc(priorityScore), desc(tasks.createdAt)) as any;
 
     if (filters?.limit) {
       query = query.limit(filters.limit);
@@ -1029,9 +921,10 @@ export class TaskService {
   static async createTaskFromTemplate(
     templateId: string,
     tenantId: string,
+    creatorId: string,
     overrides?: Partial<InsertTask>
   ): Promise<Task> {
-    return this.instantiateTemplate(templateId, tenantId, overrides);
+    return this.instantiateTemplate(templateId, tenantId, creatorId, overrides);
   }
 
   static async bulkCreateTasks(tasksData: InsertTask[]): Promise<Task[]> {

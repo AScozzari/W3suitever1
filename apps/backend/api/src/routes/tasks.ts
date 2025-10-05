@@ -27,8 +27,8 @@ const router = express.Router();
 router.use(tenantMiddleware);
 router.use(rbacMiddleware);
 
-const createTaskBodySchema = insertTaskSchema.omit({ tenantId: true });
-const updateTaskBodySchema = insertTaskSchema.omit({ tenantId: true }).partial();
+const createTaskBodySchema = insertTaskSchema.omit({ tenantId: true, creatorId: true });
+const updateTaskBodySchema = insertTaskSchema.omit({ tenantId: true, creatorId: true }).partial();
 
 const taskFiltersSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']).optional(),
@@ -134,20 +134,13 @@ router.post('/tasks/complete', requirePermission('task.create'), async (req: Req
       return res.status(400).json({ error: 'Task data is required' });
     }
     
-    const taskBodySchema = insertTaskSchema.omit({ 
-      id: true, 
-      tenantId: true, 
-      createdBy: true, 
-      createdAt: true, 
-      updatedAt: true 
-    });
-    const parsedTask = taskBodySchema.parse(taskData);
+    const parsedTask = createTaskBodySchema.parse(taskData);
     
     const task = await TaskService.createTaskComplete({
       task: {
         ...parsedTask,
         tenantId,
-        createdBy: userId,
+        creatorId: userId,
       } as InsertTask,
       assigneeIds: Array.isArray(assignees) ? assignees : [],
       watcherIds: Array.isArray(watchers) ? watchers : [],
@@ -711,13 +704,12 @@ router.post('/tasks/:taskId/assignments', requirePermission('task.update'), asyn
     const taskId = parseUUIDParam(req.params.taskId, 'Task ID');
     const userId = req.user!.id;
     
-    const bodySchema = insertTaskAssignmentSchema.omit({ 
-      taskId: true, 
-      tenantId: true, 
-      assignedBy: true, 
-      assignedAt: true 
-    });
-    const parsed = bodySchema.parse(req.body);
+    const parsed = z.object({
+      userId: z.string().uuid(),
+      role: z.enum(['assignee', 'watcher']),
+      notifyOnUpdate: z.boolean().optional(),
+      notifyOnComment: z.boolean().optional()
+    }).parse(req.body);
     
     const assignment = await TaskService.createTaskAssignment({
       ...parsed,
