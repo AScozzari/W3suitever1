@@ -14,6 +14,8 @@ import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
 import { TemplateSelector } from '@/components/tasks/TemplateSelector';
 import { BulkActionsBar } from '@/components/tasks/BulkActionsBar';
 import { KanbanBoard } from '@/components/tasks/KanbanBoard';
+import { EisenhowerMatrix } from '@/components/tasks/EisenhowerMatrix';
+import { GanttChart } from '@/components/tasks/GanttChart';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { EmptyState } from '@w3suite/frontend-kit/components/blocks';
 import { ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -113,6 +115,29 @@ export default function TasksPage() {
       toast({
         title: 'Errore',
         description: 'Impossibile aggiornare lo stato del task',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, updates }: { taskId: string; updates: any }) => {
+      return apiRequest(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({
+        title: 'Task aggiornato',
+        description: 'Il task è stato modificato con successo',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile aggiornare il task',
         variant: 'destructive',
       });
     },
@@ -273,34 +298,38 @@ export default function TasksPage() {
             </div>
 
             <div className="flex-1 overflow-auto p-6">
-              {boardView === 'kanban' ? (
-                isLoading ? (
-                  <LoadingState variant="spinner" message="Caricamento board..." />
-                ) : (
-                  <KanbanBoard
-                    tasks={filteredTasks}
-                    onTaskClick={handleTaskClick}
-                    onStatusChange={handleStatusChange}
-                  />
-                )
+              {isLoading ? (
+                <LoadingState variant="spinner" message="Caricamento board..." />
+              ) : boardView === 'kanban' ? (
+                <KanbanBoard
+                  tasks={filteredTasks}
+                  onTaskClick={handleTaskClick}
+                  onStatusChange={handleStatusChange}
+                />
               ) : (
-                <div className="flex items-center justify-center h-full">
-                  <EmptyState
-                    title="Gantt Chart"
-                    description="La vista Gantt sarà disponibile a breve"
-                  />
-                </div>
+                <GanttChart
+                  tasks={filteredTasks}
+                  onTaskClick={handleTaskClick}
+                />
               )}
             </div>
           </TabsContent>
 
           <TabsContent value="matrix" className="flex-1 p-6 m-0">
-            <div className="flex items-center justify-center h-full">
-              <EmptyState
-                title="Eisenhower Matrix"
-                description="La matrice delle priorità sarà disponibile a breve"
+            {isLoading ? (
+              <LoadingState variant="spinner" message="Caricamento matrix..." />
+            ) : (
+              <EisenhowerMatrix
+                tasks={filteredTasks}
+                onTaskClick={handleTaskClick}
+                onTaskMove={(taskId, newPriority, newUrgency) => {
+                  updateTaskMutation.mutate({ 
+                    taskId, 
+                    updates: { priority: newPriority, urgency: newUrgency }
+                  });
+                }}
               />
-            </div>
+            )}
           </TabsContent>
 
           <TabsContent value="analytics" className="flex-1 p-6 m-0">
