@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PriorityUrgencyBadge } from './PriorityUrgencyBadge';
 import { 
@@ -12,7 +11,10 @@ import {
   User,
   MoreVertical,
   AlertCircle,
-  Archive
+  Archive,
+  CheckSquare,
+  Tag,
+  Zap
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -42,11 +44,52 @@ export interface TaskCardProps {
 }
 
 const statusConfig = {
-  todo: { label: 'Da fare', variant: 'secondary' as const, icon: Circle },
-  in_progress: { label: 'In corso', variant: 'default' as const, icon: Clock },
-  review: { label: 'In revisione', variant: 'outline' as const, icon: AlertCircle },
-  done: { label: 'Completato', variant: 'default' as const, icon: CheckCircle2 },
-  archived: { label: 'Archiviato', variant: 'secondary' as const, icon: Archive },
+  todo: { 
+    label: 'Da fare', 
+    variant: 'secondary' as const, 
+    icon: Circle,
+    gradient: 'from-gray-100 to-gray-200',
+    borderColor: 'border-gray-300',
+    textColor: 'text-gray-700'
+  },
+  in_progress: { 
+    label: 'In corso', 
+    variant: 'default' as const, 
+    icon: Clock,
+    gradient: 'from-blue-100 to-cyan-100',
+    borderColor: 'border-blue-400',
+    textColor: 'text-blue-700'
+  },
+  review: { 
+    label: 'In revisione', 
+    variant: 'outline' as const, 
+    icon: AlertCircle,
+    gradient: 'from-orange-100 to-amber-100',
+    borderColor: 'border-orange-400',
+    textColor: 'text-orange-700'
+  },
+  done: { 
+    label: 'Completato', 
+    variant: 'default' as const, 
+    icon: CheckCircle2,
+    gradient: 'from-green-100 to-emerald-100',
+    borderColor: 'border-green-400',
+    textColor: 'text-green-700'
+  },
+  archived: { 
+    label: 'Archiviato', 
+    variant: 'secondary' as const, 
+    icon: Archive,
+    gradient: 'from-gray-50 to-gray-100',
+    borderColor: 'border-gray-200',
+    textColor: 'text-gray-500'
+  },
+};
+
+const priorityGradients = {
+  low: 'from-green-400 to-emerald-400',
+  medium: 'from-yellow-400 to-orange-400',
+  high: 'from-red-400 to-rose-400',
 };
 
 export function TaskCard({ 
@@ -80,8 +123,11 @@ export function TaskCard({
         data-testid={`task-card-compact-${task.id}`}
         onClick={onClick}
         className={cn(
-          'group flex items-center gap-3 p-3 rounded-lg border border-gray-200',
-          'hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors',
+          'group flex items-center gap-3 p-3 rounded-lg',
+          'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-2',
+          'hover:bg-white/90 hover:shadow-lg hover:scale-[1.02] cursor-pointer',
+          'transition-all duration-200',
+          status.borderColor,
           className
         )}
       >
@@ -91,18 +137,21 @@ export function TaskCard({
           className="flex-shrink-0"
         >
           <StatusIcon className={cn(
-            'h-5 w-5',
-            task.status === 'completed' ? 'text-green-600' : 'text-gray-400'
+            'h-5 w-5 transition-all group-hover:scale-110',
+            status.textColor
           )} />
         </button>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium text-gray-900 truncate">
+            <span className="text-sm font-semibold text-gray-900 truncate">
               {task.title}
             </span>
             {task.linkedWorkflowInstanceId && (
-              <Badge variant="outline" className="text-xs">Workflow</Badge>
+              <Badge variant="outline" className="text-xs bg-purple-50 border-purple-300 text-purple-700">
+                <Zap className="h-2.5 w-2.5 mr-1" />
+                Workflow
+              </Badge>
             )}
           </div>
           
@@ -122,7 +171,7 @@ export function TaskCard({
             {dueDate && (
               <span className={cn(
                 'flex items-center gap-1',
-                isOverdue && 'text-red-600 font-medium'
+                isOverdue && 'text-red-600 font-semibold'
               )}>
                 <Clock className="h-3 w-3" />
                 {formatDistanceToNow(dueDate, { addSuffix: true, locale: it })}
@@ -141,46 +190,64 @@ export function TaskCard({
     );
   }
 
+  const checklistPercentage = task.checklistProgress && task.checklistProgress.total > 0
+    ? (task.checklistProgress.completed / task.checklistProgress.total) * 100
+    : 0;
+
   return (
     <Card
       data-testid={`task-card-${task.id}`}
       onClick={onClick}
       className={cn(
-        'group hover:shadow-md transition-shadow cursor-pointer',
+        'group relative overflow-hidden',
+        'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl',
+        'border-2 transition-all duration-300',
+        'hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 cursor-pointer',
+        status.borderColor,
         className
       )}
     >
-      <CardHeader className="pb-3">
+      <div className={cn(
+        'absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r opacity-80',
+        priorityGradients[task.priority]
+      )} />
+
+      <CardHeader className="pb-3 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <button
               data-testid={`button-status-${task.id}`}
               onClick={handleStatusClick}
-              className="flex-shrink-0 mt-0.5"
+              className="flex-shrink-0 mt-1 transition-transform group-hover:scale-125 hover:rotate-12"
             >
               <StatusIcon className={cn(
-                'h-5 w-5',
-                task.status === 'completed' ? 'text-green-600' : 'text-gray-400',
-                'hover:text-gray-600 transition-colors'
+                'h-6 w-6 transition-colors drop-shadow-sm',
+                status.textColor
               )} />
             </button>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-gray-900 mb-1">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1.5 group-hover:text-orange-600 transition-colors">
                 {task.title}
               </h3>
               {task.description && (
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
                   {task.description}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-2 flex-shrink-0">
             <Badge 
-              variant={status.variant}
-              className="text-xs whitespace-nowrap"
+              className={cn(
+                'text-xs whitespace-nowrap font-semibold shadow-sm',
+                'bg-gradient-to-r',
+                status.gradient,
+                status.textColor,
+                'border',
+                status.borderColor
+              )}
               data-testid={`badge-status-${task.id}`}
             >
               {status.label}
@@ -190,7 +257,7 @@ export function TaskCard({
               size="sm"
               data-testid={`button-menu-${task.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <MoreVertical className="h-4 w-4" />
             </Button>
@@ -198,8 +265,8 @@ export function TaskCard({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-3">
+      <CardContent className="pt-0 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
           <PriorityUrgencyBadge 
             priority={task.priority}
             urgency={urgency as any}
@@ -208,74 +275,84 @@ export function TaskCard({
 
           {dueDate && (
             <div className={cn(
-              'flex items-center gap-1.5',
-              isOverdue && 'text-red-600 font-medium'
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium',
+              isOverdue 
+                ? 'bg-red-100 text-red-700 border border-red-300' 
+                : 'bg-blue-50 text-blue-700 border border-blue-200'
             )}>
               <Clock className="h-3.5 w-3.5" />
-              <span>{formatDistanceToNow(dueDate, { addSuffix: true, locale: it })}</span>
+              <span className="text-xs">{formatDistanceToNow(dueDate, { addSuffix: true, locale: it })}</span>
             </div>
           )}
 
           {task.linkedWorkflowInstanceId && (
-            <Badge variant="outline" className="text-xs">
-              Collegato a Workflow
+            <Badge className="text-xs bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-300 font-semibold">
+              <Zap className="h-3 w-3 mr-1" />
+              Workflow
             </Badge>
           )}
         </div>
 
         {task.checklistProgress && task.checklistProgress.total > 0 && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-              <span>Checklist</span>
-              <span>
+          <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200">
+            <div className="flex items-center justify-between text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">
+              <div className="flex items-center gap-1.5">
+                <CheckSquare className="h-3.5 w-3.5" />
+                <span>Checklist</span>
+              </div>
+              <span className="font-bold">
                 {task.checklistProgress.completed}/{task.checklistProgress.total}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div className="relative w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-blue-600 h-1.5 rounded-full transition-all"
-                style={{
-                  width: `${(task.checklistProgress.completed / task.checklistProgress.total) * 100}%`
-                }}
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500 shadow-sm"
+                style={{ width: `${checklistPercentage}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-sm text-gray-500">
+        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3 text-sm">
             {task.assigneeCount && task.assigneeCount > 0 && (
-              <div className="flex items-center gap-1" data-testid={`text-assignees-${task.id}`}>
-                <User className="h-4 w-4" />
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium" data-testid={`text-assignees-${task.id}`}>
+                <div className="p-1 rounded bg-orange-100 dark:bg-orange-900/30">
+                  <User className="h-3.5 w-3.5 text-orange-600" />
+                </div>
                 <span>{task.assigneeCount}</span>
               </div>
             )}
             {task.commentCount && task.commentCount > 0 && (
-              <div className="flex items-center gap-1" data-testid={`text-comments-${task.id}`}>
-                <MessageSquare className="h-4 w-4" />
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium" data-testid={`text-comments-${task.id}`}>
+                <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/30">
+                  <MessageSquare className="h-3.5 w-3.5 text-blue-600" />
+                </div>
                 <span>{task.commentCount}</span>
               </div>
             )}
             {task.attachmentCount && task.attachmentCount > 0 && (
-              <div className="flex items-center gap-1" data-testid={`text-attachments-${task.id}`}>
-                <Paperclip className="h-4 w-4" />
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 font-medium" data-testid={`text-attachments-${task.id}`}>
+                <div className="p-1 rounded bg-purple-100 dark:bg-purple-900/30">
+                  <Paperclip className="h-3.5 w-3.5 text-purple-600" />
+                </div>
                 <span>{task.attachmentCount}</span>
               </div>
             )}
           </div>
 
-          <span className="text-xs text-gray-400">{createdAgo}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{createdAgo}</span>
         </div>
 
         {task.tags && task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <div className="flex flex-wrap gap-1.5 pt-2">
             {task.tags.map((tag, index) => (
               <Badge
                 key={index}
-                variant="secondary"
-                className="text-xs"
+                className="text-xs bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 font-medium"
                 data-testid={`badge-tag-${index}`}
               >
+                <Tag className="h-2.5 w-2.5 mr-1" />
                 {tag}
               </Badge>
             ))}
