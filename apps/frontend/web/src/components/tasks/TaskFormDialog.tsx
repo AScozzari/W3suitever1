@@ -109,7 +109,7 @@ export interface TaskFormDialogProps {
 const statusOptions = [
   { value: 'todo', label: 'Da fare', color: 'bg-gray-100 text-gray-700' },
   { value: 'in_progress', label: 'In corso', color: 'bg-blue-100 text-blue-700' },
-  { value: 'review', label: 'In revisione', color: 'bg-orange-200 text-orange-800' },
+  { value: 'review', label: 'In revisione', color: 'bg-white border border-orange-500 text-orange-600' },
   { value: 'done', label: 'Completato', color: 'bg-green-100 text-green-700' },
   { value: 'archived', label: 'Archiviato', color: 'bg-gray-100 text-gray-400' },
 ];
@@ -117,13 +117,13 @@ const statusOptions = [
 const priorityOptions = [
   { value: 'low', label: 'Bassa', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Media', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Alta', color: 'bg-orange-200 text-orange-800' },
+  { value: 'high', label: 'Alta', color: 'bg-white border border-orange-500 text-orange-600' },
 ];
 
 const urgencyOptions = [
   { value: 'low', label: 'Non urgente', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Moderata', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Urgente', color: 'bg-orange-200 text-orange-800' },
+  { value: 'high', label: 'Urgente', color: 'bg-white border border-orange-500 text-orange-600' },
   { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-700' },
 ];
 
@@ -368,7 +368,7 @@ export function TaskFormDialog({
     <Dialog open={open}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
         {/* HEADER */}
-        <DialogHeader className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-200 to-orange-300">
+        <DialogHeader className="px-6 py-4 border-b-4 border-orange-500 bg-white">
           <DialogTitle className="text-xl font-bold text-gray-900">
             {mode === 'create' ? '✨ Crea nuovo task' : '✏️ Modifica task'}
           </DialogTitle>
@@ -387,7 +387,7 @@ export function TaskFormDialog({
                 
                 {/* SEZIONE 1: DETTAGLI TASK */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-2 pb-2 border-b-2 border-orange-200">
+                  <div className="flex items-center gap-2 pb-2 border-b-2 border-orange-500">
                     <div className="w-1 h-6 bg-orange-500 rounded-full" />
                     <h3 className="text-lg font-bold text-gray-900">Dettagli Task</h3>
                   </div>
@@ -405,7 +405,7 @@ export function TaskFormDialog({
                           <Input
                             {...field}
                             placeholder="Es: Preparare report mensile vendite"
-                            className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-200"
+                            className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-500/20"
                             data-testid="input-task-title"
                           />
                         </FormControl>
@@ -426,7 +426,7 @@ export function TaskFormDialog({
                             {...field}
                             placeholder="Descrizione dettagliata del task, obiettivi e note aggiuntive..."
                             rows={4}
-                            className="border-gray-300 focus:border-orange-500 focus:ring-orange-200 resize-none"
+                            className="border-gray-300 focus:border-orange-500 focus:ring-orange-500/20 resize-none"
                             data-testid="input-task-description"
                           />
                         </FormControl>
@@ -636,7 +636,7 @@ export function TaskFormDialog({
                             <Input
                               {...field}
                               placeholder="urgente, importante, cliente..."
-                              className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-200"
+                              className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-500/20"
                               data-testid="input-tags"
                             />
                           </FormControl>
@@ -686,7 +686,7 @@ export function TaskFormDialog({
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-6 bg-orange-500 rounded-full" />
                       <h3 className="text-lg font-bold text-gray-900">Team</h3>
-                      <Badge variant="secondary" className="bg-orange-200 text-orange-800">
+                      <Badge variant="secondary" className="bg-white border-2 border-orange-500 text-orange-600">
                         {assignedUsers.length}
                       </Badge>
                     </div>
@@ -696,7 +696,7 @@ export function TaskFormDialog({
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-9 border-orange-300 text-orange-700 hover:bg-orange-50"
+                          className="h-9 border-orange-500 text-orange-600 hover:border-orange-600"
                           disabled={usersLoading}
                           data-testid="button-add-user"
                         >
@@ -728,11 +728,11 @@ export function TaskFormDialog({
                                   onSelect={() => {
                                     addUser(u.id, 'assignee');
                                   }}
-                                  className="flex items-center justify-between cursor-pointer hover:bg-orange-50"
+                                  className="flex items-center justify-between cursor-pointer hover:bg-orange-500/10"
                                 >
                                   <div className="flex items-center gap-3">
                                     <Avatar className="h-8 w-8">
-                                      <AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">
+                                      <AvatarFallback className="bg-orange-500 text-white text-xs font-bold">
                                         {getUserInitials(u.id)}
                                       </AvatarFallback>
                                     </Avatar>
@@ -756,18 +756,18 @@ export function TaskFormDialog({
                     <div className="mb-3">
                       <p className="text-xs font-semibold text-gray-600 mb-2">Creatore</p>
                       <div
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 bg-orange-50 border-orange-400 w-fit"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 bg-white border-orange-500 w-fit"
                         data-testid="creator-pill"
                       >
                         <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-xs font-bold bg-orange-300 text-orange-900">
+                          <AvatarFallback className="text-xs font-bold bg-orange-500 text-white">
                             {getUserInitials(user.id)}
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm font-medium text-gray-900">
                           {getUserDisplayName(user.id)}
                         </span>
-                        <Badge variant="secondary" className="bg-orange-200 text-orange-800 text-xs font-semibold">
+                        <Badge variant="secondary" className="bg-orange-500 text-white text-xs font-semibold">
                           Creatore
                         </Badge>
                       </div>
@@ -786,10 +786,10 @@ export function TaskFormDialog({
                         <div
                           key={au.userId}
                           className={cn(
-                            "flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all",
+                            "flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all bg-white",
                             au.role === 'assignee' 
-                              ? "bg-orange-50 border-orange-300" 
-                              : "bg-orange-50 border-orange-300"
+                              ? "border-orange-500" 
+                              : "border-orange-500"
                           )}
                           data-testid={`user-pill-${au.userId}`}
                         >
@@ -797,8 +797,8 @@ export function TaskFormDialog({
                             <AvatarFallback className={cn(
                               "text-xs font-bold",
                               au.role === 'assignee' 
-                                ? "bg-orange-200 text-orange-800" 
-                                : "bg-orange-200 text-orange-800"
+                                ? "bg-orange-500 text-white" 
+                                : "bg-orange-500 text-white"
                             )}>
                               {getUserInitials(au.userId)}
                             </AvatarFallback>
@@ -827,8 +827,8 @@ export function TaskFormDialog({
                             className={cn(
                               "h-7 px-2 gap-1 transition-all",
                               au.role === 'assignee' 
-                                ? "border-orange-300 text-orange-700 hover:bg-orange-50" 
-                                : "border-orange-300 text-orange-700 hover:bg-orange-50"
+                                ? "border-orange-500 text-orange-600 hover:border-orange-600" 
+                                : "border-orange-500 text-orange-600 hover:border-orange-600"
                             )}
                             title={au.role === 'assignee' ? 'Cambia in Osservatore' : 'Cambia in Assegnatario'}
                             data-testid={`button-toggle-role-${au.userId}`}
@@ -862,19 +862,19 @@ export function TaskFormDialog({
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-6 bg-orange-500 rounded-full" />
                     <h3 className="text-lg font-bold text-gray-900">Checklist</h3>
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                    <Badge variant="secondary" className="bg-white border-2 border-orange-500 text-orange-600">
                       {checklistItems.length}
                     </Badge>
                   </div>
 
                   {/* Progress Bar */}
                   {checklistItems.length > 0 && (
-                    <div className="space-y-2 p-4 rounded-lg bg-orange-200 border border-orange-300">
+                    <div className="space-y-2 p-4 rounded-lg bg-white border-2 border-orange-500">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium text-gray-700">Completamento</span>
                         <span className="font-bold text-orange-600">{Math.round(completionPercentage)}%</span>
                       </div>
-                      <Progress value={completionPercentage} className="h-2 bg-orange-200" />
+                      <Progress value={completionPercentage} className="h-2 bg-gray-200" />
                       <div className="text-xs text-gray-600">
                         {completedCount} di {checklistItems.length} completati
                       </div>
@@ -887,7 +887,7 @@ export function TaskFormDialog({
                       value={newChecklistItem}
                       onChange={(e) => setNewChecklistItem(e.target.value)}
                       placeholder="Nuovo elemento checklist..."
-                      className="flex-1 h-10 border-gray-300 focus:border-orange-500 focus:ring-orange-200"
+                      className="flex-1 h-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500/20"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -926,7 +926,7 @@ export function TaskFormDialog({
                               <Input
                                 value={editingText}
                                 onChange={(e) => setEditingText(e.target.value)}
-                                className="flex-1 h-8 text-sm border-orange-300 focus:border-orange-500"
+                                className="flex-1 h-8 text-sm border-orange-500 focus:border-orange-600"
                                 autoFocus
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
@@ -977,7 +977,7 @@ export function TaskFormDialog({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditChecklistItem(index)}
-                                className="h-7 w-7 p-0 hover:bg-orange-200 text-orange-600"
+                                className="h-7 w-7 p-0 hover:bg-orange-500/10 text-orange-600"
                                 data-testid={`button-edit-checklist-${index}`}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -1007,7 +1007,7 @@ export function TaskFormDialog({
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-6 bg-orange-500 rounded-full" />
                     <h3 className="text-lg font-bold text-gray-900">Allegati</h3>
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                    <Badge variant="secondary" className="bg-white border-2 border-orange-500 text-orange-600">
                       {selectedFiles.length}
                     </Badge>
                   </div>
@@ -1025,7 +1025,7 @@ export function TaskFormDialog({
                     type="button"
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full min-h-[100px] border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-200 py-6"
+                    className="w-full min-h-[100px] border-2 border-dashed border-orange-500 hover:border-orange-600 hover:bg-orange-500/10 py-6"
                     data-testid="button-upload-file"
                   >
                     <div className="flex flex-col items-center gap-3">
@@ -1040,7 +1040,7 @@ export function TaskFormDialog({
                       {selectedFiles.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200 hover:border-orange-300 transition-colors"
+                          className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200 hover:border-orange-500 transition-colors"
                           data-testid={`attached-file-${index}`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
