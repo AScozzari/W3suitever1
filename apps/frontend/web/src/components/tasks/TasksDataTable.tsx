@@ -26,6 +26,7 @@ import {
   Pencil,
   Trash2,
   UserCheck,
+  Play,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -59,6 +60,7 @@ export interface TasksDataTableProps {
   onSelectionChange?: (taskIds: string[]) => void;
   onEdit?: (taskId: string) => void;
   onDelete?: (taskId: string) => void;
+  onStartTimer?: (taskId: string) => void;
 }
 
 const statusConfig = {
@@ -88,6 +90,7 @@ export function TasksDataTable({
   onSelectionChange,
   onEdit,
   onDelete,
+  onStartTimer,
 }: TasksDataTableProps) {
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -276,7 +279,7 @@ export function TasksDataTable({
                 <SortIcon field="createdAt" />
               </Button>
             </TableHead>
-            {(onEdit || onDelete) && (
+            {(onStartTimer || onEdit || onDelete) && (
               <TableHead className="w-24 text-center">
                 <span className="font-semibold">Azioni</span>
               </TableHead>
@@ -377,9 +380,21 @@ export function TasksDataTable({
                     {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true, locale: it })}
                   </span>
                 </TableCell>
-                {(onEdit || onDelete) && (
+                {(onStartTimer || onEdit || onDelete) && (
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1">
+                      {onStartTimer && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onStartTimer(task.id)}
+                          className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                          aria-label="Avvia timer"
+                          data-testid={`button-start-timer-${task.id}`}
+                        >
+                          <Play className="h-5 w-5" />
+                        </Button>
+                      )}
                       {onEdit && (
                         <Button
                           variant="ghost"
@@ -388,7 +403,7 @@ export function TasksDataTable({
                           className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
                           data-testid={`button-edit-${task.id}`}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-5 w-5" />
                         </Button>
                       )}
                       {onDelete && (
@@ -399,7 +414,7 @@ export function TasksDataTable({
                           className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
                           data-testid={`button-delete-${task.id}`}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-5 w-5" />
                         </Button>
                       )}
                       <Popover
@@ -413,7 +428,7 @@ export function TasksDataTable({
                             className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
                             data-testid={`button-assign-${task.id}`}
                           >
-                            <UserCheck className="h-4 w-4" />
+                            <UserCheck className="h-5 w-5" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-64" align="end">

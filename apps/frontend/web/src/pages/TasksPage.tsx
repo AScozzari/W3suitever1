@@ -199,6 +199,28 @@ export default function TasksPage() {
     },
   });
 
+  const startTimerMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      return apiRequest(`/api/tasks/${taskId}/timer/start`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      toast({
+        title: '⏱️ Timer avviato',
+        description: 'Il monitoraggio del tempo è iniziato per questo task',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile avviare il timer',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const filteredTasks = tasks.filter(task => {
     if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -216,6 +238,10 @@ export default function TasksPage() {
 
   const handleCloseDetail = () => {
     setSelectedTask(null);
+  };
+
+  const handleStartTimer = (taskId: string) => {
+    startTimerMutation.mutate(taskId);
   };
 
   if (error) {
@@ -335,6 +361,7 @@ export default function TasksPage() {
                     updateTaskMutation.mutate({ taskId, updates: { status: 'archived' } });
                   }
                 }}
+                onStartTimer={handleStartTimer}
               />
             )}
           </TabsContent>
