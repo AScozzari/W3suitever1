@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { MessageCircle, Plus, Lock } from 'lucide-react';
+import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
 
 interface ChatChannel {
   id: string;
@@ -59,6 +60,7 @@ function truncateMessage(text: string, maxLength: number = 40): string {
 export default function ChatPage() {
   const [currentModule, setCurrentModule] = useState('chat');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Query per ottenere lista chat channels
   const { data: channels = [], isLoading } = useQuery<ChatChannel[]>({
@@ -113,6 +115,7 @@ export default function ChatPage() {
 
           <button
             data-testid="button-create-chat"
+            onClick={() => setCreateDialogOpen(true)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -404,6 +407,15 @@ export default function ChatPage() {
             )}
           </div>
         </div>
+
+        {/* Create Chat Dialog */}
+        <CreateChatDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onChatCreated={(channelId) => {
+            setSelectedChannelId(channelId);
+          }}
+        />
       </div>
     </Layout>
   );
