@@ -1,0 +1,378 @@
+🌐 [WS] Scheduling reconnect in 1491ms (attempt 1)
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1595ms (attempt 1)
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-templates 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173Understand this error
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1363ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:257
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=bd45bd53:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=bd45bd53:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=bd45bd53:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1214ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-templates 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1270ms (attempt 1)
+3useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1513ms (attempt 1)
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1293ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1416ms (attempt 1)
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-templates 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=bd45bd53:103
+flush @ @tanstack_react-query.js?v=bd45bd53:610
+batch @ @tanstack_react-query.js?v=bd45bd53:628
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+fetch @ @tanstack_react-query.js?v=bd45bd53:1173Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1921ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755Understand this error
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1870ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/calendar/events 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1673Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/notifications?status=unread&limit=5 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1673Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/notifications/unread-count 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1673Understand this error
+useWebSocket.ts:58 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: 
+connect @ useWebSocket.ts:58
+(anonymous) @ useWebSocket.ts:193Understand this error
+useWebSocket.ts:160 🌐 [WS] Connection error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+overrideMethod @ hook.js:608
+ws.onerror @ useWebSocket.ts:160Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1032ms (attempt 1)
