@@ -251,25 +251,21 @@ export function TaskFormDialog({
   const getUserDisplayName = (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return userId;
-    // Support both camelCase and snake_case from API
-    const firstName = (user as any).firstName || (user as any).first_name || '';
-    const lastName = (user as any).lastName || (user as any).last_name || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-    return fullName || user.email;
+    return (user as any).displayName || (user as any).username || user.email || userId;
   };
 
   const getUserInitials = (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return '?';
-    // Support both camelCase and snake_case from API
-    const firstName = (user as any).firstName || (user as any).first_name || '';
-    const lastName = (user as any).lastName || (user as any).last_name || '';
-    if (firstName && lastName) {
-      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    const displayName = (user as any).displayName || (user as any).username || user.email || '';
+    if (displayName.length >= 2) {
+      const parts = displayName.split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return displayName.substring(0, 2).toUpperCase();
     }
-    if (firstName) return firstName[0].toUpperCase();
-    if (user.email) return user.email[0].toUpperCase();
-    return '?';
+    return displayName[0]?.toUpperCase() || '?';
   };
 
   const addUser = (userId: string, role: 'assignee' | 'watcher') => {
