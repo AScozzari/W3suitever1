@@ -121,11 +121,11 @@ const urgencyOptions = [
 ];
 
 const departmentOptions = [
-  { value: 'hr', label: 'HR' },
+  { value: 'hr', label: 'Hr' },
   { value: 'operations', label: 'Operations' },
   { value: 'sales', label: 'Sales' },
   { value: 'marketing', label: 'Marketing' },
-  { value: 'it', label: 'IT' },
+  { value: 'it', label: 'It' },
   { value: 'finance', label: 'Finance' },
   { value: 'other', label: 'Altro' }
 ];
@@ -503,11 +503,11 @@ export function TaskFormDialog({
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reparto</FormLabel>
+                      <FormLabel>Dipartimento</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-task-department">
-                            <SelectValue placeholder="Seleziona reparto" />
+                            <SelectValue placeholder="Seleziona dipartimento" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
