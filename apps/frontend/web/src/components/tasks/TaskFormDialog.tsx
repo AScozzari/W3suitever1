@@ -297,7 +297,7 @@ export function TaskFormDialog({
               </TabsList>
 
               <div className="flex-1 overflow-y-auto min-h-0 px-6">
-                <TabsContent value="details" className="space-y-4 mt-4 pb-4">
+                <TabsContent value="details" className="m-0 space-y-4 mt-4 pb-6">
                   <div className="space-y-4 p-4 rounded-lg bg-white border border-gray-200">
                     <FormField
                       control={form.control}
@@ -531,7 +531,7 @@ export function TaskFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="people" className="space-y-4 mt-4 pb-4">
+                <TabsContent value="people" className="m-0 space-y-4 mt-4 pb-6">
                   <div className="p-4 rounded-lg bg-white border border-gray-200">
                     <div className="flex items-center gap-2 mb-3">
                       <Users className="h-4 w-4 text-orange-600" />
@@ -613,7 +613,7 @@ export function TaskFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="checklist" className="space-y-4 mt-4 pb-4">
+                <TabsContent value="checklist" className="m-0 space-y-4 mt-4 pb-6">
                   <div className="p-4 rounded-lg bg-white border border-gray-200">
                     <div className="flex items-center gap-2 mb-3">
                       <CheckSquare className="h-4 w-4 text-purple-600" />
