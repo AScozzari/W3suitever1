@@ -189,7 +189,7 @@ export function KanbanBoard({
             style={{ animationDelay: `${columns.indexOf(column) * 150}ms` }}
             data-testid={`kanban-column-${column.id}`}
           >
-            <Card className="h-full flex flex-col border-2 shadow-2xl hover:shadow-3xl transition-all duration-500 bg-white/95 backdrop-blur-2xl overflow-hidden hover:scale-[1.01]">
+            <Card className="h-full flex flex-col border-2 shadow-xl transition-shadow duration-300 bg-white/95 backdrop-blur-xl overflow-hidden">
               <div className={cn('absolute top-0 left-0 right-0 h-2 bg-gradient-to-r shadow-lg animate-pulse', column.gradient)} />
               <div className={cn('absolute top-0 left-0 right-0 h-2 bg-gradient-to-r blur-md opacity-60', column.gradient)} />
               

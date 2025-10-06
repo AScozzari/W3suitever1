@@ -216,10 +216,11 @@ export function TaskCard({
       onClick={onClick}
       className={cn(
         'group relative overflow-hidden',
-        'bg-white border border-gray-200',
-        'transition-all duration-200',
-        'hover:shadow-md hover:bg-gray-50',
-        'hover:border-gray-300 cursor-pointer',
+        'bg-white/90 backdrop-blur-xl border-2',
+        'transition-all duration-300',
+        'hover:shadow-2xl hover:shadow-orange-500/20 hover:bg-white/95',
+        'hover:scale-[1.02] hover:-translate-y-1 cursor-pointer',
+        'hover:border-orange-300',
         status.borderColor,
         className
       )}
