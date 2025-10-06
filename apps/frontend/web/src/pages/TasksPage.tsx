@@ -252,8 +252,8 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto min-w-0">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="h-full flex flex-col min-w-0">
           <div className="border-b border-gray-200 bg-white px-6">
             <TabsList className="bg-transparent border-b-0 h-12">
               <TabsTrigger value="list" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-list">

@@ -254,7 +254,8 @@ export function TaskFormDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] p-0 gap-0 bg-white border border-gray-200">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 shrink-0">
-          <DialogTitle className="text-xl font-semibold text-gray-900">
+          <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center">
+            <FileText className="h-5 w-5 text-orange-500 mr-2" />
             {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}
           </DialogTitle>
         </DialogHeader>
@@ -296,9 +297,10 @@ export function TaskFormDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto min-h-0 px-6">
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="px-6">
                 <TabsContent value="details" className="m-0 space-y-4 mt-4 pb-6">
-                  <div className="space-y-4 p-4 rounded-lg bg-white border border-gray-200">
+                  <div className="space-y-4 p-3 rounded-lg bg-white border border-gray-200">
                     <FormField
                       control={form.control}
                       name="title"
@@ -342,7 +344,7 @@ export function TaskFormDialog({
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="p-3 rounded-lg bg-white border border-gray-200">
                       <FormField
                         control={form.control}
                         name="status"
@@ -371,7 +373,7 @@ export function TaskFormDialog({
                       />
                     </div>
 
-                    <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="p-3 rounded-lg bg-white border border-gray-200">
                       <FormField
                         control={form.control}
                         name="department"
@@ -399,7 +401,7 @@ export function TaskFormDialog({
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                  <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
                     <h3 className="text-sm font-semibold mb-3 text-orange-900">Priorità & Urgenza</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <FormField
@@ -463,7 +465,7 @@ export function TaskFormDialog({
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="p-3 rounded-lg bg-white border border-gray-200 h-full">
                       <FormField
                         control={form.control}
                         name="dueDate"
@@ -508,7 +510,7 @@ export function TaskFormDialog({
                       />
                     </div>
 
-                    <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="p-3 rounded-lg bg-white border border-gray-200 h-full">
                       <FormField
                         control={form.control}
                         name="tags"
@@ -532,7 +534,7 @@ export function TaskFormDialog({
                 </TabsContent>
 
                 <TabsContent value="people" className="m-0 space-y-4 mt-4 pb-6">
-                  <div className="p-4 rounded-lg bg-white border border-gray-200">
+                  <div className="p-3 rounded-lg bg-white border border-gray-200">
                     <div className="flex items-center gap-2 mb-3">
                       <Users className="h-4 w-4 text-orange-600" />
                       <h3 className="text-sm font-semibold text-gray-900">Assegnatari</h3>
@@ -572,7 +574,7 @@ export function TaskFormDialog({
                     )}
                   </div>
 
-                  <div className="p-4 rounded-lg bg-white border border-gray-200">
+                  <div className="p-3 rounded-lg bg-white border border-gray-200">
                     <div className="flex items-center gap-2 mb-3">
                       <Eye className="h-4 w-4 text-blue-600" />
                       <h3 className="text-sm font-semibold text-gray-900">Osservatori</h3>
@@ -614,7 +616,7 @@ export function TaskFormDialog({
                 </TabsContent>
 
                 <TabsContent value="checklist" className="m-0 space-y-4 mt-4 pb-6">
-                  <div className="p-4 rounded-lg bg-white border border-gray-200">
+                  <div className="p-3 rounded-lg bg-white border border-gray-200">
                     <div className="flex items-center gap-2 mb-3">
                       <CheckSquare className="h-4 w-4 text-purple-600" />
                       <h3 className="text-sm font-semibold text-gray-900">Lista attività</h3>
@@ -693,7 +695,8 @@ export function TaskFormDialog({
                     )}
                   </div>
                 </TabsContent>
-              </div>
+                </div>
+              </ScrollArea>
             </Tabs>
 
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
