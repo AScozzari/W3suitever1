@@ -730,7 +730,35 @@ export function TaskFormDialog({
                     </Popover>
                   </div>
 
+                  {/* Creator Display */}
+                  {user && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-gray-600 mb-2">Creatore</p>
+                      <div
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 bg-orange-50 border-orange-400 w-fit"
+                        data-testid="creator-pill"
+                      >
+                        <Avatar className="h-7 w-7">
+                          <AvatarFallback className="text-xs font-bold bg-orange-300 text-orange-900">
+                            {getUserInitials(user.id)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium text-gray-900">
+                          {getUserDisplayName(user.id)}
+                        </span>
+                        <Badge variant="secondary" className="bg-orange-200 text-orange-800 text-xs font-semibold">
+                          Creatore
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Assigned Users Pills */}
+                  {assignedUsers.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-xs font-semibold text-gray-600 mb-2">Assegnatari e Osservatori</p>
+                    </div>
+                  )}
                   {assignedUsers.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {assignedUsers.map((au) => (
