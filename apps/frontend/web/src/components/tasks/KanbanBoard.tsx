@@ -185,7 +185,7 @@ export function KanbanBoard({
         return (
           <div
             key={column.id}
-            className="flex-shrink-0 w-[420px] animate-in fade-in slide-in-from-bottom-8 duration-700"
+            className="flex-shrink-0 w-96 animate-in fade-in slide-in-from-bottom-8 duration-700"
             style={{ animationDelay: `${columns.indexOf(column) * 150}ms` }}
             data-testid={`kanban-column-${column.id}`}
           >
@@ -218,7 +218,7 @@ export function KanbanBoard({
               </CardHeader>
 
               <CardContent
-                className="flex-1 px-4 pb-4 pt-0 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/30"
+                className="flex-1 px-3 pb-4 pt-0 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/30"
                 onDragOver={handleDragOver}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
