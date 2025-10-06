@@ -8,6 +8,7 @@ import { workflowRoutes } from "../routes/workflows";
 import hrRoutes from "../routes/hr";
 import webhookRoutes from "../routes/webhooks";
 import taskRoutes from "../routes/tasks";
+import chatRoutes from "../routes/chat";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1119,6 +1120,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== TASK MANAGEMENT ROUTES ====================
   // Register task management API routes with authentication and tenant middleware
   app.use('/api', taskRoutes);
+  
+  // ==================== CHAT SYSTEM ROUTES ====================
+  // Register chat system API routes with authentication and tenant middleware
+  app.use('/api/chat', chatRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
