@@ -665,7 +665,7 @@ export function TaskFormDialog({
                               ) : (
                                 stores.map((store) => (
                                   <SelectItem key={store.id} value={store.id}>
-                                    {store.name || store.id}
+                                    {store.nome || store.code || store.id}
                                   </SelectItem>
                                 ))
                               )}
