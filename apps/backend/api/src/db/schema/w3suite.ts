@@ -2977,14 +2977,11 @@ export const taskAttachments = w3suiteSchema.table("task_attachments", {
   
   uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
   fileName: varchar("file_name", { length: 500 }).notNull(),
+  fileUrl: text("file_url").notNull(),
   fileSize: integer("file_size").notNull(),
   mimeType: varchar("mime_type", { length: 100 }).notNull(),
-  objectStorageKey: text("object_storage_key").notNull(),
   
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
-  
-  // Metadata
-  metadata: jsonb("metadata").default({}),
 }, (table) => [
   index("attachments_task_idx").on(table.taskId),
   index("attachments_user_idx").on(table.uploadedBy),

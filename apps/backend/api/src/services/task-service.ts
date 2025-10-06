@@ -699,11 +699,7 @@ export class TaskService {
         fileName: file.originalname,
         fileSize: file.size,
         mimeType: file.mimetype,
-        objectStorageKey: objectPath,
-        metadata: {
-          originalName: file.originalname,
-          uploadedAt: new Date().toISOString()
-        }
+        fileUrl: objectPath
       };
 
       const [attachment] = await db
@@ -728,7 +724,7 @@ export class TaskService {
 
   static async deleteAttachment(attachmentId: string, tenantId: string): Promise<void> {
     try {
-      // First get attachment to retrieve objectStorageKey
+      // First get attachment to retrieve fileUrl
       const [attachment] = await db
         .select()
         .from(taskAttachments)
@@ -743,21 +739,21 @@ export class TaskService {
       }
 
       // Delete from Object Storage
-      if (attachment.objectStorageKey) {
+      if (attachment.fileUrl) {
         const client = getObjectStorageClient();
-        const { ok, error } = await client.delete(attachment.objectStorageKey);
+        const { ok, error } = await client.delete(attachment.fileUrl);
         
         if (!ok) {
           logger.error('❌ Failed to delete file from Object Storage', {
             error,
-            objectStorageKey: attachment.objectStorageKey,
+            fileUrl: attachment.fileUrl,
             attachmentId
           });
           throw new Error(`Errore eliminazione file da Object Storage: ${error}`);
         }
         
         logger.info('🗑️  File deleted from Object Storage', {
-          objectStorageKey: attachment.objectStorageKey
+          fileUrl: attachment.fileUrl
         });
       }
 

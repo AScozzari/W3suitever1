@@ -170,7 +170,11 @@ export function TaskFormDialog({
         setWatchers(existingWatchers || []);
         setChecklistItems(existingChecklistItems || []);
       } else {
-        setAssignees(user?.id ? [user.id] : []);
+        if (user?.id && users.length > 0 && users.some(u => u.id === user.id)) {
+          setAssignees([user.id]);
+        } else {
+          setAssignees([]);
+        }
         setWatchers([]);
         setChecklistItems([]);
         setSelectedFiles([]);
@@ -190,7 +194,7 @@ export function TaskFormDialog({
     }
     
     prevOpenRef.current = open;
-  }, [open, mode, initialData, existingAssignees, existingWatchers, existingChecklistItems, form, user]);
+  }, [open, mode, initialData, existingAssignees, existingWatchers, existingChecklistItems, form, user, users]);
 
   const handleSubmit = async (data: TaskFormData) => {
     await onSubmit({
