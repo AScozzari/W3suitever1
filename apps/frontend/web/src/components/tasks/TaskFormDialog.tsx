@@ -375,7 +375,7 @@ export function TaskFormDialog({
   const completionPercentage = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
         {/* HEADER */}
         <DialogHeader className="px-6 py-4 border-b-4 border-orange-500 bg-white">
