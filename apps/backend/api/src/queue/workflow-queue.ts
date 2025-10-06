@@ -3,10 +3,6 @@ import { createHash } from 'crypto';
 
 const REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
 
-const connectionConfig = REDIS_URL
-  ? { connection: { url: REDIS_URL } }
-  : { connection: { host: 'localhost', port: 6379 } };
-
 export interface WorkflowJobData {
   instanceId: string;
   tenantId: string;
@@ -31,21 +27,31 @@ export interface StepExecutionResult {
 
 export const WORKFLOW_QUEUE_NAME = 'workflow-executions';
 
-export const workflowQueue = new Queue<WorkflowJobData>(
-  WORKFLOW_QUEUE_NAME,
-  {
-    ...connectionConfig,
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
-      },
-      removeOnComplete: 100,
-      removeOnFail: 500,
-    },
+let _workflowQueue: Queue<WorkflowJobData> | null = null;
+
+export function getWorkflowQueue(): Queue<WorkflowJobData> {
+  if (!_workflowQueue) {
+    if (!REDIS_URL) {
+      throw new Error('REDIS_URL not configured. Cannot create workflow queue.');
+    }
+    _workflowQueue = new Queue<WorkflowJobData>(
+      WORKFLOW_QUEUE_NAME,
+      {
+        connection: { url: REDIS_URL },
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+          removeOnComplete: 100,
+          removeOnFail: 500,
+        },
+      }
+    );
   }
-);
+  return _workflowQueue;
+}
 
 export function generateIdempotencyKey(
   instanceId: string,
@@ -66,7 +72,8 @@ export async function enqueueWorkflowStep(
     data.attemptNumber
   );
 
-  const job = await workflowQueue.add(
+  const queue = getWorkflowQueue();
+  const job = await queue.add(
     `step-${data.stepId}`,
     data,
     {
@@ -79,12 +86,13 @@ export async function enqueueWorkflowStep(
 }
 
 export async function getQueueMetrics() {
+  const queue = getWorkflowQueue();
   const [waiting, active, completed, failed, delayed] = await Promise.all([
-    workflowQueue.getWaitingCount(),
-    workflowQueue.getActiveCount(),
-    workflowQueue.getCompletedCount(),
-    workflowQueue.getFailedCount(),
-    workflowQueue.getDelayedCount(),
+    queue.getWaitingCount(),
+    queue.getActiveCount(),
+    queue.getCompletedCount(),
+    queue.getFailedCount(),
+    queue.getDelayedCount(),
   ]);
 
   return {
@@ -98,6 +106,7 @@ export async function getQueueMetrics() {
 }
 
 export async function cleanQueue(graceMs: number = 86400000) {
-  await workflowQueue.clean(graceMs, 1000, 'completed');
-  await workflowQueue.clean(graceMs, 1000, 'failed');
+  const queue = getWorkflowQueue();
+  await queue.clean(graceMs, 1000, 'completed');
+  await queue.clean(graceMs, 1000, 'failed');
 }

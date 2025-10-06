@@ -282,10 +282,19 @@ async function startBackendOnly() {
 
   // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ worker
   try {
-    startWorkflowWorker();
-    console.log('✅ Workflow execution worker started');
+    const { isRedisAvailable } = await import('./queue/queue-health.js');
+    const redisAvailable = await isRedisAvailable();
+    
+    if (redisAvailable) {
+      startWorkflowWorker();
+      console.log('✅ Workflow execution worker started');
+    } else {
+      console.log('ℹ️  Skipping workflow worker startup (Redis not configured)');
+      console.log('🔄 Workflow execution will run synchronously');
+      console.log('💡 Set REDIS_URL environment variable to enable async workflow execution');
+    }
   } catch (error) {
-    console.warn('⚠️  Workflow worker failed to start (Redis may not be available):', error);
+    console.warn('⚠️  Workflow worker failed to start:', error);
     console.warn('🔄 Workflow execution will run synchronously');
   }
 
@@ -409,10 +418,19 @@ async function startBackend() {
 
   // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ worker
   try {
-    startWorkflowWorker();
-    console.log('✅ Workflow execution worker started');
+    const { isRedisAvailable } = await import('./queue/queue-health.js');
+    const redisAvailable = await isRedisAvailable();
+    
+    if (redisAvailable) {
+      startWorkflowWorker();
+      console.log('✅ Workflow execution worker started');
+    } else {
+      console.log('ℹ️  Skipping workflow worker startup (Redis not configured)');
+      console.log('🔄 Workflow execution will run synchronously');
+      console.log('💡 Set REDIS_URL environment variable to enable async workflow execution');
+    }
   } catch (error) {
-    console.warn('⚠️  Workflow worker failed to start (Redis may not be available):', error);
+    console.warn('⚠️  Workflow worker failed to start:', error);
     console.warn('🔄 Workflow execution will run synchronously');
   }
 

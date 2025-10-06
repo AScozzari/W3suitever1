@@ -3,6 +3,13 @@ let lastCheckTime = 0;
 const CHECK_INTERVAL = 30000;
 
 export async function isRedisAvailable(): Promise<boolean> {
+  const REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
+  
+  if (!REDIS_URL) {
+    redisAvailable = false;
+    return false;
+  }
+
   const now = Date.now();
   
   if (now - lastCheckTime < CHECK_INTERVAL) {
@@ -10,8 +17,9 @@ export async function isRedisAvailable(): Promise<boolean> {
   }
 
   try {
-    const { workflowQueue } = await import('./workflow-queue.js');
-    await workflowQueue.getJobCounts();
+    const { getWorkflowQueue } = await import('./workflow-queue.js');
+    const queue = getWorkflowQueue();
+    await queue.getJobCounts();
     redisAvailable = true;
     lastCheckTime = now;
     return true;
