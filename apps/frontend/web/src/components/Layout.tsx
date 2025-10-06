@@ -66,6 +66,76 @@ interface LayoutProps {
   setCurrentModule: (module: string) => void;
 }
 
+// Chat Icon Button Component with Unread Badge
+function ChatIconButton({ isMobile, navigate }: { isMobile: boolean; navigate: (path: string) => void }) {
+  const { data: unreadData } = useQuery<{ unreadCount: number }>({
+    queryKey: ['/api/chat/unread-count'],
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
+    staleTime: 5000
+  });
+
+  const unreadCount = unreadData?.unreadCount || 0;
+
+  return (
+    <button
+      onClick={() => navigate('/chat')}
+      data-testid="button-chat"
+      style={{
+        position: 'relative',
+        width: isMobile ? '36px' : '40px',
+        height: isMobile ? '36px' : '40px',
+        padding: 0,
+        background: 'hsla(0, 0%, 100%, 0.1)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid hsla(0, 0%, 100%, 0.15)',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.2s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.15)';
+        e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.25)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.1)';
+        e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.15)';
+      }}
+    >
+      <MessageCircle size={isMobile ? 18 : 20} style={{ color: '#6b7280' }} />
+      
+      {/* Unread Badge - Red Circle */}
+      {unreadCount > 0 && (
+        <div
+          data-testid="badge-chat-unread"
+          style={{
+            position: 'absolute',
+            top: '-4px',
+            right: '-4px',
+            minWidth: '18px',
+            height: '18px',
+            padding: '0 4px',
+            background: '#ef4444',
+            borderRadius: '9px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 600,
+            color: 'white',
+            border: '2px solid white',
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+          }}
+        >
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function Layout({ children, currentModule, setCurrentModule }: LayoutProps) {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true);
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
@@ -603,6 +673,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
           {/* Notification Bell */}
           {user && <NotificationBell isMobile={isMobile} />}
+          
+          {/* Chat Icon with Unread Badge */}
+          {user && <ChatIconButton isMobile={isMobile} navigate={navigate} />}
           
           {/* Selettore Punto Vendita - Professional */}
           {!isMobile && (
