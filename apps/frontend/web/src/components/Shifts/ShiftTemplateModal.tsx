@@ -165,6 +165,12 @@ const shiftTemplateSchema = z.object({
   description: z.string().max(200, 'Descrizione troppo lunga (max 200 caratteri)').optional(),
   storeId: z.string().min(1, 'Seleziona un punto vendita'),
   status: z.enum(['active', 'archived']).default('active'),
+  // ✅ NEW: Shift type selection
+  shiftType: z.enum(['slot_based', 'split_shift']).default('slot_based'),
+  // ✅ NEW: Global tolerances (used only for split_shift type)
+  globalClockInTolerance: z.number().min(0).max(60).optional(),
+  globalClockOutTolerance: z.number().min(0).max(60).optional(),
+  globalBreakMinutes: z.number().min(0).max(480).optional(),
   timeSlots: z.array(timeSlotSchema)
     .min(1, 'Almeno una fascia oraria richiesta')
     .max(5, 'Massimo 5 fasce orarie per template'),
@@ -173,6 +179,31 @@ const shiftTemplateSchema = z.object({
   isActive: z.boolean().default(true),
   notes: z.string().max(500, 'Note troppo lunghe (max 500 caratteri)').optional()
 }).superRefine((data, ctx) => {
+  // Validate global tolerances for split_shift type
+  if (data.shiftType === 'split_shift') {
+    if (data.globalClockInTolerance === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Tolleranza clock-in obbligatoria per turnazione spezzata',
+        path: ['globalClockInTolerance']
+      });
+    }
+    if (data.globalClockOutTolerance === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Tolleranza clock-out obbligatoria per turnazione spezzata',
+        path: ['globalClockOutTolerance']
+      });
+    }
+    if (data.globalBreakMinutes === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Pausa obbligatoria per turnazione spezzata',
+        path: ['globalBreakMinutes']
+      });
+    }
+  }
+  
   // Business Logic Validation: Check for overlapping time slots (including split shift blocks)
   // Uses minute-based, 24h-cycle aware algorithm to handle overnight shifts correctly
   
@@ -347,6 +378,11 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       description: template?.description || '',
       storeId: template?.storeId || '',
       status: template?.status || 'active',
+      // ✅ NEW: Shift type defaults
+      shiftType: template?.shiftType || 'slot_based',
+      globalClockInTolerance: template?.globalClockInTolerance || 15,
+      globalClockOutTolerance: template?.globalClockOutTolerance || 15,
+      globalBreakMinutes: template?.globalBreakMinutes || 30,
       // Map legacy format to new format for editing
       timeSlots: template?.timeSlots || (template?.defaultStartTime ? [
         { 
@@ -375,6 +411,9 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   // Track active block count for each time slot (1-4)
   const [blockCounts, setBlockCounts] = useState<Record<number, number>>({});
 
+  // ✅ NEW: Watch shift type to conditionally show/hide fields
+  const shiftType = form.watch('shiftType');
+
   // Create/Update mutation
   const saveTemplateMutation = useMutation({
     mutationFn: async (data: ShiftTemplateFormData) => {
@@ -390,6 +429,11 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         description: data.description,
         storeId: data.storeId,
         status: data.status,
+        // ✅ NEW: Shift type and global tolerances
+        shiftType: data.shiftType,
+        globalClockInTolerance: data.globalClockInTolerance,
+        globalClockOutTolerance: data.globalClockOutTolerance,
+        globalBreakMinutes: data.globalBreakMinutes,
         pattern: 'weekly', // Default pattern
         defaultStartTime: data.timeSlots[0]?.startTime || '09:00',
         defaultEndTime: data.timeSlots[0]?.endTime || '17:00',
@@ -756,9 +800,137 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       </FormItem>
                     )}
                   />
+
+                  {/* ✅ NEW: Shift Type Selection */}
+                  <FormField
+                    control={form.control}
+                    name="shiftType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo Turnazione *</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex flex-col gap-3 pt-2"
+                          >
+                            <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                              <RadioGroupItem value="slot_based" id="shift-type-slot" data-testid="radio-shift-type-slot" className="mt-1" />
+                              <div className="flex-1">
+                                <Label htmlFor="shift-type-slot" className="cursor-pointer font-medium">
+                                  Turnazione a Fascia
+                                </Label>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Ogni fascia oraria è un turno separato con proprie tolleranze e pausa
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                              <RadioGroupItem value="split_shift" id="shift-type-split" data-testid="radio-shift-type-split" className="mt-1" />
+                              <div className="flex-1">
+                                <Label htmlFor="shift-type-split" className="cursor-pointer font-medium">
+                                  Turnazione Spezzata
+                                </Label>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Tutte le fasce insieme formano 1 unico turno con tolleranze e pausa globali
+                                </p>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
+
+            {/* ✅ NEW: Global Tolerances Section (only for split_shift) */}
+            {shiftType === 'split_shift' && (
+              <Card className="border-orange-200 bg-orange-50/30">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-orange-600" />
+                    Tolleranze Globali (Turno Unico)
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Queste tolleranze e pausa si applicano all'intero turno spezzato
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="globalClockInTolerance"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tolleranza Clock-In (minuti) *</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              max="60"
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              data-testid="input-global-clock-in-tolerance"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="globalClockOutTolerance"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tolleranza Clock-Out (minuti) *</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              max="60"
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              data-testid="input-global-clock-out-tolerance"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="globalBreakMinutes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pausa (minuti) *</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              max="480"
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              data-testid="input-global-break-minutes"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Alert className="mt-4 bg-blue-50 border-blue-200">
+                    <AlertDescription className="text-sm text-blue-800">
+                      <strong>Esempio:</strong> Se crei fasce 09:00-13:00 e 14:00-18:00, il dipendente fa clock-in solo all'inizio (09:00) e clock-out solo alla fine (18:00). La pausa si applica una volta sola.
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Time Slots Management */}
             <Card>
@@ -1032,46 +1204,24 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       </div>
                     )}
                     
-                    {/* Pausa e Tolleranze (alla fine per entrambi i tipi) */}
-                    <div className="mt-4 pt-4 border-t space-y-4">
-                      <FormField
-                        control={form.control}
-                        name={`timeSlots.${index}.breakMinutes`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Pausa (minuti)</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="number"
-                                min="0"
-                                max="480"
-                                placeholder="30"
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                data-testid={`input-break-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* ✅ Pausa e Tolleranze (SOLO per turnazione a fascia) */}
+                    {shiftType === 'slot_based' ? (
+                      <div className="mt-4 pt-4 border-t space-y-4">
                         <FormField
                           control={form.control}
-                          name={`timeSlots.${index}.clockInToleranceMinutes`}
+                          name={`timeSlots.${index}.breakMinutes`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Tolleranza Clock-In (minuti)</FormLabel>
+                              <FormLabel>Pausa (minuti)</FormLabel>
                               <FormControl>
                                 <Input
                                   {...field}
                                   type="number"
                                   min="0"
-                                  max="60"
-                                  placeholder="15"
+                                  max="480"
+                                  placeholder="30"
                                   onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                  data-testid={`input-clockin-tolerance-${index}`}
+                                  data-testid={`input-break-${index}`}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1079,29 +1229,62 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                           )}
                         />
                         
-                        <FormField
-                          control={form.control}
-                          name={`timeSlots.${index}.clockOutToleranceMinutes`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Tolleranza Clock-Out (minuti)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  type="number"
-                                  min="0"
-                                  max="60"
-                                  placeholder="15"
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                  data-testid={`input-clockout-tolerance-${index}`}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.clockInToleranceMinutes`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tolleranza Clock-In (minuti)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="number"
+                                    min="0"
+                                    max="60"
+                                    placeholder="15"
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                    data-testid={`input-clockin-tolerance-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`timeSlots.${index}.clockOutToleranceMinutes`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tolleranza Clock-Out (minuti)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="number"
+                                    min="0"
+                                    max="60"
+                                    placeholder="15"
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                    data-testid={`input-clockout-tolerance-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="mt-4 pt-4 border-t">
+                        <Alert className="bg-blue-50 border-blue-200">
+                          <Clock className="h-4 w-4 text-blue-600" />
+                          <AlertDescription className="text-sm text-blue-800">
+                            <strong>Turnazione Spezzata:</strong> Le tolleranze e la pausa sono configurate nelle <strong>Tolleranze Globali</strong> sopra e si applicano all'intero turno.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    )}
                   </div>
                   );
                 })}
