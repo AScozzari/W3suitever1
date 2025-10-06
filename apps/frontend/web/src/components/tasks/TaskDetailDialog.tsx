@@ -240,7 +240,7 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col p-0">
+      <DialogContent className="max-w-[800px] max-h-[95vh] overflow-y-auto flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
