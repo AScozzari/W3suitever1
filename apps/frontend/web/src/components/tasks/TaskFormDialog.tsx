@@ -251,15 +251,19 @@ export function TaskFormDialog({
   const getUserDisplayName = (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return userId;
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    // Support both camelCase and snake_case from API
+    const firstName = (user as any).firstName || (user as any).first_name || '';
+    const lastName = (user as any).lastName || (user as any).last_name || '';
+    const fullName = `${firstName} ${lastName}`.trim();
     return fullName || user.email;
   };
 
   const getUserInitials = (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return '?';
-    const firstName = user.firstName || '';
-    const lastName = user.lastName || '';
+    // Support both camelCase and snake_case from API
+    const firstName = (user as any).firstName || (user as any).first_name || '';
+    const lastName = (user as any).lastName || (user as any).last_name || '';
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
