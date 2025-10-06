@@ -181,6 +181,17 @@ export const chatNotificationPreferenceEnum = pgEnum('chat_notification_preferen
   'none'
 ]);
 
+export const chatVisibilityEnum = pgEnum('chat_visibility', [
+  'public',
+  'private'
+]);
+
+export const chatInviteStatusEnum = pgEnum('chat_invite_status', [
+  'pending',
+  'accepted',
+  'declined'
+]);
+
 // ==================== ACTIVITY FEED ENUMS ====================
 export const activityFeedCategoryEnum = pgEnum('activity_feed_category', [
   'TASK', 
@@ -3032,6 +3043,7 @@ export const chatChannels = w3suiteSchema.table("chat_channels", {
   name: varchar("name", { length: 200 }),
   description: text("description"),
   channelType: chatChannelTypeEnum("channel_type").notNull(),
+  visibility: chatVisibilityEnum("visibility").default('private').notNull(),
   
   // References
   teamId: uuid("team_id").references(() => teams.id),
@@ -3057,6 +3069,7 @@ export const chatChannelMembers = w3suiteSchema.table("chat_channel_members", {
   userId: varchar("user_id").notNull().references(() => users.id),
   
   role: chatMemberRoleEnum("role").default('member').notNull(),
+  inviteStatus: chatInviteStatusEnum("invite_status").default('accepted').notNull(),
   
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
   lastReadAt: timestamp("last_read_at"),
