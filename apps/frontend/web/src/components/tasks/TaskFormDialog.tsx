@@ -200,9 +200,12 @@ export function TaskFormDialog({
         setAssignedUsers(existingUsers);
         setChecklistItems(existingChecklistItems || []);
       } else {
-        if (user?.id && users.length > 0 && users.some(u => u.id === user.id)) {
+        // In modalità create, aggiungi sempre l'utente corrente come creatore di default
+        if (user?.id) {
+          console.log('✅ CREATOR AUTO-ASSIGNED:', user.id, user.email);
           setAssignedUsers([{ userId: user.id, role: 'assignee' }]);
         } else {
+          console.warn('⚠️ No user found for auto-assignment');
           setAssignedUsers([]);
         }
         setChecklistItems([]);
@@ -696,8 +699,11 @@ export function TaskFormDialog({
                               availableUsers.map((u) => (
                                 <CommandItem
                                   key={u.id}
-                                  onSelect={() => addUser(u.id, 'assignee')}
-                                  className="flex items-center justify-between cursor-pointer"
+                                  value={u.id}
+                                  onSelect={(value) => {
+                                    addUser(value, 'assignee');
+                                  }}
+                                  className="flex items-center justify-between cursor-pointer hover:bg-orange-50"
                                 >
                                   <div className="flex items-center gap-3">
                                     <Avatar className="h-8 w-8">
