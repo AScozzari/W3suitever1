@@ -109,7 +109,7 @@ export interface TaskFormDialogProps {
 const statusOptions = [
   { value: 'todo', label: 'Da fare', color: 'bg-gray-100 text-gray-700' },
   { value: 'in_progress', label: 'In corso', color: 'bg-blue-100 text-blue-700' },
-  { value: 'review', label: 'In revisione', color: 'bg-orange-100 text-orange-700' },
+  { value: 'review', label: 'In revisione', color: 'bg-rose-100 text-rose-700' },
   { value: 'done', label: 'Completato', color: 'bg-green-100 text-green-700' },
   { value: 'archived', label: 'Archiviato', color: 'bg-gray-100 text-gray-400' },
 ];
@@ -117,13 +117,13 @@ const statusOptions = [
 const priorityOptions = [
   { value: 'low', label: 'Bassa', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Media', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Alta', color: 'bg-orange-100 text-orange-700' },
+  { value: 'high', label: 'Alta', color: 'bg-rose-100 text-rose-700' },
 ];
 
 const urgencyOptions = [
   { value: 'low', label: 'Non urgente', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Moderata', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Urgente', color: 'bg-orange-100 text-orange-700' },
+  { value: 'high', label: 'Urgente', color: 'bg-rose-100 text-rose-700' },
   { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-700' },
 ];
 
