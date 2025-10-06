@@ -532,85 +532,131 @@ export function TaskFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="people" className="m-0 space-y-4 mt-4 pb-6">
-                  <div className="p-3 rounded-lg bg-white border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Users className="h-4 w-4 text-orange-600" />
-                      <h3 className="text-sm font-semibold text-gray-900">Assegnatari</h3>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-3">Persone responsabili del task</p>
-                    <div className="max-h-52 overflow-y-auto border border-gray-100 rounded-lg p-2 space-y-2">
-                      {users.map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-                          onClick={() => toggleAssignee(user.id)}
-                        >
-                          <Checkbox
-                            checked={assignees.includes(user.id)}
-                            className="border-gray-300"
-                            data-testid={`checkbox-assignee-${user.id}`}
-                          />
-                          <span className="text-sm text-gray-700">
-                            {getUserDisplayName(user.id)}
-                          </span>
+                <TabsContent value="people" className="m-0 mt-4 pb-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-lg bg-white border border-gray-200">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-600" />
+                        Seleziona utenti
+                      </h3>
+                      <ScrollArea className="h-96 border border-gray-100 rounded-lg">
+                        <div className="p-2 space-y-1">
+                          {users.map((user) => {
+                            const isAssignee = assignees.includes(user.id);
+                            const isWatcher = watchers.includes(user.id);
+                            return (
+                              <div
+                                key={user.id}
+                                className={cn(
+                                  "flex items-center space-x-2 p-2 rounded-md transition-colors",
+                                  isAssignee || isWatcher ? 'bg-orange-50' : 'hover:bg-gray-50'
+                                )}
+                              >
+                                <Checkbox
+                                  checked={isAssignee}
+                                  onCheckedChange={() => toggleAssignee(user.id)}
+                                  className="border-gray-300"
+                                  data-testid={`checkbox-assignee-${user.id}`}
+                                />
+                                <span className="flex-1 text-sm text-gray-700 cursor-pointer" onClick={() => toggleAssignee(user.id)}>
+                                  {getUserDisplayName(user.id)}
+                                </span>
+                                <Checkbox
+                                  checked={isWatcher}
+                                  onCheckedChange={() => toggleWatcher(user.id)}
+                                  className="border-gray-300"
+                                  data-testid={`checkbox-watcher-${user.id}`}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                    {assignees.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {assignees.map((userId) => (
-                          <Badge 
-                            key={userId} 
-                            variant="secondary" 
-                            className="text-xs"
-                            data-testid={`badge-assignee-${userId}`}
-                          >
-                            {getUserDisplayName(userId)}
-                          </Badge>
-                        ))}
+                      </ScrollArea>
+                      <div className="mt-2 text-xs text-gray-500 flex items-center gap-4">
+                        <span className="flex items-center gap-1">
+                          <Checkbox className="h-3 w-3" disabled /> Assegnatario
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Checkbox className="h-3 w-3" disabled /> Osservatore
+                        </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="p-3 rounded-lg bg-white border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Eye className="h-4 w-4 text-blue-600" />
-                      <h3 className="text-sm font-semibold text-gray-900">Osservatori</h3>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-3">Persone che ricevono notifiche</p>
-                    <div className="max-h-52 overflow-y-auto border border-gray-100 rounded-lg p-2 space-y-2">
-                      {users.map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-                          onClick={() => toggleWatcher(user.id)}
-                        >
-                          <Checkbox
-                            checked={watchers.includes(user.id)}
-                            className="border-gray-300"
-                            data-testid={`checkbox-watcher-${user.id}`}
-                          />
-                          <span className="text-sm text-gray-700">
-                            {getUserDisplayName(user.id)}
-                          </span>
+                    <div className="space-y-4">
+                      <div className="p-3 rounded-lg bg-white border border-gray-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Users className="h-4 w-4 text-orange-600" />
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            Assegnatari ({assignees.length})
+                          </h3>
                         </div>
-                      ))}
-                    </div>
-                    {watchers.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {watchers.map((userId) => (
-                          <Badge 
-                            key={userId} 
-                            variant="outline" 
-                            className="text-xs"
-                            data-testid={`badge-watcher-${userId}`}
-                          >
-                            {getUserDisplayName(userId)}
-                          </Badge>
-                        ))}
+                        {assignees.length > 0 ? (
+                          <div className="space-y-2">
+                            {assignees.map((userId) => (
+                              <div 
+                                key={userId}
+                                className="flex items-center gap-2 p-2 rounded-md bg-orange-50 border border-orange-200"
+                                data-testid={`selected-assignee-${userId}`}
+                              >
+                                <Users className="h-4 w-4 text-orange-600 shrink-0" />
+                                <span className="flex-1 text-sm text-gray-900 font-medium">
+                                  {getUserDisplayName(userId)}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleAssignee(userId)}
+                                  className="h-6 w-6 p-0 hover:bg-orange-100"
+                                  data-testid={`remove-assignee-${userId}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500">Nessun assegnatario selezionato</p>
+                        )}
                       </div>
-                    )}
+
+                      <div className="p-3 rounded-lg bg-white border border-gray-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Eye className="h-4 w-4 text-blue-600" />
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            Osservatori ({watchers.length})
+                          </h3>
+                        </div>
+                        {watchers.length > 0 ? (
+                          <div className="space-y-2">
+                            {watchers.map((userId) => (
+                              <div 
+                                key={userId}
+                                className="flex items-center gap-2 p-2 rounded-md bg-blue-50 border border-blue-200"
+                                data-testid={`selected-watcher-${userId}`}
+                              >
+                                <Eye className="h-4 w-4 text-blue-600 shrink-0" />
+                                <span className="flex-1 text-sm text-gray-900 font-medium">
+                                  {getUserDisplayName(userId)}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleWatcher(userId)}
+                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                  data-testid={`remove-watcher-${userId}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500">Nessun osservatore selezionato</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
 
