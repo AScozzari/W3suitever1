@@ -1,0 +1,340 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import Layout from '@/components/Layout';
+import { MessageCircle, Plus } from 'lucide-react';
+
+interface ChatChannel {
+  id: string;
+  name: string;
+  type: 'dm' | 'group';
+  visibility: 'public' | 'private';
+  createdAt: string;
+  lastMessageAt?: string | null;
+  unreadCount?: number;
+}
+
+export default function ChatPage() {
+  const [currentModule, setCurrentModule] = useState('chat');
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+
+  // Query per ottenere lista chat channels
+  const { data: channels = [], isLoading } = useQuery<ChatChannel[]>({
+    queryKey: ['/api/chat/channels'],
+    staleTime: 5000
+  });
+
+  return (
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div style={{
+        minHeight: 'calc(100vh - 64px)',
+        background: '#ffffff',
+        padding: '24px'
+      }}>
+        {/* Page Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <MessageCircle size={20} style={{ color: 'white' }} />
+            </div>
+            <div>
+              <h1 style={{
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#1f2937',
+                margin: 0
+              }}>
+                Chat Interna
+              </h1>
+              <p style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                margin: 0
+              }}>
+                Comunicazione real-time con il team
+              </p>
+            </div>
+          </div>
+
+          <button
+            data-testid="button-create-chat"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <Plus size={18} />
+            Nuova Chat
+          </button>
+        </div>
+
+        {/* Chat Layout Split */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '350px 1fr',
+          gap: '24px',
+          height: 'calc(100vh - 180px)',
+          background: 'white',
+          borderRadius: '16px',
+          border: '1px solid #e5e7eb',
+          overflow: 'hidden'
+        }}>
+          {/* Sidebar - Lista Chat */}
+          <div style={{
+            borderRight: '1px solid #e5e7eb',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%'
+          }}>
+            {/* Search Bar */}
+            <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+              <input
+                placeholder="Cerca chat..."
+                data-testid="input-search-chat"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            {/* Chat List */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '8px'
+            }}>
+              {isLoading ? (
+                <div style={{
+                  padding: '32px',
+                  textAlign: 'center',
+                  color: '#6b7280'
+                }}>
+                  Caricamento chat...
+                </div>
+              ) : channels.length === 0 ? (
+                <div style={{
+                  padding: '32px',
+                  textAlign: 'center',
+                  color: '#6b7280'
+                }}>
+                  <MessageCircle size={48} style={{ 
+                    margin: '0 auto 16px',
+                    color: '#d1d5db'
+                  }} />
+                  <p style={{ fontSize: '14px', margin: 0 }}>
+                    Nessuna chat disponibile
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>
+                    Clicca "Nuova Chat" per iniziare
+                  </p>
+                </div>
+              ) : (
+                channels.map((channel) => (
+                  <div
+                    key={channel.id}
+                    data-testid={`chat-item-${channel.id}`}
+                    onClick={() => setSelectedChannelId(channel.id)}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      background: selectedChannelId === channel.id ? '#f9fafb' : 'transparent',
+                      transition: 'background 0.15s ease',
+                      marginBottom: '4px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedChannelId !== channel.id) {
+                        e.currentTarget.style.background = '#f9fafb';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedChannelId !== channel.id) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {/* Avatar placeholder */}
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600
+                      }}>
+                        {channel.name.slice(0, 2).toUpperCase()}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          color: '#1f2937',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {channel.name}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#6b7280',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          marginTop: '2px'
+                        }}>
+                          {channel.type === 'dm' ? 'Chat Diretta' : 'Gruppo'}
+                        </div>
+                      </div>
+
+                      {/* Unread Badge */}
+                      {(channel.unreadCount ?? 0) > 0 && (
+                        <div style={{
+                          minWidth: '20px',
+                          height: '20px',
+                          padding: '0 6px',
+                          background: '#ef4444',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: 'white'
+                        }}>
+                          {channel.unreadCount}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Message Window */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            background: '#fafafa'
+          }}>
+            {selectedChannelId ? (
+              <>
+                {/* Chat Header Placeholder */}
+                <div style={{
+                  padding: '16px',
+                  borderBottom: '1px solid #e5e7eb',
+                  background: 'white'
+                }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                    {channels.find(c => c.id === selectedChannelId)?.name || 'Chat'}
+                  </h3>
+                </div>
+
+                {/* Messages Area Placeholder */}
+                <div style={{
+                  flex: 1,
+                  padding: '24px',
+                  overflowY: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                    Area messaggi - Coming soon
+                  </p>
+                </div>
+
+                {/* Message Composer Placeholder */}
+                <div style={{
+                  padding: '16px',
+                  borderTop: '1px solid #e5e7eb',
+                  background: 'white'
+                }}>
+                  <textarea
+                    placeholder="Scrivi un messaggio..."
+                    data-testid="textarea-message"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      resize: 'none',
+                      outline: 'none',
+                      minHeight: '60px'
+                    }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                color: '#6b7280'
+              }}>
+                <MessageCircle size={64} style={{ 
+                  marginBottom: '16px',
+                  color: '#d1d5db'
+                }} />
+                <p style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>
+                  Seleziona una chat per iniziare
+                </p>
+                <p style={{ fontSize: '14px', marginTop: '8px', color: '#9ca3af' }}>
+                  Scegli una conversazione dalla lista
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+}

@@ -13,6 +13,7 @@ import HRManagementPage from '../pages/HRManagementPage';
 import NotificationCenter from '../pages/NotificationCenter';
 import TenantVerificationTest from '../pages/TenantVerificationTest';
 import TasksPage from '../pages/TasksPage';
+import ChatPage from '../pages/ChatPage';
 import Login from '../pages/Login';
 import NotFound from '../pages/NotFound';
 import { useAuth } from '../hooks/useAuth';
@@ -290,6 +291,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/tasks`}>
         <AuthenticatedRoute>
           <TasksPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/chat`}>
+        <AuthenticatedRoute>
+          <ChatPage />
         </AuthenticatedRoute>
       </Route>
       
