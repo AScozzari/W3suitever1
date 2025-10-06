@@ -1,16 +1,59 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import { MessageCircle, Plus } from 'lucide-react';
+import { MessageCircle, Plus, Lock } from 'lucide-react';
 
 interface ChatChannel {
   id: string;
   name: string;
-  type: 'dm' | 'group';
+  channelType: 'dm' | 'team' | 'task_thread' | 'general';
   visibility: 'public' | 'private';
   createdAt: string;
   lastMessageAt?: string | null;
   unreadCount?: number;
+  lastMessage?: {
+    id: string;
+    content: string;
+    createdAt: string;
+    userId: string;
+  } | null;
+}
+
+// Helper function to format relative timestamps
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  // Less than 1 minute
+  if (diffMins < 1) return 'Ora';
+  
+  // Less than 1 hour
+  if (diffMins < 60) return `${diffMins} min fa`;
+  
+  // Less than 24 hours
+  if (diffHours < 24) return `${diffHours}h fa`;
+  
+  // Yesterday
+  if (diffDays === 1) return 'Ieri';
+  
+  // Within this week
+  if (diffDays < 7) return `${diffDays} giorni fa`;
+  
+  // Older - show date
+  return date.toLocaleDateString('it-IT', { 
+    day: 'numeric', 
+    month: 'short' 
+  });
+}
+
+// Helper to truncate message preview
+function truncateMessage(text: string, maxLength: number = 40): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 }
 
 export default function ChatPage() {
@@ -208,24 +251,51 @@ export default function ChatPage() {
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: '14px',
-                          fontWeight: 500,
-                          color: '#1f2937',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '4px'
                         }}>
-                          {channel.name}
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: '#1f2937',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            flex: 1
+                          }}>
+                            {channel.name}
+                            {channel.visibility === 'private' && (
+                              <Lock size={12} style={{ 
+                                marginLeft: '4px',
+                                display: 'inline',
+                                verticalAlign: 'middle',
+                                color: '#6b7280'
+                              }} />
+                            )}
+                          </div>
+                          {channel.lastMessageAt && (
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#9ca3af',
+                              marginLeft: '8px',
+                              flexShrink: 0
+                            }}>
+                              {formatRelativeTime(channel.lastMessageAt)}
+                            </div>
+                          )}
                         </div>
                         <div style={{
                           fontSize: '12px',
                           color: '#6b7280',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          marginTop: '2px'
+                          textOverflow: 'ellipsis'
                         }}>
-                          {channel.type === 'dm' ? 'Chat Diretta' : 'Gruppo'}
+                          {channel.lastMessage 
+                            ? truncateMessage(channel.lastMessage.content)
+                            : (channel.channelType === 'dm' ? 'Nessun messaggio' : 'Nuovo gruppo')}
                         </div>
                       </div>
 

@@ -63,9 +63,13 @@ export class ChatService {
       type?: 'team' | 'dm' | 'task_thread' | 'general';
       archived?: boolean;
     }
-  ): Promise<ChatChannel[]> {
+  ): Promise<any[]> {
+    // Get user's channel memberships with lastReadAt
     const memberChannels = await db
-      .select({ channelId: chatChannelMembers.channelId })
+      .select({ 
+        channelId: chatChannelMembers.channelId,
+        lastReadAt: chatChannelMembers.lastReadAt
+      })
       .from(chatChannelMembers)
       .where(eq(chatChannelMembers.userId, userId));
 
@@ -75,7 +79,8 @@ export class ChatService {
       return [];
     }
 
-    return db
+    // Get channels with basic info
+    const channels = await db
       .select()
       .from(chatChannels)
       .where(and(
@@ -83,8 +88,57 @@ export class ChatService {
         inArray(chatChannels.id, channelIds),
         filters?.type ? eq(chatChannels.channelType, filters.type) : undefined,
         eq(chatChannels.isArchived, filters?.archived ?? false)
-      ))
-      .orderBy(desc(chatChannels.createdAt));
+      ));
+
+    // For each channel, get last message and unread count
+    const channelsWithDetails = await Promise.all(
+      channels.map(async (channel) => {
+        const memberInfo = memberChannels.find(m => m.channelId === channel.id);
+        
+        // Get last message
+        const [lastMessage] = await db
+          .select({
+            id: chatMessages.id,
+            content: chatMessages.content,
+            createdAt: chatMessages.createdAt,
+            userId: chatMessages.userId
+          })
+          .from(chatMessages)
+          .where(and(
+            eq(chatMessages.channelId, channel.id),
+            isNull(chatMessages.deletedAt)
+          ))
+          .orderBy(desc(chatMessages.createdAt))
+          .limit(1);
+
+        // Get unread count
+        const lastReadAt = memberInfo?.lastReadAt;
+        const unreadMessages = lastReadAt 
+          ? await db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(chatMessages)
+              .where(and(
+                eq(chatMessages.channelId, channel.id),
+                isNull(chatMessages.deletedAt),
+                sql`${chatMessages.createdAt} > ${lastReadAt}`
+              ))
+          : [];
+        
+        const unreadCount = unreadMessages[0]?.count || 0;
+
+        return {
+          ...channel,
+          lastMessage: lastMessage || null,
+          lastMessageAt: lastMessage?.createdAt || channel.createdAt,
+          unreadCount
+        };
+      })
+    );
+
+    // Sort by lastMessageAt descending (most recent first)
+    return channelsWithDetails.sort((a, b) => 
+      new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+    );
   }
 
   static async updateChannel(
