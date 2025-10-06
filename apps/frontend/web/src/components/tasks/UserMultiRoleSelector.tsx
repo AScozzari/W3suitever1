@@ -130,8 +130,9 @@ export function UserMultiRoleSelector({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-full p-0 border-gray-200 bg-white"
+          className="w-[400px] p-0 border-gray-200 bg-white"
           align="start"
+          sideOffset={4}
           data-testid="popover-user-selector"
         >
           <Command className="border-0">
