@@ -20,6 +20,7 @@ import { useAuth } from '../hooks/useAuth';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
+import TaskDetailDialog from './tasks/TaskDetailDialog';
 
 // Palette colori W3 Suite - Coerente e Professionale
 const COLORS = {
@@ -78,6 +79,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const [location, navigate] = useLocation();
@@ -191,59 +194,75 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     // NO click-based auto-collapse timer - solo hover-only behavior
   };
   
-  // Dati tasks dal repository GitHub
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      titolo: 'Follow-up cliente Premium',
-      descrizione: 'Chiamare Mario Rossi per rinnovo contratto Enterprise',
-      priorita: 'Alta',
-      scadenza: 'Oggi 15:00',
-      completato: false,
-      urgente: true,
-      categoria: 'vendite'
-    },
-    {
-      id: 2,
-      titolo: 'Preparare documentazione',
-      descrizione: 'Contratto fibra ottica per Laura Bianchi',
-      priorita: 'Media',
-      scadenza: 'Domani 10:00',
-      completato: false,
-      urgente: false,
-      categoria: 'documentazione'
-    },
-    {
-      id: 3,
-      titolo: 'Verifica pagamento',
-      descrizione: 'Controllo fattura cliente Giuseppe Verde - €2.300',
-      priorita: 'Bassa',
-      scadenza: 'Venerdì 16:00',
-      completato: true,
-      urgente: false,
-      categoria: 'amministrativo'
-    },
-    {
-      id: 4,
-      titolo: 'Attivazione servizi',
-      descrizione: 'Nuovo contratto mobile 5G + fibra 1GB/s',
-      priorita: 'Alta',
-      scadenza: 'Oggi 17:30',
-      completato: false,
-      urgente: true,
-      categoria: 'tecnico'
-    },
-    {
-      id: 5,
-      titolo: 'Demo prodotto WindTre Business',
-      descrizione: 'Presentazione soluzioni per PMI - Azienda Tecno Solutions',
-      priorita: 'Alta',
-      scadenza: 'Lunedì 09:30',
-      completato: false,
-      urgente: false,
-      categoria: 'vendite'
-    }
-  ]);
+  // ✅ TASKS REALI DAL BACKEND - User's tasks
+  const { data: tasksRaw = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ['/api/tasks/my-tasks'],
+    enabled: !!user,
+    staleTime: 30 * 1000, // 30 secondi cache
+    refetchInterval: 60 * 1000, // Refresh ogni minuto
+  });
+
+  // 🔄 FILTRI E MAPPING: Task reali → UI Format
+  const tasks = React.useMemo(() => {
+    if (!Array.isArray(tasksRaw) || !tasksRaw.length) return [];
+    
+    const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Filtra: solo TODO, IN_PROGRESS, REVIEW + questa settimana
+    const filtered = tasksRaw.filter((task: any) => {
+      // Status filter
+      const validStatuses = ['todo', 'in_progress', 'review'];
+      if (!validStatuses.includes(task.status)) return false;
+      
+      // Date filter: task con dueDate oggi o questa settimana
+      if (task.dueDate) {
+        const dueDate = new Date(task.dueDate);
+        return dueDate >= startOfToday && dueDate <= oneWeekFromNow;
+      }
+      
+      // Se non ha dueDate, includi comunque (task senza scadenza)
+      return true;
+    });
+    
+    // Mapping: Backend → UI format
+    const mapped = filtered.map((task: any) => {
+      // Determina ruolo utente
+      const getUserRole = () => {
+        if (task.creatorId === user?.id) return 'Creatore';
+        const assignment = task.assignments?.find((a: any) => a.userId === user?.id);
+        if (assignment) {
+          return assignment.role === 'assignee' ? 'Assegnato' : 'Osservatore';
+        }
+        return null;
+      };
+      
+      // Formatta scadenza
+      const formatDueDate = (dueDate: string | null) => {
+        if (!dueDate) return 'Nessuna scadenza';
+        const due = new Date(dueDate);
+        const diffDays = Math.floor((due.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return `Oggi ${due.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+        if (diffDays === 1) return `Domani ${due.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+        return due.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      };
+      
+      return {
+        ...task,
+        titolo: task.title,
+        descrizione: task.description || 'Nessuna descrizione',
+        priorita: task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Media' : 'Bassa',
+        scadenza: formatDueDate(task.dueDate),
+        completato: task.status === 'done',
+        urgente: task.urgency === 'critical' || task.urgency === 'high',
+        userRole: getUserRole()
+      };
+    });
+    
+    return mapped;
+  }, [tasksRaw, user]);
   
   // Dati leads dal repository GitHub
   const [leads, setLeads] = useState([
@@ -340,15 +359,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     return mapped;
   }, [eventiCalendarioRaw]);
   
-  // Funzioni per gestire tasks
-  const toggleTaskComplete = (taskId: number) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, completato: !task.completato } : task
-    ));
-  };
-  
-  // Contatori per stats
-  const tasksOggi = tasks.filter(task => task.scadenza.includes('Oggi')).length;
+  // Contatori per stats - basati su dati reali
+  const tasksOggi = tasks.filter(task => task.scadenza?.includes('Oggi')).length;
   const tasksCompletate = tasks.filter(task => task.completato).length;
   // ✅ EVENTI TOTALI DINAMICI DAL BACKEND (invece di .length statico)
   const eventiTotali = calendarLoading ? 0 : eventiCalendario.length;
