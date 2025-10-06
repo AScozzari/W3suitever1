@@ -84,6 +84,7 @@ export interface TaskFormDialogProps {
     assignees: string[];
     watchers: string[];
     checklistItems: ChecklistItem[];
+    attachments: File[];
   }) => Promise<void>;
   initialData?: Partial<TaskFormData>;
   existingAssignees?: string[];
@@ -141,6 +142,7 @@ export function TaskFormDialog({
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [newChecklistItemAssignee, setNewChecklistItemAssignee] = useState<string>('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   const prevOpenRef = useRef(false);
 
@@ -175,6 +177,7 @@ export function TaskFormDialog({
         setAssignees([]);
         setWatchers([]);
         setChecklistItems([]);
+        setSelectedFiles([]);
       }
       
       form.reset({
@@ -199,11 +202,13 @@ export function TaskFormDialog({
       assignees,
       watchers,
       checklistItems,
+      attachments: selectedFiles,
     });
     form.reset();
     setAssignees([]);
     setWatchers([]);
     setChecklistItems([]);
+    setSelectedFiles([]);
   };
 
   const toggleAssignee = (userId: string) => {
@@ -266,7 +271,7 @@ export function TaskFormDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1 min-h-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <TabsList className="mx-6 mt-3 grid w-auto grid-cols-3 bg-gray-50 border border-gray-200 shrink-0">
+              <TabsList className="mx-6 mt-3 grid w-auto grid-cols-4 bg-gray-50 border border-gray-200 shrink-0">
                 <TabsTrigger 
                   value="details" 
                   className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
@@ -295,6 +300,19 @@ export function TaskFormDialog({
                   {checklistItems.length > 0 && (
                     <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs">
                       {checklistItems.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="attachments" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                  data-testid="tab-trigger-attachments"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Allegati
+                  {selectedFiles.length > 0 && (
+                    <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs">
+                      {selectedFiles.length}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -766,6 +784,70 @@ export function TaskFormDialog({
                         <div className="text-center py-12 text-gray-400">
                           <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           <p className="text-sm">Nessuna attività in checklist</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="attachments" className="m-0 mt-4 pb-6">
+                  <div className="p-3 rounded-lg bg-white border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                      <h3 className="text-sm font-semibold text-gray-900">Aggiungi file</h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-400 transition-colors">
+                        <Input
+                          type="file"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            setSelectedFiles(prev => [...prev, ...files]);
+                            e.target.value = '';
+                          }}
+                          className="hidden"
+                          id="file-upload"
+                          data-testid="input-file-upload"
+                        />
+                        <label htmlFor="file-upload" className="cursor-pointer">
+                          <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                          <p className="text-sm font-medium text-gray-700">Clicca per selezionare file</p>
+                          <p className="text-xs text-gray-500 mt-1">o trascina i file qui</p>
+                        </label>
+                      </div>
+
+                      {selectedFiles.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-gray-700">File selezionati ({selectedFiles.length})</h4>
+                          <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {selectedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2 p-2 rounded-md bg-blue-50 border border-blue-200"
+                                data-testid={`attachment-preview-${index}`}
+                              >
+                                <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-900 font-medium truncate">{file.name}</p>
+                                  <p className="text-xs text-gray-600">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
+                                  className="h-6 w-6 p-0 shrink-0 hover:bg-blue-100"
+                                  data-testid={`button-remove-attachment-${index}`}
+                                >
+                                  <X className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

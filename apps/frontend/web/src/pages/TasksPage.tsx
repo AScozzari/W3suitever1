@@ -78,9 +78,9 @@ export default function TasksPage() {
 
   const createTaskMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { assignees, watchers, checklistItems, ...taskData } = data;
+      const { assignees, watchers, checklistItems, attachments, ...taskData } = data;
       
-      return apiRequest('/api/tasks/complete', {
+      const createdTask = await apiRequest('/api/tasks/complete', {
         method: 'POST',
         body: JSON.stringify({
           task: taskData,
@@ -89,19 +89,43 @@ export default function TasksPage() {
           checklistItems: checklistItems || [],
         }),
       });
+
+      if (attachments && attachments.length > 0) {
+        const uploadPromises = attachments.map(async (file: File) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          const response = await fetch(`/api/tasks/${createdTask.id}/attachments`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Upload failed');
+          }
+
+          return response.json();
+        });
+
+        await Promise.all(uploadPromises);
+      }
+
+      return createdTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       setIsCreateDialogOpen(false);
       toast({
         title: 'Task creato',
-        description: 'Il task è stato creato con successo con assegnazioni e checklist',
+        description: 'Il task è stato creato con successo con assegnazioni, checklist e allegati',
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Errore',
-        description: 'Impossibile creare il task',
+        description: error?.message || 'Impossibile creare il task',
         variant: 'destructive',
       });
     },

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/contexts/TenantContext';
@@ -34,6 +34,8 @@ import {
   Plus,
   X,
   Check,
+  Download,
+  Upload,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -95,6 +97,18 @@ const priorityConfig = {
   high: { label: 'Alta', color: 'text-orange-600 bg-orange-100' },
 };
 
+interface Attachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  objectStorageKey: string;
+  uploadedById: string;
+  uploadedBy: { id: string; firstName: string | null; lastName: string | null };
+  uploadedAt: string;
+}
+
 export function TaskDetailDialog({
   task,
   open,
@@ -111,6 +125,11 @@ export function TaskDetailDialog({
   const [editTitle, setEditTitle] = useState('');
   const [newItemTitle, setNewItemTitle] = useState('');
   const [isAddingItem, setIsAddingItem] = useState(false);
+
+  const { data: attachmentsData = [] } = useQuery<Attachment[]>({
+    queryKey: ['/api/tasks', task.id, 'attachments'],
+    queryFn: () => apiRequest(`/api/tasks/${task.id}/attachments`),
+  });
 
   const activeTimer = task.timeTracking?.find(log => 
     !log.endTime && log.userId === currentUser?.id
@@ -312,7 +331,7 @@ export function TaskDetailDialog({
             </TabsTrigger>
             <TabsTrigger value="attachments" data-testid="tab-attachments">
               <Paperclip className="h-4 w-4 mr-2" />
-              Allegati ({task.attachments?.length || 0})
+              Allegati ({attachmentsData.length})
             </TabsTrigger>
             <TabsTrigger value="dependencies" data-testid="tab-dependencies">
               <Link2 className="h-4 w-4 mr-2" />
@@ -335,7 +354,7 @@ export function TaskDetailDialog({
 
               <Separator />
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Informazioni</h3>
                   <div className="space-y-3">
@@ -644,40 +663,8 @@ export function TaskDetailDialog({
               )}
             </TabsContent>
 
-            <TabsContent value="attachments" className="space-y-2 mt-0">
-              {!task.attachments || task.attachments.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <Paperclip className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p>Nessun allegato</p>
-                </div>
-              ) : (
-                task.attachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
-                    data-testid={`attachment-${attachment.id}`}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Paperclip className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate" data-testid={`text-attachment-name-${attachment.id}`}>{attachment.fileName}</div>
-                        <div className="text-xs text-gray-500" data-testid={`text-attachment-date-${attachment.id}`}>
-                          {format(new Date(attachment.createdAt), 'PPp', { locale: it })}
-                        </div>
-                      </div>
-                    </div>
-                    <a 
-                      href={attachment.fileUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                      data-testid={`link-attachment-${attachment.id}`}
-                    >
-                      Apri
-                    </a>
-                  </div>
-                ))
-              )}
+            <TabsContent value="attachments" className="space-y-4 mt-0">
+              <AttachmentsTab taskId={task.id} attachments={attachmentsData} />
             </TabsContent>
 
             <TabsContent value="dependencies" className="mt-0">
@@ -694,5 +681,162 @@ export function TaskDetailDialog({
         </Tabs>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AttachmentsTab({ taskId, attachments }: { taskId: string; attachments: Attachment[] }) {
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (attachmentId: string) => {
+      return apiRequest(`/api/tasks/${taskId}/attachments/${attachmentId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', taskId, 'attachments'] });
+      toast({ title: 'Allegato eliminato', description: 'L\'allegato è stato rimosso con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile eliminare l\'allegato', variant: 'destructive' });
+    },
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`/api/tasks/${taskId}/attachments`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Upload failed');
+        }
+
+        return response.json();
+      });
+
+      await Promise.all(uploadPromises);
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', taskId, 'attachments'] });
+      toast({ title: 'File caricati', description: `${files.length} file caricati con successo` });
+      e.target.value = '';
+    } catch (error: any) {
+      toast({ title: 'Errore', description: error.message || 'Impossibile caricare i file', variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getUserName = (user: { firstName: string | null; lastName: string | null }) => {
+    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown';
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">Allegati ({attachments.length})</h3>
+        <div>
+          <Input
+            type="file"
+            multiple
+            onChange={handleFileUpload}
+            disabled={isUploading}
+            className="hidden"
+            id="upload-attachments"
+            data-testid="input-upload-attachments"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isUploading}
+            onClick={() => document.getElementById('upload-attachments')?.click()}
+            data-testid="button-upload-attachment"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {isUploading ? 'Caricamento...' : 'Carica file'}
+          </Button>
+        </div>
+      </div>
+
+      {attachments.length === 0 ? (
+        <div className="text-center py-12 text-gray-500 border border-dashed border-gray-300 rounded-lg">
+          <Paperclip className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+          <p>Nessun allegato</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {attachments.map((attachment) => (
+            <div
+              key={attachment.id}
+              className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
+              data-testid={`attachment-${attachment.id}`}
+            >
+              <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium truncate" data-testid={`text-attachment-name-${attachment.id}`}>
+                    {attachment.fileName}
+                  </p>
+                  <span className="text-xs text-gray-500">({formatFileSize(attachment.fileSize)})</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Caricato da {getUserName(attachment.uploadedBy)} il {format(new Date(attachment.uploadedAt), 'PPp', { locale: it })}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = `/api/tasks/${taskId}/attachments/${attachment.id}/download`;
+                    link.download = attachment.fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  data-testid={`button-download-${attachment.id}`}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm(`Eliminare l'allegato "${attachment.fileName}"?`)) {
+                      deleteMutation.mutate(attachment.id);
+                    }
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                  data-testid={`button-delete-${attachment.id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
