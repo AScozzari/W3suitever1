@@ -51,11 +51,9 @@ import {
   CheckSquare, 
   Paperclip,
   Tag,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Trash2,
   FileText,
+  Trash2,
+  UserPlus,
 } from 'lucide-react';
 
 const taskFormSchema = z.object({
@@ -148,14 +146,8 @@ export function TaskFormDialog({
   const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
-  const [peopleCollapsed, setPeopleCollapsed] = useState(false);
-  const [checklistCollapsed, setChecklistCollapsed] = useState(false);
-  const [attachmentsCollapsed, setAttachmentsCollapsed] = useState(false);
-  
-  const [userSearch, setUserSearch] = useState('');
+  const [showUserPicker, setShowUserPicker] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [newChecklistAssignee, setNewChecklistAssignee] = useState<string>('');
   
   const prevOpenRef = useRef(false);
   const { user } = useAuth();
@@ -270,7 +262,7 @@ export function TaskFormDialog({
     } else {
       setAssignedUsers(prev => [...prev, { userId, role }]);
     }
-    setUserSearch('');
+    setShowUserPicker(false);
   };
 
   const removeUser = (userId: string) => {
@@ -294,13 +286,11 @@ export function TaskFormDialog({
       ...prev,
       {
         title: newChecklistItem.trim(),
-        assignedToUserId: (newChecklistAssignee && newChecklistAssignee !== 'unassigned') ? newChecklistAssignee : undefined,
         position: prev.length,
         isCompleted: false,
       },
     ]);
     setNewChecklistItem('');
-    setNewChecklistAssignee('');
   };
 
   const removeChecklistItem = (index: number) => {
@@ -317,14 +307,6 @@ export function TaskFormDialog({
     );
   };
 
-  const updateChecklistItemAssignee = (index: number, userId: string) => {
-    setChecklistItems(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, assignedToUserId: userId || undefined } : item
-      )
-    );
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setSelectedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
@@ -335,29 +317,22 @@ export function TaskFormDialog({
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const filteredUsers = users.filter(u => {
-    const searchLower = userSearch.toLowerCase();
-    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim().toLowerCase();
-    const email = u.email.toLowerCase();
-    return fullName.includes(searchLower) || email.includes(searchLower);
-  });
-
-  const availableUsers = filteredUsers.filter(u => 
+  const availableUsers = users.filter(u => 
     !assignedUsers.some(au => au.userId === u.id)
   );
 
-  const taskAssignees = assignedUsers.filter(u => u.role === 'assignee').map(u => u.userId);
   const completedCount = checklistItems.filter(item => item.isCompleted).length;
   const completionPercentage = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 gap-0 bg-white border border-gray-200 overflow-hidden">
-        <DialogHeader className="px-8 py-5 border-b border-gray-100 shrink-0 bg-gradient-to-r from-orange-50 to-purple-50">
-          <DialogTitle className="text-2xl font-bold text-gray-900">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+        {/* HEADER */}
+        <DialogHeader className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-purple-50">
+          <DialogTitle className="text-xl font-bold text-gray-900">
             {mode === 'create' ? '✨ Crea nuovo task' : '✏️ Modifica task'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-600 mt-1">
+          <DialogDescription className="text-sm text-gray-600">
             {mode === 'create' 
               ? 'Compila i campi per creare un nuovo task e assegnarlo al tuo team' 
               : 'Modifica i dettagli del task esistente'}
@@ -365,134 +340,136 @@ export function TaskFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-1 min-h-0">
-            {/* MAIN CONTENT - 65% */}
-            <div className="flex-[65] overflow-y-auto px-8 py-6 bg-white">
-              <div className="space-y-6 max-w-3xl">
-                {/* Title */}
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold text-gray-900">
-                        Titolo del Task <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Es: Preparare report mensile vendite"
-                          className="h-12 text-base border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
-                          data-testid="input-task-title"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
+            {/* SCROLLABLE CONTENT */}
+            <ScrollArea className="flex-1 px-6">
+              <div className="py-6 space-y-8">
+                
+                {/* SEZIONE 1: DETTAGLI TASK */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 pb-2 border-b-2 border-orange-200">
+                    <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-purple-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-900">Dettagli Task</h3>
+                  </div>
 
-                {/* Description */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold text-gray-900">
-                        Descrizione
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Descrizione dettagliata del task, obiettivi e note aggiuntive..."
-                          rows={5}
-                          className="text-base border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 resize-none"
-                          data-testid="input-task-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Status & Department */}
-                <div className="grid grid-cols-2 gap-6">
+                  {/* Title */}
                   <FormField
                     control={form.control}
-                    name="status"
+                    name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold text-gray-900">
-                          Stato <span className="text-red-500">*</span>
+                        <FormLabel className="text-sm font-semibold text-gray-900">
+                          Titolo <span className="text-red-500">*</span>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} data-testid="select-status">
-                          <FormControl>
-                            <SelectTrigger className="h-11 border-gray-300">
-                              <SelectValue placeholder="Seleziona stato" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {statusOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value} data-testid={`option-status-${option.value}`}>
-                                <Badge className={cn("text-xs font-medium", option.color)}>{option.label}</Badge>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Es: Preparare report mensile vendite"
+                            className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-200"
+                            data-testid="input-task-title"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
+                  {/* Description */}
                   <FormField
                     control={form.control}
-                    name="department"
+                    name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold text-gray-900">Dipartimento</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} data-testid="select-department">
-                          <FormControl>
-                            <SelectTrigger className="h-11 border-gray-300">
-                              <SelectValue placeholder="Seleziona dipartimento" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {departmentOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value} data-testid={`option-department-${option.value}`}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="text-sm font-semibold text-gray-900">Descrizione</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Descrizione dettagliata del task, obiettivi e note aggiuntive..."
+                            rows={4}
+                            className="border-gray-300 focus:border-orange-500 focus:ring-orange-200 resize-none"
+                            data-testid="input-task-description"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                {/* Priority & Urgency Card */}
-                <div className="p-6 rounded-xl bg-gradient-to-br from-orange-50 via-white to-purple-50 border-2 border-orange-200 shadow-sm">
-                  <h3 className="text-lg font-bold mb-4 text-gray-900 flex items-center gap-2">
-                    <span className="text-orange-600">🎯</span> Priorità & Urgenza
-                  </h3>
-                  <div className="grid grid-cols-2 gap-6">
+                  {/* Status & Department */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold text-gray-900">
+                            Stato <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-status">
+                            <FormControl>
+                              <SelectTrigger className="h-11 border-gray-300">
+                                <SelectValue placeholder="Seleziona stato" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {statusOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  <Badge className={cn("text-xs", option.color)}>{option.label}</Badge>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold text-gray-900">Dipartimento</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-department">
+                            <FormControl>
+                              <SelectTrigger className="h-11 border-gray-300">
+                                <SelectValue placeholder="Seleziona dipartimento" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {departmentOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Priority & Urgency */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="priority"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-semibold text-gray-900">
+                          <FormLabel className="text-sm font-semibold text-gray-900">
                             Priorità <span className="text-red-500">*</span>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value} data-testid="select-priority">
                             <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300 bg-white">
+                              <SelectTrigger className="h-11 border-gray-300">
                                 <SelectValue placeholder="Seleziona priorità" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {priorityOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value} data-testid={`option-priority-${option.value}`}>
-                                  <Badge className={cn("text-xs font-medium", option.color)}>{option.label}</Badge>
+                                <SelectItem key={option.value} value={option.value}>
+                                  <Badge className={cn("text-xs", option.color)}>{option.label}</Badge>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -507,19 +484,143 @@ export function TaskFormDialog({
                       name="urgency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-semibold text-gray-900">
+                          <FormLabel className="text-sm font-semibold text-gray-900">
                             Urgenza <span className="text-red-500">*</span>
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value} data-testid="select-urgency">
                             <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300 bg-white">
+                              <SelectTrigger className="h-11 border-gray-300">
                                 <SelectValue placeholder="Seleziona urgenza" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {urgencyOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value} data-testid={`option-urgency-${option.value}`}>
-                                  <Badge className={cn("text-xs font-medium", option.color)}>{option.label}</Badge>
+                                <SelectItem key={option.value} value={option.value}>
+                                  <Badge className={cn("text-xs", option.color)}>{option.label}</Badge>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel className="text-sm font-semibold text-gray-900 mb-2">Data Inizio</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'h-11 w-full justify-start text-left font-normal border-gray-300',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                  data-testid="button-start-date"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel className="text-sm font-semibold text-gray-900 mb-2">Scadenza</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'h-11 w-full justify-start text-left font-normal border-gray-300',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                  data-testid="button-due-date"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Tags & Store */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                            <Tag className="h-4 w-4" /> Tags
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="urgente, importante, cliente..."
+                              className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-200"
+                              data-testid="input-tags"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="storeId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold text-gray-900">Punto Vendita</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-store">
+                            <FormControl>
+                              <SelectTrigger className="h-11 border-gray-300">
+                                <SelectValue placeholder="Seleziona punto vendita" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {stores.map((store) => (
+                                <SelectItem key={store.id} value={store.id}>
+                                  {store.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -531,494 +632,317 @@ export function TaskFormDialog({
                   </div>
                 </div>
 
-                {/* Dates */}
-                <div className="grid grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel className="text-base font-semibold text-gray-900 mb-2">Data Inizio</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  'h-11 w-full justify-start text-left font-normal border-gray-300',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                                data-testid="button-start-date"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <Separator />
 
-                  <FormField
-                    control={form.control}
-                    name="dueDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel className="text-base font-semibold text-gray-900 mb-2">Scadenza</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  'h-11 w-full justify-start text-left font-normal border-gray-300',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                                data-testid="button-due-date"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Tags & Store */}
-                <div className="grid grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="tags"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                          <Tag className="h-4 w-4" /> Tags
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="urgente, importante, cliente..."
-                            className="h-11 border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
-                            data-testid="input-tags"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="storeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-semibold text-gray-900">Punto Vendita</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} data-testid="select-store">
-                          <FormControl>
-                            <SelectTrigger className="h-11 border-gray-300">
-                              <SelectValue placeholder="Seleziona punto vendita" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {stores.map((store) => (
-                              <SelectItem key={store.id} value={store.id} data-testid={`option-store-${store.id}`}>
-                                {store.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SIDEBAR - 35% */}
-            <div className="flex-[35] border-l border-gray-200 bg-gradient-to-br from-orange-50 via-purple-50 to-white overflow-hidden flex flex-col">
-              <ScrollArea className="flex-1 p-6">
-                <div className="space-y-6">
-                  {/* PEOPLE SECTION */}
-                  <div className="rounded-xl bg-white/80 backdrop-blur-sm border-2 border-orange-200 shadow-lg overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setPeopleCollapsed(!peopleCollapsed)}
-                      className="w-full px-5 py-4 flex items-center justify-between bg-gradient-to-r from-orange-500 to-purple-600 text-white hover:from-orange-600 hover:to-purple-700 transition-all"
-                      data-testid="button-toggle-people"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5" />
-                        <span className="font-bold text-base">Persone</span>
-                        <Badge variant="secondary" className="bg-white/20 text-white border-white/40">
-                          {assignedUsers.length}
-                        </Badge>
-                      </div>
-                      {peopleCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-                    </button>
-
-                    {!peopleCollapsed && (
-                      <div className="p-5 space-y-4">
-                        {/* User Search Command */}
-                        <Command className="border-2 border-orange-200 rounded-lg">
-                          <CommandInput 
-                            placeholder="🔍 Cerca utente..." 
-                            value={userSearch}
-                            onValueChange={setUserSearch}
-                            className="h-11"
-                          />
-                          <CommandEmpty className="py-3 text-sm text-gray-500">Nessun utente trovato</CommandEmpty>
-                          {userSearch && availableUsers.length > 0 && (
-                            <CommandGroup className="max-h-48 overflow-y-auto">
-                              {availableUsers.map((u) => (
-                                <CommandItem
-                                  key={u.id}
-                                  onSelect={() => addUser(u.id, 'assignee')}
-                                  className="flex items-center justify-between cursor-pointer"
-                                  data-testid={`user-search-item-${u.id}`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">
-                                        {getUserInitials(u.id)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="text-sm">
-                                      <div className="font-medium">{getUserDisplayName(u.id)}</div>
-                                      <div className="text-xs text-gray-500">{u.email}</div>
-                                    </div>
-                                  </div>
-                                  <Plus className="h-4 w-4 text-orange-600" />
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-                        </Command>
-
-                        {/* Assigned Users List */}
-                        {assignedUsers.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                              Assegnati ({assignedUsers.length})
-                            </div>
-                            {assignedUsers.map((au) => (
-                              <div
-                                key={au.userId}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200 hover:border-orange-300 transition-colors"
-                                data-testid={`assigned-user-${au.userId}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-9 w-9">
-                                    <AvatarFallback className="bg-gradient-to-br from-orange-400 to-purple-500 text-white text-xs font-bold">
-                                      {getUserInitials(au.userId)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="text-sm">
-                                    <div className="font-medium text-gray-900">{getUserDisplayName(au.userId)}</div>
-                                    <Badge 
-                                      variant={au.role === 'assignee' ? 'default' : 'secondary'}
-                                      className={cn(
-                                        "text-xs mt-1",
-                                        au.role === 'assignee' 
-                                          ? "bg-orange-100 text-orange-700 border-orange-300" 
-                                          : "bg-purple-100 text-purple-700 border-purple-300"
-                                      )}
-                                    >
-                                      {au.role === 'assignee' ? '👤 Assegnatario' : '👁️ Osservatore'}
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => toggleUserRole(au.userId)}
-                                    className="h-8 w-8 p-0 hover:bg-orange-100"
-                                    data-testid={`button-toggle-role-${au.userId}`}
-                                  >
-                                    {au.role === 'assignee' ? <Eye className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeUser(au.userId)}
-                                    className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
-                                    data-testid={`button-remove-user-${au.userId}`}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* CHECKLIST SECTION */}
-                  <div className="rounded-xl bg-white/80 backdrop-blur-sm border-2 border-purple-200 shadow-lg overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setChecklistCollapsed(!checklistCollapsed)}
-                      className="w-full px-5 py-4 flex items-center justify-between bg-gradient-to-r from-purple-500 to-orange-500 text-white hover:from-purple-600 hover:to-orange-600 transition-all"
-                      data-testid="button-toggle-checklist"
-                    >
-                      <div className="flex items-center gap-3">
-                        <CheckSquare className="h-5 w-5" />
-                        <span className="font-bold text-base">Checklist</span>
-                        <Badge variant="secondary" className="bg-white/20 text-white border-white/40">
-                          {checklistItems.length}
-                        </Badge>
-                      </div>
-                      {checklistCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-                    </button>
-
-                    {!checklistCollapsed && (
-                      <div className="p-5 space-y-4">
-                        {/* Progress Bar */}
-                        {checklistItems.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium text-gray-700">Completamento</span>
-                              <span className="font-bold text-purple-600">{Math.round(completionPercentage)}%</span>
-                            </div>
-                            <Progress value={completionPercentage} className="h-3" />
-                            <div className="text-xs text-gray-500">
-                              {completedCount} di {checklistItems.length} completati
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Add Checklist Item */}
-                        <div className="space-y-3 p-4 rounded-lg bg-purple-50 border border-purple-200">
-                          <Input
-                            value={newChecklistItem}
-                            onChange={(e) => setNewChecklistItem(e.target.value)}
-                            placeholder="Nuovo elemento checklist..."
-                            className="border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addChecklistItem();
-                              }
-                            }}
-                            data-testid="input-new-checklist-item"
-                          />
-                          <Select value={newChecklistAssignee} onValueChange={setNewChecklistAssignee}>
-                            <SelectTrigger className="border-purple-300" data-testid="select-checklist-assignee">
-                              <SelectValue placeholder="Assegna a..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="unassigned">Non assegnato</SelectItem>
-                              {taskAssignees.map((userId) => (
-                                <SelectItem key={userId} value={userId}>
-                                  {getUserDisplayName(userId)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            type="button"
-                            onClick={addChecklistItem}
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                            disabled={!newChecklistItem.trim()}
-                            data-testid="button-add-checklist-item"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Aggiungi elemento
-                          </Button>
-                        </div>
-
-                        {/* Checklist Items */}
-                        {checklistItems.length > 0 && (
-                          <div className="space-y-2">
-                            {checklistItems.map((item, index) => (
-                              <div
-                                key={index}
-                                className={cn(
-                                  "flex items-start gap-3 p-3 rounded-lg border transition-all",
-                                  item.isCompleted 
-                                    ? "bg-green-50 border-green-200" 
-                                    : "bg-white border-gray-200 hover:border-purple-300"
-                                )}
-                                data-testid={`checklist-item-${index}`}
-                              >
-                                <Checkbox
-                                  checked={item.isCompleted}
-                                  onCheckedChange={() => toggleChecklistItem(index)}
-                                  className="mt-1"
-                                  data-testid={`checkbox-checklist-${index}`}
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className={cn(
-                                    "text-sm font-medium",
-                                    item.isCompleted ? "line-through text-gray-500" : "text-gray-900"
-                                  )}>
-                                    {item.title}
-                                  </div>
-                                  {item.assignedToUserId && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      👤 {getUserDisplayName(item.assignedToUserId)}
-                                    </div>
-                                  )}
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeChecklistItem(index)}
-                                  className="h-7 w-7 p-0 hover:bg-red-100 text-red-600"
-                                  data-testid={`button-remove-checklist-${index}`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ATTACHMENTS SECTION */}
-                  <div className="rounded-xl bg-white/80 backdrop-blur-sm border-2 border-orange-200 shadow-lg overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setAttachmentsCollapsed(!attachmentsCollapsed)}
-                      className="w-full px-5 py-4 flex items-center justify-between bg-gradient-to-r from-orange-500 to-purple-600 text-white hover:from-orange-600 hover:to-purple-700 transition-all"
-                      data-testid="button-toggle-attachments"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Paperclip className="h-5 w-5" />
-                        <span className="font-bold text-base">Allegati</span>
-                        <Badge variant="secondary" className="bg-white/20 text-white border-white/40">
-                          {selectedFiles.length}
-                        </Badge>
-                      </div>
-                      {attachmentsCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-                    </button>
-
-                    {!attachmentsCollapsed && (
-                      <div className="p-5 space-y-4">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          onChange={handleFileSelect}
-                          className="hidden"
-                          data-testid="input-file-upload"
-                        />
+                {/* SEZIONE 2: TEAM */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-purple-600 rounded-full" />
+                      <h3 className="text-lg font-bold text-gray-900">Team</h3>
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                        {assignedUsers.length}
+                      </Badge>
+                    </div>
+                    <Popover open={showUserPicker} onOpenChange={setShowUserPicker}>
+                      <PopoverTrigger asChild>
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="w-full h-24 border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50 transition-all"
-                          data-testid="button-upload-file"
+                          size="sm"
+                          className="h-9 border-orange-300 text-orange-700 hover:bg-orange-50"
+                          data-testid="button-add-user"
                         >
-                          <div className="flex flex-col items-center gap-2">
-                            <Paperclip className="h-6 w-6 text-orange-600" />
-                            <span className="text-sm font-medium text-gray-700">Clicca per caricare file</span>
-                          </div>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Aggiungi persona
                         </Button>
-
-                        {selectedFiles.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                              File selezionati ({selectedFiles.length})
-                            </div>
-                            {selectedFiles.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200 hover:border-orange-300 transition-colors"
-                                data-testid={`attached-file-${index}`}
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0" align="end">
+                        <Command>
+                          <CommandInput placeholder="🔍 Cerca utente..." />
+                          <CommandEmpty>Nessun utente trovato</CommandEmpty>
+                          <CommandGroup className="max-h-64 overflow-y-auto">
+                            {availableUsers.map((u) => (
+                              <CommandItem
+                                key={u.id}
+                                onSelect={() => addUser(u.id, 'assignee')}
+                                className="flex items-center justify-between cursor-pointer"
                               >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <FileText className="h-5 w-5 text-orange-600 shrink-0" />
-                                  <div className="min-w-0">
-                                    <div className="text-sm font-medium text-gray-900 truncate">
-                                      {file.name}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {(file.size / 1024).toFixed(1)} KB
-                                    </div>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">
+                                      {getUserInitials(u.id)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="text-sm">
+                                    <div className="font-medium">{getUserDisplayName(u.id)}</div>
+                                    <div className="text-xs text-gray-500">{u.email}</div>
                                   </div>
                                 </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeFile(index)}
-                                  className="h-8 w-8 p-0 hover:bg-red-100 text-red-600 shrink-0"
-                                  data-testid={`button-remove-file-${index}`}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
+                                <Plus className="h-4 w-4 text-orange-600" />
+                              </CommandItem>
                             ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                </div>
-              </ScrollArea>
 
-              {/* FOOTER - Action Buttons */}
-              <div className="shrink-0 p-6 border-t border-gray-200 bg-white">
-                <div className="flex gap-3">
+                  {/* Assigned Users Pills */}
+                  {assignedUsers.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {assignedUsers.map((au) => (
+                        <div
+                          key={au.userId}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all",
+                            au.role === 'assignee' 
+                              ? "bg-orange-50 border-orange-300" 
+                              : "bg-purple-50 border-purple-300"
+                          )}
+                          data-testid={`user-pill-${au.userId}`}
+                        >
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className={cn(
+                              "text-xs font-bold",
+                              au.role === 'assignee' 
+                                ? "bg-orange-200 text-orange-800" 
+                                : "bg-purple-200 text-purple-800"
+                            )}>
+                              {getUserInitials(au.userId)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium text-gray-900">
+                            {getUserDisplayName(au.userId)}
+                          </span>
+                          <Badge variant="outline" className={cn(
+                            "text-xs",
+                            au.role === 'assignee' 
+                              ? "border-orange-400 text-orange-700" 
+                              : "border-purple-400 text-purple-700"
+                          )}>
+                            {au.role === 'assignee' ? 'Assegnatario' : 'Osservatore'}
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleUserRole(au.userId)}
+                            className="h-6 w-6 p-0 hover:bg-white/50"
+                            title={au.role === 'assignee' ? 'Cambia in osservatore' : 'Cambia in assegnatario'}
+                          >
+                            <Users className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeUser(au.userId)}
+                            className="h-6 w-6 p-0 hover:bg-red-100 text-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">Nessuna persona assegnata</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* SEZIONE 3: CHECKLIST */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-orange-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-900">Checklist</h3>
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                      {checklistItems.length}
+                    </Badge>
+                  </div>
+
+                  {/* Progress Bar */}
+                  {checklistItems.length > 0 && (
+                    <div className="space-y-2 p-4 rounded-lg bg-purple-50 border border-purple-200">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-gray-700">Completamento</span>
+                        <span className="font-bold text-purple-600">{Math.round(completionPercentage)}%</span>
+                      </div>
+                      <Progress value={completionPercentage} className="h-2 bg-purple-200" />
+                      <div className="text-xs text-gray-600">
+                        {completedCount} di {checklistItems.length} completati
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add Checklist Item */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newChecklistItem}
+                      onChange={(e) => setNewChecklistItem(e.target.value)}
+                      placeholder="Nuovo elemento checklist..."
+                      className="flex-1 h-10 border-gray-300 focus:border-purple-500 focus:ring-purple-200"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addChecklistItem();
+                        }
+                      }}
+                      data-testid="input-new-checklist-item"
+                    />
+                    <Button
+                      type="button"
+                      onClick={addChecklistItem}
+                      disabled={!newChecklistItem.trim()}
+                      className="h-10 bg-purple-600 hover:bg-purple-700 text-white"
+                      data-testid="button-add-checklist-item"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Checklist Items */}
+                  {checklistItems.length > 0 && (
+                    <div className="space-y-2">
+                      {checklistItems.map((item, index) => (
+                        <div
+                          key={index}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border transition-all",
+                            item.isCompleted 
+                              ? "bg-green-50 border-green-200" 
+                              : "bg-white border-gray-200"
+                          )}
+                          data-testid={`checklist-item-${index}`}
+                        >
+                          <Checkbox
+                            checked={item.isCompleted}
+                            onCheckedChange={() => toggleChecklistItem(index)}
+                            data-testid={`checkbox-checklist-${index}`}
+                          />
+                          <span className={cn(
+                            "flex-1 text-sm",
+                            item.isCompleted ? "line-through text-gray-500" : "text-gray-900 font-medium"
+                          )}>
+                            {item.title}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeChecklistItem(index)}
+                            className="h-7 w-7 p-0 hover:bg-red-100 text-red-600"
+                            data-testid={`button-remove-checklist-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* SEZIONE 4: ALLEGATI */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-purple-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-900">Allegati</h3>
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                      {selectedFiles.length}
+                    </Badge>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    data-testid="input-file-upload"
+                  />
+                  
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={onClose}
-                    className="flex-1 h-12 text-base font-semibold border-gray-300 hover:bg-gray-100"
-                    disabled={isSubmitting}
-                    data-testid="button-cancel-task"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-20 border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50"
+                    data-testid="button-upload-file"
                   >
-                    Annulla
+                    <div className="flex flex-col items-center gap-2">
+                      <Paperclip className="h-5 w-5 text-orange-600" />
+                      <span className="text-sm font-medium text-gray-700">Clicca per caricare file</span>
+                    </div>
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white shadow-lg"
-                    data-testid="button-submit-task"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Salvataggio...
-                      </>
-                    ) : mode === 'create' ? (
-                      '✨ Crea Task'
-                    ) : (
-                      '💾 Salva Modifiche'
-                    )}
-                  </Button>
+
+                  {selectedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200 hover:border-orange-300 transition-colors"
+                          data-testid={`attached-file-${index}`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <FileText className="h-5 w-5 text-orange-600 shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {file.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {(file.size / 1024).toFixed(1)} KB
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            className="h-8 w-8 p-0 hover:bg-red-100 text-red-600 shrink-0"
+                            data-testid={`button-remove-file-${index}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+              </div>
+            </ScrollArea>
+
+            {/* FOOTER */}
+            <div className="shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1 h-11 font-semibold border-gray-300 hover:bg-gray-100"
+                  disabled={isSubmitting}
+                  data-testid="button-cancel-task"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 h-11 font-semibold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  data-testid="button-submit-task"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>✨ {mode === 'create' ? 'Crea Task' : 'Salva Modifiche'}</>
+                  )}
+                </Button>
               </div>
             </div>
           </form>
