@@ -326,6 +326,15 @@ export default function TasksPage() {
                 onTaskClick={handleTaskClick}
                 selectedTaskIds={selectedTaskIds}
                 onSelectionChange={setSelectedTaskIds}
+                onEdit={(taskId) => {
+                  const task = filteredTasks.find(t => t.id === taskId);
+                  if (task) handleTaskClick(task);
+                }}
+                onDelete={(taskId) => {
+                  if (confirm('Sei sicuro di voler eliminare questo task?')) {
+                    updateTaskMutation.mutate({ taskId, updates: { status: 'archived' } });
+                  }
+                }}
               />
             )}
           </TabsContent>

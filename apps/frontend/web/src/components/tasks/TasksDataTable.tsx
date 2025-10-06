@@ -23,6 +23,8 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 interface Task {
@@ -52,6 +54,8 @@ export interface TasksDataTableProps {
   className?: string;
   selectedTaskIds?: string[];
   onSelectionChange?: (taskIds: string[]) => void;
+  onEdit?: (taskId: string) => void;
+  onDelete?: (taskId: string) => void;
 }
 
 const statusConfig = {
@@ -79,6 +83,8 @@ export function TasksDataTable({
   className,
   selectedTaskIds = [],
   onSelectionChange,
+  onEdit,
+  onDelete,
 }: TasksDataTableProps) {
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -258,6 +264,11 @@ export function TasksDataTable({
                 <SortIcon field="createdAt" />
               </Button>
             </TableHead>
+            {(onEdit || onDelete) && (
+              <TableHead className="w-24 text-center">
+                <span className="font-semibold">Azioni</span>
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -354,6 +365,34 @@ export function TasksDataTable({
                     {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true, locale: it })}
                   </span>
                 </TableCell>
+                {(onEdit || onDelete) && (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1">
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(task.id)}
+                          className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
+                          data-testid={`button-edit-${task.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(task.id)}
+                          className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                          data-testid={`button-delete-${task.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             );
           })}
