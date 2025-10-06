@@ -126,13 +126,13 @@ const urgencyOptions = [
 ];
 
 const departmentOptions = [
-  { value: 'hr', label: 'Risorse Umane' },
-  { value: 'operations', label: 'Operazioni' },
-  { value: 'support', label: 'Supporto' },
-  { value: 'finance', label: 'Finanza' },
-  { value: 'crm', label: 'CRM' },
-  { value: 'sales', label: 'Vendite' },
-  { value: 'marketing', label: 'Marketing' },
+  { value: 'hr', label: 'hr' },
+  { value: 'operations', label: 'operations' },
+  { value: 'support', label: 'support' },
+  { value: 'finance', label: 'finance' },
+  { value: 'crm', label: 'crm' },
+  { value: 'sales', label: 'sales' },
+  { value: 'marketing', label: 'marketing' },
 ];
 
 export function TaskFormDialog({
