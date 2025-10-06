@@ -30,6 +30,25 @@ import {
 } from '../db/schema/w3suite';
 import { eq, and, or, desc, asc, sql, inArray, isNull, lte, gte, getTableColumns } from 'drizzle-orm';
 import { logger } from '../core/logger';
+import { Client } from '@replit/object-storage';
+import { v4 as uuidv4 } from 'uuid';
+
+// Object Storage configuration
+const PRIVATE_DIR = process.env.PRIVATE_OBJECT_DIR || '.private';
+
+// Lazy singleton Object Storage Client
+let objectStorageClient: Client | null = null;
+
+function getObjectStorageClient(): Client {
+  if (!objectStorageClient) {
+    if (!process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID) {
+      throw new Error('Object Storage non configurato. Contattare amministratore (manca DEFAULT_OBJECT_STORAGE_BUCKET_ID)');
+    }
+    objectStorageClient = new Client();
+    logger.info('📦 Object Storage Client initialized');
+  }
+  return objectStorageClient;
+}
 
 export class TaskService {
   
@@ -640,15 +659,124 @@ export class TaskService {
     return attachment;
   }
 
-  static async deleteAttachment(attachmentId: string, tenantId: string): Promise<void> {
-    await db
-      .delete(taskAttachments)
-      .where(and(
-        eq(taskAttachments.id, attachmentId),
-        eq(taskAttachments.tenantId, tenantId)
-      ));
+  static async createAttachment(
+    taskId: string,
+    tenantId: string,
+    userId: string,
+    file: { buffer: Buffer; originalname: string; mimetype: string; size: number }
+  ): Promise<TaskAttachment> {
+    try {
+      // Validate file input
+      if (!file || !file.buffer || !file.originalname || !file.mimetype) {
+        throw new Error('File non valido: buffer, nome o mimetype mancanti');
+      }
 
-    logger.info('📎 Attachment deleted', { attachmentId });
+      // Get Object Storage client
+      const client = getObjectStorageClient();
+
+      // Generate unique object path
+      const fileExt = file.originalname.split('.').pop() || '';
+      const uniqueFileName = `${uuidv4()}.${fileExt}`;
+      const objectPath = `${PRIVATE_DIR}/tasks/${tenantId}/${taskId}/${uniqueFileName}`;
+
+      // Upload to Object Storage
+      const { ok, error } = await client.uploadFromBytes(objectPath, file.buffer);
+      
+      if (!ok) {
+        logger.error('❌ Failed to upload attachment to Object Storage', { 
+          error, 
+          taskId, 
+          fileName: file.originalname 
+        });
+        throw new Error('Errore durante upload file: ' + error);
+      }
+
+      // Save metadata to database
+      const attachmentData: InsertTaskAttachment = {
+        taskId,
+        tenantId,
+        uploadedBy: userId,
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        objectStorageKey: objectPath,
+        metadata: {
+          originalName: file.originalname,
+          uploadedAt: new Date().toISOString()
+        }
+      };
+
+      const [attachment] = await db
+        .insert(taskAttachments)
+        .values(attachmentData)
+        .returning();
+
+      logger.info('📎 Attachment uploaded successfully', {
+        taskId,
+        fileName: file.originalname,
+        objectPath,
+        size: file.size,
+        attachmentId: attachment.id
+      });
+
+      return attachment;
+    } catch (error) {
+      logger.error('❌ Failed to create attachment', { error, taskId, fileName: file.originalname });
+      throw error;
+    }
+  }
+
+  static async deleteAttachment(attachmentId: string, tenantId: string): Promise<void> {
+    try {
+      // First get attachment to retrieve objectStorageKey
+      const [attachment] = await db
+        .select()
+        .from(taskAttachments)
+        .where(and(
+          eq(taskAttachments.id, attachmentId),
+          eq(taskAttachments.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (!attachment) {
+        throw new Error('Attachment not found');
+      }
+
+      // Delete from Object Storage
+      if (attachment.objectStorageKey) {
+        const client = getObjectStorageClient();
+        const { ok, error } = await client.delete(attachment.objectStorageKey);
+        
+        if (!ok) {
+          logger.error('❌ Failed to delete file from Object Storage', {
+            error,
+            objectStorageKey: attachment.objectStorageKey,
+            attachmentId
+          });
+          throw new Error(`Errore eliminazione file da Object Storage: ${error}`);
+        }
+        
+        logger.info('🗑️  File deleted from Object Storage', {
+          objectStorageKey: attachment.objectStorageKey
+        });
+      }
+
+      // Delete from database
+      await db
+        .delete(taskAttachments)
+        .where(and(
+          eq(taskAttachments.id, attachmentId),
+          eq(taskAttachments.tenantId, tenantId)
+        ));
+
+      logger.info('📎 Attachment deleted successfully', { 
+        attachmentId,
+        fileName: attachment.fileName 
+      });
+    } catch (error) {
+      logger.error('❌ Failed to delete attachment', { error, attachmentId });
+      throw error;
+    }
   }
 
   static async getAttachments(taskId: string, tenantId: string): Promise<TaskAttachment[]> {
