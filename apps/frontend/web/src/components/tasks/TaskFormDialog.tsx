@@ -140,6 +140,7 @@ export function TaskFormDialog({
   const [watchers, setWatchers] = useState<string[]>([]);
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [newChecklistItemAssignee, setNewChecklistItemAssignee] = useState<string>('');
   
   const prevOpenRef = useRef(false);
 
@@ -223,10 +224,12 @@ export function TaskFormDialog({
       ...prev,
       {
         title: newChecklistItem.trim(),
+        assignedToUserId: newChecklistItemAssignee || undefined,
         position: prev.length,
       },
     ]);
     setNewChecklistItem('');
+    setNewChecklistItemAssignee('');
   };
 
   const removeChecklistItem = (index: number) => {
@@ -660,84 +663,112 @@ export function TaskFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="checklist" className="m-0 space-y-4 mt-4 pb-6">
-                  <div className="p-3 rounded-lg bg-white border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckSquare className="h-4 w-4 text-purple-600" />
-                      <h3 className="text-sm font-semibold text-gray-900">Lista attività</h3>
-                    </div>
-                    
-                    <div className="flex gap-2 mb-3">
-                      <Input
-                        placeholder="Nuova attività..."
-                        value={newChecklistItem}
-                        onChange={(e) => setNewChecklistItem(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addChecklistItem();
-                          }
-                        }}
-                        className="border-gray-200 text-sm"
-                        data-testid="input-checklist-item"
-                      />
-                      <Button
-                        type="button"
-                        onClick={addChecklistItem}
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0"
-                        data-testid="button-add-checklist-item"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                <TabsContent value="checklist" className="m-0 mt-4 pb-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-lg bg-white border border-gray-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Plus className="h-4 w-4 text-purple-600" />
+                        <h3 className="text-sm font-semibold text-gray-900">Aggiungi attività</h3>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-700 mb-1 block">Titolo attività</label>
+                          <Input
+                            placeholder="es: Rivedere documento..."
+                            value={newChecklistItem}
+                            onChange={(e) => setNewChecklistItem(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                addChecklistItem();
+                              }
+                            }}
+                            className="border-gray-200 text-sm"
+                            data-testid="input-checklist-item"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-medium text-gray-700 mb-1 block">Assegna a</label>
+                          <Select
+                            value={newChecklistItemAssignee}
+                            onValueChange={setNewChecklistItemAssignee}
+                          >
+                            <SelectTrigger className="w-full border-gray-200">
+                              <SelectValue placeholder="Seleziona utente..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Nessuno</SelectItem>
+                              {users.map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {getUserDisplayName(user.id)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <Button
+                          type="button"
+                          onClick={addChecklistItem}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                          disabled={!newChecklistItem.trim()}
+                          data-testid="button-add-checklist-item"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi alla lista
+                        </Button>
+                      </div>
                     </div>
 
-                    {checklistItems.length > 0 ? (
-                      <div className="space-y-2 max-h-80 overflow-y-auto border border-gray-100 rounded-lg p-2">
-                        {checklistItems.map((item, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 p-2 rounded-md bg-gray-50 border border-gray-100"
-                            data-testid={`checklist-item-${index}`}
-                          >
-                            <CheckSquare className="h-4 w-4 text-gray-400 shrink-0" />
-                            <span className="flex-1 text-sm text-gray-700">{item.title}</span>
-                            <Select
-                              value={item.assignedToUserId || ''}
-                              onValueChange={(value) => updateChecklistItemAssignee(index, value)}
-                            >
-                              <SelectTrigger className="w-40 h-8 text-xs border-gray-200">
-                                <SelectValue placeholder="Assegna..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">Nessuno</SelectItem>
-                                {users.map((user) => (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {getUserDisplayName(user.id)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeChecklistItem(index)}
-                              className="h-8 w-8 p-0 shrink-0"
-                              data-testid={`button-remove-checklist-${index}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                            </Button>
+                    <div className="p-3 rounded-lg bg-white border border-gray-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckSquare className="h-4 w-4 text-purple-600" />
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          Attività ({checklistItems.length})
+                        </h3>
+                      </div>
+
+                      {checklistItems.length > 0 ? (
+                        <ScrollArea className="h-80">
+                          <div className="space-y-2 pr-3">
+                            {checklistItems.map((item, index) => (
+                              <div
+                                key={index}
+                                className="flex items-start gap-2 p-2 rounded-md bg-purple-50 border border-purple-200"
+                                data-testid={`checklist-item-${index}`}
+                              >
+                                <CheckSquare className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-900 font-medium">{item.title}</p>
+                                  {item.assignedToUserId && (
+                                    <p className="text-xs text-gray-600 mt-0.5">
+                                      Assegnato a: {getUserDisplayName(item.assignedToUserId)}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeChecklistItem(index)}
+                                  className="h-6 w-6 p-0 shrink-0 hover:bg-purple-100"
+                                  data-testid={`button-remove-checklist-${index}`}
+                                >
+                                  <X className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-400 border border-gray-100 rounded-lg">
-                        <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Nessuna attività in checklist</p>
-                      </div>
-                    )}
+                        </ScrollArea>
+                      ) : (
+                        <div className="text-center py-12 text-gray-400">
+                          <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Nessuna attività in checklist</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
               </div>
