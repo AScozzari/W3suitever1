@@ -696,7 +696,7 @@ export function TaskFormDialog({
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-6 bg-orange-500 rounded-full" />
                       <h3 className="text-lg font-bold text-gray-900">Team</h3>
-                      <Badge variant="secondary" className="bg-white border-2 border-orange-500 text-orange-600">
+                      <Badge variant="secondary" className="bg-orange-500 text-white">
                         {assignedUsers.length}
                       </Badge>
                     </div>
@@ -767,18 +767,18 @@ export function TaskFormDialog({
                     <div className="mb-3">
                       <p className="text-xs font-semibold text-gray-600 mb-2">Creatore</p>
                       <div
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 bg-white border-orange-500 w-fit"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500 w-fit"
                         data-testid="creator-pill"
                       >
                         <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-xs font-bold bg-orange-500 text-white">
+                          <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
                             {getUserInitials(user.id)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-white">
                           {getUserDisplayName(user.id)}
                         </span>
-                        <Badge variant="secondary" className="bg-orange-500 text-white text-xs font-semibold">
+                        <Badge variant="secondary" className="bg-white text-orange-600 text-xs font-semibold">
                           Creatore
                         </Badge>
                       </div>
@@ -796,37 +796,24 @@ export function TaskFormDialog({
                       {assignedUsers.map((au) => (
                         <div
                           key={au.userId}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all bg-white",
-                            au.role === 'assignee' 
-                              ? "border-orange-500" 
-                              : "border-orange-500"
-                          )}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all bg-orange-500"
                           data-testid={`user-pill-${au.userId}`}
                         >
                           <Avatar className="h-7 w-7">
-                            <AvatarFallback className={cn(
-                              "text-xs font-bold",
-                              au.role === 'assignee' 
-                                ? "bg-orange-500 text-white" 
-                                : "bg-orange-500 text-white"
-                            )}>
+                            <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
                               {getUserInitials(au.userId)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-white">
                             {getUserDisplayName(au.userId)}
                           </span>
                           <div className="flex items-center gap-1">
                             {au.role === 'assignee' ? (
-                              <UserCheck className="h-4 w-4 text-orange-600" />
+                              <UserCheck className="h-4 w-4 text-white" />
                             ) : (
-                              <Eye className="h-4 w-4 text-orange-600" />
+                              <Eye className="h-4 w-4 text-white" />
                             )}
-                            <span className={cn(
-                              "text-xs font-semibold",
-                              au.role === 'assignee' ? "text-orange-700" : "text-orange-600"
-                            )}>
+                            <span className="text-xs font-semibold text-white">
                               {au.role === 'assignee' ? 'Assegnatario' : 'Osservatore'}
                             </span>
                           </div>
@@ -835,12 +822,7 @@ export function TaskFormDialog({
                             variant="outline"
                             size="sm"
                             onClick={() => toggleUserRole(au.userId)}
-                            className={cn(
-                              "h-7 px-2 gap-1 transition-all",
-                              au.role === 'assignee' 
-                                ? "border-orange-500 text-orange-600 hover:border-orange-600" 
-                                : "border-orange-500 text-orange-600 hover:border-orange-600"
-                            )}
+                            className="h-7 px-2 gap-1 transition-all border-white text-white hover:bg-white hover:text-orange-500"
                             title={au.role === 'assignee' ? 'Cambia in Osservatore' : 'Cambia in Assegnatario'}
                             data-testid={`button-toggle-role-${au.userId}`}
                           >
@@ -854,7 +836,7 @@ export function TaskFormDialog({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeUser(au.userId)}
-                            className="h-6 w-6 p-0 hover:bg-red-100 text-red-600"
+                            className="h-6 w-6 p-0 hover:bg-white text-white hover:text-red-600"
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -873,20 +855,20 @@ export function TaskFormDialog({
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-6 bg-orange-500 rounded-full" />
                     <h3 className="text-lg font-bold text-gray-900">Checklist</h3>
-                    <Badge variant="secondary" className="bg-white border-2 border-orange-500 text-orange-600">
+                    <Badge variant="secondary" className="bg-orange-500 text-white">
                       {checklistItems.length}
                     </Badge>
                   </div>
 
                   {/* Progress Bar */}
                   {checklistItems.length > 0 && (
-                    <div className="space-y-2 p-4 rounded-lg bg-white border-2 border-orange-500">
+                    <div className="space-y-2 p-4 rounded-lg bg-orange-500">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-gray-700">Completamento</span>
-                        <span className="font-bold text-orange-600">{Math.round(completionPercentage)}%</span>
+                        <span className="font-medium text-white">Completamento</span>
+                        <span className="font-bold text-white">{Math.round(completionPercentage)}%</span>
                       </div>
-                      <Progress value={completionPercentage} className="h-2 bg-gray-200" />
-                      <div className="text-xs text-gray-600">
+                      <Progress value={completionPercentage} className="h-2 bg-white/30" />
+                      <div className="text-xs text-white">
                         {completedCount} di {checklistItems.length} completati
                       </div>
                     </div>
@@ -1018,7 +1000,7 @@ export function TaskFormDialog({
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-6 bg-orange-500 rounded-full" />
                     <h3 className="text-lg font-bold text-gray-900">Allegati</h3>
-                    <Badge variant="secondary" className="bg-white border-2 border-orange-500 text-orange-600">
+                    <Badge variant="secondary" className="bg-orange-500 text-white">
                       {selectedFiles.length}
                     </Badge>
                   </div>
