@@ -252,7 +252,7 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[85vh] p-0 gap-0 bg-white border border-gray-200">
+      <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] p-0 gap-0 bg-white border border-gray-200">
         <DialogHeader className="px-6 py-4 border-b border-gray-100 shrink-0">
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}

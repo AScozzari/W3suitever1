@@ -220,8 +220,8 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="w-[96vw] max-w-[96vw] h-[96vh] max-h-[96vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-2">
