@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import multer from 'multer';
 import { TaskService } from '../services/task-service';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { handleApiError, validateRequestBody, parseUUIDParam } from '../core/error-utils';
@@ -26,6 +27,29 @@ const router = express.Router();
 
 router.use(tenantMiddleware);
 router.use(rbacMiddleware);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+  fileFilter: (req: any, file, cb) => {
+    const allowedMimes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain', 'text/csv'
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      req.fileValidationError = `Tipo file non supportato: ${file.mimetype}`;
+      cb(null, false);
+    }
+  }
+});
 
 const createTaskBodySchema = insertTaskSchema
   .omit({ tenantId: true, creatorId: true })
@@ -529,29 +553,32 @@ router.get('/tasks/:id/activity', requirePermission('task.read'), async (req: Re
   }
 });
 
-const createAttachmentBodySchema = insertTaskAttachmentSchema.omit({ 
-  taskId: true,
-  uploadedBy: true,
-  tenantId: true
-});
-
-router.post('/tasks/:id/attachments', requirePermission('task.update'), async (req: Request, res: Response) => {
+router.post('/tasks/:id/attachments', requirePermission('task.update'), upload.single('file'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
     const taskId = parseUUIDParam(req.params.id, 'Task ID');
     const userId = req.user!.id;
-    const parsed = createAttachmentBodySchema.parse(req.body);
     
-    const attachment = await TaskService.addAttachment({
-      ...parsed,
-      taskId,
-      tenantId,
-      uploadedBy: userId
-    } as InsertTaskAttachment);
+    if ((req as any).fileValidationError) {
+      return res.status(415).json({ error: (req as any).fileValidationError });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nessun file caricato' });
+    }
+
+    const file = {
+      buffer: req.file.buffer,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    };
+
+    const attachment = await TaskService.createAttachment(taskId, tenantId, userId, file);
     
     res.status(201).json(attachment);
   } catch (error) {
-    handleApiError(error, res, 'Failed to add attachment');
+    handleApiError(error, res, 'Failed to upload attachment');
   }
 });
 
