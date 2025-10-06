@@ -20,7 +20,7 @@ import { useAuth } from '../hooks/useAuth';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
-import TaskDetailDialog from './tasks/TaskDetailDialog';
+import { TaskDetailDialog } from './tasks/TaskDetailDialog';
 
 // Palette colori W3 Suite - Coerente e Professionale
 const COLORS = {
