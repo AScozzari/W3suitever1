@@ -2278,7 +2278,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         <TaskDetailDialog
           task={selectedTask}
           open={taskDetailOpen}
-          onOpenChange={setTaskDetailOpen}
+          onClose={() => setTaskDetailOpen(false)}
         />
       )}
     </div>
