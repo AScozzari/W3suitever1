@@ -100,34 +100,34 @@ export interface TaskFormDialogProps {
 }
 
 const statusOptions = [
-  { value: 'todo', label: 'Da fare', color: 'bg-gray-100 text-gray-700' },
-  { value: 'in_progress', label: 'In corso', color: 'bg-blue-100 text-blue-700' },
-  { value: 'review', label: 'In revisione', color: 'bg-orange-500 text-white' },
-  { value: 'done', label: 'Completato', color: 'bg-green-100 text-green-700' },
-  { value: 'archived', label: 'Archiviato', color: 'bg-gray-100 text-gray-400' },
+  { value: 'todo', label: 'Da fare' },
+  { value: 'in_progress', label: 'In corso' },
+  { value: 'review', label: 'In revisione' },
+  { value: 'done', label: 'Completato' },
+  { value: 'archived', label: 'Archiviato' },
 ];
 
 const priorityOptions = [
-  { value: 'low', label: 'Bassa', color: 'bg-gray-100 text-gray-700' },
-  { value: 'medium', label: 'Media', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Alta', color: 'bg-orange-500 text-white' },
+  { value: 'low', label: 'Bassa' },
+  { value: 'medium', label: 'Media' },
+  { value: 'high', label: 'Alta' },
 ];
 
 const urgencyOptions = [
-  { value: 'low', label: 'Non urgente', color: 'bg-gray-100 text-gray-700' },
-  { value: 'medium', label: 'Moderata', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Urgente', color: 'bg-orange-500 text-white' },
-  { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-700' },
+  { value: 'low', label: 'Non urgente' },
+  { value: 'medium', label: 'Moderata' },
+  { value: 'high', label: 'Urgente' },
+  { value: 'critical', label: 'Critica' },
 ];
 
 const departmentOptions = [
-  { value: 'hr', label: 'hr' },
-  { value: 'operations', label: 'operations' },
-  { value: 'sales', label: 'sales' },
-  { value: 'marketing', label: 'marketing' },
-  { value: 'it', label: 'it' },
-  { value: 'finance', label: 'finance' },
-  { value: 'other', label: 'other' }
+  { value: 'hr', label: 'HR' },
+  { value: 'operations', label: 'Operations' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'it', label: 'IT' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'other', label: 'Altro' }
 ];
 
 export function TaskFormDialog({
@@ -146,6 +146,8 @@ export function TaskFormDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showUserSelector, setShowUserSelector] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [userRoles, setUserRoles] = useState<Record<string, 'assignee' | 'watcher'>>({});
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [editingChecklistIndex, setEditingChecklistIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
@@ -197,7 +199,6 @@ export function TaskFormDialog({
       }
 
       if (mode === 'create' && user && !assignedUsers.some(au => au.userId === user.id)) {
-        console.log('✅ CREATOR AUTO-ASSIGNED:', user.id, user.email);
         setAssignedUsers(prev => [...prev, { userId: user.id, role: 'assignee' }]);
       }
       
@@ -267,29 +268,27 @@ export function TaskFormDialog({
     return '?';
   };
 
-  const addUser = (userId: string, role: 'assignee' | 'watcher') => {
-    const exists = assignedUsers.find(u => u.userId === userId);
-    if (exists) {
-      setAssignedUsers(prev => 
-        prev.map(u => u.userId === userId ? { ...u, role } : u)
-      );
-    } else {
-      setAssignedUsers(prev => [...prev, { userId, role }]);
-    }
-  };
-
   const removeUser = (userId: string) => {
     setAssignedUsers(prev => prev.filter(u => u.userId !== userId));
   };
 
-  const toggleUserRole = (userId: string) => {
-    setAssignedUsers(prev => 
-      prev.map(u => 
-        u.userId === userId 
-          ? { ...u, role: u.role === 'assignee' ? 'watcher' as const : 'assignee' as const } 
-          : u
-      )
-    );
+  const handleUserSelectorConfirm = () => {
+    const newUsers = selectedUserIds.map(userId => ({
+      userId,
+      role: userRoles[userId] || 'assignee' as const
+    }));
+    
+    setAssignedUsers(prev => {
+      const existingIds = prev.map(u => u.userId);
+      const filtered = prev.filter(u => !selectedUserIds.includes(u.userId));
+      const toAdd = newUsers.filter(nu => !existingIds.includes(nu.userId));
+      return [...filtered, ...newUsers.filter(nu => existingIds.includes(nu.userId)), ...toAdd];
+    });
+    
+    setShowUserSelector(false);
+    setSelectedUserIds([]);
+    setUserRoles({});
+    setUserSearchQuery('');
   };
 
   const addChecklistItem = () => {
@@ -360,30 +359,33 @@ export function TaskFormDialog({
   const completedCount = checklistItems.filter(item => item.isCompleted).length;
   const completionPercentage = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
 
+  const assignees = assignedUsers.filter(u => u.role === 'assignee');
+  const watchers = assignedUsers.filter(u => u.role === 'watcher');
+
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900">
+            <DialogTitle>
               {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-600">
+            <DialogDescription>
               {mode === 'create' 
-                ? 'Compila i campi per creare un nuovo task e assegnarlo al tuo team' 
+                ? 'Compila i campi per creare un nuovo task' 
                 : 'Modifica i dettagli del task esistente'}
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
               {/* Titolo */}
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Titolo *</FormLabel>
+                    <FormLabel>Titolo</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -407,7 +409,7 @@ export function TaskFormDialog({
                       <Textarea
                         {...field}
                         placeholder="Descrivi i dettagli del task..."
-                        className="resize-none min-h-[100px]"
+                        className="resize-none min-h-[80px]"
                         data-testid="input-task-description"
                       />
                     </FormControl>
@@ -433,9 +435,7 @@ export function TaskFormDialog({
                         <SelectContent>
                           {statusOptions.map(option => (
                             <SelectItem key={option.value} value={option.value}>
-                              <Badge className={cn("text-xs", option.color)}>
-                                {option.label}
-                              </Badge>
+                              {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -460,9 +460,7 @@ export function TaskFormDialog({
                         <SelectContent>
                           {priorityOptions.map(option => (
                             <SelectItem key={option.value} value={option.value}>
-                              <Badge className={cn("text-xs", option.color)}>
-                                {option.label}
-                              </Badge>
+                              {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -487,9 +485,7 @@ export function TaskFormDialog({
                         <SelectContent>
                           {urgencyOptions.map(option => (
                             <SelectItem key={option.value} value={option.value}>
-                              <Badge className={cn("text-xs", option.color)}>
-                                {option.label}
-                              </Badge>
+                              {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -657,104 +653,114 @@ export function TaskFormDialog({
                 )}
               />
 
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Team</h3>
-                
-                {/* User Pills */}
-                <div className="space-y-3 mb-4">
-                  {user && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Creatore</p>
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
-                            {getUserInitials(user.id)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium text-white">
-                          {getUserDisplayName(user.id)}
-                        </span>
-                        <Badge className="bg-white text-orange-600 text-xs">Creatore</Badge>
-                      </div>
-                    </div>
-                  )}
+              {/* Team Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Team</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUserSelector(true)}
+                    data-testid="button-add-user"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Aggiungi persona
+                  </Button>
+                </div>
 
-                  {assignedUsers.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Assegnati</p>
-                      <div className="flex flex-wrap gap-2">
-                        {assignedUsers.map((au) => (
-                          <div
-                            key={au.userId}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500"
-                            data-testid={`user-pill-${au.userId}`}
+                {assignees.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-600">Assegnati</p>
+                    <div className="flex flex-wrap gap-2">
+                      {assignees.map((au) => (
+                        <div
+                          key={au.userId}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-orange-50 border border-orange-200"
+                          data-testid={`user-pill-${au.userId}`}
+                        >
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-xs bg-orange-500 text-white">
+                              {getUserInitials(au.userId)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm text-gray-900">
+                            {getUserDisplayName(au.userId)}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeUser(au.userId)}
+                            className="h-4 w-4 p-0 hover:bg-orange-100"
                           >
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
-                                {getUserInitials(au.userId)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium text-white">
-                              {getUserDisplayName(au.userId)}
-                            </span>
-                            {au.role === 'assignee' ? (
-                              <UserCheck className="h-4 w-4 text-white" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-white" />
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeUser(au.userId)}
-                              className="h-5 w-5 p-0 hover:bg-white hover:text-orange-500 text-white"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowUserSelector(true)}
-                  className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
-                  data-testid="button-add-user"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Aggiungi persona
-                </Button>
-              </div>
-
-              {/* Checklist */}
-              <div className="border-t pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Checklist</h3>
-                  <Badge className="bg-orange-500 text-white">{checklistItems.length}</Badge>
-                </div>
-
-                {checklistItems.length > 0 && (
-                  <div className="mb-4 p-3 rounded-lg bg-orange-500">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="font-medium text-white">Completamento</span>
-                      <span className="font-bold text-white">{Math.round(completionPercentage)}%</span>
-                    </div>
-                    <Progress value={completionPercentage} className="h-2 bg-white/30" />
-                    <div className="text-xs text-white mt-1">
-                      {completedCount} di {checklistItems.length} completati
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-2 mb-3">
+                {watchers.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-600">Osservatori</p>
+                    <div className="flex flex-wrap gap-2">
+                      {watchers.map((au) => (
+                        <div
+                          key={au.userId}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-50 border border-blue-200"
+                          data-testid={`user-pill-${au.userId}`}
+                        >
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-xs bg-blue-500 text-white">
+                              {getUserInitials(au.userId)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm text-gray-900">
+                            {getUserDisplayName(au.userId)}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeUser(au.userId)}
+                            className="h-4 w-4 p-0 hover:bg-blue-100"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Checklist */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Checklist</h3>
+                  {checklistItems.length > 0 && (
+                    <span className="text-xs text-gray-500">
+                      {completedCount}/{checklistItems.length}
+                    </span>
+                  )}
+                </div>
+
+                {checklistItems.length > 0 && (
+                  <div className="space-y-1">
+                    <Progress value={completionPercentage} className="h-2" />
+                    <p className="text-xs text-gray-500">
+                      {Math.round(completionPercentage)}% completato
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
                   <Input
                     value={newChecklistItem}
                     onChange={(e) => setNewChecklistItem(e.target.value)}
-                    placeholder="Nuovo elemento checklist..."
+                    placeholder="Nuovo elemento..."
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -767,7 +773,7 @@ export function TaskFormDialog({
                     type="button"
                     onClick={addChecklistItem}
                     disabled={!newChecklistItem.trim()}
-                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                    size="sm"
                     data-testid="button-add-checklist-item"
                   >
                     <Plus className="h-4 w-4" />
@@ -808,7 +814,7 @@ export function TaskFormDialog({
                               variant="ghost"
                               size="sm"
                               onClick={saveChecklistItemEdit}
-                              className="h-6 w-6 p-0 text-green-600"
+                              className="h-6 w-6 p-0"
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -817,14 +823,14 @@ export function TaskFormDialog({
                               variant="ghost"
                               size="sm"
                               onClick={cancelChecklistItemEdit}
-                              className="h-6 w-6 p-0 text-red-600"
+                              className="h-6 w-6 p-0"
                             >
                               <X className="h-4 w-4" />
                             </Button>
                           </>
                         ) : (
                           <>
-                            <span className={cn("flex-1", item.isCompleted && "line-through text-gray-500")}>
+                            <span className={cn("flex-1 text-sm", item.isCompleted && "line-through text-gray-400")}>
                               {item.title}
                             </span>
                             <Button
@@ -832,20 +838,20 @@ export function TaskFormDialog({
                               variant="ghost"
                               size="sm"
                               onClick={() => startEditChecklistItem(index)}
-                              className="h-6 w-6 p-0 hover:bg-orange-50 text-orange-600"
+                              className="h-6 w-6 p-0"
                               data-testid={`button-edit-checklist-${index}`}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-3 w-3" />
                             </Button>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => removeChecklistItem(index)}
-                              className="h-6 w-6 p-0 hover:bg-red-50 text-red-600"
+                              className="h-6 w-6 p-0"
                               data-testid={`button-remove-checklist-${index}`}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </>
                         )}
@@ -856,10 +862,12 @@ export function TaskFormDialog({
               </div>
 
               {/* Allegati */}
-              <div className="border-t pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Allegati</h3>
-                  <Badge className="bg-orange-500 text-white">{selectedFiles.length}</Badge>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Allegati</h3>
+                  {selectedFiles.length > 0 && (
+                    <span className="text-xs text-gray-500">{selectedFiles.length} file</span>
+                  )}
                 </div>
 
                 <input
@@ -875,34 +883,32 @@ export function TaskFormDialog({
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-orange-500 hover:bg-orange-50"
+                  className="w-full"
                   data-testid="button-upload-file"
                 >
-                  <Paperclip className="h-5 w-5 mr-2 text-orange-600" />
-                  <span className="text-base text-gray-700">Clicca per caricare file</span>
+                  <Paperclip className="h-4 w-4 mr-2" />
+                  Carica file
                 </Button>
 
                 {selectedFiles.length > 0 && (
-                  <div className="mt-3 space-y-2">
+                  <div className="space-y-2">
                     {selectedFiles.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-2 rounded border"
+                        className="flex items-center gap-2 p-2 rounded border text-sm"
                         data-testid={`attached-file-${index}`}
                       >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <FileText className="h-4 w-4 text-orange-600 shrink-0" />
-                          <span className="text-sm truncate">{file.name}</span>
-                          <span className="text-xs text-gray-500 shrink-0">
-                            ({(file.size / 1024).toFixed(1)} KB)
-                          </span>
-                        </div>
+                        <FileText className="h-4 w-4 text-gray-400 shrink-0" />
+                        <span className="flex-1 truncate">{file.name}</span>
+                        <span className="text-xs text-gray-500 shrink-0">
+                          {(file.size / 1024).toFixed(1)} KB
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFile(index)}
-                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-50 shrink-0"
+                          className="h-6 w-6 p-0 shrink-0"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -924,10 +930,10 @@ export function TaskFormDialog({
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                  className="bg-orange-600 hover:bg-orange-700"
                   data-testid="button-submit-task"
                 >
-                  {isSubmitting ? 'Salvataggio...' : mode === 'create' ? 'Crea Task' : 'Salva Modifiche'}
+                  {isSubmitting ? 'Salvataggio...' : mode === 'create' ? 'Crea Task' : 'Salva'}
                 </Button>
               </DialogFooter>
             </form>
@@ -937,7 +943,7 @@ export function TaskFormDialog({
 
       {/* User Selector Dialog */}
       <Dialog open={showUserSelector} onOpenChange={setShowUserSelector}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-lg max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Seleziona Persone</DialogTitle>
             <DialogDescription>
@@ -951,66 +957,74 @@ export function TaskFormDialog({
               <Input
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
-                placeholder="Cerca per nome o email..."
+                placeholder="Cerca..."
                 className="pl-9"
               />
             </div>
 
-            <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+            <div className="max-h-[400px] overflow-y-auto border rounded-md">
               {usersLoading ? (
-                <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
+                <p className="text-sm text-gray-500 text-center py-8">Caricamento...</p>
               ) : filteredUsers.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  {userSearchQuery ? 'Nessun utente trovato' : 'Tutti gli utenti sono già stati aggiunti'}
+                <p className="text-sm text-gray-500 text-center py-8">
+                  Nessun utente disponibile
                 </p>
               ) : (
-                filteredUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-orange-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-orange-500 text-white text-xs font-bold">
-                          {getUserInitials(u.id)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{getUserDisplayName(u.id)}</div>
-                        <div className="text-xs text-gray-500 truncate">{u.email}</div>
+                <div className="divide-y">
+                  {filteredUsers.map((u) => {
+                    const isSelected = selectedUserIds.includes(u.id);
+                    const currentRole = userRoles[u.id] || 'assignee';
+                    
+                    return (
+                      <div
+                        key={u.id}
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedUserIds(prev => [...prev, u.id]);
+                              setUserRoles(prev => ({ ...prev, [u.id]: 'assignee' }));
+                            } else {
+                              setSelectedUserIds(prev => prev.filter(id => id !== u.id));
+                              setUserRoles(prev => {
+                                const newRoles = { ...prev };
+                                delete newRoles[u.id];
+                                return newRoles;
+                              });
+                            }
+                          }}
+                        />
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-gray-200 text-gray-700 text-xs">
+                            {getUserInitials(u.id)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{getUserDisplayName(u.id)}</div>
+                          <div className="text-xs text-gray-500 truncate">{u.email}</div>
+                        </div>
+                        {isSelected && (
+                          <Select
+                            value={currentRole}
+                            onValueChange={(value: 'assignee' | 'watcher') => {
+                              setUserRoles(prev => ({ ...prev, [u.id]: value }));
+                            }}
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="assignee">Assegnato</SelectItem>
+                              <SelectItem value="watcher">Osservatore</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => {
-                          addUser(u.id, 'assignee');
-                          setShowUserSelector(false);
-                          setUserSearchQuery('');
-                        }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white h-8 px-3"
-                      >
-                        <UserCheck className="h-4 w-4 mr-1" />
-                        Assegna
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          addUser(u.id, 'watcher');
-                          setShowUserSelector(false);
-                          setUserSearchQuery('');
-                        }}
-                        className="border-orange-500 text-orange-600 hover:bg-orange-50 h-8 px-3"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Osserva
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
@@ -1021,10 +1035,20 @@ export function TaskFormDialog({
               variant="outline"
               onClick={() => {
                 setShowUserSelector(false);
+                setSelectedUserIds([]);
+                setUserRoles({});
                 setUserSearchQuery('');
               }}
             >
-              Chiudi
+              Annulla
+            </Button>
+            <Button
+              type="button"
+              onClick={handleUserSelectorConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
+              disabled={selectedUserIds.length === 0}
+            >
+              Conferma ({selectedUserIds.length})
             </Button>
           </DialogFooter>
         </DialogContent>
