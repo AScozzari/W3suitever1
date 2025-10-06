@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,44 +31,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
 import { 
   CalendarIcon, 
-  Loader2, 
+  UserPlus, 
+  Trash2, 
+  Upload, 
   X, 
-  Plus, 
-  Users, 
-  CheckSquare, 
+  FileText, 
   Paperclip,
-  Tag,
-  FileText,
-  Trash2,
-  UserPlus,
-  ArrowLeftRight,
-  Eye,
+  Search,
   UserCheck,
-  Pencil,
+  Eye,
   Check,
+  Plus,
+  Pencil
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+interface ChecklistItem {
+  title: string;
+  isCompleted: boolean;
+  position: number;
+}
+
+interface AssignedUser {
+  userId: string;
+  role: 'assignee' | 'watcher';
+}
 
 const taskFormSchema = z.object({
-  title: z.string().min(3, 'Il titolo deve contenere almeno 3 caratteri').max(255),
+  title: z.string().min(1, 'Il titolo è obbligatorio'),
   description: z.string().optional(),
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']),
   priority: z.enum(['low', 'medium', 'high']),
   urgency: z.enum(['low', 'medium', 'high', 'critical']),
-  department: z.enum(['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing']).optional(),
+  department: z.enum(['hr', 'operations', 'sales', 'marketing', 'it', 'finance', 'other']).optional(),
   dueDate: z.date().optional(),
   startDate: z.date().optional(),
   tags: z.string().optional(),
@@ -75,19 +81,6 @@ const taskFormSchema = z.object({
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
-
-interface ChecklistItem {
-  id?: string;
-  title: string;
-  assignedToUserId?: string;
-  position: number;
-  isCompleted: boolean;
-}
-
-interface AssignedUser {
-  userId: string;
-  role: 'assignee' | 'watcher';
-}
 
 export interface TaskFormDialogProps {
   open: boolean;
@@ -109,7 +102,7 @@ export interface TaskFormDialogProps {
 const statusOptions = [
   { value: 'todo', label: 'Da fare', color: 'bg-gray-100 text-gray-700' },
   { value: 'in_progress', label: 'In corso', color: 'bg-blue-100 text-blue-700' },
-  { value: 'review', label: 'In revisione', color: 'bg-white border border-orange-500 text-orange-600' },
+  { value: 'review', label: 'In revisione', color: 'bg-orange-500 text-white' },
   { value: 'done', label: 'Completato', color: 'bg-green-100 text-green-700' },
   { value: 'archived', label: 'Archiviato', color: 'bg-gray-100 text-gray-400' },
 ];
@@ -117,24 +110,24 @@ const statusOptions = [
 const priorityOptions = [
   { value: 'low', label: 'Bassa', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Media', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Alta', color: 'bg-white border border-orange-500 text-orange-600' },
+  { value: 'high', label: 'Alta', color: 'bg-orange-500 text-white' },
 ];
 
 const urgencyOptions = [
   { value: 'low', label: 'Non urgente', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Moderata', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Urgente', color: 'bg-white border border-orange-500 text-orange-600' },
+  { value: 'high', label: 'Urgente', color: 'bg-orange-500 text-white' },
   { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-700' },
 ];
 
 const departmentOptions = [
   { value: 'hr', label: 'hr' },
   { value: 'operations', label: 'operations' },
-  { value: 'support', label: 'support' },
-  { value: 'finance', label: 'finance' },
-  { value: 'crm', label: 'crm' },
   { value: 'sales', label: 'sales' },
   { value: 'marketing', label: 'marketing' },
+  { value: 'it', label: 'it' },
+  { value: 'finance', label: 'finance' },
+  { value: 'other', label: 'other' }
 ];
 
 export function TaskFormDialog({
@@ -151,31 +144,15 @@ export function TaskFormDialog({
   const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [showUserPicker, setShowUserPicker] = useState(false);
+  const [showUserSelector, setShowUserSelector] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingChecklistIndex, setEditingChecklistIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
-  
-  const prevOpenRef = useRef(false);
-  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-  });
-
-  const { data: stores = [], isLoading: storesLoading } = useQuery<any[]>({
-    queryKey: ['/api/stores'],
-  });
-
-  useEffect(() => {
-    if (users && users.length > 0) {
-      console.log('✅ USERS LOADED:', users.length, 'users');
-    }
-    if (stores && stores.length > 0) {
-      console.log('✅ STORES LOADED:', stores.length, 'stores', stores[0]);
-    }
-  }, [users, stores]);
+  const prevOpenRef = useRef(open);
+  
+  const { user } = useAuth();
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskFormSchema),
@@ -190,30 +167,38 @@ export function TaskFormDialog({
       startDate: undefined,
       tags: '',
       storeId: undefined,
-      ...initialData,
     },
+  });
+
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    enabled: open,
+  });
+
+  const { data: stores = [] } = useQuery<any[]>({
+    queryKey: ['/api/stores'],
+    enabled: open,
   });
 
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      if (mode === 'edit') {
-        const existingUsers: AssignedUser[] = [
-          ...(existingAssignees || []).map(id => ({ userId: id, role: 'assignee' as const })),
-          ...(existingWatchers || []).map(id => ({ userId: id, role: 'watcher' as const })),
-        ];
-        setAssignedUsers(existingUsers);
-        setChecklistItems(existingChecklistItems || []);
-      } else {
-        // In modalità create, aggiungi sempre l'utente corrente come creatore di default
-        if (user?.id) {
-          console.log('✅ CREATOR AUTO-ASSIGNED:', user.id, user.email);
-          setAssignedUsers([{ userId: user.id, role: 'assignee' }]);
-        } else {
-          console.warn('⚠️ No user found for auto-assignment');
-          setAssignedUsers([]);
-        }
-        setChecklistItems([]);
-        setSelectedFiles([]);
+      if (existingAssignees) {
+        const assignees = existingAssignees.map(userId => ({ userId, role: 'assignee' as const }));
+        setAssignedUsers(prev => [...prev.filter(u => u.role === 'watcher'), ...assignees]);
+      }
+
+      if (existingWatchers) {
+        const watchers = existingWatchers.map(userId => ({ userId, role: 'watcher' as const }));
+        setAssignedUsers(prev => [...prev.filter(u => u.role === 'assignee'), ...watchers]);
+      }
+
+      if (existingChecklistItems) {
+        setChecklistItems(existingChecklistItems);
+      }
+
+      if (mode === 'create' && user && !assignedUsers.some(au => au.userId === user.id)) {
+        console.log('✅ CREATOR AUTO-ASSIGNED:', user.id, user.email);
+        setAssignedUsers(prev => [...prev, { userId: user.id, role: 'assignee' }]);
       }
       
       form.reset({
@@ -291,7 +276,6 @@ export function TaskFormDialog({
     } else {
       setAssignedUsers(prev => [...prev, { userId, role }]);
     }
-    setShowUserPicker(false);
   };
 
   const removeUser = (userId: string) => {
@@ -323,9 +307,7 @@ export function TaskFormDialog({
   };
 
   const removeChecklistItem = (index: number) => {
-    setChecklistItems(prev => 
-      prev.filter((_, i) => i !== index).map((item, i) => ({ ...item, position: i }))
-    );
+    setChecklistItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const toggleChecklistItem = (index: number) => {
@@ -337,440 +319,354 @@ export function TaskFormDialog({
   };
 
   const startEditChecklistItem = (index: number) => {
-    setEditingIndex(index);
+    setEditingChecklistIndex(index);
     setEditingText(checklistItems[index].title);
   };
 
-  const saveEditChecklistItem = () => {
-    if (editingIndex === null || !editingText.trim()) return;
-    setChecklistItems(prev => 
-      prev.map((item, i) => 
-        i === editingIndex ? { ...item, title: editingText.trim() } : item
-      )
-    );
-    setEditingIndex(null);
+  const saveChecklistItemEdit = () => {
+    if (editingChecklistIndex !== null && editingText.trim()) {
+      setChecklistItems(prev => 
+        prev.map((item, i) => 
+          i === editingChecklistIndex ? { ...item, title: editingText.trim() } : item
+        )
+      );
+    }
+    setEditingChecklistIndex(null);
     setEditingText('');
   };
 
-  const cancelEditChecklistItem = () => {
-    setEditingIndex(null);
+  const cancelChecklistItemEdit = () => {
+    setEditingChecklistIndex(null);
     setEditingText('');
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setSelectedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
-    }
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(prev => [...prev, ...files]);
   };
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const availableUsers = users.filter(u => 
-    !assignedUsers.some(au => au.userId === u.id)
-  );
+  const availableUsers = users.filter(u => !assignedUsers.some(au => au.userId === u.id));
+  const filteredUsers = userSearchQuery 
+    ? availableUsers.filter(u => 
+        getUserDisplayName(u.id).toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(userSearchQuery.toLowerCase())
+      )
+    : availableUsers;
 
   const completedCount = checklistItems.filter(item => item.isCompleted).length;
   const completionPercentage = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
-        {/* HEADER */}
-        <DialogHeader className="px-6 py-4 border-b-4 border-orange-500 bg-white">
-          <DialogTitle className="text-xl font-bold text-gray-900">
-            {mode === 'create' ? '✨ Crea nuovo task' : '✏️ Modifica task'}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-gray-600">
-            {mode === 'create' 
-              ? 'Compila i campi per creare un nuovo task e assegnarlo al tuo team' 
-              : 'Modifica i dettagli del task esistente'}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              {mode === 'create' 
+                ? 'Compila i campi per creare un nuovo task e assegnarlo al tuo team' 
+                : 'Modifica i dettagli del task esistente'}
+            </DialogDescription>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col">
-            {/* SCROLLABLE CONTENT */}
-            <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
-              <div className="py-6 space-y-8">
-                
-                {/* SEZIONE 1: DETTAGLI TASK */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 pb-2 border-b-2 border-orange-500">
-                    <div className="w-1 h-6 bg-orange-500 rounded-full" />
-                    <h3 className="text-lg font-bold text-gray-900">Dettagli Task</h3>
-                  </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              {/* Titolo */}
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Titolo *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Es: Preparare report mensile vendite"
+                        data-testid="input-task-title"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  {/* Title */}
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-gray-900">
-                          Titolo <span className="text-red-500">*</span>
-                        </FormLabel>
+              {/* Descrizione */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrizione</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Descrivi i dettagli del task..."
+                        className="resize-none min-h-[100px]"
+                        data-testid="input-task-description"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Status, Priority, Urgency */}
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Stato</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Es: Preparare report mensile vendite"
-                            className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-500/20"
-                            data-testid="input-task-title"
-                          />
+                          <SelectTrigger data-testid="select-task-status">
+                            <SelectValue />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {statusOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <Badge className={cn("text-xs", option.color)}>
+                                {option.label}
+                              </Badge>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  {/* Description */}
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-gray-900">Descrizione</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Priorità</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="Descrizione dettagliata del task, obiettivi e note aggiuntive..."
-                            rows={4}
-                            className="border-gray-300 focus:border-orange-500 focus:ring-orange-500/20 resize-none"
-                            data-testid="input-task-description"
-                          />
+                          <SelectTrigger data-testid="select-task-priority">
+                            <SelectValue />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {priorityOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <Badge className={cn("text-xs", option.color)}>
+                                {option.label}
+                              </Badge>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  {/* Status & Department */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold text-gray-900">
-                            Stato <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-status">
-                            <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300">
-                                <SelectValue placeholder="Seleziona stato" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {statusOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  <Badge className={cn("text-xs", option.color)}>{option.label}</Badge>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={form.control}
+                  name="urgency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Urgenza</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-task-urgency">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {urgencyOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <Badge className={cn("text-xs", option.color)}>
+                                {option.label}
+                              </Badge>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                    <FormField
-                      control={form.control}
-                      name="department"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold text-gray-900">Dipartimento</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-department">
-                            <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300">
-                                <SelectValue placeholder="Seleziona dipartimento" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {departmentOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+              {/* Department & Store */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reparto</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-task-department">
+                            <SelectValue placeholder="Seleziona reparto" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {departmentOptions.map(dept => (
+                            <SelectItem key={dept.value} value={dept.value}>
+                              {dept.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  {/* Priority & Urgency */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold text-gray-900">
-                            Priorità <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-priority">
-                            <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300">
-                                <SelectValue placeholder="Seleziona priorità" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {priorityOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  <Badge className={cn("text-xs", option.color)}>{option.label}</Badge>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={form.control}
+                  name="storeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Punto Vendita</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-task-store">
+                            <SelectValue placeholder="Seleziona store" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-64">
+                          {stores.map(store => (
+                            <SelectItem key={store.id} value={store.id}>
+                              {store.nome || store.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                    <FormField
-                      control={form.control}
-                      name="urgency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold text-gray-900">
-                            Urgenza <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-urgency">
-                            <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300">
-                                <SelectValue placeholder="Seleziona urgenza" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {urgencyOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  <Badge className={cn("text-xs", option.color)}>{option.label}</Badge>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel className="text-sm font-semibold text-gray-900 mb-2">Data Inizio</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    'h-11 w-full justify-start text-left font-normal border-gray-300',
-                                    !field.value && 'text-muted-foreground'
-                                  )}
-                                  data-testid="button-start-date"
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="dueDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel className="text-sm font-semibold text-gray-900 mb-2">Scadenza</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    'h-11 w-full justify-start text-left font-normal border-gray-300',
-                                    !field.value && 'text-muted-foreground'
-                                  )}
-                                  data-testid="button-due-date"
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Tags & Store */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="tags"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                            <Tag className="h-4 w-4" /> Tags
-                          </FormLabel>
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Data Inizio</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="urgente, importante, cliente..."
-                              className="h-11 border-gray-300 focus:border-orange-500 focus:ring-orange-500/20"
-                              data-testid="input-tags"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="storeId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold text-gray-900">Punto Vendita</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={storesLoading} data-testid="select-store">
-                            <FormControl>
-                              <SelectTrigger className="h-11 border-gray-300">
-                                <SelectValue placeholder={storesLoading ? "Caricamento..." : stores.length === 0 ? "Nessun punto vendita disponibile" : "Seleziona punto vendita"} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {stores.length === 0 && !storesLoading ? (
-                                <div className="p-4 text-sm text-gray-500 text-center">
-                                  Nessun punto vendita disponibile
-                                </div>
-                              ) : (
-                                stores.map((store) => (
-                                  <SelectItem key={store.id} value={store.id}>
-                                    {store.nome || store.code || store.id}
-                                  </SelectItem>
-                                ))
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
                               )}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                              data-testid="button-select-start-date"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP", { locale: it })
+                              ) : (
+                                <span>Seleziona data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                <Separator />
+                <FormField
+                  control={form.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Scadenza</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              data-testid="button-select-due-date"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP", { locale: it })
+                              ) : (
+                                <span>Seleziona data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                {/* SEZIONE 2: TEAM */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-6 bg-orange-500 rounded-full" />
-                      <h3 className="text-lg font-bold text-gray-900">Team</h3>
-                      <Badge variant="secondary" className="bg-orange-500 text-white">
-                        {assignedUsers.length}
-                      </Badge>
-                    </div>
-                    <Popover open={showUserPicker} onOpenChange={setShowUserPicker}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-9 border-orange-500 text-orange-600 hover:border-orange-600"
-                          disabled={usersLoading}
-                          data-testid="button-add-user"
-                        >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          {usersLoading ? 'Caricamento...' : 'Aggiungi persona'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-0" align="end">
-                        <Command>
-                          <CommandInput placeholder="🔍 Cerca utente..." />
-                          <CommandEmpty>
-                            {usersLoading ? 'Caricamento utenti...' : 'Nessun utente trovato'}
-                          </CommandEmpty>
-                          <CommandGroup className="max-h-64 overflow-y-auto">
-                            {usersLoading ? (
-                              <div className="p-4 text-sm text-gray-500 text-center flex items-center justify-center gap-2">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Caricamento utenti...
-                              </div>
-                            ) : availableUsers.length === 0 ? (
-                              <div className="p-4 text-sm text-gray-500 text-center">
-                                Tutti gli utenti sono già stati aggiunti
-                              </div>
-                            ) : (
-                              availableUsers.map((u) => (
-                                <CommandItem
-                                  key={u.id}
-                                  value={u.id}
-                                  keywords={[getUserDisplayName(u.id), u.email]}
-                                  onSelect={() => {
-                                    addUser(u.id, 'assignee');
-                                  }}
-                                  className="flex items-center justify-between cursor-pointer hover:bg-orange-500/10"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback className="bg-orange-500 text-white text-xs font-bold">
-                                        {getUserInitials(u.id)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="text-sm">
-                                      <div className="font-medium">{getUserDisplayName(u.id)}</div>
-                                      <div className="text-xs text-gray-500">{u.email}</div>
-                                    </div>
-                                  </div>
-                                  <Plus className="h-4 w-4 text-orange-600" />
-                                </CommandItem>
-                              ))
-                            )}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+              {/* Tags */}
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Es: urgente, vendite, report"
+                        data-testid="input-task-tags"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  {/* Creator Display */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Team</h3>
+                
+                {/* User Pills */}
+                <div className="space-y-3 mb-4">
                   {user && (
-                    <div className="mb-3">
+                    <div>
                       <p className="text-xs font-semibold text-gray-600 mb-2">Creatore</p>
-                      <div
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500 w-fit"
-                        data-testid="creator-pill"
-                      >
-                        <Avatar className="h-7 w-7">
+                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500">
+                        <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
                             {getUserInitials(user.id)}
                           </AvatarFallback>
@@ -778,327 +674,361 @@ export function TaskFormDialog({
                         <span className="text-sm font-medium text-white">
                           {getUserDisplayName(user.id)}
                         </span>
-                        <Badge variant="secondary" className="bg-white text-orange-600 text-xs font-semibold">
-                          Creatore
-                        </Badge>
+                        <Badge className="bg-white text-orange-600 text-xs">Creatore</Badge>
                       </div>
                     </div>
                   )}
 
-                  {/* Assigned Users Pills */}
                   {assignedUsers.length > 0 && (
-                    <div className="mb-2">
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Assegnatari e Osservatori</p>
-                    </div>
-                  )}
-                  {assignedUsers.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {assignedUsers.map((au) => (
-                        <div
-                          key={au.userId}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all bg-orange-500"
-                          data-testid={`user-pill-${au.userId}`}
-                        >
-                          <Avatar className="h-7 w-7">
-                            <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
-                              {getUserInitials(au.userId)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-medium text-white">
-                            {getUserDisplayName(au.userId)}
-                          </span>
-                          <div className="flex items-center gap-1">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 mb-2">Assegnati</p>
+                      <div className="flex flex-wrap gap-2">
+                        {assignedUsers.map((au) => (
+                          <div
+                            key={au.userId}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500"
+                            data-testid={`user-pill-${au.userId}`}
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs font-bold bg-white text-orange-500">
+                                {getUserInitials(au.userId)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium text-white">
+                              {getUserDisplayName(au.userId)}
+                            </span>
                             {au.role === 'assignee' ? (
                               <UserCheck className="h-4 w-4 text-white" />
                             ) : (
                               <Eye className="h-4 w-4 text-white" />
                             )}
-                            <span className="text-xs font-semibold text-white">
-                              {au.role === 'assignee' ? 'Assegnatario' : 'Osservatore'}
-                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeUser(au.userId)}
+                              className="h-5 w-5 p-0 hover:bg-white hover:text-orange-500 text-white"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
                           </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleUserRole(au.userId)}
-                            className="h-7 px-2 gap-1 transition-all border-white text-white hover:bg-white hover:text-orange-500"
-                            title={au.role === 'assignee' ? 'Cambia in Osservatore' : 'Cambia in Assegnatario'}
-                            data-testid={`button-toggle-role-${au.userId}`}
-                          >
-                            <ArrowLeftRight className="h-3 w-3" />
-                            <span className="text-xs font-medium">
-                              {au.role === 'assignee' ? 'Osservatore' : 'Assegnatario'}
-                            </span>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeUser(au.userId)}
-                            className="h-6 w-6 p-0 hover:bg-white text-white hover:text-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">Nessuna persona assegnata</p>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* SEZIONE 3: CHECKLIST */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-6 bg-orange-500 rounded-full" />
-                    <h3 className="text-lg font-bold text-gray-900">Checklist</h3>
-                    <Badge variant="secondary" className="bg-orange-500 text-white">
-                      {checklistItems.length}
-                    </Badge>
-                  </div>
-
-                  {/* Progress Bar */}
-                  {checklistItems.length > 0 && (
-                    <div className="space-y-2 p-4 rounded-lg bg-orange-500">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-white">Completamento</span>
-                        <span className="font-bold text-white">{Math.round(completionPercentage)}%</span>
+                        ))}
                       </div>
-                      <Progress value={completionPercentage} className="h-2 bg-white/30" />
-                      <div className="text-xs text-white">
-                        {completedCount} di {checklistItems.length} completati
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Add Checklist Item */}
-                  <div className="flex gap-2">
-                    <Input
-                      value={newChecklistItem}
-                      onChange={(e) => setNewChecklistItem(e.target.value)}
-                      placeholder="Nuovo elemento checklist..."
-                      className="flex-1 h-10 border-gray-300 focus:border-orange-500 focus:ring-orange-500/20"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addChecklistItem();
-                        }
-                      }}
-                      data-testid="input-new-checklist-item"
-                    />
-                    <Button
-                      type="button"
-                      onClick={addChecklistItem}
-                      disabled={!newChecklistItem.trim()}
-                      className="h-10 bg-orange-600 hover:bg-orange-700 text-white"
-                      data-testid="button-add-checklist-item"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Checklist Items */}
-                  {checklistItems.length > 0 && (
-                    <div className="space-y-2">
-                      {checklistItems.map((item, index) => (
-                        <div
-                          key={index}
-                          className={cn(
-                            "flex items-center gap-2 p-3 rounded-lg border transition-all",
-                            item.isCompleted 
-                              ? "bg-green-50 border-green-200" 
-                              : "bg-white border-gray-200"
-                          )}
-                          data-testid={`checklist-item-${index}`}
-                        >
-                          {editingIndex === index ? (
-                            <>
-                              <Input
-                                value={editingText}
-                                onChange={(e) => setEditingText(e.target.value)}
-                                className="flex-1 h-8 text-sm border-orange-500 focus:border-orange-600"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    saveEditChecklistItem();
-                                  } else if (e.key === 'Escape') {
-                                    cancelEditChecklistItem();
-                                  }
-                                }}
-                                data-testid={`input-edit-checklist-${index}`}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={saveEditChecklistItem}
-                                className="h-7 w-7 p-0 hover:bg-green-100 text-green-600"
-                                data-testid={`button-save-checklist-${index}`}
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={cancelEditChecklistItem}
-                                className="h-7 w-7 p-0 hover:bg-gray-100 text-gray-600"
-                                data-testid={`button-cancel-edit-checklist-${index}`}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Checkbox
-                                checked={item.isCompleted}
-                                onCheckedChange={() => toggleChecklistItem(index)}
-                                data-testid={`checkbox-checklist-${index}`}
-                              />
-                              <span className={cn(
-                                "flex-1 text-sm",
-                                item.isCompleted ? "line-through text-gray-500" : "text-gray-900 font-medium"
-                              )}>
-                                {item.title}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => startEditChecklistItem(index)}
-                                className="h-7 w-7 p-0 hover:bg-orange-500/10 text-orange-600"
-                                data-testid={`button-edit-checklist-${index}`}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeChecklistItem(index)}
-                                className="h-7 w-7 p-0 hover:bg-red-100 text-red-600"
-                                data-testid={`button-remove-checklist-${index}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      ))}
                     </div>
                   )}
                 </div>
 
-                <Separator />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowUserSelector(true)}
+                  className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                  data-testid="button-add-user"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Aggiungi persona
+                </Button>
+              </div>
 
-                {/* SEZIONE 4: ALLEGATI */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-6 bg-orange-500 rounded-full" />
-                    <h3 className="text-lg font-bold text-gray-900">Allegati</h3>
-                    <Badge variant="secondary" className="bg-orange-500 text-white">
-                      {selectedFiles.length}
-                    </Badge>
+              {/* Checklist */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Checklist</h3>
+                  <Badge className="bg-orange-500 text-white">{checklistItems.length}</Badge>
+                </div>
+
+                {checklistItems.length > 0 && (
+                  <div className="mb-4 p-3 rounded-lg bg-orange-500">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="font-medium text-white">Completamento</span>
+                      <span className="font-bold text-white">{Math.round(completionPercentage)}%</span>
+                    </div>
+                    <Progress value={completionPercentage} className="h-2 bg-white/30" />
+                    <div className="text-xs text-white mt-1">
+                      {completedCount} di {checklistItems.length} completati
+                    </div>
                   </div>
+                )}
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    data-testid="input-file-upload"
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    value={newChecklistItem}
+                    onChange={(e) => setNewChecklistItem(e.target.value)}
+                    placeholder="Nuovo elemento checklist..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addChecklistItem();
+                      }
+                    }}
+                    data-testid="input-new-checklist-item"
                   />
-                  
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full min-h-[100px] border-2 border-dashed border-orange-500 hover:border-orange-600 hover:bg-orange-500/10 py-6"
-                    data-testid="button-upload-file"
+                    onClick={addChecklistItem}
+                    disabled={!newChecklistItem.trim()}
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                    data-testid="button-add-checklist-item"
                   >
-                    <div className="flex flex-col items-center gap-3">
-                      <Paperclip className="h-6 w-6 text-orange-600" />
-                      <span className="text-base font-semibold text-gray-700">Clicca per caricare file</span>
-                      <span className="text-xs text-gray-500">PDF, immagini, documenti...</span>
-                    </div>
+                    <Plus className="h-4 w-4" />
                   </Button>
-
-                  {selectedFiles.length > 0 && (
-                    <div className="space-y-2">
-                      {selectedFiles.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200 hover:border-orange-500 transition-colors"
-                          data-testid={`attached-file-${index}`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <FileText className="h-5 w-5 text-orange-600 shrink-0" />
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-gray-900 truncate">
-                                {file.name}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {(file.size / 1024).toFixed(1)} KB
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(index)}
-                            className="h-8 w-8 p-0 hover:bg-red-100 text-red-600 shrink-0"
-                            data-testid={`button-remove-file-${index}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
+                {checklistItems.length > 0 && (
+                  <div className="space-y-2">
+                    {checklistItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 rounded border"
+                        data-testid={`checklist-item-${index}`}
+                      >
+                        <Checkbox
+                          checked={item.isCompleted}
+                          onCheckedChange={() => toggleChecklistItem(index)}
+                          data-testid={`checkbox-checklist-${index}`}
+                        />
+                        {editingChecklistIndex === index ? (
+                          <>
+                            <Input
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="flex-1"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  saveChecklistItemEdit();
+                                } else if (e.key === 'Escape') {
+                                  cancelChecklistItemEdit();
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={saveChecklistItemEdit}
+                              className="h-6 w-6 p-0 text-green-600"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={cancelChecklistItemEdit}
+                              className="h-6 w-6 p-0 text-red-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className={cn("flex-1", item.isCompleted && "line-through text-gray-500")}>
+                              {item.title}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEditChecklistItem(index)}
+                              className="h-6 w-6 p-0 hover:bg-orange-50 text-orange-600"
+                              data-testid={`button-edit-checklist-${index}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeChecklistItem(index)}
+                              className="h-6 w-6 p-0 hover:bg-red-50 text-red-600"
+                              data-testid={`button-remove-checklist-${index}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </ScrollArea>
 
-            {/* FOOTER */}
-            <div className="shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
-              <div className="flex gap-3">
+              {/* Allegati */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Allegati</h3>
+                  <Badge className="bg-orange-500 text-white">{selectedFiles.length}</Badge>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  data-testid="input-file-upload"
+                />
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-orange-500 hover:bg-orange-50"
+                  data-testid="button-upload-file"
+                >
+                  <Paperclip className="h-5 w-5 mr-2 text-orange-600" />
+                  <span className="text-base text-gray-700">Clicca per caricare file</span>
+                </Button>
+
+                {selectedFiles.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 rounded border"
+                        data-testid={`attached-file-${index}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <FileText className="h-4 w-4 text-orange-600 shrink-0" />
+                          <span className="text-sm truncate">{file.name}</span>
+                          <span className="text-xs text-gray-500 shrink-0">
+                            ({(file.size / 1024).toFixed(1)} KB)
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-50 shrink-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onClose}
-                  className="flex-1 h-11 font-semibold border-gray-300 hover:bg-gray-100"
                   disabled={isSubmitting}
-                  data-testid="button-cancel-task"
                 >
                   Annulla
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 h-11 font-semibold bg-orange-600 hover:bg-orange-700 text-white"
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
                   data-testid="button-submit-task"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvataggio...
-                    </>
-                  ) : (
-                    <>✨ {mode === 'create' ? 'Crea Task' : 'Salva Modifiche'}</>
-                  )}
+                  {isSubmitting ? 'Salvataggio...' : mode === 'create' ? 'Crea Task' : 'Salva Modifiche'}
                 </Button>
-              </div>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Selector Dialog */}
+      <Dialog open={showUserSelector} onOpenChange={setShowUserSelector}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Seleziona Persone</DialogTitle>
+            <DialogDescription>
+              Scegli chi assegnare o chi deve osservare il task
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                placeholder="Cerca per nome o email..."
+                className="pl-9"
+              />
             </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+
+            <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+              {usersLoading ? (
+                <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
+              ) : filteredUsers.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  {userSearchQuery ? 'Nessun utente trovato' : 'Tutti gli utenti sono già stati aggiunti'}
+                </p>
+              ) : (
+                filteredUsers.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-orange-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-orange-500 text-white text-xs font-bold">
+                          {getUserInitials(u.id)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{getUserDisplayName(u.id)}</div>
+                        <div className="text-xs text-gray-500 truncate">{u.email}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          addUser(u.id, 'assignee');
+                          setShowUserSelector(false);
+                          setUserSearchQuery('');
+                        }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white h-8 px-3"
+                      >
+                        <UserCheck className="h-4 w-4 mr-1" />
+                        Assegna
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          addUser(u.id, 'watcher');
+                          setShowUserSelector(false);
+                          setUserSearchQuery('');
+                        }}
+                        className="border-orange-500 text-orange-600 hover:bg-orange-50 h-8 px-3"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Osserva
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowUserSelector(false);
+                setUserSearchQuery('');
+              }}
+            >
+              Chiudi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
