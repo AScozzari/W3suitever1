@@ -255,21 +255,31 @@ export function TaskFormDialog({
   const getUserDisplayName = (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return userId;
-    return (user as any).displayName || (user as any).username || user.email || userId;
+    
+    const firstName = (user as any).firstName || (user as any).first_name || '';
+    const lastName = (user as any).lastName || (user as any).last_name || '';
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    if (firstName) return firstName;
+    if (lastName) return lastName;
+    return user.email || userId;
   };
 
   const getUserInitials = (userId: string) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return '?';
-    const displayName = (user as any).displayName || (user as any).username || user.email || '';
-    if (displayName.length >= 2) {
-      const parts = displayName.split(' ');
-      if (parts.length >= 2) {
-        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-      }
-      return displayName.substring(0, 2).toUpperCase();
+    
+    const firstName = (user as any).firstName || (user as any).first_name || '';
+    const lastName = (user as any).lastName || (user as any).last_name || '';
+    
+    if (firstName && lastName) {
+      return (firstName[0] + lastName[0]).toUpperCase();
     }
-    return displayName[0]?.toUpperCase() || '?';
+    if (firstName) return firstName.substring(0, 2).toUpperCase();
+    if (user.email) return user.email.substring(0, 2).toUpperCase();
+    return '?';
   };
 
   const addUser = (userId: string, role: 'assignee' | 'watcher') => {
@@ -724,7 +734,8 @@ export function TaskFormDialog({
                               availableUsers.map((u) => (
                                 <CommandItem
                                   key={u.id}
-                                  value={`${getUserDisplayName(u.id)} ${u.email}`}
+                                  value={u.id}
+                                  keywords={[getUserDisplayName(u.id), u.email]}
                                   onSelect={() => {
                                     addUser(u.id, 'assignee');
                                   }}
