@@ -50,7 +50,8 @@ import {
   Eye,
   Check,
   Plus,
-  Pencil
+  Pencil,
+  CheckSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -367,7 +368,8 @@ export function TaskFormDialog({
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckSquare className="h-5 w-5 text-orange-600" />
               {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}
             </DialogTitle>
             <DialogDescription>
@@ -668,6 +670,30 @@ export function TaskFormDialog({
                     Aggiungi persona
                   </Button>
                 </div>
+
+                {user && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-600">Creatore</p>
+                    <div className="flex flex-wrap gap-2">
+                      <div
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-orange-500 text-white"
+                        data-testid={`creator-pill-${user.id}`}
+                      >
+                        <Avatar className="h-5 w-5">
+                          <AvatarFallback className="text-xs bg-orange-600 text-white">
+                            {getUserInitials(user.id)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">
+                          {getUserDisplayName(user.id)}
+                        </span>
+                        <Badge className="bg-orange-600 hover:bg-orange-600 text-white text-xs px-1.5 py-0">
+                          Creatore
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {assignees.length > 0 && (
                   <div className="space-y-2">

@@ -25,7 +25,10 @@ import {
   ChevronsUpDown,
   Pencil,
   Trash2,
+  UserCheck,
 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface Task {
   id: string;
@@ -88,6 +91,7 @@ export function TasksDataTable({
 }: TasksDataTableProps) {
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [openAssignPopover, setOpenAssignPopover] = useState<string | null>(null);
 
   const handleSelectAll = (checked: boolean) => {
     if (onSelectionChange) {
@@ -167,6 +171,14 @@ export function TasksDataTable({
     ) : (
       <ChevronDown className="ml-2 h-4 w-4" />
     );
+  };
+
+  const getUserInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   if (tasks.length === 0) {
@@ -390,6 +402,50 @@ export function TasksDataTable({
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
+                      <Popover
+                        open={openAssignPopover === task.id}
+                        onOpenChange={(open) => setOpenAssignPopover(open ? task.id : null)}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
+                            data-testid={`button-assign-${task.id}`}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64" align="end">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm text-gray-900">Assegnati</h4>
+                            {task.assignees && task.assignees.length > 0 ? (
+                              <div className="space-y-2">
+                                {task.assignees
+                                  .filter(a => a.role === 'assignee')
+                                  .map((assignee) => (
+                                    <div
+                                      key={assignee.id}
+                                      className="flex items-center gap-2 p-2 rounded hover:bg-gray-50"
+                                      data-testid={`assignee-item-${assignee.id}`}
+                                    >
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="text-xs bg-blue-500 text-white">
+                                          {getUserInitials(assignee.name)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-sm text-gray-700">
+                                        {assignee.name}
+                                      </span>
+                                    </div>
+                                  ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">Nessun assegnato</p>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </TableCell>
                 )}
