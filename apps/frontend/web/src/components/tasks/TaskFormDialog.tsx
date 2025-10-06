@@ -57,6 +57,8 @@ import {
   ArrowLeftRight,
   Eye,
   UserCheck,
+  Pencil,
+  Check,
 } from 'lucide-react';
 
 const taskFormSchema = z.object({
@@ -151,6 +153,8 @@ export function TaskFormDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState('');
   
   const prevOpenRef = useRef(false);
   const { user } = useAuth();
@@ -320,6 +324,27 @@ export function TaskFormDialog({
         i === index ? { ...item, isCompleted: !item.isCompleted } : item
       )
     );
+  };
+
+  const startEditChecklistItem = (index: number) => {
+    setEditingIndex(index);
+    setEditingText(checklistItems[index].title);
+  };
+
+  const saveEditChecklistItem = () => {
+    if (editingIndex === null || !editingText.trim()) return;
+    setChecklistItems(prev => 
+      prev.map((item, i) => 
+        i === editingIndex ? { ...item, title: editingText.trim() } : item
+      )
+    );
+    setEditingIndex(null);
+    setEditingText('');
+  };
+
+  const cancelEditChecklistItem = () => {
+    setEditingIndex(null);
+    setEditingText('');
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -889,34 +914,86 @@ export function TaskFormDialog({
                         <div
                           key={index}
                           className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border transition-all",
+                            "flex items-center gap-2 p-3 rounded-lg border transition-all",
                             item.isCompleted 
                               ? "bg-green-50 border-green-200" 
                               : "bg-white border-gray-200"
                           )}
                           data-testid={`checklist-item-${index}`}
                         >
-                          <Checkbox
-                            checked={item.isCompleted}
-                            onCheckedChange={() => toggleChecklistItem(index)}
-                            data-testid={`checkbox-checklist-${index}`}
-                          />
-                          <span className={cn(
-                            "flex-1 text-sm",
-                            item.isCompleted ? "line-through text-gray-500" : "text-gray-900 font-medium"
-                          )}>
-                            {item.title}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeChecklistItem(index)}
-                            className="h-7 w-7 p-0 hover:bg-red-100 text-red-600"
-                            data-testid={`button-remove-checklist-${index}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {editingIndex === index ? (
+                            <>
+                              <Input
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                className="flex-1 h-8 text-sm border-orange-300 focus:border-orange-500"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    saveEditChecklistItem();
+                                  } else if (e.key === 'Escape') {
+                                    cancelEditChecklistItem();
+                                  }
+                                }}
+                                data-testid={`input-edit-checklist-${index}`}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={saveEditChecklistItem}
+                                className="h-7 w-7 p-0 hover:bg-green-100 text-green-600"
+                                data-testid={`button-save-checklist-${index}`}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={cancelEditChecklistItem}
+                                className="h-7 w-7 p-0 hover:bg-gray-100 text-gray-600"
+                                data-testid={`button-cancel-edit-checklist-${index}`}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Checkbox
+                                checked={item.isCompleted}
+                                onCheckedChange={() => toggleChecklistItem(index)}
+                                data-testid={`checkbox-checklist-${index}`}
+                              />
+                              <span className={cn(
+                                "flex-1 text-sm",
+                                item.isCompleted ? "line-through text-gray-500" : "text-gray-900 font-medium"
+                              )}>
+                                {item.title}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => startEditChecklistItem(index)}
+                                className="h-7 w-7 p-0 hover:bg-orange-100 text-orange-600"
+                                data-testid={`button-edit-checklist-${index}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeChecklistItem(index)}
+                                className="h-7 w-7 p-0 hover:bg-red-100 text-red-600"
+                                data-testid={`button-remove-checklist-${index}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
