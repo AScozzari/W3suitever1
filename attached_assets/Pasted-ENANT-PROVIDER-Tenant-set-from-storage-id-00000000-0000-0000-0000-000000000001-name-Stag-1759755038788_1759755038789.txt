@@ -1,0 +1,56 @@
+ENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=MfMNjlBK5zIO' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-IVFQ3KVX.js?v=bd45bd53:335:29)
+    at chunk-IVFQ3KVX.js?v=bd45bd53:239:13
+    at chunk-IVFQ3KVX.js?v=bd45bd53:162:58
+    at Presence (chunk-4346QGOE.js?v=bd45bd53:24:11)
+    at chunk-IVFQ3KVX.js?v=bd45bd53:153:64
+    at chunk-TCRT5IO7.js?v=bd45bd53:43:13
+    at chunk-TCRT5IO7.js?v=bd45bd53:20:13
+    at chunk-7IUWE4IP.js?v=bd45bd53:42:13
+    at chunk-IEEZVV2F.js?v=bd45bd53:244:22
+    at Presence (chunk-4346QGOE.js?v=bd45bd53:24:11)
+    at Provider (chunk-3WVMON5O.js?v=bd45bd53:38:15)
+    at DialogPortal (chunk-IVFQ3KVX.js?v=bd45bd53:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=bd45bd53:38:15)
+    at Dialog (chunk-IVFQ3KVX.js?v=bd45bd53:56:5)
+    at TaskDetailDialog (TaskDetailDialog.tsx:113:3)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:68:34)
+    at TasksPage (TasksPage.tsx:63:21)
+    at AuthenticatedRoute (TenantShell.tsx:351:72)
+    at Route (wouter.js?v=bd45bd53:206:16)
+    at Switch (wouter.js?v=bd45bd53:262:17)
+    at TenantRoutes (TenantShell.tsx:185:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:40:59)
+    at Route (wouter.js?v=bd45bd53:206:16)
+    at Switch (wouter.js?v=bd45bd53:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=bd45bd53:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-IVFQ3KVX.js?v=bd45bd53:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
