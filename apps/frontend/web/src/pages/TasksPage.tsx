@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/contexts/TenantContext';
+import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -62,6 +63,7 @@ export default function TasksPage() {
   const { toast } = useToast();
   const { currentUser } = useTenant();
   
+  const [currentModule, setCurrentModule] = useState('tasks');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<TaskFiltersState>({});
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -205,7 +207,8 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-white">
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="flex-1 flex flex-col min-h-0 bg-white">
       <div className="border-b border-gray-200 bg-white">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -398,6 +401,7 @@ export default function TasksPage() {
         onSubmit={(data) => createTaskMutation.mutateAsync(data)}
         isSubmitting={createTaskMutation.isPending}
       />
-    </div>
+      </div>
+    </Layout>
   );
 }
