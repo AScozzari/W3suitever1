@@ -334,14 +334,9 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch stores for dropdown
-  const { data: stores, isLoading: storesLoading } = useQuery({
-    queryKey: ['/api/stores'],
-    queryFn: async () => {
-      const response = await fetch('/api/stores');
-      if (!response.ok) return [];
-      return response.json();
-    }
+  // Fetch stores for dropdown (uses default fetcher with apiRequest for auth headers)
+  const { data: stores = [], isLoading: storesLoading } = useQuery({
+    queryKey: ['/api/stores']
   });
   
   // Initialize form with default values (MUST be before form.watch!)
