@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -299,7 +300,7 @@ export function TaskFormDialog({
       ...prev,
       {
         title: newChecklistItem.trim(),
-        assignedToUserId: newChecklistAssignee || undefined,
+        assignedToUserId: (newChecklistAssignee && newChecklistAssignee !== 'unassigned') ? newChecklistAssignee : undefined,
         position: prev.length,
         isCompleted: false,
       },
@@ -361,6 +362,9 @@ export function TaskFormDialog({
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}
           </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600">
+            Compila i campi per {mode === 'create' ? 'creare un nuovo task' : 'modificare il task'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -866,7 +870,7 @@ export function TaskFormDialog({
                               <SelectValue placeholder="Assegna a..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Nessuno</SelectItem>
+                              <SelectItem value="unassigned">Nessuno</SelectItem>
                               {taskAssignees.map((userId) => (
                                 <SelectItem key={userId} value={userId}>
                                   {getUserDisplayName(userId)}
