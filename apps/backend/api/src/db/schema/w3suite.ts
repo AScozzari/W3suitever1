@@ -1213,6 +1213,14 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   defaultSkills: jsonb("default_skills").default([]),
   defaultBreakMinutes: integer("default_break_minutes").default(30),
   
+  // ✅ NEW: Shift Type and Global Tolerances for Split Shifts
+  // 'slot_based': Each time slot is a separate shift with its own tolerances/breaks
+  // 'split_shift': All time slots together form one shift with global tolerances/breaks
+  shiftType: varchar("shift_type", { length: 20 }).notNull().default("slot_based"), // 'slot_based' | 'split_shift'
+  globalClockInTolerance: integer("global_clock_in_tolerance"), // Used only for split_shift type
+  globalClockOutTolerance: integer("global_clock_out_tolerance"), // Used only for split_shift type
+  globalBreakMinutes: integer("global_break_minutes"), // Used only for split_shift type
+  
   // Validity and status
   isActive: boolean("is_active").default(true),
   status: varchar("status", { length: 20 }).default("active"), // NEW: active | archived
