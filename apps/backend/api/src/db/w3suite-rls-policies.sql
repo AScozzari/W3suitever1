@@ -84,6 +84,57 @@ CREATE TRIGGER validate_supplier_overrides_operation
   BEFORE INSERT OR UPDATE ON w3suite.supplier_overrides
   FOR EACH ROW EXECUTE FUNCTION w3suite.validate_supplier_operation();
 
+-- ==================== TASK ATTACHMENTS TABLE (Member-Only Access) ====================
+
+-- Enable RLS on task_attachments table
+ALTER TABLE w3suite.task_attachments ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policy if exists
+DROP POLICY IF EXISTS task_attachments_member_access ON w3suite.task_attachments;
+
+-- Policy: Only task members can access attachments
+-- Members are: task creator, assignees, or watchers
+CREATE POLICY task_attachments_member_access ON w3suite.task_attachments
+  FOR ALL
+  USING (
+    tenant_id = current_setting('app.current_tenant_id', true)::uuid
+    AND (
+      -- Task creator can access
+      task_id IN (
+        SELECT id FROM w3suite.tasks 
+        WHERE creator_id = current_setting('app.current_user_id', true)
+          AND tenant_id = current_setting('app.current_tenant_id', true)::uuid
+      )
+      OR
+      -- Task assignees and watchers can access
+      task_id IN (
+        SELECT task_id FROM w3suite.task_assignments 
+        WHERE user_id = current_setting('app.current_user_id', true)
+          AND tenant_id = current_setting('app.current_tenant_id', true)::uuid
+      )
+      OR
+      -- File uploader can access their own uploads
+      uploaded_by = current_setting('app.current_user_id', true)
+    )
+  )
+  WITH CHECK (
+    tenant_id = current_setting('app.current_tenant_id', true)::uuid
+    AND (
+      -- Only task members can upload attachments
+      task_id IN (
+        SELECT id FROM w3suite.tasks 
+        WHERE creator_id = current_setting('app.current_user_id', true)
+          AND tenant_id = current_setting('app.current_tenant_id', true)::uuid
+      )
+      OR
+      task_id IN (
+        SELECT task_id FROM w3suite.task_assignments 
+        WHERE user_id = current_setting('app.current_user_id', true)
+          AND tenant_id = current_setting('app.current_tenant_id', true)::uuid
+      )
+    )
+  );
+
 -- ==================== VERIFICATION QUERIES ====================
 
 -- Verify RLS is enabled
