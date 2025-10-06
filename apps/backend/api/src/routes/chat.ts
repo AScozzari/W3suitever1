@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { ChatService } from '../services/chat-service';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { handleApiError, parseUUIDParam } from '../core/error-utils';
+import { webSocketService } from '../core/websocket-service';
 import { z } from 'zod';
 import {
   insertChatChannelSchema,
@@ -236,6 +237,16 @@ router.post('/channels/:id/messages', requirePermission('chat.create'), async (r
       userId
     });
     
+    // Broadcast message to channel members via WebSocket
+    await webSocketService.broadcastChatMessage(channelId, tenantId, {
+      id: message.id,
+      userId: message.userId,
+      content: message.content,
+      createdAt: message.createdAt.toISOString(),
+      attachments: message.attachments || [],
+      mentionedUserIds: message.mentionedUserIds || []
+    });
+    
     res.status(201).json(message);
   } catch (error) {
     handleApiError(error, res, 'Failed to send message');
@@ -253,6 +264,9 @@ router.patch('/messages/:id', requirePermission('chat.update'), async (req: Requ
     
     const message = await ChatService.editMessage(messageId, tenantId, userId, parsed.content);
     
+    // Broadcast message update via WebSocket
+    await webSocketService.broadcastMessageUpdate(message.channelId, tenantId, messageId, parsed.content);
+    
     res.json(message);
   } catch (error) {
     handleApiError(error, res, 'Failed to edit message');
@@ -266,7 +280,15 @@ router.delete('/messages/:id', requirePermission('chat.delete'), async (req: Req
     const userId = req.user!.id;
     const messageId = parseUUIDParam(req.params.id, 'Message ID');
     
+    // Get channel ID before deletion
+    const channel = await ChatService.getChannelById(req.params.channelId || '', tenantId);
+    
     await ChatService.deleteMessage(messageId, tenantId, userId);
+    
+    // Broadcast message deletion via WebSocket
+    if (channel) {
+      await webSocketService.broadcastMessageDelete(channel.id, tenantId, messageId);
+    }
     
     res.status(204).send();
   } catch (error) {
@@ -277,12 +299,21 @@ router.delete('/messages/:id', requirePermission('chat.delete'), async (req: Req
 // POST /api/chat/messages/:id/reactions - Add reaction
 router.post('/messages/:id/reactions', requirePermission('chat.create'), async (req: Request, res: Response) => {
   try {
+    const tenantId = req.tenant!.id;
     const userId = req.user!.id;
     const messageId = parseUUIDParam(req.params.id, 'Message ID');
     
     const parsed = addReactionBodySchema.parse(req.body);
     
     const message = await ChatService.addReaction(messageId, userId, parsed.emoji);
+    
+    // Broadcast reaction change via WebSocket
+    await webSocketService.broadcastReactionChange(
+      message.channelId,
+      tenantId,
+      messageId,
+      message.reactions as Record<string, string[]>
+    );
     
     res.json(message);
   } catch (error) {
@@ -293,11 +324,20 @@ router.post('/messages/:id/reactions', requirePermission('chat.create'), async (
 // DELETE /api/chat/messages/:id/reactions/:emoji - Remove reaction
 router.delete('/messages/:id/reactions/:emoji', requirePermission('chat.delete'), async (req: Request, res: Response) => {
   try {
+    const tenantId = req.tenant!.id;
     const userId = req.user!.id;
     const messageId = parseUUIDParam(req.params.id, 'Message ID');
     const emoji = req.params.emoji;
     
     const message = await ChatService.removeReaction(messageId, userId, emoji);
+    
+    // Broadcast reaction change via WebSocket
+    await webSocketService.broadcastReactionChange(
+      message.channelId,
+      tenantId,
+      messageId,
+      message.reactions as Record<string, string[]>
+    );
     
     res.json(message);
   } catch (error) {
@@ -335,6 +375,13 @@ router.post('/channels/:id/members', requirePermission('chat.create'), async (re
       inviteStatus: 'pending'
     });
     
+    // Broadcast member joined via WebSocket
+    await webSocketService.broadcastMemberJoined(channelId, tenantId, {
+      userId: member.userId,
+      role: member.role,
+      joinedAt: member.joinedAt
+    });
+    
     res.status(201).json(member);
   } catch (error) {
     handleApiError(error, res, 'Failed to add member');
@@ -369,6 +416,9 @@ router.delete('/channels/:id/members/:userId', requirePermission('chat.delete'),
     const userId = req.params.userId;
     
     await ChatService.removeMember(channelId, tenantId, userId);
+    
+    // Broadcast member left via WebSocket
+    await webSocketService.broadcastMemberLeft(channelId, tenantId, userId);
     
     res.status(204).send();
   } catch (error) {

@@ -168,6 +168,26 @@ export class WebSocketService {
           this.handleHRShiftUnsubscription(sessionId);
           break;
 
+        case 'join_chat_channel':
+          // Client wants to receive chat messages for specific channel
+          this.handleChatChannelJoin(sessionId, message.channelId);
+          break;
+
+        case 'leave_chat_channel':
+          // Client wants to stop receiving chat messages for specific channel
+          this.handleChatChannelLeave(sessionId, message.channelId);
+          break;
+
+        case 'chat_typing_start':
+          // Broadcast typing indicator to channel members
+          this.handleChatTypingStart(sessionId, message.channelId);
+          break;
+
+        case 'chat_typing_stop':
+          // Stop broadcasting typing indicator
+          this.handleChatTypingStop(sessionId, message.channelId);
+          break;
+
         default:
           logger.warn('🌐 Unknown WebSocket message type', { type: message.type, sessionId });
       }
@@ -645,6 +665,322 @@ export class WebSocketService {
     } catch (error) {
       logger.error('🌐 Failed to broadcast conflicts update', { error, tenantId });
     }
+  }
+
+  // ==================== CHAT SYSTEM METHODS ====================
+
+  /**
+   * Handle chat channel join
+   */
+  private async handleChatChannelJoin(sessionId: string, channelId: string): Promise<void> {
+    const client = this.clients.get(sessionId);
+    if (!client) return;
+
+    try {
+      await redisService.setWebSocketSubscription(
+        client.userId,
+        client.tenantId,
+        sessionId,
+        'chat_channel',
+        { channelId }
+      );
+    } catch (redisError) {
+      logger.debug('🌐 Redis chat subscription storage failed (fallback mode)', { sessionId, channelId });
+    }
+
+    this.sendToClient(sessionId, {
+      type: 'chat_channel_joined',
+      channelId,
+      timestamp: new Date().toISOString()
+    });
+
+    logger.debug('💬 Chat channel joined', { sessionId, channelId });
+  }
+
+  /**
+   * Handle chat channel leave
+   */
+  private async handleChatChannelLeave(sessionId: string, channelId: string): Promise<void> {
+    const client = this.clients.get(sessionId);
+    if (!client) return;
+
+    try {
+      await redisService.removeWebSocketSubscription(
+        client.userId,
+        client.tenantId,
+        sessionId,
+        'chat_channel'
+      );
+    } catch (redisError) {
+      logger.debug('🌐 Redis chat unsubscription failed (fallback mode)', { sessionId, channelId });
+    }
+
+    this.sendToClient(sessionId, {
+      type: 'chat_channel_left',
+      channelId,
+      timestamp: new Date().toISOString()
+    });
+
+    logger.debug('💬 Chat channel left', { sessionId, channelId });
+  }
+
+  /**
+   * Handle typing start
+   */
+  private async handleChatTypingStart(sessionId: string, channelId: string): Promise<void> {
+    const client = this.clients.get(sessionId);
+    if (!client) return;
+
+    // Broadcast typing indicator to other channel members
+    await this.broadcastToChannel(channelId, client.tenantId, {
+      type: 'chat_typing',
+      channelId,
+      userId: client.userId,
+      isTyping: true
+    }, [client.userId]);
+
+    logger.debug('💬 Typing indicator started', { sessionId, channelId, userId: client.userId });
+  }
+
+  /**
+   * Handle typing stop
+   */
+  private async handleChatTypingStop(sessionId: string, channelId: string): Promise<void> {
+    const client = this.clients.get(sessionId);
+    if (!client) return;
+
+    // Broadcast typing stopped to other channel members
+    await this.broadcastToChannel(channelId, client.tenantId, {
+      type: 'chat_typing',
+      channelId,
+      userId: client.userId,
+      isTyping: false
+    }, [client.userId]);
+
+    logger.debug('💬 Typing indicator stopped', { sessionId, channelId, userId: client.userId });
+  }
+
+  /**
+   * Broadcast new message to channel members
+   */
+  async broadcastChatMessage(
+    channelId: string,
+    tenantId: string,
+    message: {
+      id: string;
+      userId: string;
+      content: string;
+      createdAt: string;
+      attachments?: any[];
+      mentionedUserIds?: string[];
+    }
+  ): Promise<void> {
+    try {
+      await this.broadcastToChannel(channelId, tenantId, {
+        type: 'chat_message_new',
+        channelId,
+        message
+      });
+
+      logger.debug('💬 Chat message broadcasted', {
+        channelId,
+        messageId: message.id,
+        tenantId
+      });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast chat message', { error, channelId });
+    }
+  }
+
+  /**
+   * Broadcast message update
+   */
+  async broadcastMessageUpdate(
+    channelId: string,
+    tenantId: string,
+    messageId: string,
+    content: string
+  ): Promise<void> {
+    try {
+      await this.broadcastToChannel(channelId, tenantId, {
+        type: 'chat_message_updated',
+        channelId,
+        messageId,
+        content,
+        isEdited: true
+      });
+
+      logger.debug('💬 Message update broadcasted', { channelId, messageId });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast message update', { error, channelId, messageId });
+    }
+  }
+
+  /**
+   * Broadcast message deletion
+   */
+  async broadcastMessageDelete(
+    channelId: string,
+    tenantId: string,
+    messageId: string
+  ): Promise<void> {
+    try {
+      await this.broadcastToChannel(channelId, tenantId, {
+        type: 'chat_message_deleted',
+        channelId,
+        messageId
+      });
+
+      logger.debug('💬 Message deletion broadcasted', { channelId, messageId });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast message deletion', { error, channelId, messageId });
+    }
+  }
+
+  /**
+   * Broadcast reaction change
+   */
+  async broadcastReactionChange(
+    channelId: string,
+    tenantId: string,
+    messageId: string,
+    reactions: Record<string, string[]>
+  ): Promise<void> {
+    try {
+      await this.broadcastToChannel(channelId, tenantId, {
+        type: 'chat_reaction_changed',
+        channelId,
+        messageId,
+        reactions
+      });
+
+      logger.debug('💬 Reaction change broadcasted', { channelId, messageId });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast reaction change', { error, channelId, messageId });
+    }
+  }
+
+  /**
+   * Broadcast member joined
+   */
+  async broadcastMemberJoined(
+    channelId: string,
+    tenantId: string,
+    member: {
+      userId: string;
+      role: string;
+      joinedAt: Date;
+    }
+  ): Promise<void> {
+    try {
+      await this.broadcastToChannel(channelId, tenantId, {
+        type: 'chat_member_joined',
+        channelId,
+        member
+      });
+
+      logger.debug('💬 Member joined broadcasted', { channelId, userId: member.userId });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast member joined', { error, channelId });
+    }
+  }
+
+  /**
+   * Broadcast member left
+   */
+  async broadcastMemberLeft(
+    channelId: string,
+    tenantId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      await this.broadcastToChannel(channelId, tenantId, {
+        type: 'chat_member_left',
+        channelId,
+        userId
+      });
+
+      logger.debug('💬 Member left broadcasted', { channelId, userId });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast member left', { error, channelId, userId });
+    }
+  }
+
+  /**
+   * Broadcast unread count update to user
+   */
+  async broadcastUnreadCountUpdate(
+    userId: string,
+    tenantId: string,
+    unreadCount: number
+  ): Promise<void> {
+    try {
+      const userClients = Array.from(this.clients.values()).filter(
+        client => client.userId === userId && client.tenantId === tenantId
+      );
+
+      const message = {
+        type: 'chat_unread_changed',
+        unreadCount,
+        timestamp: new Date().toISOString()
+      };
+
+      for (const client of userClients) {
+        this.sendToClient(client.sessionId, message);
+      }
+
+      logger.debug('💬 Unread count broadcasted', { userId, unreadCount });
+    } catch (error) {
+      logger.error('💬 Failed to broadcast unread count', { error, userId });
+    }
+  }
+
+  /**
+   * Broadcast message to all channel members
+   */
+  private async broadcastToChannel(
+    channelId: string,
+    tenantId: string,
+    message: any,
+    excludeUserIds: string[] = []
+  ): Promise<void> {
+    // Get all clients in this tenant
+    const tenantClients = Array.from(this.clients.values()).filter(
+      client => client.tenantId === tenantId && !excludeUserIds.includes(client.userId)
+    );
+
+    // Filter clients who are subscribed to this channel
+    const subscribedClients = [];
+    for (const client of tenantClients) {
+      try {
+        const subscription = await redisService.getWebSocketSubscription(
+          client.userId,
+          client.tenantId,
+          client.sessionId,
+          'chat_channel'
+        );
+
+        if (subscription && subscription.channelId === channelId) {
+          subscribedClients.push(client);
+        }
+      } catch (redisError) {
+        // Fallback: assume all clients are subscribed
+        subscribedClients.push(client);
+      }
+    }
+
+    // Send to all subscribed clients
+    for (const client of subscribedClients) {
+      this.sendToClient(client.sessionId, {
+        ...message,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    logger.debug('💬 Broadcasted to channel', {
+      channelId,
+      clientsCount: subscribedClients.length
+    });
   }
 
   /**
