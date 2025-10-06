@@ -12,3 +12,5 @@ export type { KanbanBoardProps, KanbanTask } from './KanbanBoard';
 
 export { TasksWidget } from './TasksWidget';
 export type { TasksWidgetProps } from './TasksWidget';
+
+export { UserMultiRoleSelector } from './UserMultiRoleSelector';
