@@ -312,7 +312,7 @@ export function TasksDataTable({
                   </TableCell>
                 )}
                 <TableCell>
-                  <StatusIcon className={cn('h-11 w-11', statusInfo.color)} />
+                  <StatusIcon className={cn('h-[11px] w-[11px]', statusInfo.color)} />
                 </TableCell>
                 <TableCell className="font-medium">
                   <div>
