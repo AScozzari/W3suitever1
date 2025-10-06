@@ -54,6 +54,9 @@ import {
   FileText,
   Trash2,
   UserPlus,
+  ArrowLeftRight,
+  Eye,
+  UserCheck,
 } from 'lucide-react';
 
 const taskFormSchema = z.object({
@@ -153,13 +156,22 @@ export function TaskFormDialog({
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
 
-  const { data: stores = [] } = useQuery<any[]>({
+  const { data: stores = [], isLoading: storesLoading } = useQuery<any[]>({
     queryKey: ['/api/stores'],
   });
+
+  useEffect(() => {
+    if (users && users.length > 0) {
+      console.log('✅ USERS LOADED:', users.length, 'users');
+    }
+    if (stores && stores.length > 0) {
+      console.log('✅ STORES LOADED:', stores.length, 'stores', stores[0]);
+    }
+  }, [users, stores]);
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskFormSchema),
@@ -611,18 +623,24 @@ export function TaskFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-sm font-semibold text-gray-900">Punto Vendita</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} data-testid="select-store">
+                          <Select onValueChange={field.onChange} value={field.value} disabled={storesLoading} data-testid="select-store">
                             <FormControl>
                               <SelectTrigger className="h-11 border-gray-300">
-                                <SelectValue placeholder="Seleziona punto vendita" />
+                                <SelectValue placeholder={storesLoading ? "Caricamento..." : stores.length === 0 ? "Nessun punto vendita disponibile" : "Seleziona punto vendita"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {stores.map((store) => (
-                                <SelectItem key={store.id} value={store.id}>
-                                  {store.name}
-                                </SelectItem>
-                              ))}
+                              {stores.length === 0 && !storesLoading ? (
+                                <div className="p-4 text-sm text-gray-500 text-center">
+                                  Nessun punto vendita disponibile
+                                </div>
+                              ) : (
+                                stores.map((store) => (
+                                  <SelectItem key={store.id} value={store.id}>
+                                    {store.name || store.id}
+                                  </SelectItem>
+                                ))
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -651,37 +669,51 @@ export function TaskFormDialog({
                           variant="outline"
                           size="sm"
                           className="h-9 border-orange-300 text-orange-700 hover:bg-orange-50"
+                          disabled={usersLoading}
                           data-testid="button-add-user"
                         >
                           <UserPlus className="h-4 w-4 mr-2" />
-                          Aggiungi persona
+                          {usersLoading ? 'Caricamento...' : 'Aggiungi persona'}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-80 p-0" align="end">
                         <Command>
                           <CommandInput placeholder="🔍 Cerca utente..." />
-                          <CommandEmpty>Nessun utente trovato</CommandEmpty>
+                          <CommandEmpty>
+                            {usersLoading ? 'Caricamento utenti...' : 'Nessun utente trovato'}
+                          </CommandEmpty>
                           <CommandGroup className="max-h-64 overflow-y-auto">
-                            {availableUsers.map((u) => (
-                              <CommandItem
-                                key={u.id}
-                                onSelect={() => addUser(u.id, 'assignee')}
-                                className="flex items-center justify-between cursor-pointer"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">
-                                      {getUserInitials(u.id)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="text-sm">
-                                    <div className="font-medium">{getUserDisplayName(u.id)}</div>
-                                    <div className="text-xs text-gray-500">{u.email}</div>
+                            {usersLoading ? (
+                              <div className="p-4 text-sm text-gray-500 text-center flex items-center justify-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Caricamento utenti...
+                              </div>
+                            ) : availableUsers.length === 0 ? (
+                              <div className="p-4 text-sm text-gray-500 text-center">
+                                Tutti gli utenti sono già stati aggiunti
+                              </div>
+                            ) : (
+                              availableUsers.map((u) => (
+                                <CommandItem
+                                  key={u.id}
+                                  onSelect={() => addUser(u.id, 'assignee')}
+                                  className="flex items-center justify-between cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback className="bg-orange-100 text-orange-700 text-xs font-bold">
+                                        {getUserInitials(u.id)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="text-sm">
+                                      <div className="font-medium">{getUserDisplayName(u.id)}</div>
+                                      <div className="text-xs text-gray-500">{u.email}</div>
+                                    </div>
                                   </div>
-                                </div>
-                                <Plus className="h-4 w-4 text-orange-600" />
-                              </CommandItem>
-                            ))}
+                                  <Plus className="h-4 w-4 text-orange-600" />
+                                </CommandItem>
+                              ))
+                            )}
                           </CommandGroup>
                         </Command>
                       </PopoverContent>
@@ -715,23 +747,37 @@ export function TaskFormDialog({
                           <span className="text-sm font-medium text-gray-900">
                             {getUserDisplayName(au.userId)}
                           </span>
-                          <Badge variant="outline" className={cn(
-                            "text-xs",
-                            au.role === 'assignee' 
-                              ? "border-orange-400 text-orange-700" 
-                              : "border-purple-400 text-purple-700"
-                          )}>
-                            {au.role === 'assignee' ? 'Assegnatario' : 'Osservatore'}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            {au.role === 'assignee' ? (
+                              <UserCheck className="h-4 w-4 text-orange-600" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-purple-600" />
+                            )}
+                            <span className={cn(
+                              "text-xs font-semibold",
+                              au.role === 'assignee' ? "text-orange-700" : "text-purple-700"
+                            )}>
+                              {au.role === 'assignee' ? 'Assegnatario' : 'Osservatore'}
+                            </span>
+                          </div>
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => toggleUserRole(au.userId)}
-                            className="h-6 w-6 p-0 hover:bg-white/50"
-                            title={au.role === 'assignee' ? 'Cambia in osservatore' : 'Cambia in assegnatario'}
+                            className={cn(
+                              "h-7 px-2 gap-1 transition-all",
+                              au.role === 'assignee' 
+                                ? "border-purple-300 text-purple-700 hover:bg-purple-50" 
+                                : "border-orange-300 text-orange-700 hover:bg-orange-50"
+                            )}
+                            title={au.role === 'assignee' ? 'Cambia in Osservatore' : 'Cambia in Assegnatario'}
+                            data-testid={`button-toggle-role-${au.userId}`}
                           >
-                            <Users className="h-3 w-3" />
+                            <ArrowLeftRight className="h-3 w-3" />
+                            <span className="text-xs font-medium">
+                              {au.role === 'assignee' ? 'Osservatore' : 'Assegnatario'}
+                            </span>
                           </Button>
                           <Button
                             type="button"
