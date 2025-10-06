@@ -364,8 +364,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.tenantId, tenantId))
       .orderBy(users.firstName, users.lastName);
     
-    console.log(`[STORAGE-RLS] ✅ getUsersByTenant: Found ${result.length} users for tenant ${tenantId}`);
-    return result;
+    // Deduplicate users by ID (LEFT JOINs create multiple rows per user)
+    const uniqueUsers = Array.from(
+      new Map(result.map(user => [user.id, user])).values()
+    );
+    
+    console.log(`[STORAGE-RLS] ✅ getUsersByTenant: Found ${uniqueUsers.length} unique users (${result.length} total rows) for tenant ${tenantId}`);
+    return uniqueUsers;
   }
 
   // ==================== TENANT MANAGEMENT ====================
