@@ -493,9 +493,9 @@ export function TaskDetailDialog({
                       data-testid={`button-toggle-${item.id}`}
                     >
                       {item.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" data-testid={`icon-completed-${item.id}`} />
+                        <CheckCircle2 className="h-11 w-11 text-green-600" data-testid={`icon-completed-${item.id}`} />
                       ) : (
-                        <Circle className="h-5 w-5 text-gray-400 hover:text-gray-600" data-testid={`icon-pending-${item.id}`} />
+                        <Circle className="h-11 w-11 text-gray-400 hover:text-gray-600" data-testid={`icon-pending-${item.id}`} />
                       )}
                     </button>
                     
@@ -518,20 +518,20 @@ export function TaskDetailDialog({
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0"
+                          className="h-12 w-12 p-0"
                           onClick={() => updateChecklistItemMutation.mutate({ itemId: item.id, title: editTitle })}
                           data-testid={`button-save-${item.id}`}
                         >
-                          <Check className="h-4 w-4" />
+                          <Check className="h-11 w-11" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0"
+                          className="h-12 w-12 p-0"
                           onClick={() => setEditingItemId(null)}
                           data-testid={`button-cancel-${item.id}`}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-11 w-11" />
                         </Button>
                       </div>
                     ) : (
@@ -552,23 +552,23 @@ export function TaskDetailDialog({
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-12 w-12 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => {
                             setEditingItemId(item.id);
                             setEditTitle(item.title);
                           }}
                           data-testid={`button-edit-${item.id}`}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-11 w-11" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-12 w-12 p-0 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => deleteChecklistItemMutation.mutate(item.id)}
                           data-testid={`button-delete-${item.id}`}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-11 w-11" />
                         </Button>
                       </>
                     )}
@@ -577,7 +577,7 @@ export function TaskDetailDialog({
 
                 {isAddingItem ? (
                   <div className="flex items-center gap-2 p-3 rounded-lg border border-blue-500">
-                    <Circle className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <Circle className="h-11 w-11 text-gray-400 flex-shrink-0" />
                     <Input
                       value={newItemTitle}
                       onChange={(e) => setNewItemTitle(e.target.value)}
@@ -597,24 +597,24 @@ export function TaskDetailDialog({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0"
+                      className="h-12 w-12 p-0"
                       onClick={() => newItemTitle.trim() && addChecklistItemMutation.mutate(newItemTitle)}
                       disabled={!newItemTitle.trim()}
                       data-testid="button-save-new-item"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-11 w-11" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0"
+                      className="h-12 w-12 p-0"
                       onClick={() => {
                         setIsAddingItem(false);
                         setNewItemTitle('');
                       }}
                       data-testid="button-cancel-new-item"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-11 w-11" />
                     </Button>
                   </div>
                 ) : (
@@ -625,7 +625,7 @@ export function TaskDetailDialog({
                     onClick={() => setIsAddingItem(true)}
                     data-testid="button-add-item"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-11 w-11 mr-2" />
                     Aggiungi elemento
                   </Button>
                 )}
