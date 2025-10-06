@@ -68,6 +68,8 @@ export default function TasksPage() {
   const [filters, setFilters] = useState<TaskFiltersState>({});
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'list' | 'board' | 'matrix' | 'analytics'>('list');
   const [boardView, setBoardView] = useState<'kanban' | 'gantt'>('kanban');
@@ -199,6 +201,54 @@ export default function TasksPage() {
     },
   });
 
+  const editTaskMutation = useMutation({
+    mutationFn: async ({ taskId, data }: { taskId: string; data: any }) => {
+      const { assignees, watchers, checklistItems, attachments, ...taskData } = data;
+      
+      await apiRequest(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(taskData),
+      });
+
+      if (assignees || watchers) {
+        await apiRequest(`/api/tasks/${taskId}/assignments`, {
+          method: 'DELETE',
+        });
+        
+        const allAssignments = [
+          ...(assignees || []).map((userId: string) => ({ userId, role: 'assignee' })),
+          ...(watchers || []).map((userId: string) => ({ userId, role: 'watcher' })),
+        ];
+
+        if (allAssignments.length > 0) {
+          await apiRequest(`/api/tasks/${taskId}/assignments/bulk`, {
+            method: 'POST',
+            body: JSON.stringify({ assignments: allAssignments }),
+          });
+        }
+      }
+
+      return { id: taskId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      setIsEditDialogOpen(false);
+      setTaskToEdit(null);
+      setSelectedTask(null);
+      toast({
+        title: 'Task modificato',
+        description: 'Le modifiche sono state salvate con successo',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile modificare il task',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const startTimerMutation = useMutation({
     mutationFn: async (taskId: string) => {
       return apiRequest(`/api/tasks/${taskId}/timer/start`, {
@@ -238,6 +288,14 @@ export default function TasksPage() {
 
   const handleCloseDetail = () => {
     setSelectedTask(null);
+  };
+
+  const handleEditTask = () => {
+    if (selectedTask) {
+      setTaskToEdit(selectedTask);
+      setIsEditDialogOpen(true);
+      setSelectedTask(null);
+    }
   };
 
   const handleStartTimer = (taskId: string) => {
@@ -451,6 +509,7 @@ export default function TasksPage() {
           task={selectedTask}
           open={!!selectedTask}
           onClose={handleCloseDetail}
+          onEdit={handleEditTask}
           availableTasks={tasks as Array<{ id: string; title: string; status: string; priority: string }>}
         />
       )}
@@ -461,6 +520,38 @@ export default function TasksPage() {
         onSubmit={(data) => createTaskMutation.mutateAsync(data)}
         isSubmitting={createTaskMutation.isPending}
       />
+
+      {taskToEdit && (
+        <TaskFormDialog
+          open={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setTaskToEdit(null);
+          }}
+          onSubmit={(data) => editTaskMutation.mutateAsync({ taskId: taskToEdit.id, data })}
+          isSubmitting={editTaskMutation.isPending}
+          mode="edit"
+          initialData={{
+            title: taskToEdit.title,
+            description: taskToEdit.description || '',
+            status: taskToEdit.status as any,
+            priority: taskToEdit.priority,
+            urgency: taskToEdit.urgency,
+            department: undefined,
+            dueDate: taskToEdit.dueDate ? new Date(taskToEdit.dueDate) : undefined,
+            startDate: undefined,
+            tags: taskToEdit.tags?.join(', ') || '',
+            storeId: undefined,
+          }}
+          existingAssignees={taskToEdit.assignees?.filter(a => a.role === 'assignee').map(a => a.id) || []}
+          existingWatchers={taskToEdit.watchers?.map(w => w.id) || []}
+          existingChecklistItems={taskToEdit.checklist?.map(item => ({
+            title: item.title,
+            isCompleted: item.completed,
+            position: item.order
+          })) || []}
+        />
+      )}
       </div>
     </Layout>
   );
