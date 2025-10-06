@@ -109,7 +109,7 @@ export interface TaskFormDialogProps {
 const statusOptions = [
   { value: 'todo', label: 'Da fare', color: 'bg-gray-100 text-gray-700' },
   { value: 'in_progress', label: 'In corso', color: 'bg-blue-100 text-blue-700' },
-  { value: 'review', label: 'In revisione', color: 'bg-rose-100 text-rose-700' },
+  { value: 'review', label: 'In revisione', color: 'bg-orange-200 text-orange-800' },
   { value: 'done', label: 'Completato', color: 'bg-green-100 text-green-700' },
   { value: 'archived', label: 'Archiviato', color: 'bg-gray-100 text-gray-400' },
 ];
@@ -117,13 +117,13 @@ const statusOptions = [
 const priorityOptions = [
   { value: 'low', label: 'Bassa', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Media', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Alta', color: 'bg-rose-100 text-rose-700' },
+  { value: 'high', label: 'Alta', color: 'bg-orange-200 text-orange-800' },
 ];
 
 const urgencyOptions = [
   { value: 'low', label: 'Non urgente', color: 'bg-gray-100 text-gray-700' },
   { value: 'medium', label: 'Moderata', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Urgente', color: 'bg-rose-100 text-rose-700' },
+  { value: 'high', label: 'Urgente', color: 'bg-orange-200 text-orange-800' },
   { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-700' },
 ];
 
@@ -368,7 +368,7 @@ export function TaskFormDialog({
     <Dialog open={open}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
         {/* HEADER */}
-        <DialogHeader className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
+        <DialogHeader className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-200 to-orange-300">
           <DialogTitle className="text-xl font-bold text-gray-900">
             {mode === 'create' ? '✨ Crea nuovo task' : '✏️ Modifica task'}
           </DialogTitle>
@@ -686,7 +686,7 @@ export function TaskFormDialog({
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-6 bg-orange-500 rounded-full" />
                       <h3 className="text-lg font-bold text-gray-900">Team</h3>
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                      <Badge variant="secondary" className="bg-orange-200 text-orange-800">
                         {assignedUsers.length}
                       </Badge>
                     </div>
@@ -869,7 +869,7 @@ export function TaskFormDialog({
 
                   {/* Progress Bar */}
                   {checklistItems.length > 0 && (
-                    <div className="space-y-2 p-4 rounded-lg bg-orange-50 border border-orange-200">
+                    <div className="space-y-2 p-4 rounded-lg bg-orange-200 border border-orange-300">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium text-gray-700">Completamento</span>
                         <span className="font-bold text-orange-600">{Math.round(completionPercentage)}%</span>
@@ -977,7 +977,7 @@ export function TaskFormDialog({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => startEditChecklistItem(index)}
-                                className="h-7 w-7 p-0 hover:bg-orange-100 text-orange-600"
+                                className="h-7 w-7 p-0 hover:bg-orange-200 text-orange-600"
                                 data-testid={`button-edit-checklist-${index}`}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -1025,7 +1025,7 @@ export function TaskFormDialog({
                     type="button"
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full min-h-[100px] border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50 py-6"
+                    className="w-full min-h-[100px] border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-200 py-6"
                     data-testid="button-upload-file"
                   >
                     <div className="flex flex-col items-center gap-3">
