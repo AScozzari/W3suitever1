@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { User } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Dialog,
   DialogContent,
@@ -139,6 +140,7 @@ export function TaskFormDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   const prevOpenRef = useRef(false);
+  const { user } = useAuth();
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
@@ -168,7 +170,7 @@ export function TaskFormDialog({
         setWatchers(existingWatchers || []);
         setChecklistItems(existingChecklistItems || []);
       } else {
-        setAssignees([]);
+        setAssignees(user?.id ? [user.id] : []);
         setWatchers([]);
         setChecklistItems([]);
         setSelectedFiles([]);
@@ -188,7 +190,7 @@ export function TaskFormDialog({
     }
     
     prevOpenRef.current = open;
-  }, [open, mode, initialData, existingAssignees, existingWatchers, existingChecklistItems, form]);
+  }, [open, mode, initialData, existingAssignees, existingWatchers, existingChecklistItems, form, user]);
 
   const handleSubmit = async (data: TaskFormData) => {
     await onSubmit({
@@ -211,7 +213,7 @@ export function TaskFormDialog({
       ...prev,
       {
         title: newChecklistItem.trim(),
-        assignedToUserId: newChecklistItemAssignee || undefined,
+        assignedToUserId: newChecklistItemAssignee && newChecklistItemAssignee !== 'none' ? newChecklistItemAssignee : undefined,
         position: prev.length,
       },
     ]);
@@ -229,7 +231,7 @@ export function TaskFormDialog({
   const updateChecklistItemAssignee = (index: number, userId: string) => {
     setChecklistItems((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, assignedToUserId: userId || undefined } : item
+        i === index ? { ...item, assignedToUserId: userId && userId !== 'none' ? userId : undefined } : item
       )
     );
   };
@@ -593,7 +595,7 @@ export function TaskFormDialog({
                               <SelectValue placeholder="Seleziona utente..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Nessuno</SelectItem>
+                              <SelectItem value="none">Nessuno</SelectItem>
                               {users.map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   {getUserDisplayName(user.id)}
