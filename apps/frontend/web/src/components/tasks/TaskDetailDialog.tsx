@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -247,6 +248,9 @@ export function TaskDetailDialog({
                 <DialogTitle className="text-xl font-semibold">
                   {task.title}
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Dettagli e gestione task: {task.title}
+                </DialogDescription>
                 {activeTimer ? (
                   <Button
                     size="sm"
