@@ -311,7 +311,7 @@ export function TasksDataTable({
                   </TableCell>
                 )}
                 <TableCell>
-                  <StatusIcon className={cn('h-5 w-5', statusInfo.color)} />
+                  <StatusIcon className={cn('h-8 w-8', statusInfo.color)} />
                 </TableCell>
                 <TableCell className="font-medium">
                   <div>
@@ -392,7 +392,7 @@ export function TasksDataTable({
                           aria-label="Avvia timer"
                           data-testid={`button-start-timer-${task.id}`}
                         >
-                          <Play className="h-5 w-5" />
+                          <Play className="h-8 w-8" />
                         </Button>
                       )}
                       {onEdit && (
@@ -403,7 +403,7 @@ export function TasksDataTable({
                           className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
                           data-testid={`button-edit-${task.id}`}
                         >
-                          <Pencil className="h-5 w-5" />
+                          <Pencil className="h-8 w-8" />
                         </Button>
                       )}
                       {onDelete && (
@@ -414,7 +414,7 @@ export function TasksDataTable({
                           className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
                           data-testid={`button-delete-${task.id}`}
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-8 w-8" />
                         </Button>
                       )}
                       <Popover
@@ -428,7 +428,7 @@ export function TasksDataTable({
                             className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
                             data-testid={`button-assign-${task.id}`}
                           >
-                            <UserCheck className="h-5 w-5" />
+                            <UserCheck className="h-8 w-8" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-64" align="end">
