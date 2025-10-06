@@ -218,7 +218,7 @@ export function KanbanBoard({
               </CardHeader>
 
               <CardContent
-                className="flex-1 px-3 pb-4 pt-0 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/30"
+                className="flex-1 px-3 pb-4 pt-6 space-y-4 overflow-y-auto min-h-[400px] bg-gradient-to-b from-transparent to-gray-50/30"
                 onDragOver={handleDragOver}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
