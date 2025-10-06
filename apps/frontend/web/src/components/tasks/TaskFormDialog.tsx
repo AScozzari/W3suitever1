@@ -297,7 +297,7 @@ export function TaskFormDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <ScrollArea className="flex-1 min-h-0">
+              <ScrollArea className="flex-1 h-0">
                 <div className="px-6">
                 <TabsContent value="details" className="m-0 space-y-4 mt-4 pb-6">
                   <div className="space-y-4 p-3 rounded-lg bg-white border border-gray-200">

@@ -1057,12 +1057,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
         {/* Main Content - IDENTICO margini WindTreDashboard */}
         <main style={{
-          flex: 1,
+          width: isMobile ? '100%' : `calc(100vw - ${leftSidebarCollapsed ? 64 : 256}px - ${!workspaceCollapsed ? 320 : 64}px)`,
           marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
-          marginRight: isMobile ? '0' : (!workspaceCollapsed ? '320px' : '64px'),
           padding: isMobile ? '16px' : '24px',
           transition: 'all 0.3s ease',
-          minHeight: isMobile ? 'calc(100vh - 120px)' : 'auto'
+          minHeight: isMobile ? 'calc(100vh - 120px)' : 'auto',
+          boxSizing: 'border-box'
         }}>
           {children}
         </main>
