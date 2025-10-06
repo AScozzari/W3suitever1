@@ -1376,14 +1376,25 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       </div>
                     </div>
 
-                    {/* Tasks list */}
+                    {/* Tasks list - con scroll se molti task */}
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',
-                      marginBottom: '16px'
+                      marginBottom: '16px',
+                      maxHeight: '400px',
+                      overflowY: 'auto',
+                      paddingRight: '4px'
                     }}>
-                      {tasks.slice(0, 4).map((task) => {
+                      {tasksLoading ? (
+                        <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', fontSize: '12px' }}>
+                          Caricamento task...
+                        </div>
+                      ) : tasks.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', fontSize: '12px' }}>
+                          Nessun task da mostrare
+                        </div>
+                      ) : tasks.map((task) => {
                         const getPriorityColor = (priorita: string) => {
                           switch(priorita) {
                             case 'Alta': return COLORS.priority.high;
@@ -1393,8 +1404,26 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                           }
                         };
                         
+                        // Helper per badge ruolo
+                        const getRoleBadgeColor = (role: string | null) => {
+                          switch(role) {
+                            case 'Creatore': return { bg: 'rgba(123, 44, 191, 0.15)', color: '#7B2CBF', icon: '🎨' };
+                            case 'Assegnato': return { bg: 'rgba(255, 105, 0, 0.15)', color: '#FF6900', icon: '👤' };
+                            case 'Osservatore': return { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', icon: '👁️' };
+                            default: return { bg: 'rgba(107, 114, 128, 0.15)', color: '#6b7280', icon: '•' };
+                          }
+                        };
+                        
+                        const roleStyle = getRoleBadgeColor(task.userRole);
+                        
                         return (
-                          <div key={task.id} style={{
+                          <div 
+                            key={task.id} 
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setTaskDetailOpen(true);
+                            }}
+                            style={{
                             background: 'rgba(255, 255, 255, 0.03)',
                             borderRadius: '8px',
                             padding: '10px',
@@ -1484,31 +1513,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                                   lineHeight: 1.3
                                 }}>{task.descrizione}</div>
                               </div>
-                              <button
-                                onClick={() => toggleTaskComplete(task.id)}
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  marginLeft: '8px'
-                                }}
-                              >
-                                {task.completato ? 
-                                  <CheckCircle size={14} style={{ color: '#10b981' }} /> :
-                                  <div style={{
-                                    width: '14px',
-                                    height: '14px',
-                                    border: '2px solid #6b7280',
-                                    borderRadius: '50%'
-                                  }} />
-                                }
-                              </button>
                             </div>
                             
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'space-between'
+                              gap: '6px',
+                              flexWrap: 'wrap'
                             }}>
                               <span 
                                 className="task-priority"
@@ -1523,12 +1534,30 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                                 display: 'inline-block'
                               }}>{task.priorita}</span>
                               
+                              {task.userRole && (
+                                <span style={{
+                                  fontSize: '9px',
+                                  fontWeight: 600,
+                                  color: roleStyle.color,
+                                  background: roleStyle.bg,
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}>
+                                  <span style={{ fontSize: '8px' }}>{roleStyle.icon}</span>
+                                  {task.userRole}
+                                </span>
+                              )}
+                              
                               <div style={{
                                 fontSize: '9px',
                                 color: '#9ca3af',
                                 background: 'rgba(255, 255, 255, 0.08)',
                                 padding: '1px 4px',
-                                borderRadius: '4px'
+                                borderRadius: '4px',
+                                marginLeft: 'auto'
                               }}>{task.scadenza}</div>
                             </div>
                           </div>
@@ -2241,6 +2270,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         <ChatWidget 
           currentPage={location}
           currentModule={currentModule}
+        />
+      )}
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailDialog
+          task={selectedTask}
+          open={taskDetailOpen}
+          onOpenChange={setTaskDetailOpen}
         />
       )}
     </div>
