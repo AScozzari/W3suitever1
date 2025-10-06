@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Task {
   id: string;
@@ -311,7 +312,7 @@ export function TasksDataTable({
                   </TableCell>
                 )}
                 <TableCell>
-                  <StatusIcon className={cn('h-8 w-8', statusInfo.color)} />
+                  <StatusIcon className={cn('h-11 w-11', statusInfo.color)} />
                 </TableCell>
                 <TableCell className="font-medium">
                   <div>
@@ -382,86 +383,116 @@ export function TasksDataTable({
                 </TableCell>
                 {(onStartTimer || onEdit || onDelete) && (
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-center gap-1">
-                      {onStartTimer && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onStartTimer(task.id)}
-                          className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
-                          aria-label="Avvia timer"
-                          data-testid={`button-start-timer-${task.id}`}
+                    <TooltipProvider>
+                      <div className="flex items-center justify-center gap-1">
+                        {onStartTimer && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onStartTimer(task.id)}
+                                className="h-10 w-10 p-0 hover:bg-green-100 text-green-600"
+                                aria-label="Avvia timer"
+                                data-testid={`button-start-timer-${task.id}`}
+                              >
+                                <Play className="h-11 w-11" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Avvia timer</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        {onEdit && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onEdit(task.id)}
+                                className="h-10 w-10 p-0 hover:bg-orange-100 text-orange-600"
+                                data-testid={`button-edit-${task.id}`}
+                              >
+                                <Pencil className="h-11 w-11" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Modifica task</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        {onDelete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onDelete(task.id)}
+                                className="h-10 w-10 p-0 hover:bg-red-100 text-red-600"
+                                data-testid={`button-delete-${task.id}`}
+                              >
+                                <Trash2 className="h-11 w-11" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Elimina task</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <Popover
+                          open={openAssignPopover === task.id}
+                          onOpenChange={(open) => setOpenAssignPopover(open ? task.id : null)}
                         >
-                          <Play className="h-8 w-8" />
-                        </Button>
-                      )}
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(task.id)}
-                          className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
-                          data-testid={`button-edit-${task.id}`}
-                        >
-                          <Pencil className="h-8 w-8" />
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(task.id)}
-                          className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
-                          data-testid={`button-delete-${task.id}`}
-                        >
-                          <Trash2 className="h-8 w-8" />
-                        </Button>
-                      )}
-                      <Popover
-                        open={openAssignPopover === task.id}
-                        onOpenChange={(open) => setOpenAssignPopover(open ? task.id : null)}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
-                            data-testid={`button-assign-${task.id}`}
-                          >
-                            <UserCheck className="h-8 w-8" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-64" align="end">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-sm text-gray-900">Assegnati</h4>
-                            {task.assignees && task.assignees.length > 0 ? (
-                              <div className="space-y-2">
-                                {task.assignees
-                                  .filter(a => a.role === 'assignee')
-                                  .map((assignee) => (
-                                    <div
-                                      key={assignee.id}
-                                      className="flex items-center gap-2 p-2 rounded hover:bg-gray-50"
-                                      data-testid={`assignee-item-${assignee.id}`}
-                                    >
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="text-xs bg-blue-500 text-white">
-                                          {getUserInitials(assignee.name)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm text-gray-700">
-                                        {assignee.name}
-                                      </span>
-                                    </div>
-                                  ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-gray-500">Nessun assegnato</p>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-10 w-10 p-0 hover:bg-blue-100 text-blue-600"
+                                  data-testid={`button-assign-${task.id}`}
+                                >
+                                  <UserCheck className="h-11 w-11" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Visualizza assegnati</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="w-64" align="end">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm text-gray-900">Assegnati</h4>
+                              {task.assignees && task.assignees.length > 0 ? (
+                                <div className="space-y-2">
+                                  {task.assignees
+                                    .filter(a => a.role === 'assignee')
+                                    .map((assignee) => (
+                                      <div
+                                        key={assignee.id}
+                                        className="flex items-center gap-2 p-2 rounded hover:bg-gray-50"
+                                        data-testid={`assignee-item-${assignee.id}`}
+                                      >
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarFallback className="text-xs bg-blue-500 text-white">
+                                            {getUserInitials(assignee.name)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm text-gray-700">
+                                          {assignee.name}
+                                        </span>
+                                      </div>
+                                    ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">Nessun assegnato</p>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 )}
               </TableRow>
