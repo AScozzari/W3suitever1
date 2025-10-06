@@ -359,9 +359,9 @@ export function TaskFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col">
             {/* SCROLLABLE CONTENT */}
-            <ScrollArea className="flex-1 px-6">
+            <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
               <div className="py-6 space-y-8">
                 
                 {/* SEZIONE 1: DETTAGLI TASK */}
@@ -703,9 +703,9 @@ export function TaskFormDialog({
                               availableUsers.map((u) => (
                                 <CommandItem
                                   key={u.id}
-                                  value={u.id}
-                                  onSelect={(value) => {
-                                    addUser(value, 'assignee');
+                                  value={`${getUserDisplayName(u.id)} ${u.email}`}
+                                  onSelect={() => {
+                                    addUser(u.id, 'assignee');
                                   }}
                                   className="flex items-center justify-between cursor-pointer hover:bg-orange-50"
                                 >
