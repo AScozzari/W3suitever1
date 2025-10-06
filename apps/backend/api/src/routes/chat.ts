@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { ChatService } from '../services/chat-service';
+import { chatAttachmentService, chatFileUploadSchema } from '../services/chat-attachment-service';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { handleApiError, parseUUIDParam } from '../core/error-utils';
 import { webSocketService } from '../core/websocket-service';
@@ -452,6 +453,73 @@ router.get('/channels/:id/typing', requirePermission('chat.read'), async (req: R
     res.json({ typingUsers });
   } catch (error) {
     handleApiError(error, res, 'Failed to fetch typing users');
+  }
+});
+
+// ==================== FILE ATTACHMENT ROUTES ====================
+
+// POST /api/chat/attachments/prepare - Prepare file upload
+router.post('/attachments/prepare', requirePermission('chat.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const parsed = chatFileUploadSchema.parse(req.body);
+    
+    // Require channelId to prepare upload
+    const { channelId, messageId } = req.body;
+    if (!channelId) {
+      return res.status(400).json({ error: 'channelId è richiesto' });
+    }
+    
+    const uploadData = await chatAttachmentService.generateUploadUrl(
+      parsed,
+      userId,
+      tenantId,
+      channelId,
+      messageId
+    );
+    
+    res.json(uploadData);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to prepare file upload');
+  }
+});
+
+// GET /api/chat/attachments/:objectPath - Get attachment metadata
+router.get('/attachments/*', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const objectPath = req.params[0]; // Capture full path after /attachments/
+    
+    const metadata = await chatAttachmentService.getAttachmentMetadata(objectPath, tenantId);
+    
+    if (!metadata) {
+      return res.status(404).json({ error: 'Attachment non trovato' });
+    }
+    
+    res.json(metadata);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch attachment metadata');
+  }
+});
+
+// DELETE /api/chat/attachments/:objectPath - Delete attachment
+router.delete('/attachments/*', requirePermission('chat.delete'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    const objectPath = req.params[0]; // Capture full path after /attachments/
+    
+    const success = await chatAttachmentService.deleteAttachment(objectPath, userId, tenantId);
+    
+    if (!success) {
+      return res.status(403).json({ error: 'Non autorizzato a eliminare questo allegato' });
+    }
+    
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to delete attachment');
   }
 });
 
