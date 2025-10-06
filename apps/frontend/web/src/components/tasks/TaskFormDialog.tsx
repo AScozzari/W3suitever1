@@ -102,16 +102,16 @@ const statusOptions = [
 ];
 
 const priorityOptions = [
-  { value: 'low', label: 'Bassa', color: 'bg-green-100 text-green-800 border-green-200' },
-  { value: 'medium', label: 'Media', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  { value: 'high', label: 'Alta', color: 'bg-red-100 text-red-800 border-red-200' },
+  { value: 'low', label: 'Bassa', color: 'bg-gray-100 text-gray-700' },
+  { value: 'medium', label: 'Media', color: 'bg-blue-100 text-blue-700' },
+  { value: 'high', label: 'Alta', color: 'bg-orange-100 text-orange-700' },
 ];
 
 const urgencyOptions = [
-  { value: 'low', label: 'Non urgente', color: 'bg-blue-50 text-blue-700' },
-  { value: 'medium', label: 'Moderata', color: 'bg-orange-50 text-orange-700' },
-  { value: 'high', label: 'Urgente', color: 'bg-red-50 text-red-700' },
-  { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-900 font-semibold' },
+  { value: 'low', label: 'Non urgente', color: 'bg-gray-100 text-gray-700' },
+  { value: 'medium', label: 'Moderata', color: 'bg-blue-100 text-blue-700' },
+  { value: 'high', label: 'Urgente', color: 'bg-orange-100 text-orange-700' },
+  { value: 'critical', label: 'Critica', color: 'bg-red-100 text-red-700' },
 ];
 
 const departmentOptions = [
@@ -252,67 +252,66 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 bg-white/95 backdrop-blur-xl border-gray-200 overflow-hidden">
-        <DialogHeader className="px-6 py-5 border-b border-gray-200 bg-white/90 backdrop-blur-xl">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] bg-clip-text text-transparent">
-            {mode === 'create' ? '✨ Crea nuovo task' : '📝 Modifica task'}
+      <DialogContent className="max-w-5xl max-h-[85vh] p-0 gap-0 bg-white border border-gray-200">
+        <DialogHeader className="px-6 py-4 border-b border-gray-100 shrink-0">
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            {mode === 'create' ? 'Crea nuovo task' : 'Modifica task'}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="mx-6 mt-4 grid w-auto grid-cols-3 bg-white/90 backdrop-blur-xl border border-gray-200">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1 min-h-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+              <TabsList className="mx-6 mt-3 grid w-auto grid-cols-3 bg-gray-50 border border-gray-200 shrink-0">
                 <TabsTrigger 
                   value="details" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6900] data-[state=active]:to-[#7B2CBF] data-[state=active]:text-white transition-all"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Dettagli
                 </TabsTrigger>
                 <TabsTrigger 
                   value="people" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6900] data-[state=active]:to-[#7B2CBF] data-[state=active]:text-white transition-all"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Persone
                   {(assignees.length > 0 || watchers.length > 0) && (
-                    <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs">
                       {assignees.length + watchers.length}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="checklist" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6900] data-[state=active]:to-[#7B2CBF] data-[state=active]:text-white transition-all"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
                 >
                   <CheckSquare className="h-4 w-4 mr-2" />
                   Checklist
                   {checklistItems.length > 0 && (
-                    <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs">
                       {checklistItems.length}
                     </Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
 
-              <ScrollArea className="flex-1 px-6">
-                <TabsContent value="details" className="space-y-6 mt-6 pb-6">
-                  <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg transition-all hover:shadow-xl">
+              <div className="flex-1 overflow-y-auto min-h-0 px-6">
+                <TabsContent value="details" className="space-y-4 mt-4 pb-4">
+                  <div className="space-y-4 p-4 rounded-lg bg-white border border-gray-200">
                     <FormField
                       control={form.control}
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-semibold flex items-center gap-2">
-                            <Tag className="h-4 w-4 text-orange-500" />
+                          <FormLabel className="text-sm font-medium text-gray-700">
                             Titolo <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               placeholder="Inserisci il titolo del task"
-                              className="text-lg font-medium border-2 focus:border-orange-500 transition-all"
+                              className="border-gray-200 focus:border-orange-500"
                               data-testid="input-task-title"
                             />
                           </FormControl>
@@ -325,14 +324,14 @@ export function TaskFormDialog({
                       control={form.control}
                       name="description"
                       render={({ field }) => (
-                        <FormItem className="mt-5">
-                          <FormLabel className="text-base font-semibold">Descrizione</FormLabel>
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-gray-700">Descrizione</FormLabel>
                           <FormControl>
                             <Textarea
                               {...field}
                               placeholder="Descrizione dettagliata del task"
-                              rows={4}
-                              className="border-2 focus:border-purple-500 transition-all resize-none"
+                              rows={3}
+                              className="border-gray-200 focus:border-orange-500 resize-none"
                               data-testid="input-task-description"
                             />
                           </FormControl>
@@ -342,17 +341,19 @@ export function TaskFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-lg bg-white border border-gray-200">
                       <FormField
                         control={form.control}
                         name="status"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-semibold">Stato <span className="text-red-500">*</span></FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">
+                              Stato <span className="text-red-500">*</span>
+                            </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value} data-testid="select-status">
                               <FormControl>
-                                <SelectTrigger className="border-2">
+                                <SelectTrigger className="border-gray-200">
                                   <SelectValue placeholder="Seleziona stato" />
                                 </SelectTrigger>
                               </FormControl>
@@ -370,16 +371,16 @@ export function TaskFormDialog({
                       />
                     </div>
 
-                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
+                    <div className="p-4 rounded-lg bg-white border border-gray-200">
                       <FormField
                         control={form.control}
                         name="department"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-semibold">Dipartimento</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">Dipartimento</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value} data-testid="select-department">
                               <FormControl>
-                                <SelectTrigger className="border-2">
+                                <SelectTrigger className="border-gray-200">
                                   <SelectValue placeholder="Seleziona dipartimento" />
                                 </SelectTrigger>
                               </FormControl>
@@ -398,25 +399,27 @@ export function TaskFormDialog({
                     </div>
                   </div>
 
-                  <div className="p-5 rounded-xl bg-gradient-to-br from-orange-50 to-purple-50 backdrop-blur-xl border border-orange-200 shadow-lg">
-                    <h3 className="text-sm font-bold mb-4 text-orange-900">⚡ Priorità & Urgenza (Eisenhower Matrix)</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                    <h3 className="text-sm font-semibold mb-3 text-orange-900">Priorità & Urgenza</h3>
+                    <div className="grid grid-cols-2 gap-3">
                       <FormField
                         control={form.control}
                         name="priority"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold">Priorità <span className="text-red-500">*</span></FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">
+                              Priorità <span className="text-red-500">*</span>
+                            </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value} data-testid="select-priority">
                               <FormControl>
-                                <SelectTrigger className="border-2">
+                                <SelectTrigger className="border-gray-200 bg-white">
                                   <SelectValue placeholder="Seleziona priorità" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 {priorityOptions.map((option) => (
                                   <SelectItem key={option.value} value={option.value} data-testid={`option-priority-${option.value}`}>
-                                    <span className={cn("px-2 py-1 rounded text-xs font-medium", option.color)}>
+                                    <span className={cn("px-2 py-0.5 rounded text-xs font-medium", option.color)}>
                                       {option.label}
                                     </span>
                                   </SelectItem>
@@ -433,17 +436,19 @@ export function TaskFormDialog({
                         name="urgency"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-semibold">Urgenza <span className="text-red-500">*</span></FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">
+                              Urgenza <span className="text-red-500">*</span>
+                            </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value} data-testid="select-urgency">
                               <FormControl>
-                                <SelectTrigger className="border-2">
+                                <SelectTrigger className="border-gray-200 bg-white">
                                   <SelectValue placeholder="Seleziona urgenza" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 {urgencyOptions.map((option) => (
                                   <SelectItem key={option.value} value={option.value} data-testid={`option-urgency-${option.value}`}>
-                                    <span className={cn("px-2 py-1 rounded text-xs font-medium", option.color)}>
+                                    <span className={cn("px-2 py-0.5 rounded text-xs font-medium", option.color)}>
                                       {option.label}
                                     </span>
                                   </SelectItem>
@@ -457,34 +462,31 @@ export function TaskFormDialog({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-lg bg-white border border-gray-200">
                       <FormField
                         control={form.control}
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
-                            <FormLabel className="text-base font-semibold flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-orange-500" />
-                              Scadenza
-                            </FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700 mb-2">Scadenza</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
                                     variant="outline"
                                     className={cn(
-                                      'w-full pl-3 text-left font-normal border-2',
+                                      'w-full justify-start text-left font-normal border-gray-200',
                                       !field.value && 'text-muted-foreground'
                                     )}
                                     data-testid="button-due-date"
                                   >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
                                     {field.value ? (
                                       format(field.value, 'PPP', { locale: it })
                                     ) : (
                                       <span>Seleziona data</span>
                                     )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
@@ -506,21 +508,18 @@ export function TaskFormDialog({
                       />
                     </div>
 
-                    <div className="p-5 rounded-xl bg-white/90 backdrop-blur-xl border border-gray-200 shadow-lg">
+                    <div className="p-4 rounded-lg bg-white border border-gray-200">
                       <FormField
                         control={form.control}
                         name="tags"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-semibold flex items-center gap-2">
-                              <Tag className="h-4 w-4 text-purple-500" />
-                              Tag
-                            </FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700">Tag</FormLabel>
                             <FormControl>
                               <Input
                                 {...field}
                                 placeholder="es: frontend, urgente"
-                                className="border-2"
+                                className="border-gray-200"
                                 data-testid="input-task-tags"
                               />
                             </FormControl>
@@ -532,89 +531,81 @@ export function TaskFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="people" className="space-y-6 mt-6 pb-6">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 backdrop-blur-xl border-2 border-orange-300 shadow-xl">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 rounded-lg bg-orange-500 text-white">
-                        <Users className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-orange-900">Assegnatari</h3>
-                        <p className="text-sm text-orange-700">Persone responsabili del task</p>
-                      </div>
+                <TabsContent value="people" className="space-y-4 mt-4 pb-4">
+                  <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="h-4 w-4 text-orange-600" />
+                      <h3 className="text-sm font-semibold text-gray-900">Assegnatari</h3>
                     </div>
-                    <ScrollArea className="max-h-60 rounded-lg bg-white/90 backdrop-blur-xl border border-gray-200 p-4">
-                      <div className="space-y-3">
-                        {users.map((user) => (
-                          <div
-                            key={user.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-100/50 transition-all cursor-pointer"
-                            onClick={() => toggleAssignee(user.id)}
-                          >
-                            <Checkbox
-                              id={`assignee-${user.id}`}
-                              checked={assignees.includes(user.id)}
-                              onCheckedChange={() => toggleAssignee(user.id)}
-                              data-testid={`checkbox-assignee-${user.id}`}
-                              className="border-2"
-                            />
-                            <label htmlFor={`assignee-${user.id}`} className="text-sm font-medium cursor-pointer flex-1">
-                              {getUserDisplayName(user.id)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                    <p className="text-xs text-gray-500 mb-3">Persone responsabili del task</p>
+                    <div className="max-h-52 overflow-y-auto border border-gray-100 rounded-lg p-2 space-y-2">
+                      {users.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                          onClick={() => toggleAssignee(user.id)}
+                        >
+                          <Checkbox
+                            checked={assignees.includes(user.id)}
+                            className="border-gray-300"
+                            data-testid={`checkbox-assignee-${user.id}`}
+                          />
+                          <span className="text-sm text-gray-700">
+                            {getUserDisplayName(user.id)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                     {assignees.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
+                      <div className="mt-3 flex flex-wrap gap-1">
                         {assignees.map((userId) => (
-                          <Badge key={userId} className="bg-orange-500 hover:bg-orange-600 text-white gap-2 py-1.5 px-3">
+                          <Badge 
+                            key={userId} 
+                            variant="secondary" 
+                            className="text-xs"
+                            data-testid={`badge-assignee-${userId}`}
+                          >
                             {getUserDisplayName(userId)}
-                            <X className="h-3 w-3 cursor-pointer" onClick={() => toggleAssignee(userId)} />
                           </Badge>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 backdrop-blur-xl border-2 border-purple-300 shadow-xl">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 rounded-lg bg-purple-500 text-white">
-                        <Eye className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-purple-900">Osservatori</h3>
-                        <p className="text-sm text-purple-700">Persone che ricevono notifiche</p>
-                      </div>
+                  <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Eye className="h-4 w-4 text-blue-600" />
+                      <h3 className="text-sm font-semibold text-gray-900">Osservatori</h3>
                     </div>
-                    <ScrollArea className="max-h-60 rounded-lg bg-white/90 backdrop-blur-xl border border-gray-200 p-4">
-                      <div className="space-y-3">
-                        {users.map((user) => (
-                          <div
-                            key={user.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-100/50 transition-all cursor-pointer"
-                            onClick={() => toggleWatcher(user.id)}
-                          >
-                            <Checkbox
-                              id={`watcher-${user.id}`}
-                              checked={watchers.includes(user.id)}
-                              onCheckedChange={() => toggleWatcher(user.id)}
-                              data-testid={`checkbox-watcher-${user.id}`}
-                              className="border-2"
-                            />
-                            <label htmlFor={`watcher-${user.id}`} className="text-sm font-medium cursor-pointer flex-1">
-                              {getUserDisplayName(user.id)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                    <p className="text-xs text-gray-500 mb-3">Persone che ricevono notifiche</p>
+                    <div className="max-h-52 overflow-y-auto border border-gray-100 rounded-lg p-2 space-y-2">
+                      {users.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                          onClick={() => toggleWatcher(user.id)}
+                        >
+                          <Checkbox
+                            checked={watchers.includes(user.id)}
+                            className="border-gray-300"
+                            data-testid={`checkbox-watcher-${user.id}`}
+                          />
+                          <span className="text-sm text-gray-700">
+                            {getUserDisplayName(user.id)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                     {watchers.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
+                      <div className="mt-3 flex flex-wrap gap-1">
                         {watchers.map((userId) => (
-                          <Badge key={userId} variant="secondary" className="bg-purple-100 text-purple-900 border-purple-300 gap-2 py-1.5 px-3">
+                          <Badge 
+                            key={userId} 
+                            variant="outline" 
+                            className="text-xs"
+                            data-testid={`badge-watcher-${userId}`}
+                          >
                             {getUserDisplayName(userId)}
-                            <X className="h-3 w-3 cursor-pointer" onClick={() => toggleWatcher(userId)} />
                           </Badge>
                         ))}
                       </div>
@@ -622,63 +613,55 @@ export function TaskFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="checklist" className="space-y-4 mt-6 pb-6">
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 backdrop-blur-xl border-2 border-blue-300 shadow-xl">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="p-2 rounded-lg bg-blue-500 text-white">
-                        <CheckSquare className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-blue-900">Checklist Subtask</h3>
-                        <p className="text-sm text-blue-700">Suddividi il task in step più piccoli</p>
-                      </div>
+                <TabsContent value="checklist" className="space-y-4 mt-4 pb-4">
+                  <div className="p-4 rounded-lg bg-white border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckSquare className="h-4 w-4 text-purple-600" />
+                      <h3 className="text-sm font-semibold text-gray-900">Lista attività</h3>
                     </div>
-
-                    <div className="flex gap-2 mb-4">
+                    
+                    <div className="flex gap-2 mb-3">
                       <Input
+                        placeholder="Nuova attività..."
                         value={newChecklistItem}
                         onChange={(e) => setNewChecklistItem(e.target.value)}
-                        placeholder="Aggiungi un nuovo item..."
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             addChecklistItem();
                           }
                         }}
-                        className="border-2 border-blue-300 focus:border-blue-500"
-                        data-testid="input-new-checklist-item"
+                        className="border-gray-200 text-sm"
+                        data-testid="input-checklist-item"
                       />
                       <Button
                         type="button"
                         onClick={addChecklistItem}
-                        className="bg-blue-500 hover:bg-blue-600"
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0"
                         data-testid="button-add-checklist-item"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Aggiungi
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
 
                     {checklistItems.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2 max-h-80 overflow-y-auto border border-gray-100 rounded-lg p-2">
                         {checklistItems.map((item, index) => (
                           <div
                             key={index}
-                            className="flex items-center gap-3 p-4 bg-white/90 backdrop-blur-xl rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all"
+                            className="flex items-center gap-2 p-2 rounded-md bg-gray-50 border border-gray-100"
                             data-testid={`checklist-item-${index}`}
                           >
-                            <div className="flex-1 flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
-                                {index + 1}
-                              </div>
-                              <span className="flex-1 text-sm font-medium">{item.title}</span>
-                            </div>
+                            <CheckSquare className="h-4 w-4 text-gray-400 shrink-0" />
+                            <span className="flex-1 text-sm text-gray-700">{item.title}</span>
                             <Select
                               value={item.assignedToUserId || ''}
                               onValueChange={(value) => updateChecklistItemAssignee(index, value)}
                             >
-                              <SelectTrigger className="w-[200px] border-2">
-                                <SelectValue placeholder="Assegna a..." />
+                              <SelectTrigger className="w-40 h-8 text-xs border-gray-200">
+                                <SelectValue placeholder="Assegna..." />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="">Nessuno</SelectItem>
@@ -692,34 +675,33 @@ export function TaskFormDialog({
                             <Button
                               type="button"
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => removeChecklistItem(index)}
-                              className="hover:bg-red-100 hover:text-red-600"
+                              className="h-8 w-8 p-0 shrink-0"
                               data-testid={`button-remove-checklist-${index}`}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
                             </Button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <CheckSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p className="text-sm">Nessun item nella checklist</p>
+                      <div className="text-center py-8 text-gray-400 border border-gray-100 rounded-lg">
+                        <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nessuna attività in checklist</p>
                       </div>
                     )}
                   </div>
                 </TabsContent>
-              </ScrollArea>
+              </div>
             </Tabs>
 
-            <div className="px-6 py-4 border-t border-gray-200 bg-white/90 backdrop-blur-xl flex justify-end gap-3">
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="border-2"
                 data-testid="button-cancel"
               >
                 Annulla
@@ -727,11 +709,19 @@ export function TaskFormDialog({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] hover:from-[#FF6900]/90 hover:to-[#7B2CBF]/90 text-white font-semibold px-6 shadow-lg"
-                data-testid="button-submit-task"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                data-testid="button-submit"
               >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === 'create' ? '✨ Crea task' : '💾 Salva modifiche'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvataggio...
+                  </>
+                ) : mode === 'create' ? (
+                  'Crea task'
+                ) : (
+                  'Salva modifiche'
+                )}
               </Button>
             </div>
           </form>
