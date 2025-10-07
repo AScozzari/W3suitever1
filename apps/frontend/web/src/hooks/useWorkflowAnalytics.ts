@@ -52,25 +52,10 @@ export interface AnalyticsData {
  * Recupera statistiche e metriche di performance dal database
  */
 export function useWorkflowAnalytics(period = 30) {
-  return useQuery({
-    queryKey: ['/api/workflows/analytics', period],
-    queryFn: async (): Promise<AnalyticsData> => {
-      const response = await fetch(`/api/workflows/analytics?period=${period}`);
-      
-      if (!response.ok) {
-        throw new Error(`Analytics fetch failed: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      // Validate response structure
-      if (typeof data.period !== 'number') {
-        throw new Error('Invalid analytics response format: missing period');
-      }
-      
-      return data;
-    },
-    staleTime: 300000, // 5 minutes - analytics data changes less frequently
-    refetchInterval: 300000, // Refresh every 5 minutes
+  return useQuery<AnalyticsData>({
+    queryKey: ['/api/workflows/analytics', { period }],
+    select: (response: any) => response.data || response,
+    staleTime: 300000,
+    refetchInterval: 300000,
   });
 }
