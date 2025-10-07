@@ -183,7 +183,11 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
         topP: 1,
         frequencyPenalty: 0
       },
-      outputs: outputs.filter(o => o.condition && o.path),
+      outputs: outputs.filter(o => o.condition && o.path).map(o => ({
+        condition: o.condition,
+        path: o.path,
+        ...(o.label && { label: o.label }) // Include label solo se presente
+      })),
       fallback: {
         enabled: true,
         timeout: timeoutSeconds * 1000,
