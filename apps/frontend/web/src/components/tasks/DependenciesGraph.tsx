@@ -35,10 +35,10 @@ interface SimpleTask {
 interface Dependency {
   id: string;
   taskId: string;
-  dependsOnTaskId: string;
+  dependentTaskId: string;
   dependencyType: string;
   task?: SimpleTask;
-  dependsOnTask?: SimpleTask;
+  dependentTask?: SimpleTask;
 }
 
 interface DependenciesGraphProps {
@@ -67,11 +67,11 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
   });
 
   const addDependencyMutation = useMutation({
-    mutationFn: async (dependsOnTaskId: string) => {
+    mutationFn: async (dependentTaskId: string) => {
       return apiRequest(`/api/tasks/${taskId}/dependencies`, {
         method: 'POST',
         body: JSON.stringify({
-          dependsOnTaskId,
+          dependentTaskId,
           dependencyType: 'blocks',
         }),
       });
@@ -127,7 +127,7 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
 
     dependencies.forEach((dep) => {
       if (dep.task) taskMap.set(dep.task.id, dep.task);
-      if (dep.dependsOnTask) taskMap.set(dep.dependsOnTask.id, dep.dependsOnTask);
+      if (dep.dependentTask) taskMap.set(dep.dependentTask.id, dep.dependentTask);
     });
 
     const nodePositions = new Map<string, { x: number; y: number }>();
@@ -146,8 +146,8 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
 
       const dependsOn = dependencies.filter(d => d.taskId === task.id);
       dependsOn.forEach(dep => {
-        if (dep.dependsOnTask && !processedTasks.has(dep.dependsOnTask.id)) {
-          calculateLevel(dep.dependsOnTask, level + 1);
+        if (dep.dependentTask && !processedTasks.has(dep.dependentTask.id)) {
+          calculateLevel(dep.dependentTask, level + 1);
         }
       });
 
@@ -224,7 +224,7 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
     dependencies.forEach((dep) => {
       newEdges.push({
         id: dep.id,
-        source: dep.dependsOnTaskId,
+        source: dep.dependentTaskId,
         target: dep.taskId,
         type: 'smoothstep',
         animated: true,
@@ -244,7 +244,7 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
   const availableToAdd = availableTasks.filter(
     (task) => 
       task.id !== taskId && 
-      !dependencies.some(d => d.dependsOnTaskId === task.id)
+      !dependencies.some(d => d.dependentTaskId === task.id)
   );
 
   if (isLoading) {
@@ -370,7 +370,7 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
                       className="flex items-center justify-between gap-2 text-xs"
                     >
                       <span className="text-gray-700 truncate">
-                        {dep.dependsOnTask?.title || 'Task'}
+                        {dep.dependentTask?.title || 'Task'}
                       </span>
                       <button
                         onClick={() => removeDependencyMutation.mutate(dep.id)}
