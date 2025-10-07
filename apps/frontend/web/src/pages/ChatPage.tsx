@@ -339,20 +339,6 @@ export default function ChatPage() {
               overflowY: 'auto',
               padding: '8px'
             }}>
-              {/* DEBUG INFO */}
-              <div style={{
-                padding: '8px',
-                background: '#fffbeb',
-                border: '1px solid #fbbf24',
-                borderRadius: '4px',
-                marginBottom: '8px',
-                fontSize: '11px'
-              }}>
-                <div>Loading: {String(isLoading)}</div>
-                <div>Channels: {JSON.stringify(channels)}</div>
-                <div>Length: {channels?.length || 0}</div>
-              </div>
-              
               {isLoading ? (
                 <div style={{
                   padding: '32px',
