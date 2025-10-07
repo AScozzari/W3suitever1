@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import { MessageCircle, Plus, Lock } from 'lucide-react';
+import { MessageCircle, Plus, Lock, Settings, Users } from 'lucide-react';
 import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
 import { MessageList } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import { ChannelMembersDialog } from '@/components/chat/ChannelMembersDialog';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
+import { EditChannelDialog } from '@/components/chat/EditChannelDialog';
 
 interface ChatChannel {
   id: string;
@@ -110,6 +111,7 @@ export default function ChatPage() {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
 
@@ -424,35 +426,99 @@ export default function ChatPage() {
                   borderBottom: '1px solid #e5e7eb',
                   background: channels.find(c => c.id === selectedChannelId)?.metadata?.headerColor || 'white',
                   color: '#ffffff',
-                  transition: 'background 0.3s ease'
+                  transition: 'background 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
                 }}>
-                  <button
-                    onClick={() => setMembersDialogOpen(true)}
-                    data-testid="button-show-members"
-                    style={{
+                  <div style={{ flex: 1 }}>
+                    <div style={{
                       fontSize: '16px',
                       fontWeight: 600,
-                      margin: 0,
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'inherit',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      transition: 'background 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    {channels.find(c => c.id === selectedChannelId)?.name || 'Chat'}
-                  </button>
+                      marginBottom: '4px'
+                    }}>
+                      {(() => {
+                        const channel = channels.find(c => c.id === selectedChannelId);
+                        if (!channel) return 'Chat';
+                        if (channel.channelType === 'dm') {
+                          return channel.dmUser?.name || 'Chat Diretta';
+                        }
+                        return channel.name || 'Chat';
+                      })()}
+                    </div>
+                    
+                    {(() => {
+                      const channel = channels.find(c => c.id === selectedChannelId);
+                      if (channel && channel.channelType !== 'dm') {
+                        return (
+                          <button
+                            onClick={() => setMembersDialogOpen(true)}
+                            data-testid="button-show-members"
+                            style={{
+                              fontSize: '13px',
+                              color: 'rgba(255, 255, 255, 0.9)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'background 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <Users size={14} />
+                            {channel.memberCount || 0} membri
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+
+                  {/* Pulsante Modifica per chat di gruppo */}
+                  {(() => {
+                    const channel = channels.find(c => c.id === selectedChannelId);
+                    if (channel && channel.channelType !== 'dm') {
+                      return (
+                        <button
+                          onClick={() => setEditDialogOpen(true)}
+                          data-testid="button-edit-channel"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 12px',
+                            color: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            transition: 'background 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                          }}
+                        >
+                          <Settings size={16} />
+                          Modifica
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
 
                 {/* Messages Area - con flex per posizionamento corretto */}
@@ -518,6 +584,23 @@ export default function ChatPage() {
             channelName={channels.find(c => c.id === selectedChannelId)?.name || 'Chat'}
           />
         )}
+
+        {/* Edit Channel Dialog */}
+        {selectedChannelId && (() => {
+          const channel = channels.find(c => c.id === selectedChannelId);
+          if (channel && channel.channelType !== 'dm') {
+            return (
+              <EditChannelDialog
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                channelId={selectedChannelId}
+                currentName={channel.name || ''}
+                currentMetadata={channel.metadata}
+              />
+            );
+          }
+          return null;
+        })()}
       </div>
     </Layout>
   );
