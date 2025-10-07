@@ -197,8 +197,6 @@ function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; all
 
   const [selectedTemplate, setSelectedTemplate] = useState(config.templateId || 'custom');
   const [prompt, setPrompt] = useState(config.prompt || '');
-  const [model, setModel] = useState(config.model || 'gpt-3.5-turbo');
-  const [temperature, setTemperature] = useState(params.temperature ?? 0.7);
   const [maxTokens, setMaxTokens] = useState(params.maxTokens || 500);
   const [outputs, setOutputs] = useState(config.outputs || [
     { condition: 'approve', path: '', label: 'Approva' },
@@ -228,12 +226,8 @@ function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; all
     onSave(node.id, {
       templateId: selectedTemplate,
       prompt,
-      model,
       parameters: {
-        temperature,
-        maxTokens,
-        topP: 1,
-        frequencyPenalty: 0
+        maxTokens
       },
       outputs: outputs.filter(o => o.condition && o.path).map(o => ({
         condition: o.condition,
@@ -247,10 +241,7 @@ function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; all
       }
     });
     onClose();
-  }, [selectedTemplate, prompt, model, temperature, maxTokens, outputs, timeoutSeconds, defaultPath, node.id, onSave, onClose]);
-
-  // Stima costo
-  const estimatedCost = (maxTokens / 1000) * 0.002; // Approssimazione GPT-3.5
+  }, [selectedTemplate, prompt, maxTokens, outputs, timeoutSeconds, defaultPath, node.id, onSave, onClose]);
 
   return (
     <div className="space-y-6">
@@ -303,70 +294,16 @@ function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; all
         </p>
       </div>
 
-      {/* Model & Settings */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-            🤖 Modello AI
-            <InfoTooltip 
-              title="Modello AI"
-              description="Il modello OpenAI da utilizzare. Modelli più avanzati sono più precisi ma costano di più."
-              examples={[
-                "GPT-3.5 Turbo: Veloce ed economico",
-                "GPT-4: Massima precisione"
-              ]}
-              notes="GPT-4 costa circa 10x GPT-3.5 ma offre risultati migliori per decisioni complesse"
-            />
-          </label>
-          <Select value={model} onValueChange={setModel}>
-            <SelectTrigger data-testid="select-ai-model">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Veloce)</SelectItem>
-              <SelectItem value="gpt-4">GPT-4 (Preciso)</SelectItem>
-              <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Bilanciato)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            💰 Costo Stimato
-          </label>
-          <div className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700">
-            ~${estimatedCost.toFixed(4)} per decisione
+      {/* Agent Configuration Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-2">
+          <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-blue-900 mb-1">Agente AI: workflow-assistant</p>
+            <p className="text-xs text-blue-700">
+              Modello e temperatura sono configurati centralmente nell'AI Registry (default: GPT-4 Turbo, temp 0.7)
+            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Temperature Slider */}
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-          🎨 Creatività (Temperature): {temperature.toFixed(1)}
-          <InfoTooltip 
-            title="Temperature (Creatività)"
-            description="Controlla quanto creativamente l'AI interpreta il prompt. Valori bassi danno risposte più prevedibili, valori alti più creative."
-            examples={[
-              "0.0-0.3: Decisioni precise e deterministiche",
-              "0.7-1.0: Risposte più varie e creative"
-            ]}
-            notes="Per approvazioni usa 0.0-0.3, per classificazioni creative usa 0.7-1.0"
-          />
-        </label>
-        <input
-          type="range"
-          value={temperature}
-          onChange={(e) => setTemperature(Number(e.target.value))}
-          min={0}
-          max={1}
-          step={0.1}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-windtre-orange"
-          data-testid="slider-temperature"
-        />
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>Preciso (0.0)</span>
-          <span>Creativo (1.0)</span>
         </div>
       </div>
 
