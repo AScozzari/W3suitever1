@@ -506,15 +506,20 @@ export function TaskDetailDialog({
                     {fullTask.watchers && fullTask.watchers.length > 0 && (
                       <div className={fullTask.assignees && fullTask.assignees.length > 0 ? 'pt-3 border-t border-gray-200' : ''}>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Osservatori</div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="space-y-2">
                           {fullTask.watchers.map((watcher) => (
-                            <Badge 
-                              key={watcher.id} 
-                              variant="secondary" 
-                              className="text-xs bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                            >
-                              {watcher.name || watcher.email || 'Utente'}
-                            </Badge>
+                            <div key={watcher.id} className="flex items-center gap-2.5" data-testid={`watcher-${watcher.id}`}>
+                              <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
+                                <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-purple-600 text-white font-semibold">
+                                  {(watcher.name || watcher.email || 'U').substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-900" data-testid={`text-watcher-name-${watcher.id}`}>
+                                  {watcher.name || watcher.email || 'Utente'}
+                                </div>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
