@@ -53,6 +53,8 @@ import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../lib/workflow-node-def
 import { WorkflowActionNode } from './workflow-nodes/WorkflowActionNode';
 import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
+import { WorkflowRoutingNode } from './workflow-nodes/WorkflowRoutingNode';
+import { WorkflowFlowControlNode } from './workflow-nodes/WorkflowFlowControlNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../hooks/useWorkflowTemplates';
 import NodeConfigPanel from './NodeConfigPanel';
@@ -62,8 +64,10 @@ const nodeTypes = {
   action: WorkflowActionNode,
   trigger: WorkflowTriggerNode,
   ai: WorkflowAiNode,
-  condition: WorkflowActionNode, // Reuse action node for conditions
-  flow: WorkflowActionNode, // Reuse action node for flow control
+  routing: WorkflowRoutingNode,
+  'flow-control': WorkflowFlowControlNode,
+  condition: WorkflowActionNode, // Reuse action node for conditions (legacy)
+  flow: WorkflowActionNode, // Reuse action node for flow control (legacy)
 } as const;
 
 interface WorkflowBuilderProps {

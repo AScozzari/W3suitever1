@@ -280,12 +280,149 @@ export const AI_NODES: BaseNodeDefinition[] = [
   }
 ];
 
+// ==================== ROUTING NODES DEFINITIONS ====================
+
+export const ROUTING_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'team-assignment',
+    name: 'Team Assignment',
+    description: 'Route workflow to team (auto-selected via team_workflow_assignments or manual)',
+    category: 'routing',
+    icon: 'Users',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      assignmentMode: 'auto', // 'auto' | 'manual'
+      teamId: null,           // Solo se manual
+      forDepartment: null,    // Usa team_workflow_assignments se auto
+      priority: 100,
+      fallbackToAny: true     // Se non trova team, usa qualsiasi disponibile
+    }
+  },
+  {
+    id: 'user-assignment',
+    name: 'User Assignment',
+    description: 'Assign workflow to specific user(s) with parallel/sequential execution',
+    category: 'routing',
+    icon: 'UserCheck',
+    color: '#FF6900',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      userIds: [],              // Multi-select utenti
+      assignmentType: 'all',    // 'all' (tutti) | 'any' (primo) | 'sequential' (in sequenza)
+      waitForAll: true,         // Aspetta tutti o primo che completa
+      escalation: {
+        enabled: false,
+        afterHours: 24,
+        escalateTo: []
+      }
+    }
+  }
+];
+
+// ==================== FLOW CONTROL NODES DEFINITIONS ====================
+
+export const FLOW_CONTROL_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'if-condition',
+    name: 'IF Condition',
+    description: 'Conditional branch with true/false paths',
+    category: 'flow-control',
+    icon: 'GitBranch',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      conditions: [
+        { field: 'amount', operator: 'greater_than', value: 1000 }
+      ],
+      logic: 'AND', // 'AND' | 'OR'
+      truePath: null,   // Node ID per true
+      falsePath: null   // Node ID per false
+    }
+  },
+  {
+    id: 'switch-case',
+    name: 'Switch Case',
+    description: 'Multi-branch decision based on variable value',
+    category: 'flow-control',
+    icon: 'Split',
+    color: '#FF6900',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      variable: 'status',
+      cases: [
+        { value: 'urgent', label: 'Urgent', path: null },
+        { value: 'normal', label: 'Normal', path: null },
+        { value: 'low', label: 'Low', path: null }
+      ],
+      defaultPath: null  // Fallback path
+    }
+  },
+  {
+    id: 'while-loop',
+    name: 'While Loop',
+    description: 'Repeat actions while condition is true',
+    category: 'flow-control',
+    icon: 'RotateCw',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      condition: { field: 'retries', operator: 'less_than', value: 3 },
+      maxIterations: 10,      // Safety limit
+      loopBody: null,         // Node ID da eseguire in loop
+      exitPath: null,         // Node ID quando esce
+      incrementVar: 'retries' // Variabile da incrementare
+    }
+  },
+  {
+    id: 'parallel-fork',
+    name: 'Parallel Fork',
+    description: 'Execute multiple branches in parallel',
+    category: 'flow-control',
+    icon: 'GitMerge',
+    color: '#FF6900',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      branches: [
+        { name: 'Branch A', startNode: null, color: '#FF6900' },
+        { name: 'Branch B', startNode: null, color: '#7B2CBF' }
+      ],
+      waitFor: 'all', // 'all' | 'any' | 'first'
+      timeout: 3600   // seconds
+    }
+  },
+  {
+    id: 'join-sync',
+    name: 'Join/Sync',
+    description: 'Synchronize parallel branches before continuing',
+    category: 'flow-control',
+    icon: 'Merge',
+    color: '#7B2CBF',
+    version: '1.0.0',
+    configSchema: EventTriggerConfigSchema,
+    defaultConfig: {
+      waitForAll: true,
+      timeout: 3600,          // seconds
+      onTimeout: 'continue',  // 'continue' | 'fail' | 'retry'
+      aggregateResults: true  // Combina risultati da tutti i branch
+    }
+  }
+];
+
 // ==================== COMBINED CATALOG ====================
 
 export const ALL_WORKFLOW_NODES: BaseNodeDefinition[] = [
   ...ACTION_NODES,
   ...TRIGGER_NODES,
-  ...AI_NODES
+  ...AI_NODES,
+  ...ROUTING_NODES,
+  ...FLOW_CONTROL_NODES
 ];
 
 // Helper functions for node management
@@ -300,6 +437,8 @@ export const getNodesByCategory = (category: string): BaseNodeDefinition[] => {
 export const getActionNodes = (): BaseNodeDefinition[] => ACTION_NODES;
 export const getTriggerNodes = (): BaseNodeDefinition[] => TRIGGER_NODES;
 export const getAiNodes = (): BaseNodeDefinition[] => AI_NODES;
+export const getRoutingNodes = (): BaseNodeDefinition[] => ROUTING_NODES;
+export const getFlowControlNodes = (): BaseNodeDefinition[] => FLOW_CONTROL_NODES;
 
 // ==================== EXECUTOR MAPPING ====================
 
@@ -320,7 +459,16 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   'update-task-status': 'task-action-executor',
   'task-created': 'task-trigger-executor',
   'task-status-changed': 'task-trigger-executor',
-  'task-assigned': 'task-trigger-executor'
+  'task-assigned': 'task-trigger-executor',
+  // Routing nodes
+  'team-assignment': 'team-routing-executor',
+  'user-assignment': 'user-routing-executor',
+  // Flow control nodes
+  'if-condition': 'if-condition-executor',
+  'switch-case': 'switch-case-executor',
+  'while-loop': 'while-loop-executor',
+  'parallel-fork': 'parallel-fork-executor',
+  'join-sync': 'join-sync-executor'
 } as const;
 
 export type NodeId = keyof typeof NODE_TO_EXECUTOR_MAPPING;
