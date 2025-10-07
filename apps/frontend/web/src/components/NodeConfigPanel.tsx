@@ -1081,9 +1081,9 @@ function TaskTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
   const eventType = node.data.id as string; // task-created, task-status-changed, task-assigned
   
   const [department, setDepartment] = useState(config.filters?.department || '');
-  const [priority, setPriority] = useState(config.filters?.priority || '');
-  const [fromStatus, setFromStatus] = useState(config.filters?.fromStatus || '');
-  const [toStatus, setToStatus] = useState(config.filters?.toStatus || '');
+  const [priority, setPriority] = useState(config.filters?.priority || 'all');
+  const [fromStatus, setFromStatus] = useState(config.filters?.fromStatus || 'any');
+  const [toStatus, setToStatus] = useState(config.filters?.toStatus || 'any');
   const [assignedTo, setAssignedTo] = useState(config.filters?.assignedTo || '');
 
   const handleSave = useCallback(() => {
@@ -1092,10 +1092,10 @@ function TaskTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
     if (department) filters.department = department;
     
     if (eventType === 'task-created') {
-      if (priority) filters.priority = priority;
+      if (priority && priority !== 'all') filters.priority = priority;
     } else if (eventType === 'task-status-changed') {
-      if (fromStatus) filters.fromStatus = fromStatus;
-      if (toStatus) filters.toStatus = toStatus;
+      if (fromStatus && fromStatus !== 'any') filters.fromStatus = fromStatus;
+      if (toStatus && toStatus !== 'any') filters.toStatus = toStatus;
     } else if (eventType === 'task-assigned') {
       if (assignedTo) filters.assignedTo = assignedTo;
     }
@@ -1143,7 +1143,7 @@ function TaskTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
               <SelectValue placeholder="Tutte le priorità" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tutte</SelectItem>
+              <SelectItem value="all">Tutte</SelectItem>
               <SelectItem value="low">🟢 Bassa</SelectItem>
               <SelectItem value="medium">🟡 Media</SelectItem>
               <SelectItem value="high">🔴 Alta</SelectItem>
@@ -1163,7 +1163,7 @@ function TaskTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
                 <SelectValue placeholder="Qualsiasi status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Qualsiasi</SelectItem>
+                <SelectItem value="any">Qualsiasi</SelectItem>
                 <SelectItem value="todo">📋 Da Fare</SelectItem>
                 <SelectItem value="in_progress">🔄 In Corso</SelectItem>
                 <SelectItem value="review">👁️ In Revisione</SelectItem>
@@ -1181,7 +1181,7 @@ function TaskTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
                 <SelectValue placeholder="Qualsiasi status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Qualsiasi</SelectItem>
+                <SelectItem value="any">Qualsiasi</SelectItem>
                 <SelectItem value="todo">📋 Da Fare</SelectItem>
                 <SelectItem value="in_progress">🔄 In Corso</SelectItem>
                 <SelectItem value="review">👁️ In Revisione</SelectItem>
