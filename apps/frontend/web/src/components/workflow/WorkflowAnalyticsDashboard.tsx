@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useQuery } from '@tanstack/react-query';
+import { useWorkflowAnalytics } from '@/hooks/useWorkflowAnalytics';
 import {
   LineChart,
   Line,
@@ -76,40 +76,50 @@ const CHART_COLORS = [
 
 export function WorkflowAnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
+  
+  const periodDays = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+  const { data: analytics, isLoading, error } = useWorkflowAnalytics(periodDays);
 
-  const { data: executionTrends, isLoading: trendsLoading } = useQuery<ExecutionTrend[]>({
-    queryKey: ['/api/workflows/analytics/trends', timeRange],
-    refetchInterval: 30000,
-  });
+  // Transform data for charts
+  const executionTrends = analytics?.performance.map(p => ({
+    date: new Date(p.date).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }),
+    completed: parseInt(p.successful as any) || 0,
+    failed: parseInt(p.failed as any) || 0,
+    running: 0,
+    total: parseInt(p.executions as any) || 0,
+  })) || [];
 
-  const { data: statusDistribution, isLoading: statusLoading } = useQuery<StatusDistribution[]>({
-    queryKey: ['/api/workflows/analytics/status-distribution'],
-    refetchInterval: 30000,
-  });
+  const statusDistribution = analytics?.categoryStats.map(c => ({
+    status: c.category,
+    count: parseInt(c.total_instances as any) || 0,
+    percentage: analytics.summary.totalExecutions > 0 
+      ? (parseInt(c.total_instances as any) / analytics.summary.totalExecutions) * 100 
+      : 0,
+  })) || [];
 
-  const { data: performanceMetrics, isLoading: perfLoading } = useQuery<PerformanceMetric[]>({
-    queryKey: ['/api/workflows/analytics/performance'],
-    refetchInterval: 30000,
-  });
+  const performanceMetrics = analytics?.activeTemplates.map(t => ({
+    stepName: t.name,
+    avgDuration: t.avg_duration || 0,
+    minDuration: 0,
+    maxDuration: 0,
+    executions: parseInt(t.instances_count as any) || 0,
+  })) || [];
 
-  const { data: completionRates, isLoading: ratesLoading } = useQuery<StepCompletionRate[]>({
-    queryKey: ['/api/workflows/analytics/completion-rates'],
-    refetchInterval: 30000,
-  });
+  const completionRates: StepCompletionRate[] = [];
 
-  const overallStats = executionTrends?.reduce(
-    (acc, day) => ({
-      totalCompleted: acc.totalCompleted + day.completed,
-      totalFailed: acc.totalFailed + day.failed,
-      totalRunning: acc.totalRunning + day.running,
-      total: acc.total + day.total,
-    }),
-    { totalCompleted: 0, totalFailed: 0, totalRunning: 0, total: 0 }
-  );
+  const overallStats = {
+    totalCompleted: analytics?.categoryStats.reduce((sum, c) => sum + parseInt(c.completed as any || '0'), 0) || 0,
+    totalFailed: analytics?.categoryStats.reduce((sum, c) => sum + parseInt(c.failed as any || '0'), 0) || 0,
+    totalRunning: analytics?.categoryStats.reduce((sum, c) => sum + parseInt(c.running as any || '0'), 0) || 0,
+    total: analytics?.summary.totalExecutions || 0,
+  };
 
-  const successRate = overallStats
-    ? ((overallStats.totalCompleted / overallStats.total) * 100).toFixed(1)
-    : '0.0';
+  const successRate = analytics?.summary.successRate.toFixed(1) || '0.0';
+  
+  const trendsLoading = isLoading;
+  const statusLoading = isLoading;
+  const perfLoading = isLoading;
+  const ratesLoading = isLoading;
 
   return (
     <div className="space-y-6 p-6">
