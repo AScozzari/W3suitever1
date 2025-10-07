@@ -239,7 +239,7 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [dependencies, taskId, setNodes, setEdges]);
+  }, [dependencies, taskId]);
 
   const availableToAdd = availableTasks.filter(
     (task) => 

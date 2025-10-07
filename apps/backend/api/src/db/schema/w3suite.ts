@@ -2977,15 +2977,15 @@ export const taskDependencies = w3suiteSchema.table("task_dependencies", {
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   
   taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
-  dependsOnTaskId: uuid("depends_on_task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  dependentTaskId: uuid("dependent_task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
   dependencyType: taskDependencyTypeEnum("dependency_type").default('blocks').notNull(),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdBy: varchar("created_by").notNull().references(() => users.id),
 }, (table) => [
-  uniqueIndex("task_dependencies_unique").on(table.taskId, table.dependsOnTaskId),
+  uniqueIndex("task_dependencies_unique").on(table.taskId, table.dependentTaskId),
   index("task_dependencies_task_idx").on(table.taskId),
-  index("task_dependencies_depends_idx").on(table.dependsOnTaskId),
+  index("task_dependencies_depends_idx").on(table.dependentTaskId),
 ]);
 
 // Task Attachments - File uploads

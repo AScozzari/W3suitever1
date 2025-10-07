@@ -1,0 +1,68 @@
+IDER] 📋 Tenant set from storage: 
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: 
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+35
+DependenciesGraph.tsx:119 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at DependenciesGraph (DependenciesGraph.tsx:57:37)
+    at div (<anonymous>)
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at _c3 (dialog.tsx:28:6)
+    at TaskDetailDialog (TaskDetailDialog.tsx:114:3)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at TasksPage (TasksPage.tsx:63:21)
+    at AuthenticatedRoute (TenantShell.tsx:358:72)
+    at TenantRoutes (TenantShell.tsx:186:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:41:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+queryClient.ts:342 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/tasks/ef553b4c-8c65-4c72-89d0-705bd344f2fc/dependencies 500 (Internal Server Error)
+29
+DependenciesGraph.tsx:119 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at DependenciesGraph (DependenciesGraph.tsx:57:37)
+    at div (<anonymous>)
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at _c3 (dialog.tsx:28:6)
+    at TaskDetailDialog (TaskDetailDialog.tsx:114:3)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at TasksPage (TasksPage.tsx:63:21)
+    at AuthenticatedRoute (TenantShell.tsx:358:72)
+    at TenantRoutes (TenantShell.tsx:186:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:41:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+Layout.tsx:462 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+143
+DependenciesGraph.tsx:119 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at DependenciesGraph (DependenciesGraph.tsx:57:37)
+    at div (<anonymous>)
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at _c3 (dialog.tsx:28:6)
+    at TaskDetailDialog (TaskDetailDialog.tsx:114:3)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at TasksPage (TasksPage.tsx:63:21)
+    at AuthenticatedRoute (TenantShell.tsx:358:72)
+    at TenantRoutes (TenantShell.tsx:186:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:41:59)
+    at ThemeProvider (ThemeContext.tsx:13:33)

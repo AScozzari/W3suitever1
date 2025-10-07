@@ -680,7 +680,7 @@ export class TaskService {
   static async addDependency(
     dependencyData: InsertTaskDependency
   ): Promise<TaskDependency> {
-    if (dependencyData.taskId === dependencyData.dependsOnTaskId) {
+    if (dependencyData.taskId === dependencyData.dependentTaskId) {
       throw new Error('Task cannot depend on itself');
     }
 
@@ -691,7 +691,7 @@ export class TaskService {
 
     logger.info('🔗 Task dependency added', { 
       taskId: dependencyData.taskId, 
-      dependsOn: dependencyData.dependsOnTaskId 
+      dependsOn: dependencyData.dependentTaskId 
     });
 
     return dependency;
@@ -1192,7 +1192,7 @@ export class TaskService {
         .delete(taskDependencies)
         .where(or(
           inArray(taskDependencies.taskId, taskIds),
-          inArray(taskDependencies.dependsOnTaskId, taskIds)
+          inArray(taskDependencies.dependentTaskId, taskIds)
         ));
 
       await tx
