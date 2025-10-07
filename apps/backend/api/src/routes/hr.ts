@@ -1156,12 +1156,12 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Build query conditions - ensure UUIDs are properly typed
-    const conditions = [eq(shifts.tenantId, sql`${tenantId}::uuid`)];
+    // Build query conditions - Drizzle ORM handles type conversion automatically
+    const conditions = [eq(shifts.tenantId, tenantId)];
     
     // Only add storeId filter if valid UUID is provided
     if (storeId && storeId !== 'all') {
-      conditions.push(eq(shifts.storeId, sql`${storeId}::uuid`));
+      conditions.push(eq(shifts.storeId, storeId as string));
     }
 
     // Get all shifts for the day
