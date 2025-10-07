@@ -1,13 +1,25 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import { MessageCircle, Plus, Lock, Settings, Users } from 'lucide-react';
+import { MessageCircle, Plus, Lock, Settings, Users, Archive, Trash2 } from 'lucide-react';
 import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
 import { MessageList } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import { ChannelMembersDialog } from '@/components/chat/ChannelMembersDialog';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EditChannelDialog } from '@/components/chat/EditChannelDialog';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ChatChannel {
   id: string;
@@ -107,11 +119,15 @@ interface UserData {
 }
 
 export default function ChatPage() {
+  const { toast } = useToast();
   const [currentModule, setCurrentModule] = useState('chat');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
+  const [hoveredChannelId, setHoveredChannelId] = useState<string | null>(null);
 
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
 
@@ -121,6 +137,72 @@ export default function ChatPage() {
     staleTime: 5000,
     refetchInterval: 10000
   });
+
+  // Mutation per archiviare chat
+  const archiveMutation = useMutation({
+    mutationFn: async (channelId: string) => {
+      return apiRequest(`/api/chat/channels/${channelId}/archive`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
+      toast({
+        title: 'Chat archiviata',
+        description: 'La chat è stata archiviata con successo'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile archiviare la chat',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Mutation per eliminare chat
+  const deleteMutation = useMutation({
+    mutationFn: async (channelId: string) => {
+      return apiRequest(`/api/chat/channels/${channelId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
+      setSelectedChannelId(null);
+      toast({
+        title: 'Chat eliminata',
+        description: 'La chat è stata eliminata definitivamente'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile eliminare la chat',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleArchive = (e: React.MouseEvent, channelId: string) => {
+    e.stopPropagation();
+    archiveMutation.mutate(channelId);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, channelId: string) => {
+    e.stopPropagation();
+    setChannelToDelete(channelId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (channelToDelete) {
+      deleteMutation.mutate(channelToDelete);
+      setDeleteDialogOpen(false);
+      setChannelToDelete(null);
+    }
+  };
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
@@ -276,14 +358,17 @@ export default function ChatPage() {
                       cursor: 'pointer',
                       background: selectedChannelId === channel.id ? '#f9fafb' : 'transparent',
                       transition: 'background 0.15s ease',
-                      marginBottom: '4px'
+                      marginBottom: '4px',
+                      position: 'relative'
                     }}
                     onMouseEnter={(e) => {
+                      setHoveredChannelId(channel.id);
                       if (selectedChannelId !== channel.id) {
                         e.currentTarget.style.background = '#f9fafb';
                       }
                     }}
                     onMouseLeave={(e) => {
+                      setHoveredChannelId(null);
                       if (selectedChannelId !== channel.id) {
                         e.currentTarget.style.background = 'transparent';
                       }
@@ -350,7 +435,72 @@ export default function ChatPage() {
                               }} />
                             )}
                           </div>
-                          {channel.lastMessageAt && (
+                          
+                          {/* Shortcut icons (visible on hover) or timestamp */}
+                          {hoveredChannelId === channel.id ? (
+                            <div style={{
+                              display: 'flex',
+                              gap: '4px',
+                              marginLeft: '8px',
+                              flexShrink: 0
+                            }}>
+                              <button
+                                data-testid={`button-archive-${channel.id}`}
+                                onClick={(e) => handleArchive(e, channel.id)}
+                                disabled={archiveMutation.isPending}
+                                style={{
+                                  padding: '4px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  color: '#6b7280',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#f3f4f6';
+                                  e.currentTarget.style.color = '#FF6900';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'transparent';
+                                  e.currentTarget.style.color = '#6b7280';
+                                }}
+                                title="Archivia chat"
+                              >
+                                <Archive size={16} />
+                              </button>
+                              
+                              <button
+                                data-testid={`button-delete-${channel.id}`}
+                                onClick={(e) => handleDeleteClick(e, channel.id)}
+                                disabled={deleteMutation.isPending}
+                                style={{
+                                  padding: '4px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  color: '#6b7280',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#fee2e2';
+                                  e.currentTarget.style.color = '#dc2626';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'transparent';
+                                  e.currentTarget.style.color = '#6b7280';
+                                }}
+                                title="Elimina chat"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ) : channel.lastMessageAt ? (
                             <div style={{
                               fontSize: '11px',
                               color: '#9ca3af',
@@ -359,7 +509,7 @@ export default function ChatPage() {
                             }}>
                               {formatRelativeTime(channel.lastMessageAt)}
                             </div>
-                          )}
+                          ) : null}
                         </div>
                         
                         {/* Member count for groups */}
@@ -601,6 +751,32 @@ export default function ChatPage() {
           }
           return null;
         })()}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sei sicuro di voler eliminare definitivamente questa chat? 
+                Questa azione non può essere annullata e tutti i messaggi verranno eliminati.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                data-testid="button-confirm-delete"
+                onClick={handleDeleteConfirm}
+                style={{
+                  background: '#dc2626',
+                  color: 'white'
+                }}
+              >
+                Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

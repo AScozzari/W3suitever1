@@ -164,8 +164,8 @@ router.patch('/channels/:id', requirePermission('chat.update'), async (req: Requ
   }
 });
 
-// DELETE /api/chat/channels/:id - Archive/close channel
-router.delete('/channels/:id', requirePermission('chat.delete'), async (req: Request, res: Response) => {
+// POST /api/chat/channels/:id/archive - Archive channel
+router.post('/channels/:id/archive', requirePermission('chat.delete'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
     const channelId = parseUUIDParam(req.params.id, 'Channel ID');
@@ -175,6 +175,20 @@ router.delete('/channels/:id', requirePermission('chat.delete'), async (req: Req
     res.status(204).send();
   } catch (error) {
     handleApiError(error, res, 'Failed to archive channel');
+  }
+});
+
+// DELETE /api/chat/channels/:id - Permanently delete channel
+router.delete('/channels/:id', requirePermission('chat.delete'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const channelId = parseUUIDParam(req.params.id, 'Channel ID');
+    
+    await ChatService.deleteChannel(channelId, tenantId);
+    
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to delete channel');
   }
 });
 
