@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthReadiness } from '@/hooks/useAuthReadiness';
+import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
@@ -100,8 +100,8 @@ const HRManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees' | 'monitoring'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
-  // ✅ NEW: HR Authentication Readiness Hook
-  const { isReady: hrQueriesEnabled, attempts, debugInfo } = useAuthReadiness();
+  // ✅ NEW: HR Authentication Readiness Hook - usando useHRQueryReadiness per abilitazione immediata
+  const { enabled: hrQueriesEnabled, attempts, debugInfo } = useHRQueryReadiness();
   
   // 🔍 DEBUG: Log query readiness status
   console.log('🔍 [HR-DEBUG] Query readiness status:', {
