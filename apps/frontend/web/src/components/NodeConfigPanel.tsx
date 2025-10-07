@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Trash2, Info, Sparkles } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
 
 interface NodeConfigPanelProps {
   node: Node | null;
@@ -26,11 +27,11 @@ export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeC
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent 
-        className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white/90 backdrop-blur-xl border-2 border-white/30 shadow-2xl"
+        className="max-w-3xl max-h-[85vh] overflow-y-auto backdrop-blur-xl bg-gradient-to-br from-white/15 via-white/10 to-white/5 dark:from-gray-900/20 dark:via-gray-900/15 dark:to-gray-900/10 border-2 border-white/30 dark:border-white/20 shadow-2xl ring-1 ring-inset ring-white/20 dark:ring-white/10 animate-in fade-in-0 zoom-in-95 duration-200"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader className="pb-4 border-b border-gray-200">
+        <DialogHeader className="pb-4 border-b border-white/20 dark:border-white/10">
           <DialogTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
             🎛️ Configurazione Nodo
           </DialogTitle>
@@ -210,8 +211,17 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
 
       {/* Prompt Editor */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           📝 Prompt AI
+          <InfoTooltip 
+            title="Prompt per l'AI"
+            description="Il messaggio che guida il modello AI nella decisione. Definisce cosa analizzare e quali criteri utilizzare."
+            examples={[
+              "Analizza questa richiesta: {{description}}",
+              "Approva se {{amount}} < 1000 e {{department}} == 'Sales'"
+            ]}
+            notes="Usa {{variabile}} per inserire dati dinamici dal workflow"
+          />
         </label>
         <textarea 
           value={prompt} 
@@ -230,8 +240,17 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
       {/* Model & Settings */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
+          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
             🤖 Modello AI
+            <InfoTooltip 
+              title="Modello AI"
+              description="Il modello OpenAI da utilizzare. Modelli più avanzati sono più precisi ma costano di più."
+              examples={[
+                "GPT-3.5 Turbo: Veloce ed economico",
+                "GPT-4: Massima precisione"
+              ]}
+              notes="GPT-4 costa circa 10x GPT-3.5 ma offre risultati migliori per decisioni complesse"
+            />
           </label>
           <Select value={model} onValueChange={setModel}>
             <SelectTrigger data-testid="select-ai-model">
@@ -257,8 +276,17 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
 
       {/* Temperature Slider */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           🎨 Creatività (Temperature): {temperature.toFixed(1)}
+          <InfoTooltip 
+            title="Temperature (Creatività)"
+            description="Controlla quanto creativamente l'AI interpreta il prompt. Valori bassi danno risposte più prevedibili, valori alti più creative."
+            examples={[
+              "0.0-0.3: Decisioni precise e deterministiche",
+              "0.7-1.0: Risposte più varie e creative"
+            ]}
+            notes="Per approvazioni usa 0.0-0.3, per classificazioni creative usa 0.7-1.0"
+          />
         </label>
         <input
           type="range"
@@ -278,8 +306,17 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
 
       {/* Max Tokens */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           📏 Lunghezza Risposta (Max Tokens): {maxTokens}
+          <InfoTooltip 
+            title="Max Tokens (Lunghezza)"
+            description="Massimo numero di token (parole) che l'AI può generare. Limita la lunghezza e il costo della risposta."
+            examples={[
+              "50-200: Risposte brevi (es: sì/no, categorie)",
+              "500-1000: Spiegazioni dettagliate"
+            ]}
+            notes="Più token = costi maggiori. 1 token ≈ 0.75 parole italiane"
+          />
         </label>
         <input
           type="range"
@@ -454,8 +491,18 @@ function SendEmailConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          👤 Destinatari Email <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          👤 Destinatari Email <span className="text-red-500 ml-1">*</span>
+          <InfoTooltip 
+            title="Destinatari Email"
+            description="Gli indirizzi email che riceveranno la notifica. Supporta destinatari multipli e variabili dinamiche."
+            examples={[
+              "user@windtre.it",
+              "{{approver_email}}",
+              "{{requester.email}}"
+            ]}
+            notes="Usa {{variabile}} per email dinamiche dal workflow. Puoi aggiungere più destinatari."
+          />
         </label>
         <div className="space-y-2">
           {recipients.map((email, index) => (
@@ -483,8 +530,17 @@ function SendEmailConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          📋 Oggetto <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          📋 Oggetto <span className="text-red-500 ml-1">*</span>
+          <InfoTooltip 
+            title="Oggetto Email"
+            description="L'oggetto dell'email che apparirà nella casella di posta del destinatario."
+            examples={[
+              "Nuova richiesta da {{requester_name}}",
+              "Approvazione richiesta: {{request_type}}"
+            ]}
+            notes="Mantieni l'oggetto breve e descrittivo. Supporta variabili dinamiche."
+          />
         </label>
         <input 
           type="text" 
@@ -497,8 +553,17 @@ function SendEmailConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          ✉️ Template Email <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          ✉️ Template Email <span className="text-red-500 ml-1">*</span>
+          <InfoTooltip 
+            title="Template Email"
+            description="Il nome del template predefinito o il contenuto completo dell'email. Supporta variabili dinamiche."
+            examples={[
+              "welcome_email (template predefinito)",
+              "Ciao {{user_name}}, la tua richiesta..."
+            ]}
+            notes="Puoi usare template salvati oppure scrivere il testo completo con variabili {{nome}}"
+          />
         </label>
         <textarea 
           value={template}
@@ -566,8 +631,18 @@ function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: 
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           👤 Ruolo Approvatore
+          <InfoTooltip 
+            title="Ruolo Approvatore"
+            description="Il ruolo aziendale che deve approvare la richiesta. Il workflow si fermerà fino all'approvazione."
+            examples={[
+              "Manager: Responsabili di reparto",
+              "HR: Ufficio risorse umane",
+              "Finance: Ufficio amministrativo"
+            ]}
+            notes="Gli utenti con questo ruolo riceveranno la notifica di approvazione"
+          />
         </label>
         <Select value={approverRole} onValueChange={setApproverRole}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -581,8 +656,17 @@ function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           📝 Messaggio Richiesta
+          <InfoTooltip 
+            title="Messaggio Richiesta"
+            description="Il messaggio che accompagna la richiesta di approvazione. Spiega cosa deve essere approvato."
+            examples={[
+              "Richiesta ferie dal {{start_date}} al {{end_date}}",
+              "Approvazione spesa di {{amount}}€ per {{description}}"
+            ]}
+            notes="Fornisci dettagli chiari per facilitare la decisione dell'approvatore"
+          />
         </label>
         <textarea 
           value={message}
@@ -595,8 +679,18 @@ function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
+          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
             ⏱️ Timeout (ore)
+            <InfoTooltip 
+              title="Timeout Approvazione"
+              description="Tempo massimo di attesa prima di escalare la richiesta. Dopo questo periodo, la richiesta passa al livello superiore."
+              examples={[
+                "24 ore: Decisioni urgenti",
+                "72 ore: Approvazioni standard",
+                "168 ore: Richieste non urgenti"
+              ]}
+              notes="L'escalation automatica previene blocchi del workflow"
+            />
           </label>
           <input 
             type="number" 
@@ -1261,8 +1355,17 @@ function IfConditionConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           ⚖️ Logica Condizioni
+          <InfoTooltip 
+            title="Logica Condizioni"
+            description="Come combinare le condizioni quando sono multiple."
+            examples={[
+              "AND: Tutte le condizioni devono essere vere",
+              "OR: Almeno una condizione deve essere vera"
+            ]}
+            notes="Con AND tutte devono essere soddisfatte, con OR basta una qualsiasi"
+          />
         </label>
         <Select value={logic} onValueChange={setLogic}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1274,8 +1377,18 @@ function IfConditionConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           📋 Condizioni
+          <InfoTooltip 
+            title="Condizioni di Valutazione"
+            description="Regole che determinano quale percorso seguire. Campo = dato dal workflow, Operatore = tipo confronto, Valore = valore atteso."
+            examples={[
+              "amount > 1000 (importo maggiore di 1000)",
+              "status equals approved",
+              "department contains Sales"
+            ]}
+            notes="Usa nomi campo dal workflow. Supporta confronti numerici e testuali."
+          />
         </label>
         <div className="space-y-2">
           {conditions.map((cond: any, index: number) => (
