@@ -202,7 +202,7 @@ export class TaskService {
     });
   }
 
-  static async getTaskById(taskId: string, tenantId: string): Promise<Task | null> {
+  static async getTaskById(taskId: string, tenantId: string): Promise<any | null> {
     const [task] = await db
       .select()
       .from(tasks)
@@ -212,7 +212,79 @@ export class TaskService {
       ))
       .limit(1);
     
-    return task || null;
+    if (!task) return null;
+
+    // Fetch watchers inline
+    const watchers = await db
+      .select()
+      .from(taskAssignments)
+      .where(and(
+        eq(taskAssignments.taskId, taskId),
+        eq(taskAssignments.tenantId, tenantId),
+        eq(taskAssignments.role, 'watcher')
+      ));
+
+    // Fetch all related data in parallel
+    const [assignees, checklist, comments, attachments, timeLogs] = await Promise.all([
+      this.getTaskAssignments(taskId, tenantId),
+      this.getChecklistItems(taskId, tenantId),
+      this.getComments(taskId, tenantId),
+      this.getAttachments(taskId, tenantId),
+      this.getTimeLogs(taskId, tenantId)
+    ]);
+
+    // Return task with all relations
+    return {
+      ...task,
+      assignees: assignees
+        .filter(a => a.role === 'assignee')
+        .map(a => ({
+          id: a.userId,
+          userId: a.userId,
+          role: a.role,
+          assignedAt: a.assignedAt
+        })),
+      checklist: checklist.map(c => ({
+        id: c.id,
+        title: c.title,
+        completed: c.isCompleted,
+        isCompleted: c.isCompleted,
+        order: c.position,
+        position: c.position,
+        dueDate: c.dueDate,
+        description: c.description,
+        assignedToUserId: c.assignedToUserId
+      })),
+      comments: comments.map(c => ({
+        id: c.id,
+        content: c.content,
+        createdAt: c.createdAt,
+        userId: c.userId,
+        user: { id: c.userId, name: c.userId }
+      })),
+      attachments: attachments.map(a => ({
+        id: a.id,
+        fileName: a.fileName,
+        fileUrl: a.objectStorageKey,
+        mimeType: a.mimeType,
+        fileSize: a.fileSize,
+        uploadedById: a.uploadedById,
+        uploadedAt: a.uploadedAt
+      })),
+      watchers: watchers.map(w => ({
+        id: w.userId,
+        userId: w.userId,
+        addedAt: w.assignedAt
+      })),
+      timeTracking: timeLogs.map(t => ({
+        id: t.id,
+        userId: t.userId,
+        userName: t.userId,
+        startTime: t.startTime,
+        endTime: t.endTime,
+        duration: t.durationMinutes
+      }))
+    };
   }
 
   static async getTasksForUser(
