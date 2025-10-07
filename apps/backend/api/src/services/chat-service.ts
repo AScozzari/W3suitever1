@@ -365,7 +365,7 @@ export class ChatService {
 
     if (!member || !member.lastReadAt) {
       const messages = await db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql<number>`count(*)::int` })
         .from(chatMessages)
         .where(and(
           eq(chatMessages.channelId, channelId),
@@ -376,7 +376,7 @@ export class ChatService {
     }
 
     const unread = await db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<number>`count(*)::int` })
       .from(chatMessages)
       .where(and(
         eq(chatMessages.channelId, channelId),
