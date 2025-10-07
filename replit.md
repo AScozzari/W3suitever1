@@ -197,7 +197,10 @@ The project utilizes an enterprise monorepo structure, separating tenant-facing 
 - **Organizational Hierarchy**: Manages relationships among TENANTs, Legal Entities, Sales Points, and Users.
 - **Brand Interface Features**: Centralized Super Admin, cross-tenant campaign/pricing management, and event propagation via BullMQ.
 - **Data Architecture Patterns**: Brand Base + Tenant Override for collaborative entities; Brand-Only for Brand-controlled entities.
-- **Universal Workflow System**: Comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails. Dual-Mode Workflow Execution (SYNC/ASYNC based on `REDIS_URL`).
+- **Universal Workflow System**: Comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails. **Dual-Mode Workflow Execution** (✅ OPERATIONAL Oct 2025):
+  - **SYNC Mode** (Development/Replit): Executes ReactFlow workflows synchronously without Redis. Auto-activated when `REDIS_URL` is not set. Uses `currentNodeId` (VARCHAR) for ReactFlow compatibility, skips `workflowExecutions` tracking (UUID incompatible).
+  - **ASYNC Mode** (Production): Queue-based execution via BullMQ when `REDIS_URL` is configured. Automatically switches on Redis availability.
+  - **Auto-Detection**: Zero configuration - system automatically selects appropriate execution mode based on environment.
 - **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
 - **Unified Notification System**: Real-time notifications across 7 business categories with Redis + WebSocket architecture and PostgreSQL fallback.
 - **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management.

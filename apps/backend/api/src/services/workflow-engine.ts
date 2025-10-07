@@ -110,7 +110,7 @@ export class WorkflowEngine {
           instanceType: 'reactflow', // NEW: Mark as ReactFlow type
           instanceName: context.instanceName || `${template.name} - ${new Date().toISOString()}`,
           currentStatus: 'running',
-          currentStepId: startStep.nodeId, // Use ReactFlow node ID
+          currentNodeId: startStep.nodeId, // ✅ Use currentNodeId (VARCHAR) for ReactFlow, NOT currentStepId (UUID)
           workflowData: {
             currentAssigneeId: assigneeId,
             templateName: template.name,
@@ -126,21 +126,8 @@ export class WorkflowEngine {
         })
         .returning();
 
-      // Create first execution record for ReactFlow step
-      await db.insert(workflowExecutions).values({
-        tenantId: context.tenantId,
-        instanceId: instance.id,
-        stepId: startStep.nodeId, // Use ReactFlow node ID
-        executionType: startStep.type,
-        executorId: assigneeId || 'system',
-        status: 'pending',
-        inputData: {
-          ...context.metadata || {},
-          stepConfig: startStep.config,
-          executorId: startStep.executorId
-        },
-        startedAt: new Date()
-      });
+      // Skip workflowExecutions for ReactFlow (nodeId is string, stepId expects UUID)
+      // ReactFlow execution tracking happens via workflow_instances.currentNodeId updates
 
       logger.info('✅ [ENGINE] ReactFlow instance created successfully', {
         instanceId: instance.id,
@@ -1047,17 +1034,8 @@ export class WorkflowEngine {
         stepType: step.type
       });
 
-      // Update execution record to running
-      await db
-        .update(workflowExecutions)
-        .set({
-          status: 'running',
-          startedAt: new Date()
-        })
-        .where(and(
-          eq(workflowExecutions.instanceId, instanceId),
-          eq(workflowExecutions.stepId, step.nodeId)
-        ));
+      // Skip execution record updates for ReactFlow (nodeId is not UUID, incompatible with workflowExecutions.stepId)
+      // Execution tracking happens via workflow instance status updates
 
       // 🎯 Use Action Executors Registry for standardized execution
       const executionContext: ExecutionContext = {
@@ -1080,20 +1058,6 @@ export class WorkflowEngine {
         executionContext
       );
 
-      // Update execution record with result
-      await db
-        .update(workflowExecutions)
-        .set({
-          status: executionResult.success ? 'completed' : 'failed',
-          outputData: executionResult.data || {},
-          completedAt: new Date(),
-          notes: executionResult.message || ''
-        })
-        .where(and(
-          eq(workflowExecutions.instanceId, instanceId),
-          eq(workflowExecutions.stepId, step.nodeId)
-        ));
-
       // If execution successful, advance to next step
       if (executionResult.success && step.nextSteps.length > 0) {
         await this.advanceToNextReactFlowStep(instanceId, step, executionResult, context);
@@ -1114,18 +1078,176 @@ export class WorkflowEngine {
         stepId: step.nodeId
       });
 
-      // Mark execution as failed
+      // Skip execution record update for ReactFlow
+      // Error tracking happens at workflow instance level
+
+      throw error;
+    }
+  }
+
+  /**
+   * 🌉 NEW: Execute complete ReactFlow workflow synchronously
+   * Used for SYNC mode when Redis is not available
+   */
+  async executeReactFlowWorkflow(
+    instanceId: string,
+    context: WorkflowExecutionContext
+  ): Promise<{ success: boolean; finalStatus: string; message: string }> {
+    try {
+      logger.info('🚀 [ENGINE] Starting SYNC workflow execution', {
+        instanceId,
+        tenantId: context.tenantId
+      });
+
+      // Get workflow instance
+      const [instance] = await db
+        .select()
+        .from(workflowInstances)
+        .where(eq(workflowInstances.id, instanceId))
+        .limit(1);
+
+      if (!instance) {
+        throw new Error('Workflow instance not found');
+      }
+
+      // Get template separately
+      const [template] = await db
+        .select()
+        .from(workflowTemplates)
+        .where(eq(workflowTemplates.id, instance.templateId))
+        .limit(1);
+
+      if (!template) {
+        throw new Error('Workflow template not found');
+      }
+
+      // Parse ReactFlow workflow
+      const reactFlowData: ReactFlowWorkflowData = {
+        nodes: template.nodes || [],
+        edges: template.edges || [],
+        viewport: template.viewport || { x: 0, y: 0, zoom: 1 }
+      };
+
+      const parsedWorkflow = await reactFlowBridgeParser.parseWorkflow(reactFlowData, {
+        templateId: template.id,
+        templateName: template.name,
+        department: template.for_department || undefined
+      });
+
+      // Get start step
+      const startStep = parsedWorkflow.steps.get(parsedWorkflow.startNodeId);
+      if (!startStep) {
+        throw new Error('Start step not found in workflow');
+      }
+
+      // Execute steps sequentially (only automatic steps)
+      let currentStep = startStep;
+      let stepsExecuted = 0;
+      const executedSteps: string[] = [];
+
+      while (currentStep) {
+        // Skip manual/approval steps in SYNC mode (they need user interaction)
+        if (currentStep.type === 'approval' || currentStep.type === 'manual') {
+          logger.info('⏸️  [ENGINE] Pausing at manual/approval step', {
+            stepId: currentStep.nodeId,
+            stepName: currentStep.name,
+            stepType: currentStep.type
+          });
+
+          // Update instance to waiting state
+          await db
+            .update(workflowInstances)
+            .set({
+              currentStatus: 'waiting_approval',
+              currentNodeId: currentStep.nodeId, // Use currentNodeId for ReactFlow (varchar)
+              updatedAt: new Date()
+            })
+            .where(eq(workflowInstances.id, instanceId));
+
+          return {
+            success: true,
+            finalStatus: 'waiting_approval',
+            message: `Workflow paused at ${currentStep.name} (requires manual action)`
+          };
+        }
+
+        // Create execution record (skip for SYNC mode - ReactFlow nodes don't have UUID stepIds)
+        // Execution tracking happens via workflow instance status updates
+        logger.info('⚡ [ENGINE] Executing step', {
+          nodeId: currentStep.nodeId,
+          stepName: currentStep.name,
+          stepType: currentStep.type
+        });
+
+        // Execute step
+        const result = await this.executeReactFlowStep(
+          instanceId,
+          currentStep,
+          context,
+          {}
+        );
+
+        executedSteps.push(currentStep.nodeId);
+        stepsExecuted++;
+
+        if (!result.success) {
+          logger.error('❌ [ENGINE] Step execution failed', {
+            stepId: currentStep.nodeId,
+            error: result.message
+          });
+
+          await db
+            .update(workflowInstances)
+            .set({
+              currentStatus: 'failed',
+              updatedAt: new Date()
+            })
+            .where(eq(workflowInstances.id, instanceId));
+
+          return {
+            success: false,
+            finalStatus: 'failed',
+            message: `Failed at step: ${currentStep.name}`
+          };
+        }
+
+        // Get next step
+        if (currentStep.nextSteps.length === 0) {
+          // No more steps - workflow complete
+          break;
+        }
+
+        const nextStepId = currentStep.nextSteps[0]; // Take first next step (simple flow)
+        currentStep = parsedWorkflow.steps.get(nextStepId) || null;
+      }
+
+      // Mark workflow as completed
       await db
-        .update(workflowExecutions)
+        .update(workflowInstances)
         .set({
-          status: 'failed',
+          currentStatus: 'completed',
           completedAt: new Date(),
-          notes: error instanceof Error ? error.message : 'Unknown error'
+          updatedAt: new Date()
         })
-        .where(and(
-          eq(workflowExecutions.instanceId, instanceId),
-          eq(workflowExecutions.stepId, step.nodeId)
-        ));
+        .where(eq(workflowInstances.id, instanceId));
+
+      logger.info('✅ [ENGINE] SYNC workflow execution completed', {
+        instanceId,
+        stepsExecuted,
+        executedSteps
+      });
+
+      return {
+        success: true,
+        finalStatus: 'completed',
+        message: `Workflow completed successfully (${stepsExecuted} steps executed)`
+      };
+
+    } catch (error) {
+      logger.error('❌ [ENGINE] SYNC workflow execution failed', {
+        instanceId,
+        error: error instanceof Error ? error.message : String(error)
+      });
 
       throw error;
     }
@@ -1262,7 +1384,7 @@ export class WorkflowEngine {
       await db
         .update(workflowInstances)
         .set({
-          currentStepId: nextStepId,
+          currentNodeId: nextStepId, // ✅ Use currentNodeId (VARCHAR) for ReactFlow, NOT currentStepId (UUID)
           workflowData: {
             ...workflowData,
             currentAssigneeId: nextAssigneeId,
@@ -1272,16 +1394,8 @@ export class WorkflowEngine {
         })
         .where(eq(workflowInstances.id, instanceId));
 
-      // Create execution record for next step
-      await db.insert(workflowExecutions).values({
-        tenantId: context.tenantId,
-        instanceId,
-        stepId: nextStepId,
-        executionType: nextStep.type,
-        executorId: nextAssigneeId || 'system',
-        status: 'pending',
-        inputData: executionResult.data || {}
-      });
+      // Skip workflowExecutions for ReactFlow (nodeId is string, stepId expects UUID)
+      // ReactFlow execution tracking happens via workflow_instances.currentNodeId updates
 
       logger.info('↪️ [ENGINE] Advanced to next ReactFlow step', {
         instanceId,

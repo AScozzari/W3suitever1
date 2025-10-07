@@ -11,6 +11,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, or, desc, asc, like, count, sql, inArray, not } from 'drizzle-orm';
+import { WorkflowEngine } from '../services/workflow-engine';
 
 // Database imports
 import {
@@ -47,6 +48,9 @@ import {
 import { WorkflowAIConnector } from '../services/workflow-ai-connector';
 import { AIRegistryService } from '../services/ai-registry-service';
 import { RequestTriggerService } from '../services/request-trigger-service';
+
+// Initialize Workflow Engine
+const workflowEngine = new WorkflowEngine();
 
 const router = express.Router();
 
@@ -672,20 +676,47 @@ router.post('/instances', rbacMiddleware, requirePermission('workflow.create_ins
       } as ApiErrorResponse);
     }
 
-    // Create workflow instance with category propagated from template
-    const [newInstance] = await db
-      .insert(workflowInstances)
-      .values({
-        ...instanceData,
-        category: template.category, // 🎯 PROPAGATE category from template to instance
-        createdBy: userId,
-        updatedBy: userId
-      })
-      .returning();
+    // ✅ DETECT ReactFlow templates and use proper creation method
+    const isReactFlowTemplate = !!(template.nodes && template.edges);
+
+    logger.info('🔍 Template detection', { 
+      templateId: template.id,
+      hasNodes: !!template.nodes,
+      hasEdges: !!template.edges,
+      nodesType: typeof template.nodes,
+      edgesType: typeof template.edges,
+      isReactFlow: isReactFlowTemplate
+    });
+
+    let newInstance;
+
+    if (isReactFlowTemplate) {
+      // Use ReactFlow-specific creation with bridge parser
+      newInstance = await workflowEngine.createInstanceFromReactFlow(template.id, {
+        tenantId,
+        requesterId: userId || 'system',
+        requestId: instanceData.referenceId,
+        instanceName: instanceData.instanceName,
+        metadata: instanceData.context || {}
+      });
+    } else {
+      // Legacy method for old workflow_steps based templates
+      const [instance] = await db
+        .insert(workflowInstances)
+        .values({
+          ...instanceData,
+          category: template.category, // 🎯 PROPAGATE category from template to instance
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning();
+      newInstance = instance;
+    }
 
     logger.info('Workflow instance created', { 
       instanceId: newInstance.id, 
       templateId: instanceData.templateId,
+      isReactFlow: isReactFlowTemplate,
       tenantId, 
       userId 
     });
@@ -698,10 +729,15 @@ router.post('/instances', rbacMiddleware, requirePermission('workflow.create_ins
     } as ApiSuccessResponse<typeof newInstance>);
 
   } catch (error) {
-    logger.error('Error creating workflow instance', { error, tenantId: req.user?.tenantId });
+    logger.error('Error creating workflow instance', { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      tenantId: req.user?.tenantId 
+    });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
@@ -1486,19 +1522,14 @@ router.post('/instances/:id/execute', rbacMiddleware, requirePermission('workflo
     const { isRedisAvailable } = await import('../queue/index.js');
     const redisAvailable = await isRedisAvailable();
 
-    const instance = await db.query.workflowInstances.findFirst({
-      where: and(
+    const [instance] = await db
+      .select()
+      .from(workflowInstances)
+      .where(and(
         eq(workflowInstances.id, instanceId),
         eq(workflowInstances.tenantId, tenantId)
-      ),
-      with: {
-        template: {
-          with: {
-            steps: true
-          }
-        }
-      }
-    });
+      ))
+      .limit(1);
 
     if (!instance) {
       return res.status(404).json({
@@ -1512,7 +1543,14 @@ router.post('/instances/:id/execute', rbacMiddleware, requirePermission('workflo
     if (redisAvailable) {
       const { enqueueWorkflowStep } = await import('../queue/index.js');
       
-      const steps = (instance.template as any)?.steps || [];
+      // Get template and steps separately
+      const [template] = await db
+        .select()
+        .from(workflowTemplates)
+        .where(eq(workflowTemplates.id, instance.templateId))
+        .limit(1);
+
+      const steps = (template?.nodes as any[]) || [];
       const enqueuedSteps = [];
 
       for (const step of steps) {
