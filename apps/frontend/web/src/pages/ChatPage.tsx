@@ -111,21 +111,8 @@ export default function ChatPage() {
   // Query per ottenere lista chat channels
   const { data: channels = [], isLoading } = useQuery<ChatChannel[]>({
     queryKey: ['/api/chat/channels'],
-    queryFn: async () => {
-      const response = await fetch('/api/chat/channels', {
-        credentials: 'include',
-        headers: {
-          'X-Tenant-ID': localStorage.getItem('tenantId') || '',
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': 'admin-user'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch channels');
-      const data = await response.json();
-      // Backend may return array directly or wrapped in { success, data }
-      return Array.isArray(data) ? data : (data?.data || []);
-    },
-    staleTime: 5000
+    staleTime: 5000,
+    refetchInterval: 10000
   });
 
   return (

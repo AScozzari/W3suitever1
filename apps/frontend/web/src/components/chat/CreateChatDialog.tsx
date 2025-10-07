@@ -320,7 +320,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
           <TabsContent value="dm" className="space-y-4 mt-4">
             <div>
               <Label htmlFor="dm-user">Seleziona Utente *</Label>
-              <div className="mt-2 max-h-[300px] overflow-y-auto border rounded-md">
+              <div className="mt-2 max-h-[200px] overflow-y-auto border rounded-md">
                 {usersLoading ? (
                   <div className="p-4 text-center text-sm text-gray-500">
                     Caricamento utenti...
@@ -353,6 +353,70 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
                     </button>
                   ))
                 )}
+              </div>
+            </div>
+
+            {/* Header Color Picker */}
+            <div>
+              <Label htmlFor="dm-header-color">Colore Header</Label>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="flex gap-2">
+                  {['#FF6900', '#7B2CBF', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setHeaderColor(color)}
+                      className={`w-10 h-10 rounded-full transition-transform ${
+                        headerColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      data-testid={`dm-color-${color}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="color"
+                    id="dm-header-color"
+                    value={headerColor}
+                    onChange={(e) => setHeaderColor(e.target.value)}
+                    className="w-12 h-10 rounded cursor-pointer"
+                    data-testid="input-dm-header-color"
+                  />
+                  <div className="text-sm text-gray-600 font-mono">
+                    {headerColor}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Background Pattern Picker */}
+            <div>
+              <Label>Trama Sfondo Chat</Label>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {backgroundPatterns.map((pattern) => (
+                  <button
+                    key={pattern.id}
+                    type="button"
+                    onClick={() => setBackgroundPattern(pattern.id)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      backgroundPattern === pattern.id 
+                        ? 'border-[#FF6900] ring-2 ring-[#FF6900] ring-opacity-20' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    data-testid={`dm-pattern-${pattern.id}`}
+                  >
+                    <div 
+                      className="w-full h-16 rounded mb-2"
+                      style={{ 
+                        background: pattern.preview,
+                        backgroundSize: pattern.id === 'dots' ? '20px 20px' : 
+                                       pattern.id === 'grid' ? '20px 20px' : 'cover'
+                      }}
+                    />
+                    <div className="text-xs font-medium text-center">{pattern.name}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
