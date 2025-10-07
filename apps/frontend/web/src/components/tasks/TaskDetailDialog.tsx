@@ -127,25 +127,36 @@ export function TaskDetailDialog({
   const [newItemTitle, setNewItemTitle] = useState('');
   const [isAddingItem, setIsAddingItem] = useState(false);
 
+  // Fetch complete task details when modal opens
+  const { data: taskDetails } = useQuery({
+    queryKey: ['/api/tasks', task.id],
+    queryFn: () => apiRequest(`/api/tasks/${task.id}`),
+    enabled: open, // Only fetch when modal is open
+  });
+
+  // Use detailed task data if available, fallback to prop
+  const fullTask = taskDetails || task;
+
   const { data: attachmentsData = [] } = useQuery<Attachment[]>({
     queryKey: ['/api/tasks', task.id, 'attachments'],
     queryFn: () => apiRequest(`/api/tasks/${task.id}/attachments`),
+    enabled: open, // Only fetch when modal is open
   });
 
-  const activeTimer = task.timeTracking?.find(log => 
+  const activeTimer = fullTask.timeTracking?.find(log => 
     !log.endTime && log.userId === currentUser?.id
   );
   
-  const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.todo;
-  const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+  const status = statusConfig[fullTask.status as keyof typeof statusConfig] || statusConfig.todo;
+  const priority = priorityConfig[fullTask.priority as keyof typeof priorityConfig] || priorityConfig.medium;
 
-  const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
+  const dueDate = fullTask.dueDate ? new Date(fullTask.dueDate) : null;
+  const isOverdue = dueDate && dueDate < new Date() && fullTask.status !== 'done';
 
-  const checklistCompleted = task.checklist?.filter(item => item.completed).length || 0;
-  const checklistTotal = task.checklist?.length || 0;
+  const checklistCompleted = fullTask.checklist?.filter(item => item.completed).length || 0;
+  const checklistTotal = fullTask.checklist?.length || 0;
 
-  const totalTimeTracked = task.timeTracking?.reduce((sum, entry) => {
+  const totalTimeTracked = fullTask.timeTracking?.reduce((sum, entry) => {
     if (entry.duration) return sum + entry.duration;
     if (entry.startTime && entry.endTime) {
       const duration = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
@@ -196,7 +207,7 @@ export function TaskDetailDialog({
 
   const addChecklistItemMutation = useMutation({
     mutationFn: async (title: string) => {
-      const position = (task.checklist?.length || 0) + 1;
+      const position = (fullTask.checklist?.length || 0) + 1;
       return apiRequest(`/api/tasks/${task.id}/checklist`, {
         method: 'POST',
         body: JSON.stringify({ title, position }),
@@ -246,10 +257,10 @@ export function TaskDetailDialog({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <DialogTitle className="text-xl font-semibold">
-                  {task.title}
+                  {fullTask.title}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                  Dettagli e gestione task: {task.title}
+                  Dettagli e gestione task: {fullTask.title}
                 </DialogDescription>
                 {activeTimer ? (
                   <Button
@@ -285,7 +296,7 @@ export function TaskDetailDialog({
                   <Flag className="h-3 w-3 mr-1" />
                   {priority.label}
                 </Badge>
-                {task.linkedWorkflowInstanceId && (
+                {fullTask.linkedWorkflowInstanceId && (
                   <Badge variant="outline" data-testid="badge-workflow">
                     <Link2 className="h-3 w-3 mr-1" />
                     Workflow
@@ -331,7 +342,7 @@ export function TaskDetailDialog({
             </TabsTrigger>
             <TabsTrigger value="comments" data-testid="tab-comments">
               <MessageSquare className="h-4 w-4 mr-2" />
-              Commenti ({task.comments?.length || 0})
+              Commenti ({fullTask.comments?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="attachments" data-testid="tab-attachments">
               <Paperclip className="h-4 w-4 mr-2" />
@@ -349,10 +360,10 @@ export function TaskDetailDialog({
 
           <div className="flex-1 overflow-y-auto mt-4">
             <TabsContent value="details" className="space-y-6 mt-0">
-              {task.description && (
+              {fullTask.description && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Descrizione</h3>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{task.description}</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{fullTask.description}</p>
                 </div>
               )}
 
@@ -379,15 +390,15 @@ export function TaskDetailDialog({
                       <Clock className="h-4 w-4 text-gray-400" />
                       <span className="text-gray-600">Creato:</span>
                       <span className="font-medium">
-                        {format(new Date(task.createdAt), 'PPP', { locale: it })}
+                        {format(new Date(fullTask.createdAt), 'PPP', { locale: it })}
                       </span>
                     </div>
 
-                    {task.createdBy && (
+                    {fullTask.createdBy && (
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4 text-gray-400" />
                         <span className="text-gray-600">Creato da:</span>
-                        <span className="font-medium">{task.createdBy.name}</span>
+                        <span className="font-medium">{fullTask.createdBy.name}</span>
                       </div>
                     )}
 
@@ -406,11 +417,11 @@ export function TaskDetailDialog({
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Team</h3>
                   <div className="space-y-3">
-                    {task.assignees && task.assignees.length > 0 && (
+                    {fullTask.assignees && fullTask.assignees.length > 0 && (
                       <div>
                         <div className="text-sm text-gray-600 mb-2">Assegnati:</div>
                         <div className="space-y-2">
-                          {task.assignees.map((assignee) => (
+                          {fullTask.assignees.map((assignee) => (
                             <div key={assignee.id} className="flex items-center gap-2" data-testid={`assignee-${assignee.id}`}>
                               <Avatar className="h-6 w-6">
                                 <AvatarFallback className="text-xs">
@@ -427,11 +438,11 @@ export function TaskDetailDialog({
                       </div>
                     )}
 
-                    {task.watchers && task.watchers.length > 0 && (
+                    {fullTask.watchers && fullTask.watchers.length > 0 && (
                       <div>
                         <div className="text-sm text-gray-600 mb-2">Osservatori:</div>
                         <div className="flex flex-wrap gap-1">
-                          {task.watchers.map((watcher) => (
+                          {fullTask.watchers.map((watcher) => (
                             <Badge key={watcher.id} variant="secondary" className="text-xs">
                               {watcher.name}
                             </Badge>
@@ -443,13 +454,13 @@ export function TaskDetailDialog({
                 </div>
               </div>
 
-              {task.tags && task.tags.length > 0 && (
+              {fullTask.tags && fullTask.tags.length > 0 && (
                 <>
                   <Separator />
                   <div>
                     <h3 className="text-sm font-medium text-gray-700 mb-2">Tags</h3>
                     <div className="flex flex-wrap gap-2">
-                      {task.tags.map((tag, index) => (
+                      {fullTask.tags.map((tag, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
@@ -481,7 +492,7 @@ export function TaskDetailDialog({
                   </div>
                 )}
 
-                {task.checklist?.map((item) => (
+                {fullTask.checklist?.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors group"
@@ -640,13 +651,13 @@ export function TaskDetailDialog({
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4 mt-0">
-              {!task.comments || task.comments.length === 0 ? (
+              {!fullTask.comments || fullTask.comments.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                   <p>Nessun commento</p>
                 </div>
               ) : (
-                task.comments.map((comment) => (
+                fullTask.comments.map((comment) => (
                   <div key={comment.id} className="flex gap-3" data-testid={`comment-${comment.id}`}>
                     <Avatar className="h-8 w-8 mt-1">
                       <AvatarFallback className="text-xs">
