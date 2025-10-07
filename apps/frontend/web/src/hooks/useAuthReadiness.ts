@@ -14,8 +14,6 @@ export const useAuthReadiness = () => {
       let currentAttempts = 0;
       const maxAttempts = 50; // 5 secondi max (50 * 100ms)
       
-      console.log('🔐 [HR-AUTH] Starting authentication readiness check...');
-      
       const checkReady = () => {
         try {
           // Verifica tenant ID
@@ -39,8 +37,6 @@ export const useAuthReadiness = () => {
           
           const authModeValid = authMode && authMode !== '';
           
-          console.log(`🔍 [HR-AUTH] Check ${currentAttempts + 1}: tenant=${!!tenantValid}, localStorage=${!!localStorageValid}, authMode=${!!authModeValid}`);
-          
           return tenantValid && localStorageValid && authModeValid;
         } catch (error) {
           console.warn(`⚠️ [HR-AUTH] Error during readiness check:`, error);
@@ -53,16 +49,9 @@ export const useAuthReadiness = () => {
         await new Promise(resolve => setTimeout(resolve, 100));
         currentAttempts++;
         setAttempts(currentAttempts);
-        
-        // Log ogni secondo per debugging
-        if (currentAttempts % 10 === 0) {
-          console.log(`🕐 [HR-AUTH] Still waiting... attempt ${currentAttempts}/${maxAttempts}`);
-        }
       }
       
       if (checkReady()) {
-        const tenantId = getCurrentTenantId();
-        console.log(`✅ [HR-AUTH] Authentication system ready! Tenant: ${tenantId}`);
         setIsReady(true);
       } else {
         console.error(`❌ [HR-AUTH] Timeout waiting for auth initialization after ${maxAttempts} attempts`);

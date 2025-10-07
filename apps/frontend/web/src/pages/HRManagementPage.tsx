@@ -93,23 +93,12 @@ interface HRDocument {
 // ==================== MAIN COMPONENT ====================
 
 const HRManagementPage: React.FC = () => {
-  // 🚨 DEBUG: VERY FIRST LOG to see if component loads at all
-  console.log('🚨 [HR-COMPONENT] HRManagementPage IS LOADING!', new Date().toISOString());
-  
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees' | 'monitoring'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
   // ✅ NEW: HR Authentication Readiness Hook - usando useHRQueryReadiness per abilitazione immediata
   const { enabled: hrQueriesEnabled, attempts, debugInfo } = useHRQueryReadiness();
-  
-  // 🔍 DEBUG: Log query readiness status
-  console.log('🔍 [HR-DEBUG] Query readiness status:', {
-    hrQueriesEnabled,
-    attempts,
-    debugInfo,
-    timestamp: new Date().toISOString()
-  });
   
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -193,8 +182,6 @@ const HRManagementPage: React.FC = () => {
         throw new Error('HR_AUTH_NOT_READY: Authentication not initialized. Please wait.');
       }
       
-      console.log('🔄 [HR-PUSH] Pushing document to users:', pushData);
-      
       return await apiRequest('/api/hr/documents/push-to-user', {
         method: 'POST',
         body: JSON.stringify(pushData),
@@ -228,8 +215,6 @@ const HRManagementPage: React.FC = () => {
         console.warn('🚨 [HR-MUTATION] Blocking HR request - authentication not ready');
         throw new Error('HR_AUTH_NOT_READY: Authentication not initialized. Please wait.');
       }
-      
-      console.log('🚀 [HR-MUTATION] Creating HR request:', requestData.type);
       
       // Step 1: Create HR request
       const hrRequest = await apiRequest('/api/universal-requests', {
@@ -282,17 +267,13 @@ const HRManagementPage: React.FC = () => {
                            error?.message?.includes('Invalid tenant');
       
       if (isHRAuthError && failureCount < 3) {
-        console.log(`⏳ [HR-RETRY] Retry attempt ${failureCount + 1}/3 for auth timing issue`);
         return true;
       }
       
-      console.log(`❌ [HR-RETRY] No more retries. Failure count: ${failureCount}, Error: ${error?.message}`);
       return false;
     },
     retryDelay: (attemptIndex) => {
-      const delay = Math.min(1000 * Math.pow(2, attemptIndex), 5000); // Exponential backoff max 5s
-      console.log(`⏳ [HR-RETRY] Waiting ${delay}ms before retry attempt ${attemptIndex + 1}`);
-      return delay;
+      return Math.min(1000 * Math.pow(2, attemptIndex), 5000); // Exponential backoff max 5s
     },
     onError: (error: any) => {
       console.error('🚨 [HR-MUTATION] Final error after retries:', error);
