@@ -1,0 +1,129 @@
+g', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-GVKGBQLT.js?v=53f69fa7:335:29)
+    at chunk-GVKGBQLT.js?v=53f69fa7:239:13
+    at chunk-GVKGBQLT.js?v=53f69fa7:162:58
+    at Presence (chunk-3RPIZZKC.js?v=53f69fa7:24:11)
+    at chunk-GVKGBQLT.js?v=53f69fa7:153:64
+    at chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at chunk-Y5AAV5I6.js?v=53f69fa7:244:22
+    at Presence (chunk-3RPIZZKC.js?v=53f69fa7:24:11)
+    at Provider (chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at DialogPortal (chunk-GVKGBQLT.js?v=53f69fa7:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at Dialog (chunk-GVKGBQLT.js?v=53f69fa7:56:5)
+    at EditChannelDialog (EditChannelDialog.tsx:53:3)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at ChatPage (ChatPage.tsx?t=1759837140838:86:21)
+    at AuthenticatedRoute (TenantShell.tsx:358:72)
+    at Route (wouter.js?v=53f69fa7:206:16)
+    at Switch (wouter.js?v=53f69fa7:262:17)
+    at TenantRoutes (TenantShell.tsx:186:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:41:59)
+    at Route (wouter.js?v=53f69fa7:206:16)
+    at Switch (wouter.js?v=53f69fa7:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=53f69fa7:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-GVKGBQLT.js?v=53f69fa7:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=53f69fa7:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=53f69fa7:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=53f69fa7:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=53f69fa7:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-GVKGBQLT.js?v=53f69fa7:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=53f69fa7:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=53f69fa7:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=53f69fa7:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=53f69fa7:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this warning
+EditChannelDialog.tsx:296 Warning: Each child in a list should have a unique "key" prop.
+
+Check the render method of `EditChannelDialog`. See https://reactjs.org/link/warning-keys for more information.
+    at div
+    at EditChannelDialog (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/chat/EditChannelDialog.tsx:43:3)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:198:34)
+    at ChatPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/ChatPage.tsx?t=1759837140838:86:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1759837140838:532:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1759837140838:177:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1759837140838:35:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=53f69fa7:3081:3)
+    at App
+overrideMethod @ hook.js:608
+printWarning @ react_jsx-dev-runtime.js?v=53f69fa7:64
+error @ react_jsx-dev-runtime.js?v=53f69fa7:48
+validateExplicitKey @ react_jsx-dev-runtime.js?v=53f69fa7:724
+validateChildKeys @ react_jsx-dev-runtime.js?v=53f69fa7:737
+jsxWithValidation @ react_jsx-dev-runtime.js?v=53f69fa7:855
+EditChannelDialog @ EditChannelDialog.tsx:296
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=53f69fa7:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=53f69fa7:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=53f69fa7:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=53f69fa7:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=53f69fa7:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=53f69fa7:103
+flush @ @tanstack_react-query.js?v=53f69fa7:610
+batch @ @tanstack_react-query.js?v=53f69fa7:628
+dispatch_fn @ @tanstack_react-query.js?v=53f69fa7:1260
+setData @ @tanstack_react-query.js?v=53f69fa7:931
+fetch @ @tanstack_react-query.js?v=53f69fa7:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=53f69fa7:1639
+setOptions @ @tanstack_react-query.js?v=53f69fa7:1392
+(anonymous) @ @tanstack_react-query.js?v=53f69fa7:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=53f69fa7:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=53f69fa7:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=53f69fa7:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=53f69fa7:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this error
+TenantContext.tsx:89 [TENANT-PROVIDER] 
