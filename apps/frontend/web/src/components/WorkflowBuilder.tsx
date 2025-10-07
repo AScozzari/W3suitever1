@@ -832,6 +832,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       {/* ✅ NODE CONFIGURATION PANEL - Fixed hook order violations */}
       <NodeConfigPanel 
         node={showConfigPanel && configNodeId ? nodes.find(n => n.id === configNodeId) || null : null}
+        allNodes={nodes}
         isOpen={showConfigPanel}
         onClose={() => setShowConfigPanel(false)}
         onSave={(nodeId: string, config: any) => {

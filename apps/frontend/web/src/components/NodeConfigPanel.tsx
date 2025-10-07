@@ -11,6 +11,7 @@ import { InfoTooltip } from './InfoTooltip';
 
 interface NodeConfigPanelProps {
   node: Node | null;
+  allNodes: Node[]; // Lista di tutti i nodi disponibili per dropdown
   isOpen: boolean;
   onClose: () => void;
   onSave: (nodeId: string, config: any) => void;
@@ -31,7 +32,7 @@ interface Role {
  * Componente separato per evitare hook order violations nel WorkflowBuilder.
  * Gestisce la configurazione di tutti i tipi di nodi in modo sicuro.
  */
-export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeConfigPanelProps) {
+export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSave }: NodeConfigPanelProps) {
   if (!node) return null;
 
   return (
@@ -42,18 +43,25 @@ export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeC
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader className="pb-4 border-b border-white/20 dark:border-white/10">
-          <DialogTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
-            🎛️ Configurazione Nodo
-          </DialogTitle>
-          <DialogDescription className="text-sm text-gray-600 mt-2">
-            {String(node.data.name || node.data.title || node.data.id)}
-          </DialogDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
+                🎛️ Configurazione Nodo
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 mt-2">
+                {String(node.data.name || node.data.title || node.data.id)}
+              </DialogDescription>
+            </div>
+            <Badge variant="outline" className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1">
+              Node ID: {node.id}
+            </Badge>
+          </div>
         </DialogHeader>
         
         <div className="space-y-6 pt-4">
           {/* ========== AI NODES ========== */}
           {node.data.id === 'ai-decision' && (
-            <AiDecisionConfig node={node} onSave={onSave} onClose={onClose} />
+            <AiDecisionConfig node={node} allNodes={allNodes} onSave={onSave} onClose={onClose} />
           )}
           
           {/* ========== ACTION NODES ========== */}
@@ -128,9 +136,52 @@ export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeC
 }
 
 /**
+ * 🎯 NODE SELECTOR COMPONENT
+ * Dropdown intelligente per selezione nodi di destinazione
+ */
+interface NodeSelectorProps {
+  value: string;
+  onChange: (nodeId: string) => void;
+  allNodes: Node[];
+  currentNodeId: string;
+  placeholder?: string;
+  testId?: string;
+}
+
+function NodeSelector({ value, onChange, allNodes, currentNodeId, placeholder = "Seleziona nodo", testId }: NodeSelectorProps) {
+  // Filtra il nodo corrente dalla lista
+  const availableNodes = allNodes.filter(n => n.id !== currentNodeId);
+  
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger data-testid={testId} className="text-sm">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {availableNodes.length === 0 ? (
+          <SelectItem value="none" disabled>Nessun nodo disponibile</SelectItem>
+        ) : (
+          availableNodes.map(node => {
+            const nodeName = String(node.data.name || node.data.title || node.data.id);
+            const nodeType = String(node.data.category || 'node');
+            return (
+              <SelectItem key={node.id} value={node.id}>
+                <span className="font-mono text-xs text-gray-500 mr-2">{node.id}</span>
+                <span className="font-medium">{nodeName}</span>
+                <span className="text-xs text-gray-400 ml-2">({nodeType})</span>
+              </SelectItem>
+            );
+          })
+        )}
+      </SelectContent>
+    </Select>
+  );
+}
+
+/**
  * 🤖 AI Decision Node Configuration - ADVANCED PROMPT BUILDER
  */
-function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; allNodes: Node[]; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
   const config = (node.data.config || {}) as any;
   const params = config.parameters || {};
   
@@ -388,14 +439,16 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
                 placeholder="Etichetta"
               />
               <span className="text-gray-400">→</span>
-              <input 
-                type="text" 
-                value={output.path}
-                onChange={(e) => setOutputs(outputs.map((o, i) => i === index ? { ...o, path: e.target.value } : o))}
-                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                placeholder="node-id-destinazione"
-                data-testid={`input-path-${index}`}
-              />
+              <div className="flex-1">
+                <NodeSelector
+                  value={output.path}
+                  onChange={(nodeId) => setOutputs(outputs.map((o, i) => i === index ? { ...o, path: nodeId } : o))}
+                  allNodes={allNodes}
+                  currentNodeId={node.id}
+                  placeholder="Seleziona nodo destinazione"
+                  testId={`select-path-${index}`}
+                />
+              </div>
               <Button variant="ghost" size="sm" onClick={() => removeOutput(index)}>
                 <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
@@ -428,13 +481,13 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
           <label className="block text-sm font-medium text-gray-900 mb-2">
             🔄 Fallback (se timeout)
           </label>
-          <input 
-            type="text" 
+          <NodeSelector
             value={defaultPath}
-            onChange={(e) => setDefaultPath(e.target.value)}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-windtre-orange"
-            placeholder="manual_review"
-            data-testid="input-default-path"
+            onChange={setDefaultPath}
+            allNodes={allNodes}
+            currentNodeId={node.id}
+            placeholder="Nodo fallback"
+            testId="select-default-path"
           />
         </div>
       </div>
