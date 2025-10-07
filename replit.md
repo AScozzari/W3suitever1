@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform offering a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a unique WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system enables centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and robust platform addressing diverse business needs.
+W3 Suite is a multi-tenant enterprise platform designed to provide a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. Key features include a unique WindTre glassmorphism design, robust security with OAuth2/OIDC and MFA, and PostgreSQL with Row Level Security for tenant isolation. The platform is complemented by a Brand Interface HQ system for centralized control and cross-tenant management, aiming to deliver a scalable, secure, and robust solution for diverse business needs.
 
 # User Preferences
 
@@ -13,7 +13,7 @@ W3 Suite is a multi-tenant enterprise platform offering a comprehensive business
 #### ✅ CLEAN ARCHITECTURE - POST REFACTORING 2024/09/24:
 - 🎯 **ALWAYS** use: `apps/backend/api/src/db/schema/`
 - 🏢 **w3suite.ts** = Tenant-specific tables (users, stores, roles, HR tables with RLS)
-- 🌐 **public.ts** = Shared reference data (countries, cities, payment methods - no tenant)  
+- 🌐 **public.ts** = Shared reference data (countries, cities, payment methods - no tenant)
 - 🎯 **brand-interface.ts** = Brand HQ system tables
 - 📋 **index.ts** = ONLY backward compatibility re-exports (NO new definitions)
 
@@ -21,7 +21,7 @@ W3 Suite is a multi-tenant enterprise platform offering a comprehensive business
 ```typescript
 // 🏢 W3SUITE SCHEMA - Tenant Data (RLS Enabled)
 - tenants, users, legalEntities, stores
-- roles, rolePerms, userAssignments  
+- roles, rolePerms, userAssignments
 - customers, leads, products, inventory (CRM/Warehouse)
 - HR: calendarEvents, shifts, leaveRequests, timeTracking
 - AI: aiSettings, aiConversations, aiUsageLogs
@@ -57,7 +57,7 @@ import { stores } from './db/schema/organization'; // NEVER EXISTED
 
 #### 🚫 FORBIDDEN ACTIONS:
 - **NEVER** create duplicate enum definitions across schema files
-- **NEVER** create duplicate table definitions across schema files  
+- **NEVER** create duplicate table definitions across schema files
 - **NEVER** define new tables in `index.ts` (only re-exports allowed)
 - **NEVER** import from removed files: `core.ts`, `rbac.ts`, `organization.ts`
 
@@ -177,12 +177,12 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project utilizes an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, routes traffic.
+The project employs an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, handles traffic routing.
 
 ## Monorepo Structure:
-- **`apps/`**: Frontend/backend services, workers, edge renderers.
-- **`packages/`**: Shared libraries (UI, tokens, SDK, DWH, CMS).
-- **`db/`**: Database migration scripts.
+- **`apps/`**: Contains frontend/backend services, workers, and edge renderers.
+- **`packages/`**: Stores shared libraries (UI, design tokens, SDK, DWH, CMS).
+- **`db/`**: Holds database migration scripts.
 
 ## UI/UX Design:
 - **Glassmorphism WindTre Design System**: Incorporates WindTre branding, colors, and glassmorphism effects.
@@ -191,19 +191,17 @@ The project utilizes an enterprise monorepo structure, separating tenant-facing 
 - **Branding**: Supports tenant-customizable logos and color schemes.
 
 ## Technical Implementations:
-- **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) for data isolation.
-- **Security**: OAuth2/OIDC with MFA, JWTs, PostgreSQL Row Level Security (RLS) for multitenancy, and granular Role-Based Access Control (RBAC).
-- **Multitenancy**: Achieved via RLS, a `TenantProvider`, and global unique constraints.
+- **Database Architecture**: Utilizes a 3-schema structure (`w3suite`, `public`, `brand_interface`) for robust data isolation.
+- **Security**: Implements OAuth2/OIDC with MFA, JWTs, PostgreSQL Row Level Security (RLS) for multitenancy, and granular Role-Based Access Control (RBAC).
+- **Multitenancy**: Achieved through RLS, a `TenantProvider`, and global unique constraints.
 - **Organizational Hierarchy**: Manages relationships among TENANTs, Legal Entities, Sales Points, and Users.
-- **Brand Interface Features**: Centralized Super Admin, cross-tenant campaign/pricing management, and event propagation via BullMQ.
-- **Data Architecture Patterns**: Brand Base + Tenant Override for collaborative entities; Brand-Only for Brand-controlled entities.
-- **Universal Workflow System**: Comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails. **Dual-Mode Workflow Execution** (✅ OPERATIONAL Oct 2025):
-  - **SYNC Mode** (Development/Replit): Executes ReactFlow workflows synchronously without Redis. Auto-activated when `REDIS_URL` is not set. Uses `currentNodeId` (VARCHAR) for ReactFlow compatibility, skips `workflowExecutions` tracking (UUID incompatible).
-  - **ASYNC Mode** (Production): Queue-based execution via BullMQ when `REDIS_URL` is configured. Automatically switches on Redis availability.
-  - **Auto-Detection**: Zero configuration - system automatically selects appropriate execution mode based on environment.
-- **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
-- **Unified Notification System**: Real-time notifications across 7 business categories with Redis + WebSocket architecture and PostgreSQL fallback.
-- **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management.
+- **Brand Interface Features**: Includes a centralized Super Admin, cross-tenant campaign/pricing management, and event propagation via BullMQ.
+- **Data Architecture Patterns**: Supports Brand Base + Tenant Override for collaborative entities and Brand-Only for Brand-controlled entities.
+- **Universal Workflow System**: Features a comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, a visual workflow builder, and audit trails.
+- **Dual-Mode Workflow Execution Engine**: Fully operational (Oct 2025) supporting synchronous (development/testing, no Redis) and asynchronous (production, BullMQ with Redis) execution with automatic detection.
+- **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable components, UI patterns, custom React hooks, and the `shadcn/ui` library.
+- **Unified Notification System**: Real-time notifications across 7 business categories using Redis + WebSocket architecture with PostgreSQL fallback.
+- **HR Time Tracking Auto-Match System**: Automates matching between `time_tracking` entries and `shift_assignments`.
 - **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, Redis queue, priority worker, deduplication, workflow engine integration, and audit trail.
 - **Task Management System**: Flexible task system with optional workflow integration, RBAC-protected API endpoints, and a feature-rich frontend.
 
@@ -218,12 +216,12 @@ The project utilizes an enterprise monorepo structure, separating tenant-facing 
 ## UI Component Ecosystem
 - **SHADCN/UI**: Primary UI component library.
 - **Existing Project Components**: Custom components and design tokens within `packages/ui/` and `packages/tokens/`.
+- **Radix UI**: Provides headless component primitives for building accessible UI.
 
 ## Icon & Utility Libraries
 - **Lucide React**: Icon library.
 - **TanStack React Query**: For server state management.
 - **React Hook Form**: Facilitates form handling.
-- **Radix UI**: Provides headless component primitives for building accessible UI.
 
 ## Development Tools
 - **Vite**: Frontend build tool.
