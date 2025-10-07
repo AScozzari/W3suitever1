@@ -30,7 +30,7 @@ const createChannelBodySchema = insertChatChannelSchema
     description: z.string().max(1000).optional(),
     teamId: z.string().uuid().optional(),
     taskId: z.string().uuid().optional(),
-    memberUserIds: z.array(z.string().uuid()).default([])
+    memberUserIds: z.array(z.string()).default([])
   });
 
 const updateChannelBodySchema = z.object({
@@ -40,17 +40,16 @@ const updateChannelBodySchema = z.object({
 });
 
 const createDMBodySchema = z.object({
-  userId: z.string().uuid()
+  userId: z.string()
 });
 
-const createMessageBodySchema = insertChatMessageSchema
-  .omit({ tenantId: true, userId: true, createdAt: true, updatedAt: true, isEdited: true, deletedAt: true })
-  .extend({
-    content: z.string().min(1).max(10000),
-    parentMessageId: z.string().uuid().optional(),
-    mentionedUserIds: z.array(z.string().uuid()).default([]),
-    attachments: z.array(z.any()).default([])
-  });
+const createMessageBodySchema = z.object({
+  channelId: z.string().uuid(),
+  content: z.string().min(1).max(10000),
+  parentMessageId: z.string().uuid().optional(),
+  mentionedUserIds: z.array(z.string()).default([]),
+  attachments: z.array(z.any()).default([])
+});
 
 const updateMessageBodySchema = z.object({
   content: z.string().min(1).max(10000)
@@ -61,7 +60,7 @@ const addReactionBodySchema = z.object({
 });
 
 const addMemberBodySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string(),
   role: z.enum(['owner', 'admin', 'member']).default('member')
 });
 
@@ -246,8 +245,8 @@ router.post('/channels/:id/messages', requirePermission('chat.create'), async (r
       userId: message.userId,
       content: message.content,
       createdAt: message.createdAt.toISOString(),
-      attachments: message.attachments || [],
-      mentionedUserIds: message.mentionedUserIds || []
+      attachments: Array.isArray(message.attachments) ? message.attachments : [],
+      mentionedUserIds: Array.isArray(message.mentionedUserIds) ? message.mentionedUserIds : []
     });
     
     res.status(201).json(message);
