@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -197,6 +197,9 @@ export function EditChannelDialog({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-edit-channel">
         <DialogHeader>
           <DialogTitle>Modifica Chat di Gruppo</DialogTitle>
+          <DialogDescription>
+            Personalizza il nome, i colori e i membri di questa conversazione di gruppo
+          </DialogDescription>
         </DialogHeader>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
