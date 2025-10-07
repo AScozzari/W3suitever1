@@ -244,6 +244,7 @@ export const AiDecisionConfigSchema = z.object({
   outputs: z.array(z.object({
     condition: z.string(),
     path: z.string(),
+    label: z.string().optional(), // Label personalizzata per l'edge visualizzato
     confidence: z.number().min(0).max(1).optional()
   })),
   fallback: z.object({
