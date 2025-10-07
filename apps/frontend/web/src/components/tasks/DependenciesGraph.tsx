@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import {
@@ -114,11 +114,9 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
     },
   });
 
-  useEffect(() => {
+  const { computedNodes, computedEdges } = useMemo(() => {
     if (dependencies.length === 0) {
-      setNodes([]);
-      setEdges([]);
-      return;
+      return { computedNodes: [], computedEdges: [] };
     }
 
     const newNodes: Node[] = [];
@@ -237,9 +235,13 @@ export function DependenciesGraph({ taskId, availableTasks = [] }: DependenciesG
       });
     });
 
-    setNodes(newNodes);
-    setEdges(newEdges);
-  }, [dependencies, taskId]);
+    return { computedNodes: newNodes, computedEdges: newEdges };
+  }, [JSON.stringify(dependencies), taskId]);
+
+  useEffect(() => {
+    setNodes(computedNodes);
+    setEdges(computedEdges);
+  }, [computedNodes, computedEdges, setNodes, setEdges]);
 
   const availableToAdd = availableTasks.filter(
     (task) => 
