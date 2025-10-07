@@ -1399,21 +1399,21 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
 
     await setTenantContext(tenantId);
 
-    // 📈 Performance Analytics - Fixed column names to snake_case
+    // 📈 Performance Analytics - Using workflow_instances (ReactFlow compatible)
     const performanceStats = await db.execute(sql`
       SELECT 
-        DATE_TRUNC('day', we.started_at) as date,
+        DATE_TRUNC('day', wi.started_at) as date,
         COUNT(*) as executions,
-        AVG(we.duration) as avg_duration,
-        MIN(we.duration) as min_duration,
-        MAX(we.duration) as max_duration,
-        COUNT(CASE WHEN we.status = 'success' THEN 1 END) as successful,
-        COUNT(CASE WHEN we.status = 'failed' THEN 1 END) as failed
-      FROM workflow_executions we
-      JOIN workflow_instances wi ON wi.id = we.instance_id
+        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_duration,
+        MIN(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as min_duration,
+        MAX(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as max_duration,
+        COUNT(CASE WHEN wi.current_status = 'completed' THEN 1 END) as successful,
+        COUNT(CASE WHEN wi.current_status = 'failed' THEN 1 END) as failed
+      FROM workflow_instances wi
       WHERE wi.tenant_id = ${tenantId}
-        AND we.started_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)})
-      GROUP BY DATE_TRUNC('day', we.started_at)
+        AND wi.started_at IS NOT NULL
+        AND wi.started_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)})
+      GROUP BY DATE_TRUNC('day', wi.started_at)
       ORDER BY date DESC
     `);
 
@@ -1423,13 +1423,17 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
         wt.category,
         COUNT(wi.id) as total_instances,
         COUNT(CASE WHEN wi.current_status = 'completed' THEN 1 END) as completed,
-        COUNT(CASE WHEN wi.current_status = 'in_progress' THEN 1 END) as running,
+        COUNT(CASE WHEN wi.current_status = 'in_progress' OR wi.current_status = 'running' THEN 1 END) as running,
         COUNT(CASE WHEN wi.current_status = 'failed' THEN 1 END) as failed,
-        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_completion_time
+        AVG(CASE 
+          WHEN wi.completed_at IS NOT NULL AND wi.started_at IS NOT NULL 
+          THEN EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at)) 
+          ELSE NULL 
+        END) as avg_completion_time
       FROM workflow_templates wt
-      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
+      INNER JOIN workflow_instances wi ON wi.template_id = wt.id
       WHERE wt.tenant_id = ${tenantId}
-        AND (wi.created_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)}) OR wi.created_at IS NULL)
+        AND wi.created_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)})
       GROUP BY wt.category
       ORDER BY total_instances DESC
     `);
@@ -1440,12 +1444,16 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
         wt.name,
         wt.category,
         COUNT(wi.id) as instances_count,
-        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_duration,
+        AVG(CASE 
+          WHEN wi.completed_at IS NOT NULL AND wi.started_at IS NOT NULL 
+          THEN EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at)) 
+          ELSE NULL 
+        END) as avg_duration,
         MAX(wi.last_activity_at) as last_used
       FROM workflow_templates wt
-      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
+      INNER JOIN workflow_instances wi ON wi.template_id = wt.id
       WHERE wt.tenant_id = ${tenantId}
-        AND (wi.created_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)}) OR wi.created_at IS NULL)
+        AND wi.created_at >= NOW() - make_interval(days => ${parseInt(period as string, 10)})
       GROUP BY wt.id, wt.name, wt.category
       ORDER BY instances_count DESC
       LIMIT 10
@@ -1463,13 +1471,52 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       ORDER BY hour
     `);
 
+    // 📊 Calculate summary statistics
+    const totalExecutions = performanceStats.rows.reduce((sum: number, row: any) => 
+      sum + parseInt(row.executions || '0', 10), 0
+    );
+    
+    const totalSuccessful = performanceStats.rows.reduce((sum: number, row: any) => 
+      sum + parseInt(row.successful || '0', 10), 0
+    );
+    
+    const totalFailed = performanceStats.rows.reduce((sum: number, row: any) => 
+      sum + parseInt(row.failed || '0', 10), 0
+    );
+    
+    const successRate = totalExecutions > 0 
+      ? ((totalSuccessful / totalExecutions) * 100) 
+      : 0;
+    
+    const avgExecTime = performanceStats.rows.length > 0
+      ? performanceStats.rows.reduce((sum: number, row: any) => 
+          sum + (parseFloat(row.avg_duration) || 0), 0) / performanceStats.rows.length
+      : null;
+    
+    const mostActiveCategory = categoryStats.rows.length > 0 
+      ? categoryStats.rows[0].category 
+      : null;
+    
+    const peakHour = hourlyDistribution.rows.length > 0
+      ? hourlyDistribution.rows.reduce((max: any, row: any) => 
+          parseInt(row.instances_started || '0', 10) > parseInt(max.instances_started || '0', 10) ? row : max
+        ).hour
+      : null;
+
     const analyticsData = {
       performance: performanceStats.rows,
       categoryStats: categoryStats.rows,
       activeTemplates: activeTemplates.rows,
       hourlyDistribution: hourlyDistribution.rows,
       period: parseInt(period as string),
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalExecutions,
+        averageExecutionTime: avgExecTime,
+        successRate: parseFloat(successRate.toFixed(1)),
+        mostActiveCategory,
+        peakHour: peakHour ? parseInt(peakHour, 10) : null
+      }
     };
 
     logger.info('📊 Analytics retrieved', {
