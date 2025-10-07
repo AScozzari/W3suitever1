@@ -16,12 +16,18 @@ interface ChatChannel {
   createdAt: string;
   lastMessageAt?: string | null;
   unreadCount?: number;
+  memberCount?: number;
   lastMessage?: {
     id: string;
     content: string;
     createdAt: string;
     userId: string;
   } | null;
+  metadata?: {
+    avatarUrl?: string;
+    headerColor?: string;
+    backgroundPattern?: string;
+  };
 }
 
 // Helper function to format relative timestamps
@@ -59,6 +65,32 @@ function formatRelativeTime(dateString: string): string {
 function truncateMessage(text: string, maxLength: number = 40): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
+}
+
+// Helper to get background style based on pattern
+function getBackgroundStyle(pattern: string = 'neutral'): React.CSSProperties {
+  const patterns: Record<string, React.CSSProperties> = {
+    'neutral': { background: '#fafafa' },
+    'dots': { 
+      background: 'radial-gradient(circle, #d1d5db 1px, transparent 1px), #fafafa',
+      backgroundSize: '20px 20px'
+    },
+    'grid': {
+      background: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px), #fafafa',
+      backgroundSize: '20px 20px'
+    },
+    'diagonal': {
+      background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #f3f4f6 10px, #f3f4f6 20px), #fafafa'
+    },
+    'waves': {
+      background: 'repeating-radial-gradient(circle at 0 0, transparent 0, #fafafa 10px, transparent 20px, #f9fafb 30px), #fafafa'
+    },
+    'bubbles': {
+      background: 'radial-gradient(circle at 20% 50%, rgba(243, 244, 246, 0.5) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(229, 231, 235, 0.5) 0%, transparent 50%), #fafafa'
+    }
+  };
+  
+  return patterns[pattern] || patterns['neutral'];
 }
 
 interface UserData {
@@ -250,21 +282,35 @@ export default function ChatPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {/* Avatar placeholder */}
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: 600
-                      }}>
-                        {channel.name.slice(0, 2).toUpperCase()}
-                      </div>
+                      {/* Avatar - custom image or initials */}
+                      {channel.metadata?.avatarUrl ? (
+                        <img
+                          src={channel.metadata.avatarUrl}
+                          alt={channel.name}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #e5e7eb'
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 600
+                        }}>
+                          {channel.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
@@ -358,7 +404,7 @@ export default function ChatPage() {
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            background: '#fafafa'
+            ...getBackgroundStyle(channels.find(c => c.id === selectedChannelId)?.metadata?.backgroundPattern || 'neutral')
           }}>
             {selectedChannelId ? (
               <>

@@ -59,7 +59,17 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [headerColor, setHeaderColor] = useState<string>('#FF6900');
+  const [backgroundPattern, setBackgroundPattern] = useState<string>('neutral');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const backgroundPatterns = [
+    { id: 'neutral', name: 'Neutro', preview: '#fafafa' },
+    { id: 'dots', name: 'Puntini', preview: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)' },
+    { id: 'grid', name: 'Griglia', preview: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)' },
+    { id: 'diagonal', name: 'Diagonale', preview: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #f3f4f6 10px, #f3f4f6 20px)' },
+    { id: 'waves', name: 'Onde', preview: 'repeating-radial-gradient(circle at 0 0, transparent 0, #fafafa 10px, transparent 20px, #f9fafb 30px)' },
+    { id: 'bubbles', name: 'Bolle', preview: 'radial-gradient(circle at 20% 50%, #f3f4f6 0%, transparent 50%), radial-gradient(circle at 80% 80%, #e5e7eb 0%, transparent 50%)' }
+  ];
 
   // Fetch available users
   const { data: users = [], isLoading: usersLoading } = useQuery<UserOption[]>({
@@ -117,7 +127,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
 
   // Create group mutation
   const createGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; visibility: 'public' | 'private'; memberIds: string[]; avatarFile?: File; headerColor: string }) => {
+    mutationFn: async (data: { name: string; visibility: 'public' | 'private'; memberIds: string[]; avatarFile?: File; headerColor: string; backgroundPattern: string }) => {
       let avatarUrl = '';
       
       // Upload avatar if provided
@@ -138,7 +148,8 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
           memberUserIds: data.memberIds,
           metadata: { 
             ...(avatarUrl ? { avatarUrl } : {}),
-            headerColor: data.headerColor
+            headerColor: data.headerColor,
+            backgroundPattern: data.backgroundPattern
           }
         })
       });
@@ -171,6 +182,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
     setAvatarFile(null);
     setAvatarPreview('');
     setHeaderColor('#FF6900');
+    setBackgroundPattern('neutral');
   };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,7 +261,8 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
       visibility: isPrivate ? 'private' : 'public',
       memberIds: selectedUserIds,
       avatarFile: avatarFile || undefined,
-      headerColor: headerColor
+      headerColor: headerColor,
+      backgroundPattern: backgroundPattern
     });
   };
 
@@ -434,6 +447,36 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
                     {headerColor}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Background Pattern Picker */}
+            <div>
+              <Label>Trama Sfondo Chat</Label>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {backgroundPatterns.map((pattern) => (
+                  <button
+                    key={pattern.id}
+                    type="button"
+                    onClick={() => setBackgroundPattern(pattern.id)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      backgroundPattern === pattern.id 
+                        ? 'border-[#FF6900] ring-2 ring-[#FF6900] ring-opacity-20' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    data-testid={`pattern-${pattern.id}`}
+                  >
+                    <div 
+                      className="w-full h-16 rounded mb-2"
+                      style={{ 
+                        background: pattern.preview,
+                        backgroundSize: pattern.id === 'dots' ? '20px 20px' : 
+                                       pattern.id === 'grid' ? '20px 20px' : 'cover'
+                      }}
+                    />
+                    <div className="text-xs font-medium text-center">{pattern.name}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
