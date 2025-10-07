@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, Trash2, Info, Sparkles } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { X, Plus, Trash2, Info, Sparkles, Search, Check } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
 
 interface NodeConfigPanelProps {
@@ -2042,31 +2044,162 @@ function TeamAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
  */
 function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
   const config = (node.data.config || {}) as any;
-  const [userIds, setUserIds] = useState((config.userIds || []).join(', '));
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(config.userIds || []);
   const [assignmentType, setAssignmentType] = useState(config.assignmentType || 'all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // 🔄 Carica utenti dal database
+  const { data: usersData, isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
+
+  // Filtra utenti in base alla ricerca
+  const filteredUsers = usersData?.filter(user => {
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return fullName.includes(query) || user.email.toLowerCase().includes(query);
+  }) || [];
+
+  // Toggle selezione utente
+  const toggleUser = (userId: string) => {
+    setSelectedUserIds(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // Rimuovi utente dai selezionati
+  const removeUser = (userId: string) => {
+    setSelectedUserIds(prev => prev.filter(id => id !== userId));
+  };
 
   const handleSave = useCallback(() => {
     onSave(node.id, {
-      userIds: userIds.split(',').map(id => id.trim()).filter(Boolean),
+      userIds: selectedUserIds,
       assignmentType,
       waitForAll: assignmentType === 'all'
     });
     onClose();
-  }, [userIds, assignmentType, node.id, onSave, onClose]);
+  }, [selectedUserIds, assignmentType, node.id, onSave, onClose]);
+
+  // Ottieni informazioni utenti selezionati
+  const selectedUsers = usersData?.filter(u => selectedUserIds.includes(u.id)) || [];
 
   return (
     <div className="space-y-4">
+      {/* Utenti Selezionati */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          👤 Utenti Selezionati ({selectedUserIds.length})
+          <InfoTooltip 
+            title="Selezione Multipla Utenti"
+            description="Seleziona uno o più utenti a cui assegnare il workflow. Puoi cercare per nome o email."
+            examples={[
+              "Mario Rossi (mario.rossi@example.com)",
+              "Laura Bianchi (laura.bianchi@example.com)"
+            ]}
+            notes="Usa la ricerca per trovare rapidamente gli utenti"
+          />
+        </label>
+        {selectedUsers.length > 0 ? (
+          <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border-2 border-gray-200 rounded-lg min-h-[60px]">
+            {selectedUsers.map(user => (
+              <Badge 
+                key={user.id} 
+                variant="secondary" 
+                className="px-3 py-1.5 bg-windtre-orange/10 text-windtre-orange border border-windtre-orange/30 hover:bg-windtre-orange/20"
+              >
+                <span className="font-medium">
+                  {user.firstName && user.lastName 
+                    ? `${user.firstName} ${user.lastName}` 
+                    : user.email}
+                </span>
+                <button
+                  onClick={() => removeUser(user.id)}
+                  className="ml-2 hover:text-red-600 transition-colors"
+                  data-testid={`remove-user-${user.id}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-500">
+            Nessun utente selezionato. Cerca e seleziona utenti dalla lista sotto.
+          </div>
+        )}
+      </div>
+
+      {/* Ricerca e Selezione Utenti */}
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-2">
-          👤 User IDs (separati da virgola)
+          🔍 Cerca e Seleziona Utenti
         </label>
-        <textarea 
-          value={userIds}
-          onChange={(e) => setUserIds(e.target.value)}
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg"
-          rows={3}
-          placeholder="user-id-1, user-id-2, {{userId}}"
-        />
+        
+        {/* Campo Ricerca */}
+        <div className="relative mb-2">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Cerca per nome o email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-user-search"
+          />
+        </div>
+
+        {/* Lista Utenti */}
+        {usersLoading ? (
+          <div className="p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-500">
+            ⏳ Caricamento utenti...
+          </div>
+        ) : filteredUsers.length > 0 ? (
+          <ScrollArea className="h-[200px] border-2 border-gray-200 rounded-lg">
+            <div className="p-2 space-y-1">
+              {filteredUsers.map(user => {
+                const isSelected = selectedUserIds.includes(user.id);
+                return (
+                  <div
+                    key={user.id}
+                    onClick={() => toggleUser(user.id)}
+                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'bg-windtre-orange/10 border-2 border-windtre-orange/30' 
+                        : 'hover:bg-gray-100 border-2 border-transparent'
+                    }`}
+                    data-testid={`user-option-${user.id}`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                      isSelected 
+                        ? 'bg-windtre-orange border-windtre-orange' 
+                        : 'border-gray-300'
+                    }`}>
+                      {isSelected && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">
+                        {user.firstName && user.lastName 
+                          ? `${user.firstName} ${user.lastName}` 
+                          : 'Utente senza nome'}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                      {user.department && (
+                        <div className="text-xs text-gray-400">📁 {user.department}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-500">
+            {searchQuery ? '🔍 Nessun utente trovato' : '⚠️ Nessun utente disponibile'}
+          </div>
+        )}
       </div>
 
       <div>
