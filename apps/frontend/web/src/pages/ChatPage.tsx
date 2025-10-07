@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { MessageCircle, Plus, Lock } from 'lucide-react';
 import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
+import { MessageList } from '@/components/chat/MessageList';
 
 interface ChatChannel {
   id: string;
@@ -57,10 +58,19 @@ function truncateMessage(text: string, maxLength: number = 40): string {
   return text.substring(0, maxLength) + '...';
 }
 
+interface UserData {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export default function ChatPage() {
   const [currentModule, setCurrentModule] = useState('chat');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
 
   // Query per ottenere lista chat channels
   const { data: channels = [], isLoading } = useQuery<ChatChannel[]>({
@@ -347,19 +357,13 @@ export default function ChatPage() {
                   </h3>
                 </div>
 
-                {/* Messages Area Placeholder */}
-                <div style={{
-                  flex: 1,
-                  padding: '24px',
-                  overflowY: 'auto',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <p style={{ color: '#6b7280', fontSize: '14px' }}>
-                    Area messaggi - Coming soon
-                  </p>
-                </div>
+                {/* Messages Area */}
+                {user?.id && (
+                  <MessageList 
+                    channelId={selectedChannelId} 
+                    currentUserId={user.id} 
+                  />
+                )}
 
                 {/* Message Composer Placeholder */}
                 <div style={{

@@ -18,7 +18,7 @@ import { logger } from '../core/logger';
 
 export class ChatService {
   
-  static async createChannel(channelData: InsertChatChannel): Promise<ChatChannel> {
+  static async createChannel(channelData: InsertChatChannel, memberUserIds: string[] = []): Promise<ChatChannel> {
     try {
       const [channel] = await db
         .insert(chatChannels)
@@ -30,10 +30,21 @@ export class ChatService {
         role: 'owner'
       });
       
+      for (const userId of memberUserIds) {
+        if (userId !== channelData.createdBy) {
+          await this.addMember(channel.id, channel.tenantId, {
+            userId,
+            role: 'member',
+            inviteStatus: 'accepted'
+          });
+        }
+      }
+      
       logger.info('💬 Chat channel created', { 
         channelId: channel.id, 
         type: channel.channelType,
-        tenantId: channel.tenantId 
+        tenantId: channel.tenantId,
+        membersAdded: memberUserIds.length 
       });
       
       return channel;

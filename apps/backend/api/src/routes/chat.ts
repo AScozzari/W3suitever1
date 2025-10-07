@@ -29,7 +29,8 @@ const createChannelBodySchema = insertChatChannelSchema
     name: z.string().min(1).max(200).optional(),
     description: z.string().max(1000).optional(),
     teamId: z.string().uuid().optional(),
-    taskId: z.string().uuid().optional()
+    taskId: z.string().uuid().optional(),
+    memberUserIds: z.array(z.string().uuid()).default([])
   });
 
 const updateChannelBodySchema = z.object({
@@ -92,12 +93,13 @@ router.post('/channels', requirePermission('chat.create'), async (req: Request, 
     const userId = req.user!.id;
     
     const parsed = createChannelBodySchema.parse(req.body);
+    const { memberUserIds, ...channelData } = parsed;
     
     const channel = await ChatService.createChannel({
-      ...parsed,
+      ...channelData,
       tenantId,
       createdBy: userId
-    });
+    }, memberUserIds);
     
     res.status(201).json(channel);
   } catch (error) {
