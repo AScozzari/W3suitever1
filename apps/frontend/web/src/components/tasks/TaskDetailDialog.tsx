@@ -78,7 +78,7 @@ export interface TaskDetailProps {
   };
   open: boolean;
   onClose: () => void;
-  onEdit?: () => void;
+  onEdit?: (task: TaskDetailProps['task']) => void;
   onDelete?: () => void;
   onStatusChange?: (status: string) => void;
   availableTasks?: Array<{ id: string; title: string; status: string; priority: string }>;
@@ -126,6 +126,7 @@ export function TaskDetailDialog({
   const [editTitle, setEditTitle] = useState('');
   const [newItemTitle, setNewItemTitle] = useState('');
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [newComment, setNewComment] = useState('');
 
   // Fetch complete task details when modal opens
   const { data: taskDetails } = useQuery({
@@ -249,6 +250,63 @@ export function TaskDetailDialog({
     },
   });
 
+  const addCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest(`/api/tasks/${task.id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
+    },
+    onMutate: async (content: string) => {
+      await queryClient.cancelQueries({ queryKey: ['/api/tasks', task.id] });
+      
+      const previousTask = queryClient.getQueryData(['/api/tasks', task.id]);
+      
+      queryClient.setQueryData(['/api/tasks', task.id], (old: any) => {
+        if (!old) return old;
+        
+        const optimisticComment = {
+          id: `temp-${Date.now()}`,
+          content,
+          createdAt: new Date().toISOString(),
+          user: {
+            id: currentUser?.id || 'temp-user',
+            name: currentUser?.firstName && currentUser?.lastName
+              ? `${currentUser.firstName} ${currentUser.lastName}`
+              : currentUser?.email || 'Tu',
+          },
+        };
+        
+        return {
+          ...old,
+          comments: [...(old.comments || []), optimisticComment],
+        };
+      });
+      
+      return { previousTask };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          Array.isArray(query.queryKey) && query.queryKey[0] === '/api/tasks'
+      });
+      setNewComment('');
+      toast({ title: 'Commento aggiunto' });
+    },
+    onError: (error: any, _content, context: any) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(['/api/tasks', task.id], context.previousTask);
+      }
+      
+      const errorMessage = error?.message || 'Impossibile aggiungere il commento';
+      toast({ 
+        title: 'Errore', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
+    },
+  });
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="max-w-[800px] max-h-[95vh] overflow-y-auto flex flex-col p-0" onInteractOutside={(e) => e.preventDefault()}>
@@ -310,7 +368,7 @@ export function TaskDetailDialog({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={onEdit}
+                  onClick={() => onEdit(fullTask)}
                   data-testid="button-edit"
                 >
                   <Edit className="h-4 w-4" />
@@ -651,31 +709,78 @@ export function TaskDetailDialog({
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4 mt-0">
-              {!fullTask.comments || fullTask.comments.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p>Nessun commento</p>
-                </div>
-              ) : (
-                fullTask.comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3" data-testid={`comment-${comment.id}`}>
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarFallback className="text-xs">
-                        {comment.user.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium" data-testid={`text-comment-user-${comment.id}`}>{comment.user.name}</span>
-                        <span className="text-xs text-gray-500" data-testid={`text-comment-date-${comment.id}`}>
-                          {format(new Date(comment.createdAt), 'PPp', { locale: it })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap" data-testid={`text-comment-content-${comment.id}`}>{comment.content}</p>
+              {/* Add Comment Input */}
+              <div className="sticky top-0 bg-white pb-4 border-b">
+                <div className="flex gap-3">
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarFallback className="text-xs bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                      {currentUser?.firstName?.substring(0, 1).toUpperCase() || 'U'}
+                      {currentUser?.lastName?.substring(0, 1).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Scrivi un commento..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      rows={3}
+                      disabled={addCommentMutation.isPending}
+                      data-testid="textarea-new-comment"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (newComment.trim()) {
+                            addCommentMutation.mutate(newComment.trim());
+                          }
+                        }}
+                        disabled={!newComment.trim() || addCommentMutation.isPending}
+                        className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                        data-testid="button-add-comment"
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        {addCommentMutation.isPending ? 'Invio...' : 'Aggiungi Commento'}
+                      </Button>
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+              </div>
+
+              {/* Comments Feed */}
+              <div className="space-y-4">
+                {!fullTask.comments || fullTask.comments.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nessun commento ancora</p>
+                    <p className="text-xs mt-1">Sii il primo a commentare!</p>
+                  </div>
+                ) : (
+                  fullTask.comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid={`comment-${comment.id}`}>
+                      <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-gray-500 to-gray-600 text-white">
+                          {comment.user.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-gray-900" data-testid={`text-comment-user-${comment.id}`}>
+                            {comment.user.name}
+                          </span>
+                          <span className="text-xs text-gray-500" data-testid={`text-comment-date-${comment.id}`}>
+                            {format(new Date(comment.createdAt), 'PPp', { locale: it })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed" data-testid={`text-comment-content-${comment.id}`}>
+                          {comment.content}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="attachments" className="space-y-4 mt-0">

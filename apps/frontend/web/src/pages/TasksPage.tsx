@@ -290,12 +290,10 @@ export default function TasksPage() {
     setSelectedTask(null);
   };
 
-  const handleEditTask = () => {
-    if (selectedTask) {
-      setTaskToEdit(selectedTask);
-      setIsEditDialogOpen(true);
-      setSelectedTask(null);
-    }
+  const handleEditTask = (task: Task) => {
+    setTaskToEdit(task);
+    setIsEditDialogOpen(true);
+    setSelectedTask(null);
   };
 
   const handleStartTimer = (taskId: string) => {
