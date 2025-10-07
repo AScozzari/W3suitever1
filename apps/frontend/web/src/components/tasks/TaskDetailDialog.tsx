@@ -425,11 +425,11 @@ export function TaskDetailDialog({
                             <div key={assignee.id} className="flex items-center gap-2" data-testid={`assignee-${assignee.id}`}>
                               <Avatar className="h-6 w-6">
                                 <AvatarFallback className="text-xs">
-                                  {assignee.name.substring(0, 2).toUpperCase()}
+                                  {(assignee.name || assignee.email || 'U').substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium" data-testid={`text-assignee-name-${assignee.id}`}>{assignee.name}</div>
+                                <div className="text-sm font-medium" data-testid={`text-assignee-name-${assignee.id}`}>{assignee.name || assignee.email || 'Utente'}</div>
                                 <div className="text-xs text-gray-500" data-testid={`text-assignee-role-${assignee.id}`}>{assignee.role}</div>
                               </div>
                             </div>
@@ -444,7 +444,7 @@ export function TaskDetailDialog({
                         <div className="flex flex-wrap gap-1">
                           {fullTask.watchers.map((watcher) => (
                             <Badge key={watcher.id} variant="secondary" className="text-xs">
-                              {watcher.name}
+                              {watcher.name || watcher.email || 'Utente'}
                             </Badge>
                           ))}
                         </div>
