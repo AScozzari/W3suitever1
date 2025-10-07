@@ -148,7 +148,7 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
 
             <div style={{
               display: 'flex',
-              flexDirection: isMine ? 'row-reverse' : 'row',
+              flexDirection: isMine ? 'row' : 'row-reverse',
               gap: '12px',
               alignItems: 'flex-start'
             }}>
@@ -215,7 +215,7 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  justifyContent: isMine ? 'flex-end' : 'flex-start'
+                  justifyContent: isMine ? 'flex-start' : 'flex-end'
                 }}>
                   <div style={{
                     fontSize: '11px',
