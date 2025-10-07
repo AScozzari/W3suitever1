@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed to provide a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a distinctive WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system enables centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and robust platform addressing diverse business needs.
+W3 Suite is a multi-tenant enterprise platform offering a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a unique WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system enables centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and robust platform addressing diverse business needs.
 
 # User Preferences
 
@@ -197,12 +197,12 @@ The project utilizes an enterprise monorepo structure, separating tenant-facing 
 - **Organizational Hierarchy**: Manages relationships among TENANTs, Legal Entities, Sales Points, and Users.
 - **Brand Interface Features**: Centralized Super Admin, cross-tenant campaign/pricing management, and event propagation via BullMQ.
 - **Data Architecture Patterns**: Brand Base + Tenant Override for collaborative entities; Brand-Only for Brand-controlled entities.
-- **Universal Workflow System**: Comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails.
+- **Universal Workflow System**: Comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, visual workflow builder, and audit trails. Dual-Mode Workflow Execution (SYNC/ASYNC based on `REDIS_URL`).
 - **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
 - **Unified Notification System**: Real-time notifications across 7 business categories with Redis + WebSocket architecture and PostgreSQL fallback.
-- **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management, including clock-in/out matching, deviation tracking, compliance rules, and overwrite protection.
-- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, raw body capture for HMAC signature validation, Redis queue with automatic DB fallback, 4-tier priority worker, DB-based deduplication, integration with workflow engine, complete audit trail, and RBAC-protected management endpoints.
-- **Task Management System**: Comprehensive flexible task system with optional workflow integration, 8 database tables, 35+ RBAC-protected API endpoints (CRUD, assignments, comments, time tracking, dependencies, templates, bulk operations), and a feature-rich frontend.
+- **HR Time Tracking Auto-Match System**: Automatic matching between `time_tracking` entries and `shift_assignments` for attendance management.
+- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, Redis queue, priority worker, deduplication, workflow engine integration, and audit trail.
+- **Task Management System**: Flexible task system with optional workflow integration, RBAC-protected API endpoints, and a feature-rich frontend.
 
 # External Dependencies
 

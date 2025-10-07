@@ -1486,15 +1486,6 @@ router.post('/instances/:id/execute', rbacMiddleware, requirePermission('workflo
     const { isRedisAvailable } = await import('../queue/index.js');
     const redisAvailable = await isRedisAvailable();
 
-    if (!redisAvailable) {
-      return res.status(503).json({
-        success: false,
-        error: 'Async workflow execution unavailable',
-        message: 'Redis is not available. Async workflow execution requires Redis. Please configure REDIS_URL environment variable or use synchronous workflow engine.',
-        timestamp: new Date().toISOString()
-      } as ApiErrorResponse);
-    }
-
     const instance = await db.query.workflowInstances.findFirst({
       where: and(
         eq(workflowInstances.id, instanceId),
@@ -1517,60 +1508,137 @@ router.post('/instances/:id/execute', rbacMiddleware, requirePermission('workflo
       } as ApiErrorResponse);
     }
 
-    const { enqueueWorkflowStep } = await import('../queue/index.js');
-    
-    const steps = (instance.template as any)?.steps || [];
-    const enqueuedSteps = [];
+    // ASYNC MODE (with Redis)
+    if (redisAvailable) {
+      const { enqueueWorkflowStep } = await import('../queue/index.js');
+      
+      const steps = (instance.template as any)?.steps || [];
+      const enqueuedSteps = [];
 
-    for (const step of steps) {
-      const job = await enqueueWorkflowStep({
-        instanceId: instance.id,
+      for (const step of steps) {
+        const job = await enqueueWorkflowStep({
+          instanceId: instance.id,
+          tenantId,
+          stepId: step.nodeId,
+          stepName: step.name,
+          attemptNumber: 1,
+          inputData: step.config || {}
+        });
+
+        enqueuedSteps.push({
+          stepId: step.nodeId,
+          stepName: step.name,
+          jobId: job.id
+        });
+      }
+
+      await db
+        .update(workflowInstances)
+        .set({
+          currentStatus: 'executing',
+          startedAt: new Date(),
+          updatedBy: userId
+        })
+        .where(eq(workflowInstances.id, instanceId));
+
+      logger.info('Workflow execution started (ASYNC)', {
+        instanceId,
         tenantId,
-        stepId: step.nodeId,
-        stepName: step.name,
-        attemptNumber: 1,
-        inputData: step.config || {}
+        stepsEnqueued: enqueuedSteps.length,
+        userId
       });
 
-      enqueuedSteps.push({
-        stepId: step.nodeId,
-        stepName: step.name,
-        jobId: job.id
-      });
+      return res.status(200).json({
+        success: true,
+        data: {
+          instanceId,
+          status: 'executing',
+          mode: 'async',
+          stepsEnqueued: enqueuedSteps.length,
+          steps: enqueuedSteps
+        },
+        message: 'Workflow execution started (async mode)',
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse<{
+        instanceId: string;
+        status: string;
+        mode: string;
+        stepsEnqueued: number;
+        steps: any[];
+      }>);
     }
 
+    // SYNC MODE (without Redis - Development)
+    logger.info('Starting workflow execution (SYNC mode - no Redis)', {
+      instanceId,
+      tenantId,
+      userId
+    });
+
+    const { workflowEngine } = await import('../services/workflow-engine.js');
+    
+    // Update status to running
     await db
       .update(workflowInstances)
       .set({
-        currentStatus: 'executing',
+        currentStatus: 'running',
         startedAt: new Date(),
         updatedBy: userId
       })
       .where(eq(workflowInstances.id, instanceId));
 
-    logger.info('Workflow execution started', {
-      instanceId,
-      tenantId,
-      stepsEnqueued: enqueuedSteps.length,
-      userId
-    });
+    // Execute workflow synchronously using ReactFlow engine
+    try {
+      const result = await workflowEngine.executeReactFlowWorkflow(instanceId, {
+        tenantId,
+        requesterId: userId || 'system',
+        initiatedAt: new Date().toISOString()
+      });
 
-    res.status(200).json({
-      success: true,
-      data: {
+      logger.info('Workflow execution completed (SYNC)', {
         instanceId,
-        status: 'executing',
-        stepsEnqueued: enqueuedSteps.length,
-        steps: enqueuedSteps
-      },
-      message: 'Workflow execution started',
-      timestamp: new Date().toISOString()
-    } as ApiSuccessResponse<{
-      instanceId: string;
-      status: string;
-      stepsEnqueued: number;
-      steps: any[];
-    }>);
+        success: result.success,
+        finalStatus: result.finalStatus
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          instanceId,
+          status: result.finalStatus,
+          mode: 'sync',
+          executionDetails: result
+        },
+        message: 'Workflow execution completed (sync mode)',
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse<{
+        instanceId: string;
+        status: string;
+        mode: string;
+        executionDetails: any;
+      }>);
+    } catch (executionError: any) {
+      logger.error('Sync workflow execution failed', {
+        instanceId,
+        error: executionError.message
+      });
+
+      // Mark as failed
+      await db
+        .update(workflowInstances)
+        .set({
+          currentStatus: 'failed',
+          updatedBy: userId
+        })
+        .where(eq(workflowInstances.id, instanceId));
+
+      res.status(500).json({
+        success: false,
+        error: 'Workflow execution failed',
+        message: executionError.message,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
   } catch (error: any) {
     logger.error('Error starting workflow execution', { error, instanceId: req.params.id });
