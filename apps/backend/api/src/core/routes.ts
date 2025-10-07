@@ -59,6 +59,8 @@ import {
   stores as w3suiteStores, 
   stores, 
   userStores,
+  userAssignments,
+  roles,
   legalEntities,
   InsertTenant, 
   InsertLegalEntity, 
@@ -2182,10 +2184,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== USER MANAGEMENT API ====================
 
-  // Get users for current tenant
+  // Get users for current tenant (with optional role and store filters)
   app.get('/api/users', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { roleId, storeId } = req.query;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -2194,8 +2197,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const users = await storage.getUsersByTenant(tenantId);
-      res.json(users);
+      // If no filters, use standard method
+      if (!roleId && !storeId) {
+        const users = await storage.getUsersByTenant(tenantId);
+        return res.json(users);
+      }
+
+      // Apply filters with custom query
+      await setTenantContext(tenantId);
+
+      let conditions = [eq(users.tenantId, tenantId)];
+      
+      // Build query with joins
+      let query = db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          tenantId: users.tenantId,
+          role: users.role,
+          role_name: roles.name,
+        })
+        .from(users)
+        .leftJoin(userAssignments, eq(users.id, userAssignments.userId))
+        .leftJoin(roles, eq(userAssignments.roleId, roles.id));
+
+      // Filter by roleId if provided
+      if (roleId) {
+        conditions.push(eq(userAssignments.roleId, roleId as string));
+      }
+
+      // Filter by storeId (scope) if provided
+      if (storeId) {
+        conditions.push(
+          and(
+            eq(userAssignments.scopeType, 'store'),
+            eq(userAssignments.scopeId, storeId as string)
+          ) as any
+        );
+      }
+
+      const result = await query.where(and(...conditions));
+
+      // Deduplicate users by ID
+      const uniqueUsers = Array.from(
+        new Map(result.map(user => [user.id, user])).values()
+      );
+
+      res.json(uniqueUsers);
     } catch (error) {
       handleApiError(error, res, 'recupero utenti');
     }
