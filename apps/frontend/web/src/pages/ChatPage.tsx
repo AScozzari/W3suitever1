@@ -28,6 +28,11 @@ interface ChatChannel {
     headerColor?: string;
     backgroundPattern?: string;
   };
+  dmUser?: {
+    id: string;
+    email: string;
+    name: string;
+  } | null;
 }
 
 // Helper function to format relative timestamps
@@ -310,7 +315,7 @@ export default function ChatPage() {
                           fontWeight: 600
                         }}>
                           {channel.channelType === 'dm' 
-                            ? '💬' 
+                            ? (channel.dmUser?.name?.slice(0, 2).toUpperCase() || '💬')
                             : (channel.name || 'CH').slice(0, 2).toUpperCase()}
                         </div>
                       )}
@@ -332,7 +337,7 @@ export default function ChatPage() {
                             flex: 1
                           }}>
                             {channel.channelType === 'dm' 
-                              ? 'Chat Diretta' 
+                              ? (channel.dmUser?.name || 'Chat Diretta')
                               : (channel.name || 'Canale Senza Nome')}
                             {channel.visibility === 'private' && (
                               <Lock size={12} style={{ 

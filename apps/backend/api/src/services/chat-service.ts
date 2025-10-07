@@ -146,12 +146,47 @@ export class ChatService {
         
         const memberCount = memberCountResult?.count || 0;
 
+        // For DM channels, get the other user's info
+        let dmUserInfo = null;
+        if (channel.channelType === 'dm') {
+          const members = await db
+            .select({ userId: chatChannelMembers.userId })
+            .from(chatChannelMembers)
+            .where(eq(chatChannelMembers.channelId, channel.id));
+          
+          const otherUserId = members.find(m => m.userId !== userId)?.userId;
+          
+          if (otherUserId) {
+            const [otherUser] = await db
+              .select({
+                id: users.id,
+                email: users.email,
+                firstName: users.firstName,
+                lastName: users.lastName
+              })
+              .from(users)
+              .where(eq(users.id, otherUserId))
+              .limit(1);
+            
+            if (otherUser) {
+              dmUserInfo = {
+                id: otherUser.id,
+                email: otherUser.email,
+                name: otherUser.firstName && otherUser.lastName 
+                  ? `${otherUser.firstName} ${otherUser.lastName}`
+                  : otherUser.firstName || otherUser.lastName || otherUser.email
+              };
+            }
+          }
+        }
+
         return {
           ...channel,
           lastMessage: lastMessage || null,
           lastMessageAt: lastMessage?.createdAt || channel.createdAt,
           unreadCount,
-          memberCount
+          memberCount,
+          dmUser: dmUserInfo
         };
       })
     );
