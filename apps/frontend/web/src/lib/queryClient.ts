@@ -226,8 +226,8 @@ export const queryClient = new QueryClient({
           throw new Error(`${res.status}: ${res.statusText}`);
         }
         const data = await res.json();
-        // API response processed
-        return data;
+        // API response processed - handle both wrapped {data: ...} and raw responses
+        return data?.data ?? data;
       },
       staleTime: 1000 * 60,
       gcTime: 1000 * 60 * 5,
