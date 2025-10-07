@@ -658,7 +658,7 @@ export default function ChatPage() {
                             data-testid="button-show-members"
                             style={{
                               fontSize: '13px',
-                              color: 'rgba(255, 255, 255, 0.9)',
+                              color: '#6b7280',
                               background: 'none',
                               border: 'none',
                               cursor: 'pointer',
@@ -667,13 +667,15 @@ export default function ChatPage() {
                               display: 'flex',
                               alignItems: 'center',
                               gap: '4px',
-                              transition: 'background 0.15s ease'
+                              transition: 'all 0.15s ease'
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                              e.currentTarget.style.background = 'rgba(107, 114, 128, 0.1)';
+                              e.currentTarget.style.color = '#1f2937';
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = '#6b7280';
                             }}
                           >
                             <Users size={14} />
@@ -694,24 +696,26 @@ export default function ChatPage() {
                           onClick={() => setEditDialogOpen(true)}
                           data-testid="button-edit-channel"
                           style={{
-                            background: 'rgba(255, 255, 255, 0.2)',
-                            border: 'none',
+                            background: 'rgba(107, 114, 128, 0.1)',
+                            border: '1px solid rgba(107, 114, 128, 0.2)',
                             borderRadius: '8px',
                             padding: '8px 12px',
-                            color: 'white',
+                            color: '#1f2937',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                             fontSize: '14px',
                             fontWeight: 500,
-                            transition: 'background 0.15s ease'
+                            transition: 'all 0.15s ease'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                            e.currentTarget.style.background = 'rgba(107, 114, 128, 0.2)';
+                            e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.3)';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                            e.currentTarget.style.background = 'rgba(107, 114, 128, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.2)';
                           }}
                         >
                           <Settings size={16} />
