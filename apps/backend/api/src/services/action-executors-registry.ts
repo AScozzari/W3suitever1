@@ -8,6 +8,7 @@
 import { logger } from '../core/logger';
 import { notificationService } from '../core/notification-service';
 import { UnifiedOpenAIService } from './unified-openai';
+import { AIRegistryService, RegistryAwareContext } from './ai-registry-service';
 
 // ==================== INTERFACES ====================
 
@@ -336,61 +337,72 @@ export class DecisionEvaluator implements ActionExecutor {
 
 /**
  * 🧠 AI DECISION EXECUTOR
- * Uses UnifiedOpenAIService for intelligent decision making
+ * Uses workflow-assistant agent from AI Registry for intelligent decision making
  */
 export class AiDecisionExecutor implements ActionExecutor {
   executorId = 'ai-decision-executor';
-  description = 'Uses AI to make intelligent decisions based on context';
+  description = 'Uses workflow-assistant AI agent to make intelligent decisions based on context';
+  private aiRegistry: AIRegistryService | null = null;
 
   async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
     try {
-      logger.info('🧠 [EXECUTOR] Executing AI decision', {
+      logger.info('🧠 [EXECUTOR] Executing AI decision with workflow-assistant agent', {
         stepId: step.nodeId,
         context: context?.tenantId
       });
 
-      // Import and create UnifiedOpenAIService
-      const { createUnifiedOpenAIService } = await import('./unified-openai');
-      const { storage } = await import('../core/storage');
-      const openaiService = createUnifiedOpenAIService(storage);
+      // Initialize AI Registry if not already done
+      if (!this.aiRegistry) {
+        const { storage } = await import('../core/storage');
+        this.aiRegistry = new AIRegistryService(storage);
+      }
 
       const config = step.config || {};
-      const systemPrompt = config.prompt || 'You are a workflow decision assistant. Analyze requests and provide decisions with clear reasoning.';
-      const model = config.model || 'gpt-3.5-turbo';
+      const userPrompt = config.prompt || 'Analyze this workflow decision request and provide a decision with clear reasoning.';
+      const maxTokens = config.parameters?.maxTokens || 500;
 
-      // Prepare message for AI
-      const userMessage = `
-        Workflow Decision Request:
-        - Step: ${step.config?.label || 'Decision Point'}
-        - Request Data: ${JSON.stringify(inputData, null, 2)}
-        - Context: Tenant ${context?.tenantId}, Requester ${context?.requesterId}
-        
-        Please analyze this information and provide a decision. Respond in JSON format:
-        {"decision": "approve|reject|escalate", "reason": "clear explanation", "confidence": "high|medium|low"}
+      // Prepare message for AI with structured context
+      const aiInput = `
+Workflow Decision Request:
+- Step: ${step.config?.label || 'Decision Point'}
+- Request Data: ${JSON.stringify(inputData, null, 2)}
+- Context: Tenant ${context?.tenantId}, Requester ${context?.requesterId}
+
+${userPrompt}
+
+Please analyze this information and provide a decision. Respond in JSON format:
+{"decision": "approve|reject|escalate", "reason": "clear explanation", "confidence": "high|medium|low"}
       `;
 
-      // Call UnifiedOpenAIService
+      // Use workflow-assistant agent from registry
+      // Model and temperature are inherited from agent configuration
       const aiSettings = {
-        openaiModel: model,
-        systemPrompt,
-        maxTokens: 200,
-        temperature: 0.3
+        openaiModel: '', // Will be overridden by agent's baseConfiguration
+        systemPrompt: '', // Will be overridden by agent's systemPrompt
+        maxTokens, // Respect UI configuration
+        temperature: 0 // Will be overridden by agent's baseConfiguration
       };
 
-      const requestContext = {
+      const registryContext: RegistryAwareContext = {
+        agentId: 'workflow-assistant', // Use centralized workflow agent
         tenantId: context?.tenantId || 'default',
         userId: context?.requesterId || 'system',
         moduleContext: 'workflow',
         businessEntityId: context?.instanceId
       };
 
-      const response = await openaiService.chatAssistant(
-        userMessage,
-        aiSettings,
-        requestContext
+      logger.info('🤖 [EXECUTOR] Calling workflow-assistant agent', {
+        agentId: 'workflow-assistant',
+        maxTokens
+      });
+
+      const response = await this.aiRegistry.createUnifiedResponse(
+        aiInput,
+        aiSettings as any,
+        registryContext
       );
 
-      if (!response.success || !response.content) {
+      if (!response.success || !response.output) {
         throw new Error('AI service returned unsuccessful response');
       }
 
@@ -400,28 +412,34 @@ export class AiDecisionExecutor implements ActionExecutor {
       let confidence = 'medium';
       
       try {
-        const parsed = JSON.parse(response.content);
+        const parsed = JSON.parse(response.output);
         decision = parsed.decision || 'approve';
         reason = parsed.reason || 'AI analysis completed';
         confidence = parsed.confidence || 'medium';
       } catch {
         // Fallback: simple text parsing
-        const aiResponse = response.content.toLowerCase();
+        const aiResponse = response.output.toLowerCase();
         if (aiResponse.includes('reject')) {
           decision = 'reject';
         } else if (aiResponse.includes('escalate')) {
           decision = 'escalate';
         }
-        reason = response.content;
+        reason = response.output;
       }
+
+      logger.info('✅ [EXECUTOR] AI decision completed', {
+        decision,
+        confidence,
+        agentUsed: 'workflow-assistant'
+      });
 
       return {
         success: true,
         message: `AI Decision: ${decision} - ${reason}`,
         decision,
         data: {
-          aiResponse: response.content,
-          model,
+          aiResponse: response.output,
+          agentId: 'workflow-assistant',
           confidence,
           inputData,
           evaluatedAt: new Date().toISOString(),
