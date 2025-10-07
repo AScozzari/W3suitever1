@@ -147,6 +147,7 @@ export function TaskFormDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showUserSelector, setShowUserSelector] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [userRoles, setUserRoles] = useState<Record<string, 'assignee' | 'watcher'>>({});
   const [newChecklistItem, setNewChecklistItem] = useState('');
@@ -173,9 +174,34 @@ export function TaskFormDialog({
     },
   });
 
+  // Get selected storeId from form to use for scope filtering
+  const selectedStoreId = form.watch('storeId');
+
+  // Build query params for user filtering
+  const userQueryParams = new URLSearchParams();
+  if (selectedRoleFilter && selectedRoleFilter !== 'all') {
+    userQueryParams.append('roleId', selectedRoleFilter);
+  }
+  if (selectedStoreId) {
+    userQueryParams.append('storeId', selectedStoreId);
+  }
+  const userQueryString = userQueryParams.toString();
+
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-    enabled: open,
+    queryKey: ['/api/users', userQueryString],
+    queryFn: () => {
+      const url = userQueryString ? `/api/users?${userQueryString}` : '/api/users';
+      return fetch(url, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      }).then(res => res.json());
+    },
+    enabled: open && showUserSelector,
+  });
+
+  const { data: roles = [] } = useQuery<any[]>({
+    queryKey: ['/api/roles'],
+    enabled: open && showUserSelector,
   });
 
   const { data: stores = [] } = useQuery<any[]>({
@@ -981,6 +1007,30 @@ export function TaskFormDialog({
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Role Filter */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                Filtra per Ruolo
+              </label>
+              <Select
+                value={selectedRoleFilter}
+                onValueChange={setSelectedRoleFilter}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Tutti i ruoli" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  {roles.map((role: any) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search Bar */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -1067,6 +1117,7 @@ export function TaskFormDialog({
                 setSelectedUserIds([]);
                 setUserRoles({});
                 setUserSearchQuery('');
+                setSelectedRoleFilter('all');
               }}
             >
               Annulla
