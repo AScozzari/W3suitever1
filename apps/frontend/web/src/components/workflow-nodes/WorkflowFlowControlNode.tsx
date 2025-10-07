@@ -28,8 +28,134 @@ const FLOW_ICONS: Record<string, any> = {
 export function WorkflowFlowControlNode({ data, selected }: NodeProps<FlowControlNodeData>) {
   const Icon = FLOW_ICONS[data.id] || GitBranch;
   
-  // IF e Switch hanno handle multipli per branches
-  const hasMultipleOutputs = data.id === 'if-condition' || data.id === 'switch-case';
+  // Render handles based on node type
+  const renderHandles = () => {
+    switch (data.id) {
+      case 'if-condition':
+        // IF: true/false paths
+        return (
+          <>
+            <Handle 
+              type="source" 
+              position={Position.Bottom} 
+              id="true"
+              className="handle-source"
+              style={{ background: '#22c55e', left: '30%' }}
+              data-testid="handle-if-true"
+            />
+            <Handle 
+              type="source" 
+              position={Position.Bottom} 
+              id="false"
+              className="handle-source"
+              style={{ background: '#ef4444', left: '70%' }}
+              data-testid="handle-if-false"
+            />
+          </>
+        );
+      
+      case 'switch-case':
+        // SWITCH: Multiple case handles + default
+        const cases = data.config?.cases || [];
+        const totalHandles = cases.length + 1; // cases + default
+        return (
+          <>
+            {cases.map((caseItem: any, index: number) => (
+              <Handle
+                key={`case-${caseItem.value}`}
+                type="source"
+                position={Position.Bottom}
+                id={`case-${caseItem.value}`}
+                className="handle-source"
+                style={{ 
+                  background: data.color,
+                  left: `${((index + 1) / (totalHandles + 1)) * 100}%`
+                }}
+                data-testid={`handle-case-${caseItem.value}`}
+              />
+            ))}
+            <Handle
+              type="source"
+              position={Position.Bottom}
+              id="default"
+              className="handle-source"
+              style={{ 
+                background: '#6b7280',
+                left: `${((totalHandles) / (totalHandles + 1)) * 100}%`
+              }}
+              data-testid="handle-switch-default"
+            />
+          </>
+        );
+      
+      case 'while-loop':
+        // WHILE: continue (loop) + exit paths
+        return (
+          <>
+            <Handle 
+              type="source" 
+              position={Position.Bottom} 
+              id="continue"
+              className="handle-source"
+              style={{ background: '#3b82f6', left: '30%' }}
+              data-testid="handle-loop-continue"
+            />
+            <Handle 
+              type="source" 
+              position={Position.Bottom} 
+              id="exit"
+              className="handle-source"
+              style={{ background: '#10b981', left: '70%' }}
+              data-testid="handle-loop-exit"
+            />
+          </>
+        );
+      
+      case 'parallel-fork':
+        // PARALLEL: Multiple branch handles
+        const branches = data.config?.branches || [];
+        return (
+          <>
+            {branches.map((branch: any, index: number) => (
+              <Handle
+                key={`branch-${index}`}
+                type="source"
+                position={Position.Bottom}
+                id={`branch-${index}`}
+                className="handle-source"
+                style={{ 
+                  background: data.color,
+                  left: `${((index + 1) / (branches.length + 1)) * 100}%`
+                }}
+                data-testid={`handle-parallel-branch-${index}`}
+              />
+            ))}
+          </>
+        );
+      
+      case 'join-sync':
+        // JOIN: Single output after sync
+        return (
+          <Handle 
+            type="source" 
+            position={Position.Bottom} 
+            className="handle-source"
+            style={{ background: data.color }}
+            data-testid="handle-join-output"
+          />
+        );
+      
+      default:
+        return (
+          <Handle 
+            type="source" 
+            position={Position.Bottom} 
+            className="handle-source"
+            style={{ background: data.color }}
+          />
+        );
+    }
+  };
   
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
@@ -38,6 +164,7 @@ export function WorkflowFlowControlNode({ data, selected }: NodeProps<FlowContro
         position={Position.Top} 
         className="handle-target"
         style={{ background: data.color }}
+        data-testid={`handle-${data.id}-input`}
       />
       
       <Card className={`min-w-[200px] windtre-glass-panel border-2 transition-all ${
@@ -62,32 +189,7 @@ export function WorkflowFlowControlNode({ data, selected }: NodeProps<FlowContro
         </CardContent>
       </Card>
       
-      {/* Multiple handles for branching nodes */}
-      {hasMultipleOutputs ? (
-        <>
-          <Handle 
-            type="source" 
-            position={Position.Bottom} 
-            id="true"
-            className="handle-source"
-            style={{ background: '#22c55e', left: '30%' }}
-          />
-          <Handle 
-            type="source" 
-            position={Position.Bottom} 
-            id="false"
-            className="handle-source"
-            style={{ background: '#ef4444', left: '70%' }}
-          />
-        </>
-      ) : (
-        <Handle 
-          type="source" 
-          position={Position.Bottom} 
-          className="handle-source"
-          style={{ background: data.color }}
-        />
-      )}
+      {renderHandles()}
     </div>
   );
 }
