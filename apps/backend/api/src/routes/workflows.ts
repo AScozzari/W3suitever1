@@ -223,11 +223,21 @@ router.get('/templates/:id', async (req, res) => {
       } as ApiErrorResponse);
     }
 
+    // ✅ Transform data to match frontend interface: wrap nodes/edges/viewport in definition object
+    const transformedTemplate = {
+      ...template,
+      definition: {
+        nodes: template.nodes || [],
+        edges: template.edges || [],
+        viewport: template.viewport || { x: 0, y: 0, zoom: 1 }
+      }
+    };
+
     res.json({
       success: true,
-      data: template,
+      data: transformedTemplate,
       timestamp: new Date().toISOString()
-    } as ApiSuccessResponse<typeof template>);
+    } as ApiSuccessResponse<typeof transformedTemplate>);
 
   } catch (error) {
     logger.error('Error fetching workflow template', { error, templateId: req.params.id });

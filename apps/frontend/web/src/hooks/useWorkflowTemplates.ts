@@ -98,7 +98,10 @@ export function useWorkflowTemplate(templateId: string | null) {
     queryKey: TEMPLATE_QUERY_KEYS.detail(templateId || ''),
     queryFn: async () => {
       if (!templateId) throw new Error('Template ID is required');
-      return apiRequest(`/api/workflows/templates/${templateId}`);
+      const response = await apiRequest(`/api/workflows/templates/${templateId}`);
+      // API returns { success: true, data: {...} }
+      // Extract just the template object
+      return response?.data || null;
     },
     enabled: !!templateId,
     refetchOnWindowFocus: false,
