@@ -309,7 +309,9 @@ export default function ChatPage() {
                           fontSize: '14px',
                           fontWeight: 600
                         }}>
-                          {channel.name.slice(0, 2).toUpperCase()}
+                          {channel.channelType === 'dm' 
+                            ? '💬' 
+                            : (channel.name || 'CH').slice(0, 2).toUpperCase()}
                         </div>
                       )}
 
@@ -329,7 +331,9 @@ export default function ChatPage() {
                             textOverflow: 'ellipsis',
                             flex: 1
                           }}>
-                            {channel.name}
+                            {channel.channelType === 'dm' 
+                              ? 'Chat Diretta' 
+                              : (channel.name || 'Canale Senza Nome')}
                             {channel.visibility === 'private' && (
                               <Lock size={12} style={{ 
                                 marginLeft: '4px',
