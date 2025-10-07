@@ -23,6 +23,28 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Typing indicator mutation
+  const typingMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/chat/channels/${channelId}/typing`, {
+        method: 'POST'
+      });
+    }
+  });
+
+  // Send typing indicator when user is typing (debounced 800ms)
+  useEffect(() => {
+    if (message.trim().length === 0) return;
+
+    const debounceTimer = setTimeout(() => {
+      if (!typingMutation.isPending) {
+        typingMutation.mutate();
+      }
+    }, 800);
+
+    return () => clearTimeout(debounceTimer);
+  }, [message]);
+
   // Emoji comuni
   const commonEmojis = [
     '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
@@ -41,7 +63,7 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
     },
     onSuccess: () => {
       setMessage('');
-      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels', channelId, 'messages'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/channels/${channelId}/messages`] });
       queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
       queryClient.invalidateQueries({ queryKey: ['/api/chat/unread-count'] });
       if (textareaRef.current) {
@@ -272,14 +294,16 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
                 </button>
               </PopoverTrigger>
               <PopoverContent 
-                className="w-[280px] p-2"
+                className="w-[220px] p-2"
                 align="end"
                 side="top"
               >
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(10, 1fr)',
-                  gap: '4px'
+                  gridTemplateColumns: 'repeat(6, 1fr)',
+                  gap: '4px',
+                  maxHeight: '280px',
+                  overflowY: 'auto'
                 }}>
                   {commonEmojis.map((emoji, index) => (
                     <button

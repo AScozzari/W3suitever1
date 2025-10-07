@@ -11,7 +11,7 @@ export function TypingIndicator({ channelId, currentUserId }: TypingIndicatorPro
 
   // Poll for typing indicators
   const { data } = useQuery<any[]>({
-    queryKey: ['/api/chat/channels', channelId, 'typing'],
+    queryKey: [`/api/chat/channels/${channelId}/typing`],
     enabled: !!channelId,
     refetchInterval: 2000,
     select: (data) => data?.filter((user: any) => user.userId !== currentUserId) || []

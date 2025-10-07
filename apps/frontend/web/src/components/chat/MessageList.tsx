@@ -181,8 +181,13 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
                 <div style={{
                   padding: '12px 16px',
                   borderRadius: '16px',
-                  background: isMine ? '#FF6900' : '#f3f4f6',
-                  color: isMine ? 'white' : '#1f2937',
+                  background: isMine 
+                    ? 'rgba(255, 105, 0, 0.15)'
+                    : '#f3f4f6',
+                  backdropFilter: isMine ? 'blur(10px)' : 'none',
+                  WebkitBackdropFilter: isMine ? 'blur(10px)' : 'none',
+                  border: isMine ? '1px solid rgba(255, 105, 0, 0.3)' : 'none',
+                  color: isMine ? '#1f2937' : '#1f2937',
                   fontSize: '14px',
                   lineHeight: '1.5',
                   wordBreak: 'break-word'
