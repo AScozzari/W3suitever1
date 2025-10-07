@@ -567,7 +567,8 @@ export class ChatService {
   static async createDMChannel(
     userId1: string,
     userId2: string,
-    tenantId: string
+    tenantId: string,
+    metadata?: { headerColor?: string; backgroundPattern?: string }
   ): Promise<ChatChannel> {
     const existingChannels = await db
       .select()
@@ -591,7 +592,8 @@ export class ChatService {
     const channel = await this.createChannel({
       tenantId,
       channelType: 'dm',
-      createdBy: userId1
+      createdBy: userId1,
+      ...(metadata && { metadata })
     });
 
     await this.addMember(channel.id, tenantId, {

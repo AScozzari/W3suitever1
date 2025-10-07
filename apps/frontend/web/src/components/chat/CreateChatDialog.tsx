@@ -74,6 +74,11 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
   // Fetch available users
   const { data: users = [], isLoading: usersLoading } = useQuery<UserOption[]>({
     queryKey: ['/api/users'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/users');
+      // Backend returns { success: true, data: [...] }, extract data array
+      return Array.isArray(response) ? response : (response?.data || []);
+    },
     enabled: open,
     staleTime: 60000
   });
@@ -81,12 +86,20 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
   // Create DM mutation
   const createDMMutation = useMutation({
     mutationFn: async (userId: string) => {
-      return apiRequest('/api/chat/channels/dm', {
+      const response = await apiRequest('/api/chat/channels/dm', {
         method: 'POST',
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ 
+          userId,
+          metadata: {
+            headerColor,
+            backgroundPattern
+          }
+        })
       });
+      // Backend may return channel directly or wrapped in { success, data }
+      return response?.data || response;
     },
-    onSuccess: (data) => {
+    onSuccess: (channel) => {
       toast({
         title: 'Chat creata',
         description: 'Chat diretta creata con successo'
@@ -94,7 +107,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
       queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
       queryClient.invalidateQueries({ queryKey: ['/api/chat/unread-count'] });
       onOpenChange(false);
-      if (onChatCreated) onChatCreated(data.id);
+      if (onChatCreated && channel?.id) onChatCreated(channel.id);
       resetForm();
     },
     onError: (error: any) => {
@@ -139,7 +152,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
         }
       }
       
-      return apiRequest('/api/chat/channels', {
+      const response = await apiRequest('/api/chat/channels', {
         method: 'POST',
         body: JSON.stringify({
           channelType: 'team',
@@ -153,8 +166,10 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
           }
         })
       });
+      // Backend may return channel directly or wrapped in { success, data }
+      return response?.data || response;
     },
-    onSuccess: (data) => {
+    onSuccess: (channel) => {
       toast({
         title: 'Gruppo creato',
         description: 'Gruppo creato con successo'
@@ -162,7 +177,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
       queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
       queryClient.invalidateQueries({ queryKey: ['/api/chat/unread-count'] });
       onOpenChange(false);
-      if (onChatCreated) onChatCreated(data.id);
+      if (onChatCreated && channel?.id) onChatCreated(channel.id);
       resetForm();
     },
     onError: (error: any) => {

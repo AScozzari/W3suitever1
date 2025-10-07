@@ -40,7 +40,11 @@ const updateChannelBodySchema = z.object({
 });
 
 const createDMBodySchema = z.object({
-  userId: z.string()
+  userId: z.string(),
+  metadata: z.object({
+    headerColor: z.string().optional(),
+    backgroundPattern: z.string().optional()
+  }).optional()
 });
 
 const createMessageBodySchema = z.object({
@@ -113,7 +117,7 @@ router.post('/channels/dm', requirePermission('chat.create'), async (req: Reques
     
     const parsed = createDMBodySchema.parse(req.body);
     
-    const channel = await ChatService.createDMChannel(userId, parsed.userId, tenantId);
+    const channel = await ChatService.createDMChannel(userId, parsed.userId, tenantId, parsed.metadata);
     
     res.status(201).json(channel);
   } catch (error) {

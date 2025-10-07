@@ -124,9 +124,15 @@ export function useWorkflowTimeline(filters: TimelineFilters = {}) {
     queryKey: ['/api/workflows/timeline', filters],
     queryFn: async () => {
       const response = await apiRequest(url);
-      return response.data;
+      // apiRequest returns { success, data, timestamp }
+      // Extract data.data if nested, otherwise use data directly
+      if (response?.data?.entries) {
+        return response.data; // Already has { entries, pagination }
+      }
+      // Fallback: response might be { success, data: { data: {...} } }
+      return response?.data?.data || response?.data || { entries: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0, hasNext: false, hasPrev: false } };
     },
-    refetchInterval: 15000, // Aggiorna ogni 15 secondi per timeline real-time
+    refetchInterval: 15000,
     staleTime: 5000,
   });
 }
