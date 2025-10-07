@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Node } from '@xyflow/react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +14,15 @@ interface NodeConfigPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (nodeId: string, config: any) => void;
+}
+
+interface Role {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  createdAt: string;
 }
 
 /**
@@ -607,10 +617,15 @@ function SendEmailConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
  */
 function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
   const config = (node.data.config || {}) as any;
-  const [approverRole, setApproverRole] = useState((config.roles && config.roles[0]) || 'manager');
+  const [approverRole, setApproverRole] = useState((config.roles && config.roles[0]) || '');
   const [message, setMessage] = useState(config.message || '');
   const [timeoutHours, setTimeoutHours] = useState(config.timeout?.hours || 72);
   const [escalationEnabled, setEscalationEnabled] = useState(config.escalation?.enabled || false);
+
+  // 🔄 Carica ruoli reali dal database
+  const { data: rolesData, isLoading: rolesLoading } = useQuery<{ roles: Role[] }>({
+    queryKey: ['/api/roles'],
+  });
 
   const handleSave = useCallback(() => {
     onSave(node.id, {
@@ -644,13 +659,22 @@ function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: 
             notes="Gli utenti con questo ruolo riceveranno la notifica di approvazione"
           />
         </label>
-        <Select value={approverRole} onValueChange={setApproverRole}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <Select value={approverRole} onValueChange={setApproverRole} disabled={rolesLoading}>
+          <SelectTrigger data-testid="select-approver-role">
+            <SelectValue placeholder={rolesLoading ? "Caricamento ruoli..." : "Seleziona ruolo"} />
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="manager">👨‍💼 Manager</SelectItem>
-            <SelectItem value="hr">👥 HR</SelectItem>
-            <SelectItem value="finance">💰 Finance</SelectItem>
-            <SelectItem value="admin">🔐 Admin</SelectItem>
+            {rolesLoading ? (
+              <SelectItem value="loading" disabled>⏳ Caricamento...</SelectItem>
+            ) : rolesData?.roles && rolesData.roles.length > 0 ? (
+              rolesData.roles.map((role) => (
+                <SelectItem key={role.id} value={role.name}>
+                  {role.name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no-roles" disabled>⚠️ Nessun ruolo disponibile</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
