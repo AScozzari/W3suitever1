@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -34,9 +34,9 @@ export default function NodeConfigPanel({ node, isOpen, onClose, onSave }: NodeC
           <DialogTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
             🎛️ Configurazione Nodo
           </DialogTitle>
-          <p className="text-sm text-gray-600 mt-2">
+          <DialogDescription className="text-sm text-gray-600 mt-2">
             {String(node.data.name || node.data.title || node.data.id)}
-          </p>
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6 pt-4">
