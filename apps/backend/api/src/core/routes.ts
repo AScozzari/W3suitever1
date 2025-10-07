@@ -867,6 +867,9 @@ async function logRequestDeleted(params: {
   ]);
 }
 
+// In-memory session tracking for development mode (since Express session doesn't work well with header-based auth)
+const devModeSessions = new Map<string, { createdAt: number; lastActivity: number }>();
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
   // SECURITY: Configure express-session with 15-minute idle timeout
@@ -1065,6 +1068,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[DEV-AUTH] 🔧 Parsed values:`, { sessionAuth, demoUser });
       
       if (sessionAuth === 'authenticated') {
+        // Use in-memory session tracking for development mode (Express session doesn't work with header-based auth)
+        const sessionKey = demoUser || 'default-dev-session';
+        const now = Date.now();
+        
+        let devSession = devModeSessions.get(sessionKey);
+        
+        if (!devSession) {
+          // Initialize new session
+          devSession = {
+            createdAt: now,
+            lastActivity: now
+          };
+          devModeSessions.set(sessionKey, devSession);
+          console.log(`[DEV-AUTH] 🔧 Development session initialized for user: ${sessionKey}`);
+        } else {
+          const idleTime = now - devSession.lastActivity;
+          const absoluteTime = now - devSession.createdAt;
+          
+          console.log(`[DEV-AUTH] ♻️  Existing dev session for ${sessionKey} (idle: ${Math.floor(idleTime / 1000)}s)`);
+          
+          // Enforce 15-minute idle timeout
+          if (idleTime > config.IDLE_TIMEOUT_MS) {
+            console.log(`[DEV-AUTH] ❌ Session expired due to idle timeout (${Math.floor(idleTime / 1000 / 60)} minutes idle)`);
+            devModeSessions.delete(sessionKey);
+            return res.status(401).json({ 
+              error: 'session_expired',
+              message: 'Session expired due to inactivity',
+              reason: 'idle_timeout'
+            });
+          }
+          
+          // Enforce 8-hour absolute timeout
+          if (absoluteTime > config.ABSOLUTE_TIMEOUT_MS) {
+            console.log(`[DEV-AUTH] ❌ Session expired due to absolute timeout (${Math.floor(absoluteTime / 1000 / 60 / 60)} hours)`);
+            devModeSessions.delete(sessionKey);
+            return res.status(401).json({ 
+              error: 'session_expired',
+              message: 'Session expired due to maximum session duration',
+              reason: 'absolute_timeout'
+            });
+          }
+        }
+        
+        // Update last activity for rolling timeout
+        devSession.lastActivity = now;
+        
         // Set development user context with proper security logging
         console.log(`[DEV-AUTH] ✅ Development authentication active for API: ${apiPath}`);
         console.log(`[DEV-AUTH] 👤 User: ${demoUser || 'admin@w3suite.com'}`);
