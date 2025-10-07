@@ -23,7 +23,8 @@ export default defineConfig({
       "127.0.0.1"
     ],
     hmr: {
-      port: 24678
+      clientPort: 443,
+      protocol: 'wss'
     },
     // Proxy API requests to backend during development
     // In production, nginx handles this routing
