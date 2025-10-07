@@ -350,8 +350,23 @@ function AiDecisionConfig({ node, onSave, onClose }: { node: Node; onSave: (node
 
       {/* Output Mapper */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
           🔀 Mappatura Decisioni → Percorsi
+          <InfoTooltip 
+            title="Condizioni AI Decision"
+            description="Mappa le decisioni dell'AI ai percorsi del workflow. L'AI può restituire qualsiasi valore testuale, ma queste sono le condizioni più comuni."
+            examples={[
+              "approve - Richiesta approvata",
+              "reject - Richiesta rifiutata",
+              "escalate - Invia a livello superiore",
+              "manual_review - Revisione manuale necessaria",
+              "approved_auto - Approvazione automatica",
+              "pending - In attesa di più informazioni",
+              "urgent - Richiede attenzione immediata",
+              "low_priority - Priorità bassa"
+            ]}
+            notes="Puoi usare condizioni personalizzate: l'AI restituirà il valore corrispondente al prompt che hai configurato"
+          />
         </label>
         <div className="space-y-2">
           {outputs.map((output: any, index: number) => (
