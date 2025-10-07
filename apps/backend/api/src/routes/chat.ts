@@ -44,7 +44,6 @@ const createDMBodySchema = z.object({
 });
 
 const createMessageBodySchema = z.object({
-  channelId: z.string().uuid(),
   content: z.string().min(1).max(10000),
   parentMessageId: z.string().uuid().optional(),
   mentionedUserIds: z.array(z.string()).default([]),
