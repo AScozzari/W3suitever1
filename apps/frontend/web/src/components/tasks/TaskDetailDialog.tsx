@@ -737,7 +737,7 @@ export function TaskDetailDialog({
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Scrivi un commento..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FF6900] resize-none disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
                       rows={3}
                       disabled={addCommentMutation.isPending}
                       data-testid="textarea-new-comment"
