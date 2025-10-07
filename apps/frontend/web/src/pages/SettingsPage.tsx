@@ -626,7 +626,7 @@ export default function SettingsPage() {
     queryFn: async () => {
       const result = await apiService.getPaymentMethods();
       if (!result.success) throw new Error(result.error || 'Failed to fetch payment methods');
-      return result.data || [];
+      return (result.data as any)?.paymentMethods || [];
     }
   });
 
@@ -636,7 +636,7 @@ export default function SettingsPage() {
       // Using reference payment methods as fallback until payment-conditions endpoint is added
       const result = await apiService.getPaymentMethods();
       if (!result.success) throw new Error(result.error || 'Failed to fetch payment conditions');
-      return result.data || [];
+      return (result.data as any)?.paymentMethods || [];
     }
   });
 
