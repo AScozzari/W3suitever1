@@ -191,6 +191,7 @@ function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; all
     { id: 'classification', name: '🏷️ Classificazione', prompt: 'Classifica questa richiesta in base a:\n- Tipo: {{type}}\n- Urgenza: {{urgency}}\n- Descrizione: {{description}}\n\nCategorie: urgent/normal/low' },
     { id: 'routing', name: '🔀 Routing', prompt: 'Determina il team corretto per gestire:\n- Cliente: {{customer}}\n- Categoria: {{category}}\n- Problema: {{issue}}\n\nTeam disponibili: support/sales/technical' },
     { id: 'sentiment', name: '😊 Sentiment Analysis', prompt: 'Analizza il sentiment di questo messaggio:\n{{message}}\n\nClassifica come: positive/neutral/negative' },
+    { id: 'crm_lead', name: '🎯 CRM Lead Qualification', prompt: 'Qualifica questo lead CRM secondo il framework BANT:\n- Nome Azienda: {{company_name}}\n- Budget Stimato: {{budget}}\n- Decision Maker: {{authority}}\n- Necessità: {{need}}\n- Timeline Acquisto: {{timeline}}\n- Fonte Lead: {{source}}\n- Engagement Score: {{engagement}}\n\nClassifica come:\n- hot_lead: Budget >10k€, authority confermata, timeline <30 giorni\n- warm_lead: Budget 5-10k€, interesse moderato, timeline 1-3 mesi\n- cold_lead: Budget <5k€, no decision maker, timeline >3 mesi\n- nurture: Potenziale futuro, richiede follow-up continuo' },
     { id: 'custom', name: '🎯 Custom', prompt: '' }
   ];
 
