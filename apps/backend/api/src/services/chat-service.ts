@@ -279,7 +279,7 @@ export class ChatService {
   }
 
   static async getChannelMembers(channelId: string, tenantId: string): Promise<any[]> {
-    return db
+    const members = await db
       .select({
         id: chatChannelMembers.id,
         channelId: chatChannelMembers.channelId,
@@ -303,6 +303,15 @@ export class ChatService {
         eq(chatChannels.tenantId, tenantId)
       ))
       .orderBy(desc(chatChannelMembers.joinedAt));
+    
+    logger.info('🔍 GET CHANNEL MEMBERS', { 
+      channelId, 
+      tenantId, 
+      count: members.length,
+      members: members.map(m => ({ id: m.id, userId: m.userId, role: m.role, userName: m.user ? `${m.user.firstName} ${m.user.lastName}` : 'N/A' }))
+    });
+    
+    return members;
   }
 
   static async updateMemberRole(

@@ -72,7 +72,7 @@ export function ChannelMembersDialog({
   channelName 
 }: ChannelMembersDialogProps) {
   const { data: members = [], isLoading } = useQuery<ChannelMember[]>({
-    queryKey: ['/api/chat/channels', channelId, 'members'],
+    queryKey: [`/api/chat/channels/${channelId}/members`],
     enabled: open && !!channelId
   });
 
