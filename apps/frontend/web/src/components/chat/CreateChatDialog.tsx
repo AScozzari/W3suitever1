@@ -24,8 +24,29 @@ interface CreateChatDialogProps {
 
 interface UserOption {
   id: string;
-  name: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
+}
+
+// Helper per ottenere nome display
+function getUserDisplayName(user: UserOption): string {
+  if (user.firstName && user.lastName) {
+    return `${user.firstName} ${user.lastName}`;
+  }
+  if (user.firstName) return user.firstName;
+  if (user.lastName) return user.lastName;
+  return user.email || 'Utente';
+}
+
+// Helper per ottenere iniziali
+function getUserInitials(user: UserOption): string {
+  const displayName = getUserDisplayName(user);
+  const parts = displayName.split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return displayName.slice(0, 2).toUpperCase();
 }
 
 export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateChatDialogProps) {
@@ -207,10 +228,10 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF6900] to-[#ff8533] flex items-center justify-center text-white text-sm font-medium">
-                          {user.name.slice(0, 2).toUpperCase()}
+                          {getUserInitials(user)}
                         </div>
                         <div>
-                          <div className="font-medium text-sm">{user.name}</div>
+                          <div className="font-medium text-sm">{getUserDisplayName(user)}</div>
                           {user.email && (
                             <div className="text-xs text-gray-500">{user.email}</div>
                           )}
@@ -301,10 +322,10 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
                             )}
                           </div>
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF6900] to-[#ff8533] flex items-center justify-center text-white text-sm font-medium">
-                            {user.name.slice(0, 2).toUpperCase()}
+                            {getUserInitials(user)}
                           </div>
                           <div>
-                            <div className="font-medium text-sm">{user.name}</div>
+                            <div className="font-medium text-sm">{getUserDisplayName(user)}</div>
                             {user.email && (
                               <div className="text-xs text-gray-500">{user.email}</div>
                             )}
