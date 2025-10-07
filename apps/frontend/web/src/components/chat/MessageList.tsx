@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircle, Loader2 } from 'lucide-react';
+import { MessageActions } from './MessageActions';
 
 interface Message {
   id: string;
@@ -206,13 +207,26 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
                 </div>
 
                 <div style={{
-                  fontSize: '11px',
-                  color: '#9ca3af',
-                  paddingLeft: isMine ? '0' : '4px',
-                  paddingRight: isMine ? '4px' : '0',
-                  textAlign: isMine ? 'right' : 'left'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: isMine ? 'flex-end' : 'flex-start'
                 }}>
-                  {formatMessageTime(messageDate)}
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#9ca3af'
+                  }}>
+                    {formatMessageTime(messageDate)}
+                  </div>
+                  {!isDeleted && (
+                    <MessageActions
+                      messageId={message.id}
+                      channelId={message.channelId}
+                      content={message.content}
+                      isMine={isMine}
+                      onEdit={() => {}}
+                    />
+                  )}
                 </div>
               </div>
             </div>

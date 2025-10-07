@@ -6,6 +6,7 @@ import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
 import { MessageList } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import { ChannelMembersDialog } from '@/components/chat/ChannelMembersDialog';
+import { TypingIndicator } from '@/components/chat/TypingIndicator';
 
 interface ChatChannel {
   id: string;
@@ -393,6 +394,14 @@ export default function ChatPage() {
                     />
                   )}
                 </div>
+
+                {/* Typing Indicator */}
+                {user?.id && (
+                  <TypingIndicator 
+                    channelId={selectedChannelId} 
+                    currentUserId={user.id} 
+                  />
+                )}
 
                 {/* Message Composer - sempre in fondo */}
                 <MessageComposer channelId={selectedChannelId} />
