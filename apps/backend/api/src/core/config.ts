@@ -62,6 +62,23 @@ export const config = {
   // OAuth2 Configuration
   OAUTH2_ISSUER: process.env.OAUTH2_ISSUER || 'https://auth.w3suite.com',
   
+  // ==================== SESSION TIMEOUT CONFIGURATION ====================
+  // 🔒 SECURITY POLICY: 15-minute idle timeout, 8-hour absolute timeout
+  
+  // Session timeouts (milliseconds)
+  IDLE_TIMEOUT_MS: 15 * 60 * 1000,              // 15 minutes idle timeout
+  ABSOLUTE_TIMEOUT_MS: 8 * 60 * 60 * 1000,      // 8 hours absolute timeout
+  TOKEN_REFRESH_THRESHOLD_MS: 12 * 60 * 1000,   // Auto-refresh at 12 minutes
+  
+  // OAuth2 Token Expiry (seconds - used by OAuth2 server)
+  ACCESS_TOKEN_EXPIRY_SEC: 15 * 60,             // 15 minutes for access tokens
+  REFRESH_TOKEN_EXPIRY_SEC: 7 * 24 * 60 * 60,   // 7 days for refresh tokens
+  
+  // Development mode token expiry (seconds)
+  DEV_TOKEN_EXPIRY_SEC: 15 * 60,                // 15 minutes in development
+  
+  // ==================== END SESSION CONFIGURATION ====================
+  
   // Environment
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: Number(process.env.PORT || 3000),

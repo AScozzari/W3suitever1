@@ -1156,15 +1156,71 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // TODO: Fix UUID type mismatch in relational query
-    // Temporary: Return empty coverage data to unblock dashboard
-    const coverage: any[] = [];
-    
+    // Build WHERE clause for shifts
+    const whereConditions = [
+      eq(shifts.tenantId, tenantId),
+      gte(shifts.startTime, startOfDay),
+      lte(shifts.endTime, endOfDay)
+    ];
+
+    // Add store filter if not 'all'
+    if (storeId && storeId !== 'all') {
+      whereConditions.push(eq(shifts.storeId, storeId as string));
+    }
+
+    // Query shifts with assignment counts using raw SQL to handle UUID/VARCHAR mismatch
+    const shiftsData = await db
+      .select({
+        id: shifts.id,
+        storeId: shifts.storeId,
+        name: shifts.name,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
+        requiredStaff: shifts.requiredStaff,
+        status: shifts.status,
+        // Count assignments using subquery with explicit cast
+        assignedCount: sql<number>`(
+          SELECT COUNT(*)::integer 
+          FROM w3suite.shift_assignments sa 
+          WHERE sa.shift_id = ${shifts.id}::text 
+          AND sa.tenant_id = ${tenantId}
+        )`
+      })
+      .from(shifts)
+      .where(and(...whereConditions));
+
+    // Calculate coverage metrics
+    const coverage = shiftsData.map(shift => {
+      const coverageRate = shift.requiredStaff > 0 
+        ? (shift.assignedCount / shift.requiredStaff) * 100 
+        : 0;
+      
+      return {
+        shiftId: shift.id,
+        storeId: shift.storeId,
+        shiftName: shift.name,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        requiredStaff: shift.requiredStaff,
+        assignedStaff: shift.assignedCount,
+        coverageRate: Math.round(coverageRate),
+        status: coverageRate >= 100 ? 'fully_staffed' : coverageRate >= 75 ? 'adequate' : 'critical'
+      };
+    });
+
+    // Calculate summary statistics
+    const totalShifts = coverage.length;
+    const averageCoverageRate = totalShifts > 0
+      ? Math.round(coverage.reduce((sum, s) => sum + s.coverageRate, 0) / totalShifts)
+      : 0;
+    const criticalShifts = coverage.filter(s => s.status === 'critical').length;
+    const fullyStaffed = coverage.filter(s => s.status === 'fully_staffed').length;
+
     const summary = {
-      totalShifts: 0,
-      averageCoverageRate: 0,
-      criticalShifts: 0,
-      fullyStaffed: 0
+      totalShifts,
+      averageCoverageRate,
+      criticalShifts,
+      fullyStaffed
     };
 
     res.json({

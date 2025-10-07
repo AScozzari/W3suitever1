@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { Route, Switch, Redirect } from "wouter";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantShell } from "./components/TenantShell";
+import { useSessionKeepAlive } from "./hooks/useSessionKeepAlive";
 
 // Import pages that don't need tenant context
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,16 @@ import QRCheckinPage from "./pages/QRCheckinPage";
  * 3. Fine! Sicurezza automatica
  */
 export default function App() {
+  // 🔒 SECURITY POLICY: Auto-refresh session every 12 minutes to prevent timeout
+  useSessionKeepAlive({
+    enabled: true,
+    onSessionExpired: () => {
+      console.warn('[APP] ⏰ Session expired - redirecting to login');
+      // In production, redirect to login page
+      // window.location.href = '/login';
+    }
+  });
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

@@ -869,7 +869,8 @@ async function logRequestDeleted(params: {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // SECURITY: Configure express-session with secure defaults
+  // SECURITY: Configure express-session with 15-minute idle timeout
+  // 🔒 SECURITY POLICY: 15-minute idle timeout enforced
   app.use(session({
     secret: JWT_SECRET, // Use JWT_SECRET for session encryption
     name: 'w3suite.sid', // Custom session name for security
@@ -878,11 +879,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     cookie: {
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production
       httpOnly: true, // Prevent XSS attacks
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours (SECURITY: Match JWT token duration)
+      maxAge: config.IDLE_TIMEOUT_MS, // 15 minutes idle timeout (from config)
       sameSite: 'strict' // CSRF protection
     },
-    rolling: true // Reset expiration on each request
+    rolling: true // Reset idle timeout on each request (correct for idle timeout behavior)
   }));
+
+  // SECURITY: Apply absolute session timeout middleware (8-hour hard limit)
+  // 🔒 SECURITY POLICY: 8-hour absolute timeout enforced
+  const { sessionAbsoluteTimeoutMiddleware } = await import('../middleware/session-timeout.js');
+  app.use(sessionAbsoluteTimeoutMiddleware);
 
   // Import raw body middleware for webhook signature validation
   const { rawBodyMiddleware } = await import('../middleware/raw-body.js');

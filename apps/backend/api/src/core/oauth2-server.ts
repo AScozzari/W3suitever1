@@ -411,6 +411,7 @@ export function setupOAuth2Server(app: express.Application) {
         }
 
         // Generate tokens
+        // 🔒 SECURITY POLICY: 15-minute access token expiry (from config)
         const accessToken = jwt.sign(
           {
             sub: authCodeData.userId,
@@ -421,19 +422,20 @@ export function setupOAuth2Server(app: express.Application) {
             client_id: client_id
           },
           JWT_SECRET,
-          { expiresIn: '1h' }
+          { expiresIn: `${config.ACCESS_TOKEN_EXPIRY_SEC}s` }
         );
 
         const refreshTokenValue = generateSecureToken(64);
         
         // Store refresh token
+        // 🔒 SECURITY POLICY: 7-day refresh token expiry (from config)
         refreshTokens.set(refreshTokenValue, {
           refreshToken: refreshTokenValue,
           clientId: client_id,
           userId: authCodeData.userId,
           tenantId: authCodeData.tenantId,
           scopes: authCodeData.scopes,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+          expiresAt: new Date(Date.now() + config.REFRESH_TOKEN_EXPIRY_SEC * 1000)
         });
 
         // Clean up authorization code
@@ -442,7 +444,7 @@ export function setupOAuth2Server(app: express.Application) {
         return res.json({
           access_token: accessToken,
           token_type: 'Bearer',
-          expires_in: 3600,
+          expires_in: config.ACCESS_TOKEN_EXPIRY_SEC,
           refresh_token: refreshTokenValue,
           scope: authCodeData.scopes.join(' ')
         });
@@ -459,6 +461,7 @@ export function setupOAuth2Server(app: express.Application) {
         }
 
         // Generate new access token
+        // 🔒 SECURITY POLICY: 15-minute access token expiry (from config)
         const accessToken = jwt.sign(
           {
             sub: refreshData.userId,
@@ -469,13 +472,13 @@ export function setupOAuth2Server(app: express.Application) {
             client_id: refreshData.clientId
           },
           JWT_SECRET,
-          { expiresIn: '1h' }
+          { expiresIn: `${config.ACCESS_TOKEN_EXPIRY_SEC}s` }
         );
 
         return res.json({
           access_token: accessToken,
           token_type: 'Bearer',
-          expires_in: 3600,
+          expires_in: config.ACCESS_TOKEN_EXPIRY_SEC,
           scope: refreshData.scopes.join(' ')
         });
 
