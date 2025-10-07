@@ -397,8 +397,12 @@ router.post('/channels/:id/members', requirePermission('chat.create'), async (re
     const member = await ChatService.addMember(channelId, tenantId, {
       userId: parsed.userId,
       role: parsed.role,
-      inviteStatus: 'pending'
+      inviteStatus: 'accepted'
     });
+    
+    // Fetch complete member data with user info
+    const members = await ChatService.getChannelMembers(channelId, tenantId);
+    const memberWithUser = members.find(m => m.userId === member.userId);
     
     // Broadcast member joined via WebSocket
     await webSocketService.broadcastMemberJoined(channelId, tenantId, {
@@ -407,7 +411,7 @@ router.post('/channels/:id/members', requirePermission('chat.create'), async (re
       joinedAt: member.joinedAt
     });
     
-    res.status(201).json(member);
+    res.status(201).json(memberWithUser || member);
   } catch (error) {
     handleApiError(error, res, 'Failed to add member');
   }
