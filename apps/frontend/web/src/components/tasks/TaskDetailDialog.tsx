@@ -427,68 +427,77 @@ export function TaskDetailDialog({
 
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Informazioni</h3>
-                  <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Informazioni Generali */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-[#FF6900]" />
+                    Informazioni
+                  </h3>
+                  <div className="space-y-2.5">
                     {dueDate && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">Scadenza:</span>
-                        <span className={cn(
-                          'font-medium',
+                      <div className="flex items-start gap-2 text-sm">
+                        <div className="text-gray-500 min-w-[80px]">Scadenza</div>
+                        <div className={cn(
+                          'font-medium flex-1',
                           isOverdue && 'text-red-600'
                         )}>
                           {format(dueDate, 'PPP', { locale: it })}
-                        </span>
+                        </div>
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Creato:</span>
-                      <span className="font-medium">
+                    <div className="flex items-start gap-2 text-sm">
+                      <div className="text-gray-500 min-w-[80px]">Creato</div>
+                      <div className="font-medium text-gray-900 flex-1">
                         {format(new Date(fullTask.createdAt), 'PPP', { locale: it })}
-                      </span>
+                      </div>
                     </div>
 
                     {fullTask.createdBy && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">Creato da:</span>
-                        <span className="font-medium">{fullTask.createdBy.name}</span>
+                      <div className="flex items-start gap-2 text-sm">
+                        <div className="text-gray-500 min-w-[80px]">Creato da</div>
+                        <div className="font-medium text-gray-900 flex-1">{fullTask.createdBy.name}</div>
                       </div>
                     )}
 
                     {totalTimeTracked > 0 && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Play className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">Tempo tracciato:</span>
-                        <span className="font-medium">
+                      <div className="flex items-start gap-2 text-sm">
+                        <div className="text-gray-500 min-w-[80px]">Tempo</div>
+                        <div className="font-medium text-gray-900 flex-1">
                           {Math.floor(totalTimeTracked / 60)}h {totalTimeTracked % 60}m
-                        </span>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Team</h3>
+                {/* Team */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-[#FF6900]" />
+                    Team
+                  </h3>
                   <div className="space-y-3">
+                    {/* Assegnati */}
                     {fullTask.assignees && fullTask.assignees.length > 0 && (
                       <div>
-                        <div className="text-sm text-gray-600 mb-2">Assegnati:</div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Assegnati</div>
                         <div className="space-y-2">
                           {fullTask.assignees.map((assignee) => (
-                            <div key={assignee.id} className="flex items-center gap-2" data-testid={`assignee-${assignee.id}`}>
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback className="text-xs">
+                            <div key={assignee.id} className="flex items-center gap-2.5" data-testid={`assignee-${assignee.id}`}>
+                              <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
+                                <AvatarFallback className="text-xs bg-gradient-to-br from-[#FF6900] to-[#ff8533] text-white font-semibold">
                                   {(assignee.name || assignee.email || 'U').substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium" data-testid={`text-assignee-name-${assignee.id}`}>{assignee.name || assignee.email || 'Utente'}</div>
-                                <div className="text-xs text-gray-500" data-testid={`text-assignee-role-${assignee.id}`}>{assignee.role}</div>
+                                <div className="text-sm font-medium text-gray-900" data-testid={`text-assignee-name-${assignee.id}`}>
+                                  {assignee.name || assignee.email || 'Utente'}
+                                </div>
+                                <div className="text-xs text-gray-500" data-testid={`text-assignee-role-${assignee.id}`}>
+                                  {assignee.role}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -496,12 +505,17 @@ export function TaskDetailDialog({
                       </div>
                     )}
 
+                    {/* Osservatori */}
                     {fullTask.watchers && fullTask.watchers.length > 0 && (
-                      <div>
-                        <div className="text-sm text-gray-600 mb-2">Osservatori:</div>
-                        <div className="flex flex-wrap gap-1">
+                      <div className={fullTask.assignees && fullTask.assignees.length > 0 ? 'pt-3 border-t border-gray-200' : ''}>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Osservatori</div>
+                        <div className="flex flex-wrap gap-1.5">
                           {fullTask.watchers.map((watcher) => (
-                            <Badge key={watcher.id} variant="secondary" className="text-xs">
+                            <Badge 
+                              key={watcher.id} 
+                              variant="secondary" 
+                              className="text-xs bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                            >
                               {watcher.name || watcher.email || 'Utente'}
                             </Badge>
                           ))}
