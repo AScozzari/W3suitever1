@@ -88,23 +88,30 @@ function truncateMessage(text: string, maxLength: number = 40): string {
 // Helper to get background style based on pattern
 function getBackgroundStyle(pattern: string = 'neutral'): React.CSSProperties {
   const patterns: Record<string, React.CSSProperties> = {
-    'neutral': { background: '#fafafa' },
+    'neutral': { 
+      backgroundColor: '#fafafa' 
+    },
     'dots': { 
-      background: 'radial-gradient(circle, #d1d5db 1px, transparent 1px), #fafafa',
+      backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+      backgroundColor: '#fafafa',
       backgroundSize: '20px 20px'
     },
     'grid': {
-      background: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px), #fafafa',
+      backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+      backgroundColor: '#fafafa',
       backgroundSize: '20px 20px'
     },
     'diagonal': {
-      background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #f3f4f6 10px, #f3f4f6 20px), #fafafa'
+      backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #f3f4f6 10px, #f3f4f6 20px)',
+      backgroundColor: '#fafafa'
     },
     'waves': {
-      background: 'repeating-radial-gradient(circle at 0 0, transparent 0, #fafafa 10px, transparent 20px, #f9fafb 30px), #fafafa'
+      backgroundImage: 'repeating-radial-gradient(circle at 0 0, transparent 0, #fafafa 10px, transparent 20px, #f9fafb 30px)',
+      backgroundColor: '#fafafa'
     },
     'bubbles': {
-      background: 'radial-gradient(circle at 20% 50%, rgba(243, 244, 246, 0.5) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(229, 231, 235, 0.5) 0%, transparent 50%), #fafafa'
+      backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(243, 244, 246, 0.5) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(229, 231, 235, 0.5) 0%, transparent 50%)',
+      backgroundColor: '#fafafa'
     }
   };
   
