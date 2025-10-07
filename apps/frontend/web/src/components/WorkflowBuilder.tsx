@@ -459,6 +459,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                     <SelectItem value="action">Actions</SelectItem>
                     <SelectItem value="trigger">Triggers</SelectItem>
                     <SelectItem value="ai">AI Nodes</SelectItem>
+                    <SelectItem value="routing">Routing</SelectItem>
+                    <SelectItem value="flow-control">Flow Control</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -600,6 +602,104 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             ) : (
                               <span className="text-xs">AI</span>
                             )}
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {(selectedCategory === 'all' || selectedCategory === 'routing') && (
+                <>
+                <Separator />
+
+                {/* Routing Nodes */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-3 h-3 bg-windtre-purple rounded-full" />
+                    Routing ({getNodesByCategory('routing').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getNodesByCategory('routing')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-xs">R</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {(selectedCategory === 'all' || selectedCategory === 'flow-control') && (
+                <>
+                <Separator />
+
+                {/* Flow Control Nodes */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-3 h-3 bg-windtre-orange rounded-full" />
+                    Flow Control ({getNodesByCategory('flow-control').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getNodesByCategory('flow-control')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-xs">FC</span>
                           </div>
                           <div className="flex-1">
                             <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
