@@ -56,22 +56,10 @@ function formatMessageTime(date: Date): string {
 export function MessageList({ channelId, currentUserId }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: messages = [], isLoading, error } = useQuery<Message[]>({
-    queryKey: ['/api/chat/channels', channelId, 'messages'],
+  const { data: messages = [], isLoading } = useQuery<Message[]>({
+    queryKey: [`/api/chat/channels/${channelId}/messages`],
     enabled: !!channelId,
     refetchInterval: 3000
-  });
-
-  // DEBUG: Log per analizzare il problema messaggi
-  console.log('🔍 [MESSAGES-DEBUG]', {
-    channelId,
-    isLoading,
-    hasError: !!error,
-    error,
-    messagesRaw: messages,
-    messagesLength: messages?.length || 0,
-    messagesType: typeof messages,
-    isArray: Array.isArray(messages)
   });
 
   useEffect(() => {
