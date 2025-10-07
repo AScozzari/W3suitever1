@@ -358,15 +358,17 @@ export default function ChatPage() {
                   </h3>
                 </div>
 
-                {/* Messages Area */}
-                {user?.id && (
-                  <MessageList 
-                    channelId={selectedChannelId} 
-                    currentUserId={user.id} 
-                  />
-                )}
+                {/* Messages Area - con flex per posizionamento corretto */}
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  {user?.id && (
+                    <MessageList 
+                      channelId={selectedChannelId} 
+                      currentUserId={user.id} 
+                    />
+                  )}
+                </div>
 
-                {/* Message Composer */}
+                {/* Message Composer - sempre in fondo */}
                 <MessageComposer channelId={selectedChannelId} />
               </>
             ) : (
