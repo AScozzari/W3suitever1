@@ -136,7 +136,10 @@ export default function ChatPage() {
   const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
   const [hoveredChannelId, setHoveredChannelId] = useState<string | null>(null);
 
-  const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
+  const { data: sessionData } = useQuery<{ user: UserData } | null>({ 
+    queryKey: ["/api/auth/session"] 
+  });
+  const user = sessionData?.user;
 
   // Query per ottenere lista chat channels
   const { data: channels = [], isLoading, error } = useQuery<ChatChannel[]>({
