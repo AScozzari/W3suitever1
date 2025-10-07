@@ -24,9 +24,9 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     version: '1.0.0',
     configSchema: EmailActionConfigSchema,
     defaultConfig: {
-      to: [],
-      subject: '',
-      template: '',
+      to: ['user@example.com'], // Min 1 recipient required by schema
+      subject: 'Notification from Workflow', // Non-empty required by schema
+      template: 'default_notification', // Non-empty required by schema
       priority: 'normal',
       tracking: true
     }
@@ -41,7 +41,8 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     version: '1.0.0',
     configSchema: ApprovalActionConfigSchema,
     defaultConfig: {
-      approverType: 'specific',
+      approverType: 'role', // Valid enum value
+      roles: ['manager'], // Required array for role-based approval
       escalation: {
         enabled: false,
         delayHours: 24,
@@ -64,15 +65,18 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     version: '1.0.0',
     configSchema: ApprovalActionConfigSchema,
     defaultConfig: {
-      approverType: 'automatic',
-      rules: {
-        maxAmount: 1000,
-        businessHours: true,
-        requiredRole: 'employee'
-      },
-      fallback: {
+      approverType: 'role', // Valid enum value
+      roles: ['employee'], // Required per schema
+      autoApprove: {
         enabled: true,
-        action: 'manual_approval'
+        conditions: [
+          { field: 'amount', operator: 'less_than', value: 1000 },
+          { field: 'role', operator: 'equals', value: 'employee' }
+        ]
+      },
+      timeout: {
+        hours: 72,
+        action: 'auto_approve'
       }
     }
   },
