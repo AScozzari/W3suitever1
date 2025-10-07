@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { MessageCircle, Plus, Lock } from 'lucide-react';
 import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
 import { MessageList } from '@/components/chat/MessageList';
+import { MessageComposer } from '@/components/chat/MessageComposer';
 
 interface ChatChannel {
   id: string;
@@ -365,28 +366,8 @@ export default function ChatPage() {
                   />
                 )}
 
-                {/* Message Composer Placeholder */}
-                <div style={{
-                  padding: '16px',
-                  borderTop: '1px solid #e5e7eb',
-                  background: 'white'
-                }}>
-                  <textarea
-                    placeholder="Scrivi un messaggio..."
-                    data-testid="textarea-message"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      resize: 'none',
-                      outline: 'none',
-                      minHeight: '60px'
-                    }}
-                  />
-                </div>
+                {/* Message Composer */}
+                <MessageComposer channelId={selectedChannelId} />
               </>
             ) : (
               <div style={{
