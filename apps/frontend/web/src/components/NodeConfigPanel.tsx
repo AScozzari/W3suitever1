@@ -633,7 +633,7 @@ function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: 
   const [escalationEnabled, setEscalationEnabled] = useState(config.escalation?.enabled || false);
 
   // 🔄 Carica ruoli reali dal database
-  const { data: rolesData, isLoading: rolesLoading } = useQuery<{ roles: Role[] }>({
+  const { data: rolesData, isLoading: rolesLoading } = useQuery<Role[]>({
     queryKey: ['/api/roles'],
   });
 
@@ -676,8 +676,8 @@ function ApprovalRequestConfig({ node, onSave, onClose }: { node: Node; onSave: 
           <SelectContent>
             {rolesLoading ? (
               <SelectItem value="loading" disabled>⏳ Caricamento...</SelectItem>
-            ) : rolesData?.roles && rolesData.roles.length > 0 ? (
-              rolesData.roles.map((role) => (
+            ) : rolesData && rolesData.length > 0 ? (
+              rolesData.map((role) => (
                 <SelectItem key={role.id} value={role.name}>
                   {role.name}
                 </SelectItem>
