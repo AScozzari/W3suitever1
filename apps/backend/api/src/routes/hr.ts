@@ -4,7 +4,7 @@ import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
 import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability } from '../db/schema/w3suite';
-import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, inArray, sql, count } from 'drizzle-orm';
 
 const router = Router();
 
@@ -1168,26 +1168,31 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
       whereConditions.push(eq(shifts.storeId, storeId as string));
     }
 
-    // Query shifts with assignment counts using raw SQL to handle UUID/VARCHAR mismatch
-    const shiftsData = await db
-      .select({
-        id: shifts.id,
-        storeId: shifts.storeId,
-        name: shifts.name,
-        startTime: shifts.startTime,
-        endTime: shifts.endTime,
-        requiredStaff: shifts.requiredStaff,
-        status: shifts.status,
-        // Count assignments using subquery with explicit cast
-        assignedCount: sql<number>`(
-          SELECT COUNT(*)::integer 
-          FROM w3suite.shift_assignments sa 
-          WHERE sa.shift_id = ${shifts.id}::text 
-          AND sa.tenant_id = ${tenantId}
-        )`
-      })
-      .from(shifts)
-      .where(and(...whereConditions));
+    // Query shifts with assignment counts using raw SQL
+    // WORKAROUND: Drizzle ORM has issues with UUID/VARCHAR joins in LEFT JOIN syntax
+    // Using raw SQL query for reliability
+    const storeFilter = (storeId && storeId !== 'all') ? `AND s.store_id = '${storeId}'` : '';
+    
+    const shiftsData = await db.execute(sql`
+      SELECT 
+        s.id,
+        s.store_id as "storeId",
+        s.name,
+        s.start_time as "startTime",
+        s.end_time as "endTime",
+        s.required_staff as "requiredStaff",
+        s.status,
+        COUNT(sa.id)::integer as "assignedCount"
+      FROM w3suite.shifts s
+      LEFT JOIN w3suite.shift_assignments sa 
+        ON sa.shift_id = s.id::text 
+        AND sa.tenant_id = ${tenantId}
+      WHERE s.tenant_id = ${tenantId}
+        AND s.start_time >= ${startOfDay}
+        AND s.end_time <= ${endOfDay}
+        ${sql.raw(storeFilter)}
+      GROUP BY s.id, s.store_id, s.name, s.start_time, s.end_time, s.required_staff, s.status
+    `);
 
     // Calculate coverage metrics
     const coverage = shiftsData.map(shift => {
