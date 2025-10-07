@@ -594,9 +594,23 @@ export default function ChatPage() {
                 {/* Chat Header */}
                 <div style={{
                   padding: '16px',
-                  borderBottom: '1px solid #e5e7eb',
-                  background: channels.find(c => c.id === selectedChannelId)?.metadata?.headerColor || 'white',
-                  color: '#ffffff',
+                  borderBottom: '1px solid rgba(229, 231, 235, 0.3)',
+                  background: (() => {
+                    const headerColor = channels.find(c => c.id === selectedChannelId)?.metadata?.headerColor;
+                    if (headerColor && headerColor !== 'white') {
+                      // Estrai RGB dal colore hex e applica trasparenza
+                      const hex = headerColor.replace('#', '');
+                      const r = parseInt(hex.substring(0, 2), 16);
+                      const g = parseInt(hex.substring(2, 4), 16);
+                      const b = parseInt(hex.substring(4, 6), 16);
+                      return `rgba(${r}, ${g}, ${b}, 0.15)`;
+                    }
+                    return 'rgba(255, 255, 255, 0.8)';
+                  })(),
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: '#1f2937',
                   transition: 'background 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
