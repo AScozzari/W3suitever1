@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 
 interface ChannelMember {
@@ -85,6 +86,9 @@ export function ChannelMembersDialog({
               Membri di {channelName}
             </DialogTitle>
           </div>
+          <DialogDescription className="sr-only">
+            Lista dei membri del canale {channelName} con i loro ruoli
+          </DialogDescription>
         </DialogHeader>
 
         <div className="mt-4">
