@@ -71,7 +71,7 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
       <div style={{
         display: 'flex',
         gap: '12px',
-        alignItems: 'flex-end'
+        alignItems: 'center'
       }}>
         <div style={{
           flex: 1,
