@@ -4,7 +4,7 @@ import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
 import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability } from '../db/schema/w3suite';
-import { eq, and, gte, lte, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 
 const router = Router();
 
