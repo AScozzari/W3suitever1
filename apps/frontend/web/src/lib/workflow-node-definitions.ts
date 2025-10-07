@@ -24,9 +24,9 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     version: '1.0.0',
     configSchema: EmailActionConfigSchema,
     defaultConfig: {
-      to: ['user@example.com'], // Min 1 recipient required by schema
-      subject: 'Notification from Workflow', // Non-empty required by schema
-      template: 'default_notification', // Non-empty required by schema
+      to: ['workflow@windtre.it'], // Min 1 recipient required by schema (RFC-compliant)
+      subject: 'Notifica Workflow', // Non-empty required by schema
+      template: 'workflow_notification', // Non-empty required by schema
       priority: 'normal',
       tracking: true
     }
@@ -127,8 +127,8 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     configSchema: EventTriggerConfigSchema,
     defaultConfig: {
       action: 'create',
-      title: '',
-      description: '',
+      title: 'Nuova richiesta: {{request_type}}',
+      description: 'Task generato dal workflow per {{requester.name}} - {{description}}',
       status: 'todo',
       priority: 'medium',
       urgency: 'medium',
@@ -147,8 +147,8 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     configSchema: EventTriggerConfigSchema,
     defaultConfig: {
       action: 'assign',
-      taskId: '',
-      assignToUser: '',
+      taskId: '{{workflow.taskId}}',
+      assignToUser: '{{assignee.id}}',
       role: 'assignee'
     }
   },
@@ -163,7 +163,7 @@ export const ACTION_NODES: BaseNodeDefinition[] = [
     configSchema: EventTriggerConfigSchema,
     defaultConfig: {
       action: 'update_status',
-      taskId: '',
+      taskId: '{{workflow.taskId}}',
       newStatus: 'in_progress'
     }
   }
@@ -263,10 +263,10 @@ export const AI_NODES: BaseNodeDefinition[] = [
     configSchema: AiDecisionConfigSchema,
     defaultConfig: {
       model: 'gpt-3.5-turbo',
-      prompt: 'Analyze the following data and make a decision: {{input}}',
+      prompt: 'Analizza questa richiesta e decidi se approvarla:\n- Importo: {{amount}}€\n- Richiedente: {{requester.name}}\n- Dipartimento: {{department}}\n- Motivazione: {{reason}}\n\nCriteri: approva se importo < 1000€ e motivazione valida',
       parameters: {
-        temperature: 0.7,
-        maxTokens: 500,
+        temperature: 0.3,
+        maxTokens: 200,
         topP: 1,
         frequencyPenalty: 0
       },
