@@ -372,7 +372,7 @@ export class ChatService {
           eq(chatMessages.tenantId, tenantId)
         ));
       
-      return messages[0]?.count || 0;
+      return Number(messages[0]?.count) || 0;
     }
 
     const unread = await db
@@ -384,7 +384,7 @@ export class ChatService {
         sql`${chatMessages.createdAt} > ${member.lastReadAt}`
       ));
 
-    return unread[0]?.count || 0;
+    return Number(unread[0]?.count) || 0;
   }
 
   static async sendMessage(messageData: InsertChatMessage): Promise<ChatMessage> {

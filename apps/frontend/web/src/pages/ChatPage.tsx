@@ -206,6 +206,20 @@ export default function ChatPage() {
     }
   });
 
+  // Mutation per marcare come letto
+  const markAsReadMutation = useMutation({
+    mutationFn: async (channelId: string) => {
+      return apiRequest(`/api/chat/channels/${channelId}/read`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      // Invalida il conteggio messaggi non letti
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
+    }
+  });
+
   const handleArchive = (e: React.MouseEvent, channelId: string) => {
     e.stopPropagation();
     archiveMutation.mutate(channelId);
@@ -372,7 +386,10 @@ export default function ChatPage() {
                   <div
                     key={channel.id}
                     data-testid={`chat-item-${channel.id}`}
-                    onClick={() => setSelectedChannelId(channel.id)}
+                    onClick={() => {
+                      setSelectedChannelId(channel.id);
+                      markAsReadMutation.mutate(channel.id);
+                    }}
                     style={{
                       padding: '12px',
                       borderRadius: '8px',

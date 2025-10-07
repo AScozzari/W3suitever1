@@ -218,10 +218,11 @@ router.get('/unread-count', requirePermission('chat.read'), async (req: Request,
     let totalUnread = 0;
     for (const channel of channels) {
       const count = await ChatService.getUnreadCount(channel.id, tenantId, userId);
-      totalUnread += count;
+      // Converte esplicitamente a numero in caso il database ritorni una stringa
+      totalUnread += Number(count) || 0;
     }
     
-    res.json({ unreadCount: totalUnread });
+    res.json({ unreadCount: Number(totalUnread) });
   } catch (error) {
     handleApiError(error, res, 'Failed to fetch unread count');
   }
