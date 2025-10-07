@@ -495,9 +495,6 @@ export function TaskDetailDialog({
                                 <div className="text-sm font-medium text-gray-900" data-testid={`text-assignee-name-${assignee.id}`}>
                                   {assignee.name || assignee.email || 'Utente'}
                                 </div>
-                                <div className="text-xs text-gray-500" data-testid={`text-assignee-role-${assignee.id}`}>
-                                  {assignee.role}
-                                </div>
                               </div>
                             </div>
                           ))}
