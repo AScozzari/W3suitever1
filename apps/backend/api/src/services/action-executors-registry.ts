@@ -764,6 +764,458 @@ export class TaskActionExecutor implements ActionExecutor {
   }
 }
 
+// ==================== ROUTING EXECUTORS ====================
+
+/**
+ * 👥 TEAM ROUTING EXECUTOR
+ * Routes workflow to team based on team_workflow_assignments
+ */
+export class TeamRoutingExecutor implements ActionExecutor {
+  executorId = 'team-routing-executor';
+  description = 'Routes workflow to team (auto or manual)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('👥 [EXECUTOR] Executing team routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const mode = config.assignmentMode || 'auto';
+
+      // Auto mode: usa RequestTriggerService per selezionare team automaticamente
+      if (mode === 'auto') {
+        const { RequestTriggerService } = await import('./request-trigger-service');
+        const department = config.forDepartment || context?.department || 'operations';
+        
+        const selectedTeam = await RequestTriggerService.findTeamForDepartment(
+          department,
+          context?.tenantId
+        );
+
+        if (!selectedTeam) {
+          throw new Error(`No team found for department: ${department}`);
+        }
+
+        return {
+          success: true,
+          message: `Workflow routed to team: ${selectedTeam.name}`,
+          data: {
+            teamId: selectedTeam.id,
+            teamName: selectedTeam.name,
+            department,
+            mode: 'auto'
+          },
+          nextAction: selectedTeam.id
+        };
+      }
+
+      // Manual mode: usa teamId specificato
+      if (mode === 'manual' && config.teamId) {
+        return {
+          success: true,
+          message: `Workflow routed to specific team`,
+          data: {
+            teamId: config.teamId,
+            mode: 'manual'
+          },
+          nextAction: config.teamId
+        };
+      }
+
+      throw new Error('Invalid team assignment configuration');
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Team routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route workflow to team',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 👤 USER ROUTING EXECUTOR
+ * Assigns workflow to specific users
+ */
+export class UserRoutingExecutor implements ActionExecutor {
+  executorId = 'user-routing-executor';
+  description = 'Assigns workflow to specific user(s)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('👤 [EXECUTOR] Executing user routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const userIds = config.userIds || [];
+      const assignmentType = config.assignmentType || 'all';
+
+      if (!userIds || userIds.length === 0) {
+        throw new Error('At least one user ID is required');
+      }
+
+      // Send notifications to all assigned users
+      for (const userId of userIds) {
+        await notificationService.sendNotification(
+          context?.tenantId,
+          userId,
+          'Workflow Assignment',
+          `You have been assigned to a workflow: ${step.config?.label || 'Workflow Task'}`,
+          'workflow_assignment',
+          'high',
+          {
+            stepId: step.nodeId,
+            instanceId: context?.instanceId,
+            assignmentType
+          }
+        );
+      }
+
+      return {
+        success: true,
+        message: `Workflow assigned to ${userIds.length} user(s)`,
+        data: {
+          userIds,
+          assignmentType,
+          assignedAt: new Date().toISOString()
+        },
+        nextAction: userIds[0] // Use first user as next action
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] User routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to assign workflow to users',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+// ==================== FLOW CONTROL EXECUTORS ====================
+
+/**
+ * 🔀 IF CONDITION EXECUTOR
+ * Evaluates condition and routes to true/false path
+ */
+export class IfConditionExecutor implements ActionExecutor {
+  executorId = 'if-condition-executor';
+  description = 'Evaluates IF condition and routes workflow';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔀 [EXECUTOR] Executing IF condition', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const conditions = config.conditions || [];
+      const logic = config.logic || 'AND';
+
+      // Evaluate all conditions
+      const results = conditions.map((cond: any) => {
+        const fieldValue = inputData?.[cond.field] || context?.metadata?.[cond.field];
+        return this.evaluateCondition(fieldValue, cond.operator, cond.value);
+      });
+
+      // Apply logic
+      const finalResult = logic === 'AND' 
+        ? results.every(r => r) 
+        : results.some(r => r);
+
+      const nextPath = finalResult ? config.truePath : config.falsePath;
+
+      return {
+        success: true,
+        message: `Condition evaluated to: ${finalResult}`,
+        data: {
+          result: finalResult,
+          nextPath,
+          conditions: results
+        },
+        decision: finalResult ? 'true' : 'false',
+        nextAction: nextPath
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] IF condition failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to evaluate condition',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  private evaluateCondition(value: any, operator: string, target: any): boolean {
+    switch (operator) {
+      case 'equals': return value === target;
+      case 'not_equals': return value !== target;
+      case 'greater_than': return Number(value) > Number(target);
+      case 'less_than': return Number(value) < Number(target);
+      case 'contains': return String(value).includes(String(target));
+      default: return false;
+    }
+  }
+}
+
+/**
+ * 🔄 SWITCH CASE EXECUTOR
+ * Multi-branch routing based on variable value
+ */
+export class SwitchCaseExecutor implements ActionExecutor {
+  executorId = 'switch-case-executor';
+  description = 'Routes workflow based on switch case';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔄 [EXECUTOR] Executing SWITCH case', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const variable = config.variable;
+      const cases = config.cases || [];
+      const value = inputData?.[variable] || context?.metadata?.[variable];
+
+      // Find matching case
+      const matchedCase = cases.find((c: any) => c.value === value);
+      const nextPath = matchedCase?.path || config.defaultPath;
+
+      return {
+        success: true,
+        message: `Matched case: ${matchedCase?.label || 'default'}`,
+        data: {
+          variable,
+          value,
+          matchedCase: matchedCase?.value,
+          nextPath
+        },
+        decision: matchedCase?.value || 'default',
+        nextAction: nextPath
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] SWITCH case failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to evaluate switch case',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔁 WHILE LOOP EXECUTOR
+ * Repeats execution while condition is true
+ */
+export class WhileLoopExecutor implements ActionExecutor {
+  executorId = 'while-loop-executor';
+  description = 'Executes loop while condition is true';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔁 [EXECUTOR] Executing WHILE loop', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const condition = config.condition;
+      const currentIteration = context?.metadata?.iteration || 0;
+      const maxIterations = config.maxIterations || 10;
+
+      // Check iteration limit
+      if (currentIteration >= maxIterations) {
+        return {
+          success: true,
+          message: 'Max iterations reached, exiting loop',
+          data: {
+            iterations: currentIteration,
+            exitReason: 'max_iterations'
+          },
+          nextAction: config.exitPath
+        };
+      }
+
+      // Evaluate condition
+      const value = inputData?.[condition.field] || context?.metadata?.[condition.field] || 0;
+      const conditionMet = this.evaluateCondition(value, condition.operator, condition.value);
+
+      if (conditionMet) {
+        // Continue loop
+        return {
+          success: true,
+          message: 'Condition true, continuing loop',
+          data: {
+            iterations: currentIteration + 1,
+            conditionValue: value
+          },
+          nextAction: config.loopBody
+        };
+      } else {
+        // Exit loop
+        return {
+          success: true,
+          message: 'Condition false, exiting loop',
+          data: {
+            iterations: currentIteration,
+            exitReason: 'condition_false'
+          },
+          nextAction: config.exitPath
+        };
+      }
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] WHILE loop failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to execute loop',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  private evaluateCondition(value: any, operator: string, target: any): boolean {
+    switch (operator) {
+      case 'less_than': return Number(value) < Number(target);
+      case 'greater_than': return Number(value) > Number(target);
+      case 'equals': return value === target;
+      default: return false;
+    }
+  }
+}
+
+/**
+ * 🌿 PARALLEL FORK EXECUTOR
+ * Executes multiple branches in parallel
+ */
+export class ParallelForkExecutor implements ActionExecutor {
+  executorId = 'parallel-fork-executor';
+  description = 'Forks workflow into parallel branches';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🌿 [EXECUTOR] Executing PARALLEL fork', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const branches = config.branches || [];
+
+      // Create parallel execution tracking
+      const branchNodes = branches.map((b: any) => b.startNode).filter(Boolean);
+
+      return {
+        success: true,
+        message: `Forked into ${branches.length} parallel branches`,
+        data: {
+          branches: branches.map((b: any) => ({
+            name: b.name,
+            startNode: b.startNode
+          })),
+          waitFor: config.waitFor,
+          timeout: config.timeout
+        },
+        nextAction: branchNodes.join(',') // Multiple next nodes
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] PARALLEL fork failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to fork parallel branches',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔗 JOIN SYNC EXECUTOR
+ * Synchronizes parallel branches
+ */
+export class JoinSyncExecutor implements ActionExecutor {
+  executorId = 'join-sync-executor';
+  description = 'Synchronizes parallel branches';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔗 [EXECUTOR] Executing JOIN sync', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const completedBranches = context?.metadata?.completedBranches || [];
+      const totalBranches = context?.metadata?.totalBranches || 0;
+
+      const allCompleted = config.waitForAll 
+        ? completedBranches.length === totalBranches
+        : completedBranches.length > 0;
+
+      if (allCompleted) {
+        return {
+          success: true,
+          message: 'All branches synchronized successfully',
+          data: {
+            completedBranches,
+            totalBranches,
+            aggregateResults: config.aggregateResults ? completedBranches : undefined
+          }
+        };
+      } else {
+        return {
+          success: true,
+          message: 'Waiting for branches to complete',
+          data: {
+            completedBranches: completedBranches.length,
+            totalBranches,
+            waiting: true
+          }
+        };
+      }
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] JOIN sync failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to synchronize branches',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -781,6 +1233,7 @@ export class ActionExecutorsRegistry {
    * Register all default executors
    */
   private registerDefaultExecutors(): void {
+    // Action executors
     this.register(new EmailActionExecutor());
     this.register(new ApprovalActionExecutor());
     this.register(new AutoApprovalExecutor());
@@ -790,6 +1243,17 @@ export class ActionExecutorsRegistry {
     this.register(new TaskTriggerExecutor());
     this.register(new TaskActionExecutor());
     this.register(new GenericActionExecutor());
+    
+    // Routing executors
+    this.register(new TeamRoutingExecutor());
+    this.register(new UserRoutingExecutor());
+    
+    // Flow control executors
+    this.register(new IfConditionExecutor());
+    this.register(new SwitchCaseExecutor());
+    this.register(new WhileLoopExecutor());
+    this.register(new ParallelForkExecutor());
+    this.register(new JoinSyncExecutor());
 
     logger.info('🎯 [REGISTRY] Registered default action executors', {
       count: this.executors.size,
