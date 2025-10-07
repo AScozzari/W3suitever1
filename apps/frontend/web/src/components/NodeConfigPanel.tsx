@@ -26,6 +26,25 @@ interface Role {
   createdAt: string;
 }
 
+interface User {
+  id: string;
+  tenantId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  department: string | null;
+  isActive: boolean;
+}
+
+interface Team {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string | null;
+  teamType: string;
+  department: string | null;
+}
+
 /**
  * 🎛️ Node Configuration Panel
  * 
@@ -1920,6 +1939,11 @@ function TeamAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
   const [teamId, setTeamId] = useState(config.teamId || '');
   const [forDepartment, setForDepartment] = useState(config.forDepartment || 'operations');
 
+  // 🔄 Carica team dal database
+  const { data: teamsData, isLoading: teamsLoading } = useQuery<Team[]>({
+    queryKey: ['/api/teams'],
+  });
+
   const handleSave = useCallback(() => {
     onSave(node.id, {
       assignmentMode,
@@ -1966,16 +1990,40 @@ function TeamAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
 
       {assignmentMode === 'manual' && (
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            👥 Team ID
+          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+            👥 Team
+            <InfoTooltip 
+              title="Selezione Team"
+              description="Seleziona il team a cui assegnare il workflow. Puoi scegliere tra tutti i team attivi del tenant."
+              examples={[
+                "Team Sales Nord",
+                "Team HR Milano",
+                "Team Finance Centrale"
+              ]}
+              notes="Solo i team attivi sono disponibili nella lista"
+            />
           </label>
-          <input 
-            type="text" 
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg"
-            placeholder="UUID team o {{teamId}}"
-          />
+          <Select value={teamId} onValueChange={setTeamId} disabled={teamsLoading}>
+            <SelectTrigger data-testid="select-team">
+              <SelectValue placeholder={teamsLoading ? "Caricamento team..." : "Seleziona team"} />
+            </SelectTrigger>
+            <SelectContent>
+              {teamsLoading ? (
+                <SelectItem value="loading" disabled>⏳ Caricamento...</SelectItem>
+              ) : teamsData && teamsData.length > 0 ? (
+                teamsData.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name} {team.department && `(${team.department})`}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-teams" disabled>⚠️ Nessun team disponibile</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Tip: Puoi anche usare variabili come <code className="bg-gray-100 px-1 rounded">{'{{teamId}}'}</code>
+          </p>
         </div>
       )}
 
