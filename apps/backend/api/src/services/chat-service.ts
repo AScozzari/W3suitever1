@@ -138,11 +138,20 @@ export class ChatService {
         
         const unreadCount = unreadMessages[0]?.count || 0;
 
+        // Get member count
+        const [memberCountResult] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(chatChannelMembers)
+          .where(eq(chatChannelMembers.channelId, channel.id));
+        
+        const memberCount = memberCountResult?.count || 0;
+
         return {
           ...channel,
           lastMessage: lastMessage || null,
           lastMessageAt: lastMessage?.createdAt || channel.createdAt,
-          unreadCount
+          unreadCount,
+          memberCount
         };
       })
     );

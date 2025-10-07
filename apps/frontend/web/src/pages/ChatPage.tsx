@@ -271,7 +271,7 @@ export default function ChatPage() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          marginBottom: '4px'
+                          marginBottom: '2px'
                         }}>
                           <div style={{
                             fontSize: '14px',
@@ -303,6 +303,18 @@ export default function ChatPage() {
                             </div>
                           )}
                         </div>
+                        
+                        {/* Member count for groups */}
+                        {channel.channelType !== 'dm' && channel.memberCount && (
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            marginBottom: '2px'
+                          }}>
+                            {channel.memberCount} {channel.memberCount === 1 ? 'membro' : 'membri'}
+                          </div>
+                        )}
+                        
                         <div style={{
                           fontSize: '12px',
                           color: '#6b7280',
