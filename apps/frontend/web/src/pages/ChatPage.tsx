@@ -366,7 +366,9 @@ export default function ChatPage() {
                 <div style={{
                   padding: '16px',
                   borderBottom: '1px solid #e5e7eb',
-                  background: 'white'
+                  background: channels.find(c => c.id === selectedChannelId)?.metadata?.headerColor || 'white',
+                  color: '#ffffff',
+                  transition: 'background 0.3s ease'
                 }}>
                   <button
                     onClick={() => setMembersDialogOpen(true)}
@@ -378,7 +380,7 @@ export default function ChatPage() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#1f2937',
+                      color: 'inherit',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
@@ -387,7 +389,7 @@ export default function ChatPage() {
                       transition: 'background 0.15s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f3f4f6';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent';

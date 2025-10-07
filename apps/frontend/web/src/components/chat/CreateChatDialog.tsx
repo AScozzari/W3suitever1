@@ -58,6 +58,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
   const [isPrivate, setIsPrivate] = useState(true);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [headerColor, setHeaderColor] = useState<string>('#FF6900');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch available users
@@ -116,7 +117,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
 
   // Create group mutation
   const createGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; visibility: 'public' | 'private'; memberIds: string[]; avatarFile?: File }) => {
+    mutationFn: async (data: { name: string; visibility: 'public' | 'private'; memberIds: string[]; avatarFile?: File; headerColor: string }) => {
       let avatarUrl = '';
       
       // Upload avatar if provided
@@ -135,7 +136,10 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
           name: data.name,
           visibility: data.visibility,
           memberUserIds: data.memberIds,
-          metadata: avatarUrl ? { avatarUrl } : {}
+          metadata: { 
+            ...(avatarUrl ? { avatarUrl } : {}),
+            headerColor: data.headerColor
+          }
         })
       });
     },
@@ -166,6 +170,7 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
     setIsPrivate(true);
     setAvatarFile(null);
     setAvatarPreview('');
+    setHeaderColor('#FF6900');
   };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,7 +248,8 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
       name: groupName,
       visibility: isPrivate ? 'private' : 'public',
       memberIds: selectedUserIds,
-      avatarFile: avatarFile || undefined
+      avatarFile: avatarFile || undefined,
+      headerColor: headerColor
     });
   };
 
@@ -393,6 +399,40 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
                   <p className="text-xs text-gray-500 mt-1">
                     PNG, JPG fino a 5MB
                   </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Header Color Picker */}
+            <div>
+              <Label htmlFor="header-color">Colore Header</Label>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="flex gap-2">
+                  {['#FF6900', '#7B2CBF', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setHeaderColor(color)}
+                      className={`w-10 h-10 rounded-full transition-transform ${
+                        headerColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      data-testid={`color-${color}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="color"
+                    id="header-color"
+                    value={headerColor}
+                    onChange={(e) => setHeaderColor(e.target.value)}
+                    className="w-12 h-10 rounded cursor-pointer"
+                    data-testid="input-header-color"
+                  />
+                  <div className="text-sm text-gray-600 font-mono">
+                    {headerColor}
+                  </div>
                 </div>
               </div>
             </div>
