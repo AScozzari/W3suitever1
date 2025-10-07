@@ -139,10 +139,21 @@ export default function ChatPage() {
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
 
   // Query per ottenere lista chat channels
-  const { data: channels = [], isLoading } = useQuery<ChatChannel[]>({
+  const { data: channels = [], isLoading, error } = useQuery<ChatChannel[]>({
     queryKey: ['/api/chat/channels'],
     staleTime: 5000,
     refetchInterval: 10000
+  });
+
+  // DEBUG: Log per analizzare il problema
+  console.log('🔍 [CHAT-DEBUG] Query Status:', {
+    isLoading,
+    hasError: !!error,
+    error: error,
+    channelsRaw: channels,
+    channelsLength: channels?.length || 0,
+    channelsType: typeof channels,
+    isArray: Array.isArray(channels)
   });
 
   // Mutation per archiviare chat
@@ -328,6 +339,20 @@ export default function ChatPage() {
               overflowY: 'auto',
               padding: '8px'
             }}>
+              {/* DEBUG INFO */}
+              <div style={{
+                padding: '8px',
+                background: '#fffbeb',
+                border: '1px solid #fbbf24',
+                borderRadius: '4px',
+                marginBottom: '8px',
+                fontSize: '11px'
+              }}>
+                <div>Loading: {String(isLoading)}</div>
+                <div>Channels: {JSON.stringify(channels)}</div>
+                <div>Length: {channels?.length || 0}</div>
+              </div>
+              
               {isLoading ? (
                 <div style={{
                   padding: '32px',
