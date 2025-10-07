@@ -177,25 +177,17 @@ export function TaskFormDialog({
   // Get selected storeId from form to use for scope filtering
   const selectedStoreId = form.watch('storeId');
 
-  // Build query params for user filtering
-  const userQueryParams = new URLSearchParams();
+  // Build query params object for user filtering
+  const userQueryParams: Record<string, string> = {};
   if (selectedRoleFilter && selectedRoleFilter !== 'all') {
-    userQueryParams.append('roleId', selectedRoleFilter);
+    userQueryParams.roleId = selectedRoleFilter;
   }
   if (selectedStoreId) {
-    userQueryParams.append('storeId', selectedStoreId);
+    userQueryParams.storeId = selectedStoreId;
   }
-  const userQueryString = userQueryParams.toString();
 
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ['/api/users', userQueryString],
-    queryFn: () => {
-      const url = userQueryString ? `/api/users?${userQueryString}` : '/api/users';
-      return fetch(url, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      }).then(res => res.json());
-    },
+    queryKey: ['/api/users', userQueryParams],
     enabled: open && showUserSelector,
   });
 
