@@ -5,6 +5,7 @@ import { MessageCircle, Plus, Lock } from 'lucide-react';
 import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
 import { MessageList } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
+import { ChannelMembersDialog } from '@/components/chat/ChannelMembersDialog';
 
 interface ChatChannel {
   id: string;
@@ -70,6 +71,7 @@ export default function ChatPage() {
   const [currentModule, setCurrentModule] = useState('chat');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
 
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
 
@@ -347,15 +349,39 @@ export default function ChatPage() {
           }}>
             {selectedChannelId ? (
               <>
-                {/* Chat Header Placeholder */}
+                {/* Chat Header */}
                 <div style={{
                   padding: '16px',
                   borderBottom: '1px solid #e5e7eb',
                   background: 'white'
                 }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                  <button
+                    onClick={() => setMembersDialogOpen(true)}
+                    data-testid="button-show-members"
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      margin: 0,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#1f2937',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
                     {channels.find(c => c.id === selectedChannelId)?.name || 'Chat'}
-                  </h3>
+                  </button>
                 </div>
 
                 {/* Messages Area - con flex per posizionamento corretto */}
@@ -403,6 +429,16 @@ export default function ChatPage() {
             setSelectedChannelId(channelId);
           }}
         />
+
+        {/* Channel Members Dialog */}
+        {selectedChannelId && (
+          <ChannelMembersDialog
+            open={membersDialogOpen}
+            onOpenChange={setMembersDialogOpen}
+            channelId={selectedChannelId}
+            channelName={channels.find(c => c.id === selectedChannelId)?.name || 'Chat'}
+          />
+        )}
       </div>
     </Layout>
   );

@@ -4,6 +4,7 @@ import {
   chatChannelMembers,
   chatMessages,
   chatTypingIndicators,
+  users,
   type InsertChatChannel,
   type ChatChannel,
   type InsertChatChannelMember,
@@ -233,7 +234,7 @@ export class ChatService {
     logger.info('👤 Member removed from channel', { channelId, userId });
   }
 
-  static async getChannelMembers(channelId: string, tenantId: string): Promise<ChatChannelMember[]> {
+  static async getChannelMembers(channelId: string, tenantId: string): Promise<any[]> {
     return db
       .select({
         id: chatChannelMembers.id,
@@ -242,10 +243,17 @@ export class ChatService {
         role: chatChannelMembers.role,
         joinedAt: chatChannelMembers.joinedAt,
         lastReadAt: chatChannelMembers.lastReadAt,
-        notificationPreference: chatChannelMembers.notificationPreference
+        notificationPreference: chatChannelMembers.notificationPreference,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName
+        }
       })
       .from(chatChannelMembers)
       .innerJoin(chatChannels, eq(chatChannelMembers.channelId, chatChannels.id))
+      .leftJoin(users, eq(chatChannelMembers.userId, users.id))
       .where(and(
         eq(chatChannelMembers.channelId, channelId),
         eq(chatChannels.tenantId, tenantId)
