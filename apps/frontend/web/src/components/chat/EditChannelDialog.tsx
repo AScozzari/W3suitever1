@@ -117,7 +117,11 @@ export function EditChannelDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels', channelId, 'members'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          Array.isArray(query.queryKey) && 
+          query.queryKey[0] === '/api/chat/channels'
+      });
       setSelectedUserId('');
       toast({
         title: 'Successo',
@@ -141,7 +145,11 @@ export function EditChannelDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels', channelId, 'members'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          Array.isArray(query.queryKey) && 
+          query.queryKey[0] === '/api/chat/channels'
+      });
       toast({
         title: 'Successo',
         description: 'Membro rimosso dal canale',
