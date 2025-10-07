@@ -146,8 +146,13 @@ export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSav
             <UserAssignmentConfig node={node} onSave={onSave} onClose={onClose} />
           )}
           
+          {/* ========== FORM TRIGGER ========== */}
+          {node.data.id === 'form-trigger' && (
+            <FormTriggerConfig node={node} onSave={onSave} onClose={onClose} />
+          )}
+          
           {/* ========== FALLBACK (solo per nodi non mappati) ========== */}
-          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment'].includes(node.data.id) && (
+          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger'].includes(node.data.id) && (
             <GenericNodeConfig node={node} onSave={onSave} onClose={onClose} />
           )}
         </div>
@@ -1365,6 +1370,269 @@ function TaskTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nod
           onClick={handleSave}
           className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white hover:shadow-lg"
           data-testid="button-save-task-trigger"
+        >
+          💾 Salva Configurazione
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 📝 Form Trigger Configuration
+ */
+function FormTriggerConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+  const config = (node.data.config || {}) as any;
+  const [formId, setFormId] = useState(config.formId || '');
+  const [requiredFields, setRequiredFields] = useState<string[]>(config.requiredFields || []);
+  const [variableMappings, setVariableMappings] = useState<Array<{formField: string, workflowVar: string}>>(
+    config.variableMappings || []
+  );
+  const [autoResponse, setAutoResponse] = useState(config.autoResponse || false);
+  const [autoResponseMessage, setAutoResponseMessage] = useState(config.autoResponseMessage || 'Grazie! La tua richiesta è stata ricevuta.');
+
+  const addRequiredField = () => {
+    setRequiredFields([...requiredFields, '']);
+  };
+
+  const updateRequiredField = (index: number, value: string) => {
+    const updated = [...requiredFields];
+    updated[index] = value;
+    setRequiredFields(updated);
+  };
+
+  const removeRequiredField = (index: number) => {
+    setRequiredFields(requiredFields.filter((_, i) => i !== index));
+  };
+
+  const addMapping = () => {
+    setVariableMappings([...variableMappings, { formField: '', workflowVar: '' }]);
+  };
+
+  const updateMapping = (index: number, field: 'formField' | 'workflowVar', value: string) => {
+    const updated = [...variableMappings];
+    updated[index][field] = value;
+    setVariableMappings(updated);
+  };
+
+  const removeMapping = (index: number) => {
+    setVariableMappings(variableMappings.filter((_, i) => i !== index));
+  };
+
+  const handleSave = useCallback(() => {
+    onSave(node.id, {
+      formId,
+      requiredFields: requiredFields.filter(f => f.trim() !== ''),
+      variableMappings: variableMappings.filter(m => m.formField && m.workflowVar),
+      autoResponse,
+      autoResponseMessage: autoResponse ? autoResponseMessage : undefined
+    });
+    onClose();
+  }, [formId, requiredFields, variableMappings, autoResponse, autoResponseMessage, node.id, onSave, onClose]);
+
+  return (
+    <div className="space-y-4">
+      {/* Header Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm text-blue-900">
+          📝 <strong>Form Trigger</strong>: Avvia automaticamente il workflow quando viene inviato un form specifico. 
+          Il workflow riceverà tutti i dati del form come variabili utilizzabili.
+        </p>
+      </div>
+
+      {/* Form ID */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          🆔 Form ID
+          <InfoTooltip 
+            title="Identificativo Form"
+            description="L'ID univoco del form che farà scattare questo workflow. Può essere un ID custom o un selettore HTML."
+            examples={[
+              "leave-request-form",
+              "customer-support-ticket",
+              "job-application-form"
+            ]}
+            notes="Assicurati che l'ID corrisponda esattamente al form nel frontend"
+          />
+        </label>
+        <Input
+          type="text"
+          value={formId}
+          onChange={(e) => setFormId(e.target.value)}
+          placeholder="es: leave-request-form"
+          className="w-full"
+          data-testid="input-form-id"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          💡 Questo ID deve corrispondere all'attributo <code className="bg-gray-100 px-1 rounded">data-workflow-form</code> del form
+        </p>
+      </div>
+
+      {/* Required Fields */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          ✅ Campi Obbligatori
+          <InfoTooltip 
+            title="Validazione Campi"
+            description="Lista dei campi del form che devono essere compilati per avviare il workflow. La validazione avviene prima dell'esecuzione."
+            examples={[
+              "email - Indirizzo email",
+              "fullName - Nome completo",
+              "department - Dipartimento"
+            ]}
+            notes="Se un campo obbligatorio manca, il workflow non partirà"
+          />
+        </label>
+        
+        {requiredFields.length > 0 ? (
+          <div className="space-y-2">
+            {requiredFields.map((field, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  type="text"
+                  value={field}
+                  onChange={(e) => updateRequiredField(index, e.target.value)}
+                  placeholder="es: email, fullName, department"
+                  className="flex-1"
+                  data-testid={`input-required-field-${index}`}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeRequiredField(index)}
+                  className="text-red-600 hover:bg-red-50"
+                  data-testid={`button-remove-field-${index}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-500">
+            Nessun campo obbligatorio. Clicca "+ Aggiungi Campo" per validare i dati del form.
+          </div>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={addRequiredField}
+          className="mt-2 w-full"
+          data-testid="button-add-required-field"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Aggiungi Campo Obbligatorio
+        </Button>
+      </div>
+
+      {/* Variable Mappings */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          🔄 Mappatura Variabili (opzionale)
+          <InfoTooltip 
+            title="Mappatura Form → Workflow"
+            description="Mappa i campi del form alle variabili utilizzabili nel workflow. Questo rende i dati facilmente accessibili nei nodi successivi."
+            examples={[
+              "form.email → {{requesterEmail}}",
+              "form.amount → {{requestAmount}}",
+              "form.department → {{requesterDept}}"
+            ]}
+            notes="Le variabili possono essere usate in tutti i nodi del workflow con {{nomeVariabile}}"
+          />
+        </label>
+
+        {variableMappings.length > 0 ? (
+          <div className="space-y-2">
+            {variableMappings.map((mapping, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <Input
+                  type="text"
+                  value={mapping.formField}
+                  onChange={(e) => updateMapping(index, 'formField', e.target.value)}
+                  placeholder="Campo form (es: email)"
+                  className="flex-1"
+                  data-testid={`input-mapping-field-${index}`}
+                />
+                <span className="text-gray-400">→</span>
+                <Input
+                  type="text"
+                  value={mapping.workflowVar}
+                  onChange={(e) => updateMapping(index, 'workflowVar', e.target.value)}
+                  placeholder="Variabile (es: userEmail)"
+                  className="flex-1"
+                  data-testid={`input-mapping-var-${index}`}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeMapping(index)}
+                  className="text-red-600 hover:bg-red-50"
+                  data-testid={`button-remove-mapping-${index}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-500">
+            Nessuna mappatura. I dati del form saranno comunque accessibili con i nomi originali.
+          </div>
+        )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={addMapping}
+          className="mt-2 w-full"
+          data-testid="button-add-mapping"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Aggiungi Mappatura
+        </Button>
+      </div>
+
+      {/* Auto Response */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+          <Switch 
+            checked={autoResponse} 
+            onCheckedChange={setAutoResponse}
+            data-testid="switch-auto-response"
+          />
+          <span>✉️ Risposta Automatica</span>
+          <InfoTooltip 
+            title="Conferma Automatica"
+            description="Invia automaticamente un messaggio di conferma all'utente subito dopo l'invio del form."
+            examples={[
+              "Grazie! La tua richiesta è stata ricevuta.",
+              "Il tuo ticket #123 è stato creato con successo."
+            ]}
+            notes="Utile per dare feedback immediato all'utente"
+          />
+        </label>
+
+        {autoResponse && (
+          <textarea
+            value={autoResponseMessage}
+            onChange={(e) => setAutoResponseMessage(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-windtre-orange mt-2"
+            rows={3}
+            placeholder="Messaggio di conferma..."
+            data-testid="textarea-auto-response"
+          />
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+        <Button variant="outline" onClick={onClose} data-testid="button-cancel-config">
+          Annulla
+        </Button>
+        <Button 
+          onClick={handleSave}
+          className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white hover:shadow-lg"
+          data-testid="button-save-form-trigger"
         >
           💾 Salva Configurazione
         </Button>
