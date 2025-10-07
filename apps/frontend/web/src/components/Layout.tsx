@@ -68,6 +68,7 @@ interface LayoutProps {
 
 // Chat Icon Button Component with Unread Badge
 function ChatIconButton({ isMobile, navigate }: { isMobile: boolean; navigate: (path: string) => void }) {
+  const [location] = useLocation();
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/chat/unread-count'],
     refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
@@ -75,10 +76,13 @@ function ChatIconButton({ isMobile, navigate }: { isMobile: boolean; navigate: (
   });
 
   const unreadCount = unreadData?.unreadCount || 0;
+  
+  // Extract tenant slug from current location
+  const tenantSlug = location.split('/')[1] || 'staging';
 
   return (
     <button
-      onClick={() => navigate('/chat')}
+      onClick={() => navigate(`/${tenantSlug}/chat`)}
       data-testid="button-chat"
       style={{
         position: 'relative',
