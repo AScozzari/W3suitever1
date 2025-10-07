@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { MessageCircle, Users, User, Lock, Globe } from 'lucide-react';
+import { MessageCircle, Users, User, Lock, Globe, Upload, X } from 'lucide-react';
 
 interface CreateChatDialogProps {
   open: boolean;
@@ -56,6 +56,9 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [groupName, setGroupName] = useState('');
   const [isPrivate, setIsPrivate] = useState(true);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch available users
   const { data: users = [], isLoading: usersLoading } = useQuery<UserOption[]>({
@@ -92,16 +95,47 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
     }
   });
 
+  // Upload avatar helper
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('directory', '.private');
+    
+    const response = await fetch('/api/object-storage/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+    
+    const result = await response.json();
+    return result.url;
+  };
+
   // Create group mutation
   const createGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; visibility: 'public' | 'private'; memberIds: string[] }) => {
+    mutationFn: async (data: { name: string; visibility: 'public' | 'private'; memberIds: string[]; avatarFile?: File }) => {
+      let avatarUrl = '';
+      
+      // Upload avatar if provided
+      if (data.avatarFile) {
+        try {
+          avatarUrl = await uploadAvatar(data.avatarFile);
+        } catch (err) {
+          console.error('Avatar upload failed:', err);
+        }
+      }
+      
       return apiRequest('/api/chat/channels', {
         method: 'POST',
         body: JSON.stringify({
           channelType: 'team',
           name: data.name,
           visibility: data.visibility,
-          memberUserIds: data.memberIds
+          memberUserIds: data.memberIds,
+          metadata: avatarUrl ? { avatarUrl } : {}
         })
       });
     },
@@ -130,6 +164,50 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
     setSelectedUserIds([]);
     setGroupName('');
     setIsPrivate(true);
+    setAvatarFile(null);
+    setAvatarPreview('');
+  };
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Errore',
+        description: 'Seleziona un\'immagine valida',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Errore',
+        description: 'Immagine troppo grande (max 5MB)',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setAvatarFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleCreateDM = () => {
@@ -164,7 +242,8 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
     createGroupMutation.mutate({
       name: groupName,
       visibility: isPrivate ? 'private' : 'public',
-      memberIds: selectedUserIds
+      memberIds: selectedUserIds,
+      avatarFile: avatarFile || undefined
     });
   };
 
@@ -265,6 +344,57 @@ export function CreateChatDialog({ open, onOpenChange, onChatCreated }: CreateCh
                 onChange={(e) => setGroupName(e.target.value)}
                 className="mt-1"
               />
+            </div>
+
+            {/* Avatar Upload */}
+            <div>
+              <Label>Avatar Gruppo</Label>
+              <div className="mt-2 flex items-center gap-4">
+                {avatarPreview ? (
+                  <div className="relative">
+                    <img
+                      src={avatarPreview}
+                      alt="Avatar preview"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-[#FF6900]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      data-testid="button-remove-avatar"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <Upload size={24} className="text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarSelect}
+                    className="hidden"
+                    data-testid="input-avatar-file"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="button-upload-avatar"
+                    className="w-full"
+                  >
+                    <Upload size={16} className="mr-2" />
+                    {avatarPreview ? 'Cambia Immagine' : 'Carica Immagine'}
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PNG, JPG fino a 5MB
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-md">
