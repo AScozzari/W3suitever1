@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 
 interface TypingIndicatorProps {
   channelId: string;
@@ -8,12 +9,13 @@ interface TypingIndicatorProps {
 
 export function TypingIndicator({ channelId, currentUserId }: TypingIndicatorProps) {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const { isIdle } = useIdleDetection();
 
-  // Poll for typing indicators
+  // Poll for typing indicators (ONLY when user is active)
   const { data } = useQuery<any[]>({
     queryKey: [`/api/chat/channels/${channelId}/typing`],
     enabled: !!channelId,
-    refetchInterval: 2000,
+    refetchInterval: isIdle ? false : 2000,
     select: (data) => data?.filter((user: any) => user.userId !== currentUserId) || []
   });
 

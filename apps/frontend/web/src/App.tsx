@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Route, Switch, Redirect } from "wouter";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { IdleDetectionProvider } from "./contexts/IdleDetectionContext";
 import { TenantShell } from "./components/TenantShell";
 import { useSessionKeepAlive } from "./hooks/useSessionKeepAlive";
 
@@ -44,7 +45,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Router />
+        <IdleDetectionProvider>
+          <Router />
+        </IdleDetectionProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

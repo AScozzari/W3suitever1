@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircle, Loader2 } from 'lucide-react';
 import { MessageActions } from './MessageActions';
+import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 
 interface Message {
   id: string;
@@ -55,11 +56,12 @@ function formatMessageTime(date: Date): string {
 
 export function MessageList({ channelId, currentUserId }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isIdle } = useIdleDetection();
 
   const { data: messages = [], isLoading } = useQuery<Message[]>({
     queryKey: [`/api/chat/channels/${channelId}/messages`],
     enabled: !!channelId,
-    refetchInterval: 3000
+    refetchInterval: isIdle ? false : 3000
   });
 
   useEffect(() => {

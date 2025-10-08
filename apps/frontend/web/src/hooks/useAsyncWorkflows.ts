@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 
 export interface QueueMetrics {
   waiting: number;
@@ -34,17 +35,21 @@ export interface StepExecution {
 }
 
 export function useQueueMetrics() {
+  const { isIdle } = useIdleDetection();
+  
   return useQuery<QueueMetrics>({
     queryKey: ['/api/workflows/queue/metrics'],
-    refetchInterval: 5000,
+    refetchInterval: isIdle ? false : 5000,
   });
 }
 
 export function useWorkflowExecutions(instanceId: string | null) {
+  const { isIdle } = useIdleDetection();
+  
   return useQuery<StepExecution[]>({
     queryKey: ['/api/workflows/instances', instanceId, 'executions'],
     enabled: !!instanceId,
-    refetchInterval: 3000,
+    refetchInterval: isIdle ? false : 3000,
   });
 }
 
