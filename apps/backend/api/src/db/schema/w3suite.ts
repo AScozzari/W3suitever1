@@ -236,6 +236,13 @@ export const mcpToolCategoryEnum = pgEnum('mcp_tool_category', [
   'database',      // Postgres, MongoDB
   'other'
 ]);
+export const mcpAccountTypeEnum = pgEnum('mcp_account_type', [
+  'facebook_page',
+  'instagram_business',
+  'google_workspace',
+  'aws_account',
+  'microsoft_tenant'
+]);
 
 
 // ==================== TENANTS ====================
@@ -3525,6 +3532,49 @@ export const mcpServerCredentials = w3suiteSchema.table("mcp_server_credentials"
     table.serverId, 
     sql`COALESCE(${table.userId}, '')`,
     sql`COALESCE(${table.oauthProvider}, '')`
+  ),
+}));
+
+// MCP Connected Accounts - Multi-account support for Meta Pages, Instagram, Google Workspaces, etc.
+export const mcpConnectedAccounts = w3suiteSchema.table("mcp_connected_accounts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  credentialId: uuid("credential_id").references(() => mcpServerCredentials.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Account Type & Identity
+  accountType: mcpAccountTypeEnum("account_type").notNull(),
+  platformAccountId: varchar("platform_account_id", { length: 255 }).notNull(), // FB Page ID, IG Account ID, Google Workspace ID, etc.
+  accountName: varchar("account_name", { length: 255 }).notNull(), // Display name (e.g., "Negozio Milano")
+  accountUsername: varchar("account_username", { length: 255 }), // @username for Instagram, email for Google
+  
+  // Platform-Specific Access Token (for Page Access Tokens, etc.)
+  encryptedAccessToken: text("encrypted_access_token"), // Encrypted Page Access Token (Meta) or account-specific token
+  tokenExpiresAt: timestamp("token_expires_at"), // null = never expires (Meta Page tokens)
+  
+  // Account Metadata
+  accountMetadata: jsonb("account_metadata").default({}), // Followers, profile pic, additional info
+  linkedAccounts: jsonb("linked_accounts").default([]), // e.g., IG account linked to FB Page: [{type: 'instagram_business', id: 'xxx'}]
+  
+  // Permissions & Status
+  grantedPermissions: text("granted_permissions").array(), // Specific permissions for this account
+  isActive: boolean("is_active").default(true).notNull(),
+  isPrimary: boolean("is_primary").default(false).notNull(), // Mark one account as primary/default
+  
+  // Audit & Lifecycle
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastSyncedAt: timestamp("last_synced_at"), // Last time account data was synced
+  removedAt: timestamp("removed_at"), // Soft delete when user removes account
+}, (table) => ({
+  tenantIndex: index("mcp_connected_accounts_tenant_idx").on(table.tenantId),
+  credentialIndex: index("mcp_connected_accounts_credential_idx").on(table.credentialId),
+  accountTypeIndex: index("mcp_connected_accounts_type_idx").on(table.accountType),
+  platformAccountIndex: index("mcp_connected_accounts_platform_id_idx").on(table.platformAccountId),
+  // Unique: one account per credential (prevent duplicate page connections)
+  credentialPlatformAccountUnique: uniqueIndex("mcp_connected_accounts_credential_platform_unique").on(
+    table.credentialId, 
+    table.platformAccountId
   ),
 }));
 
