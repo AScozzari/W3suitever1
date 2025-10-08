@@ -222,6 +222,21 @@ export const activityFeedInteractionTypeEnum = pgEnum('activity_feed_interaction
   'hide'
 ]);
 
+// ==================== MCP (MODEL CONTEXT PROTOCOL) ENUMS ====================
+export const mcpTransportEnum = pgEnum('mcp_transport', ['stdio', 'http-sse']);
+export const mcpServerStatusEnum = pgEnum('mcp_server_status', ['active', 'inactive', 'error', 'configuring']);
+export const mcpCredentialTypeEnum = pgEnum('mcp_credential_type', ['oauth', 'api_key', 'basic_auth', 'none']);
+export const mcpToolCategoryEnum = pgEnum('mcp_tool_category', [
+  'communication',  // Gmail, Teams, Slack
+  'storage',        // Drive, S3, Dropbox
+  'analytics',      // GTM, GA
+  'social_media',   // Meta/Instagram, Facebook
+  'productivity',   // Calendar, Sheets, Docs
+  'ai',            // OpenAI, AI services
+  'database',      // Postgres, MongoDB
+  'other'
+]);
+
 
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
@@ -3432,6 +3447,110 @@ export const aiConversations = w3suiteSchema.table("ai_conversations", {
   expiresIndex: index("ai_conversations_expires_idx").on(table.expiresAt),
 }));
 
+// ==================== MCP (MODEL CONTEXT PROTOCOL) SYSTEM ====================
+// Enterprise-grade integration system for external services via MCP protocol
+// Supports Google Workspace, Meta/Instagram, GTM, AWS S3, Microsoft Teams, etc.
+
+// MCP Servers - Registry of configured MCP servers (tenant-scoped)
+export const mcpServers = w3suiteSchema.table("mcp_servers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Server Identification
+  name: varchar("name", { length: 100 }).notNull(), // Unique identifier (e.g., 'google-workspace', 'meta-instagram')
+  displayName: varchar("display_name", { length: 255 }).notNull(), // User-friendly name
+  description: text("description"),
+  
+  // Connection Details
+  serverUrl: text("server_url"), // For http-sse transport (null for stdio)
+  transport: mcpTransportEnum("transport").notNull(), // stdio or http-sse
+  status: mcpServerStatusEnum("status").default('configuring').notNull(),
+  
+  // Configuration & Metadata
+  config: jsonb("config").default({}).notNull(), // Server-specific config (retries, timeout, etc.)
+  iconUrl: varchar("icon_url", { length: 500 }), // Optional icon for UI
+  category: mcpToolCategoryEnum("category").default('other'),
+  
+  // Health & Monitoring
+  lastHealthCheck: timestamp("last_health_check"),
+  lastError: text("last_error"),
+  errorCount: integer("error_count").default(0).notNull(),
+  
+  // Metadata
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  archivedAt: timestamp("archived_at"),
+}, (table) => ({
+  tenantIndex: index("mcp_servers_tenant_idx").on(table.tenantId),
+  statusIndex: index("mcp_servers_status_idx").on(table.status),
+  nameIndex: uniqueIndex("mcp_servers_tenant_name_unique").on(table.tenantId, table.name),
+  categoryIndex: index("mcp_servers_category_idx").on(table.category),
+}));
+
+// MCP Server Credentials - Encrypted credential storage with RLS
+export const mcpServerCredentials = w3suiteSchema.table("mcp_server_credentials", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  serverId: uuid("server_id").references(() => mcpServers.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Credential Type & Data
+  credentialType: mcpCredentialTypeEnum("credential_type").notNull(),
+  encryptedCredentials: jsonb("encrypted_credentials").notNull(), // Encrypted: { accessToken, refreshToken, apiKey, etc. }
+  
+  // OAuth-specific fields
+  tokenType: varchar("token_type", { length: 50 }), // 'Bearer', 'Basic', etc.
+  scope: text("scope"), // OAuth scopes granted
+  expiresAt: timestamp("expires_at"), // Token expiration
+  
+  // Audit & Lifecycle
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => ({
+  tenantIndex: index("mcp_server_credentials_tenant_idx").on(table.tenantId),
+  serverIndex: index("mcp_server_credentials_server_idx").on(table.serverId),
+  expiresIndex: index("mcp_server_credentials_expires_idx").on(table.expiresAt),
+  // Unique: one credential set per server per tenant
+  serverCredentialUnique: uniqueIndex("mcp_server_credentials_server_unique").on(table.serverId),
+}));
+
+// MCP Tool Schemas - Cached tool schemas for performance & offline access
+export const mcpToolSchemas = w3suiteSchema.table("mcp_tool_schemas", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  serverId: uuid("server_id").references(() => mcpServers.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Tool Identification
+  toolName: varchar("tool_name", { length: 100 }).notNull(), // e.g., 'gmail-send', 'instagram-publish'
+  displayName: varchar("display_name", { length: 255 }),
+  description: text("description"),
+  category: mcpToolCategoryEnum("category").default('other'),
+  
+  // JSON Schema Definition (from MCP server)
+  inputSchema: jsonb("input_schema").notNull(), // Zod-compatible JSON schema for inputs
+  outputSchema: jsonb("output_schema"), // Expected output schema
+  
+  // Tool Metadata
+  examples: jsonb("examples").default([]), // Example usage for AI agents
+  tags: text("tags").array(), // Searchable tags
+  
+  // Sync & Cache Management
+  lastSyncedAt: timestamp("last_synced_at").notNull(),
+  syncVersion: varchar("sync_version", { length: 50 }), // MCP server version
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  serverIndex: index("mcp_tool_schemas_server_idx").on(table.serverId),
+  categoryIndex: index("mcp_tool_schemas_category_idx").on(table.category),
+  // Unique: one schema per tool per server
+  toolNameUnique: uniqueIndex("mcp_tool_schemas_server_tool_unique").on(table.serverId, table.toolName),
+  lastSyncedIndex: index("mcp_tool_schemas_synced_idx").on(table.lastSyncedAt),
+}));
+
 // ==================== VECTOR EMBEDDINGS SYSTEM (pgvector) ====================
 // Enterprise-grade vector storage with multi-tenant RLS isolation
 
@@ -3689,6 +3808,24 @@ export const aiTrainingSessionsRelations = relations(aiTrainingSessions, ({ one 
   user: one(users, { fields: [aiTrainingSessions.userId], references: [users.id] }),
 }));
 
+// MCP System Relations
+export const mcpServersRelations = relations(mcpServers, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [mcpServers.tenantId], references: [tenants.id] }),
+  createdBy: one(users, { fields: [mcpServers.createdBy], references: [users.id] }),
+  credentials: many(mcpServerCredentials),
+  toolSchemas: many(mcpToolSchemas),
+}));
+
+export const mcpServerCredentialsRelations = relations(mcpServerCredentials, ({ one }) => ({
+  tenant: one(tenants, { fields: [mcpServerCredentials.tenantId], references: [tenants.id] }),
+  server: one(mcpServers, { fields: [mcpServerCredentials.serverId], references: [mcpServers.id] }),
+  createdBy: one(users, { fields: [mcpServerCredentials.createdBy], references: [users.id] }),
+}));
+
+export const mcpToolSchemasRelations = relations(mcpToolSchemas, ({ one }) => ({
+  server: one(mcpServers, { fields: [mcpToolSchemas.serverId], references: [mcpServers.id] }),
+}));
+
 // AI Insert Schemas and Types
 export const insertAISettingsSchema = createInsertSchema(aiSettings).omit({ 
   id: true, 
@@ -3745,6 +3882,37 @@ export const insertAITrainingSessionSchema = createInsertSchema(aiTrainingSessio
 });
 export type InsertAITrainingSession = z.infer<typeof insertAITrainingSessionSchema>;
 export type AITrainingSession = typeof aiTrainingSessions.$inferSelect;
+
+// ==================== MCP SYSTEM INSERT SCHEMAS ====================
+
+export const insertMCPServerSchema = createInsertSchema(mcpServers).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  lastHealthCheck: true,
+  errorCount: true,
+  archivedAt: true
+});
+export type InsertMCPServer = z.infer<typeof insertMCPServerSchema>;
+export type MCPServer = typeof mcpServers.$inferSelect;
+
+export const insertMCPServerCredentialSchema = createInsertSchema(mcpServerCredentials).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  lastUsedAt: true,
+  revokedAt: true
+});
+export type InsertMCPServerCredential = z.infer<typeof insertMCPServerCredentialSchema>;
+export type MCPServerCredential = typeof mcpServerCredentials.$inferSelect;
+
+export const insertMCPToolSchemaSchema = createInsertSchema(mcpToolSchemas).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertMCPToolSchema = z.infer<typeof insertMCPToolSchemaSchema>;
+export type MCPToolSchema = typeof mcpToolSchemas.$inferSelect;
 
 // ==================== TASK SYSTEM INSERT SCHEMAS ====================
 
