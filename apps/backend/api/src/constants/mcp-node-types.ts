@@ -166,11 +166,18 @@ export enum StripeAction {
 }
 
 /**
- * GTM/Analytics Actions (0 - primarily INBOUND)
+ * GTM/Analytics Actions (6)
  */
 export enum GTMAction {
-  // GTM is primarily for inbound events (form submissions, conversions)
-  // No outbound actions needed
+  // Event tracking (3)
+  TRACK_EVENT = 'gtm.track-event',
+  TRACK_PAGE_VIEW = 'gtm.track-pageview',
+  TRACK_CONVERSION = 'gtm.track-conversion',
+  
+  // Tag management (3)
+  SETUP_TAG = 'gtm.setup-tag',
+  UPDATE_TAG = 'gtm.update-tag',
+  DELETE_TAG = 'gtm.delete-tag'
 }
 
 /**

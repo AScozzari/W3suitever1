@@ -1,9 +1,9 @@
 /**
  * 🔌 MCP NODE DEFINITIONS - Model Context Protocol
  * 
- * 73 nodes totali:
- * - 45 OUTBOUND actions (Google 12, AWS 11, Meta 9, MS 7, Stripe 6)
- * - 28 INBOUND triggers (Google 5, AWS 5, Meta 6, MS 4, Stripe 4, GTM 4)
+ * 103 nodes totali:
+ * - 54 OUTBOUND actions (Google 12, AWS 11, Meta 9, MS 7, Stripe 6, GTM 6, PostgreSQL 9)
+ * - 49 INBOUND triggers (Google 5, AWS 5, Meta 6, MS 4, Stripe 4, GTM 15, PostgreSQL 6)
  * 
  * Organizzati per ecosistema con badge e color coding
  */
@@ -18,7 +18,8 @@ export const MCP_ECOSYSTEMS = {
   meta: { badge: '[META]', color: '#E4405F', name: 'Meta/Instagram' },
   microsoft: { badge: '[MS]', color: '#0078D4', name: 'Microsoft 365' },
   stripe: { badge: '[STRIPE]', color: '#635BFF', name: 'Stripe' },
-  gtm: { badge: '[GTM]', color: '#4CAF50', name: 'GTM/Analytics' }
+  gtm: { badge: '[GTM]', color: '#4CAF50', name: 'GTM/Analytics' },
+  postgresql: { badge: '[PG]', color: '#336791', name: 'PostgreSQL' }
 } as const;
 
 // 🔵 GOOGLE WORKSPACE OUTBOUND (12 nodes)
@@ -534,7 +535,109 @@ export const STRIPE_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
   }
 ];
 
-// 🟢 GTM/ANALYTICS INBOUND (4 triggers)
+// 🟢 GTM/ANALYTICS OUTBOUND (6 actions)
+export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-gtm-track-event',
+    name: '[GTM] Track Event',
+    description: 'Track custom event via Google Analytics',
+    category: 'mcp-outbound',
+    ecosystem: 'gtm',
+    icon: 'Activity',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      eventName: z.string(),
+      eventCategory: z.string().optional(),
+      eventLabel: z.string().optional(),
+      eventValue: z.number().optional()
+    }),
+    defaultConfig: { eventName: '' }
+  },
+  {
+    id: 'mcp-gtm-track-pageview',
+    name: '[GTM] Track Page View',
+    description: 'Track page view via Google Analytics',
+    category: 'mcp-outbound',
+    ecosystem: 'gtm',
+    icon: 'Eye',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      pageUrl: z.string(),
+      pageTitle: z.string().optional(),
+      referrer: z.string().optional()
+    }),
+    defaultConfig: { pageUrl: '' }
+  },
+  {
+    id: 'mcp-gtm-track-conversion',
+    name: '[GTM] Track Conversion',
+    description: 'Track conversion event via Google Analytics',
+    category: 'mcp-outbound',
+    ecosystem: 'gtm',
+    icon: 'Target',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      conversionLabel: z.string(),
+      conversionValue: z.number().optional(),
+      currency: z.string().optional()
+    }),
+    defaultConfig: { conversionLabel: '' }
+  },
+  {
+    id: 'mcp-gtm-setup-tag',
+    name: '[GTM] Setup Tag',
+    description: 'Create GTM tag configuration',
+    category: 'mcp-outbound',
+    ecosystem: 'gtm',
+    icon: 'Tags',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      tagName: z.string(),
+      tagType: z.string(),
+      accountId: z.string(),
+      containerId: z.string()
+    }),
+    defaultConfig: { tagName: '', tagType: '', accountId: '', containerId: '' }
+  },
+  {
+    id: 'mcp-gtm-update-tag',
+    name: '[GTM] Update Tag',
+    description: 'Update existing GTM tag',
+    category: 'mcp-outbound',
+    ecosystem: 'gtm',
+    icon: 'Edit',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      tagId: z.string(),
+      tagName: z.string().optional(),
+      tagConfiguration: z.record(z.any()).optional()
+    }),
+    defaultConfig: { tagId: '' }
+  },
+  {
+    id: 'mcp-gtm-delete-tag',
+    name: '[GTM] Delete Tag',
+    description: 'Delete GTM tag',
+    category: 'mcp-outbound',
+    ecosystem: 'gtm',
+    icon: 'Trash2',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      tagId: z.string(),
+      accountId: z.string(),
+      containerId: z.string()
+    }),
+    defaultConfig: { tagId: '', accountId: '', containerId: '' }
+  }
+];
+
+// 🟢 GTM/ANALYTICS INBOUND (15 triggers)
 export const GTM_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
   {
     id: 'mcp-trigger-gtm-pageview',
@@ -565,6 +668,417 @@ export const GTM_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
       value: z.number().optional()
     }),
     defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-form-submission',
+    name: '[GTM] Form Submission',
+    description: 'Triggered when form is submitted',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'CheckSquare',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      formId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-product-view',
+    name: '[GTM] Product View',
+    description: 'Triggered when product is viewed',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'Package',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      productId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-add-to-cart',
+    name: '[GTM] Add to Cart',
+    description: 'Triggered when item added to cart',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'ShoppingCart',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      productId: z.string().optional(),
+      quantity: z.number().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-remove-from-cart',
+    name: '[GTM] Remove from Cart',
+    description: 'Triggered when item removed from cart',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'Trash2',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      productId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-checkout-started',
+    name: '[GTM] Checkout Started',
+    description: 'Triggered when checkout begins',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'CreditCard',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      cartValue: z.number().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-purchase-completed',
+    name: '[GTM] Purchase Completed',
+    description: 'Triggered when purchase is completed',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'CheckCircle',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      orderId: z.string().optional(),
+      totalAmount: z.number().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-scroll-depth',
+    name: '[GTM] Scroll Depth',
+    description: 'Triggered on scroll milestone',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'ArrowDown',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      scrollPercentage: z.number().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-video-play',
+    name: '[GTM] Video Play',
+    description: 'Triggered when video starts',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'Play',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      videoId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-video-complete',
+    name: '[GTM] Video Complete',
+    description: 'Triggered when video completes',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'CheckCircle',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      videoId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-link-click',
+    name: '[GTM] Link Click',
+    description: 'Triggered when link is clicked',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'MousePointer',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      linkUrl: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-custom-event',
+    name: '[GTM] Custom Event',
+    description: 'Triggered for custom tracking',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'Zap',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      eventName: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-error-tracking',
+    name: '[GTM] Error Tracking',
+    description: 'Triggered on JavaScript error',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'AlertTriangle',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      errorMessage: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-gtm-user-timing',
+    name: '[GTM] User Timing',
+    description: 'Triggered for performance measurements',
+    category: 'mcp-inbound',
+    ecosystem: 'gtm',
+    icon: 'Clock',
+    color: MCP_ECOSYSTEMS.gtm.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      timingCategory: z.string().optional()
+    }),
+    defaultConfig: {}
+  }
+];
+
+// 🔵 POSTGRESQL OUTBOUND (9 actions)
+export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-postgresql-execute-query',
+    name: '[PG] Execute Query',
+    description: 'Execute SELECT query on PostgreSQL database',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Search',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      query: z.string(),
+      parameters: z.array(z.any()).optional()
+    }),
+    defaultConfig: { query: 'SELECT * FROM table_name' }
+  },
+  {
+    id: 'mcp-postgresql-execute-raw-sql',
+    name: '[PG] Execute Raw SQL',
+    description: 'Execute raw SQL statement',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Terminal',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      sql: z.string(),
+      parameters: z.array(z.any()).optional()
+    }),
+    defaultConfig: { sql: '' }
+  },
+  {
+    id: 'mcp-postgresql-insert-row',
+    name: '[PG] Insert Row',
+    description: 'Insert new row into table',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'PlusCircle',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      table: z.string(),
+      data: z.record(z.any()),
+      returning: z.array(z.string()).optional()
+    }),
+    defaultConfig: { table: '', data: {} }
+  },
+  {
+    id: 'mcp-postgresql-update-row',
+    name: '[PG] Update Row',
+    description: 'Update existing row',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Edit',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      table: z.string(),
+      where: z.record(z.any()),
+      data: z.record(z.any()),
+      returning: z.array(z.string()).optional()
+    }),
+    defaultConfig: { table: '', where: {}, data: {} }
+  },
+  {
+    id: 'mcp-postgresql-delete-row',
+    name: '[PG] Delete Row',
+    description: 'Delete row from table',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Trash2',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      table: z.string(),
+      where: z.record(z.any()),
+      returning: z.array(z.string()).optional()
+    }),
+    defaultConfig: { table: '', where: {} }
+  },
+  {
+    id: 'mcp-postgresql-begin-transaction',
+    name: '[PG] Begin Transaction',
+    description: 'Start database transaction',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Lock',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      isolationLevel: z.enum(['READ UNCOMMITTED', 'READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE']).optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-postgresql-commit-transaction',
+    name: '[PG] Commit Transaction',
+    description: 'Commit active transaction',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Check',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      transactionId: z.string()
+    }),
+    defaultConfig: { transactionId: '' }
+  },
+  {
+    id: 'mcp-postgresql-rollback-transaction',
+    name: '[PG] Rollback Transaction',
+    description: 'Rollback active transaction',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'RotateCcw',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      transactionId: z.string()
+    }),
+    defaultConfig: { transactionId: '' }
+  },
+  {
+    id: 'mcp-postgresql-create-table',
+    name: '[PG] Create Table',
+    description: 'Create new database table',
+    category: 'mcp-outbound',
+    ecosystem: 'postgresql',
+    icon: 'Table',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      tableName: z.string(),
+      columns: z.array(z.object({
+        name: z.string(),
+        type: z.string(),
+        constraints: z.array(z.string()).optional()
+      })),
+      ifNotExists: z.boolean().optional()
+    }),
+    defaultConfig: { tableName: '', columns: [] }
+  }
+];
+
+// 🔵 POSTGRESQL INBOUND (6 triggers)
+export const POSTGRESQL_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-trigger-postgresql-row-inserted',
+    name: '[PG] Row Inserted',
+    description: 'Triggered when row is inserted',
+    category: 'mcp-inbound',
+    ecosystem: 'postgresql',
+    icon: 'PlusCircle',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      table: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-postgresql-row-updated',
+    name: '[PG] Row Updated',
+    description: 'Triggered when row is updated',
+    category: 'mcp-inbound',
+    ecosystem: 'postgresql',
+    icon: 'Edit',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      table: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-postgresql-row-deleted',
+    name: '[PG] Row Deleted',
+    description: 'Triggered when row is deleted',
+    category: 'mcp-inbound',
+    ecosystem: 'postgresql',
+    icon: 'Trash2',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      table: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-postgresql-query-executed',
+    name: '[PG] Query Executed',
+    description: 'Triggered when query is executed',
+    category: 'mcp-inbound',
+    ecosystem: 'postgresql',
+    icon: 'Activity',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({}),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-postgresql-table-created',
+    name: '[PG] Table Created',
+    description: 'Triggered when table is created',
+    category: 'mcp-inbound',
+    ecosystem: 'postgresql',
+    icon: 'Table',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({}),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-postgresql-table-dropped',
+    name: '[PG] Table Dropped',
+    description: 'Triggered when table is dropped',
+    category: 'mcp-inbound',
+    ecosystem: 'postgresql',
+    icon: 'XCircle',
+    color: MCP_ECOSYSTEMS.postgresql.color,
+    version: '1.0.0',
+    configSchema: z.object({}),
+    defaultConfig: {}
   }
 ];
 
@@ -574,7 +1088,9 @@ export const MCP_OUTBOUND_NODES = [
   ...AWS_OUTBOUND_NODES,
   ...META_OUTBOUND_NODES,
   ...MICROSOFT_OUTBOUND_NODES,
-  ...STRIPE_OUTBOUND_NODES
+  ...STRIPE_OUTBOUND_NODES,
+  ...GTM_OUTBOUND_NODES,
+  ...POSTGRESQL_OUTBOUND_NODES
 ];
 
 export const MCP_INBOUND_NODES = [
@@ -583,7 +1099,8 @@ export const MCP_INBOUND_NODES = [
   ...META_INBOUND_TRIGGERS,
   ...MICROSOFT_INBOUND_TRIGGERS,
   ...STRIPE_INBOUND_TRIGGERS,
-  ...GTM_INBOUND_TRIGGERS
+  ...GTM_INBOUND_TRIGGERS,
+  ...POSTGRESQL_INBOUND_TRIGGERS
 ];
 
 export const ALL_MCP_NODES = [
