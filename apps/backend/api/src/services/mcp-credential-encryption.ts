@@ -33,6 +33,12 @@ function getMasterSecret(): string {
   const secret = process.env.MCP_ENCRYPTION_KEY;
   
   if (!secret) {
+    // In development mode, use a default secret
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️  WARNING: Using default MCP_ENCRYPTION_KEY for development. NEVER use in production!');
+      return 'INSECURE_DEV_KEY_FOR_MCP_CREDENTIALS_DO_NOT_USE_IN_PRODUCTION_1234567890';
+    }
+    
     throw new Error(
       'CRITICAL SECURITY ERROR: MCP_ENCRYPTION_KEY environment variable is not set. ' +
       'MCP credential encryption requires a secure master key. ' +
