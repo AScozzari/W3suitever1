@@ -49,9 +49,20 @@ class ApiService {
           const response = await apiRequest(endpoint, requestOptions);
           clearTimeout(timeoutId);
           
-          // If response already has success/data structure, return it directly
+          // If response already has success/data structure, extract the data
           if (response && typeof response === 'object' && 'success' in response) {
-            return response as ApiResponse<T>;
+            const structuredResponse = response as any;
+            // If it has a data field, use that as the actual data
+            if ('data' in structuredResponse) {
+              return {
+                success: structuredResponse.success,
+                data: structuredResponse.data as T,
+                error: structuredResponse.error,
+                needsAuth: structuredResponse.needsAuth
+              };
+            }
+            // Otherwise return as-is (backward compatibility)
+            return structuredResponse as ApiResponse<T>;
           }
           
           // Otherwise, wrap the response
