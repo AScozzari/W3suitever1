@@ -4,6 +4,7 @@ import { webhookEvents, webhookSignatures, type InsertWebhookEvent, type Webhook
 import { redisService } from '../core/redis-service.js';
 import { logger } from '../core/logger.js';
 import crypto from 'crypto';
+import { dispatchMCPTrigger } from '../handlers/mcp-trigger-handlers.js';
 
 export interface WebhookEventPayload {
   tenantId: string;
@@ -152,6 +153,44 @@ export class WebhookService {
         
         // Re-throw if it's a different error
         throw insertError;
+      }
+
+      // STEP 3.5: Dispatch MCP triggers to start workflows (for mcp-* sources)
+      if (event.source.startsWith('mcp-')) {
+        try {
+          // Extract serverId from headers or metadata
+          const serverId = event.headers?.['x-mcp-server-id'] || event.payload?.serverId;
+          
+          if (serverId) {
+            // Dispatch trigger (non-blocking - don't await)
+            dispatchMCPTrigger({
+              tenantId: event.tenantId,
+              serverId,
+              triggerType: event.eventType,
+              payload: event.payload
+            }).catch((dispatchError) => {
+              logger.error('❌ MCP trigger dispatch failed (non-blocking)', {
+                error: dispatchError instanceof Error ? dispatchError.message : String(dispatchError),
+                eventId: storedEvent.id,
+                eventType: event.eventType,
+                tenantId: event.tenantId
+              });
+            });
+
+            logger.info('🚀 MCP trigger dispatched', {
+              eventId: storedEvent.id,
+              triggerType: event.eventType,
+              serverId,
+              tenantId: event.tenantId
+            });
+          }
+        } catch (mcpError) {
+          // Log but don't fail the webhook - MCP dispatch is supplementary
+          logger.warn('⚠️ MCP trigger dispatch error (non-critical)', {
+            error: mcpError instanceof Error ? mcpError.message : String(mcpError),
+            eventId: storedEvent.id
+          });
+        }
       }
 
       // STEP 4: Queue for async processing with Redis fallback
