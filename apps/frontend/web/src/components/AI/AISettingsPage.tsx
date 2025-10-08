@@ -124,11 +124,10 @@ export default function AISettingsPage() {
     enabled: !!selectedAgentForTraining && (agentTrainingModalOpen || agentStoryboardModalOpen)
   });
 
-  // Fetch available AI agents - only when tenant is loaded
+  // Fetch available AI agents
   const { data: aiAgents, isLoading: aiAgentsLoading } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ['/api/ai/agents'],
     refetchInterval: 60000, // Refresh every minute
-    enabled: !!settings?.data?.tenantId, // Wait for tenant to be loaded
   });
 
   // Update settings mutation

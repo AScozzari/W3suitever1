@@ -284,14 +284,17 @@ class ApiService {
 
     const hasAnyData = data.legalEntities.length > 0 || data.users.length > 0 || data.stores.length > 0;
 
+    const warnings = [
+      legalEntitiesResult.status === 'rejected' || (legalEntitiesResult.status === 'fulfilled' && !legalEntitiesResult.value.success) ? 'Legal entities service unavailable' : null,
+      usersResult.status === 'rejected' || (usersResult.status === 'fulfilled' && !usersResult.value.success) ? 'Users service unavailable' : null,
+      storesResult.status === 'rejected' || (storesResult.status === 'fulfilled' && !storesResult.value.success) ? 'Stores service unavailable' : null
+    ].filter(Boolean);
+
     return {
       success: hasAnyData,
       data,
-      warnings: [
-        legalEntitiesResult.status === 'rejected' || (legalEntitiesResult.status === 'fulfilled' && !legalEntitiesResult.value.success) ? 'Legal entities service unavailable' : null,
-        usersResult.status === 'rejected' || (usersResult.status === 'fulfilled' && !usersResult.value.success) ? 'Users service unavailable' : null,
-        storesResult.status === 'rejected' || (storesResult.status === 'fulfilled' && !storesResult.value.success) ? 'Stores service unavailable' : null
-      ].filter(Boolean)
+      error: hasAnyData ? undefined : warnings.join(', ') || 'Failed to load settings data',
+      warnings
     };
   }
 
