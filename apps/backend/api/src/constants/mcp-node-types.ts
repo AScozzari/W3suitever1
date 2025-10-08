@@ -2,10 +2,10 @@
  * MCP Node Types & Constants
  * 
  * Complete registry of:
- * - 45 OUTBOUND action node types (API calls to external services)
- * - 20+ INBOUND trigger node types (webhook events from external services)
+ * - 54 OUTBOUND action node types (API calls to external services)
+ * - 49 INBOUND trigger node types (webhook events from external services)
  * 
- * Organized by ecosystem: Google, AWS, Meta, Microsoft, Stripe, GTM
+ * Organized by ecosystem: Google, AWS, Meta, Microsoft, Stripe, GTM, PostgreSQL
  */
 
 // ==================== ECOSYSTEMS ====================
@@ -15,7 +15,8 @@ export enum MCPEcosystem {
   META = 'meta',
   MICROSOFT = 'microsoft',
   STRIPE = 'stripe',
-  GTM = 'gtm'
+  GTM = 'gtm',
+  POSTGRESQL = 'postgresql'
 }
 
 export const EcosystemMetadata = {
@@ -54,10 +55,16 @@ export const EcosystemMetadata = {
     badge: 'GTM',
     color: '#FF6F00',
     authType: 'service-account'
+  },
+  [MCPEcosystem.POSTGRESQL]: {
+    name: 'PostgreSQL',
+    badge: 'PG',
+    color: '#336791',
+    authType: 'database-credentials'
   }
 } as const;
 
-// ==================== OUTBOUND ACTION NODES (45 total) ====================
+// ==================== OUTBOUND ACTION NODES (54 total) ====================
 
 /**
  * Google Workspace Actions (12)
@@ -166,7 +173,29 @@ export enum GTMAction {
   // No outbound actions needed
 }
 
-// ==================== INBOUND TRIGGER NODES (20+ total) ====================
+/**
+ * PostgreSQL Actions (9)
+ */
+export enum PostgreSQLAction {
+  // Query operations (2)
+  EXECUTE_QUERY = 'postgresql.execute-query',
+  EXECUTE_RAW_SQL = 'postgresql.execute-raw-sql',
+  
+  // CRUD operations (3)
+  INSERT_ROW = 'postgresql.insert-row',
+  UPDATE_ROW = 'postgresql.update-row',
+  DELETE_ROW = 'postgresql.delete-row',
+  
+  // Transaction management (3)
+  BEGIN_TRANSACTION = 'postgresql.begin-transaction',
+  COMMIT_TRANSACTION = 'postgresql.commit-transaction',
+  ROLLBACK_TRANSACTION = 'postgresql.rollback-transaction',
+  
+  // Schema operations (1)
+  CREATE_TABLE = 'postgresql.create-table'
+}
+
+// ==================== INBOUND TRIGGER NODES (49 total) ====================
 
 /**
  * Google Workspace Triggers (5)
@@ -224,19 +253,50 @@ export enum StripeTrigger {
 }
 
 /**
- * GTM/Analytics Triggers (3)
+ * GTM/Analytics Triggers (15)
  */
 export enum GTMTrigger {
+  // Basic tracking (3)
   FORM_SUBMISSION = 'gtm.form.submission',
   CONVERSION_EVENT = 'gtm.conversion.event',
-  PAGE_VIEW = 'gtm.page.view'
+  PAGE_VIEW = 'gtm.page.view',
+  
+  // E-commerce tracking (5)
+  PRODUCT_VIEW = 'gtm.ecommerce.product-view',
+  ADD_TO_CART = 'gtm.ecommerce.add-to-cart',
+  REMOVE_FROM_CART = 'gtm.ecommerce.remove-from-cart',
+  CHECKOUT_STARTED = 'gtm.ecommerce.checkout-started',
+  PURCHASE_COMPLETED = 'gtm.ecommerce.purchase-completed',
+  
+  // User engagement (4)
+  SCROLL_DEPTH = 'gtm.engagement.scroll-depth',
+  VIDEO_PLAY = 'gtm.engagement.video-play',
+  VIDEO_COMPLETE = 'gtm.engagement.video-complete',
+  LINK_CLICK = 'gtm.engagement.link-click',
+  
+  // Custom & Error tracking (3)
+  CUSTOM_EVENT = 'gtm.custom.event',
+  ERROR_TRACKING = 'gtm.error.tracking',
+  USER_TIMING = 'gtm.timing.user'
+}
+
+/**
+ * PostgreSQL Triggers (6)
+ */
+export enum PostgreSQLTrigger {
+  ROW_INSERTED = 'postgresql.row.inserted',
+  ROW_UPDATED = 'postgresql.row.updated',
+  ROW_DELETED = 'postgresql.row.deleted',
+  QUERY_EXECUTED = 'postgresql.query.executed',
+  TABLE_CREATED = 'postgresql.table.created',
+  TABLE_DROPPED = 'postgresql.table.dropped'
 }
 
 // ==================== UNIFIED NODE TYPE ENUM ====================
 
 export type MCPNodeType = 
-  | GoogleAction | AWSAction | MetaAction | MicrosoftAction | StripeAction | GTMAction
-  | GoogleTrigger | AWSTrigger | MetaTrigger | MicrosoftTrigger | StripeTrigger | GTMTrigger;
+  | GoogleAction | AWSAction | MetaAction | MicrosoftAction | StripeAction | GTMAction | PostgreSQLAction
+  | GoogleTrigger | AWSTrigger | MetaTrigger | MicrosoftTrigger | StripeTrigger | GTMTrigger | PostgreSQLTrigger;
 
 // ==================== NODE METADATA ====================
 
@@ -1181,6 +1241,358 @@ export const MCPNodeRegistry: Record<string, MCPNodeMetadata> = {
     optionalFields: [],
     outputVariables: ['pageUrl', 'pageTitle', 'userId'],
     requiresAuth: false,
+    webhookSupport: true
+  },
+  
+  // E-commerce tracking
+  [GTMTrigger.PRODUCT_VIEW]: {
+    id: GTMTrigger.PRODUCT_VIEW,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Product View',
+    description: 'Triggered when product is viewed',
+    icon: 'Package',
+    requiredFields: ['productId'],
+    optionalFields: [],
+    outputVariables: ['productId', 'productName', 'price', 'category'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.ADD_TO_CART]: {
+    id: GTMTrigger.ADD_TO_CART,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Add to Cart',
+    description: 'Triggered when item is added to cart',
+    icon: 'ShoppingCart',
+    requiredFields: ['productId', 'quantity'],
+    optionalFields: [],
+    outputVariables: ['productId', 'quantity', 'price', 'cartValue'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.REMOVE_FROM_CART]: {
+    id: GTMTrigger.REMOVE_FROM_CART,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Remove from Cart',
+    description: 'Triggered when item is removed from cart',
+    icon: 'Trash2',
+    requiredFields: ['productId'],
+    optionalFields: [],
+    outputVariables: ['productId', 'quantity', 'cartValue'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.CHECKOUT_STARTED]: {
+    id: GTMTrigger.CHECKOUT_STARTED,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Checkout Started',
+    description: 'Triggered when checkout process begins',
+    icon: 'CreditCard',
+    requiredFields: ['cartValue'],
+    optionalFields: [],
+    outputVariables: ['cartValue', 'itemCount', 'userId'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.PURCHASE_COMPLETED]: {
+    id: GTMTrigger.PURCHASE_COMPLETED,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Purchase Completed',
+    description: 'Triggered when purchase is completed',
+    icon: 'CheckCircle',
+    requiredFields: ['orderId', 'totalAmount'],
+    optionalFields: [],
+    outputVariables: ['orderId', 'totalAmount', 'items', 'userId'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  
+  // User engagement
+  [GTMTrigger.SCROLL_DEPTH]: {
+    id: GTMTrigger.SCROLL_DEPTH,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Scroll Depth',
+    description: 'Triggered when user scrolls to specific depth',
+    icon: 'ArrowDown',
+    requiredFields: ['scrollPercentage'],
+    optionalFields: [],
+    outputVariables: ['scrollPercentage', 'pageUrl'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.VIDEO_PLAY]: {
+    id: GTMTrigger.VIDEO_PLAY,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Video Play',
+    description: 'Triggered when video playback starts',
+    icon: 'Play',
+    requiredFields: ['videoId'],
+    optionalFields: [],
+    outputVariables: ['videoId', 'videoTitle', 'duration'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.VIDEO_COMPLETE]: {
+    id: GTMTrigger.VIDEO_COMPLETE,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Video Complete',
+    description: 'Triggered when video playback completes',
+    icon: 'CheckCircle',
+    requiredFields: ['videoId'],
+    optionalFields: [],
+    outputVariables: ['videoId', 'watchTime', 'completionRate'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.LINK_CLICK]: {
+    id: GTMTrigger.LINK_CLICK,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Link Click',
+    description: 'Triggered when link is clicked',
+    icon: 'MousePointer',
+    requiredFields: ['linkUrl'],
+    optionalFields: [],
+    outputVariables: ['linkUrl', 'linkText', 'isExternal'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  
+  // Custom & Error tracking
+  [GTMTrigger.CUSTOM_EVENT]: {
+    id: GTMTrigger.CUSTOM_EVENT,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Custom Event',
+    description: 'Triggered for custom tracking events',
+    icon: 'Zap',
+    requiredFields: ['eventName'],
+    optionalFields: ['eventData'],
+    outputVariables: ['eventName', 'eventData', 'timestamp'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.ERROR_TRACKING]: {
+    id: GTMTrigger.ERROR_TRACKING,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'Error Tracking',
+    description: 'Triggered when JavaScript error occurs',
+    icon: 'AlertTriangle',
+    requiredFields: ['errorMessage'],
+    optionalFields: [],
+    outputVariables: ['errorMessage', 'errorStack', 'pageUrl'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  [GTMTrigger.USER_TIMING]: {
+    id: GTMTrigger.USER_TIMING,
+    ecosystem: MCPEcosystem.GTM,
+    category: 'trigger',
+    name: 'User Timing',
+    description: 'Triggered for performance timing measurements',
+    icon: 'Clock',
+    requiredFields: ['timingCategory', 'timingValue'],
+    optionalFields: [],
+    outputVariables: ['timingCategory', 'timingValue', 'timingLabel'],
+    requiresAuth: false,
+    webhookSupport: true
+  },
+  
+  // ==================== POSTGRESQL ACTIONS ====================
+  [PostgreSQLAction.EXECUTE_QUERY]: {
+    id: PostgreSQLAction.EXECUTE_QUERY,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Execute Query',
+    description: 'Execute SELECT query',
+    icon: 'Search',
+    requiredFields: ['query'],
+    optionalFields: ['parameters'],
+    outputVariables: ['rows', 'rowCount'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.EXECUTE_RAW_SQL]: {
+    id: PostgreSQLAction.EXECUTE_RAW_SQL,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Execute Raw SQL',
+    description: 'Execute raw SQL statement',
+    icon: 'Terminal',
+    requiredFields: ['sql'],
+    optionalFields: ['parameters'],
+    outputVariables: ['result', 'affectedRows'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.INSERT_ROW]: {
+    id: PostgreSQLAction.INSERT_ROW,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Insert Row',
+    description: 'Insert new row into table',
+    icon: 'PlusCircle',
+    requiredFields: ['table', 'data'],
+    optionalFields: ['returning'],
+    outputVariables: ['insertedId', 'insertedRow'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.UPDATE_ROW]: {
+    id: PostgreSQLAction.UPDATE_ROW,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Update Row',
+    description: 'Update existing row',
+    icon: 'Edit',
+    requiredFields: ['table', 'where', 'data'],
+    optionalFields: ['returning'],
+    outputVariables: ['updatedCount', 'updatedRows'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.DELETE_ROW]: {
+    id: PostgreSQLAction.DELETE_ROW,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Delete Row',
+    description: 'Delete row from table',
+    icon: 'Trash2',
+    requiredFields: ['table', 'where'],
+    optionalFields: ['returning'],
+    outputVariables: ['deletedCount', 'deletedRows'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.BEGIN_TRANSACTION]: {
+    id: PostgreSQLAction.BEGIN_TRANSACTION,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Begin Transaction',
+    description: 'Start database transaction',
+    icon: 'Lock',
+    requiredFields: [],
+    optionalFields: ['isolationLevel'],
+    outputVariables: ['transactionId'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.COMMIT_TRANSACTION]: {
+    id: PostgreSQLAction.COMMIT_TRANSACTION,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Commit Transaction',
+    description: 'Commit active transaction',
+    icon: 'Check',
+    requiredFields: ['transactionId'],
+    optionalFields: [],
+    outputVariables: ['success'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.ROLLBACK_TRANSACTION]: {
+    id: PostgreSQLAction.ROLLBACK_TRANSACTION,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Rollback Transaction',
+    description: 'Rollback active transaction',
+    icon: 'RotateCcw',
+    requiredFields: ['transactionId'],
+    optionalFields: [],
+    outputVariables: ['success'],
+    requiresAuth: true
+  },
+  [PostgreSQLAction.CREATE_TABLE]: {
+    id: PostgreSQLAction.CREATE_TABLE,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'action',
+    name: 'Create Table',
+    description: 'Create new database table',
+    icon: 'Table',
+    requiredFields: ['tableName', 'columns'],
+    optionalFields: ['ifNotExists'],
+    outputVariables: ['success', 'tableName'],
+    requiresAuth: true
+  },
+  
+  // ==================== POSTGRESQL TRIGGERS ====================
+  [PostgreSQLTrigger.ROW_INSERTED]: {
+    id: PostgreSQLTrigger.ROW_INSERTED,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'trigger',
+    name: 'Row Inserted',
+    description: 'Triggered when row is inserted',
+    icon: 'PlusCircle',
+    requiredFields: ['table'],
+    optionalFields: [],
+    outputVariables: ['insertedRow', 'tableName'],
+    requiresAuth: true,
+    webhookSupport: true
+  },
+  [PostgreSQLTrigger.ROW_UPDATED]: {
+    id: PostgreSQLTrigger.ROW_UPDATED,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'trigger',
+    name: 'Row Updated',
+    description: 'Triggered when row is updated',
+    icon: 'Edit',
+    requiredFields: ['table'],
+    optionalFields: [],
+    outputVariables: ['oldRow', 'newRow', 'tableName'],
+    requiresAuth: true,
+    webhookSupport: true
+  },
+  [PostgreSQLTrigger.ROW_DELETED]: {
+    id: PostgreSQLTrigger.ROW_DELETED,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'trigger',
+    name: 'Row Deleted',
+    description: 'Triggered when row is deleted',
+    icon: 'Trash2',
+    requiredFields: ['table'],
+    optionalFields: [],
+    outputVariables: ['deletedRow', 'tableName'],
+    requiresAuth: true,
+    webhookSupport: true
+  },
+  [PostgreSQLTrigger.QUERY_EXECUTED]: {
+    id: PostgreSQLTrigger.QUERY_EXECUTED,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'trigger',
+    name: 'Query Executed',
+    description: 'Triggered when query is executed',
+    icon: 'Activity',
+    requiredFields: [],
+    optionalFields: [],
+    outputVariables: ['query', 'duration', 'rowCount'],
+    requiresAuth: true,
+    webhookSupport: true
+  },
+  [PostgreSQLTrigger.TABLE_CREATED]: {
+    id: PostgreSQLTrigger.TABLE_CREATED,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'trigger',
+    name: 'Table Created',
+    description: 'Triggered when table is created',
+    icon: 'Table',
+    requiredFields: [],
+    optionalFields: [],
+    outputVariables: ['tableName', 'schema'],
+    requiresAuth: true,
+    webhookSupport: true
+  },
+  [PostgreSQLTrigger.TABLE_DROPPED]: {
+    id: PostgreSQLTrigger.TABLE_DROPPED,
+    ecosystem: MCPEcosystem.POSTGRESQL,
+    category: 'trigger',
+    name: 'Table Dropped',
+    description: 'Triggered when table is dropped',
+    icon: 'XCircle',
+    requiredFields: [],
+    optionalFields: [],
+    outputVariables: ['tableName'],
+    requiresAuth: true,
     webhookSupport: true
   }
 };
