@@ -29,8 +29,15 @@ import {
   Shield,
   AlertCircle,
   ExternalLink,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // 🎯 Ecosystem Configurations
 const MCP_ECOSYSTEMS = {
@@ -508,12 +515,35 @@ export default function MCPSettingsTab() {
               <div className="pt-4 border-t space-y-4">
                 {/* OAuth Configuration Form */}
                 <div className="space-y-3">
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <p className="text-sm font-medium text-blue-900 mb-2">📋 OAuth Redirect URL (copia in Google Cloud Console):</p>
-                    <code className="text-xs bg-white px-2 py-1 rounded border border-blue-300 block break-all">
-                      {window.location.origin}/api/mcp/oauth/google/callback
-                    </code>
-                  </div>
+                  {/* Info Tooltip */}
+                  <TooltipProvider>
+                    <div className="flex items-start gap-2 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <p className="text-sm font-semibold text-blue-900 mb-1">🔵 In Google Cloud Console:</p>
+                          <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Vai su <strong>APIs & Services → Credentials</strong></li>
+                            <li>Clicca <strong>Create Credentials → OAuth 2.0 Client ID</strong></li>
+                            <li>Seleziona <strong>Web application</strong></li>
+                            <li>Aggiungi questo URL nelle <strong>Authorized redirect URIs</strong>:</li>
+                          </ol>
+                          <code className="text-xs bg-white px-2 py-1 rounded border border-blue-300 block break-all mt-2">
+                            {window.location.origin}/api/mcp/oauth/google/callback
+                          </code>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-blue-900 mb-1">⚙️ In W3 Suite (qui sotto):</p>
+                          <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Copia il <strong>Client ID</strong> e <strong>Client Secret</strong> da Google Console</li>
+                            <li>Incollali nei campi qui sotto e clicca <strong>Salva Configurazione OAuth</strong></li>
+                            <li>Dopo il salvataggio, clicca <strong>Autorizza Accesso Google</strong></li>
+                            <li>Acconsenti alle autorizzazioni richieste da Google</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  </TooltipProvider>
                   
                   <form className="space-y-3" onSubmit={(e) => {
                     e.preventDefault();
