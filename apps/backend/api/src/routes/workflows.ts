@@ -1120,6 +1120,218 @@ router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), a
   }
 });
 
+/**
+ * POST /api/workflows/ai-generate
+ * AI-powered workflow generation from natural language
+ * Uses workflow-assistant agent to generate workflow JSON from user prompt
+ */
+router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Validate request body
+    const aiGenerateSchema = z.object({
+      prompt: z.string().min(10, 'Prompt must be at least 10 characters'),
+      context: z.object({
+        department: z.string().optional(),
+        category: z.string().optional()
+      }).optional()
+    });
+
+    const validationResult = aiGenerateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request body',
+        message: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { prompt, context } = validationResult.data;
+
+    logger.info('🤖 [AI Generate] Starting workflow generation', {
+      tenantId,
+      userId,
+      promptLength: prompt.length,
+      context
+    });
+
+    // Get tenant AI settings
+    await setTenantContext(tenantId);
+    const [tenantAISettings] = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.tenantId, tenantId))
+      .limit(1);
+
+    if (!tenantAISettings) {
+      return res.status(400).json({
+        success: false,
+        error: 'AI settings not configured for this tenant',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Build system prompt with node catalog
+    const systemPrompt = `You are an expert workflow automation assistant. Generate a workflow JSON from user description.
+
+Available Node Types:
+- send-email: Send notification emails
+- approve-request: Request approval with escalation
+- auto-approval: Automatic approval based on rules
+- decision-evaluator: Evaluate conditions and route
+- create-task: Create new tasks
+- ai-decision: AI-powered decision making
+- form-trigger: Form submission trigger
+- task-trigger: Task event trigger
+
+Output Format (strict JSON):
+{
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "send-email",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "label": "Send Email",
+        "config": {
+          "to": ["user@example.com"],
+          "subject": "Subject",
+          "template": "notification"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "node-1",
+      "target": "node-2",
+      "sourceHandle": "output",
+      "targetHandle": "input"
+    }
+  ]
+}
+
+Rules:
+1. Generate sequential node IDs (node-1, node-2, etc.)
+2. Position nodes vertically with 200px spacing (x: 100, y: 100, 300, 500...)
+3. Create edges to connect nodes in logical order
+4. Use appropriate node types for the workflow logic
+5. Return ONLY valid JSON, no explanations`;
+
+    const userPrompt = `Create a workflow for: ${prompt}${context?.department ? `\nDepartment: ${context.department}` : ''}`;
+
+    // Initialize AI services
+    const aiRegistry = new AIRegistryService(db);
+
+    // Call workflow-assistant agent
+    const aiResponse = await aiRegistry.createUnifiedResponse(
+      userPrompt,
+      {
+        openaiModel: tenantAISettings.openaiModel,
+        systemPrompt: systemPrompt,
+        maxTokens: tenantAISettings.maxTokens || 2000,
+        temperature: 0.3 // Low temperature for consistent JSON output
+      },
+      {
+        agentId: 'workflow-assistant',
+        tenantId,
+        userId: userId || 'system',
+        moduleContext: 'workflow'
+      }
+    );
+
+    logger.info('🤖 [AI Generate] Received AI response', {
+      tenantId,
+      outputLength: aiResponse.output.length,
+      tokensUsed: aiResponse.tokensUsed,
+      cost: aiResponse.cost
+    });
+
+    // Parse and validate JSON
+    let workflowJSON;
+    try {
+      // Clean response (remove markdown code blocks if present)
+      let cleanedOutput = aiResponse.output.trim();
+      if (cleanedOutput.startsWith('```json')) {
+        cleanedOutput = cleanedOutput.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (cleanedOutput.startsWith('```')) {
+        cleanedOutput = cleanedOutput.replace(/```\n?/g, '');
+      }
+      
+      workflowJSON = JSON.parse(cleanedOutput);
+      
+      // Basic validation
+      if (!workflowJSON.nodes || !Array.isArray(workflowJSON.nodes)) {
+        throw new Error('Invalid workflow structure: missing nodes array');
+      }
+      if (!workflowJSON.edges) {
+        workflowJSON.edges = [];
+      }
+
+    } catch (parseError) {
+      logger.error('❌ [AI Generate] Failed to parse AI response', {
+        error: parseError,
+        response: aiResponse.output.substring(0, 500)
+      });
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to parse AI-generated workflow',
+        message: parseError instanceof Error ? parseError.message : 'Invalid JSON format',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('✅ [AI Generate] Workflow generated successfully', {
+      tenantId,
+      userId,
+      nodesCount: workflowJSON.nodes.length,
+      edgesCount: workflowJSON.edges.length
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        workflow: workflowJSON,
+        metadata: {
+          tokensUsed: aiResponse.tokensUsed,
+          cost: aiResponse.cost,
+          model: aiResponse.model
+        }
+      },
+      message: 'Workflow generated successfully',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('❌ [AI Generate] Error generating workflow', { 
+      error, 
+      prompt: req.body?.prompt,
+      tenantId: req.user?.tenantId,
+      userId: req.user?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'An unexpected error occurred',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== DASHBOARD METRICS ====================
 
 /**
