@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useTenant } from '@/contexts/TenantContext';
 import { 
   CheckCircle, 
   XCircle, 
@@ -118,6 +119,7 @@ interface MCPServer {
 
 export default function MCPSettingsTab() {
   const { toast } = useToast();
+  const { currentUser, currentTenant } = useTenant();
   const queryClient = useQueryClient();
   const [activeEcosystem, setActiveEcosystem] = useState('google');
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
@@ -311,8 +313,17 @@ export default function MCPSettingsTab() {
         });
       }
       
-      // Redirect to OAuth start flow with serverId
-      window.location.href = `/api/mcp/oauth/${provider}/start/${server.id}`;
+      // 🔧 Redirect to OAuth start flow with tenant/user context in query params
+      // Note: Browser redirects can't send custom headers, so we use query parameters
+      const tenantId = currentTenant?.id || localStorage.getItem('currentTenantId');
+      const userId = currentUser?.id;
+
+      // 🔒 SECURITY: Block OAuth if tenant/user context is missing
+      if (!tenantId || !userId) {
+        throw new Error('Tenant or user context missing. Please refresh the page and try again.');
+      }
+      
+      window.location.href = `/api/mcp/oauth/${provider}/start/${server.id}?tenantId=${tenantId}&userId=${userId}`;
       
     } catch (error) {
       setConnectingProvider(null);

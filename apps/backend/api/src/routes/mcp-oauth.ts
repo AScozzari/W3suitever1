@@ -3,7 +3,7 @@ import { GoogleOAuthService } from '../services/google-oauth-service';
 import { MetaOAuthService } from '../services/meta-oauth-service';
 import { MicrosoftOAuthService } from '../services/microsoft-oauth-service';
 import { db } from '../core/db';
-import { mcpServers } from '../db/schema/w3suite';
+import { mcpServers, users } from '../db/schema/w3suite';
 import { eq, and } from 'drizzle-orm';
 import { logger } from '../core/logger';
 
@@ -20,11 +20,20 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
   try {
     const { serverId } = req.params;
     
-    // Get tenantId and userId from authenticated session
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+    // 🔧 FIX: Get tenantId from query parameter (browser redirects can't send custom headers)
+    // Note: Treat empty strings as missing values
+    const tenantId = (req.query.tenantId as string)?.trim() || (req as any).user?.tenantId;
+    const userId = (req.query.userId as string)?.trim() || (req as any).user?.id;
 
-    if (!tenantId) {
+    logger.info('🚀 [OAuth] Start endpoint called', {
+      serverId,
+      tenantId,
+      userId,
+      hasQueryTenant: !!req.query.tenantId,
+      hasUserTenant: !!(req as any).user?.tenantId
+    });
+
+    if (!tenantId || tenantId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -37,15 +46,16 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
         </head>
         <body>
           <div class="error">
-            <h1>❌ Authentication Required</h1>
-            <p>Please log in first before connecting Google Workspace.</p>
+            <h1>❌ Tenant Missing</h1>
+            <p>Tenant context required. Please refresh and try again.</p>
+            <p><small>Debug: Query params missing tenantId and userId</small></p>
           </div>
         </body>
         </html>
       `);
     }
 
-    if (!userId) {
+    if (!userId || userId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -60,6 +70,41 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
           <div class="error">
             <h1>❌ User Session Required</h1>
             <p>Unable to identify user. Please log in again.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // 🔒 SECURITY: Validate that userId belongs to tenantId to prevent cross-tenant tampering
+    const [userValidation] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!userValidation) {
+      logger.error('🚨 [OAuth] Security: userId does not belong to tenantId', {
+        userId,
+        tenantId
+      });
+      return res.status(403).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Forbidden</title>
+          <style>
+            body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .error { background: #fee; border: 1px solid #c33; padding: 20px; border-radius: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h1>❌ Access Denied</h1>
+            <p>Invalid user/tenant combination. Please refresh and try again.</p>
           </div>
         </body>
         </html>
@@ -392,11 +437,20 @@ router.get('/meta/start/:serverId', async (req: Request, res: Response) => {
   try {
     const { serverId } = req.params;
     
-    // Get tenantId and userId from authenticated session
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+    // 🔧 FIX: Get tenantId from query parameter (browser redirects can't send custom headers)
+    // Note: Treat empty strings as missing values
+    const tenantId = (req.query.tenantId as string)?.trim() || (req as any).user?.tenantId;
+    const userId = (req.query.userId as string)?.trim() || (req as any).user?.id;
 
-    if (!tenantId) {
+    logger.info('🚀 [OAuth] Meta start endpoint called', {
+      serverId,
+      tenantId,
+      userId,
+      hasQueryTenant: !!req.query.tenantId,
+      hasUserTenant: !!(req as any).user?.tenantId
+    });
+
+    if (!tenantId || tenantId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -409,15 +463,16 @@ router.get('/meta/start/:serverId', async (req: Request, res: Response) => {
         </head>
         <body>
           <div class="error">
-            <h1>❌ Authentication Required</h1>
-            <p>Please log in first before connecting Meta/Instagram.</p>
+            <h1>❌ Tenant Missing</h1>
+            <p>Tenant context required. Please refresh and try again.</p>
+            <p><small>Debug: Query params missing tenantId and userId</small></p>
           </div>
         </body>
         </html>
       `);
     }
 
-    if (!userId) {
+    if (!userId || userId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -432,6 +487,42 @@ router.get('/meta/start/:serverId', async (req: Request, res: Response) => {
           <div class="error">
             <h1>❌ User Session Required</h1>
             <p>Unable to identify user. Please log in again.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // 🔒 SECURITY: Validate that userId belongs to tenantId to prevent cross-tenant tampering
+    const [userValidation] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!userValidation) {
+      logger.error('🚨 [OAuth] Security: userId does not belong to tenantId', {
+        userId,
+        tenantId,
+        provider: 'meta'
+      });
+      return res.status(403).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Forbidden</title>
+          <style>
+            body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .error { background: #fee; border: 1px solid #c33; padding: 20px; border-radius: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h1>❌ Access Denied</h1>
+            <p>Invalid user/tenant combination. Please refresh and try again.</p>
           </div>
         </body>
         </html>
@@ -767,11 +858,20 @@ router.get('/microsoft/start/:serverId', async (req: Request, res: Response) => 
   try {
     const { serverId } = req.params;
     
-    // Get tenantId and userId from authenticated session
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+    // 🔧 FIX: Get tenantId from query parameter (browser redirects can't send custom headers)
+    // Note: Treat empty strings as missing values
+    const tenantId = (req.query.tenantId as string)?.trim() || (req as any).user?.tenantId;
+    const userId = (req.query.userId as string)?.trim() || (req as any).user?.id;
 
-    if (!tenantId) {
+    logger.info('🚀 [OAuth] Microsoft start endpoint called', {
+      serverId,
+      tenantId,
+      userId,
+      hasQueryTenant: !!req.query.tenantId,
+      hasUserTenant: !!(req as any).user?.tenantId
+    });
+
+    if (!tenantId || tenantId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -784,15 +884,16 @@ router.get('/microsoft/start/:serverId', async (req: Request, res: Response) => 
         </head>
         <body>
           <div class="error">
-            <h1>❌ Authentication Required</h1>
-            <p>Please log in first before connecting Microsoft 365.</p>
+            <h1>❌ Tenant Missing</h1>
+            <p>Tenant context required. Please refresh and try again.</p>
+            <p><small>Debug: Query params missing tenantId and userId</small></p>
           </div>
         </body>
         </html>
       `);
     }
 
-    if (!userId) {
+    if (!userId || userId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -807,6 +908,42 @@ router.get('/microsoft/start/:serverId', async (req: Request, res: Response) => 
           <div class="error">
             <h1>❌ User Session Required</h1>
             <p>Unable to identify user. Please log in again.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // 🔒 SECURITY: Validate that userId belongs to tenantId to prevent cross-tenant tampering
+    const [userValidation] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!userValidation) {
+      logger.error('🚨 [OAuth] Security: userId does not belong to tenantId', {
+        userId,
+        tenantId,
+        provider: 'microsoft'
+      });
+      return res.status(403).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Forbidden</title>
+          <style>
+            body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .error { background: #fee; border: 1px solid #c33; padding: 20px; border-radius: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h1>❌ Access Denied</h1>
+            <p>Invalid user/tenant combination. Please refresh and try again.</p>
           </div>
         </body>
         </html>
