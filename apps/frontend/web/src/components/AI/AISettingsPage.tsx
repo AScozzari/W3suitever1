@@ -68,6 +68,23 @@ interface AIUsageLog {
   requestTimestamp: string; // Correct field name from backend
 }
 
+interface AIAgent {
+  id: string;
+  agentId: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+  personality: Record<string, any>;
+  moduleContext: string;
+  baseConfiguration: {
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+  };
+  version: number;
+  status: 'active' | 'inactive' | 'deprecated';
+}
+
 export default function AISettingsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('settings');
@@ -125,7 +142,7 @@ export default function AISettingsPage() {
   });
 
   // Fetch available AI agents
-  const { data: aiAgents, isLoading: aiAgentsLoading } = useQuery<{success: boolean, data: any[]}>({
+  const { data: aiAgents, isLoading: aiAgentsLoading } = useQuery<AIAgent[]>({
     queryKey: ['/api/ai/agents'],
     refetchInterval: 60000, // Refresh every minute
   });
@@ -621,8 +638,8 @@ export default function AISettingsPage() {
               <RefreshCw className="w-6 h-6 animate-spin text-[#FF6900]" />
               <span className="ml-2 text-gray-600">Caricamento agenti AI...</span>
             </div>
-          ) : aiAgents?.data && aiAgents.data.length > 0 ? (
-            aiAgents.data.map((agent: any) => (
+          ) : aiAgents && Array.isArray(aiAgents) && aiAgents.length > 0 ? (
+            aiAgents.map((agent) => (
               <div key={agent.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-lg bg-[#FF6900]/10 flex items-center justify-center">
@@ -686,6 +703,14 @@ export default function AISettingsPage() {
                 </div>
               </div>
             ))
+          ) : aiAgents && !Array.isArray(aiAgents) ? (
+            <div className="p-4 border-2 border-dashed border-amber-200 rounded-lg text-center bg-amber-50">
+              <div className="text-amber-600">
+                <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm font-medium">Errore nel formato dei dati</p>
+                <p className="text-xs mt-1">Si è verificato un problema. Riprova più tardi.</p>
+              </div>
+            </div>
           ) : (
             <div className="p-4 border-2 border-dashed border-gray-200 rounded-lg text-center">
               <div className="text-gray-400">
