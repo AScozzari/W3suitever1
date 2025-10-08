@@ -205,6 +205,63 @@ router.delete('/servers/:id', requirePermission('mcp.delete'), async (req: Reque
 // ==================== MCP SERVER CREDENTIALS ROUTES ====================
 
 /**
+ * GET /api/mcp/my-credentials
+ * Get current user's OAuth credentials across all MCP servers
+ * Used by frontend to show which providers the user has connected
+ */
+router.get('/my-credentials', requirePermission('mcp.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    // Fetch all OAuth credentials for this user
+    const credentials = await db
+      .select({
+        id: mcpServerCredentials.id,
+        serverId: mcpServerCredentials.serverId,
+        serverName: mcpServers.name,
+        oauthProvider: mcpServerCredentials.oauthProvider,
+        credentialType: mcpServerCredentials.credentialType,
+        tokenType: mcpServerCredentials.tokenType,
+        scope: mcpServerCredentials.scope,
+        expiresAt: mcpServerCredentials.expiresAt,
+        revokedAt: mcpServerCredentials.revokedAt,
+        createdAt: mcpServerCredentials.createdAt,
+        updatedAt: mcpServerCredentials.updatedAt
+      })
+      .from(mcpServerCredentials)
+      .innerJoin(mcpServers, eq(mcpServers.id, mcpServerCredentials.serverId))
+      .where(and(
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.userId, userId),
+        eq(mcpServerCredentials.credentialType, 'oauth2_user') // Only OAuth user credentials
+      ))
+      .orderBy(desc(mcpServerCredentials.createdAt));
+    
+    // Format credentials for frontend
+    const formattedCredentials = credentials.map(cred => ({
+      id: cred.id,
+      serverId: cred.serverId,
+      serverName: cred.serverName,
+      provider: cred.oauthProvider,
+      status: cred.revokedAt 
+        ? 'revoked' 
+        : (cred.expiresAt && new Date(cred.expiresAt) < new Date()) 
+        ? 'expired' 
+        : 'active',
+      scope: cred.scope,
+      expiresAt: cred.expiresAt,
+      connectedAt: cred.createdAt,
+      lastUpdated: cred.updatedAt
+    }));
+    
+    res.json(formattedCredentials);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch user credentials');
+  }
+});
+
+/**
  * POST /api/mcp/servers/:id/credentials
  * Configure credentials for MCP server
  */
