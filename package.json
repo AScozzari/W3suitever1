@@ -13,7 +13,11 @@
   "dependencies": {
     "@assistant-ui/react": "^0.11.15",
     "@assistant-ui/react-ai-sdk": "^1.1.0",
+    "@aws-sdk/client-dynamodb": "^3.902.0",
+    "@aws-sdk/client-lambda": "^3.901.0",
     "@aws-sdk/client-s3": "^3.901.0",
+    "@aws-sdk/client-sns": "^3.901.0",
+    "@aws-sdk/client-sqs": "^3.901.0",
     "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
