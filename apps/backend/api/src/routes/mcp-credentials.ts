@@ -121,9 +121,9 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
           name: 'google-workspace-oauth-config',
           displayName: 'Google OAuth Configuration',
           description: 'Google OAuth2 Client ID and Secret configuration',
-          serverType: 'oauth-config',
           transport: 'http-sse',
           status: 'active',
+          category: 'authentication',
           createdBy: userId
         })
         .returning({ id: mcpServers.id });
@@ -133,8 +133,8 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
       serverId = server[0].id;
     }
 
-    // Encrypt and store credentials
-    const { encrypted: encryptedData, keyId } = await encryptMCPCredentials(
+    // Encrypt and store credentials - MUST store full payload for decryption
+    const encryptionResult = await encryptMCPCredentials(
       { client_id: clientId, client_secret: clientSecret },
       tenantId
     );
@@ -157,9 +157,9 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
       await db
         .update(mcpServerCredentials)
         .set({
-          encryptedCredentials: encryptedData,
-          encryptionKeyId: keyId,
-          lastUpdated: new Date()
+          encryptedCredentials: encryptionResult, // Store full payload: encrypted, iv, authTag, keyId, algorithm, version
+          encryptionKeyId: encryptionResult.keyId,
+          updatedAt: new Date()
         })
         .where(eq(mcpServerCredentials.id, existing[0].id));
       
@@ -173,12 +173,8 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
           tenantId,
           userId,
           credentialType: 'api_key',
-          encryptedCredentials: encryptedData,
-          encryptionKeyId: keyId,
-          metadata: {
-            provider: 'google',
-            configType: 'oauth2'
-          }
+          encryptedCredentials: encryptionResult, // Store full payload: encrypted, iv, authTag, keyId, algorithm, version
+          encryptionKeyId: encryptionResult.keyId
         })
         .returning({ id: mcpServerCredentials.id });
 
@@ -265,9 +261,9 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
           name: 'meta-instagram-oauth-config',
           displayName: 'Meta OAuth Configuration',
           description: 'Meta/Instagram OAuth2 App ID and Secret configuration',
-          serverType: 'oauth-config',
           transport: 'http-sse',
           status: 'active',
+          category: 'authentication',
           createdBy: userId
         })
         .returning({ id: mcpServers.id });
@@ -277,8 +273,8 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
       serverId = server[0].id;
     }
 
-    // Encrypt and store credentials
-    const { encrypted: encryptedData, keyId } = await encryptMCPCredentials(
+    // Encrypt and store credentials - MUST store full payload for decryption
+    const encryptionResult = await encryptMCPCredentials(
       { app_id: appId, app_secret: appSecret },
       tenantId
     );
@@ -301,9 +297,9 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
       await db
         .update(mcpServerCredentials)
         .set({
-          encryptedCredentials: encryptedData,
-          encryptionKeyId: keyId,
-          lastUpdated: new Date()
+          encryptedCredentials: encryptionResult, // Store full payload: encrypted, iv, authTag, keyId, algorithm, version
+          encryptionKeyId: encryptionResult.keyId,
+          updatedAt: new Date()
         })
         .where(eq(mcpServerCredentials.id, existing[0].id));
       
@@ -317,12 +313,8 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
           tenantId,
           userId,
           credentialType: 'api_key',
-          encryptedCredentials: encryptedData,
-          encryptionKeyId: keyId,
-          metadata: {
-            provider: 'meta',
-            configType: 'oauth2'
-          }
+          encryptedCredentials: encryptionResult, // Store full payload: encrypted, iv, authTag, keyId, algorithm, version
+          encryptionKeyId: encryptionResult.keyId
         })
         .returning({ id: mcpServerCredentials.id });
 

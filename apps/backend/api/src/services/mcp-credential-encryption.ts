@@ -160,16 +160,23 @@ async function deriveEncryptionKey(
 }
 
 /**
- * Encrypt MCP server credentials
+ * Encrypt MCP server credentials (NEW - returns full payload)
  * 
  * @param data - Credentials object to encrypt
  * @param tenantId - Tenant ID for key derivation
- * @returns Encrypted data with IV, auth tag, and keyId
+ * @returns Full encryption payload: { encrypted, iv, authTag, keyId, algorithm, keyVersion }
  */
 export async function encryptMCPCredentials(
   data: Record<string, any>,
   tenantId: string
-): Promise<Record<string, any>> {
+): Promise<{
+  encrypted: string;
+  iv: string;
+  authTag: string;
+  keyId: string;
+  algorithm: string;
+  keyVersion: number;
+}> {
   try {
     // Derive tenant-isolated encryption key (uses active key)
     const { key, keyMetadata } = await deriveEncryptionKey(tenantId);
