@@ -12,6 +12,7 @@ import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
 import mcpRoutes from "../routes/mcp";
 import mcpOAuthRoutes from "../routes/mcp-oauth";
+import mcpCredentialsRoutes from "../routes/mcp-credentials";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1195,6 +1196,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== MCP OAUTH ROUTES ====================
   // OAuth flows for MCP server authentication (Google Workspace, etc.)
   app.use('/api/mcp/oauth', mcpOAuthRoutes);
+  
+  // ==================== MCP CREDENTIALS ROUTES ====================
+  // API key and credential management for MCP servers (AWS, Stripe, GTM)
+  app.use('/api/mcp/credentials', mcpCredentialsRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
