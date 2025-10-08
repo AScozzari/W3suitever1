@@ -233,8 +233,8 @@ router.get('/my-credentials', requirePermission('mcp.read'), async (req: Request
       .innerJoin(mcpServers, eq(mcpServers.id, mcpServerCredentials.serverId))
       .where(and(
         eq(mcpServerCredentials.tenantId, tenantId),
-        eq(mcpServerCredentials.userId, userId),
-        eq(mcpServerCredentials.credentialType, 'oauth2_user') // Only OAuth user credentials
+        eq(mcpServerCredentials.userId, userId)
+        // Include both OAuth user credentials AND OAuth config credentials (google-oauth-config, meta-oauth-config, etc.)
       ))
       .orderBy(desc(mcpServerCredentials.createdAt));
     
@@ -243,7 +243,8 @@ router.get('/my-credentials', requirePermission('mcp.read'), async (req: Request
       id: cred.id,
       serverId: cred.serverId,
       serverName: cred.serverName,
-      provider: cred.oauthProvider,
+      provider: cred.oauthProvider || cred.credentialType?.split('-')[0], // Extract provider from oauthProvider or credentialType (e.g., 'google-oauth-config' -> 'google')
+      credentialType: cred.credentialType,
       status: cred.revokedAt 
         ? 'revoked' 
         : (cred.expiresAt && new Date(cred.expiresAt) < new Date()) 
