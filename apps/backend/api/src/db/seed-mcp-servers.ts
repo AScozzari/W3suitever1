@@ -1,7 +1,7 @@
 import { db } from '../core/db';
 import { tenants } from './schema/w3suite';
 import { mcpServers } from './schema/w3suite';
-import { eq } from 'drizzle-orm';
+import { eq, isNull, or } from 'drizzle-orm';
 
 /**
  * MCP Server Templates - Official and Community Servers
@@ -134,11 +134,14 @@ export async function seedMCPServers() {
   console.log('🔌 Starting MCP servers seeding...\n');
 
   try {
-    // Get all active tenants
+    // Get all active tenants (archivedAt is NULL or status is active)
     const allTenants = await db
       .select({ id: tenants.id, name: tenants.name })
       .from(tenants)
-      .where(eq(tenants.archivedAt, null as any));
+      .where(or(
+        isNull(tenants.archivedAt),
+        eq(tenants.status, 'active')
+      ));
 
     if (allTenants.length === 0) {
       console.log('⚠️  No tenants found. Skipping MCP server seeding.');
