@@ -67,6 +67,149 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * Store Google OAuth Configuration (Client ID and Secret)
+ * POST /api/mcp/credentials/google/oauth-config
+ */
+router.post('/google/oauth-config', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing authentication headers'
+      });
+    }
+
+    // Validate request body
+    const schema = z.object({
+      clientId: z.string().min(1),
+      clientSecret: z.string().min(1)
+    });
+
+    const validation = schema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request body',
+        details: validation.error.errors
+      });
+    }
+
+    const { clientId, clientSecret } = validation.data;
+
+    // Find or create Google OAuth config server
+    let server = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.name, 'google-workspace-oauth-config'),
+        eq(mcpServers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    let serverId: string;
+
+    if (server.length === 0) {
+      // Create new Google OAuth config server
+      const [newServer] = await db
+        .insert(mcpServers)
+        .values({
+          tenantId,
+          name: 'google-workspace-oauth-config',
+          displayName: 'Google OAuth Configuration',
+          description: 'Google OAuth2 Client ID and Secret configuration',
+          serverType: 'oauth-config',
+          status: 'active',
+          createdBy: userId
+        })
+        .returning({ id: mcpServers.id });
+
+      serverId = newServer.id;
+    } else {
+      serverId = server[0].id;
+    }
+
+    // Encrypt and store credentials
+    const { encryptedData, keyId } = await encryptMCPCredentials(
+      tenantId,
+      { client_id: clientId, client_secret: clientSecret }
+    );
+
+    // Check if credentials exist for this server
+    const existing = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(and(
+        eq(mcpServerCredentials.serverId, serverId),
+        eq(mcpServerCredentials.tenantId, tenantId),
+        isNull(mcpServerCredentials.revokedAt)
+      ))
+      .limit(1);
+
+    let credentialId: string;
+
+    if (existing.length > 0) {
+      // Update existing credentials
+      await db
+        .update(mcpServerCredentials)
+        .set({
+          encryptedCredentials: encryptedData,
+          encryptionKeyId: keyId,
+          lastUpdated: new Date()
+        })
+        .where(eq(mcpServerCredentials.id, existing[0].id));
+      
+      credentialId = existing[0].id;
+    } else {
+      // Create new credential record
+      const [newCredential] = await db
+        .insert(mcpServerCredentials)
+        .values({
+          serverId,
+          tenantId,
+          userId,
+          credentialType: 'google-oauth-config',
+          encryptedCredentials: encryptedData,
+          encryptionKeyId: keyId,
+          metadata: {
+            provider: 'google',
+            configType: 'oauth2'
+          }
+        })
+        .returning({ id: mcpServerCredentials.id });
+
+      credentialId = newCredential.id;
+    }
+
+    logger.info('✅ [API] Google OAuth config stored', {
+      serverId,
+      credentialId
+    });
+
+    res.json({
+      success: true,
+      credentialId,
+      serverId,
+      message: 'Google OAuth configuration saved successfully'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Google OAuth config storage failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save Google OAuth configuration',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
  * Store AWS IAM credentials (auto-create server if not exists)
  * POST /api/mcp/credentials/aws
  */

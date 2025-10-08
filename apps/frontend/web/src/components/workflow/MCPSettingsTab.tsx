@@ -125,6 +125,7 @@ export default function MCPSettingsTab() {
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   
   // 🔧 Form state
+  const [googleForm, setGoogleForm] = useState({ clientId: '', clientSecret: '' });
   const [awsForm, setAwsForm] = useState({ accessKeyId: '', secretAccessKey: '', region: 'eu-west-1' });
   const [stripeForm, setStripeForm] = useState({ apiKey: '' });
   const [gtmForm, setGtmForm] = useState({ serviceAccountJson: '' });
@@ -161,6 +162,36 @@ export default function MCPSettingsTab() {
       toast({
         title: 'Errore',
         description: 'Impossibile eliminare la credenziale',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🔄 Save Google OAuth Credentials Mutation
+  const saveGoogleCredentialsMutation = useMutation({
+    mutationFn: async (data: { clientId: string; clientSecret: string }) => {
+      return apiRequest('/api/mcp/credentials/google/oauth-config', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientId: data.clientId,
+          clientSecret: data.clientSecret,
+          metadata: { provider: 'google' }
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/my-credentials'] });
+      setGoogleForm({ clientId: '', clientSecret: '' }); // Clear form
+      toast({
+        title: 'Google OAuth Configurato',
+        description: 'Credenziali Google OAuth salvate con successo',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Errore Google OAuth',
+        description: error instanceof Error ? error.message : 'Impossibile salvare credenziali Google',
         variant: 'destructive'
       });
     }
@@ -469,28 +500,90 @@ export default function MCPSettingsTab() {
             <CardContent className="space-y-4">
               {renderCredentialStatus('google')}
               
-              <div className="pt-4 border-t">
-                <Button 
-                  onClick={() => handleOAuthInitiate('google')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={connectingProvider === 'google' || isLoading}
-                  data-testid="button-oauth-google"
-                >
-                  {connectingProvider === 'google' ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Connessione in corso...
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Connetti Google Workspace
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Sarai reindirizzato alla pagina di autorizzazione Google
-                </p>
+              <div className="pt-4 border-t space-y-4">
+                {/* OAuth Configuration Form */}
+                <div className="space-y-3">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <p className="text-sm font-medium text-blue-900 mb-2">📋 OAuth Redirect URL (copia in Google Cloud Console):</p>
+                    <code className="text-xs bg-white px-2 py-1 rounded border border-blue-300 block break-all">
+                      {window.location.origin}/api/mcp/oauth/google/callback
+                    </code>
+                  </div>
+                  
+                  <form className="space-y-3" onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!googleForm.clientId || !googleForm.clientSecret) {
+                      toast({
+                        title: 'Campi Obbligatori',
+                        description: 'Inserisci Client ID e Client Secret',
+                        variant: 'destructive'
+                      });
+                      return;
+                    }
+                    saveGoogleCredentialsMutation.mutate(googleForm);
+                  }}>
+                    <div>
+                      <Label htmlFor="google-client-id">Client ID *</Label>
+                      <Input 
+                        id="google-client-id" 
+                        type="text" 
+                        placeholder="xxxxx.apps.googleusercontent.com"
+                        value={googleForm.clientId}
+                        onChange={(e) => setGoogleForm({ ...googleForm, clientId: e.target.value })}
+                        data-testid="input-google-client-id"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="google-client-secret">Client Secret *</Label>
+                      <Input 
+                        id="google-client-secret" 
+                        type="password" 
+                        placeholder="••••••••"
+                        value={googleForm.clientSecret}
+                        onChange={(e) => setGoogleForm({ ...googleForm, clientSecret: e.target.value })}
+                        data-testid="input-google-client-secret"
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                      disabled={saveGoogleCredentialsMutation.isPending}
+                      data-testid="button-save-google-oauth"
+                    >
+                      <Key className="h-4 w-4 mr-2" />
+                      {saveGoogleCredentialsMutation.isPending ? 'Salvando...' : 'Salva Configurazione OAuth'}
+                    </Button>
+                  </form>
+                </div>
+
+                {/* OAuth Connect Button - Shows only after credentials are saved */}
+                {credentials?.some(c => c.provider === 'google' && c.serverName === 'google-workspace-oauth-config') && (
+                  <div className="pt-4 border-t">
+                    <Button 
+                      onClick={() => handleOAuthInitiate('google')}
+                      className="bg-green-600 hover:bg-green-700 text-white w-full"
+                      disabled={connectingProvider === 'google' || isLoading}
+                      data-testid="button-oauth-google"
+                    >
+                      {connectingProvider === 'google' ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Connessione in corso...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Autorizza Accesso Google
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Sarai reindirizzato alla pagina di autorizzazione Google
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

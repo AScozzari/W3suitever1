@@ -148,7 +148,7 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
     ).toString('base64');
 
     // Generate auth URL
-    const authUrl = GoogleOAuthService.generateAuthUrl({
+    const authUrl = await GoogleOAuthService.generateAuthUrl({
       serverId,
       tenantId,
       redirectUri,

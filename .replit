@@ -85,9 +85,6 @@ localPort = 41037
 localPort = 41599
 
 [[ports]]
-localPort = 42171
-
-[[ports]]
 localPort = 42935
 
 [[ports]]

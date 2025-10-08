@@ -25,12 +25,54 @@ export class GoogleOAuthService {
   /**
    * Get OAuth2 client for Google Workspace
    */
-  private static getOAuth2Client(redirectUri: string): OAuth2Client {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  private static async getOAuth2Client(redirectUri: string, tenantId: string): Promise<OAuth2Client> {
+    // First try to get credentials from database
+    const configServer = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.name, 'google-workspace-oauth-config'),
+        eq(mcpServers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    let clientId: string | undefined;
+    let clientSecret: string | undefined;
+
+    if (configServer.length > 0) {
+      // Get credentials from database
+      const [creds] = await db
+        .select()
+        .from(mcpServerCredentials)
+        .where(and(
+          eq(mcpServerCredentials.serverId, configServer[0].id),
+          eq(mcpServerCredentials.tenantId, tenantId),
+          sql`revoked_at IS NULL`
+        ))
+        .limit(1);
+
+      if (creds) {
+        // Decrypt credentials
+        const { decryptMCPCredentials } = await import('./mcp-credential-encryption');
+        const decrypted = await decryptMCPCredentials(
+          tenantId,
+          creds.encryptedCredentials,
+          creds.encryptionKeyId
+        );
+
+        clientId = decrypted.client_id;
+        clientSecret = decrypted.client_secret;
+      }
+    }
+
+    // Fallback to environment variables if not in database
+    if (!clientId || !clientSecret) {
+      clientId = process.env.GOOGLE_CLIENT_ID;
+      clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    }
 
     if (!clientId || !clientSecret) {
-      throw new Error('Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
+      throw new Error('Google OAuth credentials not configured. Please configure Client ID and Secret in MCP Settings');
     }
 
     return new google.auth.OAuth2(
@@ -43,15 +85,15 @@ export class GoogleOAuthService {
   /**
    * Generate authorization URL to start OAuth flow
    */
-  static generateAuthUrl(params: {
+  static async generateAuthUrl(params: {
     serverId: string;
     tenantId: string;
     redirectUri: string;
     state?: string;
-  }): string {
-    const { redirectUri, state } = params;
+  }): Promise<string> {
+    const { redirectUri, state, tenantId } = params;
 
-    const oauth2Client = this.getOAuth2Client(redirectUri);
+    const oauth2Client = await this.getOAuth2Client(redirectUri, tenantId);
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline', // Get refresh token
@@ -102,7 +144,7 @@ export class GoogleOAuthService {
       }
 
       // Exchange code for tokens
-      const oauth2Client = this.getOAuth2Client(redirectUri);
+      const oauth2Client = await this.getOAuth2Client(redirectUri, tenantId);
       const { tokens } = await oauth2Client.getToken(code);
 
       if (!tokens.access_token) {
