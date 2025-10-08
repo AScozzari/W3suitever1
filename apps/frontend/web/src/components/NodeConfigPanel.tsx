@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Plus, Trash2, Info, Sparkles, Search, Check } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
+import MCPNodeConfigModal from './MCPNodeConfigModal';
 
 interface NodeConfigPanelProps {
   node: Node | null;
@@ -161,8 +162,15 @@ export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSav
             <AIMCPNodeConfig node={node} onSave={onSave} onClose={onClose} />
           )}
           
+          {/* ========== MCP NODES (OUTBOUND + INBOUND) ========== */}
+          {(node.data.category === 'mcp-outbound' || node.data.category === 'mcp-inbound') && (
+            <MCPNodeConfigModal node={node} onSave={onSave} onClose={onClose} />
+          )}
+          
           {/* ========== FALLBACK (solo per nodi non mappati) ========== */}
-          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger', 'mcp-connector', 'ai-mcp-node'].includes(node.data.id) && (
+          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger', 'mcp-connector', 'ai-mcp-node'].includes(node.data.id) && 
+           node.data.category !== 'mcp-outbound' && 
+           node.data.category !== 'mcp-inbound' && (
             <GenericNodeConfig node={node} onSave={onSave} onClose={onClose} />
           )}
         </div>

@@ -599,3 +599,7 @@ export function getMCPNodesByEcosystem(ecosystem: keyof typeof MCP_ECOSYSTEMS) {
 export function getMCPNodesByCategory(category: 'mcp-outbound' | 'mcp-inbound') {
   return ALL_MCP_NODES.filter(node => node.category === category);
 }
+
+export function getMCPNodeById(id: string): BaseNodeDefinition | undefined {
+  return ALL_MCP_NODES.find(node => node.id === id);
+}
