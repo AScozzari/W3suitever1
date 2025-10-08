@@ -34,7 +34,10 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     // CRITICAL FIX: Since this middleware is mounted on '/api', req.path is relative to the mount point
     // Skip only specific public endpoints that don't need tenant context
     // Also check for query param tenantId for OAuth endpoints (browser redirects can't send headers)
-    const isOAuthEndpoint = req.path.startsWith('/mcp/oauth/');
+    // Check multiple OAuth path patterns since path may vary depending on middleware chain
+    const isOAuthEndpoint = req.path.startsWith('/mcp/oauth/') || 
+                          req.path.startsWith('/oauth/') || 
+                          req.path.includes('/oauth/');
     const hasQueryTenant = !!req.query.tenantId;
     
     if (req.path.startsWith('/auth/') || 
