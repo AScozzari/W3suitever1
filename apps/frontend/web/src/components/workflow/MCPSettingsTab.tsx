@@ -97,26 +97,47 @@ const MCP_ECOSYSTEMS = {
 
 interface MCPCredential {
   id: string;
-  provider: string;
-  status: 'active' | 'expired' | 'pending';
-  createdAt: string;
+  serverId: string;
+  serverName: string;
+  provider: 'google' | 'microsoft' | 'meta' | null;
+  status: 'active' | 'expired' | 'revoked';
+  scope?: string;
   expiresAt?: string;
+  connectedAt: string;
+  lastUpdated: string;
+}
+
+interface MCPServer {
+  id: string;
+  name: string;
+  description?: string;
+  status: 'active' | 'inactive' | 'disabled';
+  transport: string;
+  transportConfig: any;
 }
 
 export default function MCPSettingsTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeEcosystem, setActiveEcosystem] = useState('google');
+  const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   
   // 🔧 Form state
   const [awsForm, setAwsForm] = useState({ accessKeyId: '', secretAccessKey: '', region: 'eu-west-1' });
   const [stripeForm, setStripeForm] = useState({ apiKey: '' });
   const [gtmForm, setGtmForm] = useState({ serviceAccountJson: '' });
 
-  // 🔄 Fetch MCP Credentials
-  const { data: credentials, isLoading } = useQuery<MCPCredential[]>({
-    queryKey: ['/api/mcp/credentials'],
+  // 🔄 Fetch MCP Servers
+  const { data: servers, isLoading: serversLoading } = useQuery<MCPServer[]>({
+    queryKey: ['/api/mcp/servers'],
   });
+
+  // 🔄 Fetch User's OAuth Credentials
+  const { data: credentials, isLoading: credentialsLoading } = useQuery<MCPCredential[]>({
+    queryKey: ['/api/mcp/my-credentials'],
+  });
+
+  const isLoading = serversLoading || credentialsLoading;
 
   // 🔄 Delete Credential Mutation
   const deleteCredentialMutation = useMutation({
@@ -237,14 +258,72 @@ export default function MCPSettingsTab() {
     }
   });
 
-  // 🎯 OAuth2 Initiation
-  const handleOAuthInitiate = (provider: string) => {
-    // Redirect to OAuth2 flow
-    window.location.href = `/api/mcp/oauth/${provider}/authorize`;
+  // 🔄 Create or Get MCP Server Mutation
+  const createServerMutation = useMutation({
+    mutationFn: async (params: { name: string; description: string }) => {
+      return apiRequest('/api/mcp/servers', {
+        method: 'POST',
+        body: {
+          name: params.name,
+          description: params.description,
+          transport: 'stdio', // Default transport
+          transportConfig: {},
+          status: 'inactive' // Will be activated after OAuth
+        }
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/servers'] });
+      return data;
+    }
+  });
+
+  // 🎯 OAuth2 Initiation with Server Creation
+  const handleOAuthInitiate = async (provider: 'google' | 'microsoft' | 'meta') => {
+    try {
+      setConnectingProvider(provider);
+      
+      // Map provider to server name
+      const serverNameMap = {
+        google: 'google-workspace',
+        microsoft: 'microsoft-365',
+        meta: 'meta-instagram'
+      };
+      
+      const serverName = serverNameMap[provider];
+      
+      // Find existing server or create new one
+      let server = servers?.find(s => s.name === serverName);
+      
+      if (!server) {
+        // Create MCP server for this provider
+        const descriptionMap = {
+          google: 'Google Workspace OAuth Integration (Gmail, Drive, Calendar, Sheets)',
+          microsoft: 'Microsoft 365 OAuth Integration (Outlook, OneDrive, Teams)',
+          meta: 'Meta/Instagram OAuth Integration (Posts, Stories, Messages)'
+        };
+        
+        server = await createServerMutation.mutateAsync({
+          name: serverName,
+          description: descriptionMap[provider]
+        });
+      }
+      
+      // Redirect to OAuth start flow with serverId
+      window.location.href = `/api/mcp/oauth/${provider}/start/${server.id}`;
+      
+    } catch (error) {
+      setConnectingProvider(null);
+      toast({
+        title: 'Errore Connessione',
+        description: error instanceof Error ? error.message : 'Impossibile avviare OAuth flow',
+        variant: 'destructive'
+      });
+    }
   };
 
-  // 🎯 Render Credential Status
-  const renderCredentialStatus = (provider: string) => {
+  // 🎯 Render Credential Status (Updated for multi-user OAuth)
+  const renderCredentialStatus = (provider: 'google' | 'microsoft' | 'meta') => {
     const credential = credentials?.find(c => c.provider === provider);
     
     if (!credential) {
@@ -346,10 +425,20 @@ export default function MCPSettingsTab() {
                 <Button 
                   onClick={() => handleOAuthInitiate('google')}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={connectingProvider === 'google' || isLoading}
                   data-testid="button-oauth-google"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Connetti Google Workspace
+                  {connectingProvider === 'google' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Connessione in corso...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Connetti Google Workspace
+                    </>
+                  )}
                 </Button>
                 <p className="text-xs text-gray-500 mt-2">
                   💡 Sarai reindirizzato alla pagina di autorizzazione Google
@@ -449,10 +538,20 @@ export default function MCPSettingsTab() {
                 <Button 
                   onClick={() => handleOAuthInitiate('meta')}
                   className="bg-pink-600 hover:bg-pink-700 text-white"
+                  disabled={connectingProvider === 'meta' || isLoading}
                   data-testid="button-oauth-meta"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Connetti Instagram
+                  {connectingProvider === 'meta' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Connessione in corso...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Connetti Instagram
+                    </>
+                  )}
                 </Button>
                 <p className="text-xs text-gray-500 mt-2">
                   💡 Richiede Meta App configurata con Instagram Graph API
@@ -478,10 +577,20 @@ export default function MCPSettingsTab() {
                 <Button 
                   onClick={() => handleOAuthInitiate('microsoft')}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
+                  disabled={connectingProvider === 'microsoft' || isLoading}
                   data-testid="button-oauth-microsoft"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Connetti Microsoft 365
+                  {connectingProvider === 'microsoft' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Connessione in corso...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Connetti Microsoft 365
+                    </>
+                  )}
                 </Button>
                 <p className="text-xs text-gray-500 mt-2">
                   💡 Azure AD App Registration richiesta
