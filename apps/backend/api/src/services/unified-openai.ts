@@ -10,6 +10,7 @@ import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
 import { randomUUID } from 'crypto';
 import { enhancedRAGService, RAGQueryOptions } from './enhanced-rag-service.js';
+import { mcpClientService } from './mcp-client-service';
 
 // Default model configuration
 const DEFAULT_MODEL = "gpt-4-turbo";
@@ -59,12 +60,21 @@ export interface VisionAnalysisResult {
   metadata?: any;
 }
 
+export interface MCPToolDefinition {
+  serverId: string;
+  serverName: string;
+  toolName: string;
+  toolDescription?: string;
+  schema?: any; // OpenAI function schema format
+}
+
 export interface OpenAIRequestContext {
   tenantId: string;
   userId: string;
   moduleContext?: 'hr' | 'finance' | 'general';
   businessEntityId?: string;
   agentId?: string; // For RAG multi-source support
+  mcpTools?: MCPToolDefinition[]; // MCP tools to make available to AI
 }
 
 export interface UnifiedOpenAIResponse {
@@ -143,8 +153,11 @@ export class UnifiedOpenAIService {
       // Build context-aware instructions (now with RAG)
       const instructions = this.buildContextInstructions(settings, context, ragContext);
 
-      // Build OpenAI tools configuration
-      const openaiTools = this.buildOpenAITools(tools);
+      // Create request-scoped MCP tools map (prevents race conditions)
+      const mcpToolsMap = new Map<string, { serverId: string; toolName: string }>();
+
+      // Build OpenAI tools configuration (includes both native and MCP tools)
+      const openaiTools = this.buildOpenAITools(tools, context, mcpToolsMap);
       
       // Use Chat Completions API with function calling support
       const response = await this.client.chat.completions.create({
@@ -202,6 +215,54 @@ export class UnifiedOpenAIService {
                 role: "tool", 
                 content: JSON.stringify({
                   error: "Web search failed",
+                  message: error.message
+                })
+              });
+            }
+          } else if (toolCall.type === 'function' && toolCall.function.name.startsWith('mcp_')) {
+            // Handle MCP tool calls using request-scoped lookup map
+            try {
+              const args = JSON.parse(toolCall.function.arguments);
+              
+              // Retrieve original serverId and toolName from request-scoped map
+              const mcpIdentifiers = mcpToolsMap.get(toolCall.function.name);
+              
+              if (!mcpIdentifiers) {
+                throw new Error(`MCP tool mapping not found for function: ${toolCall.function.name}`);
+              }
+              
+              const { serverId, toolName } = mcpIdentifiers;
+              
+              console.log(`[MCP-TOOLS] 🔌 Executing MCP tool: ${toolName} from server ${serverId}`);
+              
+              // Execute MCP tool with original identifiers
+              const mcpResult = await mcpClientService.executeTool({
+                serverId,
+                toolName,
+                arguments: args,
+                tenantId: context.tenantId
+              });
+              
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({
+                  tool: toolName,
+                  server: serverId,
+                  result: mcpResult,
+                  timestamp: new Date().toISOString()
+                })
+              });
+              
+              console.log(`[MCP-TOOLS] ✅ MCP tool ${toolName} executed successfully`);
+            } catch (error: any) {
+              console.error(`[MCP-TOOLS] ❌ Error executing MCP tool:`, error);
+              
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({
+                  error: "MCP tool execution failed",
                   message: error.message
                 })
               });
@@ -1240,10 +1301,17 @@ export class UnifiedOpenAIService {
 
   /**
    * Build OpenAI-compatible tools configuration for function calling
+   * Now supports both native tools (web_search) and MCP tools
+   * @param mcpToolsMap - Request-scoped map to store MCP tool mappings (prevents race conditions)
    */
-  private buildOpenAITools(tools: string[]): any[] {
+  private buildOpenAITools(
+    tools: string[], 
+    context: OpenAIRequestContext,
+    mcpToolsMap?: Map<string, { serverId: string; toolName: string }>
+  ): any[] {
     const openaiTools: any[] = [];
     
+    // Add native tools
     if (tools.includes('web_search')) {
       openaiTools.push({
         type: "function",
@@ -1262,6 +1330,38 @@ export class UnifiedOpenAIService {
           }
         }
       });
+    }
+    
+    // Add MCP tools if provided in context
+    if (context.mcpTools && context.mcpTools.length > 0 && mcpToolsMap) {
+      for (const mcpTool of context.mcpTools) {
+        // Create sanitized function name for OpenAI
+        const functionName = `mcp_${mcpTool.serverId}_${mcpTool.toolName}`.replace(/[^a-zA-Z0-9_]/g, '_');
+        
+        // Store mapping in request-scoped map
+        mcpToolsMap.set(functionName, {
+          serverId: mcpTool.serverId,
+          toolName: mcpTool.toolName
+        });
+        
+        // Convert MCP tool to OpenAI function format
+        const toolFunction: any = {
+          type: "function",
+          function: {
+            name: functionName,
+            description: mcpTool.toolDescription || `Execute ${mcpTool.toolName} from ${mcpTool.serverName}`,
+            parameters: mcpTool.schema || {
+              type: "object",
+              properties: {},
+              required: []
+            }
+          }
+        };
+        
+        openaiTools.push(toolFunction);
+      }
+      
+      console.log(`[MCP-TOOLS] 🔧 Added ${context.mcpTools.length} MCP tools to OpenAI function calling`);
     }
     
     // Note: code_interpreter requires assistants API, not supported in chat completions
