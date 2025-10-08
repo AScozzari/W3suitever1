@@ -9,6 +9,7 @@ import { logger } from '../core/logger';
 import { notificationService } from '../core/notification-service';
 import { UnifiedOpenAIService } from './unified-openai';
 import { AIRegistryService, RegistryAwareContext } from './ai-registry-service';
+import { mcpClientService } from './mcp-client-service';
 
 // ==================== INTERFACES ====================
 
@@ -1234,6 +1235,209 @@ export class JoinSyncExecutor implements ActionExecutor {
   }
 }
 
+/**
+ * 🔌 MCP CONNECTOR EXECUTOR
+ * Executes tools via Model Context Protocol
+ */
+export class MCPConnectorExecutor implements ActionExecutor {
+  executorId = 'mcp-connector-executor';
+  description = 'Executes MCP tools with retry logic and error handling';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔌 [EXECUTOR] Executing MCP Connector', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      
+      // Validate required fields
+      if (!config.serverId || !config.toolName) {
+        throw new Error('MCP Connector requires serverId and toolName');
+      }
+
+      // Merge parameters with inputData for dynamic values
+      const parameters = this.resolveParameters(config.parameters || {}, inputData);
+      
+      // Extract configuration
+      const {
+        serverId,
+        toolName,
+        timeout = 30000,
+        retryPolicy = { enabled: true, maxRetries: 3, retryDelayMs: 1000 },
+        errorHandling = { onError: 'fail', fallbackValue: null }
+      } = config;
+
+      // Execute tool with retry logic
+      const result = await this.executeWithRetry({
+        serverId,
+        toolName,
+        arguments: parameters,
+        tenantId: context.tenantId,
+        timeout,
+        retryPolicy,
+        errorHandling
+      });
+
+      return result;
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] MCP Connector failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Apply error handling strategy
+      const errorHandling = step.config?.errorHandling || { onError: 'fail' };
+      
+      if (errorHandling.onError === 'continue') {
+        return {
+          success: true, // Continue workflow despite error
+          message: 'MCP execution failed but continuing workflow',
+          data: {
+            error: error instanceof Error ? error.message : String(error),
+            fallbackValue: errorHandling.fallbackValue
+          }
+        };
+      }
+
+      return {
+        success: false,
+        message: 'MCP tool execution failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Execute MCP tool with retry logic
+   */
+  private async executeWithRetry(options: {
+    serverId: string;
+    toolName: string;
+    arguments: Record<string, any>;
+    tenantId: string;
+    timeout: number;
+    retryPolicy: { enabled: boolean; maxRetries: number; retryDelayMs: number };
+    errorHandling: { onError: 'fail' | 'continue' | 'retry'; fallbackValue: any };
+  }): Promise<ActionExecutionResult> {
+    const { serverId, toolName, arguments: args, tenantId, timeout, retryPolicy, errorHandling } = options;
+    
+    let lastError: Error | null = null;
+    const maxAttempts = retryPolicy.enabled ? retryPolicy.maxRetries + 1 : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        logger.debug('🔌 [MCP] Executing tool', {
+          serverId,
+          toolName,
+          attempt,
+          maxAttempts
+        });
+
+        // Execute with timeout
+        const result = await Promise.race([
+          mcpClientService.executeTool({
+            serverId,
+            toolName,
+            arguments: args,
+            tenantId
+          }),
+          this.createTimeout(timeout)
+        ]);
+
+        // Success!
+        logger.info('✅ [MCP] Tool executed successfully', {
+          serverId,
+          toolName,
+          attempt
+        });
+
+        return {
+          success: true,
+          message: `MCP tool '${toolName}' executed successfully`,
+          data: {
+            result,
+            serverId,
+            toolName,
+            executedAt: new Date().toISOString(),
+            attempts: attempt
+          }
+        };
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        logger.warn('⚠️ [MCP] Tool execution failed', {
+          serverId,
+          toolName,
+          attempt,
+          maxAttempts,
+          error: lastError.message
+        });
+
+        // If this was the last attempt, throw
+        if (attempt === maxAttempts) {
+          throw lastError;
+        }
+
+        // Wait before retry (exponential backoff)
+        const delay = retryPolicy.retryDelayMs * Math.pow(2, attempt - 1);
+        logger.debug('🔄 [MCP] Retrying after delay', {
+          attempt,
+          delayMs: delay
+        });
+        await this.sleep(delay);
+      }
+    }
+
+    // Should never reach here, but TypeScript needs it
+    throw lastError || new Error('MCP execution failed');
+  }
+
+  /**
+   * Resolve parameters by replacing template variables with inputData values
+   */
+  private resolveParameters(
+    parameters: Record<string, any>,
+    inputData?: Record<string, any>
+  ): Record<string, any> {
+    if (!inputData) return parameters;
+
+    const resolved: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(parameters)) {
+      if (typeof value === 'string' && value.includes('{{')) {
+        // Replace {{variable}} with inputData.variable
+        resolved[key] = value.replace(/\{\{(\w+)\}\}/g, (_, varName) => {
+          return inputData[varName] !== undefined ? String(inputData[varName]) : value;
+        });
+      } else {
+        resolved[key] = value;
+      }
+    }
+
+    return resolved;
+  }
+
+  /**
+   * Create timeout promise
+   */
+  private createTimeout(ms: number): Promise<never> {
+    return new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`MCP execution timeout after ${ms}ms`)), ms);
+    });
+  }
+
+  /**
+   * Sleep utility
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -1272,6 +1476,9 @@ export class ActionExecutorsRegistry {
     this.register(new WhileLoopExecutor());
     this.register(new ParallelForkExecutor());
     this.register(new JoinSyncExecutor());
+    
+    // Integration executors
+    this.register(new MCPConnectorExecutor());
 
     logger.info('🎯 [REGISTRY] Registered default action executors', {
       count: this.executors.size,
