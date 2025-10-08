@@ -182,11 +182,22 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       const updatedNodes = currentNodes.map((node: Node) => {
         const change = changes.find((c) => 'id' in c && c.id === node.id);
         if (change) {
+          // Handle position changes (dragging)
           if (change.type === 'position' && 'position' in change && change.position) {
-            return { ...node, position: change.position };
+            return { ...node, position: change.position, positionAbsolute: change.positionAbsolute };
           }
+          // Handle selection changes
           if (change.type === 'select' && 'selected' in change) {
             return { ...node, selected: change.selected };
+          }
+          // Handle dimensions changes (CRITICAL for drag initialization)
+          if (change.type === 'dimensions' && 'dimensions' in change) {
+            return { 
+              ...node, 
+              measured: { width: change.dimensions?.width || 0, height: change.dimensions?.height || 0 },
+              width: change.dimensions?.width,
+              height: change.dimensions?.height
+            };
           }
         }
         return node;
