@@ -139,7 +139,7 @@ export default function MCPSettingsTab() {
 
   const isLoading = serversLoading || credentialsLoading;
 
-  // 🔄 Delete Credential Mutation
+  // 🔄 Delete Credential Mutation (FIXED: Correct query key invalidation)
   const deleteCredentialMutation = useMutation({
     mutationFn: async (params: { provider: string; credentialId: string }) => {
       return apiRequest(`/api/mcp/credentials/${params.provider}/${params.credentialId}`, {
@@ -147,7 +147,9 @@ export default function MCPSettingsTab() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp/credentials'] });
+      // FIXED: Invalidate correct query keys for multi-user OAuth
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/my-credentials'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/servers'] }); // Server status may change
       toast({
         title: 'Credential Rimossa',
         description: 'Credenziale eliminata con successo',
@@ -322,56 +324,91 @@ export default function MCPSettingsTab() {
     }
   };
 
-  // 🎯 Render Credential Status (Updated for multi-user OAuth)
+  // 🎯 Render Credential Status (Updated for multi-user OAuth with visual indicators)
   const renderCredentialStatus = (provider: 'google' | 'microsoft' | 'meta') => {
     const credential = credentials?.find(c => c.provider === provider);
     
     if (!credential) {
       return (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center gap-2 text-sm text-gray-500 p-3 bg-gray-50 rounded-lg border border-gray-200">
           <XCircle className="h-4 w-4 text-gray-400" />
           <span>Non configurato</span>
         </div>
       );
     }
 
-    const isExpired = credential.expiresAt && new Date(credential.expiresAt) < new Date();
-    const statusColor = credential.status === 'active' 
-      ? 'text-green-600' 
-      : isExpired 
-      ? 'text-red-600' 
-      : 'text-yellow-600';
-    const statusIcon = credential.status === 'active' 
-      ? CheckCircle 
-      : isExpired 
-      ? XCircle 
-      : AlertCircle;
-    const StatusIcon = statusIcon;
+    const statusConfig = {
+      active: {
+        color: 'text-green-600 bg-green-50 border-green-200',
+        badgeColor: 'bg-green-500',
+        icon: CheckCircle,
+        label: 'Attiva'
+      },
+      expired: {
+        color: 'text-red-600 bg-red-50 border-red-200',
+        badgeColor: 'bg-red-500',
+        icon: XCircle,
+        label: 'Scaduta'
+      },
+      revoked: {
+        color: 'text-gray-600 bg-gray-50 border-gray-300',
+        badgeColor: 'bg-gray-500',
+        icon: AlertCircle,
+        label: 'Revocata'
+      }
+    };
+
+    const status = statusConfig[credential.status] || statusConfig.active;
+    const StatusIcon = status.icon;
 
     return (
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm">
-          <StatusIcon className={`h-4 w-4 ${statusColor}`} />
-          <span className={statusColor}>
-            {credential.status === 'active' ? 'Attiva' : isExpired ? 'Scaduta' : 'In attesa'}
-          </span>
-          {credential.expiresAt && (
-            <span className="text-xs text-gray-500">
-              (Scade: {new Date(credential.expiresAt).toLocaleDateString()})
+      <div className={`p-3 rounded-lg border ${status.color} space-y-2`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${status.badgeColor} animate-pulse`} />
+            <StatusIcon className="h-4 w-4" />
+            <span className="font-medium text-sm">{status.label}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => deleteCredentialMutation.mutate({ 
+              provider, 
+              credentialId: credential.id 
+            })}
+            data-testid={`button-delete-${provider}`}
+            className="h-8 w-8 p-0"
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+        
+        <div className="text-xs space-y-1 pl-6">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-600">Connesso:</span>
+            <span className="font-mono text-gray-800">
+              {new Date(credential.connectedAt).toLocaleString('it-IT')}
             </span>
+          </div>
+          
+          {credential.expiresAt && (
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">Scadenza:</span>
+              <span className="font-mono text-gray-800">
+                {new Date(credential.expiresAt).toLocaleString('it-IT')}
+              </span>
+            </div>
+          )}
+          
+          {credential.scope && (
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">Permessi:</span>
+              <Badge variant="outline" className="text-xs">
+                {credential.scope.split(' ').length} scope(s)
+              </Badge>
+            </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => deleteCredentialMutation.mutate({ 
-            provider, 
-            credentialId: credential.id 
-          })}
-          data-testid={`button-delete-${provider}`}
-        >
-          <Trash2 className="h-4 w-4 text-red-500" />
-        </Button>
       </div>
     );
   };
