@@ -122,6 +122,7 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
           displayName: 'Google OAuth Configuration',
           description: 'Google OAuth2 Client ID and Secret configuration',
           serverType: 'oauth-config',
+          transport: 'http-sse',
           status: 'active',
           createdBy: userId
         })
@@ -133,9 +134,9 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
     }
 
     // Encrypt and store credentials
-    const { encryptedData, keyId } = await encryptMCPCredentials(
-      tenantId,
-      { client_id: clientId, client_secret: clientSecret }
+    const { encrypted: encryptedData, keyId } = await encryptMCPCredentials(
+      { client_id: clientId, client_secret: clientSecret },
+      tenantId
     );
 
     // Check if credentials exist for this server
@@ -171,7 +172,7 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
           serverId,
           tenantId,
           userId,
-          credentialType: 'google-oauth-config',
+          credentialType: 'api_key',
           encryptedCredentials: encryptedData,
           encryptionKeyId: keyId,
           metadata: {
@@ -265,6 +266,7 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
           displayName: 'Meta OAuth Configuration',
           description: 'Meta/Instagram OAuth2 App ID and Secret configuration',
           serverType: 'oauth-config',
+          transport: 'http-sse',
           status: 'active',
           createdBy: userId
         })
@@ -276,9 +278,9 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
     }
 
     // Encrypt and store credentials
-    const { encryptedData, keyId } = await encryptMCPCredentials(
-      tenantId,
-      { app_id: appId, app_secret: appSecret }
+    const { encrypted: encryptedData, keyId } = await encryptMCPCredentials(
+      { app_id: appId, app_secret: appSecret },
+      tenantId
     );
 
     // Check if credentials exist for this server
@@ -314,7 +316,7 @@ router.post('/meta/oauth-config', async (req: Request, res: Response) => {
           serverId,
           tenantId,
           userId,
-          credentialType: 'meta-oauth-config',
+          credentialType: 'api_key',
           encryptedCredentials: encryptedData,
           encryptionKeyId: keyId,
           metadata: {
