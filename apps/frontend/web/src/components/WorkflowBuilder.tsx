@@ -67,6 +67,8 @@ const nodeTypes = {
   ai: WorkflowAiNode,
   routing: WorkflowRoutingNode,
   'flow-control': WorkflowFlowControlNode,
+  'mcp-outbound': WorkflowActionNode, // MCP Outbound nodes use action component
+  'mcp-inbound': WorkflowTriggerNode, // MCP Inbound nodes use trigger component
   condition: WorkflowActionNode, // Reuse action node for conditions (legacy)
   flow: WorkflowActionNode, // Reuse action node for flow control (legacy)
 } as const;
