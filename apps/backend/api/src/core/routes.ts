@@ -1161,6 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // NOTE: req.path is relative to the mounted path, so /api/tenants/resolve becomes /tenants/resolve
     if (req.path.startsWith('/auth/') || 
         req.path.startsWith('/public/') ||
+        req.path.startsWith('/mcp/oauth/') || // OAuth endpoints use query params, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve') {  // CRITICAL FIX: Path is relative to /api mount point
       console.log(`[TENANT-SKIP] Bypassing tenant middleware for public endpoint: ${req.path}`);

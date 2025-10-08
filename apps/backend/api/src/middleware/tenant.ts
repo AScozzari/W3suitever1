@@ -33,13 +33,32 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
   try {
     // CRITICAL FIX: Since this middleware is mounted on '/api', req.path is relative to the mount point
     // Skip only specific public endpoints that don't need tenant context
+    // Also check for query param tenantId for OAuth endpoints (browser redirects can't send headers)
+    const isOAuthEndpoint = req.path.startsWith('/mcp/oauth/');
+    const hasQueryTenant = !!req.query.tenantId;
+    
     if (req.path.startsWith('/auth/') || 
         req.path.startsWith('/public/') ||
-        req.path.startsWith('/mcp/oauth/') || // OAuth endpoints use query params or session, not headers
+        isOAuthEndpoint || // OAuth endpoints use query params or session, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||
         req.path === '/') { // Skip auth for /api/ root endpoint
       console.log('[TENANT-SKIP] Bypassing tenant middleware for public endpoint:', req.path);
+      
+      // For OAuth endpoints with query params, set tenant from query
+      if (isOAuthEndpoint && hasQueryTenant) {
+        const tenantId = (req.query.tenantId as string)?.trim();
+        if (tenantId) {
+          // Set minimal tenant context for OAuth endpoints
+          req.tenant = {
+            id: tenantId,
+            name: 'OAuth Tenant',
+            slug: 'oauth'
+          };
+          console.log(`[TENANT-OAUTH] Set tenant from query params: ${tenantId}`);
+        }
+      }
+      
       return next();
     }
     
