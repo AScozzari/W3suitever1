@@ -48,6 +48,13 @@ class ApiService {
 
           const response = await apiRequest(endpoint, requestOptions);
           clearTimeout(timeoutId);
+          
+          // If response already has success/data structure, return it directly
+          if (response && typeof response === 'object' && 'success' in response) {
+            return response as ApiResponse<T>;
+          }
+          
+          // Otherwise, wrap the response
           return {
             success: true,
             data: response

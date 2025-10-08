@@ -1621,7 +1621,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!validateUUIDParam(tenantId, 'Identificativo organizzazione', res)) return;
 
       const stores = await storage.getStoresByTenant(tenantId);
-      res.json(stores);
+      res.json({ 
+        success: true,
+        data: stores 
+      });
     } catch (error) {
       handleApiError(error, res, 'recupero negozi');
     }
@@ -2183,7 +2186,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const legalEntities = await storage.getLegalEntitiesByTenant(tenantId);
-      res.json(legalEntities);
+      res.json({ 
+        success: true,
+        data: legalEntities 
+      });
     } catch (error) {
       handleApiError(error, res, 'recupero entità legali');
     }
@@ -2274,7 +2280,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no filters, use standard method
       if (!roleId && !storeId) {
         const users = await storage.getUsersByTenant(tenantId);
-        return res.json(users);
+        return res.json({ 
+          success: true,
+          data: users 
+        });
       }
 
       // Apply filters with custom query
