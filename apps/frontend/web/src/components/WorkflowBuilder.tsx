@@ -50,6 +50,7 @@ import {
 
 import { useWorkflowStore } from '../stores/workflowStore';
 import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../lib/workflow-node-definitions';
+import { getMCPNodesByCategory, getMCPNodesByEcosystem, MCP_ECOSYSTEMS } from '../lib/mcp-node-definitions';
 import { WorkflowActionNode } from './workflow-nodes/WorkflowActionNode';
 import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
@@ -472,6 +473,15 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                     <SelectItem value="ai">AI Nodes</SelectItem>
                     <SelectItem value="routing">Routing</SelectItem>
                     <SelectItem value="flow-control">Flow Control</SelectItem>
+                    <SelectItem value="mcp-outbound">🔌 MCP Outbound</SelectItem>
+                    <SelectItem value="mcp-inbound">📥 MCP Inbound</SelectItem>
+                    <SelectItem value="mcp-google">🔵 Google Workspace</SelectItem>
+                    <SelectItem value="mcp-aws">🟠 AWS Services</SelectItem>
+                    <SelectItem value="mcp-meta">📸 Meta/Instagram</SelectItem>
+                    <SelectItem value="mcp-microsoft">💼 Microsoft 365</SelectItem>
+                    <SelectItem value="mcp-stripe">💳 Stripe</SelectItem>
+                    <SelectItem value="mcp-gtm">📊 GTM/Analytics</SelectItem>
+                    <SelectItem value="mcp-postgresql">🐘 PostgreSQL</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -724,6 +734,373 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                 </div>
                 </>
                 )}
+
+                {/* 🔌 MCP NODES SECTIONS - Organized by Ecosystem */}
+                
+                {/* Google Workspace MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-google') && getMCPNodesByEcosystem('google').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.google.color }}>
+                      <span className="text-[10px]">G</span>
+                    </div>
+                    🔵 Google Workspace ({getMCPNodesByEcosystem('google').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('google')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-xs font-bold">G</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* AWS MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-aws') && getMCPNodesByEcosystem('aws').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.aws.color }}>
+                      <span className="text-[9px] font-bold">AWS</span>
+                    </div>
+                    🟠 AWS Services ({getMCPNodesByEcosystem('aws').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('aws')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[9px] font-bold">AWS</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* Meta/Instagram MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-meta') && getMCPNodesByEcosystem('meta').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.meta.color }}>
+                      <span className="text-[9px] font-bold">META</span>
+                    </div>
+                    📸 Meta/Instagram ({getMCPNodesByEcosystem('meta').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('meta')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[8px] font-bold">META</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* Microsoft 365 MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-microsoft') && getMCPNodesByEcosystem('microsoft').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.microsoft.color }}>
+                      <span className="text-[9px] font-bold">MS</span>
+                    </div>
+                    💼 Microsoft 365 ({getMCPNodesByEcosystem('microsoft').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('microsoft')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[9px] font-bold">MS</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* Stripe MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-stripe') && getMCPNodesByEcosystem('stripe').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.stripe.color }}>
+                      <span className="text-[8px] font-bold">$$$</span>
+                    </div>
+                    💳 Stripe ({getMCPNodesByEcosystem('stripe').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('stripe')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[10px] font-bold">💳</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* GTM/Analytics MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-gtm') && getMCPNodesByEcosystem('gtm').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.gtm.color }}>
+                      <span className="text-[8px] font-bold">GTM</span>
+                    </div>
+                    📊 GTM/Analytics ({getMCPNodesByEcosystem('gtm').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('gtm')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[8px] font-bold">GTM</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* PostgreSQL MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-postgresql') && getMCPNodesByEcosystem('postgresql').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: MCP_ECOSYSTEMS.postgresql.color }}>
+                      <span className="text-[9px] font-bold">PG</span>
+                    </div>
+                    🐘 PostgreSQL ({getMCPNodesByEcosystem('postgresql').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('postgresql')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[9px] font-bold">PG</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
                 </div>
               </div>
             </div>
