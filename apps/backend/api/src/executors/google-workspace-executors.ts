@@ -16,6 +16,7 @@ import { logger } from '../core/logger';
 export async function executeGmailSend(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     to: string;
     subject: string;
@@ -25,13 +26,14 @@ export async function executeGmailSend(params: {
     attachments?: Array<{ filename: string; content: string; mimeType: string }>;
   };
 }): Promise<{ messageId: string; threadId: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
-    // Get OAuth token
+    // Get OAuth token for specific user (multi-user OAuth)
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     // Build email message
@@ -87,18 +89,20 @@ export async function executeGmailSend(params: {
 export async function executeGmailSearch(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     query: string;
     maxResults?: number;
     labelIds?: string[];
   };
 }): Promise<{ messages: any[]; resultCount: number }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const queryParams = new URLSearchParams({
@@ -141,17 +145,19 @@ export async function executeGmailSearch(params: {
 export async function executeGmailRead(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     messageId: string;
     format?: 'full' | 'raw' | 'minimal';
   };
 }): Promise<{ from: string; to: string; subject: string; body: string; attachments?: any[] }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch(
@@ -186,17 +192,19 @@ export async function executeGmailRead(params: {
 export async function executeGmailAddLabel(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     messageId: string;
     labelId: string;
   };
 }): Promise<{ success: boolean }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch(
@@ -229,6 +237,7 @@ export async function executeGmailAddLabel(params: {
 export async function executeDriveUpload(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     fileName: string;
     fileContent: string; // Base64 encoded
@@ -236,12 +245,13 @@ export async function executeDriveUpload(params: {
     mimeType?: string;
   };
 }): Promise<{ fileId: string; fileUrl: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const metadata = {
@@ -280,17 +290,19 @@ export async function executeDriveUpload(params: {
 export async function executeDriveDownload(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     fileId: string;
     mimeType?: string;
   };
 }): Promise<{ fileContent: string; fileName: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     // Get file metadata
@@ -322,6 +334,7 @@ export async function executeDriveDownload(params: {
 export async function executeDriveShare(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     fileId: string;
     email: string;
@@ -329,12 +342,13 @@ export async function executeDriveShare(params: {
     sendNotification?: boolean;
   };
 }): Promise<{ permissionId: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch(`https://www.googleapis.com/drive/v3/files/${config.fileId}/permissions`, {
@@ -369,17 +383,19 @@ export async function executeDriveShare(params: {
 export async function executeDriveCreateFolder(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     folderName: string;
     parentFolderId?: string;
   };
 }): Promise<{ folderId: string; folderUrl: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch('https://www.googleapis.com/drive/v3/files', {
@@ -418,6 +434,7 @@ export async function executeDriveCreateFolder(params: {
 export async function executeCalendarCreateEvent(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     summary: string;
     startTime: string; // ISO 8601
@@ -427,12 +444,13 @@ export async function executeCalendarCreateEvent(params: {
     location?: string;
   };
 }): Promise<{ eventId: string; eventLink: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
@@ -472,6 +490,7 @@ export async function executeCalendarCreateEvent(params: {
 export async function executeCalendarUpdateEvent(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     eventId: string;
     summary?: string;
@@ -480,12 +499,13 @@ export async function executeCalendarUpdateEvent(params: {
     description?: string;
   };
 }): Promise<{ success: boolean }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const updateData: any = {};
@@ -521,6 +541,7 @@ export async function executeCalendarUpdateEvent(params: {
 export async function executeSheetsAppendRow(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     spreadsheetId: string;
     range: string; // e.g., "Sheet1!A1:D1"
@@ -528,12 +549,13 @@ export async function executeSheetsAppendRow(params: {
     valueInputOption?: 'RAW' | 'USER_ENTERED';
   };
 }): Promise<{ updatedRange: string; updatedRows: number }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch(
@@ -569,17 +591,19 @@ export async function executeSheetsAppendRow(params: {
 export async function executeSheetsReadRange(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   config: {
     spreadsheetId: string;
     range: string; // e.g., "Sheet1!A1:D10"
   };
 }): Promise<{ values: string[][]; rowCount: number }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, config } = params;
 
   try {
     const accessToken = await GoogleOAuthService.getValidAccessToken({
       serverId,
-      tenantId
+      tenantId,
+      userId
     });
 
     const response = await fetch(

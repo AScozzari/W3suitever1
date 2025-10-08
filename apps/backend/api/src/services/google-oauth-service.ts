@@ -124,10 +124,10 @@ export class GoogleOAuthService {
         scope: tokens.scope || this.SCOPES.join(' ')
       };
 
-      // Encrypt credentials using two-level key derivation
+      // Encrypt credentials using two-level key derivation (FIXED parameter order)
       const { encryptedData, keyId } = await encryptMCPCredentials(
-        tenantId,
-        credentials
+        credentials,  // First: data to encrypt
+        tenantId      // Second: tenant ID for key derivation
       );
 
       // Check if credentials already exist for this user/server/provider
@@ -288,32 +288,121 @@ export class GoogleOAuthService {
   }
 
   /**
-   * Get valid access token (auto-refresh if needed)
+   * Get valid access token for a specific user (multi-user OAuth)
+   * 
+   * UNIFIED PATTERN: Uses UnifiedCredentialService for credential retrieval
+   * Auto-refreshes if token is expired or expiring soon
+   * 
+   * @param params - Must include userId for multi-user support
+   * @returns Valid access token (refreshed if needed)
    */
   static async getValidAccessToken(params: {
     serverId: string;
     tenantId: string;
-    currentCredentials: any;
+    userId: string; // REQUIRED for multi-user OAuth
   }): Promise<string> {
-    const { currentCredentials } = params;
+    const { serverId, tenantId, userId } = params;
 
-    // Check if token is expired or about to expire (within 5 minutes)
-    const now = Date.now();
-    const expiryDate = currentCredentials.expiry_date || 0;
-    const bufferTime = 5 * 60 * 1000; // 5 minutes
-
-    if (expiryDate - now < bufferTime) {
-      logger.info('⏰ [Google OAuth] Token expired or expiring soon, refreshing...', {
-        expiryDate: new Date(expiryDate).toISOString(),
-        serverId: params.serverId
-      });
-
-      // Refresh token
-      const refreshedCredentials = await this.refreshAccessToken(params);
-      return refreshedCredentials.access_token;
+    // ENFORCE userId requirement
+    if (!userId) {
+      throw new Error('[Google OAuth] userId is REQUIRED for multi-user OAuth model');
     }
 
-    return currentCredentials.access_token;
+    try {
+      // Use unified credential service
+      const { UnifiedCredentialService } = await import('./unified-credential-service');
+      
+      const credentialPayload = await UnifiedCredentialService.getValidCredentials({
+        tenantId,
+        serverId,
+        userId,
+        oauthProvider: 'google',
+        credentialType: 'oauth2_user'
+      });
+
+      const currentCredentials = credentialPayload.credentials;
+
+      // Check if token needs refresh (within 5 minutes buffer)
+      if (credentialPayload.needsRefresh || credentialPayload.isExpired) {
+        logger.info('⏰ [Google OAuth] Token expired or expiring soon, refreshing...', {
+          expiresAt: credentialPayload.expiresAt?.toISOString() || 'unknown',
+          serverId,
+          userId
+        });
+
+        // Refresh token
+        const refreshedCredentials = await this.refreshAccessToken({
+          serverId,
+          tenantId,
+          currentCredentials
+        });
+
+        // Update credentials in database
+        await this.updateStoredCredentials({
+          credentialId: credentialPayload.credentialId,
+          tenantId,
+          credentials: refreshedCredentials
+        });
+
+        return refreshedCredentials.access_token;
+      }
+
+      return currentCredentials.access_token;
+
+    } catch (error) {
+      logger.error('❌ [Google OAuth] Failed to get valid access token', {
+        error: error instanceof Error ? error.message : String(error),
+        serverId,
+        tenantId,
+        userId
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Update stored credentials after token refresh
+   */
+  private static async updateStoredCredentials(params: {
+    credentialId: string;
+    tenantId: string;
+    credentials: any;
+  }): Promise<void> {
+    const { credentialId, tenantId, credentials } = params;
+
+    try {
+      const { encryptMCPCredentials } = await import('./mcp-credential-encryption');
+
+      // Re-encrypt updated credentials (FIXED parameter order)
+      const { encryptedData, keyId } = await encryptMCPCredentials(
+        credentials,  // First: data to encrypt
+        tenantId      // Second: tenant ID for key derivation
+      );
+
+      // Update database
+      await db
+        .update(mcpServerCredentials)
+        .set({
+          encryptedCredentials: encryptedData,
+          encryptionKeyId: keyId,
+          expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
+          updatedAt: new Date()
+        })
+        .where(eq(mcpServerCredentials.id, credentialId));
+
+      logger.info('✅ [Google OAuth] Updated stored credentials after refresh', {
+        credentialId
+      });
+
+    } catch (error) {
+      logger.error('❌ [Google OAuth] Failed to update stored credentials', {
+        error: error instanceof Error ? error.message : String(error),
+        credentialId
+      });
+
+      throw error;
+    }
   }
 
   /**

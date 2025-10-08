@@ -1269,12 +1269,13 @@ export class MCPConnectorExecutor implements ActionExecutor {
         errorHandling = { onError: 'fail', fallbackValue: null }
       } = config;
 
-      // Execute tool with retry logic
+      // Execute tool with retry logic (multi-user OAuth support)
       const result = await this.executeWithRetry({
         serverId,
         toolName,
         arguments: parameters,
         tenantId: context.tenantId,
+        userId: context.requesterId, // REQUIRED for multi-user OAuth
         timeout,
         retryPolicy,
         errorHandling
@@ -1312,17 +1313,19 @@ export class MCPConnectorExecutor implements ActionExecutor {
 
   /**
    * Execute MCP tool with retry logic
+   * MULTI-USER OAUTH: Now requires userId for credential isolation
    */
   private async executeWithRetry(options: {
     serverId: string;
     toolName: string;
     arguments: Record<string, any>;
     tenantId: string;
+    userId: string; // REQUIRED for multi-user OAuth
     timeout: number;
     retryPolicy: { enabled: boolean; maxRetries: number; retryDelayMs: number };
     errorHandling: { onError: 'fail' | 'continue' | 'retry'; fallbackValue: any };
   }): Promise<ActionExecutionResult> {
-    const { serverId, toolName, arguments: args, tenantId, timeout, retryPolicy, errorHandling } = options;
+    const { serverId, toolName, arguments: args, tenantId, userId, timeout, retryPolicy, errorHandling } = options;
     
     let lastError: Error | null = null;
     const maxAttempts = retryPolicy.enabled ? retryPolicy.maxRetries + 1 : 1;
@@ -1336,13 +1339,14 @@ export class MCPConnectorExecutor implements ActionExecutor {
           maxAttempts
         });
 
-        // Execute with timeout
+        // Execute with timeout (multi-user OAuth support)
         const result = await Promise.race([
           mcpClientService.executeTool({
             serverId,
             toolName,
             arguments: args,
-            tenantId
+            tenantId,
+            userId // REQUIRED for multi-user OAuth
           }),
           this.createTimeout(timeout)
         ]);
@@ -1480,8 +1484,12 @@ export class AIMCPExecutor implements ActionExecutor {
       // Build user message from instructions + inputData
       const userMessage = this.buildUserMessage(aiInstructions, inputData);
 
-      // Load MCP servers and build tools array
-      const mcpTools = await this.loadMCPTools(mcpServerIds, context.tenantId);
+      // Load MCP servers and build tools array (multi-user OAuth)
+      const mcpTools = await this.loadMCPTools(
+        mcpServerIds, 
+        context.tenantId,
+        context.requesterId // REQUIRED for multi-user OAuth
+      );
 
       if (mcpTools.length === 0) {
         logger.warn('⚠️ [AI-MCP] No MCP tools available from selected servers');
@@ -1616,10 +1624,13 @@ export class AIMCPExecutor implements ActionExecutor {
 
   /**
    * Load MCP servers and build tools array for OpenAI function calling
+   * 
+   * MULTI-USER OAUTH: Requires userId for credential isolation
    */
   private async loadMCPTools(
     serverIds: string[], 
-    tenantId: string
+    tenantId: string,
+    userId: string // REQUIRED for multi-user OAuth
   ): Promise<Array<{
     serverId: string;
     serverName: string;
@@ -1631,10 +1642,11 @@ export class AIMCPExecutor implements ActionExecutor {
 
     for (const serverId of serverIds) {
       try {
-        // List tools available from this server (returns Tool[] directly)
+        // List tools available from this server (multi-user OAuth support)
         const tools = await mcpClientService.listTools({
           serverId,
-          tenantId
+          tenantId,
+          userId // REQUIRED for multi-user OAuth
         });
 
         if (!tools || tools.length === 0) {

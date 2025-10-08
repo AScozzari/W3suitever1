@@ -235,12 +235,13 @@ export class UnifiedOpenAIService {
               
               console.log(`[MCP-TOOLS] 🔌 Executing MCP tool: ${toolName} from server ${serverId}`);
               
-              // Execute MCP tool with original identifiers
+              // Execute MCP tool with original identifiers (multi-user OAuth)
               const mcpResult = await mcpClientService.executeTool({
                 serverId,
                 toolName,
                 arguments: args,
-                tenantId: context.tenantId
+                tenantId: context.tenantId,
+                userId: context.userId // REQUIRED for multi-user OAuth
               });
               
               toolResults.push({

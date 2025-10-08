@@ -328,12 +328,14 @@ router.delete('/servers/:id/credentials', requirePermission('mcp.write'), async 
 router.get('/servers/:id/tools', requirePermission('mcp.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
+    const userId = req.user!.id; // REQUIRED for multi-user OAuth
     const serverId = parseUUIDParam(req.params.id);
     const { forceRefresh } = listToolsQuerySchema.parse(req.query);
     
     const tools = await mcpClientService.listTools({
       serverId,
       tenantId,
+      userId, // Multi-user OAuth support
       forceRefresh
     });
     
@@ -389,6 +391,7 @@ router.get('/servers/:id/tools/:toolName/schema', requirePermission('mcp.read'),
 router.post('/execute', requirePermission('mcp.execute'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
+    const userId = req.user!.id; // REQUIRED for multi-user OAuth
     
     const data = validateRequestBody(executeMCPToolSchema, req.body);
     
@@ -396,7 +399,8 @@ router.post('/execute', requirePermission('mcp.execute'), async (req: Request, r
       serverId: data.serverId,
       toolName: data.toolName,
       arguments: data.arguments,
-      tenantId
+      tenantId,
+      userId // Multi-user OAuth support
     });
     
     res.json(result);
@@ -414,9 +418,10 @@ router.post('/execute', requirePermission('mcp.execute'), async (req: Request, r
 router.get('/servers/:id/health', requirePermission('mcp.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
+    const userId = req.user!.id; // REQUIRED for multi-user OAuth
     const serverId = parseUUIDParam(req.params.id);
     
-    const healthStatus = await mcpClientService.healthCheck(serverId, tenantId);
+    const healthStatus = await mcpClientService.healthCheck(serverId, tenantId, userId);
     
     res.json(healthStatus);
   } catch (error) {

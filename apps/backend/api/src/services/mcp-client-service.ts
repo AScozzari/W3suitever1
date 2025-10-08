@@ -47,11 +47,13 @@ interface ToolExecutionOptions {
   toolName: string;
   arguments: Record<string, unknown>;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
 }
 
 interface ToolListOptions {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
   forceRefresh?: boolean; // Force re-sync from server
 }
 
@@ -77,14 +79,25 @@ class MCPClientService {
   }
 
   /**
-   * Get or create MCP client connection
+   * Get or create MCP client connection (multi-user OAuth support)
+   * 
+   * SECURITY: Connection cache keyed by serverId:userId to prevent
+   * cross-user credential leakage. Each user gets isolated connection.
    */
-  private async getConnection(serverId: string, tenantId: string): Promise<MCPClientConnection> {
-    // Check existing connection
-    const existingConnection = this.connections.get(serverId);
+  private async getConnection(serverId: string, tenantId: string, userId: string): Promise<MCPClientConnection> {
+    // SECURITY: Use serverId:userId as key to prevent credential leakage
+    const connectionKey = `${serverId}:${userId}`;
+    
+    // Check existing connection for THIS user
+    const existingConnection = this.connections.get(connectionKey);
     if (existingConnection && existingConnection.connected) {
       existingConnection.lastUsed = new Date();
-      logger.info('Reusing existing MCP connection', { serverId, tenantId });
+      logger.info('Reusing existing MCP connection (user-scoped)', { 
+        serverId, 
+        tenantId, 
+        userId,
+        connectionKey 
+      });
       return existingConnection;
     }
 
@@ -97,15 +110,20 @@ class MCPClientService {
       }
     }
 
-    // Create new connection
-    logger.info('Creating new MCP connection', { serverId, tenantId });
-    return await this.createConnection(serverId, tenantId);
+    // Create new connection (user-scoped, multi-user OAuth)
+    logger.info('Creating new MCP connection (user-scoped)', { 
+      serverId, 
+      tenantId, 
+      userId,
+      connectionKey 
+    });
+    return await this.createConnection(serverId, tenantId, userId);
   }
 
   /**
-   * Create new MCP client connection
+   * Create new MCP client connection (multi-user OAuth support)
    */
-  private async createConnection(serverId: string, tenantId: string): Promise<MCPClientConnection> {
+  private async createConnection(serverId: string, tenantId: string, userId: string): Promise<MCPClientConnection> {
     // Fetch server config from database
     const [serverConfig] = await db
       .select()
@@ -124,8 +142,8 @@ class MCPClientService {
       throw new Error(`MCP server is not active: ${serverConfig.displayName} (status: ${serverConfig.status})`);
     }
 
-    // Fetch credentials
-    const credentials = await this.getCredentials(serverId, tenantId);
+    // Fetch credentials (multi-user OAuth)
+    const credentials = await this.getCredentials(serverId, tenantId, userId);
 
     // Create client
     const client = new Client({
@@ -184,6 +202,9 @@ class MCPClientService {
       // Initialize connection
       await client.initialize();
 
+      // SECURITY: Store connection with serverId:userId key
+      const connectionKey = `${serverId}:${userId}`;
+      
       const connection: MCPClientConnection = {
         client,
         transport,
@@ -193,7 +214,7 @@ class MCPClientService {
         healthStatus: 'healthy'
       };
 
-      this.connections.set(serverId, connection);
+      this.connections.set(connectionKey, connection);
       
       // Update last health check in database
       await db
@@ -234,59 +255,121 @@ class MCPClientService {
   }
 
   /**
-   * Get and decrypt server credentials
+   * Get and decrypt server credentials (MULTI-USER OAUTH with UnifiedCredentialService)
+   * 
+   * Uses UnifiedCredentialService for userId-scoped credential retrieval
+   * and automatic OAuth token refresh.
    */
-  private async getCredentials(serverId: string, tenantId: string): Promise<Record<string, any>> {
-    const [credentialRecord] = await db
-      .select()
-      .from(mcpServerCredentials)
-      .where(and(
-        eq(mcpServerCredentials.serverId, serverId),
-        eq(mcpServerCredentials.tenantId, tenantId)
-      ))
-      .limit(1);
-
-    if (!credentialRecord) {
-      logger.warn('No credentials found for MCP server', { serverId, tenantId });
-      return {};
-    }
-
-    if (credentialRecord.revokedAt) {
-      throw new Error('MCP server credentials have been revoked');
-    }
-
-    // Check OAuth token expiration
-    if (credentialRecord.expiresAt && new Date(credentialRecord.expiresAt) < new Date()) {
-      logger.warn('MCP server credentials expired', { serverId, tenantId });
-      // TODO: Implement token refresh logic
-      throw new Error('MCP server credentials expired. Please re-authenticate.');
-    }
-
-    // Decrypt credentials using enterprise encryption service
+  private async getCredentials(serverId: string, tenantId: string, userId: string): Promise<Record<string, any>> {
     try {
-      const decrypted = await decryptMCPCredentials(
-        credentialRecord.encryptedCredentials as any,
-        tenantId
-      );
-      
-      // Update last used timestamp
-      await db
-        .update(mcpServerCredentials)
-        .set({ lastUsedAt: new Date() })
-        .where(eq(mcpServerCredentials.id, credentialRecord.id));
+      // Import UnifiedCredentialService
+      const { UnifiedCredentialService } = await import('./unified-credential-service');
 
-      return decrypted;
+      // Determine OAuth provider from serverId/name
+      // TODO: Store oauthProvider in mcpServers table
+      const oauthProvider = this.detectOAuthProvider(serverId);
+
+      if (oauthProvider) {
+        // Use UnifiedCredentialService for OAuth providers (multi-user support)
+        logger.info('Using UnifiedCredentialService for OAuth credentials', {
+          serverId,
+          tenantId,
+          userId,
+          provider: oauthProvider
+        });
+
+        const credentialPayload = await UnifiedCredentialService.getValidCredentials({
+          tenantId,
+          serverId,
+          userId,
+          oauthProvider,
+          credentialType: 'oauth2_user'
+        });
+
+        // Update last used timestamp
+        await db
+          .update(mcpServerCredentials)
+          .set({ lastUsedAt: new Date() })
+          .where(eq(mcpServerCredentials.id, credentialPayload.credentialId));
+
+        return credentialPayload.credentials;
+
+      } else {
+        // Fallback: Use tenant-level credentials for non-OAuth providers (AWS API keys, etc.)
+        logger.info('Using tenant-level credentials (non-OAuth)', {
+          serverId,
+          tenantId
+        });
+
+        const [credentialRecord] = await db
+          .select()
+          .from(mcpServerCredentials)
+          .where(and(
+            eq(mcpServerCredentials.serverId, serverId),
+            eq(mcpServerCredentials.tenantId, tenantId)
+          ))
+          .limit(1);
+
+        if (!credentialRecord) {
+          throw new Error('No credentials found for MCP server. Please configure credentials first.');
+        }
+
+        if (credentialRecord.revokedAt) {
+          throw new Error('MCP server credentials have been revoked');
+        }
+
+        // Decrypt credentials
+        const decrypted = await decryptMCPCredentials(
+          credentialRecord.encryptedCredentials as any,
+          tenantId
+        );
+
+        // Update last used timestamp
+        await db
+          .update(mcpServerCredentials)
+          .set({ lastUsedAt: new Date() })
+          .where(eq(mcpServerCredentials.id, credentialRecord.id));
+
+        return decrypted;
+      }
+
     } catch (error) {
-      logger.error('Failed to decrypt MCP credentials', { serverId, tenantId, error });
-      throw new Error('Failed to decrypt credentials');
+      logger.error('Failed to get MCP credentials', {
+        serverId,
+        tenantId,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      throw error;
     }
   }
 
   /**
-   * List available tools from MCP server
+   * Detect OAuth provider from serverId/name
+   * TODO: Store oauthProvider field in mcpServers table
+   */
+  private detectOAuthProvider(serverId: string): 'google' | 'microsoft' | 'meta' | null {
+    const lowerServerId = serverId.toLowerCase();
+    
+    if (lowerServerId.includes('google') || lowerServerId.includes('workspace')) {
+      return 'google';
+    }
+    if (lowerServerId.includes('microsoft') || lowerServerId.includes('365') || lowerServerId.includes('office')) {
+      return 'microsoft';
+    }
+    if (lowerServerId.includes('meta') || lowerServerId.includes('facebook') || lowerServerId.includes('instagram')) {
+      return 'meta';
+    }
+    
+    return null; // Non-OAuth provider (AWS, Stripe, etc.)
+  }
+
+  /**
+   * List available tools from MCP server (multi-user OAuth support)
    */
   async listTools(options: ToolListOptions): Promise<Tool[]> {
-    const { serverId, tenantId, forceRefresh = false } = options;
+    const { serverId, tenantId, userId, forceRefresh = false } = options;
 
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
@@ -306,8 +389,8 @@ class MCPClientService {
       }
     }
 
-    // Fetch from MCP server
-    const connection = await this.getConnection(serverId, tenantId);
+    // Fetch from MCP server (user-scoped connection)
+    const connection = await this.getConnection(serverId, tenantId, userId);
     
     try {
       const result: ListToolsResult = await connection.client.listTools();
@@ -326,12 +409,12 @@ class MCPClientService {
   }
 
   /**
-   * Execute tool on MCP server
+   * Execute tool on MCP server (multi-user OAuth support)
    */
   async executeTool(options: ToolExecutionOptions): Promise<CallToolResult> {
-    const { serverId, tenantId, toolName, arguments: args } = options;
+    const { serverId, tenantId, userId, toolName, arguments: args } = options;
 
-    const connection = await this.getConnection(serverId, tenantId);
+    const connection = await this.getConnection(serverId, tenantId, userId);
 
     try {
       logger.info('Executing MCP tool', { serverId, toolName, args });
@@ -361,13 +444,13 @@ class MCPClientService {
   }
 
   /**
-   * Health check for MCP server
+   * Health check for MCP server (multi-user OAuth support)
    */
-  async healthCheck(serverId: string, tenantId: string): Promise<ServerHealthCheck> {
+  async healthCheck(serverId: string, tenantId: string, userId: string): Promise<ServerHealthCheck> {
     const startTime = Date.now();
     
     try {
-      const connection = await this.getConnection(serverId, tenantId);
+      const connection = await this.getConnection(serverId, tenantId, userId);
       
       // Simple health check: list tools
       await connection.client.listTools();
@@ -383,9 +466,11 @@ class MCPClientService {
         lastCheck: new Date()
       };
     } catch (error: any) {
-      logger.error('MCP health check failed', { serverId, error: error.message });
+      logger.error('MCP health check failed', { serverId, userId, error: error.message });
 
-      const connection = this.connections.get(serverId);
+      // SECURITY: Mark user-specific connection as unhealthy
+      const connectionKey = `${serverId}:${userId}`;
+      const connection = this.connections.get(connectionKey);
       if (connection) {
         connection.healthStatus = 'unhealthy';
       }
@@ -400,23 +485,43 @@ class MCPClientService {
   }
 
   /**
-   * Disconnect from MCP server
+   * Disconnect from MCP server (user-scoped)
+   * 
+   * SECURITY: Requires userId to prevent disconnecting other users' connections
    */
-  async disconnect(serverId: string): Promise<void> {
-    const connection = this.connections.get(serverId);
+  async disconnect(serverId: string, userId?: string): Promise<void> {
+    // SECURITY: Disconnect specific user's connection if userId provided
+    const connectionKey = userId ? `${serverId}:${userId}` : serverId;
+    const connection = this.connections.get(connectionKey);
     
     if (!connection) {
+      // If no userId provided, try to find and disconnect all connections for this server
+      if (!userId) {
+        const serverConnections = Array.from(this.connections.entries())
+          .filter(([key]) => key.startsWith(`${serverId}:`));
+        
+        for (const [key, conn] of serverConnections) {
+          await this.disconnectConnection(key, conn);
+        }
+      }
       return;
     }
 
+    await this.disconnectConnection(connectionKey, connection);
+  }
+
+  /**
+   * Helper to disconnect a specific connection
+   */
+  private async disconnectConnection(connectionKey: string, connection: MCPClientConnection): Promise<void> {
     try {
       await connection.client.close();
       connection.connected = false;
-      this.connections.delete(serverId);
+      this.connections.delete(connectionKey);
       
-      logger.info('MCP connection closed', { serverId });
+      logger.info('MCP connection closed', { connectionKey, serverId: connection.serverId });
     } catch (error: any) {
-      logger.error('Error closing MCP connection', { serverId, error: error.message });
+      logger.error('Error closing MCP connection', { connectionKey, error: error.message });
     }
   }
 
@@ -456,23 +561,26 @@ class MCPClientService {
   }
 
   /**
-   * Cleanup idle connections
+   * Cleanup idle connections (user-scoped)
    */
   private async cleanupIdleConnections(): Promise<void> {
     const now = new Date();
-    const connectionsToRemove: string[] = [];
+    const connectionsToRemove: Array<[string, MCPClientConnection]> = [];
 
-    for (const [serverId, connection] of this.connections) {
+    for (const [connectionKey, connection] of this.connections) {
       const idleTime = now.getTime() - connection.lastUsed.getTime();
       
       if (idleTime > this.idleTimeout) {
-        connectionsToRemove.push(serverId);
+        connectionsToRemove.push([connectionKey, connection]);
       }
     }
 
-    for (const serverId of connectionsToRemove) {
-      await this.disconnect(serverId);
-      logger.info('Cleaned up idle MCP connection', { serverId });
+    for (const [connectionKey, connection] of connectionsToRemove) {
+      await this.disconnectConnection(connectionKey, connection);
+      logger.info('Cleaned up idle MCP connection', { 
+        connectionKey, 
+        serverId: connection.serverId 
+      });
     }
   }
 
