@@ -9,6 +9,7 @@ import hrRoutes from "../routes/hr";
 import webhookRoutes from "../routes/webhooks";
 import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
+import mcpRoutes from "../routes/mcp";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1181,6 +1182,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== CHAT SYSTEM ROUTES ====================
   // Register chat system API routes with authentication and tenant middleware
   app.use('/api/chat', chatRoutes);
+  
+  // ==================== MCP (MODEL CONTEXT PROTOCOL) ROUTES ====================
+  // Register MCP integration API routes for external service connections
+  app.use('/api/mcp', mcpRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)

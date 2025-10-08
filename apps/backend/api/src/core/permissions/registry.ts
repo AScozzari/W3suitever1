@@ -335,6 +335,32 @@ export const PERMISSIONS = {
     }
   },
 
+  // ==================== MCP (MODEL CONTEXT PROTOCOL) ====================
+  mcp: {
+    read: 'mcp.read',
+    write: 'mcp.write',
+    delete: 'mcp.delete',
+    execute: 'mcp.execute',
+    servers: {
+      view: 'mcp.servers.view',
+      create: 'mcp.servers.create',
+      update: 'mcp.servers.update',
+      delete: 'mcp.servers.delete',
+      configure: 'mcp.servers.configure'
+    },
+    credentials: {
+      view: 'mcp.credentials.view',
+      create: 'mcp.credentials.create',
+      update: 'mcp.credentials.update',
+      revoke: 'mcp.credentials.revoke'
+    },
+    tools: {
+      view: 'mcp.tools.view',
+      execute: 'mcp.tools.execute',
+      test: 'mcp.tools.test'
+    }
+  },
+
   // ==================== WEBHOOKS ====================
   webhooks: {
     receive: {
