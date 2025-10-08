@@ -151,8 +151,13 @@ export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSav
             <FormTriggerConfig node={node} onSave={onSave} onClose={onClose} />
           )}
           
+          {/* ========== INTEGRATION NODES ========== */}
+          {node.data.id === 'mcp-connector' && (
+            <MCPConnectorConfig node={node} onSave={onSave} onClose={onClose} />
+          )}
+          
           {/* ========== FALLBACK (solo per nodi non mappati) ========== */}
-          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger'].includes(node.data.id) && (
+          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger', 'mcp-connector'].includes(node.data.id) && (
             <GenericNodeConfig node={node} onSave={onSave} onClose={onClose} />
           )}
         </div>
@@ -2488,6 +2493,411 @@ function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
         <Button variant="outline" onClick={onClose}>Annulla</Button>
         <Button onClick={handleSave} className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white">
           💾 Salva
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 🔌 MCP Connector Configuration
+ * Integrates external services via Model Context Protocol
+ */
+function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+  const config = (node.data.config || {}) as any;
+  
+  // State management
+  const [serverId, setServerId] = useState<string | null>(config.serverId || null);
+  const [serverName, setServerName] = useState<string | null>(config.serverName || null);
+  const [toolName, setToolName] = useState<string | null>(config.toolName || null);
+  const [toolDescription, setToolDescription] = useState<string | null>(config.toolDescription || null);
+  const [parameters, setParameters] = useState<Record<string, any>>(config.parameters || {});
+  const [timeout, setTimeout] = useState(config.timeout || 30000);
+  const [retryEnabled, setRetryEnabled] = useState(config.retryPolicy?.enabled ?? true);
+  const [maxRetries, setMaxRetries] = useState(config.retryPolicy?.maxRetries || 3);
+  const [retryDelayMs, setRetryDelayMs] = useState(config.retryPolicy?.retryDelayMs || 1000);
+  const [errorHandling, setErrorHandling] = useState<'fail' | 'continue' | 'retry'>(
+    config.errorHandling?.onError || 'fail'
+  );
+  const [fallbackValue, setFallbackValue] = useState(config.errorHandling?.fallbackValue || '');
+  
+  // Fetch MCP servers
+  const { data: servers = [], isLoading: serversLoading } = useQuery({
+    queryKey: ['/api/mcp/servers'],
+    enabled: true
+  });
+  
+  // Fetch tools when server selected
+  const { data: tools = [], isLoading: toolsLoading, refetch: refetchTools } = useQuery({
+    queryKey: ['/api/mcp/servers', serverId, 'tools'],
+    enabled: !!serverId
+  });
+  
+  // Fetch tool schema when tool selected
+  const { data: toolSchema, isLoading: schemaLoading } = useQuery({
+    queryKey: ['/api/mcp/servers', serverId, 'tools', toolName, 'schema'],
+    enabled: !!serverId && !!toolName
+  });
+  
+  // Handle server selection
+  const handleServerChange = (newServerId: string) => {
+    setServerId(newServerId);
+    const selectedServer = servers.find((s: any) => s.id === newServerId);
+    setServerName(selectedServer?.name || null);
+    // Reset tool selection
+    setToolName(null);
+    setToolDescription(null);
+    setParameters({});
+  };
+  
+  // Handle tool selection
+  const handleToolChange = (newToolName: string) => {
+    setToolName(newToolName);
+    const selectedTool = tools.find((t: any) => t.name === newToolName);
+    setToolDescription(selectedTool?.description || null);
+    // Reset parameters when tool changes
+    setParameters({});
+  };
+  
+  // Render dynamic form field based on schema type
+  const renderFormField = (paramName: string, paramSchema: any) => {
+    const value = parameters[paramName] || '';
+    
+    const updateParam = (val: any) => {
+      setParameters(prev => ({ ...prev, [paramName]: val }));
+    };
+    
+    // Determine field type from schema
+    const fieldType = paramSchema.type || 'string';
+    const isRequired = paramSchema.required || false;
+    
+    return (
+      <div key={paramName} className="space-y-2">
+        <label className="block text-sm font-medium text-gray-900 flex items-center gap-2">
+          {paramName}
+          {isRequired && <span className="text-red-500">*</span>}
+          {paramSchema.description && (
+            <InfoTooltip
+              title={paramName}
+              description={paramSchema.description}
+              examples={paramSchema.examples || []}
+            />
+          )}
+        </label>
+        
+        {fieldType === 'boolean' ? (
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={!!value}
+              onCheckedChange={updateParam}
+              data-testid={`switch-${paramName}`}
+            />
+            <span className="text-sm text-gray-600">{value ? 'Sì' : 'No'}</span>
+          </div>
+        ) : fieldType === 'number' || fieldType === 'integer' ? (
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => updateParam(Number(e.target.value))}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-windtre-orange"
+            placeholder={paramSchema.placeholder || `Inserisci ${paramName}...`}
+            data-testid={`input-${paramName}`}
+          />
+        ) : fieldType === 'array' ? (
+          <textarea
+            value={Array.isArray(value) ? value.join('\n') : value}
+            onChange={(e) => updateParam(e.target.value.split('\n').filter((v: string) => v.trim()))}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-windtre-orange font-mono text-sm"
+            placeholder="Un valore per riga..."
+            rows={3}
+            data-testid={`textarea-${paramName}`}
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => updateParam(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-windtre-orange"
+            placeholder={paramSchema.placeholder || `Inserisci ${paramName}...`}
+            data-testid={`input-${paramName}`}
+          />
+        )}
+        
+        {paramSchema.enum && (
+          <p className="text-xs text-gray-500">
+            Valori possibili: {paramSchema.enum.join(', ')}
+          </p>
+        )}
+      </div>
+    );
+  };
+  
+  const handleSave = useCallback(() => {
+    // Validation
+    if (!serverId || !toolName) {
+      alert('Server e Tool sono obbligatori');
+      return;
+    }
+    
+    onSave(node.id, {
+      serverId,
+      serverName,
+      toolName,
+      toolDescription,
+      parameters,
+      timeout,
+      retryPolicy: {
+        enabled: retryEnabled,
+        maxRetries,
+        retryDelayMs
+      },
+      errorHandling: {
+        onError: errorHandling,
+        fallbackValue: fallbackValue || null
+      }
+    });
+    onClose();
+  }, [serverId, serverName, toolName, toolDescription, parameters, timeout, retryEnabled, maxRetries, retryDelayMs, errorHandling, fallbackValue, node.id, onSave, onClose]);
+  
+  return (
+    <div className="space-y-6">
+      {/* Info Banner */}
+      <div className="bg-gradient-to-r from-windtre-orange/10 to-windtre-purple/10 border-2 border-windtre-orange/30 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl">🔌</div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">MCP Connector</h4>
+            <p className="text-sm text-gray-700">
+              Connetti servizi esterni tramite Model Context Protocol (Google Workspace, Meta, AWS, Microsoft)
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Server Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+          🌐 MCP Server <span className="text-red-500">*</span>
+          <InfoTooltip
+            title="MCP Server"
+            description="Seleziona il server MCP configurato per accedere ai suoi tools. I server devono essere configurati dal System Admin."
+            examples={[
+              "Google Workspace - Gmail, Calendar, Drive",
+              "AWS S3 - Object Storage",
+              "Meta/Instagram - Social Media Publishing"
+            ]}
+          />
+        </label>
+        
+        {serversLoading ? (
+          <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500">
+            ⏳ Caricamento server...
+          </div>
+        ) : servers.length === 0 ? (
+          <div className="w-full px-4 py-3 border-2 border-yellow-200 rounded-lg bg-yellow-50 text-sm text-yellow-800">
+            ⚠️ Nessun server MCP configurato. Contatta il System Admin.
+          </div>
+        ) : (
+          <Select value={serverId || ''} onValueChange={handleServerChange}>
+            <SelectTrigger data-testid="select-mcp-server">
+              <SelectValue placeholder="Seleziona server MCP..." />
+            </SelectTrigger>
+            <SelectContent>
+              {servers.map((server: any) => (
+                <SelectItem key={server.id} value={server.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{server.name}</span>
+                    <Badge variant="outline" className="text-xs">{server.provider}</Badge>
+                    {server.status === 'disabled' && (
+                      <span className="text-xs text-red-500">(Disabilitato)</span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+      
+      {/* Tool Selection */}
+      {serverId && (
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+            🛠️ Tool <span className="text-red-500">*</span>
+            <InfoTooltip
+              title="MCP Tool"
+              description="Seleziona lo strumento specifico da eseguire sul server MCP."
+              examples={[
+                "send_email - Invia email via Gmail",
+                "create_calendar_event - Crea evento Calendar",
+                "upload_to_s3 - Upload file su S3"
+              ]}
+            />
+          </label>
+          
+          {toolsLoading ? (
+            <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500">
+              ⏳ Caricamento tools...
+            </div>
+          ) : tools.length === 0 ? (
+            <div className="w-full px-4 py-3 border-2 border-yellow-200 rounded-lg bg-yellow-50 text-sm text-yellow-800">
+              ⚠️ Nessun tool disponibile per questo server.
+            </div>
+          ) : (
+            <Select value={toolName || ''} onValueChange={handleToolChange}>
+              <SelectTrigger data-testid="select-mcp-tool">
+                <SelectValue placeholder="Seleziona tool..." />
+              </SelectTrigger>
+              <SelectContent>
+                {tools.map((tool: any) => (
+                  <SelectItem key={tool.name} value={tool.name}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{tool.displayName || tool.name}</span>
+                      {tool.description && (
+                        <span className="text-xs text-gray-500">{tool.description}</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+      
+      {/* Dynamic Parameters Form */}
+      {toolSchema?.inputSchema && (
+        <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <h4 className="text-sm font-semibold text-gray-900">📋 Parametri Tool</h4>
+            {schemaLoading && <span className="text-xs text-gray-500">⏳ Caricamento...</span>}
+          </div>
+          
+          {toolSchema.inputSchema.properties && Object.keys(toolSchema.inputSchema.properties).length > 0 ? (
+            <div className="space-y-4">
+              {Object.entries(toolSchema.inputSchema.properties).map(([paramName, paramSchema]: [string, any]) =>
+                renderFormField(paramName, paramSchema)
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">Nessun parametro richiesto per questo tool</p>
+          )}
+        </div>
+      )}
+      
+      {/* Advanced Configuration */}
+      <div className="border-t pt-4 space-y-4">
+        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          ⚙️ Configurazione Avanzata
+        </h4>
+        
+        {/* Timeout */}
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            ⏱️ Timeout (ms): {timeout}
+          </label>
+          <input
+            type="range"
+            value={timeout}
+            onChange={(e) => setTimeout(Number(e.target.value))}
+            min={1000}
+            max={300000}
+            step={1000}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-windtre-orange"
+            data-testid="slider-timeout"
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>1s</span>
+            <span>5min</span>
+          </div>
+        </div>
+        
+        {/* Retry Policy */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-900">🔄 Retry Policy</label>
+            <Switch
+              checked={retryEnabled}
+              onCheckedChange={setRetryEnabled}
+              data-testid="switch-retry-enabled"
+            />
+          </div>
+          
+          {retryEnabled && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Max Tentativi</label>
+                <input
+                  type="number"
+                  value={maxRetries}
+                  onChange={(e) => setMaxRetries(Number(e.target.value))}
+                  min={0}
+                  max={5}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                  data-testid="input-max-retries"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Delay (ms)</label>
+                <input
+                  type="number"
+                  value={retryDelayMs}
+                  onChange={(e) => setRetryDelayMs(Number(e.target.value))}
+                  min={100}
+                  max={10000}
+                  step={100}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                  data-testid="input-retry-delay"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Error Handling */}
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            ⚠️ Gestione Errori
+          </label>
+          <Select value={errorHandling} onValueChange={(v: any) => setErrorHandling(v)}>
+            <SelectTrigger data-testid="select-error-handling">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fail">❌ Fail - Blocca workflow</SelectItem>
+              <SelectItem value="continue">➡️ Continue - Continua esecuzione</SelectItem>
+              <SelectItem value="retry">🔄 Retry - Riprova automaticamente</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {errorHandling === 'continue' && (
+            <div className="mt-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Fallback Value (opzionale)</label>
+              <input
+                type="text"
+                value={fallbackValue}
+                onChange={(e) => setFallbackValue(e.target.value)}
+                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                placeholder="Valore di fallback in caso di errore..."
+                data-testid="input-fallback-value"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+        <Button variant="outline" onClick={onClose} data-testid="button-cancel-mcp-config">
+          Annulla
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!serverId || !toolName}
+          className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="button-save-mcp-config"
+        >
+          💾 Salva Configurazione
         </Button>
       </div>
     </div>
