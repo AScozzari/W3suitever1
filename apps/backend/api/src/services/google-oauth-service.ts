@@ -4,7 +4,7 @@ import { db } from '../core/db';
 import { mcpServers, mcpServerCredentials } from '../db/schema/w3suite';
 import { eq, and, sql } from 'drizzle-orm';
 import { encryptMCPCredentials } from './mcp-credential-encryption';
-import logger from './logger';
+import { logger } from '../core/logger';
 
 /**
  * Google OAuth Service

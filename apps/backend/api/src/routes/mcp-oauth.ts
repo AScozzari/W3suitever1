@@ -3,7 +3,7 @@ import { GoogleOAuthService } from '../services/google-oauth-service';
 import { db } from '../core/db';
 import { mcpServers } from '../db/schema/w3suite';
 import { eq, and } from 'drizzle-orm';
-import logger from '../services/logger';
+import { logger } from '../core/logger';
 
 const router = Router();
 
