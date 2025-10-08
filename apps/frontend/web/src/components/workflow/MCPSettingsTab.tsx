@@ -115,6 +115,18 @@ interface MCPCredential {
   lastUpdated: string;
 }
 
+interface ConnectedAccount {
+  id: string;
+  accountType: 'facebook_page' | 'instagram_business';
+  accountId: string;
+  accountName: string;
+  instagramAccountId?: string;
+  instagramAccountName?: string;
+  isActive: boolean;
+  lastSyncedAt?: string;
+  createdAt: string;
+}
+
 interface MCPServer {
   id: string;
   name: string;
@@ -145,6 +157,13 @@ export default function MCPSettingsTab() {
   // 🔄 Fetch User's OAuth Credentials
   const { data: credentials, isLoading: credentialsLoading } = useQuery<MCPCredential[]>({
     queryKey: ['/api/mcp/my-credentials'],
+  });
+
+  // 🔄 Fetch Connected Accounts for Meta/Instagram
+  const metaServer = servers?.find(s => s.name === 'meta-instagram');
+  const { data: connectedAccounts, isLoading: accountsLoading } = useQuery<{ success: boolean; accounts: ConnectedAccount[] }>({
+    queryKey: ['/api/mcp/credentials/connected-accounts', metaServer?.id],
+    enabled: !!metaServer,
   });
 
   const isLoading = serversLoading || credentialsLoading;
@@ -317,6 +336,52 @@ export default function MCPSettingsTab() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp/servers'] });
       return data;
+    }
+  });
+
+  // 🔄 Remove Connected Account Mutation
+  const removeAccountMutation = useMutation({
+    mutationFn: async (accountId: string) => {
+      return apiRequest(`/api/mcp/credentials/connected-accounts/${accountId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/credentials/connected-accounts', metaServer?.id] });
+      toast({
+        title: 'Account Rimosso',
+        description: 'Pagina Facebook disconnessa con successo',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Impossibile rimuovere account',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🔄 Sync Connected Account Mutation
+  const syncAccountMutation = useMutation({
+    mutationFn: async (accountId: string) => {
+      return apiRequest(`/api/mcp/credentials/connected-accounts/${accountId}/sync`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/credentials/connected-accounts', metaServer?.id] });
+      toast({
+        title: 'Sincronizzazione Completata',
+        description: 'Dati account aggiornati con successo',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Errore Sincronizzazione',
+        description: error instanceof Error ? error.message : 'Impossibile sincronizzare account',
+        variant: 'destructive'
+      });
     }
   });
 
@@ -710,10 +775,118 @@ export default function MCPSettingsTab() {
             <CardContent className="space-y-4">
               {renderCredentialStatus('meta')}
               
+              {/* Info Panel */}
+              <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                <div className="flex items-start gap-2">
+                  <Info className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-pink-900 mb-1">🔴 Come funziona Meta/Instagram OAuth:</p>
+                    <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
+                      <li>Clicca <strong>"Connetti Pagine Facebook"</strong> per autorizzare W3 Suite</li>
+                      <li>Seleziona le <strong>Pagine Facebook</strong> a cui vuoi dare accesso</li>
+                      <li>Per ogni pagina, verrà automaticamente rilevato l'<strong>Instagram Business Account</strong> collegato</li>
+                      <li>Usa le pagine connesse nei workflow per pubblicare contenuti</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connected Pages List */}
+              {accountsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-sm text-gray-500">Caricamento pagine...</span>
+                </div>
+              ) : connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-700">Pagine Connesse ({connectedAccounts.accounts.length})</h4>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {connectedAccounts.accounts.map((account) => (
+                      <div 
+                        key={account.id} 
+                        className="flex items-start justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-pink-300 transition-colors"
+                        data-testid={`connected-account-${account.id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">
+                              Facebook Page
+                            </Badge>
+                            {account.instagramAccountId && (
+                              <Badge className="bg-pink-100 text-pink-800 text-xs">
+                                + Instagram
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <p className="font-medium text-sm text-gray-900 truncate">
+                            {account.accountName}
+                          </p>
+                          
+                          {account.instagramAccountName && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              📷 Instagram: <span className="font-medium">{account.instagramAccountName}</span>
+                            </p>
+                          )}
+                          
+                          {account.lastSyncedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              🔄 Ultima sincronizzazione: {new Date(account.lastSyncedAt).toLocaleDateString('it-IT', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 ml-3">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => syncAccountMutation.mutate(account.id)}
+                            disabled={syncAccountMutation.isPending}
+                            className="text-gray-600 hover:text-pink-600"
+                            data-testid={`button-sync-${account.id}`}
+                          >
+                            <RefreshCw className={`h-4 w-4 ${syncAccountMutation.isPending ? 'animate-spin' : ''}`} />
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm(`Rimuovere la pagina "${account.accountName}"?`)) {
+                                removeAccountMutation.mutate(account.id);
+                              }
+                            }}
+                            disabled={removeAccountMutation.isPending}
+                            className="text-gray-600 hover:text-red-600"
+                            data-testid={`button-remove-${account.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-sm text-gray-500">
+                  Nessuna pagina Facebook connessa
+                </div>
+              )}
+              
+              {/* Connect Button */}
               <div className="pt-4 border-t">
                 <Button 
                   onClick={() => handleOAuthInitiate('meta')}
-                  className="bg-pink-600 hover:bg-pink-700 text-white"
+                  className="bg-pink-600 hover:bg-pink-700 text-white w-full"
                   disabled={connectingProvider === 'meta' || isLoading}
                   data-testid="button-oauth-meta"
                 >
@@ -725,12 +898,12 @@ export default function MCPSettingsTab() {
                   ) : (
                     <>
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      Connetti Instagram
+                      Connetti Pagine Facebook
                     </>
                   )}
                 </Button>
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Richiede Meta App configurata con Instagram Graph API
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  💡 Puoi connettere più pagine Facebook con Instagram Business
                 </p>
               </div>
             </CardContent>
