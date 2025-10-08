@@ -225,7 +225,7 @@ export const activityFeedInteractionTypeEnum = pgEnum('activity_feed_interaction
 // ==================== MCP (MODEL CONTEXT PROTOCOL) ENUMS ====================
 export const mcpTransportEnum = pgEnum('mcp_transport', ['stdio', 'http-sse']);
 export const mcpServerStatusEnum = pgEnum('mcp_server_status', ['active', 'inactive', 'error', 'configuring']);
-export const mcpCredentialTypeEnum = pgEnum('mcp_credential_type', ['oauth', 'api_key', 'basic_auth', 'none']);
+export const mcpCredentialTypeEnum = pgEnum('mcp_credential_type', ['oauth2_user', 'service_account', 'api_key', 'basic_auth', 'none']);
 export const mcpToolCategoryEnum = pgEnum('mcp_tool_category', [
   'communication',  // Gmail, Teams, Slack
   'storage',        // Drive, S3, Dropbox
@@ -3498,6 +3498,10 @@ export const mcpServerCredentials = w3suiteSchema.table("mcp_server_credentials"
   credentialType: mcpCredentialTypeEnum("credential_type").notNull(),
   encryptedCredentials: jsonb("encrypted_credentials").notNull(), // Encrypted: { accessToken, refreshToken, apiKey, etc. }
   
+  // Multi-Provider OAuth Support (n8n-style)
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // For multi-user OAuth (null = tenant-level)
+  oauthProvider: varchar("oauth_provider", { length: 50 }), // 'google', 'microsoft', 'meta', 'aws', etc.
+  
   // OAuth-specific fields
   tokenType: varchar("token_type", { length: 50 }), // 'Bearer', 'Basic', etc.
   scope: text("scope"), // OAuth scopes granted
@@ -3513,8 +3517,14 @@ export const mcpServerCredentials = w3suiteSchema.table("mcp_server_credentials"
   tenantIndex: index("mcp_server_credentials_tenant_idx").on(table.tenantId),
   serverIndex: index("mcp_server_credentials_server_idx").on(table.serverId),
   expiresIndex: index("mcp_server_credentials_expires_idx").on(table.expiresAt),
-  // Unique: one credential set per server per tenant
-  serverCredentialUnique: uniqueIndex("mcp_server_credentials_server_unique").on(table.serverId),
+  userIndex: index("mcp_server_credentials_user_idx").on(table.userId),
+  providerIndex: index("mcp_server_credentials_provider_idx").on(table.oauthProvider),
+  // Unique: one credential per server/user/provider combination (COALESCE handles nulls)
+  serverUserProviderUnique: uniqueIndex("mcp_server_credentials_server_user_provider_unique").on(
+    table.serverId, 
+    sql`COALESCE(${table.userId}, '')`,
+    sql`COALESCE(${table.oauthProvider}, '')`
+  ),
 }));
 
 // MCP Tool Schemas - Cached tool schemas for performance & offline access
