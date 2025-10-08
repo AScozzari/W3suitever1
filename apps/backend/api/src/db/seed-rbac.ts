@@ -2,7 +2,7 @@ import { db } from '../core/db';
 import { roles, rolePerms, userAssignments, tenants } from './schema/w3suite';
 import { eq, and } from 'drizzle-orm';
 import { rbacStorage } from '../core/rbac-storage';
-import { PERMISSIONS } from '../core/permissions/registry';
+import { PERMISSIONS, getAllPermissions } from '../core/permissions/registry';
 
 // Define default roles with their permissions
 const DEFAULT_ROLES = [
@@ -11,7 +11,7 @@ const DEFAULT_ROLES = [
     description: 'Full system administrator with all permissions',
     isSystem: true,
     level: 1,
-    permissions: ['*'] // Full access
+    permissions: getAllPermissions() // All permissions from registry
   },
   {
     name: 'store_manager',
@@ -218,6 +218,39 @@ export async function assignAdminRole(userId: string, tenantId: string) {
   }
 }
 
+// Function to update admin roles with all permissions
+export async function updateAdminRolesWithAllPermissions() {
+  console.log('🔄 Updating admin roles with all permissions...');
+  
+  try {
+    // Get all admin roles from all tenants
+    const adminRoles = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.name, 'admin'));
+    
+    if (adminRoles.length === 0) {
+      console.log('  ⚠️  No admin roles found');
+      return;
+    }
+    
+    const allPermissions = getAllPermissions();
+    console.log(`  📋 Found ${allPermissions.length} permissions in registry`);
+    
+    // Update each admin role with all permissions
+    for (const role of adminRoles) {
+      await rbacStorage.setRolePermissions(role.id, allPermissions);
+      console.log(`  ✅ Updated admin role for tenant ${role.tenantId} with ${allPermissions.length} permissions`);
+    }
+    
+    console.log(`✅ Updated ${adminRoles.length} admin role(s) with all permissions`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error updating admin roles:', error);
+    throw error;
+  }
+}
+
 // Main seed function
 export async function seedRBAC() {
   console.log('🚀 Starting RBAC seed...');
@@ -225,6 +258,9 @@ export async function seedRBAC() {
   try {
     // Seed RBAC for all tenants
     await seedRBACForAllTenants();
+    
+    // Update all admin roles with all permissions (ensures they always have full access)
+    await updateAdminRolesWithAllPermissions();
     
     // In development, assign admin role to the demo user
     if (process.env.NODE_ENV === 'development') {
