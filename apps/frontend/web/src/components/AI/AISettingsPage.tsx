@@ -273,7 +273,7 @@ export default function AISettingsPage() {
     }
   }, [settings]);
 
-  // Test API connection
+  // Test API connection (🔧 FIX: Auto-save before test to persist API key)
   const testApiConnection = async () => {
     if (!formData.openaiApiKey) {
       setConnectionTestResult({ success: false, message: 'Inserire prima la chiave API OpenAI' });
@@ -284,6 +284,14 @@ export default function AISettingsPage() {
     setConnectionTestResult(null);
 
     try {
+      // 💾 Save settings BEFORE testing to persist API key
+      console.log('[AI-SETTINGS] 💾 Auto-saving API key before connection test...');
+      await apiRequest('/api/ai/settings', {
+        method: 'PUT',
+        body: formData,
+      });
+      console.log('[AI-SETTINGS] ✅ Settings saved, now testing connection...');
+
       const result = await apiRequest('/api/ai/test-connection', {
         method: 'POST',
         body: { 
@@ -293,13 +301,21 @@ export default function AISettingsPage() {
       });
       
       if (result.success) {
-        setConnectionTestResult({ success: true, message: 'Connessione riuscita! API key valida.' });
+        setConnectionTestResult({ success: true, message: 'Connessione riuscita! API key valida e salvata.' });
         setFormData(prev => ({ 
           ...prev, 
           apiConnectionStatus: 'connected',
           lastConnectionTest: new Date().toISOString(),
           connectionTestResult: result
         }));
+        
+        // Refresh settings to confirm save
+        queryClient.invalidateQueries({ queryKey: ['/api/ai/settings'] });
+        
+        toast({
+          title: "✅ Connessione OK",
+          description: "API key salvata e connessione riuscita!",
+        });
       } else {
         setConnectionTestResult({ 
           success: false, 
