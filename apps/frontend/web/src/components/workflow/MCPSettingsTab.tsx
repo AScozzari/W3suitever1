@@ -583,7 +583,7 @@ export default function MCPSettingsTab() {
                     </div>
                     <Button 
                       type="submit" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                       disabled={saveGoogleCredentialsMutation.isPending}
                       data-testid="button-save-google-oauth"
                     >
