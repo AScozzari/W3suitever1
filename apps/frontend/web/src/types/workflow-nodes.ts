@@ -8,13 +8,14 @@ import { z } from 'zod';
 
 // ==================== BASE NODE TYPES ====================
 
-export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'integration';
+export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'integration' | 'mcp-outbound' | 'mcp-inbound';
 
 export interface BaseNodeDefinition {
   id: string;
   name: string;
   description: string;
   category: NodeCategory;
+  ecosystem?: 'google' | 'aws' | 'meta' | 'microsoft' | 'stripe' | 'gtm'; // MCP ecosystem identifier
   icon: string; // Lucide icon name
   color: string; // CSS color
   version: string;

@@ -12,6 +12,7 @@ import {
   MCPConnectorConfigSchema,
   AIMCPNodeConfigSchema
 } from '../types/workflow-nodes';
+import { ALL_MCP_NODES } from './mcp-node-definitions';
 
 // ==================== ACTION NODES DEFINITIONS ====================
 
@@ -491,7 +492,8 @@ export const ALL_WORKFLOW_NODES: BaseNodeDefinition[] = [
   ...AI_NODES,
   ...ROUTING_NODES,
   ...INTEGRATION_NODES,
-  ...FLOW_CONTROL_NODES
+  ...FLOW_CONTROL_NODES,
+  ...ALL_MCP_NODES
 ];
 
 // Helper functions for node management
