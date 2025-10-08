@@ -367,8 +367,13 @@ export default function MCPSettingsTab() {
   };
 
   // 🎯 Render Credential Status (Updated for multi-user OAuth with visual indicators)
-  const renderCredentialStatus = (provider: 'google' | 'microsoft' | 'meta') => {
-    const credential = credentials?.find(c => c.provider === provider);
+  const renderCredentialStatus = (provider: 'google' | 'microsoft' | 'meta' | 'aws' | 'stripe' | 'gtm') => {
+    // Find credential by provider name or by serverName/credentialType containing the provider
+    const credential = credentials?.find(c => 
+      c.provider === provider || 
+      c.serverName?.includes(provider) || 
+      c.credentialType?.includes(provider)
+    );
     
     if (!credential) {
       return (
