@@ -957,4 +957,94 @@ router.post('/gtm/:serverId', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Get token refresh status (monitoring dashboard)
+ * GET /api/mcp/credentials/token-refresh/status
+ */
+router.get('/token-refresh/status', async (req: Request, res: Response) => {
+  try {
+    const { TokenRefreshService } = await import('../services/token-refresh-service.js');
+    const status = await TokenRefreshService.getRefreshStatus();
+
+    res.json({
+      success: true,
+      data: status
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Get token refresh status failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get refresh status',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Manually refresh a specific credential
+ * POST /api/mcp/credentials/:credentialId/refresh
+ */
+router.post('/:credentialId/refresh', async (req: Request, res: Response) => {
+  try {
+    const { credentialId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_TENANT_ID',
+        message: 'X-Tenant-ID header is required'
+      });
+    }
+
+    // Verify credential belongs to tenant
+    const [credential] = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(and(
+        eq(mcpServerCredentials.id, credentialId),
+        eq(mcpServerCredentials.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!credential) {
+      return res.status(404).json({
+        success: false,
+        error: 'CREDENTIAL_NOT_FOUND',
+        message: 'Credential not found or does not belong to this tenant'
+      });
+    }
+
+    // Trigger manual refresh
+    const { TokenRefreshService } = await import('../services/token-refresh-service.js');
+    await TokenRefreshService.refreshCredentialById(credentialId);
+
+    logger.info('✅ [API] Manual token refresh successful', {
+      credentialId,
+      tenantId,
+      provider: credential.oauthProvider
+    });
+
+    res.json({
+      success: true,
+      message: 'Token refreshed successfully'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Manual token refresh failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh token',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

@@ -434,6 +434,15 @@ async function startBackend() {
     console.warn('🔄 Workflow execution will run synchronously');
   }
 
+  // 🔄 TOKEN REFRESH SERVICE - Automatic OAuth token refresh
+  try {
+    const { TokenRefreshService } = await import('./services/token-refresh-service.js');
+    TokenRefreshService.startMonitoring(15); // Check every 15 minutes
+    console.log('✅ Token refresh service started (15 min interval)');
+  } catch (error) {
+    console.warn('⚠️  Token refresh service failed to start:', error);
+  }
+
   // API-only backend - frontend apps handle their own routing
   // Only serve API, OAuth2, and well-known endpoints
 
