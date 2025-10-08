@@ -7,6 +7,7 @@ import { setupOAuth2Server } from "./oauth2-server";
 import { workflowRoutes } from "../routes/workflows";
 import hrRoutes from "../routes/hr";
 import webhookRoutes from "../routes/webhooks";
+import mcpWebhookRoutes from "../routes/mcp-webhooks";
 import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
 import mcpRoutes from "../routes/mcp";
@@ -1171,6 +1172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== WEBHOOK ROUTES ====================
   // Public webhook receiver + authenticated management endpoints
   app.use('/api/webhooks', webhookRoutes);
+  
+  // MCP-specific webhook receivers (Google, AWS, Meta, Microsoft, Stripe, GTM)
+  app.use('/api/webhooks/mcp', mcpWebhookRoutes);
 
   // ==================== WORKFLOW MANAGEMENT ROUTES ====================
   // Register workflow management API routes with authentication and tenant middleware

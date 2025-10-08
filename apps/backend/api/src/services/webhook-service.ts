@@ -11,6 +11,7 @@ export interface WebhookEventPayload {
   eventId: string; // Provider's event ID
   eventType: string; // 'payment.succeeded', 'sms.delivered', etc.
   payload: any;
+  rawBody?: string | Buffer; // 🔒 Raw body for HMAC signature validation
   signature?: string;
   headers?: Record<string, any>;
   priority?: 'low' | 'medium' | 'high' | 'critical';
@@ -329,8 +330,13 @@ export class WebhookService {
       }
 
       // HMAC signature validation
+      // 🔒 SECURITY: Use raw body for HMAC (not JSON.stringify which is non-deterministic)
+      const bodyForSignature = event.rawBody 
+        ? (typeof event.rawBody === 'string' ? event.rawBody : event.rawBody.toString('utf8'))
+        : JSON.stringify(event.payload); // Fallback to JSON.stringify for backwards compatibility
+      
       const expectedSignature = this.computeHmacSignature(
-        JSON.stringify(event.payload),
+        bodyForSignature,
         config.signingSecret,
         config.validationAlgorithm
       );
