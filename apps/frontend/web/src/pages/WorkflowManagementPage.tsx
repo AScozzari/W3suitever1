@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics } from '../hooks/useWorkflowDashboard';
 import WorkflowBuilder from '../components/WorkflowBuilder';
-import { QueueMetricsPanel, WorkflowExecutionDrawer, WorkflowAnalyticsDashboard } from '@/components/workflow';
+import { QueueMetricsPanel, WorkflowExecutionDrawer, WorkflowAnalyticsDashboard, MCPSettingsTab } from '@/components/workflow';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
 import '../styles/workflow-builder.css';
@@ -110,7 +110,7 @@ const WORKFLOW_ACTIONS = [
 ];
 
 interface WorkflowManagementPageProps {
-  defaultView?: 'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics';
+  defaultView?: 'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'settings';
 }
 
 export default function WorkflowManagementPage({ defaultView = 'dashboard' }: WorkflowManagementPageProps) {
@@ -119,7 +119,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
-  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'queue'>(defaultView);
+  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'queue' | 'settings'>(defaultView);
   const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENTS | null>(null);
   const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view
@@ -369,7 +369,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               { id: 'timeline', label: 'Timeline', icon: FileText },
               { id: 'teams', label: 'Teams', icon: Users },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-              { id: 'queue', label: 'Queue Monitor', icon: Activity }
+              { id: 'queue', label: 'Queue Monitor', icon: Activity },
+              { id: 'settings', label: 'MCP Settings', icon: Settings }
             ].map((tab) => (
               <Button
                 key={tab.id}
@@ -1617,6 +1618,9 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               </Card>
             </div>
           )}
+
+          {/* 🔧 MCP SETTINGS VIEW - Integration Credentials */}
+          {activeView === 'settings' && <MCPSettingsTab />}
         </div>
       </div>
 
