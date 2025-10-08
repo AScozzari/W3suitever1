@@ -150,6 +150,7 @@ export class GoogleOAuthService {
           .update(mcpServerCredentials)
           .set({
             encryptedCredentials: encryptedData,
+            encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             updatedAt: new Date(),
@@ -176,6 +177,7 @@ export class GoogleOAuthService {
             oauthProvider: 'google', // Provider identification
             credentialType: 'oauth2_user', // New credential type
             encryptedCredentials: encryptedData,
+            encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             createdBy: userId,

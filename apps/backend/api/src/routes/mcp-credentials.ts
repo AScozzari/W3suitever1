@@ -409,13 +409,14 @@ router.post('/stripe', async (req: Request, res: Response) => {
       credentials
     );
 
-    // Check if credentials exist
+    // Check if credentials exist for this provider
     const existingCreds = await db
       .select()
       .from(mcpServerCredentials)
       .where(and(
         eq(mcpServerCredentials.serverId, serverId),
-        eq(mcpServerCredentials.tenantId, tenantId)
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.oauthProvider, 'stripe')
       ))
       .limit(1);
 
@@ -438,7 +439,9 @@ router.post('/stripe', async (req: Request, res: Response) => {
         .values({
           tenantId,
           serverId,
-          credentialType: 'api-key',
+          userId: null, // Tenant-level credential
+          oauthProvider: 'stripe',
+          credentialType: 'api_key',
           encryptedCredentials: encryptedData,
           encryptionKeyId: keyId,
           createdBy: userId
@@ -460,7 +463,8 @@ router.post('/stripe', async (req: Request, res: Response) => {
 
     logger.info('✅ [API] Stripe credentials stored (auto-created server)', {
       serverId,
-      credentialId
+      credentialId,
+      provider: 'stripe'
     });
 
     res.json({
@@ -553,13 +557,14 @@ router.post('/stripe/:serverId', async (req: Request, res: Response) => {
       credentials
     );
 
-    // Check if credentials exist
+    // Check if credentials exist for this provider
     const existingCreds = await db
       .select()
       .from(mcpServerCredentials)
       .where(and(
         eq(mcpServerCredentials.serverId, serverId),
-        eq(mcpServerCredentials.tenantId, tenantId)
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.oauthProvider, 'stripe')
       ))
       .limit(1);
 
@@ -582,7 +587,9 @@ router.post('/stripe/:serverId', async (req: Request, res: Response) => {
         .values({
           tenantId,
           serverId,
-          credentialType: 'api-key',
+          userId: null, // Tenant-level credential
+          oauthProvider: 'stripe',
+          credentialType: 'api_key',
           encryptedCredentials: encryptedData,
           encryptionKeyId: keyId,
           createdBy: userId
@@ -604,7 +611,8 @@ router.post('/stripe/:serverId', async (req: Request, res: Response) => {
 
     logger.info('✅ [API] Stripe credentials stored', {
       serverId,
-      credentialId
+      credentialId,
+      provider: 'stripe'
     });
 
     res.json({
@@ -713,13 +721,14 @@ router.post('/gtm', async (req: Request, res: Response) => {
       credentials
     );
 
-    // Check if credentials exist
+    // Check if credentials exist for this provider
     const existingCreds = await db
       .select()
       .from(mcpServerCredentials)
       .where(and(
         eq(mcpServerCredentials.serverId, serverId),
-        eq(mcpServerCredentials.tenantId, tenantId)
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.oauthProvider, 'gtm')
       ))
       .limit(1);
 
@@ -742,7 +751,9 @@ router.post('/gtm', async (req: Request, res: Response) => {
         .values({
           tenantId,
           serverId,
-          credentialType: 'api-key',
+          userId: null, // Tenant-level credential
+          oauthProvider: 'gtm',
+          credentialType: 'service_account',
           encryptedCredentials: encryptedData,
           encryptionKeyId: keyId,
           createdBy: userId
@@ -765,7 +776,8 @@ router.post('/gtm', async (req: Request, res: Response) => {
     logger.info('✅ [API] GTM credentials stored (auto-created server)', {
       serverId,
       credentialId,
-      projectId: serviceAccountKey.project_id
+      projectId: serviceAccountKey.project_id,
+      provider: 'gtm'
     });
 
     res.json({
@@ -867,13 +879,14 @@ router.post('/gtm/:serverId', async (req: Request, res: Response) => {
       credentials
     );
 
-    // Check if credentials exist
+    // Check if credentials exist for this provider
     const existingCreds = await db
       .select()
       .from(mcpServerCredentials)
       .where(and(
         eq(mcpServerCredentials.serverId, serverId),
-        eq(mcpServerCredentials.tenantId, tenantId)
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.oauthProvider, 'gtm')
       ))
       .limit(1);
 
@@ -896,7 +909,9 @@ router.post('/gtm/:serverId', async (req: Request, res: Response) => {
         .values({
           tenantId,
           serverId,
-          credentialType: 'api-key',
+          userId: null, // Tenant-level credential
+          oauthProvider: 'gtm',
+          credentialType: 'service_account',
           encryptedCredentials: encryptedData,
           encryptionKeyId: keyId,
           createdBy: userId
@@ -919,7 +934,8 @@ router.post('/gtm/:serverId', async (req: Request, res: Response) => {
     logger.info('✅ [API] GTM credentials stored', {
       serverId,
       credentialId,
-      projectId: serviceAccountKey.project_id
+      projectId: serviceAccountKey.project_id,
+      provider: 'gtm'
     });
 
     res.json({

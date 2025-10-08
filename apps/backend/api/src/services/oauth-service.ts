@@ -287,6 +287,7 @@ export class OAuthService {
         .update(mcpServerCredentials)
         .set({
           encryptedCredentials: encryptedData,
+          encryptionKeyId: keyId,
           tokenType: credentials.tokenType,
           scope: credentials.scope,
           expiresAt: credentials.expiresAt,
@@ -313,6 +314,7 @@ export class OAuthService {
           oauthProvider: provider,
           credentialType: 'oauth2_user',
           encryptedCredentials: encryptedData,
+          encryptionKeyId: keyId,
           tokenType: credentials.tokenType,
           scope: credentials.scope,
           expiresAt: credentials.expiresAt,

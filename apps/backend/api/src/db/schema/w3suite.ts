@@ -3497,6 +3497,7 @@ export const mcpServerCredentials = w3suiteSchema.table("mcp_server_credentials"
   // Credential Type & Data
   credentialType: mcpCredentialTypeEnum("credential_type").notNull(),
   encryptedCredentials: jsonb("encrypted_credentials").notNull(), // Encrypted: { accessToken, refreshToken, apiKey, etc. }
+  encryptionKeyId: varchar("encryption_key_id", { length: 100 }), // Key ID for decryption
   
   // Multi-Provider OAuth Support (n8n-style)
   userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // For multi-user OAuth (null = tenant-level)

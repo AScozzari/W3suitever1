@@ -199,6 +199,7 @@ export class MetaOAuthService {
           .update(mcpServerCredentials)
           .set({
             encryptedCredentials: encryptedData,
+            encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             updatedAt: new Date(),
@@ -225,6 +226,7 @@ export class MetaOAuthService {
             oauthProvider: 'meta',
             credentialType: 'oauth2_user',
             encryptedCredentials: encryptedData,
+            encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             createdBy: userId,

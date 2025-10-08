@@ -187,6 +187,7 @@ export class MicrosoftOAuthService {
           .update(mcpServerCredentials)
           .set({
             encryptedCredentials: encryptedData,
+            encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             updatedAt: new Date(),
@@ -213,6 +214,7 @@ export class MicrosoftOAuthService {
             oauthProvider: 'microsoft',
             credentialType: 'oauth2_user',
             encryptedCredentials: encryptedData,
+            encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             createdBy: userId,

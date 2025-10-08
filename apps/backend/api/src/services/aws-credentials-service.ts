@@ -73,13 +73,14 @@ export class AWSCredentialsService {
         credentials
       );
 
-      // Check if credentials already exist for this server
+      // Check if credentials already exist for this server/provider (tenant-level, no userId)
       const existingCreds = await db
         .select()
         .from(mcpServerCredentials)
         .where(and(
           eq(mcpServerCredentials.serverId, serverId),
-          eq(mcpServerCredentials.tenantId, tenantId)
+          eq(mcpServerCredentials.tenantId, tenantId),
+          eq(mcpServerCredentials.oauthProvider, 'aws')
         ))
         .limit(1);
 
@@ -92,7 +93,8 @@ export class AWSCredentialsService {
           .set({
             encryptedCredentials: encryptedData,
             encryptionKeyId: keyId,
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            revokedAt: null
           })
           .where(eq(mcpServerCredentials.id, existingCreds[0].id));
 
@@ -103,13 +105,15 @@ export class AWSCredentialsService {
           serverId
         });
       } else {
-        // Insert new credentials
+        // Insert new credentials (tenant-level API keys)
         const [newCred] = await db
           .insert(mcpServerCredentials)
           .values({
             tenantId,
             serverId,
-            credentialType: 'api-key',
+            userId: null, // Tenant-level credential (not user-specific)
+            oauthProvider: 'aws',
+            credentialType: 'api_key',
             encryptedCredentials: encryptedData,
             encryptionKeyId: keyId,
             createdBy: userId
@@ -120,7 +124,8 @@ export class AWSCredentialsService {
 
         logger.info('✨ [AWS Credentials] Created new credentials', {
           credentialId,
-          serverId
+          serverId,
+          provider: 'aws'
         });
       }
 
