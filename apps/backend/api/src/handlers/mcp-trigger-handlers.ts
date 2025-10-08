@@ -666,6 +666,584 @@ export async function handleGTMConversionEvent(params: TriggerHandlerParams) {
   }
 }
 
+// E-commerce tracking handlers
+export async function handleGTMProductView(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      productId: payload.productId,
+      productName: payload.productName,
+      price: payload.price,
+      category: payload.category
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.ecommerce.product-view'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.ecommerce.product-view'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Product View Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMAddToCart(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      productId: payload.productId,
+      quantity: payload.quantity,
+      price: payload.price,
+      cartValue: payload.cartValue
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.ecommerce.add-to-cart'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.ecommerce.add-to-cart'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Add to Cart Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMRemoveFromCart(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      productId: payload.productId,
+      quantity: payload.quantity,
+      cartValue: payload.cartValue
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.ecommerce.remove-from-cart'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.ecommerce.remove-from-cart'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Remove from Cart Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMCheckoutStarted(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      cartValue: payload.cartValue,
+      itemCount: payload.itemCount,
+      userId: payload.userId
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.ecommerce.checkout-started'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.ecommerce.checkout-started'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Checkout Started Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMPurchaseCompleted(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      orderId: payload.orderId,
+      totalAmount: payload.totalAmount,
+      items: payload.items,
+      userId: payload.userId
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.ecommerce.purchase-completed'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.ecommerce.purchase-completed'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Purchase Completed Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+// User engagement handlers
+export async function handleGTMScrollDepth(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      scrollPercentage: payload.scrollPercentage,
+      pageUrl: payload.pageUrl
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.engagement.scroll-depth'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.engagement.scroll-depth'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Scroll Depth Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMVideoPlay(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      videoId: payload.videoId,
+      videoTitle: payload.videoTitle,
+      duration: payload.duration
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.engagement.video-play'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.engagement.video-play'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Video Play Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMVideoComplete(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      videoId: payload.videoId,
+      watchTime: payload.watchTime,
+      completionRate: payload.completionRate
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.engagement.video-complete'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.engagement.video-complete'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Video Complete Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMLinkClick(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      linkUrl: payload.linkUrl,
+      linkText: payload.linkText,
+      isExternal: payload.isExternal
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.engagement.link-click'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.engagement.link-click'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Link Click Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+// Custom & Error tracking handlers
+export async function handleGTMCustomEvent(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      eventName: payload.eventName,
+      eventData: payload.eventData,
+      timestamp: payload.timestamp
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.custom.event'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.custom.event'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Custom Event Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMErrorTracking(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      errorMessage: payload.errorMessage,
+      errorStack: payload.errorStack,
+      pageUrl: payload.pageUrl
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.error.tracking'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.error.tracking'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM Error Tracking Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handleGTMUserTiming(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      timingCategory: payload.timingCategory,
+      timingValue: payload.timingValue,
+      timingLabel: payload.timingLabel
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'gtm.timing.user'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'gtm.timing.user'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [GTM User Timing Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+// ==================== POSTGRESQL TRIGGERS ====================
+
+export async function handlePostgreSQLRowInserted(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      insertedRow: payload.new_row,
+      tableName: payload.table_name
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'postgresql.row.inserted'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'postgresql.row.inserted'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [PostgreSQL Row Inserted Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handlePostgreSQLRowUpdated(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      oldRow: payload.old_row,
+      newRow: payload.new_row,
+      tableName: payload.table_name
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'postgresql.row.updated'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'postgresql.row.updated'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [PostgreSQL Row Updated Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handlePostgreSQLRowDeleted(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      deletedRow: payload.old_row,
+      tableName: payload.table_name
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'postgresql.row.deleted'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'postgresql.row.deleted'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [PostgreSQL Row Deleted Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handlePostgreSQLQueryExecuted(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      query: payload.query,
+      duration: payload.duration,
+      rowCount: payload.row_count
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'postgresql.query.executed'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'postgresql.query.executed'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [PostgreSQL Query Executed Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handlePostgreSQLTableCreated(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      tableName: payload.table_name,
+      schema: payload.schema
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'postgresql.table.created'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'postgresql.table.created'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [PostgreSQL Table Created Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+export async function handlePostgreSQLTableDropped(params: TriggerHandlerParams) {
+  const { tenantId, serverId, payload } = params;
+
+  try {
+    const triggerData = {
+      tableName: payload.table_name
+    };
+
+    const workflows = await findWorkflowsForTrigger({
+      tenantId,
+      serverId,
+      triggerType: 'postgresql.table.dropped'
+    });
+
+    for (const workflow of workflows) {
+      await startWorkflowExecution({
+        workflowId: workflow.id,
+        tenantId,
+        triggerData,
+        triggerType: 'postgresql.table.dropped'
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ [PostgreSQL Table Dropped Trigger] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
 // ==================== TRIGGER HANDLER REGISTRY ====================
 
 export const TriggerHandlerRegistry: Record<string, (params: TriggerHandlerParams) => Promise<void>> = {
@@ -707,7 +1285,33 @@ export const TriggerHandlerRegistry: Record<string, (params: TriggerHandlerParam
   // GTM/Analytics
   'gtm.form.submission': handleGTMFormSubmission,
   'gtm.conversion.event': handleGTMConversionEvent,
-  'gtm.page.view': handleGTMConversionEvent // Similar structure
+  'gtm.page.view': handleGTMConversionEvent, // Similar structure
+  
+  // GTM E-commerce
+  'gtm.ecommerce.product-view': handleGTMProductView,
+  'gtm.ecommerce.add-to-cart': handleGTMAddToCart,
+  'gtm.ecommerce.remove-from-cart': handleGTMRemoveFromCart,
+  'gtm.ecommerce.checkout-started': handleGTMCheckoutStarted,
+  'gtm.ecommerce.purchase-completed': handleGTMPurchaseCompleted,
+  
+  // GTM Engagement
+  'gtm.engagement.scroll-depth': handleGTMScrollDepth,
+  'gtm.engagement.video-play': handleGTMVideoPlay,
+  'gtm.engagement.video-complete': handleGTMVideoComplete,
+  'gtm.engagement.link-click': handleGTMLinkClick,
+  
+  // GTM Custom & Error
+  'gtm.custom.event': handleGTMCustomEvent,
+  'gtm.error.tracking': handleGTMErrorTracking,
+  'gtm.timing.user': handleGTMUserTiming,
+  
+  // PostgreSQL
+  'postgresql.row.inserted': handlePostgreSQLRowInserted,
+  'postgresql.row.updated': handlePostgreSQLRowUpdated,
+  'postgresql.row.deleted': handlePostgreSQLRowDeleted,
+  'postgresql.query.executed': handlePostgreSQLQueryExecuted,
+  'postgresql.table.created': handlePostgreSQLTableCreated,
+  'postgresql.table.dropped': handlePostgreSQLTableDropped
 };
 
 /**
