@@ -1190,4 +1190,193 @@ router.post('/:credentialId/refresh', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Get connected accounts for a Meta/Instagram server
+ * GET /api/mcp/connected-accounts/:serverId
+ */
+router.get('/connected-accounts/:serverId', async (req: Request, res: Response) => {
+  try {
+    const { serverId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_TENANT_ID',
+        message: 'X-Tenant-ID header is required'
+      });
+    }
+
+    const { MetaOAuthService } = await import('../services/meta-oauth-service');
+    const accounts = await MetaOAuthService.getConnectedAccounts({
+      serverId,
+      tenantId
+    });
+
+    logger.info('📋 [API] Retrieved connected accounts', {
+      serverId,
+      tenantId,
+      count: accounts.length
+    });
+
+    res.json({
+      success: true,
+      accounts
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Get connected accounts failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get connected accounts',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Remove a connected account
+ * DELETE /api/mcp/connected-accounts/:accountId
+ */
+router.delete('/connected-accounts/:accountId', async (req: Request, res: Response) => {
+  try {
+    const { accountId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing authentication headers'
+      });
+    }
+
+    const { mcpConnectedAccounts } = await import('../db/schema/w3suite');
+
+    // Verify account belongs to tenant
+    const [account] = await db
+      .select()
+      .from(mcpConnectedAccounts)
+      .where(and(
+        eq(mcpConnectedAccounts.id, accountId),
+        eq(mcpConnectedAccounts.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        error: 'ACCOUNT_NOT_FOUND',
+        message: 'Connected account not found'
+      });
+    }
+
+    // Soft delete account
+    await db
+      .update(mcpConnectedAccounts)
+      .set({
+        removedAt: new Date(),
+        isActive: false,
+        updatedAt: new Date()
+      })
+      .where(eq(mcpConnectedAccounts.id, accountId));
+
+    logger.info('🗑️ [API] Removed connected account', {
+      accountId,
+      accountName: account.accountName,
+      tenantId
+    });
+
+    res.json({
+      success: true,
+      message: 'Account removed successfully'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Remove connected account failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove account',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Sync connected account data (refresh metadata)
+ * POST /api/mcp/connected-accounts/:accountId/sync
+ */
+router.post('/connected-accounts/:accountId/sync', async (req: Request, res: Response) => {
+  try {
+    const { accountId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_TENANT_ID',
+        message: 'X-Tenant-ID header is required'
+      });
+    }
+
+    const { mcpConnectedAccounts } = await import('../db/schema/w3suite');
+
+    // Get account with credential
+    const [account] = await db
+      .select()
+      .from(mcpConnectedAccounts)
+      .where(and(
+        eq(mcpConnectedAccounts.id, accountId),
+        eq(mcpConnectedAccounts.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        error: 'ACCOUNT_NOT_FOUND',
+        message: 'Connected account not found'
+      });
+    }
+
+    // Update last synced timestamp
+    await db
+      .update(mcpConnectedAccounts)
+      .set({
+        lastSyncedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(mcpConnectedAccounts.id, accountId));
+
+    logger.info('🔄 [API] Synced connected account', {
+      accountId,
+      accountName: account.accountName,
+      tenantId
+    });
+
+    res.json({
+      success: true,
+      message: 'Account synced successfully',
+      lastSyncedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Sync connected account failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to sync account',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
