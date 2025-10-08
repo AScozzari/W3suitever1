@@ -8,7 +8,8 @@ import {
   EmailActionConfigSchema,
   ApprovalActionConfigSchema,
   AiDecisionConfigSchema,
-  EventTriggerConfigSchema
+  EventTriggerConfigSchema,
+  MCPConnectorConfigSchema
 } from '../types/workflow-nodes';
 
 // ==================== ACTION NODES DEFINITIONS ====================
@@ -326,6 +327,38 @@ export const ROUTING_NODES: BaseNodeDefinition[] = [
   }
 ];
 
+// ==================== INTEGRATION NODES DEFINITIONS ====================
+
+export const INTEGRATION_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-connector',
+    name: 'MCP Connector',
+    description: 'Connect to external services via Model Context Protocol (Google, Meta, AWS, Microsoft)',
+    category: 'integration',
+    icon: 'Plug',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: MCPConnectorConfigSchema,
+    defaultConfig: {
+      serverId: null, // Will be populated from dropdown
+      serverName: null, // Will be populated from serverId
+      toolName: null, // Will be populated from tool selection
+      toolDescription: null, // Will be populated from tool schema
+      parameters: {},
+      timeout: 30000, // 30 seconds
+      retryPolicy: {
+        enabled: true,
+        maxRetries: 3,
+        retryDelayMs: 1000
+      },
+      errorHandling: {
+        onError: 'fail',
+        fallbackValue: null
+      }
+    }
+  }
+];
+
 // ==================== FLOW CONTROL NODES DEFINITIONS ====================
 
 export const FLOW_CONTROL_NODES: BaseNodeDefinition[] = [
@@ -426,6 +459,7 @@ export const ALL_WORKFLOW_NODES: BaseNodeDefinition[] = [
   ...TRIGGER_NODES,
   ...AI_NODES,
   ...ROUTING_NODES,
+  ...INTEGRATION_NODES,
   ...FLOW_CONTROL_NODES
 ];
 
@@ -442,6 +476,7 @@ export const getActionNodes = (): BaseNodeDefinition[] => ACTION_NODES;
 export const getTriggerNodes = (): BaseNodeDefinition[] => TRIGGER_NODES;
 export const getAiNodes = (): BaseNodeDefinition[] => AI_NODES;
 export const getRoutingNodes = (): BaseNodeDefinition[] => ROUTING_NODES;
+export const getIntegrationNodes = (): BaseNodeDefinition[] => INTEGRATION_NODES;
 export const getFlowControlNodes = (): BaseNodeDefinition[] => FLOW_CONTROL_NODES;
 
 // ==================== EXECUTOR MAPPING ====================
@@ -472,7 +507,9 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   'switch-case': 'switch-case-executor',
   'while-loop': 'while-loop-executor',
   'parallel-fork': 'parallel-fork-executor',
-  'join-sync': 'join-sync-executor'
+  'join-sync': 'join-sync-executor',
+  // Integration nodes
+  'mcp-connector': 'mcp-connector-executor'
 } as const;
 
 export type NodeId = keyof typeof NODE_TO_EXECUTOR_MAPPING;

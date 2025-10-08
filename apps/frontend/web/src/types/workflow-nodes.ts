@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 // ==================== BASE NODE TYPES ====================
 
-export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow';
+export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'integration';
 
 export interface BaseNodeDefinition {
   id: string;
@@ -303,9 +303,31 @@ export const AiContentConfigSchema = z.object({
   }).optional()
 });
 
+// ==================== INTEGRATION NODES ====================
+
+// MCP Connector Configuration
+export const MCPConnectorConfigSchema = z.object({
+  serverId: z.string().uuid('Server ID deve essere un UUID valido').nullable(),
+  serverName: z.string().optional(), // Display name (populated from serverId)
+  toolName: z.string().min(1, 'Nome tool richiesto').nullable(),
+  toolDescription: z.string().optional(), // Display description (populated from tool schema)
+  parameters: z.record(z.string(), z.any()).default({}),
+  timeout: z.number().min(1000).max(300000).default(30000), // 30 seconds default
+  retryPolicy: z.object({
+    enabled: z.boolean().default(true),
+    maxRetries: z.number().min(0).max(5).default(3),
+    retryDelayMs: z.number().min(100).default(1000)
+  }).optional(),
+  errorHandling: z.object({
+    onError: z.enum(['fail', 'continue', 'retry']).default('fail'),
+    fallbackValue: z.any().optional()
+  }).optional()
+});
+
 // ==================== TYPE EXPORTS ====================
 
 export type EmailActionConfig = z.infer<typeof EmailActionConfigSchema>;
+export type MCPConnectorConfig = z.infer<typeof MCPConnectorConfigSchema>;
 export type ApprovalActionConfig = z.infer<typeof ApprovalActionConfigSchema>;
 export type PaymentActionConfig = z.infer<typeof PaymentActionConfigSchema>;
 export type TicketActionConfig = z.infer<typeof TicketActionConfigSchema>;
@@ -324,5 +346,6 @@ export type AiContentConfig = z.infer<typeof AiContentConfigSchema>;
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
 export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
 export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig;
+export type IntegrationConfig = MCPConnectorConfig;
 
-export type NodeConfig = ActionConfig | TriggerConfig | AiConfig;
+export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig;
