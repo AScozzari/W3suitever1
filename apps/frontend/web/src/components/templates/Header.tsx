@@ -9,6 +9,7 @@ import { oauth2Client } from '../../services/OAuth2Client';
 import { queryClient } from '../../lib/queryClient';
 import { apiService } from '../../services/ApiService';
 import { useUserAvatar } from '../../hooks/useUserAvatar';
+import { useIdleAwareRefetch } from '../../hooks/useIdleAwareRefetch';
 import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
 
 // Palette colori W3 Suite - Consistent con Layout
@@ -45,6 +46,7 @@ export default function Header({
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
+  const refetchInterval = useIdleAwareRefetch(15000);
   
   // Use avatar hook for enhanced avatar functionality
   const userAvatar = useUserAvatar(user, {
@@ -56,7 +58,7 @@ export default function Header({
   const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery<UnreadCountApiResponse>({
     queryKey: ['/api/notifications/unread-count'],
     // No custom queryFn - use default fetcher from queryClient for proper auth/tenant headers
-    refetchInterval: 15000, // Poll every 15 seconds
+    refetchInterval, // Only poll when user is active
     enabled: !!user
   });
 

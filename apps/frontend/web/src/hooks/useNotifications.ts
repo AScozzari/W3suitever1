@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Notification, QueryResult } from '@/types';
+import { useIdleAwareRefetch } from './useIdleAwareRefetch';
 
 export interface NotificationPreference {
   id: string;
@@ -29,6 +30,7 @@ export function useNotifications(filters?: {
   limit?: number;
   offset?: number;
 }): QueryResult<Notification[]> {
+  const refetchInterval = useIdleAwareRefetch(30000);
   const queryParams = { 
     status: filters?.status, 
     type: filters?.type, 
@@ -40,16 +42,18 @@ export function useNotifications(filters?: {
   return useQuery<Notification[]>({
     queryKey: ['/api/notifications', queryParams],
     // Use default queryFn from queryClient - no custom queryFn needed
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval, // Only poll when user is active
   }) as QueryResult<Notification[]>;
 }
 
 // Hook for fetching unread notification count
 export function useUnreadNotificationCount(): QueryResult<{count: number}> {
+  const refetchInterval = useIdleAwareRefetch(15000);
+  
   return useQuery<{count: number}>({
     queryKey: ['/api/notifications/unread-count'],
     // Use default queryFn from queryClient - no custom queryFn needed
-    refetchInterval: 15000, // Refetch every 15 seconds for real-time updates
+    refetchInterval, // Only poll when user is active
   }) as QueryResult<{count: number}>;
 }
 

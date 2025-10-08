@@ -17,6 +17,7 @@ import {
 import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../hooks/useAuth';
+import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
@@ -67,11 +68,11 @@ interface LayoutProps {
 }
 
 // Chat Icon Button Component with Unread Badge
-function ChatIconButton({ isMobile, navigate }: { isMobile: boolean; navigate: (path: string) => void }) {
+function ChatIconButton({ isMobile, navigate, isIdle }: { isMobile: boolean; navigate: (path: string) => void; isIdle: boolean }) {
   const [location] = useLocation();
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/chat/unread-count'],
-    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
+    refetchInterval: isIdle ? false : 10000, // Only poll when user is active
     staleTime: 5000
   });
 
@@ -156,6 +157,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   
+  const { isIdle } = useIdleDetection();
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const [location, navigate] = useLocation();
   
@@ -273,7 +275,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     queryKey: ['/api/tasks/my-tasks'],
     enabled: !!user,
     staleTime: 30 * 1000, // 30 secondi cache
-    refetchInterval: 60 * 1000, // Refresh ogni minuto
+    refetchInterval: isIdle ? false : 60 * 1000, // Only poll when user is active
   });
 
   // 🔄 FILTRI E MAPPING: Task reali → UI Format
@@ -411,7 +413,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const { data: eventiCalendarioRaw = [], isLoading: calendarLoading, error: calendarError } = useQuery({
     queryKey: ['/api/hr/calendar/events'],
     staleTime: 5 * 60 * 1000, // 5 minuti cache
-    refetchInterval: 30 * 1000, // Refresh ogni 30 secondi per real-time
+    refetchInterval: isIdle ? false : 30 * 1000, // Only poll when user is active
   });
 
   // 🔄 MAPPING: Database → Placeholder Structure 
@@ -679,7 +681,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           {user && <NotificationBell isMobile={isMobile} />}
           
           {/* Chat Icon with Unread Badge */}
-          {user && <ChatIconButton isMobile={isMobile} navigate={navigate} />}
+          {user && <ChatIconButton isMobile={isMobile} navigate={navigate} isIdle={isIdle} />}
           
           {/* Selettore Punto Vendita - Professional */}
           {!isMobile && (
