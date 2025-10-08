@@ -833,6 +833,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       <NodeConfigPanel 
         node={showConfigPanel && configNodeId ? nodes.find(n => n.id === configNodeId) || null : null}
         allNodes={nodes}
+        edges={edges}
         isOpen={showConfigPanel}
         onClose={() => setShowConfigPanel(false)}
         onSave={(nodeId: string, config: any) => {

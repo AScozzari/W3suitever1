@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Node } from '@xyflow/react';
+import { Node, Edge } from '@xyflow/react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -15,6 +15,7 @@ import MCPNodeConfigModal from './MCPNodeConfigModal';
 interface NodeConfigPanelProps {
   node: Node | null;
   allNodes: Node[]; // Lista di tutti i nodi disponibili per dropdown
+  edges: Edge[]; // Lista di edges per auto-detect connected nodes
   isOpen: boolean;
   onClose: () => void;
   onSave: (nodeId: string, config: any) => void;
@@ -54,7 +55,7 @@ interface Team {
  * Componente separato per evitare hook order violations nel WorkflowBuilder.
  * Gestisce la configurazione di tutti i tipi di nodi in modo sicuro.
  */
-export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSave }: NodeConfigPanelProps) {
+export default function NodeConfigPanel({ node, allNodes, edges, isOpen, onClose, onSave }: NodeConfigPanelProps) {
   if (!node) return null;
 
   return (
@@ -159,7 +160,7 @@ export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSav
           
           {/* ========== AI INTEGRATION NODES ========== */}
           {node.data.id === 'ai-mcp-node' && (
-            <AIMCPNodeConfig node={node} onSave={onSave} onClose={onClose} />
+            <AIMCPNodeConfig node={node} allNodes={allNodes} edges={edges} onSave={onSave} onClose={onClose} />
           )}
           
           {/* ========== MCP NODES (OUTBOUND + INBOUND) ========== */}
@@ -2918,34 +2919,32 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
 }
 
 /**
- * 🤖 AI MCP Node Configuration
- * AI-powered orchestration of multiple MCP tools
+ * 🤖 AI MCP Node Configuration - SIMPLIFIED VERSION
+ * AI-powered orchestration with auto-detected MCP nodes
  */
-function AIMCPNodeConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+function AIMCPNodeConfig({ node, allNodes, edges, onSave, onClose }: { 
+  node: Node; 
+  allNodes: Node[];
+  edges: Edge[];
+  onSave: (nodeId: string, config: any) => void; 
+  onClose: () => void;
+}) {
   const config = (node.data.config || {}) as any;
   
-  // Type definitions for MCP entities
-  interface MCPServer {
-    id: string;
-    name: string;
-    status?: string;
-  }
+  // 🔍 Auto-detect connected MCP nodes from edges (BOTH incoming and outgoing)
+  const connectedMCPNodes = edges
+    .filter(edge => edge.source === node.id || edge.target === node.id) // Both directions
+    .map(edge => {
+      // If AI is source, get target node; if AI is target, get source node
+      const otherNodeId = edge.source === node.id ? edge.target : edge.source;
+      return allNodes.find(n => n.id === otherNodeId);
+    })
+    .filter(n => n && (n.data.category === 'mcp-outbound' || n.data.category === 'mcp-inbound'))
+    .filter((n): n is Node => n !== undefined);
   
-  interface MCPTool {
-    name: string;
-    description?: string;
-  }
-  
-  interface ServerWithTools {
-    serverId: string;
-    serverName: string;
-    tools: MCPTool[];
-  }
-  
-  // State management
+  // State management - SIMPLIFIED (removed enabledTools)
   const [model, setModel] = useState(config.model || 'gpt-4');
   const [instructions, setInstructions] = useState(config.instructions || 'Sei un assistente AI che orchestra servizi esterni via MCP. Analizza il contesto del workflow e decidi quali tools chiamare e con quali parametri.');
-  const [enabledTools, setEnabledTools] = useState<Array<{serverId: string; serverName: string; toolName: string; toolDescription?: string}>>(config.enabledTools || []);
   const [temperature, setTemperature] = useState(config.parameters?.temperature ?? 0.7);
   const [maxTokens, setMaxTokens] = useState(config.parameters?.maxTokens || 1000);
   const [topP, setTopP] = useState(config.parameters?.topP ?? 1);
@@ -2957,61 +2956,12 @@ function AIMCPNodeConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
   const [saveFunctionCallsTo, setSaveFunctionCallsTo] = useState(config.outputMapping?.saveFunctionCallsTo || 'executedFunctions');
   const [showAdvanced, setShowAdvanced] = useState(false);
   
-  // Fetch MCP servers
-  const { data: servers = [], isLoading: serversLoading } = useQuery<MCPServer[]>({
-    queryKey: ['/api/mcp/servers'],
-    enabled: true
-  });
-  
-  // Fetch all tools for all servers (parallel queries)
-  const serverToolsQueries = useQuery<ServerWithTools[]>({
-    queryKey: ['mcp-all-servers-tools'],
-    queryFn: async () => {
-      const allTools: ServerWithTools[] = [];
-      
-      for (const server of servers) {
-        try {
-          const response = await fetch(`/api/mcp/servers/${server.id}/tools`);
-          if (response.ok) {
-            const tools = await response.json();
-            allTools.push({
-              serverId: server.id,
-              serverName: server.name,
-              tools: tools || []
-            });
-          }
-        } catch (err) {
-          console.error(`Failed to fetch tools for server ${server.name}:`, err);
-        }
-      }
-      
-      return allTools;
-    },
-    enabled: servers.length > 0
-  });
-  
-  // Toggle tool selection
-  const toggleTool = (serverId: string, serverName: string, toolName: string, toolDescription?: string) => {
-    const exists = enabledTools.some(t => t.serverId === serverId && t.toolName === toolName);
-    
-    if (exists) {
-      setEnabledTools(prev => prev.filter(t => !(t.serverId === serverId && t.toolName === toolName)));
-    } else {
-      setEnabledTools(prev => [...prev, { serverId, serverName, toolName, toolDescription }]);
-    }
-  };
-  
-  // Check if tool is selected
-  const isToolSelected = (serverId: string, toolName: string) => {
-    return enabledTools.some(t => t.serverId === serverId && t.toolName === toolName);
-  };
-  
-  // Validation
+  // Validation - SIMPLIFIED (only instructions length check)
   const isValid = () => {
-    return instructions.length >= 20 && enabledTools.length >= 1;
+    return instructions.length >= 20 && connectedMCPNodes.length >= 1;
   };
   
-  // Save handler
+  // Save handler - SIMPLIFIED (auto-detected nodes stored as connectedNodeIds)
   const handleSave = () => {
     if (!isValid()) {
       return;
@@ -3020,7 +2970,7 @@ function AIMCPNodeConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
     onSave(node.id, {
       model,
       instructions,
-      enabledTools,
+      connectedNodeIds: connectedMCPNodes.map(n => n.id), // Store node IDs for backend processing
       parameters: {
         temperature,
         maxTokens,
@@ -3093,56 +3043,54 @@ function AIMCPNodeConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
         <p className="text-xs text-gray-500 mt-1">{instructions.length} caratteri</p>
       </div>
       
-      {/* MCP Tools Selection */}
+      {/* Connected MCP Nodes - AUTO-DETECTED (Read-only) */}
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-          🔧 Tools MCP Disponibili
-          {enabledTools.length === 0 && <span className="text-red-500 text-xs">(seleziona almeno 1)</span>}
-          {enabledTools.length > 0 && <span className="text-green-600 text-xs">({enabledTools.length} selezionati)</span>}
+          🔗 Nodi MCP Connessi (Auto-rilevati)
+          {connectedMCPNodes.length === 0 && <span className="text-red-500 text-xs">(collega almeno 1 nodo MCP)</span>}
+          {connectedMCPNodes.length > 0 && <span className="text-green-600 text-xs">({connectedMCPNodes.length} connessi)</span>}
+          <InfoTooltip
+            title="Auto-detection"
+            description="I nodi MCP vengono rilevati automaticamente dal grafo del workflow. Collega questo nodo AI ai nodi MCP (OUTBOUND/INBOUND) per abilitare l'orchestrazione."
+          />
         </label>
         
-        {serversLoading || serverToolsQueries.isLoading ? (
-          <div className="text-sm text-gray-500 py-4 text-center">
-            ⏳ Caricamento MCP servers e tools...
-          </div>
-        ) : serverToolsQueries.data && serverToolsQueries.data.length > 0 ? (
-          <div className="space-y-4 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-            {serverToolsQueries.data.map((server: any) => (
-              <div key={server.serverId} className="space-y-2">
-                <div className="font-medium text-sm text-gray-700 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  {server.serverName}
-                </div>
-                
-                {server.tools.length === 0 ? (
-                  <p className="text-xs text-gray-400 ml-4">Nessun tool disponibile</p>
-                ) : (
-                  <div className="ml-4 space-y-2">
-                    {server.tools.map((tool: any) => (
-                      <div key={`${server.serverId}-${tool.name}`} className="flex items-start gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isToolSelected(server.serverId, tool.name)}
-                          onChange={() => toggleTool(server.serverId, server.serverName, tool.name, tool.description)}
-                          className="mt-1 h-4 w-4 text-windtre-purple border-gray-300 rounded focus:ring-windtre-purple"
-                          data-testid={`checkbox-tool-${tool.name}`}
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-800">{tool.name}</div>
-                          {tool.description && (
-                            <div className="text-xs text-gray-500">{tool.description}</div>
-                          )}
-                        </div>
+        {connectedMCPNodes.length > 0 ? (
+          <div className="space-y-2 border border-green-200 bg-green-50 rounded-lg p-4">
+            {connectedMCPNodes.map((mcpNode) => {
+              const ecosystem = mcpNode.data.ecosystem || 'unknown';
+              const ecosystemEmoji = 
+                ecosystem === 'google' ? '🔍' :
+                ecosystem === 'aws' ? '☁️' :
+                ecosystem === 'meta' ? '📘' :
+                ecosystem === 'microsoft' ? '🪟' :
+                ecosystem === 'stripe' ? '💳' :
+                ecosystem === 'gtm' ? '📊' : '🔧';
+              
+              return (
+                <div key={mcpNode.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{ecosystemEmoji}</span>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{mcpNode.data.name || mcpNode.data.title}</div>
+                      <div className="text-xs text-gray-500">
+                        {mcpNode.data.category === 'mcp-outbound' ? '📤 OUTBOUND' : '📥 INBOUND'} • {ecosystem.toUpperCase()}
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  <Badge variant="outline" className="text-xs">
+                    {mcpNode.id}
+                  </Badge>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 py-4 text-center border border-gray-200 rounded-lg">
-            ⚠️ Nessun MCP server configurato. Configura prima i server MCP nelle impostazioni di sistema.
+          <div className="text-sm text-gray-500 py-4 text-center border-2 border-dashed border-orange-300 bg-orange-50 rounded-lg">
+            <p className="font-medium text-orange-700">⚠️ Nessun nodo MCP connesso</p>
+            <p className="text-xs text-orange-600 mt-1">
+              Collega questo nodo AI ai nodi MCP (OUTBOUND/INBOUND) nel workflow per abilitare l'orchestrazione automatica
+            </p>
           </div>
         )}
       </div>
@@ -3316,7 +3264,7 @@ function AIMCPNodeConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeI
           </p>
           <ul className="text-xs text-red-600 mt-1 ml-4 list-disc">
             {instructions.length < 20 && <li>Istruzioni AI devono essere almeno 20 caratteri</li>}
-            {enabledTools.length === 0 && <li>Seleziona almeno 1 MCP tool</li>}
+            {connectedMCPNodes.length === 0 && <li>Collega almeno 1 nodo MCP (OUTBOUND/INBOUND) al nodo AI nel workflow</li>}
           </ul>
         </div>
       )}
