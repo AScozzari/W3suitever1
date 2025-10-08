@@ -59,6 +59,7 @@ import { WorkflowFlowControlNode } from './workflow-nodes/WorkflowFlowControlNod
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../hooks/useWorkflowTemplates';
 import NodeConfigPanel from './NodeConfigPanel';
+import { AIWorkflowChatModal } from './AIWorkflowChatModal';
 
 // ✅ REAL PROFESSIONAL NODE COMPONENTS - DEFINED OUTSIDE TO PREVENT RE-RENDERS
 const nodeTypes = {
@@ -141,6 +142,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showAIModal, setShowAIModal] = useState(false);
   
   // Department mapping for context
   const departmentInfo = {
@@ -405,6 +407,60 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     };
     reader.readAsText(file);
   };
+
+  const handleAIWorkflowGenerated = useCallback((workflowJson: any) => {
+    console.log('🤖 AI workflow generated:', workflowJson);
+    
+    if (!workflowJson?.nodes || !workflowJson?.edges) {
+      console.error('❌ Invalid workflow JSON structure');
+      alert('❌ Invalid workflow structure from AI. Please try a different description.');
+      return;
+    }
+
+    const aiNodes = workflowJson.nodes.map((node: any) => {
+      const nodeDefinition = ALL_WORKFLOW_NODES.find(n => n.id === node.type);
+      
+      if (!nodeDefinition) {
+        console.warn(`⚠️ Node type not found: ${node.type}`);
+      }
+      
+      return {
+        id: node.id || `${node.type}-${Date.now()}-${Math.random()}`,
+        type: node.category || nodeDefinition?.category || 'action',
+        position: node.position || { x: Math.random() * 400, y: Math.random() * 300 },
+        data: {
+          ...(nodeDefinition || {}),
+          label: node.label || node.name || nodeDefinition?.name || 'Unnamed Node',
+          config: {
+            ...(nodeDefinition?.defaultConfig || {}),
+            ...(node.config || {})
+          },
+          onConfigClick: handleConfigClick
+        },
+        draggable: true,
+        connectable: true,
+        deletable: true,
+        selectable: true,
+      };
+    });
+
+    const aiEdges = workflowJson.edges.map((edge: any) => ({
+      id: edge.id || `edge-${edge.source}-${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+      type: edge.type || 'default',
+      animated: edge.animated !== false,
+      style: edge.style || { stroke: '#FF6900', strokeWidth: 2 }
+    }));
+
+    setNodes(aiNodes);
+    setEdges(aiEdges);
+    
+    console.log('✅ AI workflow applied to canvas:', {
+      nodes: aiNodes.length,
+      edges: aiEdges.length
+    });
+  }, [setNodes, setEdges, handleConfigClick]);
 
   return (
     <div className="flex h-full w-full bg-gray-50">
@@ -1176,6 +1232,18 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setShowAIModal(true)}
+                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                title="AI Workflow Assistant"
+                data-testid="button-ai-assistant"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                AI Assistant
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleSaveWorkflow}
                 data-testid="button-save"
               >
@@ -1238,6 +1306,13 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           
           console.log('🎛️ Node config saved:', { nodeId, config });
         }}
+      />
+
+      {/* 🤖 AI WORKFLOW CHAT MODAL */}
+      <AIWorkflowChatModal
+        open={showAIModal}
+        onOpenChange={setShowAIModal}
+        onWorkflowGenerated={handleAIWorkflowGenerated}
       />
 
     </div>
