@@ -1438,6 +1438,309 @@ export class MCPConnectorExecutor implements ActionExecutor {
   }
 }
 
+/**
+ * 🤖 AI MCP EXECUTOR
+ * Executes AI-driven MCP tool orchestration with OpenAI function calling
+ */
+export class AIMCPExecutor implements ActionExecutor {
+  executorId = 'ai-mcp-executor';
+  description = 'AI-driven MCP tool orchestration using OpenAI function calling';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing AI MCP Node', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      
+      // Validate required fields
+      if (!config.mcpServerIds || config.mcpServerIds.length === 0) {
+        throw new Error('AI MCP Node requires at least one MCP server selected');
+      }
+
+      if (!config.aiInstructions || config.aiInstructions.trim() === '') {
+        throw new Error('AI MCP Node requires AI instructions');
+      }
+
+      // Extract configuration
+      const {
+        mcpServerIds,
+        aiInstructions,
+        model = 'gpt-4',
+        temperature = 0.7,
+        maxTokens = 1000,
+        topP,
+        frequencyPenalty,
+        fallbackResponse,
+        outputMapping = {}
+      } = config;
+
+      // Build user message from instructions + inputData
+      const userMessage = this.buildUserMessage(aiInstructions, inputData);
+
+      // Load MCP servers and build tools array
+      const mcpTools = await this.loadMCPTools(mcpServerIds, context.tenantId);
+
+      if (mcpTools.length === 0) {
+        logger.warn('⚠️ [AI-MCP] No MCP tools available from selected servers');
+        
+        // Use fallback if configured
+        if (fallbackResponse) {
+          return {
+            success: true,
+            message: 'No MCP tools available, using fallback response',
+            data: { response: fallbackResponse, fallbackUsed: true }
+          };
+        }
+        
+        throw new Error('No MCP tools available from selected servers');
+      }
+
+      logger.info('🔧 [AI-MCP] Loaded MCP tools', {
+        toolCount: mcpTools.length,
+        servers: mcpServerIds
+      });
+
+      // Get UnifiedOpenAIService storage (from context)
+      const { default: storage } = await import('../core/storage');
+      const openaiService = new UnifiedOpenAIService(storage);
+
+      // Build AI settings for OpenAI API (fetch from DB or use defaults)
+      const aiSettings: any = {
+        tenantId: context.tenantId,
+        id: 'ai-mcp-executor',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        openaiModel: model as any,
+        responseCreativity: Math.round(temperature * 10), // Map 0-2.0 to 0-20
+        maxTokensPerResponse: maxTokens,
+        featuresEnabled: {},
+        privacyMode: 'normal' as const,
+        streamingEnabled: false,
+        conversationContext: false,
+        maxConversationMessages: 10,
+        conversationSummaryEnabled: false,
+        ragEnabled: false,
+        ragSettings: {},
+        contextSettings: {},
+        customSystemPrompt: null,
+        toolsEnabled: false
+      };
+
+      // Build OpenAI request context with MCP tools
+      const openaiContext = {
+        tenantId: context.tenantId,
+        availableTools: [], // No native tools, only MCP
+        mcpTools: mcpTools, // Pass MCP tools for function calling
+        moduleContext: 'workflow' as const
+      };
+
+      // Execute AI with MCP tools
+      const aiResponse = await openaiService.createUnifiedResponse(
+        userMessage,
+        aiSettings,
+        openaiContext
+      );
+
+      if (!aiResponse.success) {
+        throw new Error(aiResponse.error || 'AI execution failed');
+      }
+
+      // Extract response text from output
+      const responseText = typeof aiResponse.output === 'string' 
+        ? aiResponse.output 
+        : JSON.stringify(aiResponse.output || '');
+
+      // Apply output mapping if configured
+      const mappedOutput = this.applyOutputMapping(responseText, outputMapping);
+
+      logger.info('✅ [AI-MCP] AI execution completed successfully', {
+        responseLength: responseText.length,
+        tokensUsed: aiResponse.tokensUsed,
+        mapped: Object.keys(mappedOutput).length > 0
+      });
+
+      return {
+        success: true,
+        message: 'AI MCP orchestration completed successfully',
+        data: {
+          response: responseText,
+          mappedOutput,
+          tokensUsed: aiResponse.tokensUsed || 0,
+          cost: aiResponse.cost || 0,
+          executedAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI MCP execution failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Try fallback response if configured
+      const fallbackResponse = step.config?.fallbackResponse;
+      if (fallbackResponse) {
+        return {
+          success: true,
+          message: 'AI MCP execution failed, using fallback response',
+          data: {
+            response: fallbackResponse,
+            fallbackUsed: true,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        };
+      }
+
+      return {
+        success: false,
+        message: 'AI MCP orchestration failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Build user message by resolving template variables
+   */
+  private buildUserMessage(instructions: string, inputData?: Record<string, any>): string {
+    if (!inputData) return instructions;
+
+    // Replace {{variable}} with inputData values
+    return instructions.replace(/\{\{(\w+)\}\}/g, (_, varName) => {
+      return inputData[varName] !== undefined ? String(inputData[varName]) : `{{${varName}}}`;
+    });
+  }
+
+  /**
+   * Load MCP servers and build tools array for OpenAI function calling
+   */
+  private async loadMCPTools(
+    serverIds: string[], 
+    tenantId: string
+  ): Promise<Array<{
+    serverId: string;
+    serverName: string;
+    toolName: string;
+    toolDescription?: string;
+    schema?: any;
+  }>> {
+    const mcpTools: Array<any> = [];
+
+    for (const serverId of serverIds) {
+      try {
+        // List tools available from this server (returns Tool[] directly)
+        const tools = await mcpClientService.listTools({
+          serverId,
+          tenantId
+        });
+
+        if (!tools || tools.length === 0) {
+          logger.warn('⚠️ [AI-MCP] No tools available from server', { serverId });
+          continue;
+        }
+
+        // Load server info for serverName (optional, fallback to serverId)
+        let serverName = serverId;
+        try {
+          const { mcpServers } = await import('../db/schema/w3suite');
+          const { eq } = await import('drizzle-orm');
+          const { db } = await import('../core/db');
+          
+          const [server] = await db
+            .select()
+            .from(mcpServers)
+            .where(eq(mcpServers.id, serverId))
+            .limit(1);
+          
+          if (server) {
+            serverName = server.name;
+          }
+        } catch {
+          // Fallback to serverId if DB query fails
+        }
+
+        // Convert tools to MCPToolDefinition format
+        for (const tool of tools) {
+          mcpTools.push({
+            serverId,
+            serverName,
+            toolName: tool.name,
+            toolDescription: tool.description,
+            schema: tool.inputSchema // OpenAI function parameters format
+          });
+        }
+
+        logger.debug('🔧 [AI-MCP] Loaded tools from server', {
+          serverId,
+          serverName,
+          toolCount: tools.length
+        });
+
+      } catch (error) {
+        logger.error('❌ [AI-MCP] Failed to load tools from server', {
+          serverId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        // Continue with other servers
+      }
+    }
+
+    return mcpTools;
+  }
+
+  /**
+   * Apply output mapping to extract structured data from AI response
+   */
+  private applyOutputMapping(
+    responseText: string, 
+    mapping: Record<string, string>
+  ): Record<string, any> {
+    const output: Record<string, any> = {};
+
+    if (!mapping || Object.keys(mapping).length === 0) {
+      return output;
+    }
+
+    // For each mapping rule, extract value using regex or simple match
+    for (const [key, pattern] of Object.entries(mapping)) {
+      if (!pattern) continue;
+
+      // Try regex extraction: {{regex:/pattern/}}
+      const regexMatch = pattern.match(/\{\{regex:\/(.+)\/\}\}/);
+      if (regexMatch) {
+        const regex = new RegExp(regexMatch[1], 'i');
+        const match = responseText.match(regex);
+        output[key] = match ? match[1] || match[0] : null;
+        continue;
+      }
+
+      // Try JSON path extraction: {{json.path}}
+      if (pattern.startsWith('{{json.')) {
+        try {
+          const jsonData = JSON.parse(responseText);
+          const path = pattern.slice(7, -2).split('.');
+          let value = jsonData;
+          for (const p of path) {
+            value = value?.[p];
+          }
+          output[key] = value;
+        } catch {
+          output[key] = null;
+        }
+        continue;
+      }
+
+      // Simple string match
+      output[key] = responseText.includes(pattern) ? pattern : null;
+    }
+
+    return output;
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -1479,6 +1782,7 @@ export class ActionExecutorsRegistry {
     
     // Integration executors
     this.register(new MCPConnectorExecutor());
+    this.register(new AIMCPExecutor());
 
     logger.info('🎯 [REGISTRY] Registered default action executors', {
       count: this.executors.size,
