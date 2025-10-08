@@ -409,48 +409,85 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   return (
     <div className="flex h-full w-full bg-gray-50">
       {/* Node Palette Sidebar */}
-      <div className={`${isNodePaletteOpen ? 'w-96' : 'w-12'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900">Node Library</h3>
+      <div className={`${isNodePaletteOpen ? 'w-96' : 'w-12'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col`}>
+        
+        {/* Collapsed State: Vertical Icons */}
+        {!isNodePaletteOpen && (
+          <div className="flex flex-col items-center py-4 gap-4 h-full">
+            {/* Toggle Button - Always visible */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsNodePaletteOpen(!isNodePaletteOpen)}
-              data-testid="toggle-palette"
+              onClick={() => setIsNodePaletteOpen(true)}
+              className="hover:bg-gray-100 p-2"
+              data-testid="toggle-palette-open"
+              title="Open Node Library"
             >
-              {isNodePaletteOpen ? <Eye className="h-4 w-4" /> : <Palette className="h-4 w-4" />}
+              <Palette className="h-5 w-5 text-windtre-orange" />
             </Button>
-          </div>
-          
-          {/* Department Context Display */}
-          {initialCategory && departmentInfo[initialCategory as keyof typeof departmentInfo] && (
-            <div className="windtre-glass-panel rounded-lg p-3 border border-white/20">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
-                  style={{ backgroundColor: departmentInfo[initialCategory as keyof typeof departmentInfo].color }}
-                >
-                  {departmentInfo[initialCategory as keyof typeof departmentInfo].icon}
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">
-                    {departmentInfo[initialCategory as keyof typeof departmentInfo].name} Workflow
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    Creating workflow for {initialCategory} department
-                  </div>
-                </div>
+            
+            {/* Vertical Category Icons */}
+            <div className="flex flex-col items-center gap-3 mt-4">
+              <div className="w-8 h-8 rounded-lg bg-windtre-orange/10 flex items-center justify-center" title="Actions">
+                <span className="text-xs">⚡</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-windtre-purple/10 flex items-center justify-center" title="Triggers">
+                <span className="text-xs">🎯</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center" title="AI Nodes">
+                <span className="text-xs">🤖</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center" title="MCP">
+                <span className="text-xs">🔌</span>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
+        {/* Expanded State: Full Sidebar */}
         {isNodePaletteOpen && (
-          <div className="flex flex-col">
-            {/* Search and Filters - Fixed Area */}
-            <div className="p-4 border-b border-gray-200 flex-shrink-0">
-              <div className="space-y-4">
+          <div className="flex flex-col h-full">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900">Node Library</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsNodePaletteOpen(false)}
+                  data-testid="toggle-palette-close"
+                  title="Collapse Node Library"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {/* Department Context Display */}
+              {initialCategory && departmentInfo[initialCategory as keyof typeof departmentInfo] && (
+                <div className="windtre-glass-panel rounded-lg p-3 border border-white/20">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
+                      style={{ backgroundColor: departmentInfo[initialCategory as keyof typeof departmentInfo].color }}
+                    >
+                      {departmentInfo[initialCategory as keyof typeof departmentInfo].icon}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {departmentInfo[initialCategory as keyof typeof departmentInfo].name} Workflow
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        Creating workflow for {initialCategory} department
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col flex-1">
+              {/* Search and Filters - Fixed Area */}
+              <div className="p-4 border-b border-gray-200 flex-shrink-0">
+                <div className="space-y-4">
                 {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
