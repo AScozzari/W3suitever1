@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { AWSCredentialsService } from '../services/aws-credentials-service';
+import { encryptMCPCredentials } from '../services/mcp-credential-encryption';
 import { db } from '../core/db';
-import { mcpServers } from '../db/schema/w3suite';
+import { mcpServers, mcpServerCredentials } from '../db/schema/w3suite';
 import { eq, and, isNull } from 'drizzle-orm';
 import { logger } from '../core/logger';
 import { z } from 'zod';
@@ -26,8 +27,6 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     // Get all MCP servers for this tenant with their credentials status
-    const { mcpServerCredentials } = await import('../db/schema/w3suite');
-    
     const credentials = await db
       .select({
         id: mcpServerCredentials.id,
@@ -399,9 +398,6 @@ router.post('/stripe', async (req: Request, res: Response) => {
     const { apiKey, webhookSecret } = validation.data;
 
     // Store credentials using encryption service
-    const { encryptMCPCredentials } = await import('../services/mcp-credential-encryption');
-    const { mcpServerCredentials } = await import('../db/schema/w3suite');
-
     const credentials = {
       apiKey,
       webhookSecret: webhookSecret || null,
@@ -546,9 +542,6 @@ router.post('/stripe/:serverId', async (req: Request, res: Response) => {
     }
 
     // Store credentials using encryption service
-    const { encryptMCPCredentials } = await import('../services/mcp-credential-encryption');
-    const { mcpServerCredentials } = await import('../db/schema/w3suite');
-
     const credentials = {
       apiKey,
       webhookSecret: webhookSecret || null,
@@ -710,9 +703,6 @@ router.post('/gtm', async (req: Request, res: Response) => {
     const { serviceAccountKey } = validation.data;
 
     // Store credentials using encryption service
-    const { encryptMCPCredentials } = await import('../services/mcp-credential-encryption');
-    const { mcpServerCredentials } = await import('../db/schema/w3suite');
-
     const credentials = {
       serviceAccountKey,
       credentialType: 'gtm-service-account'
@@ -867,9 +857,6 @@ router.post('/gtm/:serverId', async (req: Request, res: Response) => {
     }
 
     // Store credentials using encryption service
-    const { encryptMCPCredentials } = await import('../services/mcp-credential-encryption');
-    const { mcpServerCredentials } = await import('../db/schema/w3suite');
-
     const credentials = {
       serviceAccountKey,
       credentialType: 'gtm-service-account'

@@ -35,6 +35,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     // Skip only specific public endpoints that don't need tenant context
     if (req.path.startsWith('/auth/') || 
         req.path.startsWith('/public/') ||
+        req.path.startsWith('/mcp/oauth/') || // OAuth callbacks don't have tenant headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||
         req.path === '/') { // Skip auth for /api/ root endpoint
