@@ -1,5 +1,6 @@
 import { seedPaymentMethods } from './seed-payment-methods';
 import { seedPaymentConditions } from './seed-payment-conditions';
+import { seedMCPServers } from './seed-mcp-servers';
 
 /**
  * Seed All Public Reference Data
@@ -15,10 +16,14 @@ async function seedAll() {
     // Seed payment conditions
     await seedPaymentConditions();
     
-    console.log("🎉 All public reference data seeded successfully!");
+    // Seed MCP servers (tenant-specific)
+    await seedMCPServers();
+    
+    console.log("🎉 All reference data seeded successfully!");
     console.log("🔍 You can now check the data:");
     console.log("   - Payment methods: SELECT * FROM public.payment_methods;");
     console.log("   - Payment conditions: SELECT * FROM public.payment_methods_conditions;");
+    console.log("   - MCP servers: SELECT * FROM w3suite.mcp_servers;");
     
   } catch (error) {
     console.error("❌ Error during seeding process:", error);
