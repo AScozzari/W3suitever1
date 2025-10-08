@@ -303,6 +303,33 @@ export const AiContentConfigSchema = z.object({
   }).optional()
 });
 
+// AI MCP Node Configuration (AI-powered MCP orchestration)
+export const AIMCPNodeConfigSchema = z.object({
+  model: z.enum(['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo']).default('gpt-4'),
+  instructions: z.string().min(20, 'Istruzioni AI devono essere almeno 20 caratteri'),
+  enabledTools: z.array(z.object({
+    serverId: z.string().uuid(),
+    serverName: z.string(),
+    toolName: z.string(),
+    toolDescription: z.string().optional()
+  })).default([]), // Empty array allowed for initial config, validated on execution
+  parameters: z.object({
+    temperature: z.number().min(0).max(2).default(0.7),
+    maxTokens: z.number().min(100).max(4000).default(1000),
+    topP: z.number().min(0).max(1).default(1),
+    frequencyPenalty: z.number().min(0).max(2).default(0)
+  }).optional(),
+  fallback: z.object({
+    enabled: z.boolean().default(true),
+    defaultAction: z.enum(['continue', 'fail', 'manual_review']).default('manual_review'),
+    timeout: z.number().min(5000).max(120000).default(60000) // 1 minute default
+  }).optional(),
+  outputMapping: z.object({
+    saveResultTo: z.string().optional(), // Field name to save AI response
+    saveFunctionCallsTo: z.string().optional() // Field name to save executed function calls
+  }).optional()
+});
+
 // ==================== INTEGRATION NODES ====================
 
 // MCP Connector Configuration
@@ -341,11 +368,12 @@ export type ThresholdTriggerConfig = z.infer<typeof ThresholdTriggerConfigSchema
 export type AiDecisionConfig = z.infer<typeof AiDecisionConfigSchema>;
 export type AiClassificationConfig = z.infer<typeof AiClassificationConfigSchema>;
 export type AiContentConfig = z.infer<typeof AiContentConfigSchema>;
+export type AIMCPNodeConfig = z.infer<typeof AIMCPNodeConfigSchema>;
 
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
 export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
-export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig;
+export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig;
 export type IntegrationConfig = MCPConnectorConfig;
 
 export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig;

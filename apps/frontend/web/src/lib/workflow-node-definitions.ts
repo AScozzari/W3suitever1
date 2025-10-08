@@ -9,7 +9,8 @@ import {
   ApprovalActionConfigSchema,
   AiDecisionConfigSchema,
   EventTriggerConfigSchema,
-  MCPConnectorConfigSchema
+  MCPConnectorConfigSchema,
+  AIMCPNodeConfigSchema
 } from '../types/workflow-nodes';
 
 // ==================== ACTION NODES DEFINITIONS ====================
@@ -282,6 +283,36 @@ export const AI_NODES: BaseNodeDefinition[] = [
         timeout: 30000
       }
     }
+  },
+  {
+    id: 'ai-mcp-node',
+    name: 'AI MCP Orchestrator',
+    description: 'AI-powered orchestration of MCP tools with OpenAI function calling',
+    category: 'ai',
+    icon: 'BrainCircuit',
+    color: '#7B2CBF', // WindTre Purple for AI integration
+    version: '1.0.0',
+    configSchema: AIMCPNodeConfigSchema,
+    defaultConfig: {
+      model: 'gpt-4',
+      instructions: 'Sei un assistente AI che orchestra servizi esterni via MCP. Analizza il contesto del workflow e decidi quali tools chiamare e con quali parametri.',
+      enabledTools: [],
+      parameters: {
+        temperature: 0.7,
+        maxTokens: 1000,
+        topP: 1,
+        frequencyPenalty: 0
+      },
+      fallback: {
+        enabled: true,
+        defaultAction: 'manual_review',
+        timeout: 60000
+      },
+      outputMapping: {
+        saveResultTo: 'aiResponse',
+        saveFunctionCallsTo: 'executedFunctions'
+      }
+    }
   }
 ];
 
@@ -493,6 +524,7 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   'generic-action': 'generic-action-executor',
   'form-trigger': 'form-trigger-executor',
   'ai-decision': 'ai-decision-executor',
+  'ai-mcp-node': 'ai-mcp-executor',
   'create-task': 'task-action-executor',
   'assign-task': 'task-action-executor',
   'update-task-status': 'task-action-executor',
