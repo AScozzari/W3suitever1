@@ -10,6 +10,7 @@ import webhookRoutes from "../routes/webhooks";
 import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
 import mcpRoutes from "../routes/mcp";
+import mcpOAuthRoutes from "../routes/mcp-oauth";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1186,6 +1187,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== MCP (MODEL CONTEXT PROTOCOL) ROUTES ====================
   // Register MCP integration API routes for external service connections
   app.use('/api/mcp', mcpRoutes);
+  
+  // ==================== MCP OAUTH ROUTES ====================
+  // OAuth flows for MCP server authentication (Google Workspace, etc.)
+  app.use('/api/mcp/oauth', mcpOAuthRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
