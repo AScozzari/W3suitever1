@@ -156,8 +156,13 @@ export default function NodeConfigPanel({ node, allNodes, isOpen, onClose, onSav
             <MCPConnectorConfig node={node} onSave={onSave} onClose={onClose} />
           )}
           
+          {/* ========== AI INTEGRATION NODES ========== */}
+          {node.data.id === 'ai-mcp-node' && (
+            <AIMCPNodeConfig node={node} onSave={onSave} onClose={onClose} />
+          )}
+          
           {/* ========== FALLBACK (solo per nodi non mappati) ========== */}
-          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger', 'mcp-connector'].includes(node.data.id) && (
+          {!['ai-decision', 'send-email', 'approve-request', 'auto-approval', 'create-task', 'assign-task', 'update-task-status', 'task-created', 'task-status-changed', 'task-assigned', 'if-condition', 'switch-case', 'while-loop', 'parallel-fork', 'join-sync', 'team-assignment', 'user-assignment', 'form-trigger', 'mcp-connector', 'ai-mcp-node'].includes(node.data.id) && (
             <GenericNodeConfig node={node} onSave={onSave} onClose={onClose} />
           )}
         </div>
@@ -2896,6 +2901,428 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
           disabled={!serverId || !toolName}
           className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="button-save-mcp-config"
+        >
+          💾 Salva Configurazione
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 🤖 AI MCP Node Configuration
+ * AI-powered orchestration of multiple MCP tools
+ */
+function AIMCPNodeConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+  const config = (node.data.config || {}) as any;
+  
+  // Type definitions for MCP entities
+  interface MCPServer {
+    id: string;
+    name: string;
+    status?: string;
+  }
+  
+  interface MCPTool {
+    name: string;
+    description?: string;
+  }
+  
+  interface ServerWithTools {
+    serverId: string;
+    serverName: string;
+    tools: MCPTool[];
+  }
+  
+  // State management
+  const [model, setModel] = useState(config.model || 'gpt-4');
+  const [instructions, setInstructions] = useState(config.instructions || 'Sei un assistente AI che orchestra servizi esterni via MCP. Analizza il contesto del workflow e decidi quali tools chiamare e con quali parametri.');
+  const [enabledTools, setEnabledTools] = useState<Array<{serverId: string; serverName: string; toolName: string; toolDescription?: string}>>(config.enabledTools || []);
+  const [temperature, setTemperature] = useState(config.parameters?.temperature ?? 0.7);
+  const [maxTokens, setMaxTokens] = useState(config.parameters?.maxTokens || 1000);
+  const [topP, setTopP] = useState(config.parameters?.topP ?? 1);
+  const [frequencyPenalty, setFrequencyPenalty] = useState(config.parameters?.frequencyPenalty || 0);
+  const [fallbackEnabled, setFallbackEnabled] = useState(config.fallback?.enabled ?? true);
+  const [defaultAction, setDefaultAction] = useState<'continue' | 'fail' | 'manual_review'>(config.fallback?.defaultAction || 'manual_review');
+  const [fallbackTimeout, setFallbackTimeout] = useState(config.fallback?.timeout || 60000);
+  const [saveResultTo, setSaveResultTo] = useState(config.outputMapping?.saveResultTo || 'aiResponse');
+  const [saveFunctionCallsTo, setSaveFunctionCallsTo] = useState(config.outputMapping?.saveFunctionCallsTo || 'executedFunctions');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  // Fetch MCP servers
+  const { data: servers = [], isLoading: serversLoading } = useQuery<MCPServer[]>({
+    queryKey: ['/api/mcp/servers'],
+    enabled: true
+  });
+  
+  // Fetch all tools for all servers (parallel queries)
+  const serverToolsQueries = useQuery<ServerWithTools[]>({
+    queryKey: ['mcp-all-servers-tools'],
+    queryFn: async () => {
+      const allTools: ServerWithTools[] = [];
+      
+      for (const server of servers) {
+        try {
+          const response = await fetch(`/api/mcp/servers/${server.id}/tools`);
+          if (response.ok) {
+            const tools = await response.json();
+            allTools.push({
+              serverId: server.id,
+              serverName: server.name,
+              tools: tools || []
+            });
+          }
+        } catch (err) {
+          console.error(`Failed to fetch tools for server ${server.name}:`, err);
+        }
+      }
+      
+      return allTools;
+    },
+    enabled: servers.length > 0
+  });
+  
+  // Toggle tool selection
+  const toggleTool = (serverId: string, serverName: string, toolName: string, toolDescription?: string) => {
+    const exists = enabledTools.some(t => t.serverId === serverId && t.toolName === toolName);
+    
+    if (exists) {
+      setEnabledTools(prev => prev.filter(t => !(t.serverId === serverId && t.toolName === toolName)));
+    } else {
+      setEnabledTools(prev => [...prev, { serverId, serverName, toolName, toolDescription }]);
+    }
+  };
+  
+  // Check if tool is selected
+  const isToolSelected = (serverId: string, toolName: string) => {
+    return enabledTools.some(t => t.serverId === serverId && t.toolName === toolName);
+  };
+  
+  // Validation
+  const isValid = () => {
+    return instructions.length >= 20 && enabledTools.length >= 1;
+  };
+  
+  // Save handler
+  const handleSave = () => {
+    if (!isValid()) {
+      return;
+    }
+    
+    onSave(node.id, {
+      model,
+      instructions,
+      enabledTools,
+      parameters: {
+        temperature,
+        maxTokens,
+        topP,
+        frequencyPenalty
+      },
+      fallback: {
+        enabled: fallbackEnabled,
+        defaultAction,
+        timeout: fallbackTimeout
+      },
+      outputMapping: {
+        saveResultTo,
+        saveFunctionCallsTo
+      }
+    });
+    onClose();
+  };
+  
+  return (
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+      {/* Header Info */}
+      <div className="bg-gradient-to-r from-purple-50 to-orange-50 border border-purple-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-3xl">🤖</div>
+          <div>
+            <h3 className="font-semibold text-gray-900">AI MCP Orchestrator</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              L'AI analizzerà il contesto e chiamerà automaticamente i tools MCP selezionati con i parametri appropriati.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Model Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+          🎯 Modello AI
+          <InfoTooltip
+            title="Modello AI"
+            description="Seleziona il modello OpenAI da utilizzare. GPT-4 offre la migliore accuratezza, GPT-3.5-turbo è più veloce ed economico."
+          />
+        </label>
+        <Select value={model} onValueChange={setModel}>
+          <SelectTrigger data-testid="select-ai-model">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gpt-4">GPT-4 (Migliore)</SelectItem>
+            <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Veloce)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* AI Instructions */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+          📝 Istruzioni per l'AI
+          {instructions.length < 20 && <span className="text-red-500 text-xs">(min 20 caratteri)</span>}
+        </label>
+        <textarea
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-windtre-purple font-mono text-sm"
+          placeholder="Descrivi il compito dell'AI e come deve decidere quali tools utilizzare..."
+          rows={6}
+          data-testid="textarea-ai-instructions"
+        />
+        <p className="text-xs text-gray-500 mt-1">{instructions.length} caratteri</p>
+      </div>
+      
+      {/* MCP Tools Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+          🔧 Tools MCP Disponibili
+          {enabledTools.length === 0 && <span className="text-red-500 text-xs">(seleziona almeno 1)</span>}
+          {enabledTools.length > 0 && <span className="text-green-600 text-xs">({enabledTools.length} selezionati)</span>}
+        </label>
+        
+        {serversLoading || serverToolsQueries.isLoading ? (
+          <div className="text-sm text-gray-500 py-4 text-center">
+            ⏳ Caricamento MCP servers e tools...
+          </div>
+        ) : serverToolsQueries.data && serverToolsQueries.data.length > 0 ? (
+          <div className="space-y-4 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+            {serverToolsQueries.data.map((server: any) => (
+              <div key={server.serverId} className="space-y-2">
+                <div className="font-medium text-sm text-gray-700 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  {server.serverName}
+                </div>
+                
+                {server.tools.length === 0 ? (
+                  <p className="text-xs text-gray-400 ml-4">Nessun tool disponibile</p>
+                ) : (
+                  <div className="ml-4 space-y-2">
+                    {server.tools.map((tool: any) => (
+                      <div key={`${server.serverId}-${tool.name}`} className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isToolSelected(server.serverId, tool.name)}
+                          onChange={() => toggleTool(server.serverId, server.serverName, tool.name, tool.description)}
+                          className="mt-1 h-4 w-4 text-windtre-purple border-gray-300 rounded focus:ring-windtre-purple"
+                          data-testid={`checkbox-tool-${tool.name}`}
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-800">{tool.name}</div>
+                          {tool.description && (
+                            <div className="text-xs text-gray-500">{tool.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 py-4 text-center border border-gray-200 rounded-lg">
+            ⚠️ Nessun MCP server configurato. Configura prima i server MCP nelle impostazioni di sistema.
+          </div>
+        )}
+      </div>
+      
+      {/* Advanced Parameters (Collapsible) */}
+      <div className="border border-gray-200 rounded-lg">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full px-4 py-2 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <span>⚙️ Parametri Avanzati</span>
+          <span>{showAdvanced ? '▲' : '▼'}</span>
+        </button>
+        
+        {showAdvanced && (
+          <div className="p-4 space-y-4 border-t border-gray-200">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Temperature: {temperature}
+                <InfoTooltip
+                  title="Temperature"
+                  description="Controlla la creatività delle risposte. 0 = deterministico, 2 = molto creativo"
+                />
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(Number(e.target.value))}
+                className="w-full"
+                data-testid="slider-temperature"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Max Tokens: {maxTokens}
+              </label>
+              <input
+                type="number"
+                min="100"
+                max="4000"
+                value={maxTokens}
+                onChange={(e) => setMaxTokens(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                data-testid="input-max-tokens"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Top P: {topP}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={topP}
+                onChange={(e) => setTopP(Number(e.target.value))}
+                className="w-full"
+                data-testid="slider-top-p"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Frequency Penalty: {frequencyPenalty}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={frequencyPenalty}
+                onChange={(e) => setFrequencyPenalty(Number(e.target.value))}
+                className="w-full"
+                data-testid="slider-frequency-penalty"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Fallback Configuration */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-900">🛡️ Gestione Fallback</label>
+        
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={fallbackEnabled}
+            onCheckedChange={setFallbackEnabled}
+            data-testid="switch-fallback-enabled"
+          />
+          <span className="text-sm text-gray-600">Abilita fallback in caso di errore</span>
+        </div>
+        
+        {fallbackEnabled && (
+          <div className="ml-6 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Azione di Default</label>
+              <Select value={defaultAction} onValueChange={(v: any) => setDefaultAction(v)}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="continue">▶️ Continua workflow</SelectItem>
+                  <SelectItem value="fail">❌ Blocca workflow</SelectItem>
+                  <SelectItem value="manual_review">👤 Revisione manuale</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Timeout (ms): {fallbackTimeout}
+              </label>
+              <input
+                type="range"
+                min="5000"
+                max="120000"
+                step="5000"
+                value={fallbackTimeout}
+                onChange={(e) => setFallbackTimeout(Number(e.target.value))}
+                className="w-full"
+                data-testid="slider-fallback-timeout"
+              />
+              <p className="text-xs text-gray-500 mt-1">{(fallbackTimeout / 1000).toFixed(0)} secondi</p>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Output Mapping */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-900">💾 Output Mapping</label>
+        
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Salva risposta AI in:</label>
+          <input
+            type="text"
+            value={saveResultTo}
+            onChange={(e) => setSaveResultTo(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+            placeholder="Nome campo per risposta AI..."
+            data-testid="input-save-result-to"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Salva function calls in:</label>
+          <input
+            type="text"
+            value={saveFunctionCallsTo}
+            onChange={(e) => setSaveFunctionCallsTo(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+            placeholder="Nome campo per function calls eseguite..."
+            data-testid="input-save-function-calls-to"
+          />
+        </div>
+      </div>
+      
+      {/* Validation Warning */}
+      {!isValid() && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-sm text-red-700">
+            ⚠️ Completare la configurazione:
+          </p>
+          <ul className="text-xs text-red-600 mt-1 ml-4 list-disc">
+            {instructions.length < 20 && <li>Istruzioni AI devono essere almeno 20 caratteri</li>}
+            {enabledTools.length === 0 && <li>Seleziona almeno 1 MCP tool</li>}
+          </ul>
+        </div>
+      )}
+      
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+        <Button variant="outline" onClick={onClose} data-testid="button-cancel-ai-mcp-config">
+          Annulla
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!isValid()}
+          className="bg-gradient-to-r from-windtre-purple to-windtre-orange text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="button-save-ai-mcp-config"
         >
           💾 Salva Configurazione
         </Button>
