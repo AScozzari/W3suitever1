@@ -130,13 +130,15 @@ export class GoogleOAuthService {
         credentials
       );
 
-      // Check if credentials already exist for this server
+      // Check if credentials already exist for this user/server/provider
       const existingCreds = await db
         .select()
         .from(mcpServerCredentials)
         .where(and(
           eq(mcpServerCredentials.serverId, serverId),
-          eq(mcpServerCredentials.tenantId, tenantId)
+          eq(mcpServerCredentials.tenantId, tenantId),
+          eq(mcpServerCredentials.userId, userId),
+          eq(mcpServerCredentials.oauthProvider, 'google')
         ))
         .limit(1);
 
@@ -148,9 +150,11 @@ export class GoogleOAuthService {
           .update(mcpServerCredentials)
           .set({
             encryptedCredentials: encryptedData,
-            encryptionKeyId: keyId,
+            tokenType: credentials.token_type,
+            scope: credentials.scope,
             updatedAt: new Date(),
-            expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null
+            expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+            revokedAt: null // Clear revoked status on re-auth
           })
           .where(eq(mcpServerCredentials.id, existingCreds[0].id));
 
@@ -158,18 +162,22 @@ export class GoogleOAuthService {
 
         logger.info('🔄 [Google OAuth] Updated existing credentials', {
           credentialId,
-          serverId
+          serverId,
+          userId
         });
       } else {
-        // Insert new credentials
+        // Insert new credentials with multi-user support
         const [newCred] = await db
           .insert(mcpServerCredentials)
           .values({
             tenantId,
             serverId,
-            credentialType: 'oauth2',
+            userId, // Multi-user OAuth support
+            oauthProvider: 'google', // Provider identification
+            credentialType: 'oauth2_user', // New credential type
             encryptedCredentials: encryptedData,
-            encryptionKeyId: keyId,
+            tokenType: credentials.token_type,
+            scope: credentials.scope,
             createdBy: userId,
             expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null
           })
@@ -179,7 +187,9 @@ export class GoogleOAuthService {
 
         logger.info('✨ [Google OAuth] Created new credentials', {
           credentialId,
-          serverId
+          serverId,
+          userId,
+          provider: 'google'
         });
       }
 

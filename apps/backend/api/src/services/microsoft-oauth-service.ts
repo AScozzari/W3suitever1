@@ -167,13 +167,15 @@ export class MicrosoftOAuthService {
         credentials
       );
 
-      // Check if credentials already exist for this server
+      // Check if credentials already exist for this user/server/provider
       const existingCreds = await db
         .select()
         .from(mcpServerCredentials)
         .where(and(
           eq(mcpServerCredentials.serverId, serverId),
-          eq(mcpServerCredentials.tenantId, tenantId)
+          eq(mcpServerCredentials.tenantId, tenantId),
+          eq(mcpServerCredentials.userId, userId),
+          eq(mcpServerCredentials.oauthProvider, 'microsoft')
         ))
         .limit(1);
 
@@ -185,9 +187,11 @@ export class MicrosoftOAuthService {
           .update(mcpServerCredentials)
           .set({
             encryptedCredentials: encryptedData,
-            encryptionKeyId: keyId,
+            tokenType: credentials.token_type,
+            scope: credentials.scope,
             updatedAt: new Date(),
-            expiresAt: new Date(expiryDate)
+            expiresAt: new Date(expiryDate),
+            revokedAt: null
           })
           .where(eq(mcpServerCredentials.id, existingCreds[0].id));
 
@@ -195,18 +199,22 @@ export class MicrosoftOAuthService {
 
         logger.info('🔄 [Microsoft OAuth] Updated existing credentials', {
           credentialId,
-          serverId
+          serverId,
+          userId
         });
       } else {
-        // Insert new credentials
+        // Insert new credentials with multi-user support
         const [newCred] = await db
           .insert(mcpServerCredentials)
           .values({
             tenantId,
             serverId,
-            credentialType: 'oauth2',
+            userId,
+            oauthProvider: 'microsoft',
+            credentialType: 'oauth2_user',
             encryptedCredentials: encryptedData,
-            encryptionKeyId: keyId,
+            tokenType: credentials.token_type,
+            scope: credentials.scope,
             createdBy: userId,
             expiresAt: new Date(expiryDate)
           })
