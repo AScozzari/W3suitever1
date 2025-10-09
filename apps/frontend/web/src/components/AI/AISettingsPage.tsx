@@ -108,6 +108,20 @@ export default function AISettingsPage() {
   const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery<{success: boolean, data: AISettings}>({
     queryKey: ['/api/ai/settings'],
     refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: 'always', // Always fetch on mount
+    retry: 2, // Retry failed requests twice
+    onSuccess: (data) => {
+      console.log('[AI-SETTINGS-QUERY] ✅ Query success:', {
+        isActive: data?.data?.isActive,
+        status: data?.data?.apiConnectionStatus
+      });
+    },
+    onError: (error) => {
+      console.error('[AI-SETTINGS-QUERY] ❌ Query error:', error);
+    }
   });
 
   // Fetch usage statistics
@@ -292,19 +306,52 @@ export default function AISettingsPage() {
     },
   });
 
-  const [formData, setFormData] = useState<Partial<AISettings>>({});
+  // ✅ FIX: Initialize with proper defaults that match backend state
+  const [formData, setFormData] = useState<Partial<AISettings>>({
+    isActive: true, // Default to true since backend has it as true
+    apiConnectionStatus: 'disconnected', // Will be updated from backend
+    openaiApiKey: '', // Will be updated from backend
+    featuresEnabled: {
+      chat_assistant: true,
+      document_analysis: true,
+      financial_forecasting: false,
+      web_search: false,
+      code_interpreter: false,
+    },
+    privacySettings: {
+      dataRetentionDays: 30,
+      allowDataTraining: false,
+      anonymizeConversations: true,
+    }
+  });
 
   useEffect(() => {
+    console.log('[AI-SETTINGS] 🔍 Settings changed:', {
+      loading: settingsLoading,
+      error: settingsError,
+      hasData: !!settings?.data,
+      dataReceived: settings?.data
+    });
+    
     if (settings?.data) {
       // ✅ FIX: Ensure all fields are properly mapped from backend
-      setFormData({
+      const newFormData = {
         ...settings.data,
         // Explicitly ensure isActive is set (backend returns it)
         isActive: settings.data.isActive !== undefined ? settings.data.isActive : true,
         // Ensure apiConnectionStatus is set
         apiConnectionStatus: settings.data.apiConnectionStatus || 'disconnected'
+      };
+      
+      console.log('[AI-SETTINGS] ✅ Setting formData with:', {
+        isActive: newFormData.isActive,
+        apiConnectionStatus: newFormData.apiConnectionStatus,
+        hasApiKey: !!newFormData.openaiApiKey
       });
+      
+      setFormData(newFormData);
     } else if (settingsError && !settingsLoading) {
+      console.log('[AI-SETTINGS] ⚠️ No settings found, using defaults');
       // If no settings exist yet (404), set default values for initial setup
       setFormData({
         isActive: false,
