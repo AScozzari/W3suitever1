@@ -379,7 +379,7 @@ export const stores = w3suiteSchema.table("stores", {
   cap: varchar("cap", { length: 10 }),
   region: varchar("region", { length: 100 }),
   status: varchar("status", { length: 50 }).default("active"),
-  // category: storeCategoryEnum("category").default("sales_point").notNull(), // TODO: Add to database
+  category: storeCategoryEnum("category").default("sales_point").notNull(),
   openedAt: date("opened_at"),
   closedAt: date("closed_at"),
   billingOverrideId: uuid("billing_override_id"),

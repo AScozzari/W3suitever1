@@ -222,11 +222,20 @@ router.post('/stores', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // Auto-determine category based on code prefix
+    // 5xxxxxxxx = warehouse, 6xxxxxxxx = office, 9xxxxxxxx = sales_point
+    const firstChar = validation.data.code.charAt(0);
+    let category: 'warehouse' | 'office' | 'sales_point' = 'sales_point';
+    if (firstChar === '5') category = 'warehouse';
+    else if (firstChar === '6') category = 'office';
+    else if (firstChar === '9') category = 'sales_point';
+
     const [store] = await db
       .insert(stores)
       .values({
         ...validation.data,
-        tenantId
+        tenantId,
+        category
       })
       .returning();
 
