@@ -710,19 +710,19 @@ export default function AISettingsPage() {
                     onClick={() => {
                       const currentEnabled = agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active';
                       toggleAgentMutation.mutate({
-                        agentId: agent.id,
+                        agentId: agent.agentId, // FIX: usa agentId (slug) invece di id (UUID)
                         isEnabled: !currentEnabled
                       });
                     }}
-                    disabled={toggleAgentMutation.isPending}
+                    disabled={toggleAgentMutation.isPending || !formData.isActive}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      (agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active') ? 'bg-[#FF6900]' : 'bg-gray-300'
+                      !formData.isActive ? 'bg-gray-200' : (agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active') ? 'bg-[#FF6900]' : 'bg-gray-300'
                     }`}
                     data-testid={`toggle-agent-${agent.id}`}
-                    title="Attiva/Disattiva agente per questo tenant"
+                    title={!formData.isActive ? 'Attiva prima l\'AI principale per abilitare gli agenti' : 'Attiva/Disattiva agente per questo tenant'}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      (agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active') ? 'translate-x-6' : 'translate-x-1'
+                      !formData.isActive ? 'translate-x-1' : (agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active') ? 'translate-x-6' : 'translate-x-1'
                     }`} />
                   </button>
                   
