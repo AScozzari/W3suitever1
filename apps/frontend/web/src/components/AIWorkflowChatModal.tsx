@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, Sparkles, CheckCircle2, XCircle } from 'lucide-react';
@@ -7,8 +6,6 @@ import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
 interface AIWorkflowChatModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onWorkflowGenerated: (workflowJson: any) => void;
 }
 
@@ -18,7 +15,7 @@ interface Message {
   workflowJson?: any;
 }
 
-export function AIWorkflowChatModal({ open, onOpenChange, onWorkflowGenerated }: AIWorkflowChatModalProps) {
+export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModalProps) {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -81,24 +78,21 @@ export function AIWorkflowChatModal({ open, onOpenChange, onWorkflowGenerated }:
         content: 'Describe your workflow in natural language and I\'ll generate it for you!'
       }]);
       setGeneratedWorkflow(null);
-      onOpenChange(false);
     }
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="right" 
-        className="w-[500px] sm:w-[540px] flex flex-col p-0"
-      >
-        <SheetHeader className="px-6 py-4 border-b">
-          <SheetTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-orange-500" />
-            AI Workflow Assistant
-          </SheetTitle>
-        </SheetHeader>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-6 py-4 border-b bg-gradient-to-r from-orange-50 to-purple-50">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-orange-500" />
+          <h3 className="font-semibold text-gray-900">AI Workflow Assistant</h3>
+        </div>
+      </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {messages.map((msg, idx) => (
             <div
               key={idx}
@@ -191,7 +185,6 @@ export function AIWorkflowChatModal({ open, onOpenChange, onWorkflowGenerated }:
             Press Enter to send, Shift+Enter for new line
           </p>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
   );
 }

@@ -1472,8 +1472,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             }}
           >
             <AIWorkflowChatModal
-              open={true}
-              onOpenChange={() => {}}
               onWorkflowGenerated={handleAIWorkflowGenerated}
             />
           </div>
