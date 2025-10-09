@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform offering a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a unique WindTre glassmorphism design, robust security with OAuth2/OIDC and MFA, and PostgreSQL with Row Level Security for tenant isolation. Complementing this is the Brand Interface HQ system, designed for centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust solution for diverse business needs.
+W3 Suite is a multi-tenant enterprise platform that provides a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. Key features include a unique WindTre glassmorphism design, robust security with OAuth2/OIDC and MFA, and PostgreSQL with Row Level Security for tenant isolation. The platform is complemented by the Brand Interface HQ system, designed for centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and robust solution for diverse business needs.
 
 # User Preferences
 
@@ -177,7 +177,7 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project utilizes an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, handles traffic routing.
+The project employs an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`. Traffic routing is managed by an embedded Nginx reverse proxy, controlled by a Node.js master process.
 
 ## Monorepo Structure:
 - **`apps/`**: Contains frontend/backend services, workers, and edge renderers.
@@ -191,21 +191,22 @@ The project utilizes an enterprise monorepo structure, separating tenant-facing 
 - **Branding**: Supports tenant-customizable logos and color schemes.
 
 ## Technical Implementations:
-- **Database Architecture**: Utilizes a 3-schema structure (`w3suite`, `public`, `brand_interface`) for robust data isolation.
-- **Security**: Implements OAuth2/OIDC with MFA, JWTs, PostgreSQL Row Level Security (RLS) for multitenancy, and granular Role-Based Access Control (RBAC).
+- **Database Architecture**: Utilizes a 3-schema structure (`w3suite`, `public`, `brand_interface`) for robust data isolation and PostgreSQL Row Level Security (RLS) for multitenancy.
+- **Security**: Implements OAuth2/OIDC with MFA, JWTs, and granular Role-Based Access Control (RBAC).
 - **Multitenancy**: Achieved through RLS, a `TenantProvider`, and global unique constraints.
 - **Organizational Hierarchy**: Manages relationships among TENANTs, Legal Entities, Sales Points, and Users.
 - **Brand Interface Features**: Includes a centralized Super Admin, cross-tenant campaign/pricing management, and event propagation.
 - **Data Architecture Patterns**: Supports Brand Base + Tenant Override for collaborative entities and Brand-Only for Brand-controlled entities.
-- **Universal Workflow System**: Features a comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, a visual workflow builder, and audit trails.
+- **Universal Workflow System**: Features an approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, event-driven state machines, a visual workflow builder, and audit trails.
 - **Dual-Mode Workflow Execution Engine**: Supports synchronous (development/testing) and asynchronous (production, BullMQ with Redis) execution with automatic detection.
 - **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable components, UI patterns, custom React hooks, and the `shadcn/ui` library.
 - **Unified Notification System**: Real-time notifications across 7 business categories using Redis + WebSocket architecture with PostgreSQL fallback.
 - **HR Time Tracking Auto-Match System**: Automates matching between `time_tracking` entries and `shift_assignments`.
 - **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, Redis queue, priority worker, deduplication, workflow engine integration, and audit trail.
 - **Task Management System**: Flexible task system with optional workflow integration, RBAC-protected API endpoints, and a feature-rich frontend.
-- **MCP Multi-Provider OAuth System**: Unified credential management supporting Google Workspace, AWS, Meta/Instagram, Microsoft 365, Stripe, and GTM/Analytics. Per-user OAuth isolation prevents cross-user token leakage in multi-tenant environment.
-- **Meta/Instagram OAuth Architecture**: Single global Meta App with per-tenant page authorization following n8n pattern. Supports multiple Facebook Pages and Instagram Business accounts per tenant with page-specific access tokens stored in `mcpConnectedAccounts` table. Page Access Tokens never expire when derived from long-lived user tokens.
+- **MCP Multi-Provider OAuth System**: Unified credential management supporting Google Workspace, AWS, Meta/Instagram, Microsoft 365, Stripe, and GTM/Analytics with per-user OAuth isolation.
+- **Meta/Instagram OAuth Architecture**: Single global Meta App with per-tenant page authorization, supporting multiple Facebook Pages and Instagram Business accounts per tenant with page-specific access tokens.
+- **AI Enforcement Middleware System**: Hierarchical API-level blocking when AI features are disabled, intercepting requests and checking tenant-level `isActive` and agent-specific `isEnabled` flags using raw SQL queries to bypass RLS for settings access.
 
 # External Dependencies
 
@@ -217,7 +218,6 @@ The project utilizes an enterprise monorepo structure, separating tenant-facing 
 
 ## UI Component Ecosystem
 - **SHADCN/UI**: Primary UI component library.
-- **Existing Project Components**: Custom components and design tokens within `packages/ui/` and `packages/tokens/`.
 - **Radix UI**: Provides headless component primitives for building accessible UI.
 
 ## Icon & Utility Libraries
