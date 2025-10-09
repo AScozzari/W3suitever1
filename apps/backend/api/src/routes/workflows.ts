@@ -1184,66 +1184,16 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
     }
 
     // Build system prompt - MUST explicitly mention JSON for response_format to work
-    const systemPrompt = `Sei un esperto di automazione workflow. Il tuo compito è generare SOLO un oggetto JSON valido che rappresenta un workflow ReactFlow.
-
-**IMPORTANTE**: Devi rispondere ESCLUSIVAMENTE con JSON valido, senza alcun testo aggiuntivo, spiegazioni o formattazione Markdown.
-
-Tipi di Nodi Disponibili:
-- send-email: Invio email di notifica
-- approve-request: Richiesta approvazione con escalation
-- auto-approval: Approvazione automatica basata su regole
-- decision-evaluator: Valutazione condizioni e routing
-- create-task: Creazione nuovi task
-- ai-decision: Decisione basata su AI
-- form-trigger: Trigger da invio form
-- task-trigger: Trigger da eventi task
-
-Formato Output (JSON obbligatorio):
-{
-  "nodes": [
-    {
-      "id": "node-1",
-      "type": "send-email",
-      "position": { "x": 100, "y": 100 },
-      "data": {
-        "label": "Invia Email",
-        "config": {
-          "to": ["user@example.com"],
-          "subject": "Oggetto",
-          "template": "notification"
-        }
-      }
-    }
-  ],
-  "edges": [
-    {
-      "id": "edge-1",
-      "source": "node-1",
-      "target": "node-2",
-      "sourceHandle": "output",
-      "targetHandle": "input"
-    }
-  ]
-}
-
-Regole:
-1. ID nodi sequenziali (node-1, node-2, etc.)
-2. Posiziona nodi verticalmente con spaziatura 200px (x: 100, y: 100, 300, 500...)
-3. Crea edges per connettere nodi in ordine logico
-4. Usa tipi di nodo appropriati per la logica del workflow
-5. Rispondi SOLO con JSON valido, nessuna spiegazione`;
-
     const userPrompt = `Genera un workflow JSON per: ${prompt}${context?.department ? `\nReparto: ${context.department}` : ''}`;
 
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);
 
-    // Call workflow-assistant agent with custom system prompt for workflow generation
+    // Use workflow-builder-ai agent from Brand Interface registry
+    // The agent already has the correct system prompt for JSON workflow generation
     // IMPORTANT: Disable all tools to enable JSON mode (tools and response_format are incompatible)
-    const settingsWithSystemPrompt = {
+    const settingsForJSONMode = {
       ...tenantAISettings,
-      systemPrompt: systemPrompt,
-      temperature: 0.3, // Low temperature for consistent JSON output
       responseFormat: { type: "json_object" }, // Force JSON mode
       featuresEnabled: {
         ...tenantAISettings.featuresEnabled,
@@ -1256,9 +1206,9 @@ Regole:
     
     const aiResponse = await aiRegistry.createUnifiedResponse(
       userPrompt,
-      settingsWithSystemPrompt,
+      settingsForJSONMode,
       {
-        agentId: 'workflow-assistant',
+        agentId: 'workflow-builder-ai', // Use dedicated workflow builder agent
         tenantId,
         userId: userId || 'system',
         moduleContext: 'workflow',
