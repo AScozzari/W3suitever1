@@ -531,22 +531,117 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   return (
     <div className="flex h-full w-full bg-gray-50">
       {/* Node Palette Sidebar */}
-      <div className={`${isNodePaletteOpen ? 'w-96' : 'w-12'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900">Node Library</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsNodePaletteOpen(!isNodePaletteOpen)}
-              data-testid="toggle-palette"
-            >
-              {isNodePaletteOpen ? <Eye className="h-4 w-4" /> : <Palette className="h-4 w-4" />}
-            </Button>
-          </div>
-          
-          {/* Department Context Display */}
-          {initialCategory && departmentInfo[initialCategory as keyof typeof departmentInfo] && (
+      <div className={`${isNodePaletteOpen ? 'w-96' : 'w-16'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
+        {/* Header - Always Visible */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          {isNodePaletteOpen && <h3 className="font-semibold text-gray-900">Node Library</h3>}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsNodePaletteOpen(!isNodePaletteOpen)}
+            data-testid="toggle-palette"
+            className={!isNodePaletteOpen ? "mx-auto" : ""}
+            title={isNodePaletteOpen ? "Collapse palette" : "Expand palette"}
+          >
+            {isNodePaletteOpen ? <Eye className="h-4 w-4" /> : <Palette className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        {/* Collapsed State - Icon Rail */}
+        {!isNodePaletteOpen && (
+          <ScrollArea className="flex-1">
+            <div className="flex flex-col items-center gap-3 py-4">
+              {/* Actions Category */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('action');
+                  setIsNodePaletteOpen(true);
+                }}
+                className="w-12 h-12 p-0 hover:bg-orange-50"
+                title="Actions"
+                data-testid="collapsed-icon-action"
+              >
+                <div className="w-10 h-10 rounded-lg bg-windtre-orange flex items-center justify-center text-white">
+                  <span className="text-sm font-bold">A</span>
+                </div>
+              </Button>
+
+              {/* Triggers Category */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('trigger');
+                  setIsNodePaletteOpen(true);
+                }}
+                className="w-12 h-12 p-0 hover:bg-purple-50"
+                title="Triggers"
+                data-testid="collapsed-icon-trigger"
+              >
+                <div className="w-10 h-10 rounded-lg bg-windtre-purple flex items-center justify-center text-white">
+                  <span className="text-sm font-bold">T</span>
+                </div>
+              </Button>
+
+              {/* AI Category */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('ai');
+                  setIsNodePaletteOpen(true);
+                }}
+                className="w-12 h-12 p-0 hover:bg-blue-50"
+                title="AI Nodes"
+                data-testid="collapsed-icon-ai"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                  <Brain className="h-5 w-5" />
+                </div>
+              </Button>
+
+              {/* Routing Category */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('routing');
+                  setIsNodePaletteOpen(true);
+                }}
+                className="w-12 h-12 p-0 hover:bg-green-50"
+                title="Routing"
+                data-testid="collapsed-icon-routing"
+              >
+                <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center text-white">
+                  <span className="text-sm font-bold">R</span>
+                </div>
+              </Button>
+
+              {/* MCP Integrations - Opens to mcp-outbound */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('mcp-outbound');
+                  setIsNodePaletteOpen(true);
+                }}
+                className="w-12 h-12 p-0 hover:bg-indigo-50"
+                title="MCP Integrations"
+                data-testid="collapsed-icon-mcp"
+              >
+                <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                  <span className="text-sm font-bold">🔌</span>
+                </div>
+              </Button>
+            </div>
+          </ScrollArea>
+        )}
+
+        {/* Department Context - Only when expanded */}
+        {isNodePaletteOpen && initialCategory && departmentInfo[initialCategory as keyof typeof departmentInfo] && (
+          <div className="px-4 pb-4 border-b border-gray-200">
             <div className="windtre-glass-panel rounded-lg p-3 border border-white/20">
               <div className="flex items-center gap-2">
                 <div 
@@ -565,8 +660,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {isNodePaletteOpen && (
           <div className="flex flex-col">
