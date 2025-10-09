@@ -1236,15 +1236,16 @@ Rules:
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);
 
-    // Call workflow-assistant agent
+    // Call workflow-assistant agent with custom system prompt for workflow generation
+    const settingsWithSystemPrompt = {
+      ...tenantAISettings,
+      systemPrompt: systemPrompt,
+      temperature: 0.3 // Low temperature for consistent JSON output
+    };
+    
     const aiResponse = await aiRegistry.createUnifiedResponse(
       userPrompt,
-      {
-        openaiModel: tenantAISettings.openaiModel,
-        systemPrompt: systemPrompt,
-        maxTokens: tenantAISettings.maxTokens || 2000,
-        temperature: 0.3 // Low temperature for consistent JSON output
-      },
+      settingsWithSystemPrompt,
       {
         agentId: 'workflow-assistant',
         tenantId,

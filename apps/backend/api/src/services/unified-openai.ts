@@ -1387,13 +1387,17 @@ export class UnifiedOpenAIService {
 
   private buildContextInstructions(settings: AISettings, context: OpenAIRequestContext, ragContext?: string): string {
     const contextSettings = settings.contextSettings as any;
-    let instructions = "You are an AI assistant for the W3 Suite enterprise platform.";
     
-    // Add module-specific context
-    if (context.moduleContext === 'hr' && contextSettings?.hr_context_enabled) {
-      instructions += " Focus on HR-related tasks, employee management, and HR policies.";
-    } else if (context.moduleContext === 'finance' && contextSettings?.finance_context_enabled) {
-      instructions += " Focus on financial analysis, budgeting, and business metrics.";
+    // Use systemPrompt if provided, otherwise use default
+    let instructions = settings.systemPrompt || "You are an AI assistant for the W3 Suite enterprise platform.";
+    
+    // Add module-specific context (only if no custom systemPrompt)
+    if (!settings.systemPrompt) {
+      if (context.moduleContext === 'hr' && contextSettings?.hr_context_enabled) {
+        instructions += " Focus on HR-related tasks, employee management, and HR policies.";
+      } else if (context.moduleContext === 'finance' && contextSettings?.finance_context_enabled) {
+        instructions += " Focus on financial analysis, budgeting, and business metrics.";
+      }
     }
     
     // 🧠 Add RAG knowledge context if available

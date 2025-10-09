@@ -78,11 +78,15 @@ export class AIRegistryService {
       moduleContext: this.mapAgentToModule(agent.moduleContext) as any
     };
 
-    // Override system prompt with agent-specific instructions
-    const enhancedInput = this.buildAgentEnhancedPrompt(input, agent);
+    // Build enhanced settings with agent-specific system prompt
+    // Priority: settings.systemPrompt (if provided) > agent.systemPrompt
+    const enhancedSettings = {
+      ...settings,
+      systemPrompt: settings.systemPrompt ?? this.buildAgentSystemPrompt(agent)
+    };
 
-    // Use existing UnifiedOpenAIService with enhanced context
-    return this.legacyService.createUnifiedResponse(enhancedInput, settings, enhancedContext);
+    // Use existing UnifiedOpenAIService with enhanced context and settings
+    return this.legacyService.createUnifiedResponse(input, enhancedSettings, enhancedContext);
   }
 
   /**
@@ -159,27 +163,25 @@ export class AIRegistryService {
   }
 
   /**
-   * Build agent-enhanced prompt with personality
+   * Build agent system prompt with personality
    */
-  private buildAgentEnhancedPrompt(input: string, agent: AgentProfile): string {
-    let enhancedPrompt = agent.systemPrompt;
+  private buildAgentSystemPrompt(agent: AgentProfile): string {
+    let systemPrompt = agent.systemPrompt;
 
     // Add personality context
     if (agent.personality.tone) {
-      enhancedPrompt += ` Mantieni un tono ${agent.personality.tone}.`;
+      systemPrompt += ` Mantieni un tono ${agent.personality.tone}.`;
     }
     
     if (agent.personality.style) {
-      enhancedPrompt += ` Usa uno stile ${agent.personality.style}.`;
+      systemPrompt += ` Usa uno stile ${agent.personality.style}.`;
     }
 
     if (agent.personality.expertise) {
-      enhancedPrompt += ` Concentrati sulla tua expertise in ${agent.personality.expertise}.`;
+      systemPrompt += ` Concentrati sulla tua expertise in ${agent.personality.expertise}.`;
     }
-
-    enhancedPrompt += `\n\nUser Question: ${input}`;
     
-    return enhancedPrompt;
+    return systemPrompt;
   }
 
   /**
