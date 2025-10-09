@@ -95,6 +95,25 @@ export default function AISettingsPage() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
   
+  // 🔑 Track user-entered API key separately to prevent overwrite by masked key
+  // 
+  // CRITICAL FIX: Race condition between test/save and settings reload
+  // 
+  // Problem:
+  // 1. User enters new API key → formData.openaiApiKey = "sk-proj-abc123..."
+  // 2. User tests connection → Backend saves key and returns success
+  // 3. Query invalidation → Settings reloaded with MASKED key ("sk-proj***...xyz4")
+  // 4. useEffect overwrites formData.openaiApiKey with masked key
+  // 5. User clicks Save → Masked key detected and excluded from update
+  // 6. Result: API key is lost
+  // 
+  // Solution:
+  // - Store user-entered key in separate state (userEnteredApiKey)
+  // - useEffect preserves userEnteredApiKey instead of overwriting with masked key
+  // - handleSave/testApiConnection use userEnteredApiKey if available
+  // - Reset userEnteredApiKey after successful save
+  const [userEnteredApiKey, setUserEnteredApiKey] = useState<string | null>(null);
+  
   // Agent-specific training states
   const [selectedAgentForTraining, setSelectedAgentForTraining] = useState<string | null>(null);
   const [agentTrainingModalOpen, setAgentTrainingModalOpen] = useState(false);
@@ -340,13 +359,16 @@ export default function AISettingsPage() {
         // Explicitly ensure isActive is set (backend returns it)
         isActive: settings.data.isActive !== undefined ? settings.data.isActive : true,
         // Ensure apiConnectionStatus is set
-        apiConnectionStatus: settings.data.apiConnectionStatus || 'disconnected'
+        apiConnectionStatus: settings.data.apiConnectionStatus || 'disconnected',
+        // 🔑 CRITICAL: Preserve user-entered API key, don't overwrite with masked key
+        openaiApiKey: userEnteredApiKey !== null ? userEnteredApiKey : settings.data.openaiApiKey
       };
       
       console.log('[AI-SETTINGS] ✅ Setting formData with:', {
         isActive: newFormData.isActive,
         apiConnectionStatus: newFormData.apiConnectionStatus,
-        hasApiKey: !!newFormData.openaiApiKey
+        hasApiKey: !!newFormData.openaiApiKey,
+        hasUserEnteredKey: userEnteredApiKey !== null
       });
       
       setFormData(newFormData);
@@ -370,42 +392,48 @@ export default function AISettingsPage() {
         }
       });
     }
+    // NOTE: userEnteredApiKey is NOT in dependencies to avoid resetting other form fields on every keystroke
   }, [settings, settingsError, settingsLoading]);
 
   // Test API connection (🔧 FIX: Auto-save before test to persist API key)
   const testApiConnection = async () => {
-    // ✅ Allow test even without API key in form - backend will use OPENAI_API_KEY from environment
-    if (!formData.openaiApiKey) {
-      console.log('[AI-SETTINGS] ℹ️ No API key in form, backend will use OPENAI_API_KEY from environment');
-    }
-
     setTestingConnection(true);
     setConnectionTestResult(null);
 
     try {
       // 💾 Save settings BEFORE testing to persist API key
-      // 🔒 CRITICAL FIX: Don't send masked API key to backend
+      // 🔑 Use user-entered key if available
       const dataToSave = { ...formData };
       
-      if (dataToSave.openaiApiKey?.includes('*')) {
-        // Key is masked, remove it from the payload
-        console.log('[AI-SETTINGS] ℹ️ API key is masked, using existing key from database for test...');
+      if (userEnteredApiKey !== null) {
+        // User entered a new key, save it
+        console.log('[AI-SETTINGS] 💾 Saving new user-entered API key before test...');
+        dataToSave.openaiApiKey = userEnteredApiKey;
+        await apiRequest('/api/ai/settings', {
+          method: 'PUT',
+          body: dataToSave,
+        });
+      } else if (dataToSave.openaiApiKey?.includes('*')) {
+        // Key is masked, don't send it
+        console.log('[AI-SETTINGS] ℹ️ Using existing key from database for test...');
         delete dataToSave.openaiApiKey;
         
         // Save other settings if changed (but not the masked key)
-        if (Object.keys(dataToSave).length > 0) {
+        if (Object.keys(dataToSave).length > 1) { // More than just the deleted key
           await apiRequest('/api/ai/settings', {
             method: 'PUT',
             body: dataToSave,
           });
         }
-      } else {
-        // New API key provided, save it
-        console.log('[AI-SETTINGS] 💾 Saving new API key before connection test...');
+      } else if (dataToSave.openaiApiKey) {
+        // New API key in formData (edge case)
+        console.log('[AI-SETTINGS] 💾 Saving API key from formData before test...');
         await apiRequest('/api/ai/settings', {
           method: 'PUT',
           body: dataToSave,
         });
+      } else {
+        console.log('[AI-SETTINGS] ℹ️ No API key in form, backend will use database or environment');
       }
 
       // Test connection - backend will use the key from database
@@ -452,14 +480,34 @@ export default function AISettingsPage() {
   const handleSave = () => {
     setSaveStatus('saving');
     
-    // 🔒 SECURITY: Don't send masked API key to backend
+    // 🔒 SECURITY: Use user-entered key if available, otherwise don't send masked key
     const dataToSave = { ...formData };
-    if (dataToSave.openaiApiKey?.includes('*')) {
-      // API key is masked, don't include it in the update
-      delete dataToSave.openaiApiKey;
+    
+    if (userEnteredApiKey !== null) {
+      // User entered a new key, use it
+      dataToSave.openaiApiKey = userEnteredApiKey;
+    } else {
+      // No new key from user, check if current key is masked
+      const isMaskedKey = dataToSave.openaiApiKey?.startsWith('sk-') && 
+                          dataToSave.openaiApiKey?.includes('***') &&
+                          dataToSave.openaiApiKey?.match(/\*{3,}/); // 3+ asterisks = masked
+      
+      if (isMaskedKey) {
+        // API key is masked from backend, don't include it in the update
+        delete dataToSave.openaiApiKey;
+      }
     }
     
-    updateSettingsMutation.mutate(dataToSave);
+    updateSettingsMutation.mutate(dataToSave, {
+      onSuccess: () => {
+        // Reset user-entered key tracking after successful save
+        setUserEnteredApiKey(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/ai/settings'] });
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      },
+      onError: () => setSaveStatus('error')
+    });
   };
 
   const handleFeatureToggle = (feature: keyof AISettings['featuresEnabled']) => {
@@ -685,8 +733,12 @@ export default function AISettingsPage() {
           <div className="relative">
             <input
               type={apiKeyVisible ? 'text' : 'password'}
-              value={formData.openaiApiKey || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, openaiApiKey: e.target.value }))}
+              value={userEnteredApiKey !== null ? userEnteredApiKey : (formData.openaiApiKey || '')}
+              onChange={(e) => {
+                const newKey = e.target.value;
+                setUserEnteredApiKey(newKey); // Track user input separately
+                setFormData(prev => ({ ...prev, openaiApiKey: newKey }));
+              }}
               placeholder={formData.openaiApiKey?.includes('*') ? 'Chiave esistente (mascherata per sicurezza)' : 'sk-...'}
               className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
               data-testid="input-openai-api-key"
