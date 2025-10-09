@@ -312,19 +312,35 @@ export default function AISettingsPage() {
 
     try {
       // 💾 Save settings BEFORE testing to persist API key
-      console.log('[AI-SETTINGS] 💾 Auto-saving API key before connection test...');
-      await apiRequest('/api/ai/settings', {
-        method: 'PUT',
-        body: formData,
-      });
-      console.log('[AI-SETTINGS] ✅ Settings saved, now testing connection...');
+      // 🔒 CRITICAL FIX: Don't send masked API key to backend
+      const dataToSave = { ...formData };
+      
+      if (dataToSave.openaiApiKey?.includes('*')) {
+        // Key is masked, remove it from the payload
+        console.log('[AI-SETTINGS] ℹ️ API key is masked, using existing key from database for test...');
+        delete dataToSave.openaiApiKey;
+        
+        // Save other settings if changed (but not the masked key)
+        if (Object.keys(dataToSave).length > 0) {
+          await apiRequest('/api/ai/settings', {
+            method: 'PUT',
+            body: dataToSave,
+          });
+        }
+      } else {
+        // New API key provided, save it
+        console.log('[AI-SETTINGS] 💾 Saving new API key before connection test...');
+        await apiRequest('/api/ai/settings', {
+          method: 'PUT',
+          body: dataToSave,
+        });
+      }
 
+      // Test connection - backend will use the key from database
+      // No need to send the key in the body since backend now fetches it from DB
       const result = await apiRequest('/api/ai/test-connection', {
         method: 'POST',
-        body: { 
-          apiKey: formData.openaiApiKey,
-          model: formData.openaiModel || 'gpt-4-turbo'
-        },
+        body: {}, // Empty body - backend will use the key from database
       });
       
       if (result.success) {

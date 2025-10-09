@@ -153,7 +153,19 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
       // UPDATE existing settings (partial updates allowed)
       const updateData: any = {};
       
-      if (data.openaiApiKey !== undefined) updateData.openaiApiKey = data.openaiApiKey;
+      // 🔒 CRITICAL FIX: Ignore masked API keys (containing asterisks)
+      // Only update API key if it's a real key, not masked from frontend
+      if (data.openaiApiKey !== undefined) {
+        if (data.openaiApiKey.includes('*')) {
+          logger.info('Ignoring masked API key update', { tenantId });
+          // Do NOT update the API key if it contains asterisks
+        } else {
+          updateData.openaiApiKey = data.openaiApiKey;
+          // Reset connection status if API key changed
+          updateData.apiConnectionStatus = 'disconnected';
+        }
+      }
+      
       if (data.openaiModel !== undefined) updateData.openaiModel = data.openaiModel;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
       if (data.trainingMode !== undefined) updateData.trainingMode = data.trainingMode;
@@ -162,11 +174,6 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
       if (data.trainingSettings !== undefined) updateData.trainingSettings = data.trainingSettings;
       if (data.maxTokens !== undefined) updateData.maxTokens = data.maxTokens;
       if (data.temperature !== undefined) updateData.temperature = data.temperature;
-      
-      // Reset connection status if API key changed
-      if (data.openaiApiKey) {
-        updateData.apiConnectionStatus = 'disconnected';
-      }
 
       [result] = await db
         .update(aiSettings)
@@ -259,23 +266,27 @@ router.post('/test-connection', rbacMiddleware, requirePermission('workflow.mana
       } as ApiErrorResponse);
     }
 
-    const testSchema = z.object({
-      openaiApiKey: z.string().min(1, 'OpenAI API key is required')
-    });
+    // 🔒 CRITICAL FIX: Always use API key from database, never from frontend
+    // This prevents masked keys from being used in connection tests
+    await setTenantContext(tenantId);
+    
+    const [settings] = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.tenantId, tenantId))
+      .limit(1);
 
-    const validation = testSchema.safeParse(req.body);
-    if (!validation.success) {
+    if (!settings || !settings.openaiApiKey) {
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
-        message: validation.error.issues.map(i => i.message).join(', '),
+        error: 'No API key configured',
+        message: 'Please configure an OpenAI API key first',
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
 
-    const { openaiApiKey } = validation.data;
-
-    const openai = new OpenAI({ apiKey: openaiApiKey });
+    // Use the real API key from database (already decrypted by PostgreSQL)
+    const openai = new OpenAI({ apiKey: settings.openaiApiKey });
 
     const testResult = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -283,14 +294,7 @@ router.post('/test-connection', rbacMiddleware, requirePermission('workflow.mana
       max_tokens: 10
     });
 
-    await setTenantContext(tenantId);
-
-    const [settings] = await db
-      .select()
-      .from(aiSettings)
-      .where(eq(aiSettings.tenantId, tenantId))
-      .limit(1);
-
+    // Settings already retrieved above, no need to query again
     if (settings) {
       await db
         .update(aiSettings)
