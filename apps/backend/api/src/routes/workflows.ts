@@ -8,6 +8,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
+import { storage } from '../core/storage';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, or, desc, asc, like, count, sql, inArray, not } from 'drizzle-orm';
@@ -1064,7 +1065,7 @@ router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), a
     }
 
     // Initialize AI services
-    const aiRegistry = new AIRegistryService(db);
+    const aiRegistry = new AIRegistryService(storage);
     const workflowAI = new WorkflowAIConnector(aiRegistry);
 
     // Execute AI routing
@@ -1233,7 +1234,7 @@ Rules:
     const userPrompt = `Create a workflow for: ${prompt}${context?.department ? `\nDepartment: ${context.department}` : ''}`;
 
     // Initialize AI services
-    const aiRegistry = new AIRegistryService(db);
+    const aiRegistry = new AIRegistryService(storage);
 
     // Call workflow-assistant agent
     const aiResponse = await aiRegistry.createUnifiedResponse(
@@ -1251,6 +1252,16 @@ Rules:
         moduleContext: 'workflow'
       }
     );
+
+    // Check if AI response is valid
+    if (!aiResponse.success || !aiResponse.output) {
+      return res.status(500).json({
+        success: false,
+        error: 'AI service error',
+        message: aiResponse.error || 'No response from AI service',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
     logger.info('🤖 [AI Generate] Received AI response', {
       tenantId,

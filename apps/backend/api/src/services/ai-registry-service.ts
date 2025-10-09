@@ -18,6 +18,7 @@ export class AIRegistryService {
   private agentRegistry: Map<string, AgentProfile>;
   private brandDB: any; // Brand Interface database connection
   private w3suiteDB: any; // W3Suite database connection
+  private registryLoaded: Promise<void> | null = null;
 
   constructor(storage: any, brandStorage?: any) {
     // ✅ MANTENIAMO: UnifiedOpenAIService esistente invariato
@@ -26,8 +27,7 @@ export class AIRegistryService {
     this.w3suiteDB = storage;
     this.brandDB = brandStorage; // Se disponibile per query cross-schema
     
-    // Load agent registry at startup
-    this.loadAgentRegistry().catch(console.error);
+    // Lazy load: registry will be loaded on first use
   }
 
   /**
@@ -57,6 +57,12 @@ export class AIRegistryService {
     settings: AISettings,
     context: RegistryAwareContext
   ): Promise<UnifiedOpenAIResponse> {
+    
+    // Lazy load: load registry on first use if not already loaded
+    if (!this.registryLoaded) {
+      this.registryLoaded = this.loadAgentRegistry();
+    }
+    await this.registryLoaded;
     
     const agent = this.agentRegistry.get(context.agentId!);
     

@@ -360,9 +360,22 @@ export class UnifiedOpenAIService {
         // Don't fail the request if conversation storage fails
       }
 
+      // Ensure we have textual output
+      const messageContent = finalResponse.choices[0].message.content;
+      if (!messageContent) {
+        console.error('[AI-SERVICE] ❌ OpenAI returned no text content (possibly tool_calls only)');
+        return {
+          success: false,
+          error: 'No text response from AI model',
+          tokensUsed,
+          cost,
+          responseTime
+        };
+      }
+
       return {
         success: true,
-        output: finalResponse.choices[0].message.content,
+        output: messageContent,
         tokensUsed,
         cost,
         responseTime,
