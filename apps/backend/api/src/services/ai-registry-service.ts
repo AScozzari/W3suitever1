@@ -2,9 +2,10 @@
 // Manages AI agent behaviors while maintaining full compatibility with existing code
 
 import { UnifiedOpenAIService, OpenAIRequestContext, UnifiedOpenAIResponse } from './unified-openai';
-import { AISettings } from '../db/schema/w3suite';
+import { AISettings, aiAgentTenantSettings } from '../db/schema/w3suite';
 import { AgentProfile } from '../../../brand-api/src/db/schema/brand-interface';
 import { db as brandDB, aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
+import { db } from '../core/db';
 import { eq } from 'drizzle-orm';
 
 // Extended context to support agent registry
@@ -193,11 +194,28 @@ export class AIRegistryService {
   }
 
   /**
-   * Get available agents for a tenant
+   * Get available agents for a tenant with isEnabled status from ai_agent_tenant_settings
    */
   async getAvailableAgents(tenantId: string): Promise<AgentProfile[]> {
-    // TODO: Filter based on tenant active_agents settings
-    return Array.from(this.agentRegistry.values()).filter(agent => agent.status === 'active');
+    // Get active agents from registry
+    const activeAgents = Array.from(this.agentRegistry.values()).filter(agent => agent.status === 'active');
+    
+    // Fetch tenant-specific settings for each agent
+    const agentSettings = await db
+      .select()
+      .from(aiAgentTenantSettings)
+      .where(eq(aiAgentTenantSettings.tenantId, tenantId));
+    
+    // Create a map for quick lookup
+    const settingsMap = new Map(
+      agentSettings.map(setting => [setting.agentId, setting.isEnabled])
+    );
+    
+    // Enrich agents with isEnabled status (default to true if no setting exists)
+    return activeAgents.map(agent => ({
+      ...agent,
+      isEnabled: settingsMap.get(agent.agentId) ?? true
+    }));
   }
 
   /**

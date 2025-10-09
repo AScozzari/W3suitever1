@@ -83,6 +83,8 @@ interface AIAgent {
   };
   version: number;
   status: 'active' | 'inactive' | 'deprecated';
+  isEnabled?: boolean; // Tenant-specific enabled status from ai_agent_tenant_settings
+  isLegacy?: boolean; // Legacy agent flag
 }
 
 export default function AISettingsPage() {

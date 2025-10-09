@@ -258,6 +258,7 @@ export interface AgentProfile {
   baseConfiguration: Record<string, any>;
   version: number;
   status: string;
+  isEnabled?: boolean; // Tenant-specific enabled status from ai_agent_tenant_settings
 }
 
 // ==================== AI AGENT SCHEMAS ====================
