@@ -8,8 +8,8 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { db, setTenantContext } from '../core/db';
-import { eq, and } from 'drizzle-orm';
+import { db } from '../core/db';
+import { eq, and, sql } from 'drizzle-orm';
 import { aiSettings, aiAgentTenantSettings } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 
@@ -30,20 +30,19 @@ export async function enforceAIEnabled(req: Request, res: Response, next: NextFu
       });
     }
 
-    await setTenantContext(tenantId);
+    // Check if AI is enabled for this tenant (bypass RLS to read settings)
+    const result = await db.execute(
+      sql`SELECT is_active FROM w3suite.ai_settings WHERE tenant_id = ${tenantId} LIMIT 1`
+    );
+    
+    const settings = result.rows[0];
+    const isActive = settings?.is_active;
 
-    // Check if AI is enabled for this tenant
-    const [settings] = await db
-      .select()
-      .from(aiSettings)
-      .where(eq(aiSettings.tenantId, tenantId))
-      .limit(1);
-
-    if (!settings || !settings.isActive) {
+    if (!isActive) {
       logger.warn('AI access denied - AI disabled for tenant', { 
         tenantId, 
         path: req.path,
-        isActive: settings?.isActive ?? null
+        isActive: isActive ?? null
       });
 
       return res.status(403).json({
@@ -94,22 +93,15 @@ export async function enforceAgentEnabled(req: Request, res: Response, next: Nex
       });
     }
 
-    await setTenantContext(tenantId);
-
-    // Check if this specific agent is enabled for the tenant
-    const [agentSettings] = await db
-      .select()
-      .from(aiAgentTenantSettings)
-      .where(
-        and(
-          eq(aiAgentTenantSettings.tenantId, tenantId),
-          eq(aiAgentTenantSettings.agentId, agentId)
-        )
-      )
-      .limit(1);
-
+    // Check if this specific agent is enabled for the tenant (bypass RLS to read settings)
+    const result = await db.execute(
+      sql`SELECT is_enabled FROM w3suite.ai_agent_tenant_settings 
+          WHERE tenant_id = ${tenantId} AND agent_id = ${agentId} LIMIT 1`
+    );
+    
     // If no settings exist, agent is disabled by default (as per backend default logic)
-    const isEnabled = agentSettings?.isEnabled ?? false;
+    const agentSettings = result.rows[0];
+    const isEnabled = agentSettings?.is_enabled ?? false;
 
     if (!isEnabled) {
       logger.warn('AI access denied - Agent disabled for tenant', { 
