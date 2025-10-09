@@ -169,7 +169,8 @@ export class UnifiedOpenAIService {
         max_tokens: settings.maxTokensPerResponse,
         temperature: temperature,
         stream: false,
-        ...(openaiTools.length > 0 && { tools: openaiTools, tool_choice: "auto" })
+        ...(openaiTools.length > 0 && { tools: openaiTools, tool_choice: "auto" }),
+        ...((settings as any).responseFormat && { response_format: (settings as any).responseFormat })
       });
 
       let finalResponse = response;

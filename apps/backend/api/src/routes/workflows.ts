@@ -1183,20 +1183,22 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
       } as ApiErrorResponse);
     }
 
-    // Build system prompt with node catalog
-    const systemPrompt = `You are an expert workflow automation assistant. Generate a workflow JSON from user description.
+    // Build system prompt - MUST explicitly mention JSON for response_format to work
+    const systemPrompt = `Sei un esperto di automazione workflow. Il tuo compito è generare SOLO un oggetto JSON valido che rappresenta un workflow ReactFlow.
 
-Available Node Types:
-- send-email: Send notification emails
-- approve-request: Request approval with escalation
-- auto-approval: Automatic approval based on rules
-- decision-evaluator: Evaluate conditions and route
-- create-task: Create new tasks
-- ai-decision: AI-powered decision making
-- form-trigger: Form submission trigger
-- task-trigger: Task event trigger
+**IMPORTANTE**: Devi rispondere ESCLUSIVAMENTE con JSON valido, senza alcun testo aggiuntivo, spiegazioni o formattazione Markdown.
 
-Output Format (strict JSON):
+Tipi di Nodi Disponibili:
+- send-email: Invio email di notifica
+- approve-request: Richiesta approvazione con escalation
+- auto-approval: Approvazione automatica basata su regole
+- decision-evaluator: Valutazione condizioni e routing
+- create-task: Creazione nuovi task
+- ai-decision: Decisione basata su AI
+- form-trigger: Trigger da invio form
+- task-trigger: Trigger da eventi task
+
+Formato Output (JSON obbligatorio):
 {
   "nodes": [
     {
@@ -1204,10 +1206,10 @@ Output Format (strict JSON):
       "type": "send-email",
       "position": { "x": 100, "y": 100 },
       "data": {
-        "label": "Send Email",
+        "label": "Invia Email",
         "config": {
           "to": ["user@example.com"],
-          "subject": "Subject",
+          "subject": "Oggetto",
           "template": "notification"
         }
       }
@@ -1224,23 +1226,32 @@ Output Format (strict JSON):
   ]
 }
 
-Rules:
-1. Generate sequential node IDs (node-1, node-2, etc.)
-2. Position nodes vertically with 200px spacing (x: 100, y: 100, 300, 500...)
-3. Create edges to connect nodes in logical order
-4. Use appropriate node types for the workflow logic
-5. Return ONLY valid JSON, no explanations`;
+Regole:
+1. ID nodi sequenziali (node-1, node-2, etc.)
+2. Posiziona nodi verticalmente con spaziatura 200px (x: 100, y: 100, 300, 500...)
+3. Crea edges per connettere nodi in ordine logico
+4. Usa tipi di nodo appropriati per la logica del workflow
+5. Rispondi SOLO con JSON valido, nessuna spiegazione`;
 
-    const userPrompt = `Create a workflow for: ${prompt}${context?.department ? `\nDepartment: ${context.department}` : ''}`;
+    const userPrompt = `Genera un workflow JSON per: ${prompt}${context?.department ? `\nReparto: ${context.department}` : ''}`;
 
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);
 
     // Call workflow-assistant agent with custom system prompt for workflow generation
+    // IMPORTANT: Disable all tools to enable JSON mode (tools and response_format are incompatible)
     const settingsWithSystemPrompt = {
       ...tenantAISettings,
       systemPrompt: systemPrompt,
-      temperature: 0.3 // Low temperature for consistent JSON output
+      temperature: 0.3, // Low temperature for consistent JSON output
+      responseFormat: { type: "json_object" }, // Force JSON mode
+      featuresEnabled: {
+        ...tenantAISettings.featuresEnabled,
+        web_search: false, // Disable to allow JSON mode
+        file_search: false,
+        code_interpreter: false,
+        computer_use: false
+      }
     };
     
     const aiResponse = await aiRegistry.createUnifiedResponse(
@@ -1250,7 +1261,8 @@ Rules:
         agentId: 'workflow-assistant',
         tenantId,
         userId: userId || 'system',
-        moduleContext: 'workflow'
+        moduleContext: 'workflow',
+        mcpTools: [] // No MCP tools for workflow generation
       }
     );
 
