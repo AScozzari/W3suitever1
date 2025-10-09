@@ -736,8 +736,9 @@ export default function AISettingsPage() {
               value={userEnteredApiKey !== null ? userEnteredApiKey : (formData.openaiApiKey || '')}
               onChange={(e) => {
                 const newKey = e.target.value;
-                setUserEnteredApiKey(newKey); // Track user input separately
-                setFormData(prev => ({ ...prev, openaiApiKey: newKey }));
+                // Always track user entered key
+                setUserEnteredApiKey(newKey);
+                // Don't update formData with user input - let it be handled by save/test functions
               }}
               placeholder={formData.openaiApiKey?.includes('*') ? 'Chiave esistente (mascherata per sicurezza)' : 'sk-...'}
               className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"

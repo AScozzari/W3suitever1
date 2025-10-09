@@ -372,6 +372,154 @@ router.post('/test-connection', rbacMiddleware, requirePermission('workflow.mana
 });
 
 /**
+ * GET /api/ai/agents
+ * Get list of available AI agents with their tenant-specific settings
+ */
+router.get('/agents', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Hardcoded list of available agents (will be replaced with DB query later)
+    const availableAgents = [
+      {
+        id: 'tippy-sales-id',
+        agentId: 'tippy-sales',
+        name: 'Tippy - Sales Assistant',
+        description: 'Assistente vendite WindTre specializzato in supporto commerciale',
+        systemPrompt: 'Sei Tippy, assistente AI specializzato nel supporto vendite WindTre.',
+        personality: {
+          tone: 'friendly',
+          style: 'professional',
+          expertise: 'sales',
+          brand: 'windtre'
+        },
+        moduleContext: 'sales',
+        baseConfiguration: {
+          model: 'gpt-4-turbo',
+          maxTokens: 1000,
+          temperature: 0.7
+        },
+        version: 1,
+        status: 'active',
+        isEnabled: true, // Default enabled for new tenants
+        isLegacy: false
+      },
+      {
+        id: 'hr-assistant-id',
+        agentId: 'hr-assistant',
+        name: 'HR Assistant',
+        description: 'Assistente HR per gestione risorse umane e workflow',
+        systemPrompt: 'Sei un assistente HR specializzato nella gestione del personale.',
+        personality: {
+          tone: 'professional',
+          style: 'supportive',
+          expertise: 'hr',
+          brand: 'windtre'
+        },
+        moduleContext: 'hr',
+        baseConfiguration: {
+          model: 'gpt-4-turbo',
+          maxTokens: 1500,
+          temperature: 0.6
+        },
+        version: 1,
+        status: 'active',
+        isEnabled: true,
+        isLegacy: false
+      },
+      {
+        id: 'finance-analyst-id',
+        agentId: 'finance-analyst',
+        name: 'Finance Analyst',
+        description: 'Analista finanziario per reportistica e previsioni',
+        systemPrompt: 'Sei un analista finanziario specializzato in analisi dati e reportistica.',
+        personality: {
+          tone: 'analytical',
+          style: 'precise',
+          expertise: 'finance',
+          brand: 'windtre'
+        },
+        moduleContext: 'finance',
+        baseConfiguration: {
+          model: 'gpt-4-turbo',
+          maxTokens: 2000,
+          temperature: 0.3
+        },
+        version: 1,
+        status: 'active',
+        isEnabled: false,
+        isLegacy: false
+      },
+      {
+        id: 'crm-specialist-id',
+        agentId: 'crm-specialist',
+        name: 'CRM Specialist',
+        description: 'Specialista CRM per gestione clienti e campagne',
+        systemPrompt: 'Sei uno specialista CRM per la gestione dei rapporti con i clienti.',
+        personality: {
+          tone: 'empathetic',
+          style: 'customer-focused',
+          expertise: 'crm',
+          brand: 'windtre'
+        },
+        moduleContext: 'crm',
+        baseConfiguration: {
+          model: 'gpt-4-turbo',
+          maxTokens: 1200,
+          temperature: 0.7
+        },
+        version: 1,
+        status: 'active',
+        isEnabled: false,
+        isLegacy: false
+      }
+    ];
+
+    // Check tenant-specific agent settings from aiAgentTenantSettings table
+    await setTenantContext(tenantId);
+    
+    // Get tenant-specific agent settings if they exist
+    const tenantAgentSettings = await db
+      .select()
+      .from(aiAgentTenantSettings)
+      .where(eq(aiAgentTenantSettings.tenantId, tenantId));
+
+    // Merge tenant settings with available agents
+    const agentsWithTenantSettings = availableAgents.map(agent => {
+      const tenantSetting = tenantAgentSettings.find(s => s.agentId === agent.agentId);
+      return {
+        ...agent,
+        isEnabled: tenantSetting ? tenantSetting.isEnabled : agent.isEnabled
+      };
+    });
+
+    logger.info('AI agents retrieved', { 
+      tenantId, 
+      agentCount: agentsWithTenantSettings.length 
+    });
+
+    // Return as array directly (not wrapped in data object) to match frontend expectation
+    res.status(200).json(agentsWithTenantSettings);
+
+  } catch (error: any) {
+    logger.error('Error retrieving AI agents', { error, tenantId: req.user?.tenantId });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * PUT /api/ai/agents/:agentId/toggle
  * Enable or disable a specific AI agent for the current tenant
  */
