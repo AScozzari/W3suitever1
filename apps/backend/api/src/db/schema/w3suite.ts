@@ -3426,6 +3426,27 @@ export const aiUsageLogs = w3suiteSchema.table("ai_usage_logs", {
   costIndex: index("ai_usage_logs_cost_idx").on(table.tenantId, table.costUsd, table.requestTimestamp),
 }));
 
+// AI Agent Tenant Settings - Per-tenant agent enablement control
+export const aiAgentTenantSettings = w3suiteSchema.table("ai_agent_tenant_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Agent Identification
+  agentId: text("agent_id").notNull(), // e.g., "tippy-sales", "workflow-assistant"
+  
+  // Enablement Control
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIndex: index("ai_agent_tenant_settings_tenant_idx").on(table.tenantId),
+  agentIndex: index("ai_agent_tenant_settings_agent_idx").on(table.agentId),
+  // Unique constraint: one setting per agent per tenant
+  uniqueTenantAgent: index("ai_agent_tenant_settings_unique_idx").on(table.tenantId, table.agentId),
+}));
+
 // AI Conversations - Chat History with encryption and retention
 export const aiConversations = w3suiteSchema.table("ai_conversations", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -3841,6 +3862,10 @@ export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
 export const aiUsageLogsRelations = relations(aiUsageLogs, ({ one }) => ({
   tenant: one(tenants, { fields: [aiUsageLogs.tenantId], references: [tenants.id] }),
   user: one(users, { fields: [aiUsageLogs.userId], references: [users.id] }),
+}));
+
+export const aiAgentTenantSettingsRelations = relations(aiAgentTenantSettings, ({ one }) => ({
+  tenant: one(tenants, { fields: [aiAgentTenantSettings.tenantId], references: [tenants.id] }),
 }));
 
 export const aiConversationsRelations = relations(aiConversations, ({ one }) => ({
