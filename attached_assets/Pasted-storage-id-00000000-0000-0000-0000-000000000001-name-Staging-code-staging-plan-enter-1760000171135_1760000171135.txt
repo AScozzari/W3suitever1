@@ -1,0 +1,44 @@
+storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/notifications/unread-count 401 (Unauthorized)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=6e75a53d:1097
+run @ @tanstack_react-query.js?v=6e75a53d:795
+start @ @tanstack_react-query.js?v=6e75a53d:838
+fetch @ @tanstack_react-query.js?v=6e75a53d:1144
+executeFetch_fn @ @tanstack_react-query.js?v=6e75a53d:1639
+onSubscribe @ @tanstack_react-query.js?v=6e75a53d:1335
+subscribe @ @tanstack_react-query.js?v=6e75a53d:24
+(anonymous) @ @tanstack_react-query.js?v=6e75a53d:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=6e75a53d:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=6e75a53d:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=6e75a53d:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=6e75a53d:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=6e75a53d:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=6e75a53d:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=6e75a53d:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=6e75a53d:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=6e75a53d:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=6e75a53d:197
+flushWork @ chunk-ZHRYBLGQ.js?v=6e75a53d:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=6e75a53d:384Understand this error
+queryClient.ts:211 ❌ 401 Unauthorized
+SettingsPage.tsx:650 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:663 📝 Setting state with data: {legalEntities: 18, users: 23, stores: 18}
+SettingsPage.tsx:650 📦 SettingsPage: loadSettingsData result: {success: false, data: {…}, error: 'Legal entities service unavailable, Users service unavailable, Stores service unavailable', warnings: Array(3)}
+SettingsPage.tsx:657 Failed to load settings data: Legal entities service unavailable, Users service unavailable, Stores service unavailable
+overrideMethod @ hook.js:608
+loadData @ SettingsPage.tsx:657
+await in loadData
+(anonymous) @ SettingsPage.tsx:684
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=6e75a53d:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=6e75a53d:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=6e75a53d:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=6e75a53d:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=6e75a53d:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=6e75a53d:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=6e75a53d:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=6e75a53d:197
+flushWork @ chunk-ZHRYBLGQ.js?v=6e75a53d:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=6e75a53d:384Understand this error
+SettingsPage.tsx:677 📋 Suppliers will be loaded via 
