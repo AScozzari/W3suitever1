@@ -160,9 +160,16 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
           logger.info('Ignoring masked API key update', { tenantId });
           // Do NOT update the API key if it contains asterisks
         } else {
+          // Only reset connection status if API key actually CHANGED
+          const keyChanged = existing.openaiApiKey !== data.openaiApiKey;
           updateData.openaiApiKey = data.openaiApiKey;
-          // Reset connection status if API key changed
-          updateData.apiConnectionStatus = 'disconnected';
+          
+          if (keyChanged) {
+            logger.info('API key changed, resetting connection status', { tenantId });
+            updateData.apiConnectionStatus = 'disconnected';
+          } else {
+            logger.info('API key unchanged, preserving connection status', { tenantId });
+          }
         }
       }
       
@@ -294,21 +301,19 @@ router.post('/test-connection', rbacMiddleware, requirePermission('workflow.mana
       max_tokens: 10
     });
 
-    // Settings already retrieved above, no need to query again
-    if (settings) {
-      await db
-        .update(aiSettings)
-        .set({
-          apiConnectionStatus: 'connected',
-          lastConnectionTest: new Date(),
-          connectionTestResult: {
-            success: true,
-            model: testResult.model,
-            timestamp: new Date().toISOString()
-          }
-        })
-        .where(eq(aiSettings.id, settings.id));
-    }
+    // Update connection status to 'connected' after successful test
+    await db
+      .update(aiSettings)
+      .set({
+        apiConnectionStatus: 'connected',
+        lastConnectionTest: new Date(),
+        connectionTestResult: {
+          success: true,
+          model: testResult.model,
+          timestamp: new Date().toISOString()
+        }
+      })
+      .where(eq(aiSettings.id, settings.id));
 
     logger.info('OpenAI connection test successful', { 
       tenantId, 
