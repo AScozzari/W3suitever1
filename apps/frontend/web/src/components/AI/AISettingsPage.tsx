@@ -147,6 +147,31 @@ export default function AISettingsPage() {
     refetchInterval: 60000, // Refresh every minute
   });
 
+  // Mutation to toggle agent enable/disable for tenant
+  const toggleAgentMutation = useMutation({
+    mutationFn: async ({ agentId, isEnabled }: { agentId: string; isEnabled: boolean }) => {
+      return await apiRequest(`/api/ai/agents/${agentId}/toggle`, {
+        method: 'PUT',
+        body: JSON.stringify({ isEnabled }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Agente aggiornato",
+        description: `L'agente è stato ${variables.isEnabled ? 'abilitato' : 'disabilitato'} per questo tenant`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiornare l'agente",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Partial<AISettings>) => {
@@ -681,19 +706,21 @@ export default function AISettingsPage() {
                   {/* Toggle Attiva/Disattiva per Tenant */}
                   <button
                     onClick={() => {
-                      toast({ 
-                        title: `Agente ${agent.name}`, 
-                        description: `${agent.name} è stato ${agent.status === 'active' ? "disattivato" : "attivato"} per questo tenant` 
+                      const currentEnabled = agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active';
+                      toggleAgentMutation.mutate({
+                        agentId: agent.id,
+                        isEnabled: !currentEnabled
                       });
                     }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
-                      agent.status === 'active' ? 'bg-[#FF6900]' : 'bg-gray-300'
+                    disabled={toggleAgentMutation.isPending}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      (agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active') ? 'bg-[#FF6900]' : 'bg-gray-300'
                     }`}
                     data-testid={`toggle-agent-${agent.id}`}
                     title="Attiva/Disattiva agente per questo tenant"
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      agent.status === 'active' ? 'translate-x-6' : 'translate-x-1'
+                      (agent.isEnabled !== undefined ? agent.isEnabled : agent.status === 'active') ? 'translate-x-6' : 'translate-x-1'
                     }`} />
                   </button>
                   
