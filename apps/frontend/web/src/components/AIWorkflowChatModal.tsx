@@ -13,7 +13,8 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   workflowJson?: any;
-  showGenerateButton?: boolean;
+  taskReminder?: any;
+  readyToBuild?: boolean;
 }
 
 export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModalProps) {
@@ -28,32 +29,58 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
   const [currentUserPrompt, setCurrentUserPrompt] = useState<string>('');
   const [workflowPhase, setWorkflowPhase] = useState<'idle' | 'analyzed' | 'generated'>('idle');
 
-  // Phase 1: Analysis
+  // Phase 1: Conversational Analysis (auto-triggered on message send)
   const analyzeMutation = useMutation({
-    mutationFn: async (userPrompt: string) => {
-      const response = await apiRequest<{ 
-        success: boolean; 
-        data: { analysis: string; tokensUsed?: number; cost?: number }; 
-        message: string;
-      }>('/api/workflows/ai-analyze', {
+    mutationFn: async ({ userPrompt, conversationHistory }: { userPrompt: string; conversationHistory: Message[] }) => {
+      const response = await apiRequest('/api/workflows/ai-analyze', {
         method: 'POST',
         body: JSON.stringify({
           prompt: userPrompt,
+          conversationHistory: conversationHistory.filter(m => m.role !== 'system').map(m => ({
+            role: m.role,
+            content: m.content
+          })),
           context: {}
         })
       });
       return response;
     },
     onSuccess: (response) => {
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: response.data.analysis,
-          showGenerateButton: true
-        }
-      ]);
-      setWorkflowPhase('analyzed');
+      const parsed = response.data.parsedAnalysis;
+      
+      if (parsed?.status === 'complete' && parsed.taskReminder) {
+        // AI has complete vision - show task reminder
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: parsed.message,
+            taskReminder: parsed.taskReminder,
+            readyToBuild: true
+          }
+        ]);
+        setWorkflowPhase('analyzed');
+      } else if (parsed?.status === 'incomplete') {
+        // AI needs more info - show question
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: parsed.message
+          }
+        ]);
+        setWorkflowPhase('idle'); // Allow user to continue conversation
+      } else {
+        // Fallback: raw analysis text
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: response.data.analysis
+          }
+        ]);
+        setWorkflowPhase('idle');
+      }
     },
     onError: (error: any) => {
       setMessages(prev => [
@@ -70,11 +97,7 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
   // Phase 2: Generation
   const generateMutation = useMutation({
     mutationFn: async (userPrompt: string) => {
-      const response = await apiRequest<{ 
-        success: boolean; 
-        data: { workflow: any }; 
-        message: string;
-      }>('/api/workflows/ai-generate', {
+      const response = await apiRequest('/api/workflows/ai-generate', {
         method: 'POST',
         body: JSON.stringify({
           prompt: userPrompt,
@@ -113,13 +136,18 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
     const userPrompt = prompt;
     setCurrentUserPrompt(userPrompt);
     
-    setMessages(prev => [
-      ...prev,
-      { role: 'user', content: userPrompt }
-    ]);
+    const updatedMessages = [
+      ...messages,
+      { role: 'user', content: userPrompt } as Message
+    ];
+    
+    setMessages(updatedMessages);
 
-    // Phase 1: Analyze the request
-    analyzeMutation.mutate(userPrompt);
+    // Phase 1: Analyze the request with full conversation history
+    analyzeMutation.mutate({ 
+      userPrompt, 
+      conversationHistory: updatedMessages 
+    });
     setPrompt('');
   };
 
@@ -178,24 +206,57 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 
-                {/* Show Generate Template button after analysis */}
-                {msg.showGenerateButton && workflowPhase === 'analyzed' && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                {/* Task Reminder + Start Building Button */}
+                {msg.taskReminder && msg.readyToBuild && (
+                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                    {/* Task Reminder Card */}
+                    <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <span className="text-xs font-semibold text-green-900">
+                          Workflow Pronto per la Costruzione
+                        </span>
+                      </div>
+                      <details className="text-xs">
+                        <summary className="cursor-pointer text-green-700 hover:text-green-900 font-medium">
+                          📋 View Remind
+                        </summary>
+                        <div className="mt-2 space-y-1 text-gray-700">
+                          <p><strong>Tipo:</strong> {msg.taskReminder.workflowType}</p>
+                          <p><strong>Trigger:</strong> {msg.taskReminder.trigger}</p>
+                          <p><strong>Approver:</strong> {msg.taskReminder.approver}</p>
+                          <p><strong>Team:</strong> {msg.taskReminder.teamsInvolved?.join(', ')}</p>
+                          <p><strong>Flow:</strong> {msg.taskReminder.flow}</p>
+                          {msg.taskReminder.notifications && (
+                            <p><strong>Notifiche:</strong> {msg.taskReminder.notifications}</p>
+                          )}
+                          {msg.taskReminder.businessRules && (
+                            <p><strong>Regole:</strong> {msg.taskReminder.businessRules}</p>
+                          )}
+                          {msg.taskReminder.sla && (
+                            <p><strong>SLA:</strong> {msg.taskReminder.sla}</p>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+                    
+                    {/* Start Building Button */}
                     <Button
                       onClick={handleGenerateTemplate}
                       disabled={generateMutation.isPending}
-                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                      data-testid="button-generate-template"
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white h-12"
+                      data-testid="button-start-building"
+                      title="Start to build"
                     >
                       {generateMutation.isPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Generazione in corso...
+                          Building...
                         </>
                       ) : (
                         <>
-                          <Zap className="w-4 h-4 mr-2" />
-                          Genera Template Workflow
+                          <Zap className="w-5 h-5 mr-2" />
+                          ▶ Start Building
                         </>
                       )}
                     </Button>
@@ -271,16 +332,13 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
               {analyzeMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Analizza
-                </>
+                <Send className="w-4 h-4" />
               )}
             </Button>
           </div>
           
           <p className="text-xs text-gray-500 text-center">
-            Premi Invio per analizzare, Shift+Invio per nuova riga
+            Premi Invio per inviare, Shift+Invio per nuova riga
           </p>
         </div>
       </div>

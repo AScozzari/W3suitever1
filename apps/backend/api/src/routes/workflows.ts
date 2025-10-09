@@ -1142,6 +1142,10 @@ router.post('/ai-analyze', rbacMiddleware, requirePermission('workflow.create'),
     // Validate request body
     const aiAnalyzeSchema = z.object({
       prompt: z.string().min(3, 'Prompt must be at least 3 characters'),
+      conversationHistory: z.array(z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string()
+      })).optional(),
       context: z.object({
         department: z.string().optional(),
         category: z.string().optional()
@@ -1158,7 +1162,7 @@ router.post('/ai-analyze', rbacMiddleware, requirePermission('workflow.create'),
       } as ApiErrorResponse);
     }
 
-    const { prompt, context } = validationResult.data;
+    const { prompt, conversationHistory, context } = validationResult.data;
 
     logger.info('🤖 [AI Analyze] Starting workflow analysis', {
       tenantId,
@@ -1183,27 +1187,28 @@ router.post('/ai-analyze', rbacMiddleware, requirePermission('workflow.create'),
       } as ApiErrorResponse);
     }
 
-    // Use workflow-assistant for analysis (not workflow-builder-ai)
-    const userPrompt = `Analizza questa richiesta di workflow e fornisci un piano strutturato:
+    // Build conversational prompt with full history for context retention
+    let fullPrompt = prompt;
+    if (conversationHistory && conversationHistory.length > 0) {
+      const historyText = conversationHistory
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n\n');
+      fullPrompt = `${historyText}\n\nUser: ${prompt}`;
+    }
 
-Richiesta: ${prompt}
-${context?.department ? `Reparto: ${context.department}` : ''}
-
-Fornisci:
-1. Tipo di workflow richiesto
-2. Passi principali necessari (3-5 step)
-3. Chi deve essere coinvolto (approvatori, team)
-4. Regole di business da applicare
-5. Complessità stimata (bassa/media/alta)
-
-Rispondi in italiano con un'analisi chiara e concisa.`;
+    logger.info('🤖 [AI Analyze] Conversation history', {
+      tenantId,
+      historyLength: conversationHistory?.length || 0,
+      fullPromptLength: fullPrompt.length
+    });
 
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);
 
-    // Call workflow-assistant agent for analysis
+    // Call workflow-assistant agent for conversational analysis
+    // The agent will respond with JSON: {status, type, message, missing, collected, taskReminder, readyToBuild}
     const aiResponse = await aiRegistry.createUnifiedResponse(
-      userPrompt,
+      fullPrompt, // Pass full conversation history for context
       tenantAISettings,
       {
         agentId: 'workflow-assistant',
@@ -1224,16 +1229,30 @@ Rispondi in italiano con un'analisi chiara e concisa.`;
       } as ApiErrorResponse);
     }
 
+    // Parse JSON response from AI
+    let parsedAnalysis;
+    try {
+      parsedAnalysis = JSON.parse(aiResponse.output);
+    } catch (parseError) {
+      logger.warn('🤖 [AI Analyze] AI returned non-JSON response, using raw text', {
+        tenantId,
+        outputPreview: aiResponse.output.substring(0, 100)
+      });
+      parsedAnalysis = null;
+    }
+
     logger.info('🤖 [AI Analyze] Analysis completed', {
       tenantId,
-      outputLength: aiResponse.output.length,
+      status: parsedAnalysis?.status || 'unknown',
+      type: parsedAnalysis?.type || 'text',
       tokensUsed: aiResponse.tokensUsed
     });
 
     return res.json({
       success: true,
       data: {
-        analysis: aiResponse.output,
+        analysis: aiResponse.output, // Raw text (fallback)
+        parsedAnalysis: parsedAnalysis, // Parsed JSON structure
         tokensUsed: aiResponse.tokensUsed,
         cost: aiResponse.cost
       },
@@ -1241,6 +1260,15 @@ Rispondi in italiano con un'analisi chiara e concisa.`;
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse<{
       analysis: string;
+      parsedAnalysis?: {
+        status: 'incomplete' | 'complete';
+        type: 'question' | 'reminder';
+        message: string;
+        missing?: string[];
+        collected?: any;
+        taskReminder?: any;
+        readyToBuild?: boolean;
+      };
       tokensUsed?: number;
       cost?: number;
     }>);
