@@ -583,34 +583,39 @@ export default function SettingsPage() {
 
   // Note: Hierarchy Management removed - now handled by dedicated WorkflowManagementPage
 
-  // Workflow Management Queries
+  // Workflow Management Queries - Only load when Entity Management tab is active
   const { data: workflowActionsData, isLoading: loadingWorkflowActions } = useQuery({
     queryKey: ['/api/workflow-actions'],
-    enabled: true,
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: workflowTriggersData, isLoading: loadingWorkflowTriggers } = useQuery({
     queryKey: ['/api/workflow-triggers'],
-    enabled: true,
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: teamsData, isLoading: loadingTeams, refetch: refetchTeams } = useQuery({
     queryKey: ['/api/teams'],
-    enabled: true,
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: workflowTemplatesData, isLoading: loadingTemplates, refetch: refetchTemplates } = useQuery({
     queryKey: ['/api/workflow-templates'],
-    enabled: true,
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: teamAssignmentsData, isLoading: loadingAssignments, refetch: refetchAssignments } = useQuery({
     queryKey: ['/api/team-workflow-assignments'],
-    enabled: true,
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
   
@@ -620,14 +625,17 @@ export default function SettingsPage() {
   // Note: fornitoriList is now managed by TanStack Query as suppliersList
   
   
-  // TanStack Query hooks for payment data using ApiService
+  // TanStack Query hooks for payment data - Only load when Entity Management tab is active
   const { data: paymentMethodsList, isLoading: paymentMethodsLoading } = useQuery({
     queryKey: ['paymentMethods'],
     queryFn: async () => {
       const result = await apiService.getPaymentMethods();
       if (!result.success) throw new Error(result.error || 'Failed to fetch payment methods');
       return (result.data as any)?.paymentMethods || [];
-    }
+    },
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: paymentConditionsList, isLoading: paymentConditionsLoading } = useQuery({
@@ -637,12 +645,27 @@ export default function SettingsPage() {
       const result = await apiService.getPaymentMethods();
       if (!result.success) throw new Error(result.error || 'Failed to fetch payment conditions');
       return (result.data as any)?.paymentMethods || [];
-    }
+    },
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000
   });
 
-  // Caricamento dati enterprise con service layer
+  // Caricamento dati enterprise con service layer - Only when Entity Management tab is active
   useEffect(() => {
-    console.log('🆕 SettingsPage: useEffect triggered - loading data...');
+    // Skip loading if not on Entity Management tab
+    if (activeTab !== 'Entity Management') {
+      console.log('⏭️ SettingsPage: Skipping data load (not on Entity Management tab)');
+      return;
+    }
+
+    // Skip if data already loaded
+    if (ragioneSocialiList.length > 0 || utentiList.length > 0 || puntiVenditaList.length > 0) {
+      console.log('✅ SettingsPage: Data already loaded, skipping');
+      return;
+    }
+
+    console.log('🆕 SettingsPage: Loading data for Entity Management tab...');
     const loadData = async () => {
       try {
         console.log('🌎 SettingsPage: Calling apiService.loadSettingsData()...');
@@ -682,7 +705,7 @@ export default function SettingsPage() {
     };
 
     loadData();
-  }, []);
+  }, [activeTab]); // Re-run when activeTab changes
 
   // Funzione per ricaricare i dati delle ragioni sociali
   const refetchLegalEntities = async () => {
@@ -1408,9 +1431,11 @@ export default function SettingsPage() {
     }
   };
   
-  // Load reference data from API
+  // Load reference data from API - Only when Entity Management tab is active
   const { data: legalForms = [] } = useQuery<LegalForm[]>({
     queryKey: ['/api/reference/legal-forms'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -1424,16 +1449,19 @@ export default function SettingsPage() {
   const rolesError = null;
   const refetchRoles = () => Promise.resolve();
 
-  // REAL permissions from backend API - NOT hardcoded!
+  // REAL permissions from backend API - Only when Entity Management tab is active
   const { data: rbacPermissionsData, isLoading: permissionsLoading } = useQuery<RBACPermissionsResponse>({
     queryKey: ['/api/rbac/permissions'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // REAL permissions for selected role from backend API
+  // REAL permissions for selected role from backend API - Only when Entity Management tab is active
   const { data: selectedRolePermissions, isLoading: rolePermissionsLoading } = useQuery<RolePermissionsResponse>({
     queryKey: ['/api/rbac/roles', selectedRole, 'permissions'],
-    enabled: !!selectedRole,
+    enabled: activeTab === 'Entity Management' && !!selectedRole,
+    refetchOnMount: false,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
   
@@ -1471,26 +1499,34 @@ export default function SettingsPage() {
 
   const { data: countries = [] } = useQuery({
     queryKey: ['/api/reference/countries'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: italianCities = [] } = useQuery<ItalianCity[]>({
     queryKey: ['/api/reference/italian-cities'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: commercialAreas = [] } = useQuery({
     queryKey: ['/api/commercial-areas'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load payment methods reference data
+  // Load payment methods reference data - Only when Entity Management tab is active
   const { data: referencePaymentMethods = [] } = useQuery({
     queryKey: ['/api/payment-methods'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load suppliers data with TanStack Query using ApiService
+  // Load suppliers data - Only when Entity Management tab is active
   const { data: suppliersList = [], isLoading: suppliersLoading, error: suppliersError, isError: suppliersIsError, refetch: refetchSuppliersQuery } = useQuery({
     queryKey: ['/api/suppliers'],
     queryFn: async () => {
@@ -1498,6 +1534,8 @@ export default function SettingsPage() {
       if (!result.success) throw new Error(result.error || 'Failed to fetch suppliers');
       return result.data || [];
     },
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 3, // Retry failed requests 3 times
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
