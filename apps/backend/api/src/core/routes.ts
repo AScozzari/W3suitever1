@@ -14,6 +14,7 @@ import mcpRoutes from "../routes/mcp";
 import mcpOAuthRoutes from "../routes/mcp-oauth";
 import mcpCredentialsRoutes from "../routes/mcp-credentials";
 import { aiSettingsRoutes } from "../routes/ai-settings";
+import entitiesRoutes from "../routes/entities";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1207,6 +1208,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AI SETTINGS ROUTES ====================
   // AI configuration and OpenAI connection management
   app.use('/api/ai', aiSettingsRoutes);
+  
+  // ==================== ENTITIES MANAGEMENT ROUTES ====================
+  // Legal entities, stores, and users management API routes
+  app.use('/api', entitiesRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
