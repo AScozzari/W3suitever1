@@ -38,18 +38,18 @@ router.get('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const entities = await db
-      .select()
-      .from(legalEntities)
-      .where(eq(legalEntities.tenantId, tenantId))
-      .orderBy(desc(legalEntities.createdAt));
+    const result = await db.execute(sql`
+      SELECT * FROM w3suite.legal_entities
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC
+    `);
 
     res.status(200).json({
       success: true,
-      data: entities,
+      data: result.rows,
       message: 'Legal entities retrieved successfully',
       timestamp: new Date().toISOString()
-    } as ApiSuccessResponse<typeof entities>);
+    } as ApiSuccessResponse);
 
   } catch (error: any) {
     logger.error('Error retrieving legal entities', { 
@@ -153,18 +153,18 @@ router.get('/stores', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const storesList = await db
-      .select()
-      .from(stores)
-      .where(eq(stores.tenantId, tenantId))
-      .orderBy(desc(stores.createdAt));
+    const storesList = await db.execute(sql`
+      SELECT * FROM w3suite.stores
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC
+    `);
 
     res.status(200).json({
       success: true,
-      data: storesList,
+      data: storesList.rows,
       message: 'Stores retrieved successfully',
       timestamp: new Date().toISOString()
-    } as ApiSuccessResponse<typeof storesList>);
+    } as ApiSuccessResponse);
 
   } catch (error: any) {
     logger.error('Error retrieving stores', { 
@@ -281,10 +281,10 @@ router.get('/users', async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: usersList,
+      data: usersList.rows,
       message: 'Users retrieved successfully',
       timestamp: new Date().toISOString()
-    } as ApiSuccessResponse<typeof usersList>);
+    } as ApiSuccessResponse);
 
   } catch (error: any) {
     logger.error('Error retrieving users', { 
