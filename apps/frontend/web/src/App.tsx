@@ -148,7 +148,10 @@ function SmartRootRedirect() {
   // Prova a recuperare ultimo tenant visitato
   const lastTenant = localStorage.getItem('currentTenant');
   
-  if (lastTenant && lastTenant !== '' && lastTenant !== 'null') {
+  // Blacklist tenant invalidi o legacy
+  const invalidTenants = ['', 'null', 'login', 'undefined'];
+  
+  if (lastTenant && !invalidTenants.includes(lastTenant)) {
     console.log(`[SMART-REDIRECT] 🔄 Redirecting to last tenant: ${lastTenant}`);
     return <Redirect to={`/${lastTenant}/dashboard`} />;
   }
