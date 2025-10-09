@@ -211,10 +211,10 @@ export class AIRegistryService {
       agentSettings.map(setting => [setting.agentId, setting.isEnabled])
     );
     
-    // Enrich agents with isEnabled status (default to true if no setting exists)
+    // Enrich agents with isEnabled status (default to false - agents must be explicitly enabled)
     return activeAgents.map(agent => ({
       ...agent,
-      isEnabled: settingsMap.get(agent.agentId) ?? true
+      isEnabled: settingsMap.get(agent.agentId) ?? false
     }));
   }
 
