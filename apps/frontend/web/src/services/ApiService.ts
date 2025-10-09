@@ -271,9 +271,15 @@ class ApiService {
 
     const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
 
+    // Map fields from API format (snake_case/lowercase) to frontend format (camelCase)
+    const mapLegalEntity = (item: any) => ({
+      ...item,
+      pIva: item.piva || item.pIva,
+    });
+
     // Extract successful results, fallback to empty arrays for failures
     const legalEntities = legalEntitiesResult.status === 'fulfilled' && legalEntitiesResult.value.success 
-      ? legalEntitiesResult.value.data : [];
+      ? (legalEntitiesResult.value.data || []).map(mapLegalEntity) : [];
     
     const users = usersResult.status === 'fulfilled' && usersResult.value.success 
       ? usersResult.value.data : [];
