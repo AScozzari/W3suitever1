@@ -11,7 +11,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq } from 'drizzle-orm';
-import { aiSettings } from '../db/schema/w3suite';
+import { aiSettings, aiAgentTenantSettings } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import OpenAI from 'openai';
 
@@ -354,6 +354,89 @@ router.post('/test-connection', rbacMiddleware, requirePermission('workflow.mana
       success: false,
       error: 'Connection test failed',
       message: error.message || 'Invalid API key or network error',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/ai/agents/:agentId/toggle
+ * Enable or disable a specific AI agent for the current tenant
+ */
+router.put('/agents/:agentId/toggle', rbacMiddleware, requirePermission('workflow.manage'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { agentId } = req.params;
+    
+    const toggleSchema = z.object({
+      isEnabled: z.boolean()
+    });
+
+    const validation = toggleSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => i.message).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { isEnabled } = validation.data;
+
+    await setTenantContext(tenantId);
+
+    // UPSERT: Insert or update agent settings for this tenant
+    const [result] = await db
+      .insert(aiAgentTenantSettings)
+      .values({
+        tenantId,
+        agentId,
+        isEnabled,
+        updatedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: [aiAgentTenantSettings.tenantId, aiAgentTenantSettings.agentId],
+        set: {
+          isEnabled,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+
+    logger.info('AI agent toggle updated', { 
+      tenantId, 
+      agentId, 
+      isEnabled,
+      settingId: result.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: `Agent ${agentId} ${isEnabled ? 'enabled' : 'disabled'} successfully`,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof result>);
+
+  } catch (error: any) {
+    logger.error('Error toggling AI agent', { 
+      error: error.message, 
+      tenantId: req.user?.tenantId,
+      agentId: req.params.agentId
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
