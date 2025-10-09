@@ -204,6 +204,84 @@ Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, p
       })
       .onConflictDoNothing();
 
+    // Create Workflow Builder AI Agent - Specializzato in generazione DSL/JSON workflow
+    await db.insert(aiAgentsRegistry)
+      .values({
+        agentId: "workflow-builder-ai",
+        name: "AI Workflow Builder",
+        description: "Assistente AI specializzato nella generazione automatica di workflow DSL/JSON da descrizioni in linguaggio naturale. Genera strutture ReactFlow validate con nodi e collegamenti configurati.",
+        systemPrompt: `Sei un esperto di automazione workflow. Il tuo compito è generare SOLO un oggetto JSON valido che rappresenta un workflow ReactFlow.
+
+**IMPORTANTE**: Devi rispondere ESCLUSIVAMENTE con JSON valido, senza alcun testo aggiuntivo, spiegazioni o formattazione Markdown.
+
+Tipi di Nodi Disponibili:
+- send-email: Invio email di notifica
+- approve-request: Richiesta approvazione con escalation
+- auto-approval: Approvazione automatica basata su regole
+- decision-evaluator: Valutazione condizioni e routing
+- create-task: Creazione nuovi task
+- ai-decision: Decisione basata su AI
+- form-trigger: Trigger da invio form
+- task-trigger: Trigger da eventi task
+
+Formato Output (JSON obbligatorio):
+{
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "send-email",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "label": "Invia Email",
+        "config": {
+          "to": ["user@example.com"],
+          "subject": "Oggetto",
+          "template": "notification"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "node-1",
+      "target": "node-2",
+      "sourceHandle": "output",
+      "targetHandle": "input"
+    }
+  ]
+}
+
+Regole:
+1. ID nodi sequenziali (node-1, node-2, etc.)
+2. Posiziona nodi verticalmente con spaziatura 200px (x: 100, y: 100, 300, 500...)
+3. Crea edges per connettere nodi in ordine logico
+4. Usa tipi di nodo appropriati per la logica del workflow
+5. Rispondi SOLO con JSON valido, nessuna spiegazione`,
+        personality: {
+          tone: "technical",
+          style: "precise",
+          expertise: "workflow_dsl_generation",
+          output_format: "json_only",
+          language: "italian"
+        },
+        moduleContext: "workflow",
+        baseConfiguration: {
+          default_model: "gpt-4-turbo",
+          temperature: 0.3,
+          max_tokens: 2000,
+          features: ["json_mode", "structured_output"],
+          response_format: "json_object"
+        },
+        version: 1,
+        status: "active",
+        isLegacy: false,
+        targetTenants: null,
+        brandTenantId: tenantId,
+        createdBy: null
+      })
+      .onConflictDoNothing();
+
     // Create Tippy Sales Agent (legacy compatibility)
     await db.insert(aiAgentsRegistry)
       .values({
@@ -241,6 +319,7 @@ Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, p
     console.log("  - brand.national@windtre.it (password: Brand123!) - National Manager");
     console.log("🤖 AI Agents Registry:");
     console.log("  - workflow-assistant: AI Workflow Router (centralizzato)");
+    console.log("  - workflow-builder-ai: AI Workflow Builder (generazione DSL/JSON)");
     console.log("  - tippy-sales: Sales Assistant (legacy compatibility)");
     
   } catch (error) {
