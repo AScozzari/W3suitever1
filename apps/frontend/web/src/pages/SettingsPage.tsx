@@ -1741,11 +1741,13 @@ export default function SettingsPage() {
     return getCurrentRolePermissions().includes(permission);
   };
 
-  // Check if all permissions in a category are enabled
+  // Check if category switch should be ON (at least one permission is enabled)
   const isCategoryEnabled = (category: string): boolean => {
     const categoryPermissions = organizePermissionsByCategory(rbacPermissionsData?.permissions || [])
       .find(cat => cat.category === category)?.permissions || [];
-    return categoryPermissions.length > 0 && categoryPermissions.every(perm => isPermissionEnabled(perm));
+    // Switch is ON if at least ONE permission is enabled, not ALL
+    // This prevents the switch from turning OFF when user manually disables a single microservice
+    return categoryPermissions.length > 0 && categoryPermissions.some(perm => isPermissionEnabled(perm));
   };
 
   // Toggle individual permission
