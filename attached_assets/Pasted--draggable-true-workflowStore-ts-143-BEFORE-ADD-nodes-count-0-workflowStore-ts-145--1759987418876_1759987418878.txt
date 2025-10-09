@@ -1,0 +1,64 @@
+…}, draggable: true, …}
+workflowStore.ts:143 🏪 BEFORE ADD: nodes count = 0
+workflowStore.ts:145 🏪 AFTER ADD: nodes count = 1
+workflowStore.ts:148 🏪 FINAL STATE: nodes = [{…}]
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-DST26WPP.js?v=6e75a53d:335:29)
+    at chunk-DST26WPP.js?v=6e75a53d:239:13
+    at chunk-DST26WPP.js?v=6e75a53d:162:58
+    at Presence (chunk-4346QGOE.js?v=6e75a53d:24:11)
+    at chunk-DST26WPP.js?v=6e75a53d:153:64
+    at chunk-TCRT5IO7.js?v=6e75a53d:43:13
+    at chunk-TCRT5IO7.js?v=6e75a53d:20:13
+    at chunk-7JN5FQRM.js?v=6e75a53d:42:13
+    at chunk-Z6HBWYGQ.js?v=6e75a53d:244:22
+    at Presence (chunk-4346QGOE.js?v=6e75a53d:24:11)
+    at Provider (chunk-3WVMON5O.js?v=6e75a53d:38:15)
+    at DialogPortal (chunk-DST26WPP.js?v=6e75a53d:115:11)
+    at _c3 (sheet.tsx:57:6)
+    at Provider (chunk-3WVMON5O.js?v=6e75a53d:38:15)
+    at Dialog (chunk-DST26WPP.js?v=6e75a53d:56:5)
+    at AIWorkflowChatModal (AIWorkflowChatModal.tsx:21:39)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:84:35)
+    at BatchProvider (@xyflow_react.js?v=6e75a53d:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=6e75a53d:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:116:50)
+    at AuthenticatedRoute (TenantShell.tsx:358:72)
+    at Route (wouter.js?v=6e75a53d:206:16)
+    at Switch (wouter.js?v=6e75a53d:262:17)
+    at TenantRoutes (TenantShell.tsx:186:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:41:59)
+    at Route (wouter.js?v=6e75a53d:206:16)
+    at Switch (wouter.js?v=6e75a53d:262:17)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=6e75a53d:3081:3)
+    at App (App.tsx:36:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-DST26WPP.js?v=6e75a53d:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=6e75a53d:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=6e75a53d:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=6e75a53d:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=6e75a53d:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=6e75a53d:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=6e75a53d:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=6e75a53d:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=6e75a53d:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=6e75a53d:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=6e75a53d:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=6e75a53d:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=6e75a53d:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
