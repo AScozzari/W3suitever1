@@ -111,7 +111,7 @@ function Router() {
           const tenantSlug = params.tenant;
           
           // Validation tenant slug - Exclude reserved paths
-          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api' || tenantSlug === 'workflows' || tenantSlug === 'tasks') {
+          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api' || tenantSlug === 'workflows' || tenantSlug === 'tasks' || tenantSlug === 'impostazioni' || tenantSlug === 'settings') {
             console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
             return <NotFound />;
           }

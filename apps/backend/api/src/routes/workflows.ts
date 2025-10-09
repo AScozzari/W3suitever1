@@ -1140,7 +1140,7 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
 
     // Validate request body
     const aiGenerateSchema = z.object({
-      prompt: z.string().min(10, 'Prompt must be at least 10 characters'),
+      prompt: z.string().min(3, 'Prompt must be at least 3 characters'),
       context: z.object({
         department: z.string().optional(),
         category: z.string().optional()
