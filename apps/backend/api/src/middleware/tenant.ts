@@ -4,6 +4,35 @@ import { tenants, userAssignments, roles, rolePerms, userExtraPerms } from '../d
 import { eq, and, or, sql } from 'drizzle-orm';
 import { rbacStorage } from '../core/rbac-storage';
 
+// 🚀 PERFORMANCE FIX: In-memory cache for tenant resolution
+// Prevents redundant DB queries when multiple API calls are made in parallel
+interface TenantCacheEntry {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  timestamp: number;
+}
+
+const tenantCache = new Map<string, TenantCacheEntry>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache TTL
+
+// Helper to check if cache entry is still valid
+function isCacheValid(entry: TenantCacheEntry): boolean {
+  return Date.now() - entry.timestamp < CACHE_TTL_MS;
+}
+
+// Helper to clear expired entries periodically (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of tenantCache.entries()) {
+    if (now - entry.timestamp >= CACHE_TTL_MS) {
+      tenantCache.delete(key);
+      console.log(`[TENANT-CACHE] Expired cache for tenant: ${key}`);
+    }
+  }
+}, 10 * 60 * 1000);
+
 declare global {
   namespace Express {
     interface Request {
@@ -97,34 +126,54 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       });
     }
     
-    // SECURITY FIX: Query tenant by UUID (not slug) for proper tenant isolation
-    const tenantResult = await db
-      .select({
-        id: tenants.id,
-        name: tenants.name,
-        slug: tenants.slug,
-        status: tenants.status
-      })
-      .from(tenants)
-      .where(and(
-        eq(tenants.id, tenantId),
-        eq(tenants.status, 'active')
-      ))
-      .limit(1);
+    // 🚀 PERFORMANCE: Check cache first
+    const cachedTenant = tenantCache.get(tenantId);
+    let tenant: { id: string; name: string; slug: string | null; status: string };
     
-    console.log(`[TENANT-DB-QUERY] Searching for tenant UUID: ${tenantId}`);
-    console.log(`[TENANT-DB-RESULT] Found ${tenantResult.length} tenant(s)`);
-    
-    if (tenantResult.length === 0) {
-      console.error(`[TENANT-ERROR] Tenant not found for UUID: ${tenantId}`);
-      return res.status(404).json({ 
-        error: 'TENANT_NOT_FOUND',
-        message: 'Tenant not found or inactive',
-        tenantId: tenantId
+    if (cachedTenant && isCacheValid(cachedTenant)) {
+      // Cache hit - use cached tenant
+      tenant = cachedTenant;
+      console.log(`[TENANT-CACHE-HIT] Using cached tenant: ${tenant.name} (${tenant.id})`);
+    } else {
+      // Cache miss - query database
+      console.log(`[TENANT-CACHE-MISS] Querying database for tenant: ${tenantId}`);
+      
+      const tenantResult = await db
+        .select({
+          id: tenants.id,
+          name: tenants.name,
+          slug: tenants.slug,
+          status: tenants.status
+        })
+        .from(tenants)
+        .where(and(
+          eq(tenants.id, tenantId),
+          eq(tenants.status, 'active')
+        ))
+        .limit(1);
+      
+      console.log(`[TENANT-DB-QUERY] Searching for tenant UUID: ${tenantId}`);
+      console.log(`[TENANT-DB-RESULT] Found ${tenantResult.length} tenant(s)`);
+      
+      if (tenantResult.length === 0) {
+        console.error(`[TENANT-ERROR] Tenant not found for UUID: ${tenantId}`);
+        return res.status(404).json({ 
+          error: 'TENANT_NOT_FOUND',
+          message: 'Tenant not found or inactive',
+          tenantId: tenantId
+        });
+      }
+      
+      tenant = tenantResult[0];
+      
+      // Cache the tenant for future requests
+      tenantCache.set(tenantId, {
+        ...tenant,
+        slug: tenant.slug || '',
+        timestamp: Date.now()
       });
+      console.log(`[TENANT-CACHE-SET] Cached tenant: ${tenant.name} (${tenant.id})`);
     }
-    
-    const tenant = tenantResult[0];
     req.tenant = {
       id: tenant.id,
       name: tenant.name,
