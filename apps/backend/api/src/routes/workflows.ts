@@ -1304,7 +1304,17 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
 
     // Validate request body
     const aiGenerateSchema = z.object({
-      prompt: z.string().min(3, 'Prompt must be at least 3 characters'),
+      taskReminder: z.object({
+        workflowType: z.string(),
+        trigger: z.string(),
+        approver: z.string(),
+        teamsInvolved: z.array(z.string()).optional(),
+        flow: z.string(),
+        notifications: z.string().optional(),
+        businessRules: z.string().optional(),
+        sla: z.string().optional()
+      }),
+      originalPrompt: z.string().optional(),
       context: z.object({
         department: z.string().optional(),
         category: z.string().optional()
@@ -1321,12 +1331,13 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
       } as ApiErrorResponse);
     }
 
-    const { prompt, context } = validationResult.data;
+    const { taskReminder, originalPrompt, context } = validationResult.data;
 
     logger.info('🤖 [AI Generate] Starting workflow generation', {
       tenantId,
       userId,
-      promptLength: prompt.length,
+      taskReminder,
+      originalPrompt,
       context
     });
 
@@ -1346,8 +1357,20 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
       } as ApiErrorResponse);
     }
 
-    // Build system prompt - MUST explicitly mention JSON for response_format to work
-    const userPrompt = `Genera un workflow JSON per: ${prompt}${context?.department ? `\nReparto: ${context.department}` : ''}`;
+    // Build comprehensive prompt from task reminder
+    const userPrompt = `Genera un workflow JSON completo con queste specifiche:
+
+Tipo Workflow: ${taskReminder.workflowType}
+Trigger: ${taskReminder.trigger}
+Approver: ${taskReminder.approver}
+Team Coinvolti: ${taskReminder.teamsInvolved?.join(', ') || 'N/A'}
+Flow Type: ${taskReminder.flow}
+${taskReminder.notifications ? `Notifiche: ${taskReminder.notifications}` : ''}
+${taskReminder.businessRules ? `Regole Business: ${taskReminder.businessRules}` : ''}
+${taskReminder.sla ? `SLA: ${taskReminder.sla}` : ''}
+${context?.department ? `\nReparto: ${context.department}` : ''}
+
+Genera un workflow ReactFlow JSON con nodi e collegamenti configurati correttamente.`;
 
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);

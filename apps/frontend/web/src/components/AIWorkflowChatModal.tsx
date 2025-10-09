@@ -96,11 +96,12 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
 
   // Phase 2: Generation
   const generateMutation = useMutation({
-    mutationFn: async (userPrompt: string) => {
+    mutationFn: async ({ taskReminder, originalPrompt }: { taskReminder: any; originalPrompt: string }) => {
       const response = await apiRequest('/api/workflows/ai-generate', {
         method: 'POST',
         body: JSON.stringify({
-          prompt: userPrompt,
+          taskReminder: taskReminder,
+          originalPrompt: originalPrompt,
           context: {}
         })
       });
@@ -152,15 +153,28 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
   };
 
   const handleGenerateTemplate = () => {
-    if (!currentUserPrompt) return;
+    // Find the task reminder from the last complete assistant message
+    const lastCompleteMessage = messages
+      .slice()
+      .reverse()
+      .find(msg => msg.role === 'assistant' && msg.taskReminder);
 
-    // Phase 2: Generate workflow JSON
+    if (!lastCompleteMessage?.taskReminder) {
+      console.error('No task reminder found');
+      return;
+    }
+
+    // Phase 2: Generate workflow JSON with full task reminder context
     setMessages(prev => [
       ...prev,
       { role: 'user', content: '🎯 Genera il template del workflow' }
     ]);
     
-    generateMutation.mutate(currentUserPrompt);
+    // Pass the complete task reminder to the generator
+    generateMutation.mutate({ 
+      taskReminder: lastCompleteMessage.taskReminder,
+      originalPrompt: currentUserPrompt 
+    });
   };
 
   const handleApplyToCanvas = () => {
