@@ -1229,14 +1229,24 @@ router.post('/ai-analyze', rbacMiddleware, requirePermission('workflow.create'),
       } as ApiErrorResponse);
     }
 
-    // Parse JSON response from AI
+    // Parse JSON response from AI (clean markdown code blocks first)
     let parsedAnalysis;
     try {
-      parsedAnalysis = JSON.parse(aiResponse.output);
+      let cleanedOutput = aiResponse.output.trim();
+      
+      // Remove markdown code blocks if present
+      if (cleanedOutput.startsWith('```json')) {
+        cleanedOutput = cleanedOutput.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (cleanedOutput.startsWith('```')) {
+        cleanedOutput = cleanedOutput.replace(/```\n?/g, '');
+      }
+      
+      parsedAnalysis = JSON.parse(cleanedOutput.trim());
     } catch (parseError) {
       logger.warn('🤖 [AI Analyze] AI returned non-JSON response, using raw text', {
         tenantId,
-        outputPreview: aiResponse.output.substring(0, 100)
+        outputPreview: aiResponse.output.substring(0, 100),
+        error: parseError
       });
       parsedAnalysis = null;
     }
