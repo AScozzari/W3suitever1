@@ -296,9 +296,34 @@ export default function AISettingsPage() {
 
   useEffect(() => {
     if (settings?.data) {
-      setFormData(settings.data);
+      // ✅ FIX: Ensure all fields are properly mapped from backend
+      setFormData({
+        ...settings.data,
+        // Explicitly ensure isActive is set (backend returns it)
+        isActive: settings.data.isActive !== undefined ? settings.data.isActive : true,
+        // Ensure apiConnectionStatus is set
+        apiConnectionStatus: settings.data.apiConnectionStatus || 'disconnected'
+      });
+    } else if (settingsError && !settingsLoading) {
+      // If no settings exist yet (404), set default values for initial setup
+      setFormData({
+        isActive: false,
+        apiConnectionStatus: 'disconnected',
+        featuresEnabled: {
+          chat_assistant: true,
+          document_analysis: true,
+          financial_forecasting: false,
+          web_search: false,
+          code_interpreter: false,
+        },
+        privacySettings: {
+          dataRetentionDays: 30,
+          allowDataTraining: false,
+          anonymizeConversations: true,
+        }
+      });
     }
-  }, [settings]);
+  }, [settings, settingsError, settingsLoading]);
 
   // Test API connection (🔧 FIX: Auto-save before test to persist API key)
   const testApiConnection = async () => {
