@@ -45,7 +45,8 @@ import {
   X,
   Brain,
   Undo2,
-  Redo2
+  Redo2,
+  PlayCircle
 } from 'lucide-react';
 
 import { useWorkflowStore } from '../stores/workflowStore';
@@ -308,6 +309,10 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
 
+  // 🧪 TEST RUN STATE
+  const [isTestRunning, setIsTestRunning] = useState(false);
+  const [testRunResult, setTestRunResult] = useState<any | null>(null);
+
   // 💾 SMART SAVE: CREATE vs UPDATE TEMPLATE
   const handleSaveWorkflow = () => {
     if (nodes.length === 0) {
@@ -406,6 +411,64 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       }
     };
     reader.readAsText(file);
+  };
+
+  // 🧪 TEST RUN HANDLER
+  const handleTestRun = async () => {
+    if (nodes.length === 0) {
+      alert('⚠️ Il workflow è vuoto. Aggiungi almeno un nodo prima di testarlo.');
+      return;
+    }
+
+    setIsTestRunning(true);
+    setTestRunResult(null);
+
+    try {
+      // Clean nodes data before sending (remove functions)
+      const cleanNodes = nodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          onConfigClick: undefined
+        }
+      }));
+
+      const response = await fetch('/api/workflows/test-run', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          nodes: cleanNodes,
+          edges,
+          testName: templateData?.name || 'Test Run'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Test run completed:', result);
+        setTestRunResult(result);
+      } else {
+        console.error('❌ Test run failed:', result);
+        setTestRunResult({ 
+          success: false, 
+          error: result.error || 'Test run failed',
+          message: result.message 
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Test run request failed:', error);
+      setTestRunResult({ 
+        success: false, 
+        error: 'Network error',
+        message: error.message || 'Failed to connect to server' 
+      });
+    } finally {
+      setIsTestRunning(false);
+    }
   };
 
   const handleAIWorkflowGenerated = useCallback((workflowJson: any) => {
@@ -1225,6 +1288,18 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                 data-testid="button-reset"
               >
                 <RotateCcw className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestRun}
+                disabled={isTestRunning || nodes.length === 0}
+                className="text-green-600 hover:text-green-700 hover:bg-green-50 disabled:opacity-50"
+                title="Test workflow execution"
+                data-testid="button-test-run"
+              >
+                <PlayCircle className="h-4 w-4" />
               </Button>
               
               <Separator orientation="vertical" className="h-6" />
