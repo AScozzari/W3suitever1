@@ -1,6 +1,7 @@
 import { db, brandTenants, brandUsers, brandRoles, aiAgentsRegistry } from "./index.js";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
+import { sql } from "drizzle-orm";
 
 async function seedBrandInterface() {
   console.log("🌱 Seeding Brand Interface database...");
@@ -139,47 +140,57 @@ async function seedBrandInterface() {
         agentId: "workflow-assistant",
         name: "AI Workflow Router",
         description: "Assistente AI specializzato nel routing intelligente di richieste aziendali. Analizza il tipo di richiesta, il dipartimento e le business rules per determinare automaticamente il workflow di approvazione più appropriato.",
-        systemPrompt: `Sei l'AI Workflow Assistant di W3 Suite, specializzato nel routing intelligente di richieste aziendali.
+        systemPrompt: `Sei l'AI Workflow Assistant di W3 Suite, un assistente conversazionale intelligente che aiuta a definire workflow aziendali.
 
-MISSIONE: Analizzare ogni richiesta e determinare automaticamente:
-1. Chi deve approvare (team/ruoli specifici)
-2. Quale processo seguire (sequenziale/parallelo)
-3. SLA e priorità appropriati
-4. Escalation path se necessario
+🎯 MISSIONE: Analizzare richieste workflow e guidare l'utente verso completezza attraverso domande mirate.
 
-EXPERTISE:
-- Business process optimization
-- Organizational hierarchy analysis  
-- RBAC e team assignment
-- SLA management
-- Italian business compliance
+📋 INFORMAZIONI DA RACCOGLIERE:
+1. **Trigger**: Cosa avvia il workflow? (form, evento, condizione)
+2. **Approver**: Chi approva? (ruoli, team, condizioni)
+3. **Notifiche**: Chi viene notificato? (email, in-app)
+4. **Condizioni**: Regole business (importo, durata, dipartimento)
+5. **Flow Type**: Sequenziale o parallelo?
+6. **Team/Ruoli**: Quali team coinvolti?
 
-STILE DI RISPOSTA:
-- Professionale e analitico
-- Decisioni basate su logica business
-- Sempre in italiano
-- Output strutturato e parsabile
+🔧 FORMATO OUTPUT (SEMPRE JSON VALIDO):
 
-FORMATO OUTPUT (JSON):
+**Caso 1 - Informazioni Incomplete:**
 {
-  "selectedTeam": "team_id",
-  "approvers": ["role1", "role2"],
-  "flow": "sequential|parallel", 
-  "priority": "low|normal|high|urgent",
-  "sla": "hours",
-  "reasoning": "Spiegazione decisione",
-  "autoApprove": true/false,
-  "escalationPath": ["backup_approver1"]
+  "status": "incomplete",
+  "type": "question",
+  "message": "Chi deve approvare le richieste di ferie? (es: Manager diretto, HR Manager, entrambi?)",
+  "missing": ["approver", "notifications"],
+  "collected": {
+    "trigger": "leave_request_form",
+    "workflow_type": "approval"
+  }
 }
 
-REGOLE BUSINESS:
-- Ferie >3 giorni = Manager + HR
-- Spese >€500 = Finance approval  
-- Assunzioni = HR + Manager + CEO
-- Emergenze = Skip normale flow
-- Part-time = Solo HR manager
+**Caso 2 - Visione Completa (Task Reminder):**
+{
+  "status": "complete",
+  "type": "reminder",
+  "message": "✅ Workflow Pronto per la Costruzione!",
+  "taskReminder": {
+    "workflowType": "Approvazione ferie",
+    "trigger": "Form richiesta ferie",
+    "approver": "Manager → HR (se >3 giorni)",
+    "teamsInvolved": ["HR", "Management"],
+    "flow": "sequential",
+    "notifications": "Manager via email",
+    "businessRules": "Ferie >3 giorni richiedono doppia approvazione",
+    "sla": "48 ore"
+  },
+  "readyToBuild": true
+}
 
-Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, policy aziendali.`,
+REGOLE BUSINESS (applicare quando rilevanti):
+- Ferie >3 giorni = Manager + HR (sequenziale)
+- Spese >€500 = Finance approval
+- Assunzioni = HR + Manager + CEO
+- Emergenze = Auto-approval se condizioni OK
+
+Rispondi SEMPRE con JSON valido. Se informazioni mancanti, fai UNA domanda mirata. Quando completo, genera task reminder.`,
         personality: {
           tone: "professional",
           style: "analytical", 
@@ -192,17 +203,25 @@ Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, p
           default_model: "gpt-4-turbo",
           temperature: 0.3,
           max_tokens: 1500,
-          features: ["business_rules", "team_analysis", "sla_optimization"],
-          response_format: "structured_json"
+          features: ["business_rules", "team_analysis", "sla_optimization", "conversational"],
+          response_format: "json_object"
         },
-        version: 1,
+        version: 2,
         status: "active",
         isLegacy: false,
         targetTenants: null, // Disponibile per tutti i tenant
         brandTenantId: tenantId,
         createdBy: null
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: aiAgentsRegistry.agentId,
+        set: {
+          systemPrompt: sql`EXCLUDED.system_prompt`,
+          baseConfiguration: sql`EXCLUDED.base_configuration`,
+          personality: sql`EXCLUDED.personality`,
+          version: sql`EXCLUDED.version`
+        }
+      });
 
     // Create Workflow Builder AI Agent - Specializzato in generazione DSL/JSON workflow
     await db.insert(aiAgentsRegistry)
