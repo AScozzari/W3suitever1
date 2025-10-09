@@ -110,6 +110,19 @@ async function seedDatabase() {
       mfaEnabled: false
     }).onConflictDoNothing().returning();
 
+    // Create demo user  
+    console.log('Creating demo user...');
+    const [demoUser] = await db.insert(users).values({
+      id: 'demo-user',
+      email: 'demo@w3suite.com',
+      firstName: 'Demo',
+      lastName: 'User',
+      tenantId: DEMO_TENANT_ID,
+      status: 'Operativo',
+      isSystemAdmin: false,
+      mfaEnabled: false
+    }).onConflictDoNothing().returning();
+
     // 4. Create roles
     console.log('Creating roles...');
     const [adminRole, managerRole, operatorRole] = await db.insert(roles).values([
@@ -142,23 +155,26 @@ async function seedDatabase() {
       {
         id: '40000000-0000-0000-0000-000000000001',
         tenantId: DEMO_TENANT_ID,
-        name: 'WindTre Retail Milano Srl',
-        vat: 'IT12345678901',
-        status: 'Attiva'
+        codice: 'LE001',
+        nome: 'WindTre Retail Milano Srl',
+        pIva: 'IT12345678901',
+        stato: 'Attiva'
       },
       {
         id: '40000000-0000-0000-0000-000000000002',
         tenantId: DEMO_TENANT_ID,
-        name: 'Digital Services Italia Spa',
-        vat: 'IT98765432101',
-        status: 'Attiva'
+        codice: 'LE002',
+        nome: 'Digital Services Italia Spa',
+        pIva: 'IT98765432101',
+        stato: 'Attiva'
       },
       {
         id: '40000000-0000-0000-0000-000000000003',
         tenantId: DEMO_TENANT_ID,
-        name: 'Telecom Solutions Sas',
-        vat: 'IT11223344556',
-        status: 'Sospesa'
+        codice: 'LE003',
+        nome: 'Telecom Solutions Sas',
+        pIva: 'IT11223344556',
+        stato: 'Sospesa'
       }
     ]).onConflictDoNothing().returning();
 
@@ -171,12 +187,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000001',
         code: 'MI001',
-        name: 'Milano Duomo',
+        nome: 'Milano Duomo',
         channelId: '10000000-0000-0000-0000-000000000004', // Flagship
         commercialAreaId: '20000000-0000-0000-0000-000000000001', // Nord Ovest
         address: 'Piazza Duomo, 1',
-        city: 'Milano',
-        province: 'MI',
+        citta: 'Milano',
+        provincia: 'MI',
         cap: '20121',
         region: 'Lombardia',
         status: 'Attivo'
@@ -186,12 +202,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000001',
         code: 'MI002',
-        name: 'Milano Corso Buenos Aires',
+        nome: 'Milano Corso Buenos Aires',
         channelId: '10000000-0000-0000-0000-000000000001', // Franchising
         commercialAreaId: '20000000-0000-0000-0000-000000000001', // Nord Ovest
         address: 'Corso Buenos Aires, 33',
-        city: 'Milano',
-        province: 'MI',
+        citta: 'Milano',
+        provincia: 'MI',
         cap: '20124',
         region: 'Lombardia',
         status: 'Attivo'
@@ -202,12 +218,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000002',
         code: 'RM001',
-        name: 'Roma Termini',
+        nome: 'Roma Termini',
         channelId: '10000000-0000-0000-0000-000000000002', // Top Dealer
         commercialAreaId: '20000000-0000-0000-0000-000000000003', // Centro
         address: 'Via Marsala, 25',
-        city: 'Roma',
-        province: 'RM',
+        citta: 'Roma',
+        provincia: 'RM',
         cap: '00185',
         region: 'Lazio',
         status: 'Attivo'
@@ -217,12 +233,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000002',
         code: 'NA001',
-        name: 'Napoli Centro',
+        nome: 'Napoli Centro',
         channelId: '10000000-0000-0000-0000-000000000003', // Dealer
         commercialAreaId: '20000000-0000-0000-0000-000000000004', // Sud
         address: 'Via Toledo, 148',
-        city: 'Napoli',
-        province: 'NA',
+        citta: 'Napoli',
+        provincia: 'NA',
         cap: '80134',
         region: 'Campania',
         status: 'Attivo'
@@ -233,12 +249,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000003',
         code: 'TO001',
-        name: 'Torino Porta Nuova',
+        nome: 'Torino Porta Nuova',
         channelId: '10000000-0000-0000-0000-000000000001', // Franchising
         commercialAreaId: '20000000-0000-0000-0000-000000000001', // Nord Ovest
         address: 'Corso Vittorio Emanuele II, 52',
-        city: 'Torino',
-        province: 'TO',
+        citta: 'Torino',
+        provincia: 'TO',
         cap: '10123',
         region: 'Piemonte',
         status: 'Sospeso'
@@ -284,6 +300,13 @@ async function seedDatabase() {
       {
         userId: ADMIN_USER_ID,
         roleId: '30000000-0000-0000-0000-000000000001', // Amministratore
+        scopeType: 'tenant',
+        scopeId: DEMO_TENANT_ID
+      },
+      // Demo user - Store Manager level
+      {
+        userId: 'demo-user',
+        roleId: '30000000-0000-0000-0000-000000000002', // Store Manager
         scopeType: 'tenant',
         scopeId: DEMO_TENANT_ID
       },

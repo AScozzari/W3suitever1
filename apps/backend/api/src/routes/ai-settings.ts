@@ -373,7 +373,7 @@ router.post('/test-connection', rbacMiddleware, requirePermission('workflow.mana
 
 /**
  * GET /api/ai/agents
- * Get list of available AI agents with their tenant-specific settings
+ * Get AI agents from Brand Interface central registry with tenant-specific settings
  */
 router.get('/agents', rbacMiddleware, requirePermission('workflow.view'), async (req, res) => {
   try {
@@ -386,103 +386,17 @@ router.get('/agents', rbacMiddleware, requirePermission('workflow.view'), async 
       } as ApiErrorResponse);
     }
 
-    // Hardcoded list of available agents (will be replaced with DB query later)
-    const availableAgents = [
-      {
-        id: 'tippy-sales-id',
-        agentId: 'tippy-sales',
-        name: 'Tippy - Sales Assistant',
-        description: 'Assistente vendite WindTre specializzato in supporto commerciale',
-        systemPrompt: 'Sei Tippy, assistente AI specializzato nel supporto vendite WindTre.',
-        personality: {
-          tone: 'friendly',
-          style: 'professional',
-          expertise: 'sales',
-          brand: 'windtre'
-        },
-        moduleContext: 'sales',
-        baseConfiguration: {
-          model: 'gpt-4-turbo',
-          maxTokens: 1000,
-          temperature: 0.7
-        },
-        version: 1,
-        status: 'active',
-        isEnabled: true, // Default enabled for new tenants
-        isLegacy: false
-      },
-      {
-        id: 'hr-assistant-id',
-        agentId: 'hr-assistant',
-        name: 'HR Assistant',
-        description: 'Assistente HR per gestione risorse umane e workflow',
-        systemPrompt: 'Sei un assistente HR specializzato nella gestione del personale.',
-        personality: {
-          tone: 'professional',
-          style: 'supportive',
-          expertise: 'hr',
-          brand: 'windtre'
-        },
-        moduleContext: 'hr',
-        baseConfiguration: {
-          model: 'gpt-4-turbo',
-          maxTokens: 1500,
-          temperature: 0.6
-        },
-        version: 1,
-        status: 'active',
-        isEnabled: true,
-        isLegacy: false
-      },
-      {
-        id: 'finance-analyst-id',
-        agentId: 'finance-analyst',
-        name: 'Finance Analyst',
-        description: 'Analista finanziario per reportistica e previsioni',
-        systemPrompt: 'Sei un analista finanziario specializzato in analisi dati e reportistica.',
-        personality: {
-          tone: 'analytical',
-          style: 'precise',
-          expertise: 'finance',
-          brand: 'windtre'
-        },
-        moduleContext: 'finance',
-        baseConfiguration: {
-          model: 'gpt-4-turbo',
-          maxTokens: 2000,
-          temperature: 0.3
-        },
-        version: 1,
-        status: 'active',
-        isEnabled: false,
-        isLegacy: false
-      },
-      {
-        id: 'crm-specialist-id',
-        agentId: 'crm-specialist',
-        name: 'CRM Specialist',
-        description: 'Specialista CRM per gestione clienti e campagne',
-        systemPrompt: 'Sei uno specialista CRM per la gestione dei rapporti con i clienti.',
-        personality: {
-          tone: 'empathetic',
-          style: 'customer-focused',
-          expertise: 'crm',
-          brand: 'windtre'
-        },
-        moduleContext: 'crm',
-        baseConfiguration: {
-          model: 'gpt-4-turbo',
-          maxTokens: 1200,
-          temperature: 0.7
-        },
-        version: 1,
-        status: 'active',
-        isEnabled: false,
-        isLegacy: false
-      }
-    ];
+    // Import Brand Interface database connection for central registry
+    const { db: brandDB, aiAgentsRegistry } = await import('../../../brand-api/src/db/index.js');
+    const { eq: brandEq } = await import('drizzle-orm');
+    
+    // Query active agents from Brand Interface central registry
+    const registryAgents = await brandDB
+      .select()
+      .from(aiAgentsRegistry)
+      .where(brandEq(aiAgentsRegistry.status, 'active'));
 
-    // Check tenant-specific agent settings from aiAgentTenantSettings table
+    // Set tenant context for W3Suite queries
     await setTenantContext(tenantId);
     
     // Get tenant-specific agent settings if they exist
@@ -491,28 +405,35 @@ router.get('/agents', rbacMiddleware, requirePermission('workflow.view'), async 
       .from(aiAgentTenantSettings)
       .where(eq(aiAgentTenantSettings.tenantId, tenantId));
 
-    // Merge tenant settings with available agents
-    const agentsWithTenantSettings = availableAgents.map(agent => {
-      const tenantSetting = tenantAgentSettings.find(s => s.agentId === agent.agentId);
-      return {
-        ...agent,
-        isEnabled: tenantSetting ? tenantSetting.isEnabled : agent.isEnabled
-      };
-    });
+    // Create settings map for quick lookup
+    const settingsMap = new Map(
+      tenantAgentSettings.map(setting => [setting.agentId, setting.isEnabled])
+    );
 
-    logger.info('AI agents retrieved', { 
+    // Merge registry agents with tenant-specific settings
+    const agentsWithTenantSettings = registryAgents.map(agent => ({
+      ...agent,
+      // Default to enabled for tippy-sales, disabled for others unless explicitly set
+      isEnabled: settingsMap.get(agent.agentId) ?? (agent.agentId === 'tippy-sales')
+    }));
+
+    logger.info('AI agents retrieved from Brand Interface registry', { 
       tenantId, 
-      agentCount: agentsWithTenantSettings.length 
+      agentCount: agentsWithTenantSettings.length,
+      agents: agentsWithTenantSettings.map(a => a.agentId)
     });
 
     // Return as array directly (not wrapped in data object) to match frontend expectation
     res.status(200).json(agentsWithTenantSettings);
 
   } catch (error: any) {
-    logger.error('Error retrieving AI agents', { error, tenantId: req.user?.tenantId });
+    logger.error('Error retrieving AI agents from Brand Interface registry', { 
+      error: error.message, 
+      tenantId: req.user?.tenantId 
+    });
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: 'Failed to retrieve AI agents from central registry',
       message: error.message,
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
