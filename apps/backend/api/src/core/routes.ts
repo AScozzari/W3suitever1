@@ -16,6 +16,7 @@ import mcpCredentialsRoutes from "../routes/mcp-credentials";
 import { aiSettingsRoutes } from "../routes/ai-settings";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
+import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
 import { createHmac, timingSafeEqual } from "crypto";
 import jwt from "jsonwebtoken";
@@ -12089,7 +12090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // AI Chat Assistant (enhanced with RAG and Web Search)
-  app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), async (req: any, res) => {
+  app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), enforceAIEnabled, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
@@ -12300,7 +12301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // AI Document Analysis
-  app.post('/api/ai/analyze-document', ...authWithRBAC, requirePermission('ai.documents.analyze'), async (req: any, res) => {
+  app.post('/api/ai/analyze-document', ...authWithRBAC, requirePermission('ai.documents.analyze'), enforceAIEnabled, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
@@ -12753,7 +12754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Process URL for Agent-Specific Training
-  app.post('/api/ai/agents/:agentId/training/url', ...authWithRBAC, requirePermission('ai.training.url'), async (req: any, res) => {
+  app.post('/api/ai/agents/:agentId/training/url', ...authWithRBAC, requirePermission('ai.training.url'), ...enforceAIWithAgent, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
@@ -12862,6 +12863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/ai/agents/:agentId/training/media', 
     ...authWithRBAC, 
     requirePermission('ai.training.media'),
+    ...enforceAIWithAgent,
     trainingUpload.single('file'),
     async (req: any, res) => {
       try {
@@ -12997,7 +12999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AGENT-SPECIFIC TRAINING ENDPOINTS ====================
   
   // Get Agent-Specific Training Sessions
-  app.get('/api/ai/agents/:agentId/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
+  app.get('/api/ai/agents/:agentId/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), ...enforceAIWithAgent, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const { agentId } = req.params;
@@ -13034,7 +13036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get Agent-Specific Training Statistics
-  app.get('/api/ai/agents/:agentId/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
+  app.get('/api/ai/agents/:agentId/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), ...enforceAIWithAgent, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const { agentId } = req.params;
