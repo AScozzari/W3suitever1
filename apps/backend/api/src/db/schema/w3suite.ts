@@ -3338,6 +3338,9 @@ export const aiSettings = w3suiteSchema.table("ai_settings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   
+  // AI Activation Control
+  isActive: boolean("is_active").default(true).notNull(), // Master switch for AI features
+  
   // Model Configuration
   openaiModel: aiModelEnum("openai_model").default('gpt-4-turbo').notNull(),
   openaiApiKey: text("openai_api_key"), // Encrypted storage for tenant-specific API key
