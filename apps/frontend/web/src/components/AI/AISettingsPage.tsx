@@ -363,7 +363,15 @@ export default function AISettingsPage() {
 
   const handleSave = () => {
     setSaveStatus('saving');
-    updateSettingsMutation.mutate(formData);
+    
+    // 🔒 SECURITY: Don't send masked API key to backend
+    const dataToSave = { ...formData };
+    if (dataToSave.openaiApiKey?.includes('*')) {
+      // API key is masked, don't include it in the update
+      delete dataToSave.openaiApiKey;
+    }
+    
+    updateSettingsMutation.mutate(dataToSave);
   };
 
   const handleFeatureToggle = (feature: keyof AISettings['featuresEnabled']) => {
@@ -552,7 +560,12 @@ export default function AISettingsPage() {
               {formData.isActive ? 'Attivo' : 'Disattivo'}
             </span>
             <button
-              onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
+              onClick={() => {
+                const newIsActive = !formData.isActive;
+                setFormData(prev => ({ ...prev, isActive: newIsActive }));
+                // Auto-save when toggling AI active status
+                updateSettingsMutation.mutate({ isActive: newIsActive });
+              }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
                 formData.isActive ? 'bg-[#FF6900]' : 'bg-gray-200'
               }`}
@@ -586,7 +599,7 @@ export default function AISettingsPage() {
               type={apiKeyVisible ? 'text' : 'password'}
               value={formData.openaiApiKey || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, openaiApiKey: e.target.value }))}
-              placeholder="sk-..."
+              placeholder={formData.openaiApiKey?.includes('*') ? 'Chiave esistente (mascherata per sicurezza)' : 'sk-...'}
               className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
               data-testid="input-openai-api-key"
             />
@@ -599,9 +612,16 @@ export default function AISettingsPage() {
               {apiKeyVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Ogni tenant può avere la propria chiave API. I dati vengono crittografati nel database.
-          </p>
+          {formData.openaiApiKey?.includes('*') ? (
+            <p className="text-xs text-blue-600 mt-1 flex items-center">
+              <span className="mr-1">🔒</span>
+              La chiave API è mascherata per sicurezza. Puoi inserire una nuova chiave per sostituirla.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-500 mt-1">
+              Ogni tenant può avere la propria chiave API. I dati vengono crittografati nel database.
+            </p>
+          )}
         </div>
 
         {/* Connection Test */}

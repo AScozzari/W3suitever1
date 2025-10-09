@@ -54,9 +54,17 @@ router.get('/settings', rbacMiddleware, requirePermission('workflow.view'), asyn
       } as ApiErrorResponse);
     }
 
+    // 🔒 SECURITY: Mask API key before sending to frontend
+    const maskedSettings = {
+      ...settings,
+      openaiApiKey: settings.openaiApiKey 
+        ? `${settings.openaiApiKey.substring(0, 7)}${'*'.repeat(20)}${settings.openaiApiKey.slice(-4)}`
+        : null
+    };
+
     res.status(200).json({
       success: true,
-      data: settings,
+      data: maskedSettings,
       message: 'AI settings retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse<typeof settings>);
@@ -88,7 +96,7 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
     }
 
     const updateSchema = z.object({
-      openaiApiKey: z.string().min(1, 'OpenAI API key is required').optional(),
+      openaiApiKey: z.union([z.string().min(1), z.literal('')]).optional(),
       openaiModel: z.enum(['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo']).optional(),
       isActive: z.boolean().optional(),
       trainingMode: z.boolean().optional(),
