@@ -2017,7 +2017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!validateUUIDParam(tenantId, 'Identificativo organizzazione', res)) return;
 
       const suppliers = await storage.getSuppliersByTenant(tenantId);
-      res.json({ suppliers, success: true });
+      res.json({ success: true, data: suppliers });
     } catch (error) {
       handleApiError(error, res, 'recupero fornitori');
     }
