@@ -2076,6 +2076,235 @@ router.post('/instances/:id/steps/:stepId/retry', rbacMiddleware, requirePermiss
   }
 });
 
+// ==================== WORKFLOW TEST RUN ====================
+
+/**
+ * POST /api/workflows/test-run
+ * Test workflow execution without saving to database
+ * Accepts ReactFlow nodes/edges directly and simulates execution
+ * 🔐 RBAC: workflow.create permission required
+ */
+router.post('/test-run', rbacMiddleware, requirePermission('workflow.create'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Validate request body
+    const testRunSchema = z.object({
+      nodes: z.array(z.any()).min(1, 'At least one node is required'),
+      edges: z.array(z.any()).optional().default([]),
+      testName: z.string().optional().default('Test Run')
+    });
+
+    const validation = testRunSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { nodes, edges, testName } = validation.data;
+
+    logger.info('🧪 [TEST-RUN] Starting workflow test execution', {
+      tenantId,
+      userId,
+      nodesCount: nodes.length,
+      edgesCount: edges.length,
+      testName
+    });
+
+    // Parse ReactFlow workflow using bridge parser
+    const { reactFlowBridgeParser } = await import('../services/reactflow-bridge-parser.js');
+    
+    const reactFlowData = {
+      nodes,
+      edges,
+      viewport: { x: 0, y: 0, zoom: 1 }
+    };
+
+    let parsedWorkflow;
+    try {
+      parsedWorkflow = await reactFlowBridgeParser.parseWorkflow(reactFlowData, {
+        templateId: 'test-run-temp',
+        templateName: testName,
+        department: undefined
+      });
+    } catch (parseError: any) {
+      logger.error('❌ [TEST-RUN] Failed to parse workflow', {
+        error: parseError.message,
+        nodesCount: nodes.length
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: 'Workflow parsing failed',
+        message: parseError.message,
+        details: {
+          phase: 'parsing',
+          nodesFailed: nodes.length
+        },
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Validate parsed workflow
+    const validation2 = reactFlowBridgeParser.validateWorkflow(parsedWorkflow);
+    if (!validation2.isValid) {
+      logger.error('❌ [TEST-RUN] Workflow validation failed', {
+        errors: validation2.errors
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: 'Workflow validation failed',
+        message: validation2.errors.join(', '),
+        details: {
+          phase: 'validation',
+          errors: validation2.errors
+        },
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Simulate execution (dry-run without actual actions)
+    const startTime = Date.now();
+    const executionResults = [];
+    let currentNodeId = parsedWorkflow.startNodeId;
+    let failedNodeId: string | null = null;
+    let failureReason: string | null = null;
+
+    try {
+      // Walk through the workflow graph
+      for (let i = 0; i < parsedWorkflow.totalSteps && i < 100; i++) { // Max 100 steps safety limit
+        const step = parsedWorkflow.steps.get(currentNodeId);
+        
+        if (!step) {
+          failedNodeId = currentNodeId;
+          failureReason = 'Step not found in workflow definition';
+          break;
+        }
+
+        // Simulate step execution
+        executionResults.push({
+          nodeId: step.nodeId,
+          nodeName: step.name,
+          nodeType: step.type,
+          status: 'simulated',
+          executorId: step.executorId,
+          config: step.config
+        });
+
+        // Find next step
+        const nextSteps = parsedWorkflow.edges.filter(e => e.source === currentNodeId);
+        if (nextSteps.length === 0) {
+          // End of workflow
+          break;
+        }
+
+        // For simplicity, follow first edge (in real execution, routing logic would apply)
+        currentNodeId = nextSteps[0].target;
+      }
+
+      const executionTime = Date.now() - startTime;
+
+      if (failedNodeId) {
+        logger.warn('⚠️ [TEST-RUN] Workflow test completed with issues', {
+          tenantId,
+          failedNodeId,
+          failureReason,
+          executedSteps: executionResults.length
+        });
+
+        return res.status(200).json({
+          success: false,
+          data: {
+            status: 'failed',
+            executionTime,
+            totalSteps: parsedWorkflow.totalSteps,
+            executedSteps: executionResults.length,
+            failedNodeId,
+            failureReason,
+            executionResults
+          },
+          message: `Test run failed at node: ${failedNodeId}`,
+          timestamp: new Date().toISOString()
+        } as ApiSuccessResponse<any>);
+      }
+
+      logger.info('✅ [TEST-RUN] Workflow test completed successfully', {
+        tenantId,
+        executionTime,
+        stepsExecuted: executionResults.length,
+        totalSteps: parsedWorkflow.totalSteps
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          status: 'success',
+          executionTime,
+          totalSteps: parsedWorkflow.totalSteps,
+          executedSteps: executionResults.length,
+          startNodeId: parsedWorkflow.startNodeId,
+          executionResults
+        },
+        message: 'Workflow test run completed successfully',
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse<{
+        status: string;
+        executionTime: number;
+        totalSteps: number;
+        executedSteps: number;
+        startNodeId: string;
+        executionResults: any[];
+      }>);
+
+    } catch (executionError: any) {
+      logger.error('❌ [TEST-RUN] Execution simulation failed', {
+        error: executionError.message,
+        currentNodeId
+      });
+
+      return res.status(500).json({
+        success: false,
+        error: 'Execution simulation failed',
+        message: executionError.message,
+        details: {
+          phase: 'execution',
+          failedNodeId: currentNodeId,
+          executedSteps: executionResults.length
+        },
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+  } catch (error: any) {
+    logger.error('❌ [TEST-RUN] Unexpected error', { 
+      error: error.message,
+      tenantId: req.user?.tenantId,
+      userId: req.user?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== EVENT SOURCING & RECOVERY ====================
 
 /**
