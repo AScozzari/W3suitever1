@@ -1427,36 +1427,56 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
 
-        {/* Canvas Zone - Fixed Size */}
-        <div 
-          ref={reactFlowWrapper}
-          style={{ 
-            width: '800px',
-            height: '600px',
-            border: '2px solid #E5E7EB',
-            backgroundColor: '#F9FAFB',
-            margin: '1cm auto 0 auto'
-          }}
-        >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onNodeDoubleClick={onNodeDoubleClick}
-            onPaneClick={onPaneClick}
-            onInit={setReactFlowInstance}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            style={{ width: '800px', height: '600px' }}
-            data-testid="reactflow-canvas"
+        {/* Canvas + AI Chat Row */}
+        <div className="flex flex-row">
+          {/* Canvas Zone - Fixed Size */}
+          <div 
+            ref={reactFlowWrapper}
+            style={{ 
+              width: '800px',
+              height: '600px',
+              border: '2px solid #E5E7EB',
+              backgroundColor: '#F9FAFB',
+              margin: '1cm 0 0 2cm'
+            }}
           >
-            <Controls />
-            <Background variant={BackgroundVariant.Dots} color="#E5E7EB" gap={20} />
-          </ReactFlow>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeClick={onNodeClick}
+              onNodeDoubleClick={onNodeDoubleClick}
+              onPaneClick={onPaneClick}
+              onInit={setReactFlowInstance}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              nodeTypes={nodeTypes}
+              style={{ width: '800px', height: '600px' }}
+              data-testid="reactflow-canvas"
+            >
+              <Controls />
+              <Background variant={BackgroundVariant.Dots} color="#E5E7EB" gap={20} />
+            </ReactFlow>
+          </div>
+
+          {/* AI Chat Panel - Always Visible */}
+          <div 
+            className="flex flex-col bg-white border-2 border-gray-200 rounded-lg"
+            style={{ 
+              width: '400px',
+              height: '600px',
+              marginTop: '1cm',
+              marginLeft: '1cm'
+            }}
+          >
+            <AIWorkflowChatModal
+              open={true}
+              onOpenChange={() => {}}
+              onWorkflowGenerated={handleAIWorkflowGenerated}
+            />
+          </div>
         </div>
       </div>
 
