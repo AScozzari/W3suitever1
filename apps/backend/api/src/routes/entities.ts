@@ -39,18 +39,7 @@ router.get('/legal-entities', async (req, res) => {
     await setTenantContext(tenantId);
 
     const entities = await db
-      .select({
-        id: legalEntities.id,
-        codice: legalEntities.codice,
-        ragioneSociale: legalEntities.ragioneSociale,
-        formaGiuridica: legalEntities.formaGiuridica,
-        partitaIva: legalEntities.partitaIva,
-        codiceFiscale: legalEntities.codiceFiscale,
-        settoreAttivita: legalEntities.settoreAttivita,
-        isActive: legalEntities.isActive,
-        createdAt: legalEntities.createdAt,
-        updatedAt: legalEntities.updatedAt
-      })
+      .select()
       .from(legalEntities)
       .where(eq(legalEntities.tenantId, tenantId))
       .orderBy(desc(legalEntities.createdAt));
@@ -117,8 +106,7 @@ router.post('/legal-entities', async (req, res) => {
       .insert(legalEntities)
       .values({
         ...validation.data,
-        tenantId,
-        isActive: true
+        tenantId
       })
       .returning();
 
@@ -163,19 +151,13 @@ router.get('/stores', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    // await setTenantContext(tenantId);
+    await setTenantContext(tenantId);
 
-    const storesList = await db.execute(sql`
-      SELECT 
-        id, code, nome, address, citta, provincia, cap,
-        phone, email, legal_entity_id as "legalEntityId",
-        channel_id as "channelId", commercial_area_id as "commercialAreaId",
-        created_at as "createdAt", updated_at as "updatedAt",
-        tenant_id as "tenantId"
-      FROM w3suite.stores
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
-    `);
+    const storesList = await db
+      .select()
+      .from(stores)
+      .where(eq(stores.tenantId, tenantId))
+      .orderBy(desc(stores.createdAt));
 
     res.status(200).json({
       success: true,
@@ -244,8 +226,7 @@ router.post('/stores', async (req, res) => {
       .insert(stores)
       .values({
         ...validation.data,
-        tenantId,
-        isActive: true
+        tenantId
       })
       .returning();
 
@@ -292,26 +273,11 @@ router.get('/users', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const usersList = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-        createdAt: users.createdAt,
-        lastActive: users.lastActive,
-        isActive: users.isActive,
-        oauthProvider: users.oauthProvider,
-        phoneNumber: users.phoneNumber,
-        birthDate: users.birthDate,
-        hireDate: users.hireDate,
-        department: users.department,
-        jobTitle: users.jobTitle
-      })
-      .from(users)
-      .where(eq(users.tenantId, tenantId))
-      .orderBy(desc(users.createdAt));
+    const usersList = await db.execute(sql`
+      SELECT * FROM w3suite.users
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC
+    `);
 
     res.status(200).json({
       success: true,
