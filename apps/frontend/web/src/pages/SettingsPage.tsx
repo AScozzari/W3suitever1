@@ -1702,20 +1702,43 @@ export default function SettingsPage() {
   };
 
   // Permission management state and functions
-  const [tempPermissions, setTempPermissions] = useState<string[]>([]);
+  // 🔧 FIX Bug #2: Store permissions per-role to prevent cross-contamination
+  const [rolePermissionsMap, setRolePermissionsMap] = useState<Record<string, string[]>>({});
   const [isPermissionsDirty, setIsPermissionsDirty] = useState(false);
 
-  // Initialize temp permissions when role permissions are loaded
+  // Get current role's permissions from map
+  const getCurrentRolePermissions = (): string[] => {
+    if (!selectedRole) return [];
+    return rolePermissionsMap[selectedRole] || [];
+  };
+
+  // Initialize temp permissions when role permissions are loaded or role changes
   useEffect(() => {
-    if (selectedRolePermissions?.permissions) {
-      setTempPermissions(selectedRolePermissions.permissions);
-      setIsPermissionsDirty(false);
+    if (selectedRolePermissions?.permissions && selectedRole) {
+      // Only initialize if this role's permissions aren't already in the map
+      if (!rolePermissionsMap[selectedRole]) {
+        // 🔧 FIX Bug #4: Expand wildcard '*' to all permissions for Amministratore
+        let permissions = selectedRolePermissions.permissions;
+        if (permissions.includes('*')) {
+          // Replace '*' with ALL_PERMISSIONS
+          permissions = [...ALL_PERMISSIONS];
+        }
+        
+        setRolePermissionsMap(prev => ({
+          ...prev,
+          [selectedRole]: permissions
+        }));
+        // Only reset dirty flag when INITIALIZING a role, not on every map change
+        setIsPermissionsDirty(false);
+      }
     }
-  }, [selectedRolePermissions]);
+    // NOTE: rolePermissionsMap is NOT in dependencies to avoid resetting dirty flag on toggle
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRolePermissions, selectedRole]);
 
   // Check if a permission is currently enabled
   const isPermissionEnabled = (permission: string): boolean => {
-    return tempPermissions.includes(permission);
+    return getCurrentRolePermissions().includes(permission);
   };
 
   // Check if all permissions in a category are enabled
@@ -1727,20 +1750,29 @@ export default function SettingsPage() {
 
   // Toggle individual permission
   const togglePermission = (permission: string) => {
-    const newPermissions = isPermissionEnabled(permission)
-      ? tempPermissions.filter(p => p !== permission)
-      : [...tempPermissions, permission];
+    if (!selectedRole) return;
     
-    setTempPermissions(newPermissions);
+    const currentPermissions = getCurrentRolePermissions();
+    const newPermissions = isPermissionEnabled(permission)
+      ? currentPermissions.filter(p => p !== permission)
+      : [...currentPermissions, permission];
+    
+    setRolePermissionsMap(prev => ({
+      ...prev,
+      [selectedRole]: newPermissions
+    }));
     setIsPermissionsDirty(true);
   };
 
   // Toggle all permissions in a category
   const toggleCategoryPermissions = (category: string, enabled: boolean) => {
+    if (!selectedRole) return;
+    
     const categoryPermissions = organizePermissionsByCategory(rbacPermissionsData?.permissions || [])
       .find(cat => cat.category === category)?.permissions || [];
     
-    let newPermissions = [...tempPermissions];
+    const currentPermissions = getCurrentRolePermissions();
+    let newPermissions = [...currentPermissions];
     
     if (enabled) {
       // Add all category permissions
@@ -1754,7 +1786,10 @@ export default function SettingsPage() {
       newPermissions = newPermissions.filter(perm => !categoryPermissions.includes(perm));
     }
     
-    setTempPermissions(newPermissions);
+    setRolePermissionsMap(prev => ({
+      ...prev,
+      [selectedRole]: newPermissions
+    }));
     setIsPermissionsDirty(true);
   };
 
@@ -1763,6 +1798,8 @@ export default function SettingsPage() {
     if (!selectedRole) return;
 
     try {
+      const currentPermissions = getCurrentRolePermissions();
+      
       // Update permissions in local state
       const isCustomRole = !HARDCODED_ROLES.find(r => r.code === selectedRole);
       
@@ -1770,7 +1807,7 @@ export default function SettingsPage() {
         // Update custom role permissions
         setCustomRoles(prev => prev.map(role => 
           role.code === selectedRole 
-            ? { ...role, permissions: tempPermissions }
+            ? { ...role, permissions: currentPermissions }
             : role
         ));
       } else {
@@ -3517,7 +3554,7 @@ export default function SettingsPage() {
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          background: selectedRole === 'admin' ? 'linear-gradient(135deg, #FF6900, #ff8533)' : '#e5e7eb',
+                          background: isCategoryEnabled(cat.category) ? 'linear-gradient(135deg, #FF6900, #ff8533)' : '#e5e7eb',
                           borderRadius: '24px',
                           transition: 'all 0.3s ease',
                           boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.12)'
@@ -3532,48 +3569,60 @@ export default function SettingsPage() {
                             backgroundColor: 'white',
                             borderRadius: '50%',
                             transition: 'all 0.3s ease',
-                            transform: selectedRole === 'admin' ? 'translateX(20px)' : 'translateX(0)',
+                            transform: isCategoryEnabled(cat.category) ? 'translateX(20px)' : 'translateX(0)',
                             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
                           }} />
                         </span>
                       </label>
                     </h5>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {cat.permissions.map((perm) => (
-                        <label
-                          key={perm}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '6px 8px',
-                            fontSize: '13px',
-                            color: '#6b7280',
-                            cursor: 'pointer',
-                            borderRadius: '4px',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isPermissionEnabled(perm)}
-                            onChange={() => togglePermission(perm)}
-                            style={{ 
-                              cursor: 'pointer',
-                              width: '16px',
-                              height: '16px',
-                              accentColor: '#FF6900'
+                      {cat.permissions.map((perm) => {
+                        const categoryEnabled = isCategoryEnabled(cat.category);
+                        return (
+                          <label
+                            key={perm}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              padding: '6px 8px',
+                              fontSize: '13px',
+                              color: categoryEnabled ? '#6b7280' : '#9ca3af',
+                              cursor: categoryEnabled ? 'pointer' : 'not-allowed',
+                              borderRadius: '4px',
+                              transition: 'all 0.2s ease',
+                              opacity: categoryEnabled ? 1 : 0.5
                             }}
-                          />
-                          {perm}
-                        </label>
-                      ))}
+                            onMouseOver={(e) => {
+                              if (categoryEnabled) {
+                                e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isPermissionEnabled(perm)}
+                              disabled={!categoryEnabled}
+                              onChange={() => {
+                                // 🔧 FIX Bug #3: Block individual permission toggle when category is disabled
+                                if (categoryEnabled) {
+                                  togglePermission(perm);
+                                }
+                              }}
+                              style={{ 
+                                cursor: categoryEnabled ? 'pointer' : 'not-allowed',
+                                width: '16px',
+                                height: '16px',
+                                accentColor: '#FF6900'
+                              }}
+                            />
+                            {perm}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 ))
