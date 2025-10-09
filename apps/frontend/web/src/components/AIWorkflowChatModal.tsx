@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Sparkles, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, Send, Sparkles, CheckCircle2, XCircle, FileText, Zap } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -13,6 +13,7 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   workflowJson?: any;
+  showGenerateButton?: boolean;
 }
 
 export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModalProps) {
@@ -20,14 +21,21 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'system',
-      content: 'Describe your workflow in natural language and I\'ll generate it for you!'
+      content: 'Descrivi il tuo workflow in linguaggio naturale e lo analizzerò per te!'
     }
   ]);
   const [generatedWorkflow, setGeneratedWorkflow] = useState<any | null>(null);
+  const [currentUserPrompt, setCurrentUserPrompt] = useState<string>('');
+  const [workflowPhase, setWorkflowPhase] = useState<'idle' | 'analyzed' | 'generated'>('idle');
 
-  const generateMutation = useMutation({
+  // Phase 1: Analysis
+  const analyzeMutation = useMutation({
     mutationFn: async (userPrompt: string) => {
-      const response = await apiRequest<{ workflow: any }>('/api/workflows/ai-generate', {
+      const response = await apiRequest<{ 
+        success: boolean; 
+        data: { analysis: string; tokensUsed?: number; cost?: number }; 
+        message: string;
+      }>('/api/workflows/ai-analyze', {
         method: 'POST',
         body: JSON.stringify({
           prompt: userPrompt,
@@ -36,38 +44,95 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
       });
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (response) => {
       setMessages(prev => [
         ...prev,
         {
           role: 'assistant',
-          content: 'I\'ve generated your workflow! Review it below and click "Apply to Canvas" to use it.',
-          workflowJson: data.workflow
+          content: response.data.analysis,
+          showGenerateButton: true
         }
       ]);
-      setGeneratedWorkflow(data.workflow);
+      setWorkflowPhase('analyzed');
     },
     onError: (error: any) => {
       setMessages(prev => [
         ...prev,
         {
           role: 'assistant',
-          content: `Error generating workflow: ${error.message || 'Unknown error'}. Please try again with a different description.`
+          content: `Errore durante l'analisi: ${error.message || 'Errore sconosciuto'}. Riprova con una descrizione diversa.`
         }
       ]);
+      setWorkflowPhase('idle');
+    }
+  });
+
+  // Phase 2: Generation
+  const generateMutation = useMutation({
+    mutationFn: async (userPrompt: string) => {
+      const response = await apiRequest<{ 
+        success: boolean; 
+        data: { workflow: any }; 
+        message: string;
+      }>('/api/workflows/ai-generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          prompt: userPrompt,
+          context: {}
+        })
+      });
+      return response;
+    },
+    onSuccess: (response) => {
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Ho generato il tuo workflow! Controlla il risultato qui sotto e clicca "Applica al Canvas" per usarlo.',
+          workflowJson: response.data.workflow
+        }
+      ]);
+      setGeneratedWorkflow(response.data.workflow);
+      setWorkflowPhase('generated');
+    },
+    onError: (error: any) => {
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Errore durante la generazione: ${error.message || 'Errore sconosciuto'}. Riprova.`
+        }
+      ]);
+      setWorkflowPhase('analyzed'); // Torna alla fase di analisi
     }
   });
 
   const handleSend = () => {
     if (!prompt.trim()) return;
 
+    const userPrompt = prompt;
+    setCurrentUserPrompt(userPrompt);
+    
     setMessages(prev => [
       ...prev,
-      { role: 'user', content: prompt }
+      { role: 'user', content: userPrompt }
     ]);
 
-    generateMutation.mutate(prompt);
+    // Phase 1: Analyze the request
+    analyzeMutation.mutate(userPrompt);
     setPrompt('');
+  };
+
+  const handleGenerateTemplate = () => {
+    if (!currentUserPrompt) return;
+
+    // Phase 2: Generate workflow JSON
+    setMessages(prev => [
+      ...prev,
+      { role: 'user', content: '🎯 Genera il template del workflow' }
+    ]);
+    
+    generateMutation.mutate(currentUserPrompt);
   };
 
   const handleApplyToCanvas = () => {
@@ -75,9 +140,11 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
       onWorkflowGenerated(generatedWorkflow);
       setMessages([{
         role: 'system',
-        content: 'Describe your workflow in natural language and I\'ll generate it for you!'
+        content: 'Descrivi il tuo workflow in linguaggio naturale e lo analizzerò per te!'
       }]);
       setGeneratedWorkflow(null);
+      setCurrentUserPrompt('');
+      setWorkflowPhase('idle');
     }
   };
 
@@ -111,17 +178,41 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 
+                {/* Show Generate Template button after analysis */}
+                {msg.showGenerateButton && workflowPhase === 'analyzed' && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <Button
+                      onClick={handleGenerateTemplate}
+                      disabled={generateMutation.isPending}
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+                      data-testid="button-generate-template"
+                    >
+                      {generateMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generazione in corso...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          Genera Template Workflow
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                
                 {msg.workflowJson && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600" />
                       <span className="text-xs font-medium text-gray-700">
-                        Workflow Generated
+                        Workflow Generato
                       </span>
                     </div>
                     <details className="text-xs">
                       <summary className="cursor-pointer text-gray-600 hover:text-gray-900">
-                        View JSON (debug)
+                        Visualizza JSON (debug)
                       </summary>
                       <pre className="mt-2 p-2 bg-gray-50 rounded text-[10px] overflow-x-auto">
                         {JSON.stringify(msg.workflowJson, null, 2)}
@@ -133,11 +224,11 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
             </div>
           ))}
 
-          {generateMutation.isPending && (
+          {analyzeMutation.isPending && (
             <div className="flex gap-3 justify-start">
               <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Generating workflow...</span>
+                <span className="text-sm">Analisi in corso...</span>
               </div>
             </div>
           )}
@@ -151,7 +242,7 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
               data-testid="button-apply-workflow"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Apply to Canvas
+              Applica al Canvas
             </Button>
           )}
 
@@ -159,10 +250,10 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your workflow... (e.g., 'When a leave request is submitted, notify manager and wait for approval')"
+              placeholder="Descrivi il tuo workflow... (es: 'Quando viene inviata una richiesta di ferie, notifica il manager e aspetta l'approvazione')"
               className="resize-none"
               rows={3}
-              disabled={generateMutation.isPending}
+              disabled={analyzeMutation.isPending || generateMutation.isPending}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -173,16 +264,23 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
             />
             <Button
               onClick={handleSend}
-              disabled={!prompt.trim() || generateMutation.isPending}
-              className="shrink-0"
+              disabled={!prompt.trim() || analyzeMutation.isPending || generateMutation.isPending}
+              className="shrink-0 bg-purple-600 hover:bg-purple-700"
               data-testid="button-send-prompt"
             >
-              <Send className="w-4 h-4" />
+              {analyzeMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Analizza
+                </>
+              )}
             </Button>
           </div>
           
           <p className="text-xs text-gray-500 text-center">
-            Press Enter to send, Shift+Enter for new line
+            Premi Invio per analizzare, Shift+Invio per nuova riga
           </p>
         </div>
       </div>

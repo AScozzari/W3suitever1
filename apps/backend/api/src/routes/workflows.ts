@@ -1122,9 +1122,144 @@ router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), a
 });
 
 /**
+ * POST /api/workflows/ai-analyze
+ * AI-powered workflow analysis (Phase 1)
+ * Analyzes user request and provides workflow plan before generation
+ */
+router.post('/ai-analyze', rbacMiddleware, requirePermission('workflow.create'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Validate request body
+    const aiAnalyzeSchema = z.object({
+      prompt: z.string().min(3, 'Prompt must be at least 3 characters'),
+      context: z.object({
+        department: z.string().optional(),
+        category: z.string().optional()
+      }).optional()
+    });
+
+    const validationResult = aiAnalyzeSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request body',
+        message: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { prompt, context } = validationResult.data;
+
+    logger.info('🤖 [AI Analyze] Starting workflow analysis', {
+      tenantId,
+      userId,
+      promptLength: prompt.length,
+      context
+    });
+
+    // Get tenant AI settings
+    await setTenantContext(tenantId);
+    const [tenantAISettings] = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.tenantId, tenantId))
+      .limit(1);
+
+    if (!tenantAISettings) {
+      return res.status(400).json({
+        success: false,
+        error: 'AI settings not configured for this tenant',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Use workflow-assistant for analysis (not workflow-builder-ai)
+    const userPrompt = `Analizza questa richiesta di workflow e fornisci un piano strutturato:
+
+Richiesta: ${prompt}
+${context?.department ? `Reparto: ${context.department}` : ''}
+
+Fornisci:
+1. Tipo di workflow richiesto
+2. Passi principali necessari (3-5 step)
+3. Chi deve essere coinvolto (approvatori, team)
+4. Regole di business da applicare
+5. Complessità stimata (bassa/media/alta)
+
+Rispondi in italiano con un'analisi chiara e concisa.`;
+
+    // Initialize AI services
+    const aiRegistry = new AIRegistryService(storage);
+
+    // Call workflow-assistant agent for analysis
+    const aiResponse = await aiRegistry.createUnifiedResponse(
+      userPrompt,
+      tenantAISettings,
+      {
+        agentId: 'workflow-assistant',
+        tenantId,
+        userId: userId || 'system',
+        moduleContext: 'workflow',
+        mcpTools: []
+      }
+    );
+
+    // Check if AI response is valid
+    if (!aiResponse.success || !aiResponse.output) {
+      return res.status(500).json({
+        success: false,
+        error: 'AI service error',
+        message: aiResponse.error || 'No response from AI service',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('🤖 [AI Analyze] Analysis completed', {
+      tenantId,
+      outputLength: aiResponse.output.length,
+      tokensUsed: aiResponse.tokensUsed
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        analysis: aiResponse.output,
+        tokensUsed: aiResponse.tokensUsed,
+        cost: aiResponse.cost
+      },
+      message: 'Workflow analysis completed successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<{
+      analysis: string;
+      tokensUsed?: number;
+      cost?: number;
+    }>);
+
+  } catch (error) {
+    logger.error('❌ [AI Analyze] Error during analysis:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'An unexpected error occurred during AI analysis',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/workflows/ai-generate
- * AI-powered workflow generation from natural language
- * Uses workflow-assistant agent to generate workflow JSON from user prompt
+ * AI-powered workflow generation from natural language (Phase 2)
+ * Uses workflow-builder-ai agent to generate workflow JSON from user prompt
  */
 router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create'), async (req, res) => {
   try {
