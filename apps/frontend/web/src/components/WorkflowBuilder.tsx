@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   Save, 
   Download, 
@@ -46,7 +47,9 @@ import {
   Brain,
   Undo2,
   Redo2,
-  PlayCircle
+  PlayCircle,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 import { useWorkflowStore } from '../stores/workflowStore';
@@ -1389,6 +1392,116 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         onOpenChange={setShowAIModal}
         onWorkflowGenerated={handleAIWorkflowGenerated}
       />
+
+      {/* 🧪 TEST RUN RESULTS POPUP */}
+      <AlertDialog open={testRunResult !== null} onOpenChange={(open) => !open && setTestRunResult(null)}>
+        <AlertDialogContent className="max-w-2xl" data-testid="test-run-result-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-3">
+              {testRunResult?.success ? (
+                <>
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <span className="text-green-700">✓ Test Run Successful</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-6 w-6 text-red-600" />
+                  <span className="text-red-700">✗ Test Run Failed</span>
+                </>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 mt-4">
+                {testRunResult?.success ? (
+                  // SUCCESS CASE
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600">Execution Time</div>
+                        <div className="text-2xl font-bold text-green-700">
+                          {testRunResult.data?.executionTime}ms
+                        </div>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600">Steps Executed</div>
+                        <div className="text-2xl font-bold text-green-700">
+                          {testRunResult.data?.executedSteps} / {testRunResult.data?.totalSteps}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <div className="text-sm font-semibold text-gray-700 mb-2">Execution Path:</div>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {testRunResult.data?.executionResults?.map((step: any, idx: number) => (
+                          <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="font-mono">{step.nodeId}</span>
+                            <span className="text-gray-400">•</span>
+                            <span>{step.nodeName}</span>
+                            <Badge variant="outline" className="ml-auto">{step.nodeType}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // FAILURE CASE
+                  <div className="space-y-3">
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                      <div className="text-sm font-semibold text-red-700 mb-2">Error:</div>
+                      <div className="text-sm text-red-600">
+                        {testRunResult?.message || testRunResult?.error || 'Unknown error'}
+                      </div>
+                    </div>
+                    
+                    {testRunResult?.data?.failedNodeId && (
+                      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <div className="text-sm font-semibold text-orange-700 mb-2">Failed Node:</div>
+                        <div className="font-mono text-sm text-orange-600">
+                          {testRunResult.data.failedNodeId}
+                        </div>
+                        {testRunResult.data.failureReason && (
+                          <div className="text-sm text-orange-600 mt-1">
+                            Reason: {testRunResult.data.failureReason}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {testRunResult?.data?.executionResults && testRunResult.data.executionResults.length > 0 && (
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="text-sm font-semibold text-gray-700 mb-2">
+                          Steps Completed Before Failure ({testRunResult.data.executedSteps}):
+                        </div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {testRunResult.data.executionResults.map((step: any, idx: number) => (
+                            <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
+                              <CheckCircle className="h-3 w-3 text-gray-400" />
+                              <span className="font-mono">{step.nodeId}</span>
+                              <span className="text-gray-400">•</span>
+                              <span>{step.nodeName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setTestRunResult(null)}
+              className={testRunResult?.success ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              data-testid="button-close-test-result"
+            >
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
