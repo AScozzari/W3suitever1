@@ -88,8 +88,10 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
     }
 
     const updateSchema = z.object({
-      openaiApiKey: z.string().min(1, 'OpenAI API key is required'),
+      openaiApiKey: z.string().min(1, 'OpenAI API key is required').optional(),
       openaiModel: z.enum(['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo']).optional(),
+      isActive: z.boolean().optional(),
+      trainingMode: z.boolean().optional(),
       featuresEnabled: z.object({
         chat_assistant: z.boolean().optional(),
         document_analysis: z.boolean().optional(),
@@ -99,6 +101,19 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
         code_interpreter: z.boolean().optional(),
         file_search: z.boolean().optional(),
         image_generation: z.boolean().optional()
+      }).optional(),
+      privacySettings: z.object({
+        dataRetentionDays: z.number().min(1).max(365).optional(),
+        allowDataTraining: z.boolean().optional(),
+        anonymizeConversations: z.boolean().optional()
+      }).optional(),
+      trainingSettings: z.object({
+        urlIngestion: z.boolean().optional(),
+        documentProcessing: z.boolean().optional(),
+        imageAnalysis: z.boolean().optional(),
+        audioTranscription: z.boolean().optional(),
+        videoProcessing: z.boolean().optional(),
+        responseValidation: z.boolean().optional()
       }).optional(),
       maxTokens: z.number().min(100).max(8000).optional(),
       temperature: z.number().min(0).max(2).optional()
@@ -127,27 +142,50 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
     let result;
 
     if (existing) {
+      // UPDATE existing settings (partial updates allowed)
+      const updateData: any = {};
+      
+      if (data.openaiApiKey !== undefined) updateData.openaiApiKey = data.openaiApiKey;
+      if (data.openaiModel !== undefined) updateData.openaiModel = data.openaiModel;
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
+      if (data.trainingMode !== undefined) updateData.trainingMode = data.trainingMode;
+      if (data.featuresEnabled !== undefined) updateData.featuresEnabled = data.featuresEnabled;
+      if (data.privacySettings !== undefined) updateData.privacySettings = data.privacySettings;
+      if (data.trainingSettings !== undefined) updateData.trainingSettings = data.trainingSettings;
+      if (data.maxTokens !== undefined) updateData.maxTokens = data.maxTokens;
+      if (data.temperature !== undefined) updateData.temperature = data.temperature;
+      
+      // Reset connection status if API key changed
+      if (data.openaiApiKey) {
+        updateData.apiConnectionStatus = 'disconnected';
+      }
+
       [result] = await db
         .update(aiSettings)
-        .set({
-          openaiApiKey: data.openaiApiKey,
-          openaiModel: data.openaiModel || existing.openaiModel,
-          featuresEnabled: data.featuresEnabled || existing.featuresEnabled,
-          maxTokens: data.maxTokens || existing.maxTokens,
-          temperature: data.temperature || existing.temperature,
-          apiConnectionStatus: 'disconnected'
-        })
+        .set(updateData)
         .where(eq(aiSettings.id, existing.id))
         .returning();
 
-      logger.info('AI settings updated', { tenantId, settingsId: result.id });
+      logger.info('AI settings updated', { tenantId, settingsId: result.id, fieldsUpdated: Object.keys(updateData) });
     } else {
+      // INSERT new settings (openaiApiKey required for creation)
+      if (!data.openaiApiKey) {
+        return res.status(400).json({
+          success: false,
+          error: 'OpenAI API key is required for initial setup',
+          message: 'Please provide an OpenAI API key to create AI settings',
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+
       [result] = await db
         .insert(aiSettings)
         .values({
           tenantId,
           openaiApiKey: data.openaiApiKey,
           openaiModel: data.openaiModel || 'gpt-4-turbo',
+          isActive: data.isActive !== undefined ? data.isActive : true,
+          trainingMode: data.trainingMode !== undefined ? data.trainingMode : false,
           featuresEnabled: data.featuresEnabled || {
             chat_assistant: true,
             document_analysis: true,
@@ -157,6 +195,19 @@ router.put('/settings', rbacMiddleware, requirePermission('workflow.manage'), as
             code_interpreter: false,
             file_search: true,
             image_generation: false
+          },
+          privacySettings: data.privacySettings || {
+            dataRetentionDays: 30,
+            allowDataTraining: false,
+            anonymizeConversations: true
+          },
+          trainingSettings: data.trainingSettings || {
+            urlIngestion: true,
+            documentProcessing: true,
+            imageAnalysis: false,
+            audioTranscription: false,
+            videoProcessing: false,
+            responseValidation: true
           },
           maxTokens: data.maxTokens || 2000,
           temperature: data.temperature || 0.7,
