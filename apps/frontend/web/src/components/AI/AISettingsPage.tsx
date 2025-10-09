@@ -374,9 +374,9 @@ export default function AISettingsPage() {
 
   // Test API connection (🔧 FIX: Auto-save before test to persist API key)
   const testApiConnection = async () => {
+    // ✅ Allow test even without API key in form - backend will use OPENAI_API_KEY from environment
     if (!formData.openaiApiKey) {
-      setConnectionTestResult({ success: false, message: 'Inserire prima la chiave API OpenAI' });
-      return;
+      console.log('[AI-SETTINGS] ℹ️ No API key in form, backend will use OPENAI_API_KEY from environment');
     }
 
     setTestingConnection(true);
@@ -729,7 +729,7 @@ export default function AISettingsPage() {
             </div>
             <button
               onClick={testApiConnection}
-              disabled={testingConnection || !formData.openaiApiKey}
+              disabled={testingConnection}
               className="px-4 py-2 bg-[#FF6900] text-white rounded-lg hover:bg-[#E55A00] disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
               data-testid="button-test-connection"
             >
