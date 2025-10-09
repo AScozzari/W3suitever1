@@ -88,9 +88,8 @@ export function AIWorkflowChatModal({ open, onOpenChange, onWorkflowGenerated }:
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
-        side="left" 
+        side="right" 
         className="w-[500px] sm:w-[540px] flex flex-col p-0"
-        style={{ left: '48px' }}
       >
         <SheetHeader className="px-6 py-4 border-b">
           <SheetTitle className="flex items-center gap-2">
