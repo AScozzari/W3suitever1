@@ -146,7 +146,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showAIModal, setShowAIModal] = useState(false);
   
   // Department mapping for context
   const departmentInfo = {
@@ -1405,18 +1404,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowAIModal(true)}
-                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                title="AI Workflow Assistant"
-                data-testid="button-ai-assistant"
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                AI Assistant
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={handleSaveWorkflow}
                 data-testid="button-save"
               >
@@ -1497,13 +1484,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           
           console.log('🎛️ Node config saved:', { nodeId, config });
         }}
-      />
-
-      {/* 🤖 AI WORKFLOW CHAT MODAL */}
-      <AIWorkflowChatModal
-        open={showAIModal}
-        onOpenChange={setShowAIModal}
-        onWorkflowGenerated={handleAIWorkflowGenerated}
       />
 
       {/* 🧪 TEST RUN RESULTS POPUP */}
