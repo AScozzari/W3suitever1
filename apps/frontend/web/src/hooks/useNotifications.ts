@@ -29,6 +29,7 @@ export function useNotifications(filters?: {
   priority?: string;
   limit?: number;
   offset?: number;
+  enabled?: boolean;
 }): QueryResult<Notification[]> {
   const refetchInterval = useIdleAwareRefetch(30000);
   const queryParams = { 
@@ -41,18 +42,18 @@ export function useNotifications(filters?: {
   
   return useQuery<Notification[]>({
     queryKey: ['/api/notifications', queryParams],
-    // Use default queryFn from queryClient - no custom queryFn needed
+    enabled: filters?.enabled ?? true, // Default to true for backward compatibility
     refetchInterval, // Only poll when user is active
   }) as QueryResult<Notification[]>;
 }
 
 // Hook for fetching unread notification count
-export function useUnreadNotificationCount(): QueryResult<{count: number}> {
+export function useUnreadNotificationCount(options?: { enabled?: boolean }): QueryResult<{count: number}> {
   const refetchInterval = useIdleAwareRefetch(15000);
   
   return useQuery<{count: number}>({
     queryKey: ['/api/notifications/unread-count'],
-    // Use default queryFn from queryClient - no custom queryFn needed
+    enabled: options?.enabled ?? true, // Default to true for backward compatibility
     refetchInterval, // Only poll when user is active
   }) as QueryResult<{count: number}>;
 }

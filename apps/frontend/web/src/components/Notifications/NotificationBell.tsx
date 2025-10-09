@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, CheckCircle, Clock, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import { Notification } from '@/types';
 import { useLocation, useParams } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
@@ -47,12 +48,18 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
   const currentTenant = (params as any).tenant || 'staging'; // fallback for safety
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications and unread count
-  const { data: unreadCountData } = useUnreadNotificationCount();
+  // Check authentication status
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Fetch notifications and unread count - only when authenticated
+  const { data: unreadCountData } = useUnreadNotificationCount({ 
+    enabled: isAuthenticated && !authLoading 
+  });
   const unreadCount = typeof unreadCountData === 'number' ? unreadCountData : (unreadCountData as any)?.count || 0;
   const { data: notifications = [], isLoading } = useNotifications({ 
     status: 'unread', 
-    limit: 5 
+    limit: 5,
+    enabled: isAuthenticated && !authLoading 
   });
 
   // Mutations
