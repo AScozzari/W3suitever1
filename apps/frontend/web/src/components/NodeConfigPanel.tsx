@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -2331,12 +2332,14 @@ function TeamAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
  */
 function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
   const config = (node.data.config || {}) as any;
+  const [assignmentMode, setAssignmentMode] = useState(config.assignmentMode || 'auto');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>(config.userIds || []);
+  const [forDepartment, setForDepartment] = useState(config.forDepartment || 'operations');
   const [assignmentType, setAssignmentType] = useState(config.assignmentType || 'all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // 🔄 Carica utenti dal database
-  const { data: usersData, isLoading: usersLoading } = useQuery<User[]>({
+  const { data: usersData, isLoading: usersLoading} = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
 
@@ -2363,22 +2366,68 @@ function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
 
   const handleSave = useCallback(() => {
     onSave(node.id, {
-      userIds: selectedUserIds,
+      assignmentMode,
+      userIds: assignmentMode === 'manual' ? selectedUserIds : null,
+      forDepartment: assignmentMode === 'auto' ? forDepartment : null,
       assignmentType,
       waitForAll: assignmentType === 'all'
     });
     onClose();
-  }, [selectedUserIds, assignmentType, node.id, onSave, onClose]);
+  }, [assignmentMode, selectedUserIds, forDepartment, assignmentType, node.id, onSave, onClose]);
 
   // Ottieni informazioni utenti selezionati
   const selectedUsers = usersData?.filter(u => selectedUserIds.includes(u.id)) || [];
 
   return (
     <div className="space-y-4">
-      {/* Utenti Selezionati */}
+      {/* Modalità Assegnazione */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-          👤 Utenti Selezionati ({selectedUserIds.length})
+        <label className="block text-sm font-medium text-gray-900 mb-2">
+          🎯 Modalità Assegnazione
+        </label>
+        <RadioGroup value={assignmentMode} onValueChange={setAssignmentMode} className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="auto" id="mode-auto" />
+            <label htmlFor="mode-auto" className="text-sm cursor-pointer">
+              🤖 Automatica (da department)
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="manual" id="mode-manual" />
+            <label htmlFor="mode-manual" className="text-sm cursor-pointer">
+              👤 Manuale (utenti specifici)
+            </label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {/* Department Selection - Solo in Auto Mode */}
+      {assignmentMode === 'auto' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            🏢 Dipartimento
+          </label>
+          <Select value={forDepartment} onValueChange={setForDepartment}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hr">👥 HR</SelectItem>
+              <SelectItem value="finance">💰 Finance</SelectItem>
+              <SelectItem value="sales">📈 Sales</SelectItem>
+              <SelectItem value="operations">⚙️ Operations</SelectItem>
+              <SelectItem value="support">🎧 Support</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Gli utenti verranno selezionati automaticamente dalla tabella user_workflow_assignments
+          </p>
+        </div>
+      )}
+
+      {/* Utenti Selezionati - Solo in Manual Mode */}
+      {assignmentMode === 'manual' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+            👤 Utenti Selezionati ({selectedUserIds.length})
           <InfoTooltip 
             title="Selezione Multipla Utenti"
             description="Seleziona uno o più utenti a cui assegnare il workflow. Puoi cercare per nome o email."
@@ -2417,13 +2466,12 @@ function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
             Nessun utente selezionato. Cerca e seleziona utenti dalla lista sotto.
           </div>
         )}
-      </div>
-
-      {/* Ricerca e Selezione Utenti */}
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          🔍 Cerca e Seleziona Utenti
-        </label>
+        
+        {/* Ricerca e Selezione Utenti */}
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            🔍 Cerca e Seleziona Utenti
+          </label>
         
         {/* Campo Ricerca */}
         <div className="relative mb-2">
@@ -2487,21 +2535,23 @@ function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
             {searchQuery ? '🔍 Nessun utente trovato' : '⚠️ Nessun utente disponibile'}
           </div>
         )}
-      </div>
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          🎯 Tipo Assegnazione
-        </label>
-        <Select value={assignmentType} onValueChange={setAssignmentType}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">👥 Tutti (parallelo)</SelectItem>
-            <SelectItem value="any">🎲 Primo disponibile</SelectItem>
-            <SelectItem value="sequential">⏭️ Sequenziale</SelectItem>
-          </SelectContent>
-        </Select>
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            🎯 Tipo Assegnazione
+          </label>
+          <Select value={assignmentType} onValueChange={setAssignmentType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">👥 Tutti (parallelo)</SelectItem>
+              <SelectItem value="any">🎲 Primo disponibile</SelectItem>
+              <SelectItem value="sequential">⏭️ Sequenziale</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
         <Button variant="outline" onClick={onClose}>Annulla</Button>
