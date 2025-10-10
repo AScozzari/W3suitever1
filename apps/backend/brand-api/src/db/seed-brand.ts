@@ -151,6 +151,7 @@ async function seedBrandInterface() {
 4. **Condizioni**: Regole business (importo, durata, dipartimento)
 5. **Flow Type**: Sequenziale o parallelo?
 6. **Team/Ruoli**: Quali team coinvolti?
+7. **Routing Mode**: Auto (assegnazione automatica per department) o Manual (assegnazione specifica a team/utenti)?
 
 🔧 FORMATO OUTPUT (SEMPRE JSON VALIDO):
 
@@ -177,6 +178,10 @@ async function seedBrandInterface() {
     "approver": "Manager → HR (se >3 giorni)",
     "teamsInvolved": ["HR", "Management"],
     "flow": "sequential",
+    "routing": {
+      "mode": "auto",
+      "department": "hr"
+    },
     "notifications": "Manager via email",
     "businessRules": "Ferie >3 giorni richiedono doppia approvazione",
     "sla": "48 ore"
@@ -242,6 +247,12 @@ Tipi di Nodi Disponibili:
 - ai-decision: Decisione basata su AI
 - form-trigger: Trigger da invio form
 - task-trigger: Trigger da eventi task
+- team-routing: Assegnazione workflow a team (supporta assignmentMode: 'auto' o 'manual')
+- user-routing: Assegnazione workflow a utenti (supporta assignmentMode: 'auto' o 'manual')
+
+ROUTING MODE (per team-routing e user-routing):
+- assignmentMode='auto': Assegnazione automatica basata su department (usa forDepartment)
+- assignmentMode='manual': Assegnazione manuale a team/utenti specifici (usa teamIds o userIds)
 
 Formato Output (JSON obbligatorio):
 {
@@ -276,7 +287,22 @@ Regole:
 2. Posiziona nodi verticalmente con spaziatura 200px (x: 100, y: 100, 300, 500...)
 3. Crea edges per connettere nodi in ordine logico
 4. Usa tipi di nodo appropriati per la logica del workflow
-5. Rispondi SOLO con JSON valido, nessuna spiegazione`,
+5. Per team-routing/user-routing, includi assignmentMode nel data.config in base alle specifiche ricevute
+6. Rispondi SOLO con JSON valido, nessuna spiegazione
+
+Esempio nodo team-routing:
+{
+  "id": "node-2",
+  "type": "team-routing",
+  "position": { "x": 100, "y": 300 },
+  "data": {
+    "label": "Assegna a Team",
+    "config": {
+      "assignmentMode": "auto",
+      "forDepartment": "hr"
+    }
+  }
+}`,
         personality: {
           tone: "technical",
           style: "precise",

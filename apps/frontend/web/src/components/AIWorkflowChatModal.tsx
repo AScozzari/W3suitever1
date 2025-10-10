@@ -241,6 +241,9 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
                           <p><strong>Approver:</strong> {msg.taskReminder.approver}</p>
                           <p><strong>Team:</strong> {msg.taskReminder.teamsInvolved?.join(', ')}</p>
                           <p><strong>Flow:</strong> {msg.taskReminder.flow}</p>
+                          {msg.taskReminder.routing && (
+                            <p><strong>Routing:</strong> {msg.taskReminder.routing.mode === 'auto' ? '🤖 Automatico' : '👤 Manuale'} {msg.taskReminder.routing.department && `(${msg.taskReminder.routing.department})`}</p>
+                          )}
                           {msg.taskReminder.notifications && (
                             <p><strong>Notifiche:</strong> {msg.taskReminder.notifications}</p>
                           )}

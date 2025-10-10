@@ -1320,6 +1320,10 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
         approver: z.string(),
         teamsInvolved: z.array(z.string()).optional(),
         flow: z.string(),
+        routing: z.object({
+          mode: z.enum(['auto', 'manual']),
+          department: z.string().optional()
+        }).optional(),
         notifications: z.string().optional(),
         businessRules: z.string().optional(),
         sla: z.string().optional()
@@ -1375,12 +1379,14 @@ Trigger: ${taskReminder.trigger}
 Approver: ${taskReminder.approver}
 Team Coinvolti: ${taskReminder.teamsInvolved?.join(', ') || 'N/A'}
 Flow Type: ${taskReminder.flow}
+${taskReminder.routing ? `Routing Mode: ${taskReminder.routing.mode} (${taskReminder.routing.mode === 'auto' ? 'automatic assignment by department' : 'manual assignment to specific teams/users'})${taskReminder.routing.department ? ` - Department: ${taskReminder.routing.department}` : ''}` : ''}
 ${taskReminder.notifications ? `Notifiche: ${taskReminder.notifications}` : ''}
 ${taskReminder.businessRules ? `Regole Business: ${taskReminder.businessRules}` : ''}
 ${taskReminder.sla ? `SLA: ${taskReminder.sla}` : ''}
 ${context?.department ? `\nReparto: ${context.department}` : ''}
 
-Genera un workflow ReactFlow JSON con nodi e collegamenti configurati correttamente.`;
+Genera un workflow ReactFlow JSON con nodi e collegamenti configurati correttamente.
+${taskReminder.routing ? `\nIMPORTANTE: Il nodo di routing (team-routing o user-routing) deve avere assignmentMode='${taskReminder.routing.mode}'${taskReminder.routing.department ? ` e forDepartment='${taskReminder.routing.department}'` : ''}.` : ''}`;
 
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);
