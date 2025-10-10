@@ -1,4 +1,4 @@
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles } from "lucide-react";
 import { useRequiredTenant } from "@/contexts/TenantContext";
@@ -53,12 +53,12 @@ const aiTools: AITool[] = [
 ];
 
 export default function AIToolsDashboardPage() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { tenant } = useRequiredTenant();
 
   const handleToolClick = (tool: AITool) => {
     if (tool.status === "available") {
-      navigate(`/${tenant.slug}${tool.route}`);
+      setLocation(`/${tenant.slug}${tool.route}`);
     }
   };
 
