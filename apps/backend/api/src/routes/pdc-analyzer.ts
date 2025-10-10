@@ -41,6 +41,20 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Lazy singleton Object Storage Client
+let objectStorageClient: Client | null = null;
+
+function getObjectStorageClient(): Client {
+  if (!objectStorageClient) {
+    if (!process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID) {
+      throw new Error('Object Storage non configurato. Contattare amministratore (manca DEFAULT_OBJECT_STORAGE_BUCKET_ID)');
+    }
+    objectStorageClient = new Client();
+    console.log('📦 Object Storage Client initialized for PDC Analyzer');
+  }
+  return objectStorageClient;
+}
+
 /**
  * POST /api/pdc/sessions
  * Create a new PDC analysis session
@@ -182,11 +196,30 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
     }
 
     // Save PDF to Object Storage (Replit native)
-    const storage = new Client();
-    
-    const fileKey = `pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
-    await storage.uploadFromBytes(fileKey, req.file.buffer);
-    const fileUrl = await storage.publicDownloadUrl(fileKey);
+    let fileUrl: string;
+    try {
+      console.log('📦 [PDC-UPLOAD] Initializing Object Storage client...');
+      const storage = getObjectStorageClient();
+      
+      const fileKey = `pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
+      console.log('📦 [PDC-UPLOAD] Uploading file with key:', fileKey);
+      console.log('📦 [PDC-UPLOAD] File size:', req.file.size, 'bytes');
+      
+      await storage.uploadFromBytes(fileKey, req.file.buffer);
+      fileUrl = storage.publicUrl(fileKey);
+      console.log('✅ [PDC-UPLOAD] File uploaded successfully:', fileUrl);
+    } catch (storageError: any) {
+      console.error('❌ [PDC-UPLOAD] Object Storage error:', storageError);
+      console.error('❌ [PDC-UPLOAD] Storage error stack:', storageError.stack);
+      console.error('❌ [PDC-UPLOAD] Storage error details:', {
+        message: storageError.message,
+        name: storageError.name,
+      });
+      return res.status(500).json({ 
+        error: "Failed to upload PDF to storage",
+        details: storageError.message 
+      });
+    }
 
     // Create PDF upload record
     const [pdfUpload] = await db
