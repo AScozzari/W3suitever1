@@ -253,38 +253,49 @@ export default function PDCAnalyzerPage() {
   });
 
   // Load session data when session changes (from Analytics view)
-  // DISABLED: Causes 500 loop, will be replaced with proper load mechanism
-  // useEffect(() => {
-  //   const loadSessionData = async () => {
-  //     if (session?.id && activeView === 'upload') {
-  //       try {
-  //         const sessionData = await apiRequest(`/api/pdc/sessions/${session.id}`);
-  //         
-  //         // Populate analysisResults from pdfUploads
-  //         if (sessionData.pdfUploads && sessionData.pdfUploads.length > 0) {
-  //           const results = sessionData.pdfUploads.map((pdf: any) => ({
-  //             id: pdf.id,
-  //             fileName: pdf.fileName,
-  //             status: pdf.status,
-  //             confidence: pdf.aiConfidence,
-  //             extractedData: sessionData.extractedData?.find((d: any) => d.pdfId === pdf.id),
-  //           }));
-  //           setAnalysisResults(results);
-  //         }
-  //         
-  //         // If there's extracted data, load first one for review
-  //         if (sessionData.extractedData && sessionData.extractedData.length > 0) {
-  //           const firstExtracted = sessionData.extractedData[0];
-  //           setReviewData(firstExtracted);
-  //         }
-  //       } catch (error) {
-  //         console.error('Error loading session data:', error);
-  //       }
-  //     }
-  //   };
-  //
-  //   loadSessionData();
-  // }, [session?.id, activeView]);
+  const [sessionLoaded, setSessionLoaded] = useState<string | null>(null);
+  
+  // Reset sessionLoaded when session is cleared or changed
+  useEffect(() => {
+    if (!session) {
+      setSessionLoaded(null);
+    }
+  }, [session]);
+  
+  useEffect(() => {
+    const loadSessionData = async () => {
+      // Guard: Only load if session exists, not already loaded
+      if (!session?.id || sessionLoaded === session.id) return;
+      
+      try {
+        const sessionData = await apiRequest(`/api/pdc/sessions/${session.id}`);
+        
+        // Populate analysisResults from pdfUploads
+        if (sessionData.pdfUploads && sessionData.pdfUploads.length > 0) {
+          const results = sessionData.pdfUploads.map((pdf: any) => ({
+            id: pdf.id,
+            fileName: pdf.fileName,
+            status: pdf.status,
+            confidence: pdf.aiConfidence,
+            extractedData: sessionData.extractedData?.find((d: any) => d.pdfId === pdf.id),
+          }));
+          setAnalysisResults(results);
+        }
+        
+        // If there's extracted data, load first one for review
+        if (sessionData.extractedData && sessionData.extractedData.length > 0) {
+          const firstExtracted = sessionData.extractedData[0];
+          setReviewData(firstExtracted);
+        }
+        
+        setSessionLoaded(session.id); // Mark as loaded
+      } catch (error) {
+        console.error('Error loading session data:', error);
+      }
+    };
+
+    loadSessionData();
+  }, [session?.id]);
 
   const handleCreateSession = async () => {
     if (!sessionName.trim()) {
@@ -1369,13 +1380,21 @@ export default function PDCAnalyzerPage() {
                         
                         return (
                           <div key={index} className="p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-windtre-orange/20">
-                            <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
                               <span className="w-6 h-6 bg-windtre-orange text-white rounded-full flex items-center justify-center text-sm">
                                 {index + 1}
                               </span>
                               {service.serviceName || `Servizio ${index + 1}`}
                               <span className="text-sm text-gray-500 ml-auto">€{service.price || 'N/A'}</span>
                             </h4>
+                            
+                            {/* Campo Presunto - Testo esatto dal PDF */}
+                            {service.rawTextFromPdf && (
+                              <div className="mb-4 p-2 bg-yellow-50 border border-yellow-300 rounded">
+                                <span className="text-xs font-semibold text-yellow-700">📝 TESTO DAL PDF:</span>
+                                <p className="text-sm text-gray-800 mt-1 font-mono">"{service.rawTextFromPdf}"</p>
+                              </div>
+                            )}
                             
                             <div className="grid grid-cols-3 gap-4">
                               {/* Driver Select */}
