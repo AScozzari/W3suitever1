@@ -424,8 +424,8 @@ Rispondi SEMPRE con JSON valido.`,
     await db
       .update(aiPdcAnalysisSessions)
       .set({
-        totalPdfs: drizzleSql`${aiPdcAnalysisSessions.totalPdfs} + 1`,
-        processedPdfs: drizzleSql`${aiPdcAnalysisSessions.processedPdfs} + 1`,
+        totalPdfs: sql`${aiPdcAnalysisSessions.totalPdfs} + 1`,
+        processedPdfs: sql`${aiPdcAnalysisSessions.processedPdfs} + 1`,
       })
       .where(eq(aiPdcAnalysisSessions.id, sessionId));
 
