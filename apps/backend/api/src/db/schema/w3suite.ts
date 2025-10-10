@@ -2556,6 +2556,45 @@ export const teamWorkflowAssignments = w3suiteSchema.table("team_workflow_assign
   uniqueIndex("team_workflow_assignments_unique").on(table.teamId, table.templateId, table.forDepartment),
 ]);
 
+// User Workflow Assignments - Mapping N:M tra utenti e workflow (con condizioni)
+export const userWorkflowAssignments = w3suiteSchema.table("user_workflow_assignments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  templateId: uuid("template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  
+  // 🎯 DEPARTMENT-SPECIFIC ASSIGNMENT: Workflow assignato per specifico dipartimento
+  forDepartment: departmentEnum("for_department").notNull(), // Quale dipartimento usa questo workflow
+  
+  // Assignment configuration
+  autoAssign: boolean("auto_assign").default(true), // Auto-assign a richieste utente
+  priority: integer("priority").default(100), // Se multipli workflow per utente, quale usare primo
+  
+  // Conditions for workflow usage
+  conditions: jsonb("conditions").default({}), // { requestType: 'vacation', amountRange: [0, 1000], customRules: {} }
+  
+  // Overrides specifici per questo utente
+  overrides: jsonb("overrides").default({}), // { skipSteps: [], alternateApprovers: {}, customSLA: 24 }
+  
+  // Status and validity
+  isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").defaultNow(),
+  validTo: timestamp("valid_to"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("user_workflow_assignments_tenant_idx").on(table.tenantId),
+  index("user_workflow_assignments_user_idx").on(table.userId),
+  index("user_workflow_assignments_template_idx").on(table.templateId),
+  index("user_workflow_assignments_active_idx").on(table.isActive),
+  // 🎯 UNIQUE PER DIPARTIMENTO: Stesso utente può avere stesso workflow per dipartimenti diversi
+  uniqueIndex("user_workflow_assignments_unique").on(table.userId, table.templateId, table.forDepartment),
+]);
+
 // Workflow Instances - Istanze runtime di workflow in esecuzione
 export const workflowInstances = w3suiteSchema.table("workflow_instances", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -3254,6 +3293,14 @@ export const insertTeamWorkflowAssignmentSchema = createInsertSchema(teamWorkflo
 });
 export type InsertTeamWorkflowAssignment = z.infer<typeof insertTeamWorkflowAssignmentSchema>;
 export type TeamWorkflowAssignment = typeof teamWorkflowAssignments.$inferSelect;
+
+export const insertUserWorkflowAssignmentSchema = createInsertSchema(userWorkflowAssignments).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertUserWorkflowAssignment = z.infer<typeof insertUserWorkflowAssignmentSchema>;
+export type UserWorkflowAssignment = typeof userWorkflowAssignments.$inferSelect;
 
 export const insertWorkflowInstanceSchema = createInsertSchema(workflowInstances).omit({ 
   id: true, 
