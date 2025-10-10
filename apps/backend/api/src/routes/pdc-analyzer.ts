@@ -13,6 +13,7 @@ import { drivers, driverCategories, driverTypologies } from "../db/schema/public
 import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcement";
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
+import crypto from "crypto";
 
 const router = Router();
 
@@ -208,18 +209,19 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
         sessionId,
         fileName: req.file.originalname,
         fileUrl,
-        fileHash: require('crypto').createHash('sha256').update(req.file.buffer).digest('hex'),
+        fileHash: crypto.createHash('sha256').update(req.file.buffer).digest('hex'),
         fileSize: req.file.size,
         status: 'analyzing',
       })
       .returning();
 
-    // Extract text from PDF
-    const pdfParse = require('pdf-parse');
-    const pdfData = await pdfParse(req.file.buffer);
-    const pdfText = pdfData.text;
+    // Convert PDF to base64 for GPT-4 Vision
+    const pdfBase64 = req.file.buffer.toString('base64');
+    const pdfDataUrl = `data:application/pdf;base64,${pdfBase64}`;
 
-    // Call GPT-4o for analysis
+    console.log('🤖 [PDC-AI] Sending PDF to GPT-4 Vision for analysis...');
+
+    // Call GPT-4o Vision for PDF analysis (can read PDFs directly)
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -280,7 +282,19 @@ Rispondi SEMPRE con JSON valido.`,
         },
         {
           role: "user",
-          content: `Analizza questa proposta contrattuale WindTre ed estrai tutti i dati:\n\n${pdfText}`,
+          content: [
+            {
+              type: "text",
+              text: "Analizza questa proposta contrattuale WindTre ed estrai tutti i dati come JSON strutturato. Leggi attentamente ogni pagina del PDF."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: pdfDataUrl,
+                detail: "high"
+              }
+            }
+          ],
         },
       ],
       response_format: { type: "json_object" },
@@ -445,7 +459,19 @@ Rispondi SEMPRE con JSON valido.`,
         },
         {
           role: "user",
-          content: `Analizza questa proposta contrattuale WindTre ed estrai tutti i dati:\n\n${pdfText}`,
+          content: [
+            {
+              type: "text",
+              text: "Analizza questa proposta contrattuale WindTre ed estrai tutti i dati come JSON strutturato. Leggi attentamente ogni pagina del PDF."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: pdfDataUrl,
+                detail: "high"
+              }
+            }
+          ],
         },
       ],
       response_format: { type: "json_object" },
