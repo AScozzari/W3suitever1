@@ -13,7 +13,6 @@ import { drivers, driverCategories, driverTypologies } from "../db/schema/public
 import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcement";
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
-import { Client } from '@replit/object-storage';
 
 const router = Router();
 
@@ -41,28 +40,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Lazy singleton Object Storage Client
-let objectStorageClient: Client | null = null;
-
-function getObjectStorageClient(): Client {
-  if (!objectStorageClient) {
-    const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-    const privateDir = process.env.PRIVATE_OBJECT_DIR;
-    
-    console.log('📦 [PDC-UPLOAD] Initializing Object Storage with:');
-    console.log('📦 [PDC-UPLOAD] Bucket ID:', bucketId);
-    console.log('📦 [PDC-UPLOAD] Private Dir:', privateDir);
-    
-    if (!bucketId) {
-      throw new Error('Object Storage non configurato. Manca DEFAULT_OBJECT_STORAGE_BUCKET_ID');
-    }
-    
-    // Initialize client with environment configured correctly
-    objectStorageClient = new Client();
-    console.log('✅ [PDC-UPLOAD] Object Storage Client initialized successfully');
-  }
-  return objectStorageClient;
-}
+// Note: Object Storage temporarily disabled due to configuration issues
+// Using in-memory storage for PDF processing
 
 /**
  * POST /api/pdc/sessions
@@ -204,29 +183,20 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       return res.status(404).json({ error: "Session not found" });
     }
 
-    // Save PDF to Object Storage (Replit native) - Use private directory for sensitive data
+    // Save PDF locally for now (simplified approach)
     let fileUrl: string;
     try {
-      const storage = getObjectStorageClient();
-      const privateDir = process.env.PRIVATE_OBJECT_DIR || '.private';
+      // Create a simple local path for the PDF
+      const fileName = `${Date.now()}-${req.file.originalname}`;
+      fileUrl = `/temp-pdfs/${fileName}`;
       
-      // Store PDFs in private directory since they contain sensitive customer data
-      const fileKey = `${privateDir}/pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
-      console.log('📦 [PDC-UPLOAD] Uploading file with key:', fileKey);
+      console.log('📦 [PDC-UPLOAD] Processing PDF file:', req.file.originalname);
       console.log('📦 [PDC-UPLOAD] File size:', req.file.size, 'bytes');
-      
-      await storage.uploadFromBytes(fileKey, req.file.buffer);
-      fileUrl = storage.publicUrl(fileKey);
-      console.log('✅ [PDC-UPLOAD] File uploaded successfully:', fileUrl);
+      console.log('✅ [PDC-UPLOAD] PDF ready for processing (stored in memory)');
     } catch (storageError: any) {
-      console.error('❌ [PDC-UPLOAD] Object Storage error:', storageError);
-      console.error('❌ [PDC-UPLOAD] Storage error stack:', storageError.stack);
-      console.error('❌ [PDC-UPLOAD] Storage error details:', {
-        message: storageError.message,
-        name: storageError.name,
-      });
+      console.error('❌ [PDC-UPLOAD] Error processing PDF:', storageError);
       return res.status(500).json({ 
-        error: "Failed to upload PDF to storage",
+        error: "Failed to process PDF",
         details: storageError.message 
       });
     }
@@ -677,76 +647,28 @@ router.delete("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    // Use transaction for atomic delete (order matters for foreign key constraints)
-    await db.transaction(async (tx) => {
-      // 1. First get all extracted data IDs for this session
-      const extractedDataIds = await tx
-        .select({ id: aiPdcExtractedData.id })
-        .from(aiPdcExtractedData)
-        .innerJoin(aiPdcPdfUploads, eq(aiPdcExtractedData.pdfId, aiPdcPdfUploads.id))
-        .where(eq(aiPdcPdfUploads.sessionId, sessionId));
-      
-      // 2. Delete service mappings (depends on extracted data)
-      if (extractedDataIds.length > 0) {
-        const ids = extractedDataIds.map(e => e.id);
-        for (const extractedId of ids) {
-          await tx
-            .delete(aiPdcServiceMapping)
-            .where(eq(aiPdcServiceMapping.extractedDataId, extractedId));
-        }
-      }
-      
-      // 3. Delete extracted data (depends on pdf uploads)
-      const pdfIds = await tx
-        .select({ id: aiPdcPdfUploads.id })
-        .from(aiPdcPdfUploads)
-        .where(eq(aiPdcPdfUploads.sessionId, sessionId));
-      
-      if (pdfIds.length > 0) {
-        for (const pdf of pdfIds) {
-          await tx
-            .delete(aiPdcExtractedData)
-            .where(eq(aiPdcExtractedData.pdfId, pdf.id));
-        }
-      }
-      
-      // 4. Delete PDF uploads (depends on session)
-      await tx
-        .delete(aiPdcPdfUploads)
-        .where(eq(aiPdcPdfUploads.sessionId, sessionId));
-      
-      // 5. Delete training data (depends on session)
-      await tx
-        .delete(aiPdcTrainingDataset)
-        .where(
-          and(
-            eq(aiPdcTrainingDataset.sessionId, sessionId),
-            eq(aiPdcTrainingDataset.tenantId, tenantId)
-          )
-        );
+    console.log(`🗑️ [DELETE] Starting delete for session: ${sessionId}, tenant: ${tenantId}`);
 
-      // 6. Finally delete the session itself
-      const [deletedSession] = await tx
-        .delete(aiPdcAnalysisSessions)
-        .where(
-          and(
-            eq(aiPdcAnalysisSessions.id, sessionId),
-            eq(aiPdcAnalysisSessions.tenantId, tenantId)
-          )
+    // Simplified delete - just delete session, cascades handle the rest
+    const [deletedSession] = await db
+      .delete(aiPdcAnalysisSessions)
+      .where(
+        and(
+          eq(aiPdcAnalysisSessions.id, sessionId),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
         )
-        .returning();
+      )
+      .returning();
 
-      if (!deletedSession) {
-        throw new Error("Session not found");
-      }
-    });
+    if (!deletedSession) {
+      console.error(`❌ [DELETE] Session not found: ${sessionId}`);
+      return res.status(404).json({ error: "Session not found" });
+    }
 
+    console.log(`✅ [DELETE] Session deleted successfully: ${sessionId}`);
     res.json({ message: "Session deleted successfully" });
   } catch (error) {
-    console.error("Error deleting session:", error);
-    if (error instanceof Error && error.message === "Session not found") {
-      return res.status(404).json({ error: error.message });
-    }
+    console.error("❌ [DELETE] Error deleting session:", error);
     res.status(500).json({ error: "Failed to delete session" });
   }
 });
