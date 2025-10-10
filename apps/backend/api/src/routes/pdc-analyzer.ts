@@ -18,7 +18,9 @@ import { createRequire } from "module";
 
 // Import pdf-parse using createRequire (CommonJS module)
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse"); // Default export is the function!
+const pdfParseModule = require("pdf-parse");
+// Handle both default export and direct function export
+const pdfParse = pdfParseModule.default || pdfParseModule;
 
 const router = Router();
 
