@@ -198,19 +198,37 @@ export type { InsertEntityLog, EntityLog } from './w3suite';
 import {
   aiPdcAnalysisSessions,
   aiPdcTrainingDataset,
+  aiPdcPdfUploads,
+  aiPdcExtractedData,
+  aiPdcServiceMapping,
   pdcAnalysisStatusEnum,
   type AiPdcAnalysisSession,
   type InsertAiPdcAnalysisSession,
   type AiPdcTrainingDataset,
-  type InsertAiPdcTrainingDataset
+  type InsertAiPdcTrainingDataset,
+  type AiPdcPdfUpload,
+  type InsertAiPdcPdfUpload,
+  type AiPdcExtractedData,
+  type InsertAiPdcExtractedData,
+  type AiPdcServiceMapping,
+  type InsertAiPdcServiceMapping
 } from './brand-interface';
 
 export {
   aiPdcAnalysisSessions,
   aiPdcTrainingDataset,
+  aiPdcPdfUploads,
+  aiPdcExtractedData,
+  aiPdcServiceMapping,
   pdcAnalysisStatusEnum,
   type AiPdcAnalysisSession,
   type InsertAiPdcAnalysisSession,
   type AiPdcTrainingDataset,
-  type InsertAiPdcTrainingDataset
+  type InsertAiPdcTrainingDataset,
+  type AiPdcPdfUpload,
+  type InsertAiPdcPdfUpload,
+  type AiPdcExtractedData,
+  type InsertAiPdcExtractedData,
+  type AiPdcServiceMapping,
+  type InsertAiPdcServiceMapping
 };

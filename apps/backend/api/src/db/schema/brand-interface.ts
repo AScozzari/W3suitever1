@@ -15,6 +15,8 @@ import {
   date,
   uniqueIndex,
   smallint,
+  integer,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -475,6 +477,121 @@ export const insertAiPdcTrainingDatasetSchema = createInsertSchema(aiPdcTraining
 });
 export type InsertAiPdcTrainingDataset = z.infer<typeof insertAiPdcTrainingDatasetSchema>;
 export type AiPdcTrainingDataset = typeof aiPdcTrainingDataset.$inferSelect;
+
+// ==================== AI PDC PDF UPLOADS ====================
+// Individual PDF files uploaded to a session
+export const aiPdcPdfUploads = brandInterfaceSchema.table("ai_pdc_pdf_uploads", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: uuid("session_id").notNull().references(() => aiPdcAnalysisSessions.id, { onDelete: 'cascade' }),
+  
+  // PDF file info
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileUrl: text("file_url").notNull(), // Object storage URL
+  fileHash: varchar("file_hash", { length: 64 }), // SHA256 for deduplication
+  fileSize: integer("file_size"), // bytes
+  
+  // Analysis status
+  status: pdcAnalysisStatusEnum("status").notNull().default('pending'),
+  aiModel: varchar("ai_model", { length: 100 }).default('gpt-4o'),
+  aiConfidence: smallint("ai_confidence"), // 0-100
+  
+  // Timestamps
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  analyzedAt: timestamp("analyzed_at"),
+  reviewedAt: timestamp("reviewed_at"),
+}, (table) => [
+  index("idx_pdc_uploads_session").on(table.sessionId),
+  index("idx_pdc_uploads_status").on(table.status),
+]);
+
+export const insertAiPdcPdfUploadSchema = createInsertSchema(aiPdcPdfUploads).omit({ 
+  id: true, 
+  uploadedAt: true 
+});
+export type InsertAiPdcPdfUpload = z.infer<typeof insertAiPdcPdfUploadSchema>;
+export type AiPdcPdfUpload = typeof aiPdcPdfUploads.$inferSelect;
+
+// ==================== AI PDC EXTRACTED DATA ====================
+// Customer and service data extracted from each PDF
+export const aiPdcExtractedData = brandInterfaceSchema.table("ai_pdc_extracted_data", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  pdfId: uuid("pdf_id").notNull().references(() => aiPdcPdfUploads.id, { onDelete: 'cascade' }),
+  sessionId: uuid("session_id").notNull().references(() => aiPdcAnalysisSessions.id, { onDelete: 'cascade' }),
+  
+  // Customer data (anagrafica)
+  customerType: varchar("customer_type", { length: 50 }), // 'business' | 'private'
+  customerData: jsonb("customer_data").notNull(), // { nome, cognome, cf, piva, indirizzo, telefono, email, etc }
+  
+  // Service data
+  servicesExtracted: jsonb("services_extracted").notNull(), // Array of services found
+  
+  // AI extraction metadata
+  aiRawOutput: jsonb("ai_raw_output"), // Full AI response
+  extractionMethod: varchar("extraction_method", { length: 100 }).default('gpt-4o-vision'),
+  
+  // Human review
+  wasReviewed: boolean("was_reviewed").default(false),
+  reviewedBy: varchar("reviewed_by", { length: 255 }),
+  correctedData: jsonb("corrected_data"), // User corrections
+  reviewNotes: text("review_notes"),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+}, (table) => [
+  index("idx_pdc_extracted_pdf").on(table.pdfId),
+  index("idx_pdc_extracted_session").on(table.sessionId),
+  index("idx_pdc_extracted_reviewed").on(table.wasReviewed),
+]);
+
+export const insertAiPdcExtractedDataSchema = createInsertSchema(aiPdcExtractedData).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertAiPdcExtractedData = z.infer<typeof insertAiPdcExtractedDataSchema>;
+export type AiPdcExtractedData = typeof aiPdcExtractedData.$inferSelect;
+
+// ==================== AI PDC SERVICE MAPPING ====================
+// Maps extracted services to WindTre product hierarchy (Driver → Category → Typology → Product)
+export const aiPdcServiceMapping = brandInterfaceSchema.table("ai_pdc_service_mapping", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  extractedDataId: uuid("extracted_data_id").notNull().references(() => aiPdcExtractedData.id, { onDelete: 'cascade' }),
+  
+  // Extracted service text
+  serviceTextExtracted: text("service_text_extracted").notNull(), // Raw text from PDF
+  serviceDescription: text("service_description"), // AI interpretation
+  
+  // WindTre Hierarchy Mapping
+  driverId: uuid("driver_id"), // References public.drivers (Fisso, Mobile, Energia, etc)
+  categoryId: uuid("category_id"), // References public.driver_categories OR w3suite.tenant_driver_categories
+  typologyId: uuid("typology_id"), // References public.driver_typologies OR w3suite.tenant_driver_typologies
+  productId: uuid("product_id"), // References w3suite.products (tenant inventory)
+  
+  // Mapping metadata
+  mappingConfidence: smallint("mapping_confidence"), // 0-100
+  mappingMethod: varchar("mapping_method", { length: 100 }).default('ai-auto'), // 'ai-auto' | 'manual' | 'training-match'
+  mappedBy: varchar("mapped_by", { length: 255 }), // User ID if manual
+  
+  // Training integration
+  wasUsedForTraining: boolean("was_used_for_training").default(false),
+  trainingDatasetId: uuid("training_dataset_id").references(() => aiPdcTrainingDataset.id),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_pdc_mapping_extracted").on(table.extractedDataId),
+  index("idx_pdc_mapping_driver").on(table.driverId),
+  index("idx_pdc_mapping_training").on(table.wasUsedForTraining),
+]);
+
+export const insertAiPdcServiceMappingSchema = createInsertSchema(aiPdcServiceMapping).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertAiPdcServiceMapping = z.infer<typeof insertAiPdcServiceMappingSchema>;
+export type AiPdcServiceMapping = typeof aiPdcServiceMapping.$inferSelect;
 
 // ==================== CROSS-TENANT KNOWLEDGE - USE W3SUITE SCHEMA ====================
 // 
