@@ -15,6 +15,12 @@ import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
 import crypto from "crypto";
 
+// Use CommonJS require for pdfjs-dist to ensure production compatibility
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+
+// Configure worker for PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.js");
+
 const router = Router();
 
 // Apply middleware
@@ -43,6 +49,46 @@ const openai = new OpenAI({
 
 // Note: Object Storage temporarily disabled due to configuration issues
 // Using in-memory storage for PDF processing
+
+/**
+ * Extract text from PDF using pdfjs-dist (Mozilla PDF.js)
+ * Supports complex PDFs, scanned documents, multi-page extraction
+ */
+async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
+  try {
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      useSystemFonts: true,
+    });
+    
+    const pdfDocument = await loadingTask.promise;
+    const numPages = pdfDocument.numPages;
+    
+    console.log(`📄 [PDF-EXTRACT] Processing ${numPages} pages...`);
+    
+    let fullText = '';
+    
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      fullText += `\n\n--- Pagina ${pageNum} ---\n${pageText}`;
+      
+      console.log(`✅ [PDF-EXTRACT] Pagina ${pageNum}/${numPages} estratta (${pageText.length} caratteri)`);
+    }
+    
+    console.log(`✅ [PDF-EXTRACT] Estrazione completata: ${fullText.length} caratteri totali`);
+    
+    return fullText.trim();
+  } catch (error) {
+    console.error('❌ [PDF-EXTRACT] Errore estrazione testo:', error);
+    throw new Error(`Impossibile estrarre testo dal PDF: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
+  }
+}
 
 /**
  * POST /api/pdc/sessions
@@ -215,10 +261,38 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       })
       .returning();
 
-    console.log('🤖 [PDC-AI] Generating simulated analysis (PDF parsing bypassed)...');
+    // Extract text from PDF using pdfjs-dist
+    console.log('📄 [PDC-UPLOAD] Extracting text from PDF...');
+    let pdfText: string;
+    try {
+      pdfText = await extractTextFromPDF(req.file.buffer);
+      
+      if (!pdfText || pdfText.length < 50) {
+        throw new Error('PDF appears to be empty or contains only images. Text extraction yielded insufficient content.');
+      }
+      
+      console.log(`✅ [PDC-UPLOAD] Text extracted successfully: ${pdfText.length} characters`);
+    } catch (extractError) {
+      console.error('❌ [PDC-UPLOAD] PDF text extraction failed:', extractError);
+      
+      // Update PDF status to failed (without extractionError field for now)
+      await db
+        .update(aiPdcPdfUploads)
+        .set({
+          status: 'failed',
+        })
+        .where(eq(aiPdcPdfUploads.id, pdfUpload.id));
+      
+      return res.status(400).json({ 
+        error: "Failed to extract text from PDF",
+        details: extractError instanceof Error ? extractError.message : 'Unknown error',
+        suggestion: "Il PDF potrebbe essere completamente scansionato o protetto. Prova con un PDF con testo selezionabile."
+      });
+    }
 
-    // TEMPORARY: Simulate PDF analysis since pdf-parse has import issues
-    // In production, implement proper PDF text extraction
+    console.log('🤖 [PDC-AI] Analyzing PDF text with GPT-4o...');
+
+    // Analyze extracted text with GPT-4o
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -226,49 +300,62 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
           role: "system",
           content: `Sei un esperto di analisi documentale specializzato nell'estrazione di dati da proposte di contratto (PDC) WindTre.
 
-Genera dati di esempio per test basati sul nome del file PDF: "${req.file.originalname}"
+**OBIETTIVO**: Estrarre anagrafica cliente, servizi venduti, e mapping prodotti dal testo PDF, generando JSON strutturato.
+
+**GERARCHIA PRODOTTI WINDTRE**:
+1. **Driver** (livello 1): Fisso, Mobile, Energia, Assicurazione, Protecta, Customer Base
+2. **Categoria** (livello 2): es. Mobile → Ricaricabile, Mobile → Abbonamento, Fisso → Fibra
+3. **Tipologia** (livello 3): es. Ricaricabile → Prepagata, Abbonamento → Postpagato, Fibra → FTTH
+4. **Prodotto** (livello 4): descrizione commerciale (es. "Super Fibra 1 Giga", "Smart 50GB")
 
 **FORMATO OUTPUT JSON**:
 {
   "customer": {
-    "type": "private",
-    "firstName": "Nome Cliente",
-    "lastName": "Cognome Cliente",
-    "fiscalCode": "RSSMRA80A01H501U",
-    "phone": "3331234567",
-    "email": "cliente@example.com",
+    "type": "private|business",
+    "firstName": "...",
+    "lastName": "...",
+    "fiscalCode": "...",
+    "phone": "...",
+    "email": "...",
     "address": {
-      "street": "Via Roma 1",
-      "city": "Roma",
-      "zip": "00100",
-      "province": "RM"
+      "street": "...",
+      "city": "...",
+      "zip": "...",
+      "province": "..."
     }
   },
   "services": [
     {
-      "driver": "Fisso",
-      "category": "Fibra",
-      "typology": "FTTH",
-      "productDescription": "Super Fibra 2.5 Giga",
-      "price": 24.99,
-      "duration": "24 mesi",
-      "activationDate": "${new Date().toISOString().split('T')[0]}"
+      "driver": "Mobile|Fisso|Energia|...",
+      "category": "Abbonamento|Ricaricabile|Fibra|...",
+      "typology": "Postpagato|Prepagata|FTTH|...",
+      "productDescription": "Nome commerciale prodotto",
+      "price": 14.99,
+      "duration": "24 mesi|30 giorni",
+      "activationDate": "YYYY-MM-DD"
     }
   ],
-  "confidence": 85,
-  "extractionNotes": "Dati simulati per test - PDF parsing temporaneamente disabilitato"
+  "confidence": 95,
+  "extractionNotes": "eventuali note su campi ambigui o mancanti"
 }
 
-Rispondi SEMPRE con JSON valido. Usa dati realistici italiani.`,
+**REGOLE**:
+- Estrai SOLO dati realmente presenti nel testo
+- Se un campo è ambiguo o mancante, segnalalo in extractionNotes
+- confidence deve riflettere la certezza dei dati estratti (0-100)
+- Per servizi multipli, crea array con tutti i prodotti trovati
+- Se è un cliente business, usa businessName invece di firstName/lastName
+
+Rispondi SEMPRE con JSON valido.`,
         },
         {
           role: "user",
-          content: `Genera dati di esempio per il PDF: ${req.file.originalname}`,
+          content: `Analizza questa proposta contrattuale WindTre ed estrai tutti i dati come JSON strutturato.\n\n**TESTO PDF**:\n${pdfText}`,
         },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 1500,
+      temperature: 0.2,
+      max_tokens: 2000,
     });
 
     const analysisResult = JSON.parse(response.choices[0].message.content || "{}");
