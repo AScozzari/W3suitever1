@@ -16,6 +16,8 @@ import TasksPage from '../pages/TasksPage';
 import ChatPage from '../pages/ChatPage';
 import Login from '../pages/Login';
 import NotFound from '../pages/NotFound';
+import AIToolsDashboardPage from '../pages/AIToolsDashboardPage';
+import PDCAnalyzerPage from '../pages/PDCAnalyzerPage';
 import { useAuth } from '../hooks/useAuth';
 
 interface TenantShellProps {
@@ -303,6 +305,18 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/chat`}>
         <AuthenticatedRoute>
           <ChatPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/ai-tools/pdc-analyzer`}>
+        <AuthenticatedRoute>
+          <PDCAnalyzerPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/ai-tools`}>
+        <AuthenticatedRoute>
+          <AIToolsDashboardPage />
         </AuthenticatedRoute>
       </Route>
       

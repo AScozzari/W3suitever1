@@ -67,14 +67,17 @@ export async function enforceAIEnabled(req: Request, res: Response, next: NextFu
 }
 
 /**
- * Middleware to enforce agent-level enablement
+ * Middleware factory to enforce agent-level enablement
  * Blocks request with 403 if specific agent is disabled
  * Use this AFTER enforceAIEnabled for agent-specific routes
+ * 
+ * @param agentId - The agent ID to check (optional, will use req.params/body if not provided)
  */
-export async function enforceAgentEnabled(req: Request, res: Response, next: NextFunction) {
-  try {
-    const tenantId = req.headers['x-tenant-id'] as string || (req as any).user?.tenantId;
-    const agentId = req.params.agentId || req.body?.agentId;
+export function enforceAgentEnabled(agentId?: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] as string || (req as any).user?.tenantId;
+      const effectiveAgentId = agentId || req.params.agentId || req.body?.agentId;
 
     if (!tenantId) {
       return res.status(400).json({
@@ -84,7 +87,7 @@ export async function enforceAgentEnabled(req: Request, res: Response, next: Nex
       });
     }
 
-    if (!agentId) {
+    if (!effectiveAgentId) {
       return res.status(400).json({
         success: false,
         error: 'Missing agent ID',
@@ -96,7 +99,7 @@ export async function enforceAgentEnabled(req: Request, res: Response, next: Nex
     // Check if this specific agent is enabled for the tenant (bypass RLS to read settings)
     const result = await db.execute(
       sql`SELECT is_enabled FROM w3suite.ai_agent_tenant_settings 
-          WHERE tenant_id = ${tenantId} AND agent_id = ${agentId} LIMIT 1`
+          WHERE tenant_id = ${tenantId} AND agent_id = ${effectiveAgentId} LIMIT 1`
     );
     
     // If no settings exist, agent is disabled by default (as per backend default logic)
@@ -106,14 +109,14 @@ export async function enforceAgentEnabled(req: Request, res: Response, next: Nex
     if (!isEnabled) {
       logger.warn('AI access denied - Agent disabled for tenant', { 
         tenantId, 
-        agentId,
+        agentId: effectiveAgentId,
         path: req.path
       });
 
       return res.status(403).json({
         success: false,
         error: 'Agent disabled',
-        message: `The AI agent "${agentId}" is currently disabled. Please enable it in Settings > AI Assistant.`,
+        message: `The AI agent "${effectiveAgentId}" is currently disabled. Please enable it in Settings > AI Assistant.`,
         timestamp: new Date().toISOString()
       });
     }
@@ -124,7 +127,7 @@ export async function enforceAgentEnabled(req: Request, res: Response, next: Nex
     logger.error('Agent enforcement middleware error', { 
       error: error.message, 
       path: req.path,
-      agentId: req.params.agentId 
+      agentId: effectiveAgentId 
     });
     
     res.status(500).json({
@@ -134,6 +137,7 @@ export async function enforceAgentEnabled(req: Request, res: Response, next: Nex
       timestamp: new Date().toISOString()
     });
   }
+  };
 }
 
 /**

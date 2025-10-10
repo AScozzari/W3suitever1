@@ -45,7 +45,7 @@ interface LeftSidebarProps {
 const defaultMenuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/' },
   { id: 'crm', label: 'CRM', icon: Users },
-  { id: 'ai', label: 'AI Tools', icon: Zap },
+  { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai-tools' },
   { id: 'calendario', label: 'Calendario', icon: Calendar, path: '/calendar' },
   { id: 'time-tracking', label: 'Time Tracking', icon: Clock, path: '/time-tracking' },
   { id: 'leave-management', label: 'Gestione Ferie', icon: CalendarDays, path: '/leave-management' },
