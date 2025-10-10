@@ -24,15 +24,15 @@ import {
   Sparkles,
   Edit,
   Save,
-  GitBranch
+  GitBranch,
+  BarChart3,
+  FileSearch
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
-
-type Step = "dashboard" | "create-session" | "upload" | "analyzing" | "results" | "review" | "service-mapping" | "export";
 
 interface SessionData {
   id: string;
@@ -66,7 +66,6 @@ interface ExtractedData {
   pdfFileName: string;
 }
 
-// WindTre Product Hierarchy
 const WINDTRE_HIERARCHY = {
   "Fisso": {
     "Fibra": ["FTTH", "FTTC"],
@@ -99,8 +98,10 @@ export default function PDCAnalyzerPage() {
   const { toast } = useToast();
   const [location] = useLocation();
   
-  // Wizard state
-  const [currentStep, setCurrentStep] = useState<Step>("dashboard");
+  // Navigation state
+  const [activeView, setActiveView] = useState<'analytics' | 'upload' | 'review' | 'export'>('analytics');
+  
+  // Session & Upload state
   const [sessionName, setSessionName] = useState("");
   const [session, setSession] = useState<SessionData | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -120,9 +121,8 @@ export default function PDCAnalyzerPage() {
   const [exportJson, setExportJson] = useState<any>(null);
 
   // Query per sessioni precedenti
-  const { data: previousSessions, isLoading: loadingSessions } = useQuery({
+  const { data: previousSessions = [], isLoading: loadingSessions } = useQuery({
     queryKey: ['/api/pdc/sessions'],
-    enabled: currentStep === "dashboard",
   });
 
   // Mutation per creare sessione
@@ -130,23 +130,20 @@ export default function PDCAnalyzerPage() {
     mutationFn: async (name: string) => {
       const response = await apiRequest("/api/pdc/sessions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sessionName: name }),
+        body: { sessionName: name },
       });
       return response;
     },
     onSuccess: (data) => {
       setSession(data);
-      setCurrentStep("upload");
+      setActiveView('upload');
       toast({ title: "✅ Sessione creata", description: `Sessione "${sessionName}" pronta per l'upload` });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "❌ Errore creazione sessione", 
-        description: error.message,
-        variant: "destructive" 
+      toast({
+        title: "❌ Errore creazione sessione",
+        description: error.message || "Riprova",
+        variant: "destructive",
       });
     },
   });
@@ -159,7 +156,6 @@ export default function PDCAnalyzerPage() {
       const formData = new FormData();
       formData.append("pdf", file);
       
-      // Get tenant ID dynamically (same as apiRequest)
       const currentTenantId = localStorage.getItem("currentTenantId") || localStorage.getItem("tenantId") || "";
       
       const response = await fetch(`/api/pdc/sessions/${session.id}/upload`, {
@@ -185,17 +181,17 @@ export default function PDCAnalyzerPage() {
   const submitReviewMutation = useMutation({
     mutationFn: async ({ extractedDataId, correctedData, notes }: any) => {
       const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/review`, {
-        method: "PUT",
+        method: "POST",
         body: {
           correctedData,
-          reviewNotes: notes,
+          notes,
         },
       });
       return response;
     },
     onSuccess: () => {
-      toast({ title: "✅ Review salvata", description: "Correzioni salvate con successo" });
-      setCurrentStep("service-mapping");
+      toast({ title: "✅ Review salvata" });
+      setActiveView('export');
     },
   });
 
@@ -230,85 +226,79 @@ export default function PDCAnalyzerPage() {
     },
   });
 
-  const handleCreateSession = () => {
-    if (sessionName.trim().length < 3) {
-      toast({ 
-        title: "Nome troppo corto", 
-        description: "Il nome deve avere almeno 3 caratteri",
-        variant: "destructive" 
+  const handleCreateSession = async () => {
+    if (!sessionName.trim()) {
+      toast({
+        title: "❌ Nome richiesto",
+        description: "Inserisci un nome per la sessione",
+        variant: "destructive",
       });
       return;
     }
     createSessionMutation.mutate(sessionName);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setUploadedFiles(prev => [...prev, ...newFiles]);
-    }
-  };
-
-  const handleProcessFiles = async () => {
-    if (uploadedFiles.length === 0) {
-      toast({ title: "Nessun file", description: "Carica almeno un PDF" });
-      return;
-    }
-
-    setCurrentStep("analyzing");
+  const handleFileUpload = async (file: File) => {
     setIsProcessing(true);
-    const results: AnalysisResult[] = [];
-
-    for (const file of uploadedFiles) {
-      try {
-        const result = await analyzeFileMutation.mutateAsync(file);
-        results.push({
-          id: result.id,
-          extractedDataId: result.extractedDataId,
-          fileName: file.name,
-          status: "completed",
-          analysis: result.analysis,
+    try {
+      const result = await analyzeFileMutation.mutateAsync(file);
+      
+      setAnalysisResults(prev => [...prev, result]);
+      setUploadedFiles(prev => [...prev, file]);
+      
+      if (result.status === "completed") {
+        toast({ 
+          title: "✅ Analisi completata", 
+          description: `${file.name} analizzato con successo`
         });
-      } catch (error: any) {
-        results.push({
-          id: "",
-          extractedDataId: "",
-          fileName: file.name,
-          status: "error",
-          error: error.message,
+      } else {
+        toast({
+          title: "❌ Errore analisi",
+          description: result.error || "Errore sconosciuto",
+          variant: "destructive",
         });
       }
+    } catch (error: any) {
+      toast({
+        title: "❌ Upload fallito",
+        description: error.message || "Riprova",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
-
-    setAnalysisResults(results);
-    setIsProcessing(false);
-    setCurrentStep("results");
-    toast({ 
-      title: "🎉 Analisi completata!", 
-      description: `${results.filter(r => r.status === "completed").length}/${results.length} documenti analizzati` 
-    });
   };
 
-  const handleStartReview = (result: AnalysisResult) => {
+  const handleSelectResult = async (result: AnalysisResult) => {
     setSelectedResult(result);
-    setReviewData(result.analysis);
-    setCurrentStep("review");
+    
+    if (result.status === "completed") {
+      const extractedData: ExtractedData = await apiRequest(`/api/pdc/extracted/${result.extractedDataId}`);
+      setReviewData(extractedData);
+      setActiveView('review');
+    }
   };
 
-  const handleSaveReview = () => {
+  const handleSubmitReview = async () => {
     if (!selectedResult) return;
     
-    submitReviewMutation.mutate({
-      extractedDataId: selectedResult.extractedDataId,
-      correctedData: reviewData,
-      notes: reviewNotes,
-    });
+    try {
+      await submitReviewMutation.mutateAsync({
+        extractedDataId: selectedResult.extractedDataId,
+        correctedData: reviewData,
+        notes: reviewNotes,
+      });
+    } catch (error: any) {
+      toast({
+        title: "❌ Errore salvataggio review",
+        description: error.message || "Riprova",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSaveServiceMapping = async () => {
+  const handleSaveServiceMapping = async (mapping: any) => {
     if (!selectedResult) return;
-    
-    const mapping = serviceMappings[currentServiceIndex];
     
     try {
       await saveServiceMappingMutation.mutateAsync({
@@ -319,12 +309,11 @@ export default function PDCAnalyzerPage() {
         },
       });
 
-      // Only advance after successful save
-      if (currentServiceIndex < (reviewData?.services?.length || 0) - 1) {
+      if (currentServiceIndex < (reviewData?.servicesExtracted?.length || 0) - 1) {
         setCurrentServiceIndex(currentServiceIndex + 1);
         toast({ title: "✅ Mapping salvato", description: `Servizio ${currentServiceIndex + 1} mappato` });
       } else {
-        setCurrentStep("export");
+        setActiveView('export');
         await handlePrepareExport();
         toast({ title: "✅ Tutti i servizi mappati", description: "Preparazione export..." });
       }
@@ -360,733 +349,536 @@ export default function PDCAnalyzerPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleNewSession = () => {
-    setSessionName("");
-    setSession(null);
-    setUploadedFiles([]);
-    setAnalysisResults([]);
-    setSelectedResult(null);
-    setReviewData(null);
-    setServiceMappings([]);
-    setCurrentServiceIndex(0);
-    setExportJson(null);
-    setCurrentStep("dashboard");
-  };
-
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Hero Header */}
-        <div
-          className="rounded-2xl p-8 relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)",
-            color: "white",
-          }}
-        >
-          <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <FileText className="h-8 w-8 text-white" />
-              </div>
+      <div className="min-h-screen bg-white">
+        {/* Hero Header con WindTre Gradient */}
+        <div className="bg-gradient-to-r from-windtre-orange to-windtre-purple p-8 mb-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-bold">PDC Analyzer</h1>
-                <p className="mt-1 text-lg text-white/90">
-                  Analisi automatica proposte contrattuali con AI
+                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                  <Sparkles className="h-8 w-8" />
+                  PDC Analyzer
+                </h1>
+                <p className="text-white/90 mt-2">
+                  Analisi AI-powered dei contratti PDF con estrazione automatica dati
                 </p>
               </div>
             </div>
-            {currentStep === "dashboard" && (
-              <Button
-                size="lg"
-                onClick={() => setCurrentStep("create-session")}
-                className="bg-white text-purple-700 hover:bg-gray-100"
-                data-testid="button-new-analysis"
-              >
-                <Plus className="mr-2 h-5 w-5" />
-                Nuova Analisi
-              </Button>
-            )}
+            
+            {/* Navigation Tabs */}
+            <div className="flex gap-1 mt-6">
+              {[
+                { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+                { id: 'upload', label: 'Upload & Analyze', icon: Upload },
+                { id: 'review', label: 'Review & Correct', icon: FileSearch },
+                { id: 'export', label: 'Export JSON', icon: Download }
+              ].map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant={activeView === tab.id ? 'default' : 'ghost'}
+                  onClick={() => setActiveView(tab.id as any)}
+                  className={`flex items-center gap-2 ${
+                    activeView === tab.id 
+                      ? 'bg-white text-windtre-orange hover:bg-white/90' 
+                      : 'text-white hover:bg-white/20'
+                  }`}
+                  data-testid={`button-tab-${tab.id}`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
           </div>
-          
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
-          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-500/20 rounded-full -ml-48 -mb-48" />
         </div>
 
-        {/* Dashboard View */}
-        {currentStep === "dashboard" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Sessioni Totali</CardTitle>
-                  <FileCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{previousSessions?.length || 0}</div>
-                  <p className="text-xs text-muted-foreground">Analisi completate</p>
-                </CardContent>
-              </Card>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 pb-6">
+          {activeView === 'analytics' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Dashboard Analytics</h2>
               
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">PDC Analizzati</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {previousSessions?.reduce((acc: number, s: any) => acc + (s.totalPdfs || 0), 0) || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Documenti processati</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Ultima Sessione</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {previousSessions?.[0]?.createdAt ? new Date(previousSessions[0].createdAt).toLocaleDateString('it-IT') : "-"}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Data analisi</p>
-                </CardContent>
-              </Card>
-            </div>
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-windtre-orange" />
+                      Sessioni Totali
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-total-sessions">
+                      {loadingSessions ? '...' : previousSessions.length || 0}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Tutte le sessioni di analisi
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Sessioni Recenti</CardTitle>
-                <CardDescription>Le tue ultime analisi PDC</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingSessions ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-                  </div>
-                ) : previousSessions && previousSessions.length > 0 ? (
-                  <div className="space-y-3">
-                    {previousSessions.slice(0, 5).map((sess: any) => (
-                      <div
-                        key={sess.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-purple-600">
-                            <FileText className="h-5 w-5 text-white" />
-                          </div>
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <FileCheck className="h-4 w-4 text-windtre-purple" />
+                      PDF Analizzati
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-analyzed-pdfs">
+                      {analysisResults.length}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      In questa sessione
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Success Rate
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600" data-testid="stat-success-rate">
+                      {analysisResults.length > 0 
+                        ? Math.round((analysisResults.filter(r => r.status === 'completed').length / analysisResults.length) * 100)
+                        : 0}%
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Analisi completate
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-windtre-orange" />
+                      In Revisione
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-in-review">
+                      {reviewData ? 1 : 0}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Dati da correggere
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Sessions */}
+              <Card className="windtre-glass-panel border-white/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                    <Clock className="h-5 w-5" />
+                    Sessioni Recenti
+                  </CardTitle>
+                  <CardDescription>Ultime sessioni di analisi PDC</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingSessions ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-windtre-orange mx-auto" />
+                      <p className="text-gray-500 mt-2">Caricamento sessioni...</p>
+                    </div>
+                  ) : previousSessions.length > 0 ? (
+                    <div className="space-y-3">
+                      {previousSessions.slice(0, 10).map((sess: any) => (
+                        <div 
+                          key={sess.id}
+                          className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
+                          data-testid={`session-item-${sess.id}`}
+                        >
                           <div>
-                            <p className="font-medium">{sess.sessionName || `Sessione ${sess.id.slice(0, 8)}`}</p>
-                            <p className="text-sm text-gray-500">
-                              {new Date(sess.createdAt).toLocaleDateString('it-IT', { 
-                                day: 'numeric', 
-                                month: 'long', 
-                                year: 'numeric' 
+                            <h4 className="font-medium text-gray-900">{sess.sessionName}</h4>
+                            <p className="text-sm text-gray-600">
+                              {new Date(sess.createdAt).toLocaleDateString('it-IT', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
                               })}
                             </p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant={sess.status === 'completed' ? 'default' : 'secondary'}>
-                            {sess.totalPdfs || 0} PDC
+                          <Badge variant="outline" className="capitalize">
+                            {sess.status}
                           </Badge>
-                          <Button variant="ghost" size="sm">
-                            Vedi dettagli
-                          </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="flex justify-center mb-4">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                        <Sparkles className="h-10 w-10 text-gray-400" />
-                      </div>
+                      ))}
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Nessuna analisi trovata</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      Inizia la tua prima analisi PDC con l'intelligenza artificiale
-                    </p>
-                    <Button
-                      onClick={() => setCurrentStep("create-session")}
-                      className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Crea Prima Sessione
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Progress Steps */}
-        {currentStep !== "dashboard" && (
-          <div className="flex items-center justify-center gap-4 overflow-x-auto pb-2">
-            {[
-              { step: "create-session", label: "Crea Sessione", icon: Plus },
-              { step: "upload", label: "Carica PDF", icon: Upload },
-              { step: "analyzing", label: "Analisi AI", icon: Loader2 },
-              { step: "results", label: "Risultati", icon: CheckCircle2 },
-              { step: "review", label: "Review", icon: Edit },
-              { step: "service-mapping", label: "Mapping", icon: GitBranch },
-              { step: "export", label: "Export", icon: Download },
-            ].map((item, idx) => {
-              const Icon = item.icon;
-              const isActive = currentStep === item.step;
-              const steps = ["create-session", "upload", "analyzing", "results", "review", "service-mapping", "export"];
-              const isPast = steps.indexOf(currentStep) > idx;
-              
-              return (
-                <div key={item.step} className="flex items-center">
-                  <div className={`flex flex-col items-center ${isActive ? "opacity-100" : isPast ? "opacity-70" : "opacity-30"}`}>
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                      isActive ? "bg-gradient-to-br from-orange-500 to-purple-600 text-white" :
-                      isPast ? "bg-green-500 text-white" :
-                      "bg-gray-200 dark:bg-gray-700 text-gray-400"
-                    }`}>
-                      {isPast ? <Check className="h-5 w-5" /> : <Icon className={`h-5 w-5 ${isActive && item.step === "analyzing" ? "animate-spin" : ""}`} />}
-                    </div>
-                    <span className="mt-1 text-xs font-medium whitespace-nowrap">{item.label}</span>
-                  </div>
-                  {idx < 6 && (
-                    <ChevronRight className={`h-4 w-4 mx-1 ${isPast ? "text-green-500" : "text-gray-300"}`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Step Content */}
-        {currentStep !== "dashboard" && (
-          <Card>
-            <CardContent className="p-8">
-              {/* STEP 1: Create Session */}
-              {currentStep === "create-session" && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold">Inizia una nuova analisi</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Dai un nome alla sessione per organizzare i tuoi documenti PDC
-                    </p>
-                  </div>
-                  
-                  <div className="max-w-md mx-auto space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="session-name">Nome Sessione *</Label>
-                      <Input
-                        id="session-name"
-                        data-testid="input-session-name"
-                        placeholder="es. Proposte Gennaio 2025"
-                        value={sessionName}
-                        onChange={(e) => setSessionName(e.target.value)}
-                        className="text-lg"
-                        onKeyDown={(e) => e.key === "Enter" && handleCreateSession()}
-                      />
-                    </div>
-                    
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentStep("dashboard")}
-                        className="flex-1"
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">Nessuna sessione trovata</p>
+                      <Button 
+                        onClick={() => setActiveView('upload')}
+                        className="mt-4 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                        data-testid="button-create-first-session"
                       >
-                        Annulla
+                        Crea Prima Sessione
                       </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeView === 'upload' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Upload & Analyze PDFs</h2>
+
+              {/* Create Session Section */}
+              {!session && (
+                <Card className="windtre-glass-panel border-white/20 mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                      <Plus className="h-5 w-5" />
+                      Crea Nuova Sessione
+                    </CardTitle>
+                    <CardDescription>Inizia una nuova sessione di analisi PDC</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="session-name">Nome Sessione *</Label>
+                        <Input
+                          id="session-name"
+                          value={sessionName}
+                          onChange={(e) => setSessionName(e.target.value)}
+                          placeholder="es. Analisi PDC Gennaio 2024"
+                          className="mt-1"
+                          data-testid="input-session-name"
+                        />
+                      </div>
                       <Button
-                        data-testid="button-create-session"
                         onClick={handleCreateSession}
-                        disabled={sessionName.trim().length < 3 || createSessionMutation.isPending}
-                        className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                        size="lg"
+                        disabled={!sessionName.trim() || createSessionMutation.isPending}
+                        className="w-full bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                        data-testid="button-create-session"
                       >
                         {createSessionMutation.isPending ? (
                           <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             Creazione...
                           </>
                         ) : (
                           <>
+                            <Plus className="h-4 w-4 mr-2" />
                             Crea Sessione
-                            <ChevronRight className="ml-2 h-5 w-5" />
                           </>
                         )}
                       </Button>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
-              {/* STEP 2: Upload Files */}
-              {currentStep === "upload" && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold">Carica i tuoi documenti PDF</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Carica più file contemporaneamente. L'AI analizzerà tutti i documenti.
-                    </p>
-                  </div>
-
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center hover:border-orange-500 transition-colors">
-                    <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <p className="text-lg font-medium mb-2">Trascina i PDF qui o clicca per selezionare</p>
-                    <p className="text-sm text-gray-500 mb-4">PDF fino a 10MB ciascuno</p>
-                    <Input
-                      type="file"
-                      accept=".pdf"
-                      multiple
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <Button asChild variant="outline">
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        Seleziona File
-                      </label>
-                    </Button>
-                  </div>
-
-                  {uploadedFiles.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold">Documenti caricati ({uploadedFiles.length})</h3>
-                      <div className="space-y-2">
-                        {uploadedFiles.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-5 w-5 text-orange-500" />
-                              <span className="font-medium">{file.name}</span>
-                              <span className="text-sm text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))}
-                            >
-                              Rimuovi
-                            </Button>
-                          </div>
-                        ))}
+              {/* Upload Section */}
+              {session && (
+                <>
+                  <Card className="windtre-glass-panel border-white/20 mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-windtre-purple">
+                        <Upload className="h-5 w-5" />
+                        Upload PDF Contratti
+                      </CardTitle>
+                      <CardDescription>
+                        Sessione attiva: <strong>{session.sessionName}</strong>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-windtre-orange transition-colors cursor-pointer"
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const file = e.dataTransfer.files[0];
+                          if (file && file.type === 'application/pdf') {
+                            handleFileUpload(file);
+                          }
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        data-testid="upload-dropzone"
+                      >
+                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-2">Trascina qui il PDF o clicca per selezionare</p>
+                        <Input
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          id="pdf-upload"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file);
+                          }}
+                          data-testid="input-pdf-upload"
+                        />
+                        <Button
+                          onClick={() => document.getElementById('pdf-upload')?.click()}
+                          variant="outline"
+                          disabled={isProcessing}
+                          data-testid="button-select-pdf"
+                        >
+                          Seleziona PDF
+                        </Button>
                       </div>
-                    </div>
-                  )}
 
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={handleNewSession}
-                      className="flex-1"
-                    >
-                      Annulla
-                    </Button>
-                    <Button
-                      onClick={handleProcessFiles}
-                      disabled={uploadedFiles.length === 0}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                      size="lg"
-                    >
-                      Analizza {uploadedFiles.length} {uploadedFiles.length === 1 ? "documento" : "documenti"}
-                      <ChevronRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+                      {isProcessing && (
+                        <div className="mt-4">
+                          <div className="flex items-center gap-2 text-windtre-orange mb-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="font-medium">Analisi AI in corso...</span>
+                          </div>
+                          <Progress value={50} className="h-2" />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-              {/* STEP 3: Analyzing */}
-              {currentStep === "analyzing" && (
-                <div className="space-y-6 text-center py-12">
-                  <Loader2 className="h-20 w-20 mx-auto animate-spin text-orange-500" />
-                  <h2 className="text-2xl font-bold">Analisi in corso...</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    L'intelligenza artificiale sta processando i tuoi documenti
-                  </p>
-                  <Progress value={65} className="max-w-md mx-auto" />
-                </div>
-              )}
-
-              {/* STEP 4: Results */}
-              {currentStep === "results" && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <CheckCircle2 className="h-20 w-20 mx-auto text-green-500" />
-                    <h2 className="text-2xl font-bold">Analisi completata!</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {analysisResults.filter(r => r.status === "completed").length} documenti analizzati con successo
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {analysisResults.map((result, idx) => (
-                      <div key={idx} className={`p-4 rounded-lg ${
-                        result.status === "completed" ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" : 
-                        "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {result.status === "completed" ? (
-                              <CheckCircle2 className="h-6 w-6 text-green-600" />
-                            ) : (
-                              <AlertCircle className="h-6 w-6 text-red-600" />
-                            )}
-                            <div>
-                              <p className="font-semibold">{result.fileName}</p>
-                              {result.status === "error" && (
-                                <p className="text-sm text-red-600">{result.error}</p>
-                              )}
-                              {result.status === "completed" && result.analysis && (
-                                <p className="text-sm text-green-600">Confidence: {result.analysis.confidence}%</p>
+                  {/* Analysis Results */}
+                  {analysisResults.length > 0 && (
+                    <Card className="windtre-glass-panel border-white/20">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                          <FileCheck className="h-5 w-5" />
+                          Risultati Analisi ({analysisResults.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {analysisResults.map((result) => (
+                            <div
+                              key={result.id}
+                              className="flex items-center justify-between p-4 windtre-glass-panel rounded-lg border-white/20"
+                              data-testid={`result-item-${result.id}`}
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                {result.status === "completed" ? (
+                                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <AlertCircle className="h-5 w-5 text-red-600" />
+                                )}
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900">{result.fileName}</h4>
+                                  <p className="text-sm text-gray-600">
+                                    {result.status === "completed" 
+                                      ? `Confidence: ${result.analysis?.confidence}%` 
+                                      : result.error}
+                                  </p>
+                                </div>
+                              </div>
+                              {result.status === "completed" && (
+                                <Button
+                                  onClick={() => handleSelectResult(result)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-windtre-orange text-windtre-orange hover:bg-windtre-orange hover:text-white"
+                                  data-testid={`button-review-${result.id}`}
+                                >
+                                  Review
+                                  <ChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
                               )}
                             </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {activeView === 'review' && reviewData && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Correct</h2>
+
+              <Card className="windtre-glass-panel border-white/20 mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-windtre-purple">
+                    <Edit className="h-5 w-5" />
+                    Dati Cliente
+                  </CardTitle>
+                  <CardDescription>Verifica e correggi i dati estratti dall'AI</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nome</Label>
+                      <Input 
+                        value={reviewData.customerData?.firstName || ''} 
+                        onChange={(e) => setReviewData({
+                          ...reviewData,
+                          customerData: { ...reviewData.customerData, firstName: e.target.value }
+                        })}
+                        data-testid="input-customer-firstname"
+                      />
+                    </div>
+                    <div>
+                      <Label>Cognome</Label>
+                      <Input 
+                        value={reviewData.customerData?.lastName || ''} 
+                        onChange={(e) => setReviewData({
+                          ...reviewData,
+                          customerData: { ...reviewData.customerData, lastName: e.target.value }
+                        })}
+                        data-testid="input-customer-lastname"
+                      />
+                    </div>
+                    <div>
+                      <Label>Email</Label>
+                      <Input 
+                        value={reviewData.customerData?.email || ''} 
+                        onChange={(e) => setReviewData({
+                          ...reviewData,
+                          customerData: { ...reviewData.customerData, email: e.target.value }
+                        })}
+                        data-testid="input-customer-email"
+                      />
+                    </div>
+                    <div>
+                      <Label>Telefono</Label>
+                      <Input 
+                        value={reviewData.customerData?.phone || ''} 
+                        onChange={(e) => setReviewData({
+                          ...reviewData,
+                          customerData: { ...reviewData.customerData, phone: e.target.value }
+                        })}
+                        data-testid="input-customer-phone"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="windtre-glass-panel border-white/20 mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                    <GitBranch className="h-5 w-5" />
+                    Servizi Estratti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {reviewData.servicesExtracted?.map((service: any, index: number) => (
+                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-medium text-gray-900 mb-2">Servizio {index + 1}</h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600">Nome:</span>
+                            <span className="ml-2 font-medium">{service.serviceName}</span>
                           </div>
-                          {result.status === "completed" && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleStartReview(result)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Review & Export
-                            </Button>
-                          )}
+                          <div>
+                            <span className="text-gray-600">Prezzo:</span>
+                            <span className="ml-2 font-medium">€{service.price}</span>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex gap-4 pt-4">
-                    <Button
-                      onClick={handleNewSession}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Nuova Analisi
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <Card className="windtre-glass-panel border-white/20 mb-6">
+                <CardHeader>
+                  <CardTitle>Note di Revisione</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="Aggiungi note sulla revisione..."
+                    rows={4}
+                    data-testid="textarea-review-notes"
+                  />
+                </CardContent>
+              </Card>
 
-              {/* STEP 5: Review */}
-              {currentStep === "review" && reviewData && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold">Review Dati Estratti</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Verifica e correggi i dati estratti dall'AI
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">Cliente</h3>
-                      <Textarea
-                        value={JSON.stringify(reviewData.customer, null, 2)}
-                        onChange={(e) => {
-                          try {
-                            const customer = JSON.parse(e.target.value);
-                            setReviewData({ ...reviewData, customer });
-                          } catch {}
-                        }}
-                        rows={8}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold mb-2">Servizi ({reviewData.services?.length || 0})</h3>
-                      <Textarea
-                        value={JSON.stringify(reviewData.services, null, 2)}
-                        onChange={(e) => {
-                          try {
-                            const services = JSON.parse(e.target.value);
-                            setReviewData({ ...reviewData, services });
-                          } catch {}
-                        }}
-                        rows={10}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Note di Revisione (opzionale)</Label>
-                      <Textarea
-                        value={reviewNotes}
-                        onChange={(e) => setReviewNotes(e.target.value)}
-                        placeholder="Descrivi eventuali correzioni apportate..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep("results")}
-                      className="flex-1"
-                    >
-                      Indietro
-                    </Button>
-                    <Button
-                      onClick={handleSaveReview}
-                      disabled={submitReviewMutation.isPending}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
-                      size="lg"
-                    >
-                      {submitReviewMutation.isPending ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-5 w-5" />
-                      )}
-                      Salva Review
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 6: Service Mapping */}
-              {currentStep === "service-mapping" && reviewData && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold">Mapping Servizi WindTre</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Mappa servizio {currentServiceIndex + 1} di {reviewData.services?.length || 0} alla gerarchia WindTre
-                    </p>
-                  </div>
-
-                  {reviewData.services?.[currentServiceIndex] && (
-                    <div className="space-y-4">
-                      <Card className="bg-gray-50 dark:bg-gray-800">
-                        <CardContent className="p-4">
-                          <p className="font-semibold">Servizio dal PDF:</p>
-                          <p className="text-sm mt-1">{reviewData.services[currentServiceIndex].productDescription || "N/A"}</p>
-                          <p className="text-sm text-gray-500 mt-1">Prezzo: €{reviewData.services[currentServiceIndex].price || "N/A"}</p>
-                        </CardContent>
-                      </Card>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label>Driver (Livello 1) *</Label>
-                          <Select
-                            value={serviceMappings[currentServiceIndex]?.driverSelected}
-                            onValueChange={(value) => {
-                              const newMappings = [...serviceMappings];
-                              newMappings[currentServiceIndex] = { 
-                                ...newMappings[currentServiceIndex], 
-                                driverSelected: value,
-                                categorySelected: "",
-                                typologySelected: "",
-                              };
-                              setServiceMappings(newMappings);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona driver" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.keys(WINDTRE_HIERARCHY).map(driver => (
-                                <SelectItem key={driver} value={driver}>{driver}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Categoria (Livello 2) *</Label>
-                          <Select
-                            value={serviceMappings[currentServiceIndex]?.categorySelected}
-                            onValueChange={(value) => {
-                              const newMappings = [...serviceMappings];
-                              newMappings[currentServiceIndex] = { 
-                                ...newMappings[currentServiceIndex], 
-                                categorySelected: value,
-                                typologySelected: "",
-                              };
-                              setServiceMappings(newMappings);
-                            }}
-                            disabled={!serviceMappings[currentServiceIndex]?.driverSelected}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona categoria" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {serviceMappings[currentServiceIndex]?.driverSelected && 
-                                Object.keys(WINDTRE_HIERARCHY[serviceMappings[currentServiceIndex].driverSelected as keyof typeof WINDTRE_HIERARCHY] || {}).map(cat => (
-                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                ))
-                              }
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Tipologia (Livello 3) *</Label>
-                          <Select
-                            value={serviceMappings[currentServiceIndex]?.typologySelected}
-                            onValueChange={(value) => {
-                              const newMappings = [...serviceMappings];
-                              newMappings[currentServiceIndex] = { 
-                                ...newMappings[currentServiceIndex], 
-                                typologySelected: value,
-                              };
-                              setServiceMappings(newMappings);
-                            }}
-                            disabled={!serviceMappings[currentServiceIndex]?.categorySelected}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona tipologia" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {serviceMappings[currentServiceIndex]?.driverSelected && 
-                               serviceMappings[currentServiceIndex]?.categorySelected &&
-                                (WINDTRE_HIERARCHY[serviceMappings[currentServiceIndex].driverSelected as keyof typeof WINDTRE_HIERARCHY]?.[serviceMappings[currentServiceIndex].categorySelected as any] || []).map((typ: string) => (
-                                  <SelectItem key={typ} value={typ}>{typ}</SelectItem>
-                                ))
-                              }
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Prodotto Esatto (descrizione da PDF)</Label>
-                        <Input
-                          value={serviceMappings[currentServiceIndex]?.productMatched || ""}
-                          onChange={(e) => {
-                            const newMappings = [...serviceMappings];
-                            newMappings[currentServiceIndex] = { 
-                              ...newMappings[currentServiceIndex], 
-                              productMatched: e.target.value,
-                            };
-                            setServiceMappings(newMappings);
-                          }}
-                          placeholder="es. WindTre Top 50GB"
-                        />
-                      </div>
-                    </div>
+              <div className="flex justify-end gap-3">
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={submitReviewMutation.isPending}
+                  className="bg-windtre-purple hover:bg-windtre-purple-dark text-white"
+                  data-testid="button-submit-review"
+                >
+                  {submitReviewMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Salva Revisione
+                    </>
                   )}
+                </Button>
+              </div>
+            </div>
+          )}
 
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        if (currentServiceIndex > 0) {
-                          setCurrentServiceIndex(currentServiceIndex - 1);
-                        }
-                      }}
-                      disabled={currentServiceIndex === 0}
-                      className="flex-1"
-                    >
-                      Servizio Precedente
-                    </Button>
-                    <Button
-                      onClick={handleSaveServiceMapping}
-                      disabled={
-                        !serviceMappings[currentServiceIndex]?.driverSelected ||
-                        !serviceMappings[currentServiceIndex]?.categorySelected ||
-                        !serviceMappings[currentServiceIndex]?.typologySelected
-                      }
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
-                      size="lg"
-                    >
-                      {currentServiceIndex < (reviewData.services?.length || 0) - 1 ? "Servizio Successivo" : "Completa Mapping"}
-                      <ChevronRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+          {activeView === 'export' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Export JSON</h2>
 
-              {/* STEP 7: Export */}
-              {currentStep === "export" && exportJson && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <Download className="h-20 w-20 mx-auto text-green-500" />
-                    <h2 className="text-2xl font-bold">Export JSON Completato</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Dati pronti per l'integrazione con il sistema di cassa
-                    </p>
-                  </div>
+              {exportJson ? (
+                <>
+                  <Card className="windtre-glass-panel border-white/20 mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                        <Download className="h-5 w-5" />
+                        JSON Pronto per Export
+                      </CardTitle>
+                      <CardDescription>Dati formattati per integrazione con cassa</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-96 text-xs">
+                        {JSON.stringify(exportJson, null, 2)}
+                      </pre>
+                    </CardContent>
+                  </Card>
 
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">Anteprima JSON</h3>
-                      <div className="bg-gray-900 text-gray-100 p-4 rounded-lg max-h-96 overflow-auto">
-                        <pre className="text-xs">{JSON.stringify(exportJson, null, 2)}</pre>
-                      </div>
-                    </div>
-
-                    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                      <CardContent className="p-4">
-                        <p className="text-sm">
-                          <strong>✅ Dati validati e corretti</strong><br />
-                          {exportJson.metadata?.wasHumanReviewed ? "Review umana completata" : "Solo AI extraction"}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={handleNewSession}
-                      className="flex-1"
-                    >
-                      Nuova Analisi
-                    </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          Salva nel Training Dataset
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Salva nel Training Dataset</DialogTitle>
-                          <DialogDescription>
-                            Contribuisci al miglioramento dell'AI salvando questi dati validati
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Note per Training (opzionale)</Label>
-                            <Textarea
-                              placeholder="Descrivi eventuali pattern o regole apprese..."
-                              rows={3}
-                            />
-                          </div>
-                          <Button
-                            onClick={() => {
-                              saveToTrainingMutation.mutate({
-                                extractedDataId: selectedResult?.extractedDataId,
-                                isPublic: true,
-                                trainingPrompt: "",
-                              });
-                            }}
-                            className="w-full bg-gradient-to-r from-orange-500 to-purple-600"
-                          >
-                            Salva (Cross-Tenant)
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                  <div className="flex justify-end gap-3">
                     <Button
                       onClick={handleDownloadJson}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
-                      size="lg"
+                      className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                      data-testid="button-download-json"
                     >
-                      <Download className="mr-2 h-5 w-5" />
+                      <Download className="h-4 w-4 mr-2" />
                       Download JSON
                     </Button>
                   </div>
-                </div>
+                </>
+              ) : (
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardContent className="pt-12 pb-12 text-center">
+                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nessun Export Disponibile</h3>
+                    <p className="text-gray-600 mb-6">
+                      Completa la revisione di almeno un PDF per generare l'export JSON
+                    </p>
+                    <Button
+                      onClick={() => setActiveView('upload')}
+                      variant="outline"
+                      data-testid="button-go-to-upload"
+                    >
+                      Vai a Upload
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
