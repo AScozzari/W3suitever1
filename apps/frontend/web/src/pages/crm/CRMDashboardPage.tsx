@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,13 @@ interface DashboardStats {
 
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [location, navigate] = useLocation();
+
+  // Get tenant from URL
+  const getTenantFromUrl = () => {
+    const segments = location.split('/').filter(Boolean);
+    return segments[0] || 'staging';
+  };
 
   // Fetch dashboard stats
   const { data: stats, isLoading, error } = useQuery<DashboardStats>({
@@ -108,21 +116,21 @@ export default function CRMDashboardPage() {
 
   const quickActions = [
     { 
-      label: 'Nuovo Contatto', 
-      icon: UserPlus, 
-      href: '/crm/persons/new',
+      label: 'Gestione Contatti', 
+      icon: Users, 
+      href: '/crm/persons',
       color: 'from-blue-500 to-blue-600'
     },
     { 
-      label: 'Nuovo Lead', 
+      label: 'Gestione Lead', 
       icon: Phone, 
-      href: '/crm/leads/new',
+      href: '/crm/leads',
       color: 'from-orange-500 to-orange-600'
     },
     { 
-      label: 'Nuova Campagna', 
-      icon: Mail, 
-      href: '/crm/campaigns/new',
+      label: 'Pipeline Deals', 
+      icon: Target, 
+      href: '/crm/deals',
       color: 'from-purple-500 to-purple-600'
     },
     { 
@@ -147,6 +155,7 @@ export default function CRMDashboardPage() {
             </p>
           </div>
           <Button 
+            onClick={() => navigate(`/${getTenantFromUrl()}/crm/leads`)}
             className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
             data-testid="button-new-lead"
           >
@@ -205,6 +214,7 @@ export default function CRMDashboardPage() {
                   <Button
                     key={index}
                     variant="outline"
+                    onClick={() => navigate(`/${getTenantFromUrl()}${action.href}`)}
                     className={`h-24 flex flex-col items-center justify-center gap-2 hover:border-orange-500 hover:bg-orange-50 transition-all group`}
                     data-testid={`quick-action-${index}`}
                   >
