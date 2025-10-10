@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../core/db";
-import { eq, and, desc, sql as drizzleSql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import multer from "multer";
 import { 
   aiPdcAnalysisSessions, 
