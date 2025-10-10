@@ -394,8 +394,8 @@ export default function PDCAnalyzerPage() {
     }
   };
 
-  const handleDownloadJson = () => {
-    if (!exportJson) return;
+  const handleDownloadJson = async () => {
+    if (!exportJson || !session) return;
     
     const blob = new Blob([JSON.stringify(exportJson, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -404,6 +404,23 @@ export default function PDCAnalyzerPage() {
     a.download = `pdc-export-${selectedResult?.extractedDataId}.json`;
     a.click();
     URL.revokeObjectURL(url);
+
+    // Finalize session (mark as completed)
+    try {
+      await apiRequest(`/api/pdc/sessions/${session.id}/finalize`, {
+        method: 'POST'
+      });
+      toast({ 
+        title: "✅ Sessione Completata", 
+        description: "Il JSON è stato esportato e la sessione è stata finalizzata",
+        variant: "default" 
+      });
+      // Refresh sessions list
+      queryClient.invalidateQueries({ queryKey: ['/api/pdc/sessions'] });
+    } catch (error) {
+      console.error('Failed to finalize session:', error);
+      // Don't show error to user - download was successful
+    }
   };
 
   // PDF2 Flow handlers

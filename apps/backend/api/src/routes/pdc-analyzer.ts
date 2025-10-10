@@ -137,7 +137,7 @@ router.get("/sessions", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), a
 
 /**
  * GET /api/pdc/sessions/:sessionId
- * Get a specific PDC analysis session with training data
+ * Get a specific PDC analysis session with ALL related data
  */
 router.get("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
   try {
@@ -169,9 +169,32 @@ router.get("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc-an
       .where(eq(aiPdcTrainingDataset.sessionId, sessionId))
       .orderBy(desc(aiPdcTrainingDataset.analyzedAt));
 
+    // Get extracted data for this session
+    const extractedData = await db
+      .select()
+      .from(aiPdcExtractedData)
+      .where(eq(aiPdcExtractedData.sessionId, sessionId))
+      .orderBy(desc(aiPdcExtractedData.createdAt));
+
+    // Get service mappings for this session
+    const serviceMappings = await db
+      .select()
+      .from(aiPdcServiceMapping)
+      .where(eq(aiPdcServiceMapping.sessionId, sessionId));
+
+    // Get PDF uploads for this session
+    const pdfUploads = await db
+      .select()
+      .from(aiPdcPdfUploads)
+      .where(eq(aiPdcPdfUploads.sessionId, sessionId))
+      .orderBy(desc(aiPdcPdfUploads.uploadedAt));
+
     res.json({
       ...session,
       trainingData,
+      extractedData,
+      serviceMappings,
+      pdfUploads,
     });
   } catch (error) {
     console.error("Error fetching PDC session:", error);
