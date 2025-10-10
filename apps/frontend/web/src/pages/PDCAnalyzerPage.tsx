@@ -383,80 +383,116 @@ export default function PDCAnalyzerPage() {
     URL.revokeObjectURL(url);
   };
 
+  const tabs = [
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, disabled: false },
+    { id: 'upload', label: 'Genera Sessione', icon: Plus, disabled: false },
+    { id: 'review', label: 'Review', icon: FileSearch, disabled: !reviewData },
+    { id: 'export', label: 'Export', icon: Download, disabled: !exportJson },
+  ];
+
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="min-h-screen bg-white">
-        {/* Page Header */}
-        <div className="border-b border-gray-200 bg-white">
-          <div className="px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-windtre-orange" />
-              PDC Analyzer
-            </h1>
-          </div>
-          
-          {/* Barra Menu Orizzontale */}
-          <div className="px-6">
-            <nav className="flex gap-1 border-b border-gray-200">
-              <button
-                onClick={() => setActiveView('analytics')}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeView === 'analytics'
-                    ? 'border-windtre-orange text-windtre-orange'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-                data-testid="tab-analytics"
-              >
-                <BarChart3 className="h-4 w-4 inline mr-2" />
-                Analytics
-              </button>
-              <button
-                onClick={() => setActiveView('upload')}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeView === 'upload'
-                    ? 'border-windtre-orange text-windtre-orange'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-                data-testid="tab-genera-sessione"
-              >
-                <Plus className="h-4 w-4 inline mr-2" />
-                Genera Sessione
-              </button>
-              <button
-                onClick={() => setActiveView('review')}
-                disabled={!reviewData}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeView === 'review'
-                    ? 'border-windtre-orange text-windtre-orange'
-                    : reviewData
-                    ? 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                    : 'border-transparent text-gray-400 cursor-not-allowed'
-                }`}
-                data-testid="tab-review"
-              >
-                <FileSearch className="h-4 w-4 inline mr-2" />
-                Review
-              </button>
-              <button
-                onClick={() => setActiveView('export')}
-                disabled={!exportJson}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeView === 'export'
-                    ? 'border-windtre-orange text-windtre-orange'
-                    : exportJson
-                    ? 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                    : 'border-transparent text-gray-400 cursor-not-allowed'
-                }`}
-                data-testid="tab-export"
-              >
-                <Download className="h-4 w-4 inline mr-2" />
-                Export
-              </button>
-            </nav>
+        {/* Header Dedicato - Stile Settings */}
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#111827',
+            margin: '0 0 8px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <Sparkles style={{ color: '#FF6900', width: '32px', height: '32px' }} />
+            PDC Analyzer
+          </h1>
+          <p style={{
+            fontSize: '15px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Estrazione automatica dati da PDF Proposte di Contratto con AI - Mapping prodotti WindTre e export JSON
+          </p>
+        </div>
+
+        {/* Tabs Container - Stile Settings con Glassmorphism */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <div style={{
+            display: 'flex',
+            background: 'rgba(243, 244, 246, 0.5)',
+            borderRadius: '12px',
+            padding: '4px',
+            gap: '4px'
+          }}>
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeView === tab.id;
+              const isDisabled = tab.disabled;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => !isDisabled && setActiveView(tab.id as any)}
+                  disabled={isDisabled}
+                  style={{
+                    flex: 1,
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'transparent',
+                    color: isActive ? 'white' : isDisabled ? '#d1d5db' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px 20px',
+                    fontSize: '14px',
+                    fontWeight: isActive ? '600' : '500',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isActive 
+                      ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                      : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    textAlign: 'center',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    opacity: isDisabled ? 0.5 : 1
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive && !isDisabled) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive && !isDisabled) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
+                  }}
+                  data-testid={`tab-${tab.id}`}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Content Area */}
         <div className="px-6 py-6">
           {activeView === 'analytics' && (
             <div>
