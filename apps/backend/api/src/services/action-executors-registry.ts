@@ -862,11 +862,11 @@ export class TeamRoutingExecutor implements ActionExecutor {
 
 /**
  * 👤 USER ROUTING EXECUTOR
- * Assigns workflow to specific users
+ * Assigns workflow to specific users (auto or manual)
  */
 export class UserRoutingExecutor implements ActionExecutor {
   executorId = 'user-routing-executor';
-  description = 'Assigns workflow to specific user(s)';
+  description = 'Routes workflow to user(s) (auto or manual)';
 
   async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
     try {
@@ -876,11 +876,44 @@ export class UserRoutingExecutor implements ActionExecutor {
       });
 
       const config = step.config || {};
-      const userIds = config.userIds || [];
-      const assignmentType = config.assignmentType || 'all';
+      const mode = config.assignmentMode || 'auto';
+      let userIds: string[] = [];
+      let assignmentType = config.assignmentType || 'all';
 
-      if (!userIds || userIds.length === 0) {
-        throw new Error('At least one user ID is required');
+      // Auto mode: usa RequestTriggerService per selezionare users automaticamente
+      if (mode === 'auto') {
+        const { RequestTriggerService } = await import('./request-trigger-service');
+        const department = config.forDepartment || context?.department || 'operations';
+        
+        const selectedUsers = await RequestTriggerService.findUsersForDepartment(
+          department,
+          context?.tenantId,
+          context?.templateId
+        );
+
+        if (!selectedUsers || selectedUsers.length === 0) {
+          throw new Error(`No users found for department: ${department}`);
+        }
+
+        userIds = selectedUsers.map(u => u.id);
+
+        logger.info('✅ [EXECUTOR] Auto-assigned users from workflow assignments', {
+          department,
+          userIds,
+          count: userIds.length
+        });
+      } 
+      // Manual mode: usa userIds specificati
+      else if (mode === 'manual' && config.userIds && config.userIds.length > 0) {
+        userIds = config.userIds;
+        
+        logger.info('✅ [EXECUTOR] Manual user assignment', {
+          userIds,
+          count: userIds.length
+        });
+      } 
+      else {
+        throw new Error('Invalid user assignment configuration: no users specified');
       }
 
       // Send notifications to all assigned users
@@ -895,17 +928,19 @@ export class UserRoutingExecutor implements ActionExecutor {
           {
             stepId: step.nodeId,
             instanceId: context?.instanceId,
-            assignmentType
+            assignmentType,
+            mode
           }
         );
       }
 
       return {
         success: true,
-        message: `Workflow assigned to ${userIds.length} user(s)`,
+        message: `Workflow assigned to ${userIds.length} user(s) (${mode} mode)`,
         data: {
           userIds,
           assignmentType,
+          mode,
           assignedAt: new Date().toISOString()
         },
         nextAction: userIds[0] // Use first user as next action

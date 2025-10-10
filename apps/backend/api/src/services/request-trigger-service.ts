@@ -3,7 +3,9 @@ import { db } from '../core/db.js';
 import { 
   universalRequests, 
   teams, 
-  teamWorkflowAssignments, 
+  teamWorkflowAssignments,
+  users,
+  userWorkflowAssignments,
   workflowInstances,
   workflowTemplates,
   type UniversalRequest,
@@ -494,5 +496,85 @@ export class RequestTriggerService {
       status: request?.status,
       department: request?.department
     };
+  }
+
+  /**
+   * 👤 FIND USERS FOR DEPARTMENT
+   * Finds eligible users for a department based on user_workflow_assignments
+   * Used by UserRoutingExecutor in auto mode
+   */
+  static async findUsersForDepartment(
+    department: string, 
+    tenantId: string,
+    templateId?: string
+  ): Promise<Array<{ id: string; name: string; email: string }>> {
+    try {
+      logger.info('👤 Finding users for department', {
+        department,
+        tenantId,
+        templateId
+      });
+
+      // Query user_workflow_assignments with priority ordering
+      const queryConditions = [
+        eq(userWorkflowAssignments.tenantId, tenantId),
+        eq(userWorkflowAssignments.forDepartment, department as any),
+        eq(userWorkflowAssignments.autoAssign, true),
+        eq(userWorkflowAssignments.isActive, true),
+        eq(users.isActive, true)
+      ];
+
+      // If templateId specified, filter by it
+      if (templateId) {
+        queryConditions.push(eq(userWorkflowAssignments.templateId, templateId));
+      }
+
+      const usersWithAssignments = await db
+        .select({
+          userId: users.id,
+          userName: users.name,
+          userEmail: users.email,
+          priority: userWorkflowAssignments.priority,
+          templateId: userWorkflowAssignments.templateId
+        })
+        .from(userWorkflowAssignments)
+        .innerJoin(users, eq(userWorkflowAssignments.userId, users.id))
+        .where(and(...queryConditions))
+        .orderBy(
+          desc(userWorkflowAssignments.priority), // Highest priority first
+          desc(userWorkflowAssignments.createdAt) // Newest assignment as tiebreaker
+        );
+
+      if (usersWithAssignments.length === 0) {
+        logger.warn('⚠️ No users with workflow assignments found for department', {
+          department,
+          tenantId,
+          templateId
+        });
+        return [];
+      }
+
+      const result = usersWithAssignments.map(u => ({
+        id: u.userId,
+        name: u.userName || 'Unknown User',
+        email: u.userEmail || ''
+      }));
+
+      logger.info('✅ Found users for department', {
+        department,
+        userCount: result.length,
+        users: result.map(u => ({ id: u.id, name: u.name }))
+      });
+
+      return result;
+
+    } catch (error) {
+      logger.error('❌ Failed to find users for department', {
+        error: error instanceof Error ? error.message : String(error),
+        department,
+        tenantId
+      });
+      return [];
+    }
   }
 }
