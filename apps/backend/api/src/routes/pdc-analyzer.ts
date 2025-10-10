@@ -2,7 +2,13 @@ import { Router } from "express";
 import { db } from "../core/db";
 import { eq, and, desc, sql as drizzleSql } from "drizzle-orm";
 import multer from "multer";
-import { aiPdcAnalysisSessions, aiPdcTrainingDataset } from "../db/schema/brand-interface";
+import { 
+  aiPdcAnalysisSessions, 
+  aiPdcTrainingDataset,
+  aiPdcPdfUploads,
+  aiPdcExtractedData,
+  aiPdcServiceMapping
+} from "../db/schema/brand-interface";
 import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcement";
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
@@ -137,6 +143,187 @@ router.get("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc-an
   } catch (error) {
     console.error("Error fetching PDC session:", error);
     res.status(500).json({ error: "Failed to fetch session" });
+  }
+});
+
+/**
+ * POST /api/pdc/sessions/:sessionId/upload
+ * Upload PDF to session and analyze with GPT-4o
+ */
+router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), upload.single("pdf"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { sessionId } = req.params;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "PDF file is required" });
+    }
+
+    // Verify session exists and belongs to tenant
+    const [session] = await db
+      .select()
+      .from(aiPdcAnalysisSessions)
+      .where(
+        and(
+          eq(aiPdcAnalysisSessions.id, sessionId),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    // Save PDF to Object Storage (Replit native)
+    const { getDefaultStorage } = await import('@replit/object-storage');
+    const storage = getDefaultStorage();
+    
+    const fileKey = `pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
+    await storage.uploadFromBytes(fileKey, req.file.buffer);
+    const fileUrl = await storage.publicDownloadUrl(fileKey);
+
+    // Create PDF upload record
+    const [pdfUpload] = await db
+      .insert(aiPdcPdfUploads)
+      .values({
+        sessionId,
+        fileName: req.file.originalname,
+        fileUrl,
+        fileHash: require('crypto').createHash('sha256').update(req.file.buffer).digest('hex'),
+        fileSize: req.file.size,
+        status: 'analyzing',
+      })
+      .returning();
+
+    // Extract text from PDF
+    const pdfParse = require('pdf-parse');
+    const pdfData = await pdfParse(req.file.buffer);
+    const pdfText = pdfData.text;
+
+    // Call GPT-4o for analysis
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `Sei un esperto di analisi documentale specializzato nell'estrazione di dati da proposte di contratto (PDC) WindTre.
+
+**OBIETTIVO**: Estrarre anagrafica cliente, servizi venduti, e mapping prodotti da testo PDF, generando JSON strutturato.
+
+**GERARCHIA PRODOTTI WINDTRE**:
+1. **Driver** (livello 1): Fisso, Mobile, Energia, Assicurazione, Protecta, Customer Base
+2. **Categoria** (livello 2): es. Mobile → Ricaricabile, Mobile → Abbonamento, Fisso → Fibra, Fisso → ADSL
+3. **Tipologia** (livello 3): es. Ricaricabile → Prepagata, Abbonamento → Postpagato, Fibra → FTTH, ADSL → FTTC
+4. **Prodotto** (livello 4): descrizione esatta dal PDF
+
+**FORMATO OUTPUT JSON**:
+{
+  "customer": {
+    "type": "private|business",
+    "firstName": "...",
+    "lastName": "...",
+    "companyName": "..." (solo se business),
+    "fiscalCode": "...",
+    "vatNumber": "..." (solo se business),
+    "phone": "...",
+    "email": "...",
+    "address": {
+      "street": "...",
+      "city": "...",
+      "zip": "...",
+      "province": "..."
+    }
+  },
+  "services": [
+    {
+      "driver": "Mobile",
+      "category": "Abbonamento",
+      "typology": "Postpagato",
+      "productDescription": "WindTre Top 50GB",
+      "price": 14.99,
+      "duration": "30 giorni",
+      "activationDate": "2025-10-15"
+    }
+  ],
+  "confidence": 95,
+  "extractionNotes": "eventuali note su campi ambigui o mancanti"
+}
+
+**REGOLE**:
+- Se cliente business: usa "companyName" e "vatNumber"
+- Se cliente privato: usa "firstName", "lastName", "fiscalCode"
+- Estrai TUTTI i servizi presenti nel contratto
+- Mappa ogni servizio alla gerarchia WindTre corretta
+- Se un campo non è presente, metti null
+- Confidence: 0-100 (basso se molti campi mancanti)
+
+Rispondi SEMPRE con JSON valido.`,
+        },
+        {
+          role: "user",
+          content: `Analizza questa proposta contrattuale WindTre ed estrai tutti i dati:\n\n${pdfText}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_tokens: 3000,
+    });
+
+    const analysisResult = JSON.parse(response.choices[0].message.content || "{}");
+
+    // Save extracted data
+    const [extractedData] = await db
+      .insert(aiPdcExtractedData)
+      .values({
+        pdfId: pdfUpload.id,
+        sessionId,
+        customerType: analysisResult.customer?.type || 'private',
+        customerData: analysisResult.customer || {},
+        servicesExtracted: analysisResult.services || [],
+        aiRawOutput: analysisResult,
+        extractionMethod: 'gpt-4o',
+      })
+      .returning();
+
+    // Update PDF upload status
+    await db
+      .update(aiPdcPdfUploads)
+      .set({
+        status: 'completed',
+        aiConfidence: analysisResult.confidence,
+        analyzedAt: new Date(),
+      })
+      .where(eq(aiPdcPdfUploads.id, pdfUpload.id));
+
+    // Update session counters
+    await db
+      .update(aiPdcAnalysisSessions)
+      .set({
+        totalPdfs: drizzleSql`${aiPdcAnalysisSessions.totalPdfs} + 1`,
+        processedPdfs: drizzleSql`${aiPdcAnalysisSessions.processedPdfs} + 1`,
+      })
+      .where(eq(aiPdcAnalysisSessions.id, sessionId));
+
+    res.json({
+      id: pdfUpload.id,
+      fileName: req.file.originalname,
+      status: 'completed',
+      analysis: {
+        customer: analysisResult.customer,
+        services: analysisResult.services,
+        confidence: analysisResult.confidence,
+        notes: analysisResult.extractionNotes,
+      },
+      extractedDataId: extractedData.id,
+    });
+  } catch (error) {
+    console.error("Error analyzing PDF:", error);
+    res.status(500).json({ error: "Failed to analyze PDF" });
   }
 });
 
@@ -472,6 +659,205 @@ router.delete("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc
       return res.status(404).json({ error: error.message });
     }
     res.status(500).json({ error: "Failed to delete session" });
+  }
+});
+
+/**
+ * GET /api/pdc/extracted/:id
+ * Get extracted data for review
+ */
+router.get("/extracted/:id", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Get extracted data with PDF info
+    const [extractedData] = await db
+      .select({
+        id: aiPdcExtractedData.id,
+        pdfId: aiPdcExtractedData.pdfId,
+        sessionId: aiPdcExtractedData.sessionId,
+        customerType: aiPdcExtractedData.customerType,
+        customerData: aiPdcExtractedData.customerData,
+        servicesExtracted: aiPdcExtractedData.servicesExtracted,
+        aiRawOutput: aiPdcExtractedData.aiRawOutput,
+        extractionMethod: aiPdcExtractedData.extractionMethod,
+        wasReviewed: aiPdcExtractedData.wasReviewed,
+        reviewedBy: aiPdcExtractedData.reviewedBy,
+        correctedData: aiPdcExtractedData.correctedData,
+        reviewNotes: aiPdcExtractedData.reviewNotes,
+        createdAt: aiPdcExtractedData.createdAt,
+        reviewedAt: aiPdcExtractedData.reviewedAt,
+        pdfFileName: aiPdcPdfUploads.fileName,
+        pdfUrl: aiPdcPdfUploads.fileUrl,
+      })
+      .from(aiPdcExtractedData)
+      .innerJoin(aiPdcPdfUploads, eq(aiPdcExtractedData.pdfId, aiPdcPdfUploads.id))
+      .innerJoin(aiPdcAnalysisSessions, eq(aiPdcExtractedData.sessionId, aiPdcAnalysisSessions.id))
+      .where(
+        and(
+          eq(aiPdcExtractedData.id, id),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!extractedData) {
+      return res.status(404).json({ error: "Extracted data not found" });
+    }
+
+    res.json(extractedData);
+  } catch (error) {
+    console.error("Error fetching extracted data:", error);
+    res.status(500).json({ error: "Failed to fetch extracted data" });
+  }
+});
+
+/**
+ * PUT /api/pdc/extracted/:id/review
+ * Submit human review corrections
+ */
+router.put("/extracted/:id/review", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { correctedData, reviewNotes } = req.body;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (!correctedData) {
+      return res.status(400).json({ error: "Corrected data is required" });
+    }
+
+    // Verify ownership
+    const [existing] = await db
+      .select({ sessionId: aiPdcExtractedData.sessionId })
+      .from(aiPdcExtractedData)
+      .innerJoin(aiPdcAnalysisSessions, eq(aiPdcExtractedData.sessionId, aiPdcAnalysisSessions.id))
+      .where(
+        and(
+          eq(aiPdcExtractedData.id, id),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!existing) {
+      return res.status(404).json({ error: "Extracted data not found" });
+    }
+
+    // Update with corrections
+    const [updated] = await db
+      .update(aiPdcExtractedData)
+      .set({
+        correctedData,
+        reviewNotes,
+        wasReviewed: true,
+        reviewedBy: userId,
+        reviewedAt: new Date(),
+      })
+      .where(eq(aiPdcExtractedData.id, id))
+      .returning();
+
+    res.json({
+      message: "Review submitted successfully",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    res.status(500).json({ error: "Failed to submit review" });
+  }
+});
+
+/**
+ * POST /api/pdc/extracted/:id/training
+ * Save reviewed data to cross-tenant training dataset
+ */
+router.post("/extracted/:id/training", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { isPublic = true, trainingPrompt } = req.body;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Get reviewed data with PDF info
+    const [extractedData] = await db
+      .select({
+        extractedId: aiPdcExtractedData.id,
+        sessionId: aiPdcExtractedData.sessionId,
+        pdfUrl: aiPdcPdfUploads.fileUrl,
+        pdfFileName: aiPdcPdfUploads.fileName,
+        pdfHash: aiPdcPdfUploads.fileHash,
+        aiRawOutput: aiPdcExtractedData.aiRawOutput,
+        correctedData: aiPdcExtractedData.correctedData,
+        wasReviewed: aiPdcExtractedData.wasReviewed,
+      })
+      .from(aiPdcExtractedData)
+      .innerJoin(aiPdcPdfUploads, eq(aiPdcExtractedData.pdfId, aiPdcPdfUploads.id))
+      .innerJoin(aiPdcAnalysisSessions, eq(aiPdcExtractedData.sessionId, aiPdcAnalysisSessions.id))
+      .where(
+        and(
+          eq(aiPdcExtractedData.id, id),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!extractedData) {
+      return res.status(404).json({ error: "Extracted data not found" });
+    }
+
+    if (!extractedData.wasReviewed) {
+      return res.status(400).json({ error: "Data must be reviewed before saving to training" });
+    }
+
+    // Check if already in training dataset (by PDF hash)
+    const [existingTraining] = await db
+      .select()
+      .from(aiPdcTrainingDataset)
+      .where(eq(aiPdcTrainingDataset.pdfHash, extractedData.pdfHash || ''));
+
+    if (existingTraining) {
+      return res.status(409).json({ 
+        error: "This PDF is already in the training dataset",
+        trainingId: existingTraining.id 
+      });
+    }
+
+    // Save to training dataset
+    const [trainingEntry] = await db
+      .insert(aiPdcTrainingDataset)
+      .values({
+        sessionId: extractedData.sessionId,
+        pdfUrl: extractedData.pdfUrl,
+        pdfFileName: extractedData.pdfFileName,
+        pdfHash: extractedData.pdfHash,
+        aiExtractedData: extractedData.aiRawOutput,
+        aiModel: 'gpt-4o',
+        correctedJson: extractedData.correctedData,
+        correctionNotes: trainingPrompt || '',
+        validatedBy: userId,
+        isPublicTraining: isPublic,
+        sourceTenantId: tenantId,
+      })
+      .returning();
+
+    res.json({
+      message: "Successfully added to training dataset",
+      trainingEntry,
+      crossTenant: isPublic,
+    });
+  } catch (error) {
+    console.error("Error saving to training:", error);
+    res.status(500).json({ error: "Failed to save to training dataset" });
   }
 });
 
