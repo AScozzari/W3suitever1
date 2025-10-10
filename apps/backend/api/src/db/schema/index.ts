@@ -107,6 +107,33 @@ export type { InsertChannel, Channel } from './public';
 export type { InsertCommercialArea, CommercialArea } from './public';
 export type { InsertDriver, Driver } from './public';
 
+// ==================== PRODUCT HIERARCHY - BRAND OFFICIAL (PUBLIC) ====================
+import { 
+  driverCategories as publicDriverCategories, 
+  driverTypologies as publicDriverTypologies 
+} from './public';
+
+export const driverCategories = publicDriverCategories;
+export const driverTypologies = publicDriverTypologies;
+
+export type { InsertDriverCategory, DriverCategory } from './public';
+export type { InsertDriverTypology, DriverTypology } from './public';
+
+// ==================== PRODUCT HIERARCHY - TENANT CUSTOM (W3SUITE) ====================
+import { 
+  tenantCustomDrivers as w3suiteTenantCustomDrivers,
+  tenantDriverCategories as w3suiteTenantDriverCategories,
+  tenantDriverTypologies as w3suiteTenantDriverTypologies
+} from './w3suite';
+
+export const tenantCustomDrivers = w3suiteTenantCustomDrivers;
+export const tenantDriverCategories = w3suiteTenantDriverCategories;
+export const tenantDriverTypologies = w3suiteTenantDriverTypologies;
+
+export type { InsertTenantCustomDriver, TenantCustomDriver } from './w3suite';
+export type { InsertTenantDriverCategory, TenantDriverCategory } from './w3suite';
+export type { InsertTenantDriverTypology, TenantDriverTypology } from './w3suite';
+
 // ==================== STORES RE-EXPORTED FROM W3SUITE ====================
 import { stores as w3suiteStoresTable } from './w3suite';
 export const stores = w3suiteStoresTable;
@@ -166,3 +193,24 @@ export type { InsertEntityLog, EntityLog } from './w3suite';
 
 // ==================== BRAND INTERFACE MOVED TO SEPARATE SCHEMA ====================
 // Brand Interface tables are now in brand-interface.ts with dedicated 'brand_interface' schema
+
+// ==================== AI PDC ANALYZER SYSTEM (BRAND INTERFACE) ====================
+import {
+  aiPdcAnalysisSessions,
+  aiPdcTrainingDataset,
+  pdcAnalysisStatusEnum,
+  type AiPdcAnalysisSession,
+  type InsertAiPdcAnalysisSession,
+  type AiPdcTrainingDataset,
+  type InsertAiPdcTrainingDataset
+} from './brand-interface';
+
+export {
+  aiPdcAnalysisSessions,
+  aiPdcTrainingDataset,
+  pdcAnalysisStatusEnum,
+  type AiPdcAnalysisSession,
+  type InsertAiPdcAnalysisSession,
+  type AiPdcTrainingDataset,
+  type InsertAiPdcTrainingDataset
+};
