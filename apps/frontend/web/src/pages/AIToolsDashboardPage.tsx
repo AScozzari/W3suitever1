@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles } from "lucide-react";
-import { useRequiredTenant } from "@/contexts/TenantContext";
+import { useRequiredTenant } from "@/hooks/useTenantSafety";
 
 interface AITool {
   id: string;
