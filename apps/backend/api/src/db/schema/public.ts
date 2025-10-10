@@ -82,6 +82,50 @@ export const insertDriverSchema = createInsertSchema(drivers).omit({
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
 export type Driver = typeof drivers.$inferSelect;
 
+// ==================== DRIVER CATEGORIES (Brand Official) ====================
+export const driverCategories = pgTable("driver_categories", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  driverId: uuid("driver_id").notNull().references(() => drivers.id, { onDelete: 'cascade' }),
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  active: boolean("active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_driver_categories_driver").on(table.driverId),
+  uniqueIndex("driver_categories_unique").on(table.driverId, table.code),
+]);
+
+export const insertDriverCategorySchema = createInsertSchema(driverCategories).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertDriverCategory = z.infer<typeof insertDriverCategorySchema>;
+export type DriverCategory = typeof driverCategories.$inferSelect;
+
+// ==================== DRIVER TYPOLOGIES (Brand Official) ====================
+export const driverTypologies = pgTable("driver_typologies", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  categoryId: uuid("category_id").notNull().references(() => driverCategories.id, { onDelete: 'cascade' }),
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  active: boolean("active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_driver_typologies_category").on(table.categoryId),
+  uniqueIndex("driver_typologies_unique").on(table.categoryId, table.code),
+]);
+
+export const insertDriverTypologySchema = createInsertSchema(driverTypologies).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertDriverTypology = z.infer<typeof insertDriverTypologySchema>;
+export type DriverTypology = typeof driverTypologies.$inferSelect;
+
 // ==================== REFERENCE TABLES ====================
 
 // Forme giuridiche italiane
