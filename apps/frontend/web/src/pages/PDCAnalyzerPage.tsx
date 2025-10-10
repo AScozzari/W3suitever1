@@ -1091,7 +1091,7 @@ export default function PDCAnalyzerPage() {
               )}
 
               {reviewData && (
-                <>
+              <div>
               <Card className="windtre-glass-panel border-white/20 mb-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-windtre-purple">
@@ -1428,7 +1428,7 @@ export default function PDCAnalyzerPage() {
                   )}
                 </Button>
               </div>
-                </>
+              </div>
               )}
             </div>
           )}
