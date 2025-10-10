@@ -16,15 +16,23 @@ import {
   Download,
   CheckCircle2,
   AlertCircle,
-  Plus
+  Plus,
+  TrendingUp,
+  Clock,
+  FileCheck,
+  Sparkles
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 
-type Step = "create-session" | "upload" | "analyzing" | "results";
+type Step = "dashboard" | "create-session" | "upload" | "analyzing" | "results";
 
 interface SessionData {
   id: string;
   sessionName: string;
+  createdAt: string;
+  status: string;
 }
 
 interface AnalysisResult {
@@ -38,14 +46,24 @@ interface AnalysisResult {
 export default function PDCAnalyzerPage() {
   const [currentModule, setCurrentModule] = useState("ai");
   const { toast } = useToast();
+  const [location] = useLocation();
   
   // Wizard state
-  const [currentStep, setCurrentStep] = useState<Step>("create-session");
+  const [currentStep, setCurrentStep] = useState<Step>("dashboard");
   const [sessionName, setSessionName] = useState("");
   const [session, setSession] = useState<SessionData | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Estrai tenant slug dalla URL
+  const tenantSlug = location.split('/')[1] || 'staging';
+
+  // Query per sessioni precedenti
+  const { data: previousSessions, isLoading: loadingSessions } = useQuery({
+    queryKey: ['/api/pdc/sessions'],
+    enabled: currentStep === "dashboard",
+  });
 
   // Mutation per creare sessione
   const createSessionMutation = useMutation({
@@ -95,7 +113,6 @@ export default function PDCAnalyzerPage() {
     },
   });
 
-  // Handle step 1: Crea sessione
   const handleCreateSession = () => {
     if (sessionName.trim().length < 3) {
       toast({ 
@@ -108,7 +125,6 @@ export default function PDCAnalyzerPage() {
     createSessionMutation.mutate(sessionName);
   };
 
-  // Handle step 2: Upload files
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -116,7 +132,6 @@ export default function PDCAnalyzerPage() {
     }
   };
 
-  // Handle step 3: Processa tutti i file
   const handleProcessFiles = async () => {
     if (uploadedFiles.length === 0) {
       toast({ title: "Nessun file", description: "Carica almeno un PDF" });
@@ -151,277 +166,414 @@ export default function PDCAnalyzerPage() {
     setCurrentStep("results");
     toast({ 
       title: "🎉 Analisi completata!", 
-      description: `${results.filter(r => r.status === "success").length}/${results.length} documenti analizzati con successo` 
+      description: `${results.filter(r => r.status === "success").length}/${results.length} documenti analizzati` 
     });
   };
 
-  // Reset wizard
   const handleNewSession = () => {
     setSessionName("");
     setSession(null);
     setUploadedFiles([]);
     setAnalysisResults([]);
-    setCurrentStep("create-session");
+    setCurrentStep("dashboard");
   };
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Hero Header */}
         <div
-          className="rounded-2xl p-8"
+          className="rounded-2xl p-8 relative overflow-hidden"
           style={{
             background: "linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)",
             color: "white",
           }}
         >
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <FileText className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold">PDC Analyzer</h1>
-              <p className="mt-1 text-lg text-white/90">
-                Analisi automatica proposte contrattuali con AI
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-4">
-          {[
-            { step: "create-session", label: "Crea Sessione", icon: Plus },
-            { step: "upload", label: "Carica PDF", icon: Upload },
-            { step: "analyzing", label: "Analisi AI", icon: Loader2 },
-            { step: "results", label: "Risultati", icon: CheckCircle2 },
-          ].map((item, idx) => {
-            const Icon = item.icon;
-            const isActive = currentStep === item.step;
-            const isPast = ["create-session", "upload", "analyzing", "results"].indexOf(currentStep) > idx;
-            
-            return (
-              <div key={item.step} className="flex items-center">
-                <div className={`flex flex-col items-center ${isActive ? "opacity-100" : isPast ? "opacity-70" : "opacity-30"}`}>
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
-                    isActive ? "bg-gradient-to-br from-orange-500 to-purple-600 text-white" :
-                    isPast ? "bg-green-500 text-white" :
-                    "bg-gray-200 dark:bg-gray-700 text-gray-400"
-                  }`}>
-                    {isPast ? <Check className="h-6 w-6" /> : <Icon className={`h-6 w-6 ${isActive && item.step === "analyzing" ? "animate-spin" : ""}`} />}
-                  </div>
-                  <span className="mt-2 text-sm font-medium">{item.label}</span>
-                </div>
-                {idx < 3 && (
-                  <ChevronRight className={`h-5 w-5 mx-2 ${isPast ? "text-green-500" : "text-gray-300"}`} />
-                )}
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <FileText className="h-8 w-8 text-white" />
               </div>
-            );
-          })}
-        </div>
-
-        {/* Step Content */}
-        <Card>
-          <CardContent className="p-8">
-            {/* STEP 1: Create Session */}
-            {currentStep === "create-session" && (
-              <div className="space-y-6">
-                <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-bold">Inizia una nuova analisi</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Dai un nome alla sessione per organizzare i tuoi documenti PDC
-                  </p>
-                </div>
-                
-                <div className="max-w-md mx-auto space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="session-name">Nome Sessione *</Label>
-                    <Input
-                      id="session-name"
-                      data-testid="input-session-name"
-                      placeholder="es. Proposte Gennaio 2025"
-                      value={sessionName}
-                      onChange={(e) => setSessionName(e.target.value)}
-                      className="text-lg"
-                      onKeyDown={(e) => e.key === "Enter" && handleCreateSession()}
-                    />
-                  </div>
-                  
-                  <Button
-                    data-testid="button-create-session"
-                    onClick={handleCreateSession}
-                    disabled={sessionName.trim().length < 3 || createSessionMutation.isPending}
-                    className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                    size="lg"
-                  >
-                    {createSessionMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Creazione in corso...
-                      </>
-                    ) : (
-                      <>
-                        Crea Sessione
-                        <ChevronRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2: Upload Files */}
-            {currentStep === "upload" && (
-              <div className="space-y-6">
-                <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-bold">Carica i tuoi documenti PDF</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Puoi caricare più file contemporaneamente. L'AI analizzerà tutti i documenti.
-                  </p>
-                </div>
-
-                {/* Drag & Drop Area */}
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center hover:border-orange-500 transition-colors">
-                  <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium mb-2">Trascina i PDF qui o clicca per selezionare</p>
-                  <p className="text-sm text-gray-500 mb-4">PDF fino a 10MB ciascuno</p>
-                  <Input
-                    type="file"
-                    accept=".pdf"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <Button asChild variant="outline">
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      Seleziona File
-                    </label>
-                  </Button>
-                </div>
-
-                {/* Uploaded Files List */}
-                {uploadedFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Documenti caricati ({uploadedFiles.length})</h3>
-                    <div className="space-y-2">
-                      {uploadedFiles.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-orange-500" />
-                            <span className="font-medium">{file.name}</span>
-                            <span className="text-sm text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))}
-                          >
-                            Rimuovi
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleNewSession}
-                    className="flex-1"
-                  >
-                    Annulla
-                  </Button>
-                  <Button
-                    onClick={handleProcessFiles}
-                    disabled={uploadedFiles.length === 0}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                    size="lg"
-                  >
-                    Analizza {uploadedFiles.length} {uploadedFiles.length === 1 ? "documento" : "documenti"}
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3: Analyzing */}
-            {currentStep === "analyzing" && (
-              <div className="space-y-6 text-center py-12">
-                <Loader2 className="h-20 w-20 mx-auto animate-spin text-orange-500" />
-                <h2 className="text-2xl font-bold">Analisi in corso...</h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  L'intelligenza artificiale sta processando i tuoi documenti
+              <div>
+                <h1 className="text-4xl font-bold">PDC Analyzer</h1>
+                <p className="mt-1 text-lg text-white/90">
+                  Analisi automatica proposte contrattuali con AI
                 </p>
-                <Progress value={65} className="max-w-md mx-auto" />
               </div>
+            </div>
+            {currentStep === "dashboard" && (
+              <Button
+                size="lg"
+                onClick={() => setCurrentStep("create-session")}
+                className="bg-white text-purple-700 hover:bg-gray-100"
+                data-testid="button-new-analysis"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                Nuova Analisi
+              </Button>
             )}
+          </div>
+          
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
+          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-500/20 rounded-full -ml-48 -mb-48" />
+        </div>
 
-            {/* STEP 4: Results */}
-            {currentStep === "results" && (
-              <div className="space-y-6">
-                <div className="text-center space-y-2">
-                  <CheckCircle2 className="h-20 w-20 mx-auto text-green-500" />
-                  <h2 className="text-2xl font-bold">Analisi completata!</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {analysisResults.filter(r => r.status === "success").length} documenti analizzati con successo
-                  </p>
-                </div>
+        {/* Dashboard View */}
+        {currentStep === "dashboard" && (
+          <div className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Sessioni Totali</CardTitle>
+                  <FileCheck className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{previousSessions?.length || 0}</div>
+                  <p className="text-xs text-muted-foreground">Analisi completate</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">PDC Analizzati</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {previousSessions?.reduce((acc: number, s: any) => acc + (s.totalPdfs || 0), 0) || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Documenti processati</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Ultima Sessione</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {previousSessions?.[0]?.createdAt ? new Date(previousSessions[0].createdAt).toLocaleDateString('it-IT') : "-"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Data analisi</p>
+                </CardContent>
+              </Card>
+            </div>
 
-                {/* Results List */}
-                <div className="space-y-3">
-                  {analysisResults.map((result, idx) => (
-                    <div key={idx} className={`p-4 rounded-lg ${
-                      result.status === "success" ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" : 
-                      "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-                    }`}>
-                      <div className="flex items-center justify-between">
+            {/* Recent Sessions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sessioni Recenti</CardTitle>
+                <CardDescription>Le tue ultime analisi PDC</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingSessions ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                  </div>
+                ) : previousSessions && previousSessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {previousSessions.slice(0, 5).map((sess: any) => (
+                      <div
+                        key={sess.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
                         <div className="flex items-center gap-3">
-                          {result.status === "success" ? (
-                            <CheckCircle2 className="h-6 w-6 text-green-600" />
-                          ) : (
-                            <AlertCircle className="h-6 w-6 text-red-600" />
-                          )}
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-purple-600">
+                            <FileText className="h-5 w-5 text-white" />
+                          </div>
                           <div>
-                            <p className="font-semibold">{result.fileName}</p>
-                            {result.status === "error" && (
-                              <p className="text-sm text-red-600">{result.error}</p>
-                            )}
+                            <p className="font-medium">{sess.sessionName || `Sessione ${sess.id.slice(0, 8)}`}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(sess.createdAt).toLocaleDateString('it-IT', { 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric' 
+                              })}
+                            </p>
                           </div>
                         </div>
-                        {result.status === "success" && (
-                          <Button variant="outline" size="sm">
-                            <Download className="h-4 w-4 mr-2" />
-                            Esporta JSON
+                        <div className="flex items-center gap-3">
+                          <Badge variant={sess.status === 'completed' ? 'default' : 'secondary'}>
+                            {sess.totalPdfs || 0} PDC
+                          </Badge>
+                          <Button variant="ghost" size="sm">
+                            Vedi dettagli
                           </Button>
-                        )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="flex justify-center mb-4">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                        <Sparkles className="h-10 w-10 text-gray-400" />
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-lg font-semibold mb-2">Nessuna analisi trovata</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Inizia la tua prima analisi PDC con l'intelligenza artificiale
+                    </p>
+                    <Button
+                      onClick={() => setCurrentStep("create-session")}
+                      className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Crea Prima Sessione
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-                {/* Actions */}
-                <div className="flex gap-4 pt-4">
-                  <Button
-                    onClick={handleNewSession}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Nuova Analisi
-                  </Button>
-                  <Button
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
-                  >
-                    <Download className="mr-2 h-5 w-5" />
-                    Esporta Tutti i Risultati
-                  </Button>
+        {/* Progress Steps (only show when not on dashboard) */}
+        {currentStep !== "dashboard" && (
+          <div className="flex items-center justify-center gap-4">
+            {[
+              { step: "create-session", label: "Crea Sessione", icon: Plus },
+              { step: "upload", label: "Carica PDF", icon: Upload },
+              { step: "analyzing", label: "Analisi AI", icon: Loader2 },
+              { step: "results", label: "Risultati", icon: CheckCircle2 },
+            ].map((item, idx) => {
+              const Icon = item.icon;
+              const isActive = currentStep === item.step;
+              const steps = ["create-session", "upload", "analyzing", "results"];
+              const isPast = steps.indexOf(currentStep) > idx;
+              
+              return (
+                <div key={item.step} className="flex items-center">
+                  <div className={`flex flex-col items-center ${isActive ? "opacity-100" : isPast ? "opacity-70" : "opacity-30"}`}>
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
+                      isActive ? "bg-gradient-to-br from-orange-500 to-purple-600 text-white" :
+                      isPast ? "bg-green-500 text-white" :
+                      "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                    }`}>
+                      {isPast ? <Check className="h-6 w-6" /> : <Icon className={`h-6 w-6 ${isActive && item.step === "analyzing" ? "animate-spin" : ""}`} />}
+                    </div>
+                    <span className="mt-2 text-sm font-medium">{item.label}</span>
+                  </div>
+                  {idx < 3 && (
+                    <ChevronRight className={`h-5 w-5 mx-2 ${isPast ? "text-green-500" : "text-gray-300"}`} />
+                  )}
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Step Content */}
+        {currentStep !== "dashboard" && (
+          <Card>
+            <CardContent className="p-8">
+              {/* STEP 1: Create Session */}
+              {currentStep === "create-session" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">Inizia una nuova analisi</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Dai un nome alla sessione per organizzare i tuoi documenti PDC
+                    </p>
+                  </div>
+                  
+                  <div className="max-w-md mx-auto space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="session-name">Nome Sessione *</Label>
+                      <Input
+                        id="session-name"
+                        data-testid="input-session-name"
+                        placeholder="es. Proposte Gennaio 2025"
+                        value={sessionName}
+                        onChange={(e) => setSessionName(e.target.value)}
+                        className="text-lg"
+                        onKeyDown={(e) => e.key === "Enter" && handleCreateSession()}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentStep("dashboard")}
+                        className="flex-1"
+                      >
+                        Annulla
+                      </Button>
+                      <Button
+                        data-testid="button-create-session"
+                        onClick={handleCreateSession}
+                        disabled={sessionName.trim().length < 3 || createSessionMutation.isPending}
+                        className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                        size="lg"
+                      >
+                        {createSessionMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Creazione...
+                          </>
+                        ) : (
+                          <>
+                            Crea Sessione
+                            <ChevronRight className="ml-2 h-5 w-5" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Upload Files */}
+              {currentStep === "upload" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">Carica i tuoi documenti PDF</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Carica più file contemporaneamente. L'AI analizzerà tutti i documenti.
+                    </p>
+                  </div>
+
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center hover:border-orange-500 transition-colors">
+                    <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <p className="text-lg font-medium mb-2">Trascina i PDF qui o clicca per selezionare</p>
+                    <p className="text-sm text-gray-500 mb-4">PDF fino a 10MB ciascuno</p>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <Button asChild variant="outline">
+                      <label htmlFor="file-upload" className="cursor-pointer">
+                        Seleziona File
+                      </label>
+                    </Button>
+                  </div>
+
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Documenti caricati ({uploadedFiles.length})</h3>
+                      <div className="space-y-2">
+                        {uploadedFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-5 w-5 text-orange-500" />
+                              <span className="font-medium">{file.name}</span>
+                              <span className="text-sm text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))}
+                            >
+                              Rimuovi
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={handleNewSession}
+                      className="flex-1"
+                    >
+                      Annulla
+                    </Button>
+                    <Button
+                      onClick={handleProcessFiles}
+                      disabled={uploadedFiles.length === 0}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                      size="lg"
+                    >
+                      Analizza {uploadedFiles.length} {uploadedFiles.length === 1 ? "documento" : "documenti"}
+                      <ChevronRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Analyzing */}
+              {currentStep === "analyzing" && (
+                <div className="space-y-6 text-center py-12">
+                  <Loader2 className="h-20 w-20 mx-auto animate-spin text-orange-500" />
+                  <h2 className="text-2xl font-bold">Analisi in corso...</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    L'intelligenza artificiale sta processando i tuoi documenti
+                  </p>
+                  <Progress value={65} className="max-w-md mx-auto" />
+                </div>
+              )}
+
+              {/* STEP 4: Results */}
+              {currentStep === "results" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <CheckCircle2 className="h-20 w-20 mx-auto text-green-500" />
+                    <h2 className="text-2xl font-bold">Analisi completata!</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {analysisResults.filter(r => r.status === "success").length} documenti analizzati con successo
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {analysisResults.map((result, idx) => (
+                      <div key={idx} className={`p-4 rounded-lg ${
+                        result.status === "success" ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" : 
+                        "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {result.status === "success" ? (
+                              <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            ) : (
+                              <AlertCircle className="h-6 w-6 text-red-600" />
+                            )}
+                            <div>
+                              <p className="font-semibold">{result.fileName}</p>
+                              {result.status === "error" && (
+                                <p className="text-sm text-red-600">{result.error}</p>
+                              )}
+                            </div>
+                          </div>
+                          {result.status === "success" && (
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4 mr-2" />
+                              Esporta JSON
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <Button
+                      onClick={handleNewSession}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Nuova Analisi
+                    </Button>
+                    <Button
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
+                    >
+                      <Download className="mr-2 h-5 w-5" />
+                      Esporta Tutti i Risultati
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );

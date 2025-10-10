@@ -46,9 +46,9 @@ router.post("/sessions", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), 
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { name } = req.body;
+    const { sessionName } = req.body;
 
-    if (!name || typeof name !== "string") {
+    if (!sessionName || typeof sessionName !== "string") {
       return res.status(400).json({ error: "Session name is required" });
     }
 
@@ -56,12 +56,11 @@ router.post("/sessions", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), 
       .insert(aiPdcAnalysisSessions)
       .values({
         tenantId,
-        sessionName: name,
+        userId,
+        sessionName,
         totalPdfs: 0,
-        analyzedPdfs: 0,
-        reviewedPdfs: 0,
-        status: "active",
-        createdBy: userId,
+        processedPdfs: 0,
+        status: "pending",
       })
       .returning();
 
