@@ -1142,57 +1142,194 @@ export default function PDCAnalyzerPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-windtre-purple">
                     <Edit className="h-5 w-5" />
-                    Dati Cliente
+                    Anagrafica Completa Cliente
                   </CardTitle>
-                  <CardDescription>Verifica e correggi i dati estratti dall'AI</CardDescription>
+                  <CardDescription>
+                    Tipo: <Badge variant={reviewData.customerData?.type === 'business' ? 'default' : 'secondary'}>
+                      {reviewData.customerData?.type === 'business' ? '🏢 Business (P.IVA)' : '👤 Consumer (Privato)'}
+                    </Badge>
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Nome</Label>
-                      <Input 
-                        value={reviewData.customerData?.firstName || ''} 
-                        onChange={(e) => setReviewData({
-                          ...reviewData,
-                          customerData: { ...reviewData.customerData, firstName: e.target.value }
-                        })}
-                        data-testid="input-customer-firstname"
-                      />
+                <CardContent className="space-y-6">
+                  
+                  {/* BUSINESS FIELDS */}
+                  {reviewData.customerData?.type === 'business' && (
+                    <>
+                      <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <h3 className="font-semibold text-gray-900 mb-4">Dati Azienda</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Ragione Sociale *</Label>
+                            <Input value={reviewData.customerData?.businessName || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, businessName: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>Codice Fornitore</Label>
+                            <Input value={reviewData.customerData?.code || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, code: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>Partita IVA *</Label>
+                            <Input value={reviewData.customerData?.vatNumber || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, vatNumber: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>Codice Fiscale</Label>
+                            <Input value={reviewData.customerData?.taxCode || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, taxCode: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>PEC</Label>
+                            <Input value={reviewData.customerData?.pecEmail || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, pecEmail: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>SDI</Label>
+                            <Input value={reviewData.customerData?.sdiCode || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, sdiCode: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>Forma Giuridica</Label>
+                            <Input value={reviewData.customerData?.legalForm || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, legalForm: e.target.value}})} />
+                          </div>
+                          <div>
+                            <Label>Website</Label>
+                            <Input value={reviewData.customerData?.website || ''} 
+                              onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, website: e.target.value}})} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* REFERENTE AZIENDALE */}
+                      {reviewData.customerData?.contactPerson && (
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <h3 className="font-semibold text-gray-900 mb-4">Referente Aziendale</h3>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <Label>Nome</Label>
+                              <Input value={reviewData.customerData?.contactPerson?.firstName || ''} 
+                                onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, contactPerson: {...reviewData.customerData.contactPerson, firstName: e.target.value}}})} />
+                            </div>
+                            <div>
+                              <Label>Cognome</Label>
+                              <Input value={reviewData.customerData?.contactPerson?.lastName || ''} 
+                                onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, contactPerson: {...reviewData.customerData.contactPerson, lastName: e.target.value}}})} />
+                            </div>
+                            <div>
+                              <Label>Ruolo</Label>
+                              <Input value={reviewData.customerData?.contactPerson?.role || ''} 
+                                onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, contactPerson: {...reviewData.customerData.contactPerson, role: e.target.value}}})} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* CONSUMER FIELDS */}
+                  {reviewData.customerData?.type === 'consumer' && (
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h3 className="font-semibold text-gray-900 mb-4">Dati Personali</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label>Nome *</Label>
+                          <Input value={reviewData.customerData?.firstName || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, firstName: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>Cognome *</Label>
+                          <Input value={reviewData.customerData?.lastName || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, lastName: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>Codice Fiscale</Label>
+                          <Input value={reviewData.customerData?.fiscalCode || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, fiscalCode: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>Data di Nascita</Label>
+                          <Input value={reviewData.customerData?.birthDate || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, birthDate: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>Luogo di Nascita</Label>
+                          <Input value={reviewData.customerData?.birthPlace || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, birthPlace: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>Sesso</Label>
+                          <Input value={reviewData.customerData?.gender || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, gender: e.target.value}})} />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Cognome</Label>
-                      <Input 
-                        value={reviewData.customerData?.lastName || ''} 
-                        onChange={(e) => setReviewData({
-                          ...reviewData,
-                          customerData: { ...reviewData.customerData, lastName: e.target.value }
-                        })}
-                        data-testid="input-customer-lastname"
-                      />
-                    </div>
+                  )}
+
+                  {/* CONTATTI (COMUNE) */}
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label>Email</Label>
-                      <Input 
-                        value={reviewData.customerData?.email || ''} 
-                        onChange={(e) => setReviewData({
-                          ...reviewData,
-                          customerData: { ...reviewData.customerData, email: e.target.value }
-                        })}
-                        data-testid="input-customer-email"
-                      />
+                      <Input value={reviewData.customerData?.email || ''} 
+                        onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, email: e.target.value}})} />
                     </div>
                     <div>
                       <Label>Telefono</Label>
-                      <Input 
-                        value={reviewData.customerData?.phone || ''} 
-                        onChange={(e) => setReviewData({
-                          ...reviewData,
-                          customerData: { ...reviewData.customerData, phone: e.target.value }
-                        })}
-                        data-testid="input-customer-phone"
-                      />
+                      <Input value={reviewData.customerData?.phone || ''} 
+                        onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, phone: e.target.value}})} />
+                    </div>
+                    <div>
+                      <Label>Cellulare</Label>
+                      <Input value={reviewData.customerData?.mobilePhone || ''} 
+                        onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, mobilePhone: e.target.value}})} />
                     </div>
                   </div>
+
+                  {/* INDIRIZZO */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-4">Indirizzo Residenza/Sede</h3>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-2">
+                        <Label>Via</Label>
+                        <Input value={reviewData.customerData?.address || ''} 
+                          onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, address: e.target.value}})} />
+                      </div>
+                      <div>
+                        <Label>Città</Label>
+                        <Input value={reviewData.customerData?.city || ''} 
+                          onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, city: e.target.value}})} />
+                      </div>
+                      <div>
+                        <Label>CAP</Label>
+                        <Input value={reviewData.customerData?.postalCode || ''} 
+                          onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, postalCode: e.target.value}})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PAGAMENTO */}
+                  {(reviewData.customerData?.iban || reviewData.customerData?.paymentMethod) && (
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-4">Dati Pagamento</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label>Metodo</Label>
+                          <Input value={reviewData.customerData?.paymentMethod || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, paymentMethod: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>IBAN</Label>
+                          <Input value={reviewData.customerData?.iban || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, iban: e.target.value}})} />
+                        </div>
+                        <div>
+                          <Label>Banca</Label>
+                          <Input value={reviewData.customerData?.bankName || ''} 
+                            onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, bankName: e.target.value}})} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
