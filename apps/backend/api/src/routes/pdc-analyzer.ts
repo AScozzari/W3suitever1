@@ -14,15 +14,11 @@ import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcem
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
 import crypto from "crypto";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { createRequire } from "module";
 
-// Configure worker for PDF.js with absolute path
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const workerPath = join(__dirname, "../../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs");
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
+// Import pdf-parse using createRequire (CommonJS module)
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse"); // Default export is the function!
 
 const router = Router();
 
@@ -54,42 +50,25 @@ const openai = new OpenAI({
 // Using in-memory storage for PDF processing
 
 /**
- * Extract text from PDF using pdfjs-dist (Mozilla PDF.js)
- * Supports complex PDFs, scanned documents, multi-page extraction
+ * Extract text from PDF using pdf-parse
+ * Simple and reliable extraction for Node.js
  */
 async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   try {
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(pdfBuffer),
-      useSystemFonts: true,
-    });
+    console.log('📄 [PDF-EXTRACT] Starting text extraction with pdf-parse...');
     
-    const pdfDocument = await loadingTask.promise;
-    const numPages = pdfDocument.numPages;
+    const data = await pdfParse(pdfBuffer);
     
-    console.log(`📄 [PDF-EXTRACT] Processing ${numPages} pages...`);
+    console.log(`✅ [PDF-EXTRACT] Extracted ${data.text.length} characters from ${data.numpages} pages`);
     
-    let fullText = '';
-    
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      
-      fullText += `\n\n--- Pagina ${pageNum} ---\n${pageText}`;
-      
-      console.log(`✅ [PDF-EXTRACT] Pagina ${pageNum}/${numPages} estratta (${pageText.length} caratteri)`);
+    if (!data.text || data.text.trim().length < 50) {
+      throw new Error('PDF contains insufficient text (might be scanned/image-based)');
     }
     
-    console.log(`✅ [PDF-EXTRACT] Estrazione completata: ${fullText.length} caratteri totali`);
-    
-    return fullText.trim();
+    return data.text.trim();
   } catch (error) {
-    console.error('❌ [PDF-EXTRACT] Errore estrazione testo:', error);
-    throw new Error(`Impossibile estrarre testo dal PDF: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
+    console.error('❌ [PDF-EXTRACT] Error extracting text:', error);
+    throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
