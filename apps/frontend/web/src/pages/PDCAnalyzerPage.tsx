@@ -26,7 +26,8 @@ import {
   Save,
   GitBranch,
   BarChart3,
-  FileSearch
+  FileSearch,
+  Trash2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -610,23 +611,24 @@ export default function PDCAnalyzerPage() {
                             <Badge variant="outline" className="capitalize">
                               {sess.status}
                             </Badge>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1">
                               <Button
-                                size="sm"
-                                variant="outline"
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => {
                                   setSession(sess);
                                   setActiveView('upload');
                                 }}
-                                className="border-windtre-purple text-windtre-purple hover:bg-windtre-purple hover:text-white"
+                                className="h-8 w-8 text-windtre-purple hover:bg-windtre-purple hover:text-white"
                                 data-testid={`button-view-session-${sess.id}`}
+                                title="Visualizza sessione"
                               >
-                                <FileSearch className="h-4 w-4 mr-1" />
-                                View
+                                <FileSearch className="h-4 w-4" />
                               </Button>
                               {sess.status === 'pending' && (
                                 <Button
-                                  size="sm"
+                                  size="icon"
+                                  variant="ghost"
                                   onClick={async () => {
                                     try {
                                       await apiRequest(`/api/pdc/sessions/${sess.id}/finalize`, {
@@ -642,13 +644,38 @@ export default function PDCAnalyzerPage() {
                                       });
                                     }
                                   }}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  className="h-8 w-8 text-green-600 hover:bg-green-600 hover:text-white"
                                   data-testid={`button-finalize-session-${sess.id}`}
+                                  title="Finalizza sessione"
                                 >
-                                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                                  Finalizza
+                                  <CheckCircle2 className="h-4 w-4" />
                                 </Button>
                               )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={async () => {
+                                  if (!confirm(`Eliminare la sessione "${sess.sessionName}"?`)) return;
+                                  try {
+                                    await apiRequest(`/api/pdc/sessions/${sess.id}`, {
+                                      method: 'DELETE',
+                                    });
+                                    queryClient.invalidateQueries({ queryKey: ['/api/pdc/sessions'] });
+                                    toast({ title: "🗑️ Sessione eliminata" });
+                                  } catch (error: any) {
+                                    toast({
+                                      title: "❌ Errore eliminazione",
+                                      description: error.message,
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                className="h-8 w-8 text-red-600 hover:bg-red-600 hover:text-white"
+                                data-testid={`button-delete-session-${sess.id}`}
+                                title="Elimina sessione"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         </div>
