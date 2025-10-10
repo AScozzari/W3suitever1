@@ -593,6 +593,73 @@ export const insertAiPdcServiceMappingSchema = createInsertSchema(aiPdcServiceMa
 export type InsertAiPdcServiceMapping = z.infer<typeof insertAiPdcServiceMappingSchema>;
 export type AiPdcServiceMapping = typeof aiPdcServiceMapping.$inferSelect;
 
+// ==================== CRM BRAND TEMPLATES ====================
+
+// Brand CRM Campaigns - Template centralizzati per campagne
+export const brandCrmCampaigns = brandInterfaceSchema.table("brand_crm_campaigns", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  brandId: uuid("brand_id").notNull(), // For RLS
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  templateConfig: jsonb("template_config").notNull(), // {type, utm_defaults, budget_suggestion, recommended_channels}
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_brand_crm_campaigns_brand").on(table.brandId),
+]);
+
+export const insertBrandCrmCampaignSchema = createInsertSchema(brandCrmCampaigns).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertBrandCrmCampaign = z.infer<typeof insertBrandCrmCampaignSchema>;
+export type BrandCrmCampaign = typeof brandCrmCampaigns.$inferSelect;
+
+// Brand CRM Pipelines - Template centralizzati per pipeline
+export const brandCrmPipelines = brandInterfaceSchema.table("brand_crm_pipelines", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  brandId: uuid("brand_id").notNull(), // For RLS
+  name: varchar("name", { length: 255 }).notNull(),
+  domain: varchar("domain", { length: 50 }).notNull(), // 'sales', 'service', 'retention'
+  defaultStages: jsonb("default_stages").notNull(), // [{order:1, name:'Contatto', category:'new', color:'#ff6900'}]
+  recommendedWorkflows: jsonb("recommended_workflows"), // Array of workflow IDs or configs
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_brand_crm_pipelines_brand").on(table.brandId),
+]);
+
+export const insertBrandCrmPipelineSchema = createInsertSchema(brandCrmPipelines).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertBrandCrmPipeline = z.infer<typeof insertBrandCrmPipelineSchema>;
+export type BrandCrmPipeline = typeof brandCrmPipelines.$inferSelect;
+
+// Brand Template Deployments - Tracking dei template pushati ai tenant
+export const brandTemplateDeployments = brandInterfaceSchema.table("brand_template_deployments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateType: varchar("template_type", { length: 50 }).notNull(), // 'campaign', 'pipeline', 'workflow'
+  brandTemplateId: uuid("brand_template_id").notNull(), // References brand_crm_campaigns.id or brand_crm_pipelines.id
+  tenantId: uuid("tenant_id").notNull(), // Target tenant
+  deployedEntityId: uuid("deployed_entity_id").notNull(), // ID dell'entità creata nel tenant (w3suite.crm_campaigns.id, etc)
+  deployedAt: timestamp("deployed_at").defaultNow(),
+}, (table) => [
+  index("idx_brand_template_deployments_template").on(table.templateType, table.brandTemplateId),
+  index("idx_brand_template_deployments_tenant").on(table.tenantId),
+]);
+
+export const insertBrandTemplateDeploymentSchema = createInsertSchema(brandTemplateDeployments).omit({ 
+  id: true, 
+  deployedAt: true 
+});
+export type InsertBrandTemplateDeployment = z.infer<typeof insertBrandTemplateDeploymentSchema>;
+export type BrandTemplateDeployment = typeof brandTemplateDeployments.$inferSelect;
+
 // ==================== CROSS-TENANT KNOWLEDGE - USE W3SUITE SCHEMA ====================
 // 
 // 🎯 NOTA ARCHITETTURALE: 

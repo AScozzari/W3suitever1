@@ -123,6 +123,22 @@ export const aiModelEnum = pgEnum('ai_model', [
   'dall-e-3'
 ]);
 
+// CRM System Enums
+export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media', 'outbound_crm', 'retention']);
+export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
+export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
+export const crmPipelineDomainEnum = pgEnum('crm_pipeline_domain', ['sales', 'service', 'retention']);
+export const crmDealStatusEnum = pgEnum('crm_deal_status', ['open', 'won', 'lost', 'abandoned']);
+export const crmInteractionDirectionEnum = pgEnum('crm_interaction_direction', ['inbound', 'outbound']);
+export const crmTaskTypeEnum = pgEnum('crm_task_type', ['call', 'email', 'meeting', 'follow_up', 'demo', 'other']);
+export const crmTaskStatusEnum = pgEnum('crm_task_status', ['pending', 'in_progress', 'completed', 'cancelled']);
+export const crmTaskPriorityEnum = pgEnum('crm_task_priority', ['low', 'medium', 'high', 'urgent']);
+export const crmConsentTypeEnum = pgEnum('crm_consent_type', ['privacy_policy', 'marketing', 'profiling', 'third_party']);
+export const crmConsentStatusEnum = pgEnum('crm_consent_status', ['granted', 'denied', 'withdrawn', 'pending']);
+export const crmConsentScopeEnum = pgEnum('crm_consent_scope', ['marketing', 'service', 'both']);
+export const crmSourceTypeEnum = pgEnum('crm_source_type', ['meta_page', 'google_ads', 'whatsapp_phone', 'instagram', 'tiktok']);
+export const customerTypeEnum = pgEnum('customer_type', ['b2c', 'b2b']);
+
 // ✅ CRITICAL ENUM FIX: Add missing calendar_event_category enum
 export const calendarEventCategoryEnum = pgEnum('calendar_event_category', [
   'sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing'
@@ -4262,3 +4278,546 @@ export const insertActivityFeedInteractionSchema = createInsertSchema(activityFe
 });
 export type InsertActivityFeedInteraction = z.infer<typeof insertActivityFeedInteractionSchema>;
 export type ActivityFeedInteraction = typeof activityFeedInteractions.$inferSelect;
+
+// ==================== CRM SYSTEM TABLES ====================
+
+// CRM Persons - Identity Graph centrale
+export const crmPersons = w3suiteSchema.table("crm_persons", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  emailCanonical: varchar("email_canonical", { length: 255 }),
+  phoneCanonical: varchar("phone_canonical", { length: 50 }),
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
+  mergedAt: timestamp("merged_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantEmailIdx: uniqueIndex("crm_persons_tenant_email_idx").on(table.tenantId, table.emailCanonical),
+  tenantPhoneIdx: uniqueIndex("crm_persons_tenant_phone_idx").on(table.tenantId, table.phoneCanonical),
+  tenantIdIdx: index("crm_persons_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Person Consents - GDPR verità operativa
+export const crmPersonConsents = w3suiteSchema.table("crm_person_consents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  personId: uuid("person_id").notNull().references(() => crmPersons.id),
+  consentType: crmConsentTypeEnum("consent_type").notNull(),
+  channel: text("channel").notNull(), // 'all', 'email', 'sms', 'phone', 'whatsapp', 'telegram'
+  status: crmConsentStatusEnum("status").notNull(),
+  scope: crmConsentScopeEnum("scope"),
+  grantedAt: timestamp("granted_at"),
+  withdrawnAt: timestamp("withdrawn_at"),
+  source: varchar("source", { length: 255 }),
+  proofDocumentId: uuid("proof_document_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  personChannelConsentUniq: uniqueIndex("crm_person_consents_person_channel_consent_uniq").on(table.personId, table.channel, table.consentType),
+  tenantIdIdx: index("crm_person_consents_tenant_id_idx").on(table.tenantId),
+  personIdIdx: index("crm_person_consents_person_id_idx").on(table.personId),
+}));
+
+// CRM Person Preferences - Contact preferences & quiet hours
+export const crmPersonPreferences = w3suiteSchema.table("crm_person_preferences", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  personId: uuid("person_id").notNull().unique().references(() => crmPersons.id),
+  preferredChannel: varchar("preferred_channel", { length: 50 }),
+  quietHoursStart: varchar("quiet_hours_start", { length: 5 }), // "22:00"
+  quietHoursEnd: varchar("quiet_hours_end", { length: 5 }), // "08:00"
+  language: varchar("language", { length: 5 }),
+  doNotContact: boolean("do_not_contact").default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// CRM Campaigns - Marketing containers
+export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  legalEntityId: uuid("legal_entity_id"),
+  storeId: uuid("store_id"),
+  isBrandTemplate: boolean("is_brand_template").default(false),
+  brandCampaignId: uuid("brand_campaign_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: crmCampaignTypeEnum("type").notNull(),
+  status: crmCampaignStatusEnum("status").default('draft'),
+  targetDriverId: uuid("target_driver_id").references(() => drivers.id),
+  primaryPipelineId: uuid("primary_pipeline_id"),
+  budget: real("budget"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  utmSource: varchar("utm_source", { length: 255 }),
+  utmMedium: varchar("utm_medium", { length: 255 }),
+  utmCampaign: varchar("utm_campaign", { length: 255 }),
+  totalLeads: integer("total_leads").default(0),
+  totalDeals: integer("total_deals").default(0),
+  totalRevenue: real("total_revenue").default(0),
+  createdBy: uuid("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantStatusStartIdx: index("crm_campaigns_tenant_status_start_idx").on(table.tenantId, table.status, table.startDate),
+  tenantIdIdx: index("crm_campaigns_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Leads - Lead con person_id e GDPR snapshot
+export const crmLeads = w3suiteSchema.table("crm_leads", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  legalEntityId: uuid("legal_entity_id"),
+  storeId: uuid("store_id").notNull(),
+  personId: uuid("person_id").notNull().references(() => crmPersons.id),
+  ownerUserId: uuid("owner_user_id"),
+  campaignId: uuid("campaign_id").references(() => crmCampaigns.id),
+  sourceChannel: varchar("source_channel", { length: 100 }),
+  sourceSocialAccountId: uuid("source_social_account_id"),
+  status: crmLeadStatusEnum("status").default('new'),
+  leadScore: smallint("lead_score").default(0), // 0-100
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  companyName: varchar("company_name", { length: 255 }),
+  productInterest: varchar("product_interest", { length: 255 }),
+  driverId: uuid("driver_id").references(() => drivers.id),
+  notes: text("notes"),
+  utmSource: varchar("utm_source", { length: 255 }),
+  utmMedium: varchar("utm_medium", { length: 255 }),
+  utmCampaign: varchar("utm_campaign", { length: 255 }),
+  landingPageUrl: text("landing_page_url"),
+  referrerUrl: text("referrer_url"),
+  eventName: varchar("event_name", { length: 255 }),
+  eventSource: text("event_source"),
+  sessionId: varchar("session_id", { length: 255 }),
+  clientIpAddress: varchar("client_ip_address", { length: 45 }),
+  privacyPolicyAccepted: boolean("privacy_policy_accepted").default(false),
+  marketingConsent: boolean("marketing_consent").default(false),
+  profilingConsent: boolean("profiling_consent").default(false),
+  consentTimestamp: timestamp("consent_timestamp"),
+  consentSource: varchar("consent_source", { length: 255 }),
+  rawEventPayload: jsonb("raw_event_payload"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantStatusScoreCreatedIdx: index("crm_leads_tenant_status_score_created_idx").on(table.tenantId, table.status, table.leadScore, table.createdAt),
+  personIdIdx: index("crm_leads_person_id_idx").on(table.personId),
+  tenantIdIdx: index("crm_leads_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Pipelines - Sales processes
+export const crmPipelines = w3suiteSchema.table("crm_pipelines", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  isBrandTemplate: boolean("is_brand_template").default(false),
+  brandPipelineId: uuid("brand_pipeline_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  domain: crmPipelineDomainEnum("domain").notNull(),
+  driverId: uuid("driver_id").references(() => drivers.id),
+  isActive: boolean("is_active").default(true),
+  stagesConfig: jsonb("stages_config").notNull(), // [{order:1, name:'Contatto', category:'new', color:'#ff6900'}]
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("crm_pipelines_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Pipeline Settings - Settings dedicati per pipeline
+export const crmPipelineSettings = w3suiteSchema.table("crm_pipeline_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  pipelineId: uuid("pipeline_id").notNull().unique().references(() => crmPipelines.id),
+  enabledChannels: text("enabled_channels").array(), // ['sms','whatsapp','email']
+  contactRules: jsonb("contact_rules"), // {max_attempts_per_day, quiet_hours, sla_hours}
+  workflowIds: text("workflow_ids").array(),
+  customStatusNames: jsonb("custom_status_names"), // {new:'Primo Contatto', in_progress:'Lavorazione'}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// CRM Pipeline Stage Playbooks - Regole contatto per stage
+export const crmPipelineStagePlaybooks = w3suiteSchema.table("crm_pipeline_stage_playbooks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id),
+  stageName: varchar("stage_name", { length: 100 }).notNull(),
+  allowedChannels: text("allowed_channels").array(),
+  maxAttemptsPerDay: smallint("max_attempts_per_day"),
+  slaHours: smallint("sla_hours"),
+  quietHoursStart: varchar("quiet_hours_start", { length: 5 }),
+  quietHoursEnd: varchar("quiet_hours_end", { length: 5 }),
+  nextBestActionJson: jsonb("next_best_action_json"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  pipelineStageUniq: uniqueIndex("crm_pipeline_stage_playbooks_pipeline_stage_uniq").on(table.pipelineId, table.stageName),
+}));
+
+// CRM Deals - Opportunities in pipeline
+export const crmDeals = w3suiteSchema.table("crm_deals", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  legalEntityId: uuid("legal_entity_id"),
+  storeId: uuid("store_id").notNull(),
+  ownerUserId: uuid("owner_user_id").notNull(),
+  pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id),
+  stage: varchar("stage", { length: 100 }).notNull(),
+  status: crmDealStatusEnum("status").default('open'),
+  leadId: uuid("lead_id").references(() => crmLeads.id),
+  campaignId: uuid("campaign_id"),
+  sourceChannel: varchar("source_channel", { length: 100 }),
+  personId: uuid("person_id").notNull().references(() => crmPersons.id),
+  customerId: uuid("customer_id"),
+  estimatedValue: real("estimated_value"),
+  probability: smallint("probability").default(0), // 0-100
+  driverId: uuid("driver_id").references(() => drivers.id),
+  agingDays: smallint("aging_days").default(0),
+  wonAt: timestamp("won_at"),
+  lostAt: timestamp("lost_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantPipelineStageStatusIdx: index("crm_deals_tenant_pipeline_stage_status_idx").on(table.tenantId, table.pipelineId, table.stage, table.status),
+  personIdIdx: index("crm_deals_person_id_idx").on(table.personId),
+  tenantIdIdx: index("crm_deals_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Interactions - Contact logs audit trail
+export const crmInteractions = w3suiteSchema.table("crm_interactions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(), // 'lead', 'deal', 'customer'
+  entityId: uuid("entity_id").notNull(),
+  channel: varchar("channel", { length: 50 }),
+  direction: crmInteractionDirectionEnum("direction"),
+  outcome: text("outcome"),
+  durationSeconds: integer("duration_seconds"),
+  performedByUserId: uuid("performed_by_user_id"),
+  notes: text("notes"),
+  payload: jsonb("payload"),
+  occurredAt: timestamp("occurred_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  entityTypeEntityIdOccurredIdx: index("crm_interactions_entity_type_entity_id_occurred_idx").on(table.entityType, table.entityId, table.occurredAt),
+  tenantIdIdx: index("crm_interactions_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Tasks - Activities e to-do
+export const crmTasks = w3suiteSchema.table("crm_tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  entityType: varchar("entity_type", { length: 50 }), // 'lead', 'deal', 'customer'
+  entityId: uuid("entity_id"),
+  assignedToUserId: uuid("assigned_to_user_id"),
+  taskType: crmTaskTypeEnum("task_type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  dueDate: timestamp("due_date"),
+  status: crmTaskStatusEnum("status").default('pending'),
+  priority: crmTaskPriorityEnum("priority").default('medium'),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantAssignedStatusDueIdx: index("crm_tasks_tenant_assigned_status_due_idx").on(table.tenantId, table.assignedToUserId, table.status, table.dueDate),
+  tenantIdIdx: index("crm_tasks_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Campaign Pipeline Links - N:N relationships
+export const crmCampaignPipelineLinks = w3suiteSchema.table("crm_campaign_pipeline_links", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: uuid("campaign_id").notNull().references(() => crmCampaigns.id),
+  pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id),
+  isPrimary: boolean("is_primary").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  campaignPipelineUniq: uniqueIndex("crm_campaign_pipeline_links_campaign_pipeline_uniq").on(table.campaignId, table.pipelineId),
+}));
+
+// CRM Lead Attributions - Multi-touch attribution
+export const crmLeadAttributions = w3suiteSchema.table("crm_lead_attributions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  leadId: uuid("lead_id").notNull().references(() => crmLeads.id),
+  campaignId: uuid("campaign_id").notNull().references(() => crmCampaigns.id),
+  touchpointOrder: smallint("touchpoint_order").notNull(),
+  attributionWeight: real("attribution_weight"),
+  occurredAt: timestamp("occurred_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  leadTouchpointIdx: index("crm_lead_attributions_lead_touchpoint_idx").on(table.leadId, table.touchpointOrder),
+}));
+
+// CRM Source Mappings - External ID mapping
+export const crmSourceMappings = w3suiteSchema.table("crm_source_mappings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  sourceType: crmSourceTypeEnum("source_type").notNull(),
+  externalId: varchar("external_id", { length: 255 }).notNull(),
+  legalEntityId: uuid("legal_entity_id"),
+  storeId: uuid("store_id"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantSourceExternalUniq: uniqueIndex("crm_source_mappings_tenant_source_external_uniq").on(table.tenantId, table.sourceType, table.externalId),
+  tenantIdIdx: index("crm_source_mappings_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Email Templates
+export const crmEmailTemplates = w3suiteSchema.table("crm_email_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 500 }),
+  bodyHtml: text("body_html"),
+  bodyText: text("body_text"),
+  variables: jsonb("variables"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("crm_email_templates_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM SMS Templates
+export const crmSmsTemplates = w3suiteSchema.table("crm_sms_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  body: text("body"), // max 160 char validated in app
+  variables: jsonb("variables"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("crm_sms_templates_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM WhatsApp Templates
+export const crmWhatsappTemplates = w3suiteSchema.table("crm_whatsapp_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  templateId: varchar("template_id", { length: 255 }), // WhatsApp approved template ID
+  language: varchar("language", { length: 5 }),
+  headerText: text("header_text"),
+  bodyText: text("body_text"),
+  footerText: text("footer_text"),
+  buttons: jsonb("buttons"),
+  variables: jsonb("variables"),
+  isApproved: boolean("is_approved").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("crm_whatsapp_templates_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Customer Segments
+export const crmCustomerSegments = w3suiteSchema.table("crm_customer_segments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  filterRules: jsonb("filter_rules"),
+  calculatedCount: integer("calculated_count").default(0),
+  isDynamic: boolean("is_dynamic").default(true),
+  lastCalculatedAt: timestamp("last_calculated_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("crm_customer_segments_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Automation Rules
+export const crmAutomationRules = w3suiteSchema.table("crm_automation_rules", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  triggerEvent: varchar("trigger_event", { length: 255 }).notNull(),
+  conditions: jsonb("conditions"),
+  actions: jsonb("actions"),
+  isActive: boolean("is_active").default(true),
+  executionCount: integer("execution_count").default(0),
+  lastExecutedAt: timestamp("last_executed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("crm_automation_rules_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Saved Views
+export const crmSavedViews = w3suiteSchema.table("crm_saved_views", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  viewName: varchar("view_name", { length: 255 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(),
+  filters: jsonb("filters"),
+  sortConfig: jsonb("sort_config"),
+  columnsConfig: jsonb("columns_config"),
+  isShared: boolean("is_shared").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantUserIdx: index("crm_saved_views_tenant_user_idx").on(table.tenantId, table.userId),
+}));
+
+// ==================== CRM INSERT SCHEMAS ====================
+
+export const insertCrmPersonSchema = createInsertSchema(crmPersons).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmPerson = z.infer<typeof insertCrmPersonSchema>;
+export type CrmPerson = typeof crmPersons.$inferSelect;
+
+export const insertCrmPersonConsentSchema = createInsertSchema(crmPersonConsents).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmPersonConsent = z.infer<typeof insertCrmPersonConsentSchema>;
+export type CrmPersonConsent = typeof crmPersonConsents.$inferSelect;
+
+export const insertCrmPersonPreferenceSchema = createInsertSchema(crmPersonPreferences).omit({ 
+  id: true, 
+  updatedAt: true
+});
+export type InsertCrmPersonPreference = z.infer<typeof insertCrmPersonPreferenceSchema>;
+export type CrmPersonPreference = typeof crmPersonPreferences.$inferSelect;
+
+export const insertCrmCampaignSchema = createInsertSchema(crmCampaigns).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  totalLeads: true,
+  totalDeals: true,
+  totalRevenue: true
+});
+export type InsertCrmCampaign = z.infer<typeof insertCrmCampaignSchema>;
+export type CrmCampaign = typeof crmCampaigns.$inferSelect;
+
+export const insertCrmLeadSchema = createInsertSchema(crmLeads).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmLead = z.infer<typeof insertCrmLeadSchema>;
+export type CrmLead = typeof crmLeads.$inferSelect;
+
+export const insertCrmPipelineSchema = createInsertSchema(crmPipelines).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmPipeline = z.infer<typeof insertCrmPipelineSchema>;
+export type CrmPipeline = typeof crmPipelines.$inferSelect;
+
+export const insertCrmPipelineSettingsSchema = createInsertSchema(crmPipelineSettings).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmPipelineSettings = z.infer<typeof insertCrmPipelineSettingsSchema>;
+export type CrmPipelineSettings = typeof crmPipelineSettings.$inferSelect;
+
+export const insertCrmPipelineStagePlaybookSchema = createInsertSchema(crmPipelineStagePlaybooks).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmPipelineStagePlaybook = z.infer<typeof insertCrmPipelineStagePlaybookSchema>;
+export type CrmPipelineStagePlaybook = typeof crmPipelineStagePlaybooks.$inferSelect;
+
+export const insertCrmDealSchema = createInsertSchema(crmDeals).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  agingDays: true
+});
+export type InsertCrmDeal = z.infer<typeof insertCrmDealSchema>;
+export type CrmDeal = typeof crmDeals.$inferSelect;
+
+export const insertCrmInteractionSchema = createInsertSchema(crmInteractions).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmInteraction = z.infer<typeof insertCrmInteractionSchema>;
+export type CrmInteraction = typeof crmInteractions.$inferSelect;
+
+export const insertCrmTaskSchema = createInsertSchema(crmTasks).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmTask = z.infer<typeof insertCrmTaskSchema>;
+export type CrmTask = typeof crmTasks.$inferSelect;
+
+export const insertCrmCampaignPipelineLinkSchema = createInsertSchema(crmCampaignPipelineLinks).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmCampaignPipelineLink = z.infer<typeof insertCrmCampaignPipelineLinkSchema>;
+export type CrmCampaignPipelineLink = typeof crmCampaignPipelineLinks.$inferSelect;
+
+export const insertCrmLeadAttributionSchema = createInsertSchema(crmLeadAttributions).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmLeadAttribution = z.infer<typeof insertCrmLeadAttributionSchema>;
+export type CrmLeadAttribution = typeof crmLeadAttributions.$inferSelect;
+
+export const insertCrmSourceMappingSchema = createInsertSchema(crmSourceMappings).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmSourceMapping = z.infer<typeof insertCrmSourceMappingSchema>;
+export type CrmSourceMapping = typeof crmSourceMappings.$inferSelect;
+
+export const insertCrmEmailTemplateSchema = createInsertSchema(crmEmailTemplates).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmEmailTemplate = z.infer<typeof insertCrmEmailTemplateSchema>;
+export type CrmEmailTemplate = typeof crmEmailTemplates.$inferSelect;
+
+export const insertCrmSmsTemplateSchema = createInsertSchema(crmSmsTemplates).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmSmsTemplate = z.infer<typeof insertCrmSmsTemplateSchema>;
+export type CrmSmsTemplate = typeof crmSmsTemplates.$inferSelect;
+
+export const insertCrmWhatsappTemplateSchema = createInsertSchema(crmWhatsappTemplates).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmWhatsappTemplate = z.infer<typeof insertCrmWhatsappTemplateSchema>;
+export type CrmWhatsappTemplate = typeof crmWhatsappTemplates.$inferSelect;
+
+export const insertCrmCustomerSegmentSchema = createInsertSchema(crmCustomerSegments).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  calculatedCount: true
+});
+export type InsertCrmCustomerSegment = z.infer<typeof insertCrmCustomerSegmentSchema>;
+export type CrmCustomerSegment = typeof crmCustomerSegments.$inferSelect;
+
+export const insertCrmAutomationRuleSchema = createInsertSchema(crmAutomationRules).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  executionCount: true
+});
+export type InsertCrmAutomationRule = z.infer<typeof insertCrmAutomationRuleSchema>;
+export type CrmAutomationRule = typeof crmAutomationRules.$inferSelect;
+
+export const insertCrmSavedViewSchema = createInsertSchema(crmSavedViews).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmSavedView = z.infer<typeof insertCrmSavedViewSchema>;
+export type CrmSavedView = typeof crmSavedViews.$inferSelect;
