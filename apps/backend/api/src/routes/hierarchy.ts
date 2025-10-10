@@ -1198,10 +1198,28 @@ router.get('/workflow-templates', requirePermission('workflows.read'), async (re
       .orderBy(asc(workflowTemplates.name));
 
     // Aggiungi routing info a ogni template
-    const templatesWithRouting = templates.map(template => ({
-      ...template,
-      routingInfo: detectWorkflowRoutingNodes(template as any)
-    }));
+    const templatesWithRouting = templates.map(template => {
+      // Parse nodes if it's a string (JSONB from database)
+      const parsedTemplate = {
+        ...template,
+        nodes: typeof template.nodes === 'string' ? JSON.parse(template.nodes) : template.nodes
+      };
+      
+      console.log(`[ROUTING-DEBUG] Template ${template.name}:`, {
+        nodesType: typeof template.nodes,
+        nodesIsArray: Array.isArray(parsedTemplate.nodes),
+        nodesLength: parsedTemplate.nodes?.length,
+        hasTeamRouting: parsedTemplate.nodes?.some((n: any) => n.type === 'team-routing')
+      });
+      
+      const routingInfo = detectWorkflowRoutingNodes(parsedTemplate as any);
+      console.log(`[ROUTING-DEBUG] Detected routing:`, routingInfo);
+      
+      return {
+        ...template,
+        routingInfo
+      };
+    });
 
     res.json(templatesWithRouting);
   } catch (error) {

@@ -3033,7 +3033,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = db.select().from(workflowTemplates).where(and(...whereConditions));
       
       const templates = await query;
-      res.json(templates);
+      
+      // Import routing detection utility
+      const { detectWorkflowRoutingNodes } = await import('../utils/workflow-routing-utils');
+      
+      // Aggiungi routing info a ogni template
+      const templatesWithRouting = templates.map(template => {
+        console.log(`[TEMPLATE-DEBUG] ${template.name} - nodes type:`, typeof template.nodes, 'is array:', Array.isArray(template.nodes));
+        
+        const parsedTemplate = {
+          ...template,
+          nodes: typeof template.nodes === 'string' ? JSON.parse(template.nodes) : template.nodes
+        };
+        
+        console.log(`[TEMPLATE-DEBUG] After parse - nodes is array:`, Array.isArray(parsedTemplate.nodes), 'length:', parsedTemplate.nodes?.length);
+        
+        const routingInfo = detectWorkflowRoutingNodes(parsedTemplate as any);
+        console.log(`[TEMPLATE-DEBUG] Routing info:`, JSON.stringify(routingInfo));
+        
+        return {
+          ...template,
+          routingInfo
+        };
+      });
+      
+      res.json(templatesWithRouting);
     } catch (error) {
       handleApiError(error, res, 'recupero template workflow');
     }
