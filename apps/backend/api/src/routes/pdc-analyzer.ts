@@ -9,6 +9,7 @@ import {
   aiPdcExtractedData,
   aiPdcServiceMapping
 } from "../db/schema/brand-interface";
+import { drivers, driverCategories, driverTypologies } from "../db/schema/public";
 import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcement";
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
@@ -373,10 +374,11 @@ router.post("/analyze", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), u
     const pdfData = await pdfParse(req.file.buffer);
     const pdfText = pdfData.text;
 
-    // Call GPT-4 (not Vision) for text-based analysis
-    // Note: For true OCR of scanned PDFs, we need to convert PDF pages to images first
+    // Call GPT-4o (has vision capabilities built-in for better text extraction)
+    // Note: For 100% scanned PDFs (pure images), ideal solution: convert PDF→Images→Vision API
+    // TODO: Implement pdf2pic for full OCR: PDF pages → Base64 images → gpt-4o vision
     const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -1139,6 +1141,63 @@ router.post("/sessions/:sessionId/finalize", enforceAIEnabled, enforceAgentEnabl
   } catch (error) {
     console.error("Error finalizing session:", error);
     res.status(500).json({ error: "Failed to finalize session" });
+  }
+});
+
+/**
+ * GET /api/pdc/drivers/hierarchy
+ * Get complete WindTre product hierarchy: Drivers → Categories → Typologies
+ */
+router.get("/drivers/hierarchy", async (req, res) => {
+  try {
+    // Get all drivers
+    const allDrivers = await db
+      .select()
+      .from(drivers)
+      .where(eq(drivers.active, true))
+      .orderBy(drivers.name);
+
+    // Get all categories
+    const allCategories = await db
+      .select()
+      .from(driverCategories)
+      .where(eq(driverCategories.active, true))
+      .orderBy(driverCategories.sortOrder);
+
+    // Get all typologies
+    const allTypologies = await db
+      .select()
+      .from(driverTypologies)
+      .where(eq(driverTypologies.active, true))
+      .orderBy(driverTypologies.sortOrder);
+
+    // Build hierarchy
+    const hierarchy = allDrivers.map(driver => ({
+      id: driver.id,
+      code: driver.code,
+      name: driver.name,
+      categories: allCategories
+        .filter(cat => cat.driverId === driver.id)
+        .map(category => ({
+          id: category.id,
+          code: category.code,
+          name: category.name,
+          description: category.description,
+          typologies: allTypologies
+            .filter(typ => typ.categoryId === category.id)
+            .map(typology => ({
+              id: typology.id,
+              code: typology.code,
+              name: typology.name,
+              description: typology.description,
+            })),
+        })),
+    }));
+
+    res.json(hierarchy);
+  } catch (error) {
+    console.error("Error fetching drivers hierarchy:", error);
+    res.status(500).json({ error: "Failed to fetch drivers hierarchy" });
   }
 });
 

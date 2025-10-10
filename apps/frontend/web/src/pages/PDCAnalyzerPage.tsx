@@ -66,32 +66,27 @@ interface ExtractedData {
   pdfFileName: string;
 }
 
-const WINDTRE_HIERARCHY = {
-  "Fisso": {
-    "Fibra": ["FTTH", "FTTC"],
-    "ADSL": ["Basic", "Plus"]
-  },
-  "Mobile": {
-    "Abbonamento": ["Postpagato", "Business"],
-    "Ricaricabile": ["Prepagata", "Easy"]
-  },
-  "Energia": {
-    "Luce": ["Domestica", "Business"],
-    "Gas": ["Domestica", "Business"]
-  },
-  "Assicurazione": {
-    "Vita": ["Base", "Premium"],
-    "Casa": ["Base", "Premium"]
-  },
-  "Protecta": {
-    "Device": ["Smartphone", "Tablet"],
-    "Servizi": ["Assistenza", "Garanzia"]
-  },
-  "Customer Base": {
-    "Retention": ["Fidelizzazione", "Winback"],
-    "Upsell": ["Cross-sell", "Up-sell"]
-  }
-};
+interface DriverTypology {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+}
+
+interface DriverCategory {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  typologies: DriverTypology[];
+}
+
+interface Driver {
+  id: string;
+  code: string;
+  name: string;
+  categories: DriverCategory[];
+}
 
 export default function PDCAnalyzerPage() {
   const [currentModule, setCurrentModule] = useState("ai");
@@ -120,6 +115,11 @@ export default function PDCAnalyzerPage() {
   // Export state
   const [exportJson, setExportJson] = useState<any>(null);
 
+  // Training dialog state
+  const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
+  const [trainingPrompt, setTrainingPrompt] = useState("");
+  const [isPublicTraining, setIsPublicTraining] = useState(true);
+
   // Flow step calculation
   const getFlowStep = () => {
     if (!session) return 1;
@@ -135,6 +135,11 @@ export default function PDCAnalyzerPage() {
   // Query per sessioni precedenti
   const { data: previousSessions = [], isLoading: loadingSessions } = useQuery({
     queryKey: ['/api/pdc/sessions'],
+  });
+
+  // Query per gerarchia drivers da DB
+  const { data: driversHierarchy = [], isLoading: loadingHierarchy } = useQuery<Driver[]>({
+    queryKey: ['/api/pdc/drivers/hierarchy'],
   });
 
   // Mutation per creare sessione
@@ -909,27 +914,113 @@ export default function PDCAnalyzerPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-windtre-orange">
                     <GitBranch className="h-5 w-5" />
-                    Servizi Estratti
+                    Mapping Servizi WindTre
                   </CardTitle>
+                  <CardDescription>Mappa ogni servizio estratto alla gerarchia prodotti WindTre</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {reviewData.servicesExtracted?.map((service: any, index: number) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">Servizio {index + 1}</h4>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <span className="text-gray-600">Nome:</span>
-                            <span className="ml-2 font-medium">{service.serviceName}</span>
+                  {loadingHierarchy ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-windtre-orange mx-auto" />
+                      <p className="text-gray-500 mt-2">Caricamento gerarchia prodotti...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {reviewData.servicesExtracted?.map((service: any, index: number) => {
+                        const mapping = serviceMappings[index] || {};
+                        const selectedDriver = driversHierarchy.find(d => d.id === mapping.driverId);
+                        const selectedCategory = selectedDriver?.categories.find(c => c.id === mapping.categoryId);
+                        
+                        return (
+                          <div key={index} className="p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-windtre-orange/20">
+                            <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                              <span className="w-6 h-6 bg-windtre-orange text-white rounded-full flex items-center justify-center text-sm">
+                                {index + 1}
+                              </span>
+                              {service.serviceName || `Servizio ${index + 1}`}
+                              <span className="text-sm text-gray-500 ml-auto">€{service.price || 'N/A'}</span>
+                            </h4>
+                            
+                            <div className="grid grid-cols-3 gap-4">
+                              {/* Driver Select */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Driver *</Label>
+                                <Select
+                                  value={mapping.driverId || ""}
+                                  onValueChange={(value) => {
+                                    const newMappings = [...serviceMappings];
+                                    newMappings[index] = { driverId: value, categoryId: undefined, typologyId: undefined };
+                                    setServiceMappings(newMappings);
+                                  }}
+                                >
+                                  <SelectTrigger className="mt-1" data-testid={`select-driver-${index}`}>
+                                    <SelectValue placeholder="Seleziona Driver" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {driversHierarchy.map(driver => (
+                                      <SelectItem key={driver.id} value={driver.id}>
+                                        {driver.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Category Select */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Categoria *</Label>
+                                <Select
+                                  value={mapping.categoryId || ""}
+                                  onValueChange={(value) => {
+                                    const newMappings = [...serviceMappings];
+                                    newMappings[index] = { ...mapping, categoryId: value, typologyId: undefined };
+                                    setServiceMappings(newMappings);
+                                  }}
+                                  disabled={!selectedDriver}
+                                >
+                                  <SelectTrigger className="mt-1" data-testid={`select-category-${index}`}>
+                                    <SelectValue placeholder={selectedDriver ? "Seleziona Categoria" : "Prima seleziona Driver"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {selectedDriver?.categories.map(category => (
+                                      <SelectItem key={category.id} value={category.id}>
+                                        {category.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Typology Select */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Tipologia *</Label>
+                                <Select
+                                  value={mapping.typologyId || ""}
+                                  onValueChange={(value) => {
+                                    const newMappings = [...serviceMappings];
+                                    newMappings[index] = { ...mapping, typologyId: value };
+                                    setServiceMappings(newMappings);
+                                  }}
+                                  disabled={!selectedCategory}
+                                >
+                                  <SelectTrigger className="mt-1" data-testid={`select-typology-${index}`}>
+                                    <SelectValue placeholder={selectedCategory ? "Seleziona Tipologia" : "Prima seleziona Categoria"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {selectedCategory?.typologies.map(typology => (
+                                      <SelectItem key={typology.id} value={typology.id}>
+                                        {typology.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-gray-600">Prezzo:</span>
-                            <span className="ml-2 font-medium">€{service.price}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -947,6 +1038,100 @@ export default function PDCAnalyzerPage() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Training Prompt Dialog */}
+              <Dialog open={trainingDialogOpen} onOpenChange={setTrainingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="mb-4 border-windtre-orange text-windtre-orange hover:bg-windtre-orange hover:text-white"
+                    data-testid="button-open-training-dialog"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Addestra AI su questa PDC
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-windtre-orange">
+                      <Sparkles className="h-5 w-5" />
+                      Training AI Cross-Tenant
+                    </DialogTitle>
+                    <DialogDescription>
+                      Fornisci istruzioni all'AI per migliorare l'analisi futura di PDC simili. 
+                      Il training sarà condiviso tra tutti i tenant per migliorare l'accuratezza globale.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div>
+                      <Label htmlFor="training-prompt">Prompt di Addestramento *</Label>
+                      <Textarea
+                        id="training-prompt"
+                        value={trainingPrompt}
+                        onChange={(e) => setTrainingPrompt(e.target.value)}
+                        placeholder="Esempio: 'Quando vedi campo X nel PDF, estrailo sempre come Y...' oppure 'Questo servizio dovrebbe essere mappato a Driver Mobile, Categoria Ricaricabile...'"
+                        rows={6}
+                        className="mt-2"
+                        data-testid="textarea-training-prompt"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="is-public"
+                        checked={isPublicTraining}
+                        onChange={(e) => setIsPublicTraining(e.target.checked)}
+                        className="w-4 h-4 text-windtre-orange"
+                        data-testid="checkbox-public-training"
+                      />
+                      <Label htmlFor="is-public" className="text-sm">
+                        Condividi training cross-tenant (consigliato per migliorare l'AI globalmente)
+                      </Label>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setTrainingDialogOpen(false);
+                        setTrainingPrompt("");
+                      }}
+                      data-testid="button-cancel-training"
+                    >
+                      Annulla
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!trainingPrompt.trim() || !selectedResult) return;
+                        
+                        await saveToTrainingMutation.mutateAsync({
+                          extractedDataId: selectedResult.extractedDataId,
+                          isPublic: isPublicTraining,
+                          trainingPrompt: trainingPrompt,
+                        });
+                        
+                        setTrainingDialogOpen(false);
+                        setTrainingPrompt("");
+                      }}
+                      disabled={!trainingPrompt.trim() || saveToTrainingMutation.isPending}
+                      className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                      data-testid="button-save-training"
+                    >
+                      {saveToTrainingMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Salvataggio...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Salva Training
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <div className="flex justify-end gap-3">
                 <Button
