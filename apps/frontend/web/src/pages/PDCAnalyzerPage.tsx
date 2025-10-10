@@ -446,7 +446,7 @@ export default function PDCAnalyzerPage() {
   const tabs = [
     { id: 'analytics', label: 'Analytics', icon: BarChart3, disabled: false },
     { id: 'upload', label: 'Genera Sessione', icon: Upload, disabled: false },
-    { id: 'review', label: 'Review', icon: FileSearch, disabled: !reviewData },
+    { id: 'review', label: 'Review', icon: FileSearch, disabled: false },
     { id: 'export', label: 'Export', icon: Download, disabled: !exportJson },
   ];
 
