@@ -1489,26 +1489,41 @@ export default function PDCAnalyzerPage() {
 
         {/* PDF2 Flow Dialog */}
         <Dialog open={showPdf2Dialog} onOpenChange={setShowPdf2Dialog}>
-          <DialogContent className="windtre-glass-panel border-windtre-orange/20">
+          <DialogContent 
+            className="max-w-lg w-full"
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 105, 0, 0.2)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'auto'
+            }}
+          >
             <DialogHeader>
-              <DialogTitle className="text-windtre-purple flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+              <DialogTitle className="text-windtre-purple flex items-center gap-2 text-xl font-semibold">
+                <FileText className="h-6 w-6" />
                 Secondo PDF Disponibile?
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-gray-600 mt-2">
                 Hai un secondo PDF da caricare (es. retro del contratto o allegati)?
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <p className="text-sm text-gray-600">
+            <div className="space-y-6 py-6">
+              <p className="text-sm text-gray-600 leading-relaxed">
                 Se il contratto ha un retro o documenti allegati, puoi caricarli ora per un'analisi completa.
                 Altrimenti, procederemo direttamente alla revisione dei dati estratti.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <Button
                   onClick={() => handlePdf2Response(false)}
                   variant="outline"
-                  className="flex-1 border-gray-300"
+                  className="flex-1 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-colors"
                   data-testid="button-no-pdf2"
                 >
                   No, Procedi al Review
@@ -1516,7 +1531,7 @@ export default function PDCAnalyzerPage() {
                 </Button>
                 <Button
                   onClick={() => handlePdf2Response(true)}
-                  className="flex-1 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  className="flex-1 bg-windtre-orange hover:bg-orange-600 text-white transition-colors shadow-md hover:shadow-lg"
                   data-testid="button-yes-pdf2"
                 >
                   <Upload className="h-4 w-4 mr-2" />

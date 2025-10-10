@@ -336,51 +336,102 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
           role: "system",
           content: `Sei un esperto di analisi documentale specializzato nell'estrazione di dati da proposte di contratto (PDC) WindTre.
 
-**OBIETTIVO**: Estrarre anagrafica cliente, servizi venduti, e mapping prodotti dal testo PDF, generando JSON strutturato.
+**OBIETTIVO**: Estrarre TUTTA l'anagrafica cliente completa, servizi venduti, e mapping prodotti dal testo PDF.
 
 **GERARCHIA PRODOTTI WINDTRE**:
-1. **Driver** (livello 1): Fisso, Mobile, Energia, Assicurazione, Protecta, Customer Base
-2. **Categoria** (livello 2): es. Mobile → Ricaricabile, Mobile → Abbonamento, Fisso → Fibra
-3. **Tipologia** (livello 3): es. Ricaricabile → Prepagata, Abbonamento → Postpagato, Fibra → FTTH
-4. **Prodotto** (livello 4): descrizione commerciale (es. "Super Fibra 1 Giga", "Smart 50GB")
+1. **Driver**: Fisso, Mobile, Energia, Assicurazione, Protecta, Customer Base
+2. **Categoria**: es. Mobile → Ricaricabile/Abbonamento, Fisso → Fibra/ADSL
+3. **Tipologia**: es. Ricaricabile → Prepagata, Abbonamento → Postpagato, Fibra → FTTH/FTTC
+4. **Prodotto**: descrizione commerciale (es. "Super Fibra 2,5 Giga & Netflix")
 
-**FORMATO OUTPUT JSON**:
+**FORMATO OUTPUT JSON COMPLETO**:
 {
   "customer": {
-    "type": "private|business",
+    "type": "consumer|business",
+    // CONSUMER (Privato)
     "firstName": "...",
     "lastName": "...",
     "fiscalCode": "...",
+    "birthDate": "DD/MM/YYYY",
+    "birthPlace": "...",
+    "birthProvince": "...",
+    "gender": "M|F",
+    
+    // BUSINESS (P.IVA)
+    "businessName": "...",
+    "vatNumber": "...",
+    "pec": "...",
+    "sdi": "...",
+    "legalForm": "SRL|SPA|...",
+    
+    // CONTATTO (per Business o Consumer)
+    "contactPerson": {
+      "firstName": "...",
+      "lastName": "...",
+      "role": "..."
+    },
+    
+    // CONTATTI
     "phone": "...",
+    "mobilePhone": "...",
     "email": "...",
+    
+    // INDIRIZZO RESIDENZA/SEDE LEGALE
     "address": {
       "street": "...",
+      "number": "...",
       "city": "...",
       "zip": "...",
       "province": "..."
-    }
+    },
+    
+    // INDIRIZZO INSTALLAZIONE (se diverso)
+    "installationAddress": {
+      "street": "...",
+      "number": "...",
+      "city": "...",
+      "zip": "...",
+      "province": "..."
+    },
+    
+    // DOCUMENTO
+    "document": {
+      "type": "CI|Passaporto|Patente",
+      "number": "...",
+      "issuedBy": "...",
+      "issueDate": "DD/MM/YYYY",
+      "expiryDate": "DD/MM/YYYY"
+    },
+    
+    // PAGAMENTO
+    "paymentMethod": "SDD|Bollettino|...",
+    "iban": "...",
+    "bankName": "...",
+    "accountHolder": "..."
   },
   "services": [
     {
       "driver": "Mobile|Fisso|Energia|...",
-      "category": "Abbonamento|Ricaricabile|Fibra|...",
-      "typology": "Postpagato|Prepagata|FTTH|...",
-      "productDescription": "Nome commerciale prodotto",
+      "category": "...",
+      "typology": "...",
+      "productDescription": "...",
       "price": 14.99,
-      "duration": "24 mesi|30 giorni",
-      "activationDate": "YYYY-MM-DD"
+      "duration": "24 mesi",
+      "activationDate": "YYYY-MM-DD",
+      "phoneNumber": "..." 
     }
   ],
   "confidence": 95,
-  "extractionNotes": "eventuali note su campi ambigui o mancanti"
+  "extractionNotes": "..."
 }
 
-**REGOLE**:
-- Estrai SOLO dati realmente presenti nel testo
-- Se un campo è ambiguo o mancante, segnalalo in extractionNotes
-- confidence deve riflettere la certezza dei dati estratti (0-100)
-- Per servizi multipli, crea array con tutti i prodotti trovati
-- Se è un cliente business, usa businessName invece di firstName/lastName
+**REGOLE CRITICHE**:
+1. **RICONOSCI TIPO CLIENTE**: Se trovi P.IVA/Ragione Sociale → type="business", altrimenti "consumer"
+2. **BUSINESS**: Estrai businessName, vatNumber, PEC, SDI + dati contatto persona di riferimento
+3. **CONSUMER**: Estrai firstName, lastName, fiscalCode, birthDate/Place completi
+4. **TUTTI I CAMPI**: Estrai OGNI campo trovato (telefoni, indirizzi, documenti, IBAN)
+5. **DUE INDIRIZZI**: Distingui residenza/sede da installazione servizio
+6. confidence riflette completezza dati (più campi = più alta)
 
 Rispondi SEMPRE con JSON valido.`,
         },
