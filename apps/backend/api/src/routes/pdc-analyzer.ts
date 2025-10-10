@@ -1087,4 +1087,59 @@ router.post("/extracted/:id/training", enforceAIEnabled, enforceAgentEnabled("pd
   }
 });
 
+/**
+ * POST /api/pdc/sessions/:sessionId/finalize
+ * Finalize a PDC analysis session (change status from pending to completed)
+ */
+router.post("/sessions/:sessionId/finalize", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { sessionId } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Verify session exists and belongs to tenant
+    const [session] = await db
+      .select()
+      .from(aiPdcAnalysisSessions)
+      .where(
+        and(
+          eq(aiPdcAnalysisSessions.id, sessionId),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    if (session.status !== "pending") {
+      return res.status(400).json({ 
+        error: "Only pending sessions can be finalized",
+        currentStatus: session.status 
+      });
+    }
+
+    // Update session status to completed
+    const [updatedSession] = await db
+      .update(aiPdcAnalysisSessions)
+      .set({ 
+        status: "completed",
+        completedAt: new Date()
+      })
+      .where(eq(aiPdcAnalysisSessions.id, sessionId))
+      .returning();
+
+    res.json({
+      message: "Session finalized successfully",
+      session: updatedSession,
+    });
+  } catch (error) {
+    console.error("Error finalizing session:", error);
+    res.status(500).json({ error: "Failed to finalize session" });
+  }
+});
+
 export default router;

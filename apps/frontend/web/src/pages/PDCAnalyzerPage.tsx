@@ -559,7 +559,7 @@ export default function PDCAnalyzerPage() {
                           className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
                           data-testid={`session-item-${sess.id}`}
                         >
-                          <div>
+                          <div className="flex-1">
                             <h4 className="font-medium text-gray-900">{sess.sessionName}</h4>
                             <p className="text-sm text-gray-600">
                               {new Date(sess.createdAt).toLocaleDateString('it-IT', {
@@ -571,9 +571,51 @@ export default function PDCAnalyzerPage() {
                               })}
                             </p>
                           </div>
-                          <Badge variant="outline" className="capitalize">
-                            {sess.status}
-                          </Badge>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="capitalize">
+                              {sess.status}
+                            </Badge>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSession(sess);
+                                  setActiveView('upload');
+                                }}
+                                className="border-windtre-purple text-windtre-purple hover:bg-windtre-purple hover:text-white"
+                                data-testid={`button-view-session-${sess.id}`}
+                              >
+                                <FileSearch className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              {sess.status === 'pending' && (
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await apiRequest(`/api/pdc/sessions/${sess.id}/finalize`, {
+                                        method: 'POST',
+                                      });
+                                      queryClient.invalidateQueries({ queryKey: ['/api/pdc/sessions'] });
+                                      toast({ title: "✅ Sessione finalizzata" });
+                                    } catch (error: any) {
+                                      toast({
+                                        title: "❌ Errore finalizzazione",
+                                        description: error.message,
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  data-testid={`button-finalize-session-${sess.id}`}
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                                  Finalizza
+                                </Button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
