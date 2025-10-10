@@ -215,13 +215,24 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       })
       .returning();
 
-    // Convert PDF to base64 for GPT-4 Vision
-    const pdfBase64 = req.file.buffer.toString('base64');
-    const pdfDataUrl = `data:application/pdf;base64,${pdfBase64}`;
+    // Extract text from PDF using pdf-parse
+    let pdfText: string;
+    try {
+      const pdfParse = (await import('pdf-parse')).default;
+      const pdfData = await pdfParse(req.file.buffer);
+      pdfText = pdfData.text;
+      console.log('📄 [PDC-AI] PDF text extracted:', pdfText.substring(0, 200) + '...');
+    } catch (parseError: any) {
+      console.error('❌ [PDC-AI] Error parsing PDF:', parseError);
+      return res.status(500).json({ 
+        error: "Failed to parse PDF",
+        details: parseError.message 
+      });
+    }
 
-    console.log('🤖 [PDC-AI] Sending PDF to GPT-4 Vision for analysis...');
+    console.log('🤖 [PDC-AI] Sending text to GPT-4 for analysis...');
 
-    // Call GPT-4o Vision for PDF analysis (can read PDFs directly)
+    // Call GPT-4o for text analysis
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -282,19 +293,7 @@ Rispondi SEMPRE con JSON valido.`,
         },
         {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Analizza questa proposta contrattuale WindTre ed estrai tutti i dati come JSON strutturato. Leggi attentamente ogni pagina del PDF."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: pdfDataUrl,
-                detail: "high"
-              }
-            }
-          ],
+          content: `Analizza questa proposta contrattuale WindTre ed estrai tutti i dati:\n\n${pdfText}`,
         },
       ],
       response_format: { type: "json_object" },
