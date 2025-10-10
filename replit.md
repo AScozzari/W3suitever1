@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. It features a unique WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform also includes the Brand Interface HQ system for centralized control and cross-tenant management, aiming to provide a scalable, secure, and robust solution for diverse business needs.
+W3 Suite is a multi-tenant enterprise platform for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a monorepo. It features a WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform includes the Brand Interface HQ system for centralized control and cross-tenant management, aiming to provide a scalable, secure, and robust solution for diverse business needs.
 
 # User Preferences
 
@@ -8,7 +8,7 @@ W3 Suite is a multi-tenant enterprise platform designed for comprehensive busine
 **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
 **❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
 
-#### ✅ CLEAN ARCHITECTURE - POST REFACTORING 2024/09/24:
+#### ✅ CLEAN ARCHITECTURE:
 - 🎯 **ALWAYS** use: `apps/backend/api/src/db/schema/`
 - 🏢 **w3suite.ts** = Tenant-specific tables (users, stores, roles, HR tables with RLS)
 - 🌐 **public.ts** = Shared reference data (countries, cities, payment methods - no tenant)
