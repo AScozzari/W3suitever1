@@ -198,7 +198,7 @@ router.get("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc-an
       .select()
       .from(aiPdcTrainingDataset)
       .where(eq(aiPdcTrainingDataset.sessionId, sessionId))
-      .orderBy(desc(aiPdcTrainingDataset.analyzedAt));
+      .orderBy(desc(aiPdcTrainingDataset.createdAt));
 
     // Get extracted data for this session
     const extractedData = await db
