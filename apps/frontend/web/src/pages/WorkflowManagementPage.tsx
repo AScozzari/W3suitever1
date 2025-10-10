@@ -1468,9 +1468,11 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                           
                           {(selectedTeamForWorkflows.assignedDepartments || []).map((department) => {
                             const deptInfo = DEPARTMENTS[department];
-                            // Filter templates by department category
+                            // Filter templates by department category AND manual team routing
                             const departmentTemplates = templates.filter(
-                              (template: any) => template.category === department || !template.category
+                              (template: any) => 
+                                (template.category === department || !template.category) &&
+                                template.routingInfo?.teams?.hasManualRouting === true
                             );
                             
                             return (
