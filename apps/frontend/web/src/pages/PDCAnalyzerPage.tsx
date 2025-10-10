@@ -121,6 +121,10 @@ export default function PDCAnalyzerPage() {
   const [trainingPrompt, setTrainingPrompt] = useState("");
   const [isPublicTraining, setIsPublicTraining] = useState(true);
 
+  // PDF2 Flow Dialog state
+  const [showPdf2Dialog, setShowPdf2Dialog] = useState(false);
+  const [waitingForPdf2, setWaitingForPdf2] = useState(false);
+
   // Flow step calculation
   const getFlowStep = () => {
     if (!session) return 1;
@@ -273,6 +277,24 @@ export default function PDCAnalyzerPage() {
           title: "✅ Analisi completata", 
           description: `${file.name} analizzato con successo`
         });
+        
+        // After FIRST PDF: show dialog asking for PDF2
+        if (analysisResults.length === 0) {
+          setShowPdf2Dialog(true);
+        } 
+        // After SECOND PDF (while waiting): go to review automatically
+        else if (waitingForPdf2) {
+          setWaitingForPdf2(false);
+          toast({
+            title: "✅ Secondo PDF analizzato",
+            description: "Procedendo al review dei dati"
+          });
+          // Auto-select first result for review
+          const firstResult = analysisResults.find(r => r.status === 'completed');
+          if (firstResult) {
+            await handleSelectResult(firstResult);
+          }
+        }
       } else {
         toast({
           title: "❌ Errore analisi",
@@ -382,6 +404,26 @@ export default function PDCAnalyzerPage() {
     a.download = `pdc-export-${selectedResult?.extractedDataId}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // PDF2 Flow handlers
+  const handlePdf2Response = async (hasPdf2: boolean) => {
+    setShowPdf2Dialog(false);
+    
+    if (hasPdf2) {
+      // User has PDF2 - wait for second upload
+      setWaitingForPdf2(true);
+      toast({
+        title: "📄 Carica il secondo PDF",
+        description: "Puoi caricare il retro del contratto o un allegato"
+      });
+    } else {
+      // No PDF2 - proceed directly to review
+      const completedResult = analysisResults.find(r => r.status === 'completed');
+      if (completedResult) {
+        await handleSelectResult(completedResult);
+      }
+    }
   };
 
   const tabs = [
@@ -1359,6 +1401,54 @@ export default function PDCAnalyzerPage() {
             </div>
           )}
         </div>
+
+        {/* PDF2 Flow Dialog */}
+        <Dialog open={showPdf2Dialog} onOpenChange={setShowPdf2Dialog}>
+          <DialogContent className="windtre-glass-panel border-windtre-orange/20">
+            <DialogHeader>
+              <DialogTitle className="text-windtre-purple flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Secondo PDF Disponibile?
+              </DialogTitle>
+              <DialogDescription>
+                Hai un secondo PDF da caricare (es. retro del contratto o allegati)?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-gray-600">
+                Se il contratto ha un retro o documenti allegati, puoi caricarli ora per un'analisi completa.
+                Altrimenti, procederemo direttamente alla revisione dei dati estratti.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => handlePdf2Response(false)}
+                  variant="outline"
+                  className="flex-1 border-gray-300"
+                  data-testid="button-no-pdf2"
+                >
+                  No, Procedi al Review
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+                <Button
+                  onClick={() => handlePdf2Response(true)}
+                  className="flex-1 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  data-testid="button-yes-pdf2"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Sì, Carica PDF2
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* PDF2 Waiting State */}
+        {waitingForPdf2 && (
+          <div className="fixed bottom-8 right-8 bg-windtre-orange text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-pulse">
+            <Upload className="h-5 w-5" />
+            <span className="font-medium">In attesa del secondo PDF...</span>
+          </div>
+        )}
       </div>
     </Layout>
   );

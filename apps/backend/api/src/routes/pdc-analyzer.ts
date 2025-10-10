@@ -14,12 +14,15 @@ import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcem
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
 import crypto from "crypto";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
-// Use CommonJS require for pdfjs-dist to ensure production compatibility
-const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
-
-// Configure worker for PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.js");
+// Configure worker for PDF.js with absolute path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const workerPath = join(__dirname, "../../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs");
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
 
 const router = Router();
 
