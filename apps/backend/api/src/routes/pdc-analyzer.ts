@@ -237,7 +237,7 @@ router.get("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc-an
  * POST /api/pdc/sessions/:sessionId/upload
  * Upload PDF to session and analyze with GPT-4o
  */
-router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), upload.single("pdf"), async (req, res) => {
+router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), upload.single("file"), async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
     const userId = req.user?.id;
@@ -463,7 +463,7 @@ Rispondi SEMPRE con JSON valido.`,
  * This endpoint uses text extraction + GPT-4 for now.
  * TODO: Implement PDF-to-image conversion for true OCR with Vision API
  */
-router.post("/analyze", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), upload.single("pdf"), async (req, res) => {
+router.post("/analyze", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), upload.single("file"), async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
     const userId = req.user?.id;
