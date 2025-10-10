@@ -1335,15 +1335,23 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
       }).optional()
     });
 
+    console.log('[AI-GENERATE] 📥 Request body received:', JSON.stringify(req.body, null, 2));
+    
     const validationResult = aiGenerateSchema.safeParse(req.body);
     if (!validationResult.success) {
+      console.error('[AI-GENERATE] ❌ Validation failed:', validationResult.error.errors);
+      console.error('[AI-GENERATE] 📋 Received body:', JSON.stringify(req.body, null, 2));
+      
       return res.status(400).json({
         success: false,
         error: 'Invalid request body',
         message: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
+        details: validationResult.error.errors,
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
+    
+    console.log('[AI-GENERATE] ✅ Validation passed, taskReminder:', JSON.stringify(validationResult.data.taskReminder, null, 2));
 
     const { taskReminder, originalPrompt, context } = validationResult.data;
 
