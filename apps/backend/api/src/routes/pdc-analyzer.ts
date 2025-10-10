@@ -427,6 +427,7 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       "category": "...",
       "typology": "...",
       "productDescription": "...",
+      "rawTextFromPdf": "Testo ESATTO dal PDF (es. 'Super Fibra 2,5 Giga & Netflix') per mapping",
       "price": 14.99,
       "duration": "24 mesi",
       "activationDate": "YYYY-MM-DD",
@@ -444,6 +445,7 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
 4. **CONTATTO BUSINESS**: Se P.IVA, estrai SEMPRE contactPerson (referente aziendale)
 5. **VALIDAZIONE**: fiscalCode 16 char, vatNumber 11 cifre, postalCode 5 cifre, province 2 char
 6. **COMPLETEZZA**: confidence alta = più campi estratti correttamente
+7. **CAMPI PRESUNTI**: Per ogni servizio, estrai in "rawTextFromPdf" la descrizione ESATTA dal PDF (es. "cosa: Super Fibra 2,5 Giga & Netflix" → "Super Fibra 2,5 Giga & Netflix") per facilitare il mapping prodotti WindTre
 
 Rispondi SEMPRE con JSON valido.`,
         },

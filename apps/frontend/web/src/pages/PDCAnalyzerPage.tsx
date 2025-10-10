@@ -253,37 +253,38 @@ export default function PDCAnalyzerPage() {
   });
 
   // Load session data when session changes (from Analytics view)
-  useEffect(() => {
-    const loadSessionData = async () => {
-      if (session?.id && activeView === 'upload') {
-        try {
-          const sessionData = await apiRequest(`/api/pdc/sessions/${session.id}`);
-          
-          // Populate analysisResults from pdfUploads
-          if (sessionData.pdfUploads && sessionData.pdfUploads.length > 0) {
-            const results = sessionData.pdfUploads.map((pdf: any) => ({
-              id: pdf.id,
-              fileName: pdf.fileName,
-              status: pdf.status,
-              confidence: pdf.aiConfidence,
-              extractedData: sessionData.extractedData?.find((d: any) => d.pdfId === pdf.id),
-            }));
-            setAnalysisResults(results);
-          }
-          
-          // If there's extracted data, load first one for review
-          if (sessionData.extractedData && sessionData.extractedData.length > 0) {
-            const firstExtracted = sessionData.extractedData[0];
-            setReviewData(firstExtracted);
-          }
-        } catch (error) {
-          console.error('Error loading session data:', error);
-        }
-      }
-    };
-
-    loadSessionData();
-  }, [session?.id, activeView]);
+  // DISABLED: Causes 500 loop, will be replaced with proper load mechanism
+  // useEffect(() => {
+  //   const loadSessionData = async () => {
+  //     if (session?.id && activeView === 'upload') {
+  //       try {
+  //         const sessionData = await apiRequest(`/api/pdc/sessions/${session.id}`);
+  //         
+  //         // Populate analysisResults from pdfUploads
+  //         if (sessionData.pdfUploads && sessionData.pdfUploads.length > 0) {
+  //           const results = sessionData.pdfUploads.map((pdf: any) => ({
+  //             id: pdf.id,
+  //             fileName: pdf.fileName,
+  //             status: pdf.status,
+  //             confidence: pdf.aiConfidence,
+  //             extractedData: sessionData.extractedData?.find((d: any) => d.pdfId === pdf.id),
+  //           }));
+  //           setAnalysisResults(results);
+  //         }
+  //         
+  //         // If there's extracted data, load first one for review
+  //         if (sessionData.extractedData && sessionData.extractedData.length > 0) {
+  //           const firstExtracted = sessionData.extractedData[0];
+  //           setReviewData(firstExtracted);
+  //         }
+  //       } catch (error) {
+  //         console.error('Error loading session data:', error);
+  //       }
+  //     }
+  //   };
+  //
+  //   loadSessionData();
+  // }, [session?.id, activeView]);
 
   const handleCreateSession = async () => {
     if (!sessionName.trim()) {
