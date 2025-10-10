@@ -393,13 +393,14 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       "lastName": "...",
       "role": "...",
       "email": "...",
-      "phone": "..."
+      "mobilePhone": "...",     // cellulare referente (+39 3xx)
+      "landlinePhone": "..."    // telefono fisso referente (+39 0xx)
     },
     
     // ===== CONTATTI COMUNI =====
     "email": "...",
-    "phone": "...",           // telefono principale
-    "mobilePhone": "...",     // cellulare
+    "mobilePhone": "...",     // cellulare (+39 3xx)
+    "landlinePhone": "...",   // telefono fisso (+39 0xx)
     
     // ===== INDIRIZZO SEDE/RESIDENZA =====
     "address": "...",         // via e numero
@@ -435,6 +436,14 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
     "notes": "...",
     "status": "active"
   },
+  "additionalInfo": {
+    "contractNumber": "...",
+    "promotionCode": "...",
+    "salesAgent": "...",
+    "store": "...",
+    "campaignName": "...",
+    "otherRelevantData": "qualsiasi altra informazione rilevante trovata nel PDF che potrebbe essere utile per training/mapping"
+  },
   "services": [
     {
       "driver": "Mobile|Fisso|Energia|...",
@@ -455,11 +464,13 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
 **REGOLE CRITICHE**:
 1. **TIPO CLIENTE**: P.IVA presente → "business", altrimenti "consumer"
 2. **BUSINESS**: Usa campi Supplier (vatNumber, taxCode, pecEmail, sdiCode, legalForm, code, contactPerson)
-3. **CONSUMER**: Usa campi User (firstName, lastName, fiscalCode, email, phone, birthDate)
+3. **CONSUMER**: Usa campi User (firstName, lastName, fiscalCode, email, mobilePhone, landlinePhone, birthDate)
 4. **CONTATTO BUSINESS**: Se P.IVA, estrai SEMPRE contactPerson (referente aziendale)
 5. **VALIDAZIONE**: fiscalCode 16 char, vatNumber 11 cifre, postalCode 5 cifre, province 2 char
 6. **COMPLETEZZA**: confidence alta = più campi estratti correttamente
 7. **CAMPI PRESUNTI**: Per ogni servizio, estrai in "rawTextFromPdf" la descrizione ESATTA dal PDF (es. "cosa: Super Fibra 2,5 Giga & Netflix" → "Super Fibra 2,5 Giga & Netflix") per facilitare il mapping prodotti WindTre
+8. **TELEFONI**: Distingui cellulari (mobilePhone = +39 3xx) da fissi (landlinePhone = +39 0xx). Applica a cliente e contactPerson.
+9. **ADDITIONAL INFO**: Estrai tutte le informazioni aggiuntive trovate nel PDF (numero contratto, codice promo, agente, punto vendita, campagna, ecc.) nel campo additionalInfo per training/mapping futuro
 
 Rispondi SEMPRE con JSON valido.`,
         },
