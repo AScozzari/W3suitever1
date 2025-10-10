@@ -156,24 +156,13 @@ export default function PDCAnalyzerPage() {
       const formData = new FormData();
       formData.append("pdf", file);
       
-      const currentTenantId = localStorage.getItem("currentTenantId") || localStorage.getItem("tenantId") || "";
-      
-      const response = await fetch(`/api/pdc/sessions/${session.id}/upload`, {
+      // apiRequest handles X-Tenant-ID and auth headers automatically
+      const response = await apiRequest(`/api/pdc/sessions/${session.id}/upload`, {
         method: "POST",
-        headers: {
-          "X-Tenant-ID": currentTenantId,
-          "X-Auth-Session": "authenticated",
-          "X-Demo-User": "admin-user",
-        },
-        credentials: "include",
-        body: formData,
+        body: formData, // apiRequest supports FormData natively
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Upload fallito");
-      }
-      return await response.json();
+      
+      return response;
     },
   });
 
