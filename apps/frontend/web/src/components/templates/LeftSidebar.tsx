@@ -135,6 +135,13 @@ export default function LeftSidebar({
     // Force use staging tenant
     const tenant = 'staging';
     
+    console.log('🔍 [LeftSidebar] Click on:', item.label, {
+      id: item.id,
+      path: item.path,
+      hasSubmenu: item.hasSubmenu,
+      submenuItems: item.submenuItems?.length
+    });
+    
     // If HR item with path, navigate and toggle submenu
     if (item.id === 'hr' && item.path) {
       // Use wouter navigation for HR
@@ -147,6 +154,7 @@ export default function LeftSidebar({
     if (item.hasSubmenu && item.path) {
       // Navigate to the main path using wouter
       const targetPath = `/${tenant}${item.path}`;
+      console.log('✅ [LeftSidebar] Navigating to:', targetPath);
       navigate(targetPath);
       toggleSubmenu(item.id);
       return;
@@ -154,6 +162,7 @@ export default function LeftSidebar({
     
     // If item has submenu only, toggle it
     if (item.hasSubmenu) {
+      console.log('🔄 [LeftSidebar] Toggling submenu for:', item.id);
       toggleSubmenu(item.id);
       return;
     }
