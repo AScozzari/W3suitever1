@@ -344,57 +344,64 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
 3. **Tipologia**: es. Ricaricabile → Prepagata, Abbonamento → Postpagato, Fibra → FTTH/FTTC
 4. **Prodotto**: descrizione commerciale (es. "Super Fibra 2,5 Giga & Netflix")
 
-**FORMATO OUTPUT JSON COMPLETO**:
+**FORMATO OUTPUT JSON (ALLINEATO A MODAL SUPPLIER/USER W3SUITE)**:
 {
   "customer": {
     "type": "consumer|business",
-    // CONSUMER (Privato)
+    
+    // ===== CONSUMER (B2C) - Campi da Modal User =====
     "firstName": "...",
     "lastName": "...",
-    "fiscalCode": "...",
+    "fiscalCode": "...",      // taxCode italiano
+    "email": "...",
+    "phone": "...",           // formato italiano +39
     "birthDate": "DD/MM/YYYY",
     "birthPlace": "...",
     "birthProvince": "...",
     "gender": "M|F",
     
-    // BUSINESS (P.IVA)
-    "businessName": "...",
-    "vatNumber": "...",
-    "pec": "...",
-    "sdi": "...",
-    "legalForm": "SRL|SPA|...",
+    // ===== BUSINESS (B2B/P.IVA) - Campi da Modal Supplier =====
+    "businessName": "...",    // name/legalName
+    "code": "...",            // codice fornitore
+    "vatNumber": "...",       // P.IVA 11 cifre
+    "taxCode": "...",         // Codice Fiscale 16 caratteri
+    "legalName": "...",       // ragione sociale completa
+    "legalForm": "SRL|SPA|SNCDID|...",
+    "pecEmail": "...",        // PEC certificata
+    "sdiCode": "...",         // SDI 7 caratteri
+    "website": "...",
+    "splitPayment": true|false,
+    "withholdingTax": true|false,
     
-    // CONTATTO (per Business o Consumer)
+    // REFERENTE AZIENDALE (per Business)
     "contactPerson": {
       "firstName": "...",
       "lastName": "...",
-      "role": "..."
+      "role": "...",
+      "email": "...",
+      "phone": "..."
     },
     
-    // CONTATTI
-    "phone": "...",
-    "mobilePhone": "...",
+    // ===== CONTATTI COMUNI =====
     "email": "...",
+    "phone": "...",           // telefono principale
+    "mobilePhone": "...",     // cellulare
     
-    // INDIRIZZO RESIDENZA/SEDE LEGALE
-    "address": {
-      "street": "...",
-      "number": "...",
-      "city": "...",
-      "zip": "...",
-      "province": "..."
-    },
+    // ===== INDIRIZZO SEDE/RESIDENZA =====
+    "address": "...",         // via e numero
+    "city": "...",
+    "province": "...",        // 2 caratteri (RM, MI, etc)
+    "postalCode": "...",      // CAP 5 cifre
     
-    // INDIRIZZO INSTALLAZIONE (se diverso)
+    // ===== INDIRIZZO INSTALLAZIONE (se diverso) =====
     "installationAddress": {
       "street": "...",
-      "number": "...",
       "city": "...",
-      "zip": "...",
-      "province": "..."
+      "province": "...",
+      "postalCode": "..."
     },
     
-    // DOCUMENTO
+    // ===== DOCUMENTO IDENTITÀ =====
     "document": {
       "type": "CI|Passaporto|Patente",
       "number": "...",
@@ -403,11 +410,16 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       "expiryDate": "DD/MM/YYYY"
     },
     
-    // PAGAMENTO
-    "paymentMethod": "SDD|Bollettino|...",
-    "iban": "...",
+    // ===== DATI BANCARI/PAGAMENTO =====
+    "paymentMethod": "SDD|Bollettino|RID|...",
+    "iban": "...",            // con checksum validazione
+    "bic": "...",             // SWIFT code
     "bankName": "...",
-    "accountHolder": "..."
+    "accountHolder": "...",
+    
+    // ===== ALTRE INFO =====
+    "notes": "...",
+    "status": "active"
   },
   "services": [
     {
@@ -426,12 +438,12 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
 }
 
 **REGOLE CRITICHE**:
-1. **RICONOSCI TIPO CLIENTE**: Se trovi P.IVA/Ragione Sociale → type="business", altrimenti "consumer"
-2. **BUSINESS**: Estrai businessName, vatNumber, PEC, SDI + dati contatto persona di riferimento
-3. **CONSUMER**: Estrai firstName, lastName, fiscalCode, birthDate/Place completi
-4. **TUTTI I CAMPI**: Estrai OGNI campo trovato (telefoni, indirizzi, documenti, IBAN)
-5. **DUE INDIRIZZI**: Distingui residenza/sede da installazione servizio
-6. confidence riflette completezza dati (più campi = più alta)
+1. **TIPO CLIENTE**: P.IVA presente → "business", altrimenti "consumer"
+2. **BUSINESS**: Usa campi Supplier (vatNumber, taxCode, pecEmail, sdiCode, legalForm, code, contactPerson)
+3. **CONSUMER**: Usa campi User (firstName, lastName, fiscalCode, email, phone, birthDate)
+4. **CONTATTO BUSINESS**: Se P.IVA, estrai SEMPRE contactPerson (referente aziendale)
+5. **VALIDAZIONE**: fiscalCode 16 char, vatNumber 11 cifre, postalCode 5 cifre, province 2 char
+6. **COMPLETEZZA**: confidence alta = più campi estratti correttamente
 
 Rispondi SEMPRE con JSON valido.`,
         },
