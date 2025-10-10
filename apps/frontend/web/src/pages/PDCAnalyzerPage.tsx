@@ -534,7 +534,20 @@ export default function PDCAnalyzerPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => !isDisabled && setActiveView(tab.id as any)}
+                  onClick={() => {
+                    if (isDisabled) return;
+                    
+                    // Reset session when going to "Genera Sessione" to allow creating new session
+                    if (tab.id === 'upload') {
+                      setSession(null);
+                      setAnalysisResults([]);
+                      setReviewData(null);
+                      setExportJson(null);
+                      setSessionName('');
+                    }
+                    
+                    setActiveView(tab.id as any);
+                  }}
                   disabled={isDisabled}
                   style={{
                     flex: 1,
