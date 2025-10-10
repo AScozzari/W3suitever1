@@ -138,10 +138,6 @@ export default function DealsKanbanPage() {
   // Fetch deals
   const { data: deals, isLoading, error } = useQuery<Deal[]>({
     queryKey: ['/api/crm/deals', selectedPipeline],
-    queryFn: async () => {
-      const params = selectedPipeline !== 'all' ? `?pipelineId=${selectedPipeline}` : '';
-      return [];
-    },
     // Fallback to demo data
     initialData: [
       {

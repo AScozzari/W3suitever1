@@ -317,8 +317,33 @@ export const userValidationSchema = z.object({
   storeId: z.string().uuid().optional(),
 });
 
+// ==================== CRM VALIDATION SCHEMAS ====================
+
+// CRM Person validation schema
+export const crmPersonFormSchema = z.object({
+  firstName: z.string().min(2, "Nome richiesto").max(255, "Nome troppo lungo"),
+  lastName: z.string().min(2, "Cognome richiesto").max(255, "Cognome troppo lungo"),
+  emailCanonical: z.string().email("Email non valida").optional().or(z.literal('')),
+  phoneCanonical: italianPhoneSchema.optional().or(z.literal('')),
+});
+
+// CRM Lead validation schema
+export const crmLeadFormSchema = z.object({
+  firstName: z.string().min(2, "Nome richiesto").max(255, "Nome troppo lungo"),
+  lastName: z.string().min(2, "Cognome richiesto").max(255, "Cognome troppo lungo"),
+  email: z.string().email("Email non valida").optional().or(z.literal('')),
+  phone: italianPhoneSchema.optional().or(z.literal('')),
+  companyName: z.string().max(255, "Nome azienda troppo lungo").optional().or(z.literal('')),
+  productInterest: z.string().max(255, "Interesse troppo lungo").optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+  storeId: z.string().uuid("Seleziona punto vendita"),
+  personId: z.string().uuid("Seleziona persona"),
+});
+
 // ==================== EXPORT TYPES ====================
 export type SupplierValidation = z.infer<typeof supplierValidationSchema>;
 export type LegalEntityValidation = z.infer<typeof legalEntityValidationSchema>;
 export type StoreValidation = z.infer<typeof storeValidationSchema>;
 export type UserValidation = z.infer<typeof userValidationSchema>;
+export type CrmPersonFormValidation = z.infer<typeof crmPersonFormSchema>;
+export type CrmLeadFormValidation = z.infer<typeof crmLeadFormSchema>;
