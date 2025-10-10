@@ -22,6 +22,9 @@ import CRMDashboardPage from '../pages/crm/CRMDashboardPage';
 import PersonsPage from '../pages/crm/PersonsPage';
 import LeadsPage from '../pages/crm/LeadsPage';
 import DealsKanbanPage from '../pages/crm/DealsKanbanPage';
+import CampaignsPage from '../pages/crm/CampaignsPage';
+import PipelinePage from '../pages/crm/PipelinePage';
+import AnalyticsPage from '../pages/crm/AnalyticsPage';
 import { useAuth } from '../hooks/useAuth';
 
 interface TenantShellProps {
@@ -339,6 +342,24 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm/deals`}>
         <AuthenticatedRoute>
           <DealsKanbanPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm/campaigns`}>
+        <AuthenticatedRoute>
+          <CampaignsPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm/pipeline`}>
+        <AuthenticatedRoute>
+          <PipelinePage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm/analytics`}>
+        <AuthenticatedRoute>
+          <AnalyticsPage />
         </AuthenticatedRoute>
       </Route>
       
