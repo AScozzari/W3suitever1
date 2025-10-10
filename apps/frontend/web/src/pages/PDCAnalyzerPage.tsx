@@ -827,6 +827,31 @@ export default function PDCAnalyzerPage() {
                     </CardContent>
                   </Card>
 
+                  {/* Session Summary - PDF Counter */}
+                  {analysisResults.length > 0 && (
+                    <Card className="windtre-glass-panel border-white/20 mb-6">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="h-16 w-16 bg-gradient-to-br from-windtre-orange to-windtre-purple rounded-full flex items-center justify-center">
+                              <FileCheck className="h-8 w-8 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-2xl font-bold text-gray-900">{analysisResults.length}</h3>
+                              <p className="text-gray-600">PDF Caricati in questa sessione</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-600">Completati con successo</div>
+                            <div className="text-3xl font-bold text-green-600">
+                              {analysisResults.filter(r => r.status === 'completed').length}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Analysis Results */}
                   {analysisResults.length > 0 && (
                     <Card className="windtre-glass-panel border-white/20">
@@ -875,20 +900,32 @@ export default function PDCAnalyzerPage() {
                           ))}
                         </div>
                         
-                        {/* Navigation: Go to Review */}
+                        {/* Actions: Continue or Proceed */}
                         {analysisResults.some(r => r.status === 'completed') && (
-                          <div className="mt-6 flex justify-end">
-                            <Button
-                              onClick={() => {
-                                const completedResult = analysisResults.find(r => r.status === 'completed');
-                                if (completedResult) handleSelectResult(completedResult);
-                              }}
-                              className="bg-windtre-purple hover:bg-windtre-purple-dark text-white"
-                              data-testid="button-proceed-to-review"
-                            >
-                              Procedi al Review
-                              <ChevronRight className="h-4 w-4 ml-2" />
-                            </Button>
+                          <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-windtre-orange/20">
+                            <h4 className="font-medium text-gray-900 mb-3">Cosa vuoi fare?</h4>
+                            <div className="flex gap-3">
+                              <Button
+                                onClick={() => document.getElementById('pdf-upload')?.click()}
+                                variant="outline"
+                                className="flex-1 border-windtre-orange text-windtre-orange hover:bg-windtre-orange hover:text-white"
+                                data-testid="button-upload-another"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Carica un altro PDF
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  const completedResult = analysisResults.find(r => r.status === 'completed');
+                                  if (completedResult) handleSelectResult(completedResult);
+                                }}
+                                className="flex-1 bg-windtre-purple hover:bg-windtre-purple-dark text-white"
+                                data-testid="button-proceed-to-review"
+                              >
+                                Procedi al Review
+                                <ChevronRight className="h-4 w-4 ml-2" />
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>
