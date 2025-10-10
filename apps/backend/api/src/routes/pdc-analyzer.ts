@@ -775,6 +775,232 @@ router.put("/extracted/:id/review", enforceAIEnabled, enforceAgentEnabled("pdc-a
 });
 
 /**
+ * GET /api/pdc/extracted/:id/service-mapping
+ * Get service mappings for extracted data
+ */
+router.get("/extracted/:id/service-mapping", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Verify ownership
+    const [extractedData] = await db
+      .select({ id: aiPdcExtractedData.id })
+      .from(aiPdcExtractedData)
+      .innerJoin(aiPdcAnalysisSessions, eq(aiPdcExtractedData.sessionId, aiPdcAnalysisSessions.id))
+      .where(
+        and(
+          eq(aiPdcExtractedData.id, id),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!extractedData) {
+      return res.status(404).json({ error: "Extracted data not found" });
+    }
+
+    // Get mappings
+    const mappings = await db
+      .select()
+      .from(aiPdcServiceMapping)
+      .where(eq(aiPdcServiceMapping.extractedDataId, id))
+      .orderBy(aiPdcServiceMapping.serviceIndex);
+
+    res.json({ mappings });
+  } catch (error) {
+    console.error("Error fetching service mappings:", error);
+    res.status(500).json({ error: "Failed to fetch service mappings" });
+  }
+});
+
+/**
+ * POST /api/pdc/extracted/:id/service-mapping
+ * Create or update service mapping to WindTre hierarchy
+ */
+router.post("/extracted/:id/service-mapping", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { 
+      serviceIndex, 
+      driverSelected, 
+      categorySelected, 
+      typologySelected, 
+      productMatched,
+      matchConfidence = 100,
+      mappingNotes 
+    } = req.body;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (serviceIndex === undefined || !driverSelected) {
+      return res.status(400).json({ error: "Service index and driver are required" });
+    }
+
+    // Verify ownership
+    const [extractedData] = await db
+      .select({ id: aiPdcExtractedData.id })
+      .from(aiPdcExtractedData)
+      .innerJoin(aiPdcAnalysisSessions, eq(aiPdcExtractedData.sessionId, aiPdcAnalysisSessions.id))
+      .where(
+        and(
+          eq(aiPdcExtractedData.id, id),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!extractedData) {
+      return res.status(404).json({ error: "Extracted data not found" });
+    }
+
+    // Check if mapping already exists
+    const [existingMapping] = await db
+      .select()
+      .from(aiPdcServiceMapping)
+      .where(
+        and(
+          eq(aiPdcServiceMapping.extractedDataId, id),
+          eq(aiPdcServiceMapping.serviceIndex, serviceIndex)
+        )
+      );
+
+    let mapping;
+
+    if (existingMapping) {
+      // Update existing mapping
+      [mapping] = await db
+        .update(aiPdcServiceMapping)
+        .set({
+          driverSelected,
+          categorySelected,
+          typologySelected,
+          productMatched,
+          matchConfidence,
+          mappingNotes,
+          mappedBy: userId,
+          mappedAt: new Date(),
+        })
+        .where(eq(aiPdcServiceMapping.id, existingMapping.id))
+        .returning();
+    } else {
+      // Create new mapping
+      [mapping] = await db
+        .insert(aiPdcServiceMapping)
+        .values({
+          extractedDataId: id,
+          serviceIndex,
+          driverSelected,
+          categorySelected,
+          typologySelected,
+          productMatched,
+          matchConfidence,
+          mappingNotes,
+          mappedBy: userId,
+        })
+        .returning();
+    }
+
+    res.json({
+      message: existingMapping ? "Mapping updated successfully" : "Mapping created successfully",
+      mapping,
+    });
+  } catch (error) {
+    console.error("Error saving service mapping:", error);
+    res.status(500).json({ error: "Failed to save service mapping" });
+  }
+});
+
+/**
+ * GET /api/pdc/extracted/:id/export
+ * Export final JSON for cash register integration
+ */
+router.get("/extracted/:id/export", enforceAIEnabled, enforceAgentEnabled("pdc-analyzer"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Get extracted data
+    const [extractedData] = await db
+      .select({
+        id: aiPdcExtractedData.id,
+        wasReviewed: aiPdcExtractedData.wasReviewed,
+        aiRawOutput: aiPdcExtractedData.aiRawOutput,
+        correctedData: aiPdcExtractedData.correctedData,
+        customerData: aiPdcExtractedData.customerData,
+        servicesExtracted: aiPdcExtractedData.servicesExtracted,
+        pdfFileName: aiPdcPdfUploads.fileName,
+      })
+      .from(aiPdcExtractedData)
+      .innerJoin(aiPdcPdfUploads, eq(aiPdcExtractedData.pdfId, aiPdcPdfUploads.id))
+      .innerJoin(aiPdcAnalysisSessions, eq(aiPdcExtractedData.sessionId, aiPdcAnalysisSessions.id))
+      .where(
+        and(
+          eq(aiPdcExtractedData.id, id),
+          eq(aiPdcAnalysisSessions.tenantId, tenantId)
+        )
+      );
+
+    if (!extractedData) {
+      return res.status(404).json({ error: "Extracted data not found" });
+    }
+
+    // Use corrected data if reviewed, otherwise AI output
+    const finalData = extractedData.wasReviewed && extractedData.correctedData
+      ? extractedData.correctedData
+      : extractedData.aiRawOutput;
+
+    // Get service mappings if they exist
+    const serviceMappings = await db
+      .select()
+      .from(aiPdcServiceMapping)
+      .where(eq(aiPdcServiceMapping.extractedDataId, id));
+
+    // Build export JSON for cash register
+    const exportJson = {
+      customer: finalData.customer || {},
+      services: (finalData.services || []).map((service: any, index: number) => {
+        const mapping = serviceMappings.find(m => m.serviceIndex === index);
+        return {
+          ...service,
+          windtreMapping: mapping ? {
+            driver: mapping.driverSelected,
+            category: mapping.categorySelected,
+            typology: mapping.typologySelected,
+            product: mapping.productMatched,
+            confidence: mapping.matchConfidence,
+          } : null,
+        };
+      }),
+      metadata: {
+        extractedFrom: extractedData.pdfFileName,
+        extractedAt: new Date().toISOString(),
+        wasHumanReviewed: extractedData.wasReviewed,
+        exportedBy: tenantId,
+      },
+    };
+
+    // Set content disposition for download
+    res.setHeader('Content-Disposition', `attachment; filename="pdc-export-${id}.json"`);
+    res.setHeader('Content-Type', 'application/json');
+    res.json(exportJson);
+  } catch (error) {
+    console.error("Error exporting JSON:", error);
+    res.status(500).json({ error: "Failed to export JSON" });
+  }
+});
+
+/**
  * POST /api/pdc/extracted/:id/training
  * Save reviewed data to cross-tenant training dataset
  */

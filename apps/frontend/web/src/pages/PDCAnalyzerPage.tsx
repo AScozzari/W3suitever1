@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { 
   FileText, 
@@ -20,13 +21,18 @@ import {
   TrendingUp,
   Clock,
   FileCheck,
-  Sparkles
+  Sparkles,
+  Edit,
+  Save,
+  GitBranch
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 
-type Step = "dashboard" | "create-session" | "upload" | "analyzing" | "results";
+type Step = "dashboard" | "create-session" | "upload" | "analyzing" | "results" | "review" | "service-mapping" | "export";
 
 interface SessionData {
   id: string;
@@ -36,12 +42,57 @@ interface SessionData {
 }
 
 interface AnalysisResult {
-  pdfId: string;
+  id: string;
+  extractedDataId: string;
   fileName: string;
-  status: "success" | "error";
-  data?: any;
+  status: "completed" | "error";
+  analysis?: {
+    customer: any;
+    services: any[];
+    confidence: number;
+    notes?: string;
+  };
   error?: string;
 }
+
+interface ExtractedData {
+  id: string;
+  customerData: any;
+  servicesExtracted: any[];
+  aiRawOutput: any;
+  wasReviewed: boolean;
+  correctedData?: any;
+  reviewNotes?: string;
+  pdfFileName: string;
+}
+
+// WindTre Product Hierarchy
+const WINDTRE_HIERARCHY = {
+  "Fisso": {
+    "Fibra": ["FTTH", "FTTC"],
+    "ADSL": ["Basic", "Plus"]
+  },
+  "Mobile": {
+    "Abbonamento": ["Postpagato", "Business"],
+    "Ricaricabile": ["Prepagata", "Easy"]
+  },
+  "Energia": {
+    "Luce": ["Domestica", "Business"],
+    "Gas": ["Domestica", "Business"]
+  },
+  "Assicurazione": {
+    "Vita": ["Base", "Premium"],
+    "Casa": ["Base", "Premium"]
+  },
+  "Protecta": {
+    "Device": ["Smartphone", "Tablet"],
+    "Servizi": ["Assistenza", "Garanzia"]
+  },
+  "Customer Base": {
+    "Retention": ["Fidelizzazione", "Winback"],
+    "Upsell": ["Cross-sell", "Up-sell"]
+  }
+};
 
 export default function PDCAnalyzerPage() {
   const [currentModule, setCurrentModule] = useState("ai");
@@ -54,10 +105,21 @@ export default function PDCAnalyzerPage() {
   const [session, setSession] = useState<SessionData | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
+  const [selectedResult, setSelectedResult] = useState<AnalysisResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Estrai tenant slug dalla URL
-  const tenantSlug = location.split('/')[1] || 'staging';
+  // Review state
+  const [reviewData, setReviewData] = useState<any>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
+
+  // Service mapping state
+  const [serviceMappings, setServiceMappings] = useState<any[]>([]);
+  const [currentServiceIndex, setCurrentServiceIndex] = useState(0);
+
+  // Export state
+  const [exportJson, setExportJson] = useState<any>(null);
+
+  const tenantId = localStorage.getItem("tenantId") || "";
 
   // Query per sessioni precedenti
   const { data: previousSessions, isLoading: loadingSessions } = useQuery({
@@ -72,7 +134,7 @@ export default function PDCAnalyzerPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Tenant-ID": localStorage.getItem("tenantId") || "",
+          "X-Tenant-ID": tenantId,
         },
         body: JSON.stringify({ sessionName: name }),
       });
@@ -103,13 +165,77 @@ export default function PDCAnalyzerPage() {
       const response = await fetch(`/api/pdc/sessions/${session.id}/upload`, {
         method: "POST",
         headers: {
-          "X-Tenant-ID": localStorage.getItem("tenantId") || "",
+          "X-Tenant-ID": tenantId,
         },
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Upload fallito");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Upload fallito");
+      }
       return await response.json();
+    },
+  });
+
+  // Mutation per review
+  const submitReviewMutation = useMutation({
+    mutationFn: async ({ extractedDataId, correctedData, notes }: any) => {
+      const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/review`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Tenant-ID": tenantId,
+        },
+        body: JSON.stringify({
+          correctedData,
+          reviewNotes: notes,
+        }),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Review salvata", description: "Correzioni salvate con successo" });
+      setCurrentStep("service-mapping");
+    },
+  });
+
+  // Mutation per service mapping
+  const saveServiceMappingMutation = useMutation({
+    mutationFn: async ({ extractedDataId, mapping }: any) => {
+      const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/service-mapping`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Tenant-ID": tenantId,
+        },
+        body: JSON.stringify(mapping),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Mapping salvato" });
+    },
+  });
+
+  // Mutation per training
+  const saveToTrainingMutation = useMutation({
+    mutationFn: async ({ extractedDataId, isPublic, trainingPrompt }: any) => {
+      const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/training`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Tenant-ID": tenantId,
+        },
+        body: JSON.stringify({
+          isPublic,
+          trainingPrompt,
+        }),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Salvato nel training dataset cross-tenant" });
     },
   });
 
@@ -146,14 +272,16 @@ export default function PDCAnalyzerPage() {
       try {
         const result = await analyzeFileMutation.mutateAsync(file);
         results.push({
-          pdfId: result.id,
+          id: result.id,
+          extractedDataId: result.extractedDataId,
           fileName: file.name,
-          status: "success",
-          data: result.analysis,
+          status: "completed",
+          analysis: result.analysis,
         });
       } catch (error: any) {
         results.push({
-          pdfId: "",
+          id: "",
+          extractedDataId: "",
           fileName: file.name,
           status: "error",
           error: error.message,
@@ -166,8 +294,84 @@ export default function PDCAnalyzerPage() {
     setCurrentStep("results");
     toast({ 
       title: "🎉 Analisi completata!", 
-      description: `${results.filter(r => r.status === "success").length}/${results.length} documenti analizzati` 
+      description: `${results.filter(r => r.status === "completed").length}/${results.length} documenti analizzati` 
     });
+  };
+
+  const handleStartReview = (result: AnalysisResult) => {
+    setSelectedResult(result);
+    setReviewData(result.analysis);
+    setCurrentStep("review");
+  };
+
+  const handleSaveReview = () => {
+    if (!selectedResult) return;
+    
+    submitReviewMutation.mutate({
+      extractedDataId: selectedResult.extractedDataId,
+      correctedData: reviewData,
+      notes: reviewNotes,
+    });
+  };
+
+  const handleSaveServiceMapping = async () => {
+    if (!selectedResult) return;
+    
+    const mapping = serviceMappings[currentServiceIndex];
+    
+    try {
+      await saveServiceMappingMutation.mutateAsync({
+        extractedDataId: selectedResult.extractedDataId,
+        mapping: {
+          serviceIndex: currentServiceIndex,
+          ...mapping,
+        },
+      });
+
+      // Only advance after successful save
+      if (currentServiceIndex < (reviewData?.services?.length || 0) - 1) {
+        setCurrentServiceIndex(currentServiceIndex + 1);
+        toast({ title: "✅ Mapping salvato", description: `Servizio ${currentServiceIndex + 1} mappato` });
+      } else {
+        setCurrentStep("export");
+        await handlePrepareExport();
+        toast({ title: "✅ Tutti i servizi mappati", description: "Preparazione export..." });
+      }
+    } catch (error: any) {
+      toast({
+        title: "❌ Errore salvataggio mapping",
+        description: error.message || "Riprova",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePrepareExport = async () => {
+    if (!selectedResult) return;
+
+    try {
+      const response = await fetch(`/api/pdc/extracted/${selectedResult.extractedDataId}/export`, {
+        headers: {
+          "X-Tenant-ID": tenantId,
+        },
+      });
+      const json = await response.json();
+      setExportJson(json);
+    } catch (error) {
+      toast({ title: "Errore", description: "Impossibile preparare export", variant: "destructive" });
+    }
+  };
+
+  const handleDownloadJson = () => {
+    if (!exportJson) return;
+    
+    const blob = new Blob([JSON.stringify(exportJson, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pdc-export-${selectedResult?.extractedDataId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleNewSession = () => {
@@ -175,6 +379,11 @@ export default function PDCAnalyzerPage() {
     setSession(null);
     setUploadedFiles([]);
     setAnalysisResults([]);
+    setSelectedResult(null);
+    setReviewData(null);
+    setServiceMappings([]);
+    setCurrentServiceIndex(0);
+    setExportJson(null);
     setCurrentStep("dashboard");
   };
 
@@ -214,7 +423,6 @@ export default function PDCAnalyzerPage() {
             )}
           </div>
           
-          {/* Decorative Elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
           <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-500/20 rounded-full -ml-48 -mb-48" />
         </div>
@@ -222,7 +430,6 @@ export default function PDCAnalyzerPage() {
         {/* Dashboard View */}
         {currentStep === "dashboard" && (
           <div className="space-y-6">
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -262,7 +469,6 @@ export default function PDCAnalyzerPage() {
               </Card>
             </div>
 
-            {/* Recent Sessions */}
             <Card>
               <CardHeader>
                 <CardTitle>Sessioni Recenti</CardTitle>
@@ -331,34 +537,37 @@ export default function PDCAnalyzerPage() {
           </div>
         )}
 
-        {/* Progress Steps (only show when not on dashboard) */}
+        {/* Progress Steps */}
         {currentStep !== "dashboard" && (
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 overflow-x-auto pb-2">
             {[
               { step: "create-session", label: "Crea Sessione", icon: Plus },
               { step: "upload", label: "Carica PDF", icon: Upload },
               { step: "analyzing", label: "Analisi AI", icon: Loader2 },
               { step: "results", label: "Risultati", icon: CheckCircle2 },
+              { step: "review", label: "Review", icon: Edit },
+              { step: "service-mapping", label: "Mapping", icon: GitBranch },
+              { step: "export", label: "Export", icon: Download },
             ].map((item, idx) => {
               const Icon = item.icon;
               const isActive = currentStep === item.step;
-              const steps = ["create-session", "upload", "analyzing", "results"];
+              const steps = ["create-session", "upload", "analyzing", "results", "review", "service-mapping", "export"];
               const isPast = steps.indexOf(currentStep) > idx;
               
               return (
                 <div key={item.step} className="flex items-center">
                   <div className={`flex flex-col items-center ${isActive ? "opacity-100" : isPast ? "opacity-70" : "opacity-30"}`}>
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
                       isActive ? "bg-gradient-to-br from-orange-500 to-purple-600 text-white" :
                       isPast ? "bg-green-500 text-white" :
                       "bg-gray-200 dark:bg-gray-700 text-gray-400"
                     }`}>
-                      {isPast ? <Check className="h-6 w-6" /> : <Icon className={`h-6 w-6 ${isActive && item.step === "analyzing" ? "animate-spin" : ""}`} />}
+                      {isPast ? <Check className="h-5 w-5" /> : <Icon className={`h-5 w-5 ${isActive && item.step === "analyzing" ? "animate-spin" : ""}`} />}
                     </div>
-                    <span className="mt-2 text-sm font-medium">{item.label}</span>
+                    <span className="mt-1 text-xs font-medium whitespace-nowrap">{item.label}</span>
                   </div>
-                  {idx < 3 && (
-                    <ChevronRight className={`h-5 w-5 mx-2 ${isPast ? "text-green-500" : "text-gray-300"}`} />
+                  {idx < 6 && (
+                    <ChevronRight className={`h-4 w-4 mx-1 ${isPast ? "text-green-500" : "text-gray-300"}`} />
                   )}
                 </div>
               );
@@ -519,19 +728,19 @@ export default function PDCAnalyzerPage() {
                     <CheckCircle2 className="h-20 w-20 mx-auto text-green-500" />
                     <h2 className="text-2xl font-bold">Analisi completata!</h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {analysisResults.filter(r => r.status === "success").length} documenti analizzati con successo
+                      {analysisResults.filter(r => r.status === "completed").length} documenti analizzati con successo
                     </p>
                   </div>
 
                   <div className="space-y-3">
                     {analysisResults.map((result, idx) => (
                       <div key={idx} className={`p-4 rounded-lg ${
-                        result.status === "success" ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" : 
+                        result.status === "completed" ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" : 
                         "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                       }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            {result.status === "success" ? (
+                            {result.status === "completed" ? (
                               <CheckCircle2 className="h-6 w-6 text-green-600" />
                             ) : (
                               <AlertCircle className="h-6 w-6 text-red-600" />
@@ -541,12 +750,19 @@ export default function PDCAnalyzerPage() {
                               {result.status === "error" && (
                                 <p className="text-sm text-red-600">{result.error}</p>
                               )}
+                              {result.status === "completed" && result.analysis && (
+                                <p className="text-sm text-green-600">Confidence: {result.analysis.confidence}%</p>
+                              )}
                             </div>
                           </div>
-                          {result.status === "success" && (
-                            <Button variant="outline" size="sm">
-                              <Download className="h-4 w-4 mr-2" />
-                              Esporta JSON
+                          {result.status === "completed" && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleStartReview(result)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Review & Export
                             </Button>
                           )}
                         </div>
@@ -562,11 +778,322 @@ export default function PDCAnalyzerPage() {
                     >
                       Nuova Analisi
                     </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 5: Review */}
+              {currentStep === "review" && reviewData && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">Review Dati Estratti</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Verifica e correggi i dati estratti dall'AI
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">Cliente</h3>
+                      <Textarea
+                        value={JSON.stringify(reviewData.customer, null, 2)}
+                        onChange={(e) => {
+                          try {
+                            const customer = JSON.parse(e.target.value);
+                            setReviewData({ ...reviewData, customer });
+                          } catch {}
+                        }}
+                        rows={8}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold mb-2">Servizi ({reviewData.services?.length || 0})</h3>
+                      <Textarea
+                        value={JSON.stringify(reviewData.services, null, 2)}
+                        onChange={(e) => {
+                          try {
+                            const services = JSON.parse(e.target.value);
+                            setReviewData({ ...reviewData, services });
+                          } catch {}
+                        }}
+                        rows={10}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Note di Revisione (opzionale)</Label>
+                      <Textarea
+                        value={reviewNotes}
+                        onChange={(e) => setReviewNotes(e.target.value)}
+                        placeholder="Descrivi eventuali correzioni apportate..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
                     <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep("results")}
+                      className="flex-1"
+                    >
+                      Indietro
+                    </Button>
+                    <Button
+                      onClick={handleSaveReview}
+                      disabled={submitReviewMutation.isPending}
                       className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
+                      size="lg"
+                    >
+                      {submitReviewMutation.isPending ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-5 w-5" />
+                      )}
+                      Salva Review
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 6: Service Mapping */}
+              {currentStep === "service-mapping" && reviewData && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">Mapping Servizi WindTre</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Mappa servizio {currentServiceIndex + 1} di {reviewData.services?.length || 0} alla gerarchia WindTre
+                    </p>
+                  </div>
+
+                  {reviewData.services?.[currentServiceIndex] && (
+                    <div className="space-y-4">
+                      <Card className="bg-gray-50 dark:bg-gray-800">
+                        <CardContent className="p-4">
+                          <p className="font-semibold">Servizio dal PDF:</p>
+                          <p className="text-sm mt-1">{reviewData.services[currentServiceIndex].productDescription || "N/A"}</p>
+                          <p className="text-sm text-gray-500 mt-1">Prezzo: €{reviewData.services[currentServiceIndex].price || "N/A"}</p>
+                        </CardContent>
+                      </Card>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Driver (Livello 1) *</Label>
+                          <Select
+                            value={serviceMappings[currentServiceIndex]?.driverSelected}
+                            onValueChange={(value) => {
+                              const newMappings = [...serviceMappings];
+                              newMappings[currentServiceIndex] = { 
+                                ...newMappings[currentServiceIndex], 
+                                driverSelected: value,
+                                categorySelected: "",
+                                typologySelected: "",
+                              };
+                              setServiceMappings(newMappings);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleziona driver" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.keys(WINDTRE_HIERARCHY).map(driver => (
+                                <SelectItem key={driver} value={driver}>{driver}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Categoria (Livello 2) *</Label>
+                          <Select
+                            value={serviceMappings[currentServiceIndex]?.categorySelected}
+                            onValueChange={(value) => {
+                              const newMappings = [...serviceMappings];
+                              newMappings[currentServiceIndex] = { 
+                                ...newMappings[currentServiceIndex], 
+                                categorySelected: value,
+                                typologySelected: "",
+                              };
+                              setServiceMappings(newMappings);
+                            }}
+                            disabled={!serviceMappings[currentServiceIndex]?.driverSelected}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleziona categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {serviceMappings[currentServiceIndex]?.driverSelected && 
+                                Object.keys(WINDTRE_HIERARCHY[serviceMappings[currentServiceIndex].driverSelected as keyof typeof WINDTRE_HIERARCHY] || {}).map(cat => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))
+                              }
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Tipologia (Livello 3) *</Label>
+                          <Select
+                            value={serviceMappings[currentServiceIndex]?.typologySelected}
+                            onValueChange={(value) => {
+                              const newMappings = [...serviceMappings];
+                              newMappings[currentServiceIndex] = { 
+                                ...newMappings[currentServiceIndex], 
+                                typologySelected: value,
+                              };
+                              setServiceMappings(newMappings);
+                            }}
+                            disabled={!serviceMappings[currentServiceIndex]?.categorySelected}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleziona tipologia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {serviceMappings[currentServiceIndex]?.driverSelected && 
+                               serviceMappings[currentServiceIndex]?.categorySelected &&
+                                (WINDTRE_HIERARCHY[serviceMappings[currentServiceIndex].driverSelected as keyof typeof WINDTRE_HIERARCHY]?.[serviceMappings[currentServiceIndex].categorySelected as any] || []).map((typ: string) => (
+                                  <SelectItem key={typ} value={typ}>{typ}</SelectItem>
+                                ))
+                              }
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Prodotto Esatto (descrizione da PDF)</Label>
+                        <Input
+                          value={serviceMappings[currentServiceIndex]?.productMatched || ""}
+                          onChange={(e) => {
+                            const newMappings = [...serviceMappings];
+                            newMappings[currentServiceIndex] = { 
+                              ...newMappings[currentServiceIndex], 
+                              productMatched: e.target.value,
+                            };
+                            setServiceMappings(newMappings);
+                          }}
+                          placeholder="es. WindTre Top 50GB"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (currentServiceIndex > 0) {
+                          setCurrentServiceIndex(currentServiceIndex - 1);
+                        }
+                      }}
+                      disabled={currentServiceIndex === 0}
+                      className="flex-1"
+                    >
+                      Servizio Precedente
+                    </Button>
+                    <Button
+                      onClick={handleSaveServiceMapping}
+                      disabled={
+                        !serviceMappings[currentServiceIndex]?.driverSelected ||
+                        !serviceMappings[currentServiceIndex]?.categorySelected ||
+                        !serviceMappings[currentServiceIndex]?.typologySelected
+                      }
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
+                      size="lg"
+                    >
+                      {currentServiceIndex < (reviewData.services?.length || 0) - 1 ? "Servizio Successivo" : "Completa Mapping"}
+                      <ChevronRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 7: Export */}
+              {currentStep === "export" && exportJson && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <Download className="h-20 w-20 mx-auto text-green-500" />
+                    <h2 className="text-2xl font-bold">Export JSON Completato</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Dati pronti per l'integrazione con il sistema di cassa
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">Anteprima JSON</h3>
+                      <div className="bg-gray-900 text-gray-100 p-4 rounded-lg max-h-96 overflow-auto">
+                        <pre className="text-xs">{JSON.stringify(exportJson, null, 2)}</pre>
+                      </div>
+                    </div>
+
+                    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                      <CardContent className="p-4">
+                        <p className="text-sm">
+                          <strong>✅ Dati validati e corretti</strong><br />
+                          {exportJson.metadata?.wasHumanReviewed ? "Review umana completata" : "Solo AI extraction"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={handleNewSession}
+                      className="flex-1"
+                    >
+                      Nuova Analisi
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Salva nel Training Dataset
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Salva nel Training Dataset</DialogTitle>
+                          <DialogDescription>
+                            Contribuisci al miglioramento dell'AI salvando questi dati validati
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Note per Training (opzionale)</Label>
+                            <Textarea
+                              placeholder="Descrivi eventuali pattern o regole apprese..."
+                              rows={3}
+                            />
+                          </div>
+                          <Button
+                            onClick={() => {
+                              saveToTrainingMutation.mutate({
+                                extractedDataId: selectedResult?.extractedDataId,
+                                isPublic: true,
+                                trainingPrompt: "",
+                              });
+                            }}
+                            className="w-full bg-gradient-to-r from-orange-500 to-purple-600"
+                          >
+                            Salva (Cross-Tenant)
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      onClick={handleDownloadJson}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
+                      size="lg"
                     >
                       <Download className="mr-2 h-5 w-5" />
-                      Esporta Tutti i Risultati
+                      Download JSON
                     </Button>
                   </div>
                 </div>
