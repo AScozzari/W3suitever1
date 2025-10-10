@@ -1156,11 +1156,11 @@ export default function PDCAnalyzerPage() {
                     <Edit className="h-5 w-5" />
                     Anagrafica Completa Cliente
                   </CardTitle>
-                  <CardDescription>
-                    Tipo: <Badge variant={reviewData.customerData?.type === 'business' ? 'default' : 'secondary'}>
+                  <div className="mt-2">
+                    <Badge variant={reviewData.customerData?.type === 'business' ? 'default' : 'secondary'}>
                       {reviewData.customerData?.type === 'business' ? '🏢 Business (P.IVA)' : '👤 Consumer (Privato)'}
                     </Badge>
-                  </CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   

@@ -207,11 +207,25 @@ router.get("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc-an
       .where(eq(aiPdcExtractedData.sessionId, sessionId))
       .orderBy(desc(aiPdcExtractedData.createdAt));
 
-    // Get service mappings for this session
+    // Get service mappings for this session (via extractedData join)
     const serviceMappings = await db
-      .select()
+      .select({
+        id: aiPdcServiceMapping.id,
+        extractedDataId: aiPdcServiceMapping.extractedDataId,
+        serviceTextExtracted: aiPdcServiceMapping.serviceTextExtracted,
+        serviceDescription: aiPdcServiceMapping.serviceDescription,
+        driverId: aiPdcServiceMapping.driverId,
+        categoryId: aiPdcServiceMapping.categoryId,
+        typologyId: aiPdcServiceMapping.typologyId,
+        productId: aiPdcServiceMapping.productId,
+        mappingConfidence: aiPdcServiceMapping.mappingConfidence,
+        mappingMethod: aiPdcServiceMapping.mappingMethod,
+        mappedBy: aiPdcServiceMapping.mappedBy,
+        createdAt: aiPdcServiceMapping.createdAt,
+      })
       .from(aiPdcServiceMapping)
-      .where(eq(aiPdcServiceMapping.sessionId, sessionId));
+      .innerJoin(aiPdcExtractedData, eq(aiPdcServiceMapping.extractedDataId, aiPdcExtractedData.id))
+      .where(eq(aiPdcExtractedData.sessionId, sessionId));
 
     // Get PDF uploads for this session
     const pdfUploads = await db
