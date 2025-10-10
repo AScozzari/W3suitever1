@@ -61,16 +61,10 @@ router.get('/persons', async (req, res) => {
     
     await setTenantContext(tenantId);
 
-    let query = db
-      .select()
-      .from(crmPersons)
-      .where(eq(crmPersons.tenantId, tenantId))
-      .orderBy(desc(crmPersons.createdAt))
-      .limit(parseInt(limit as string))
-      .offset(parseInt(offset as string));
-
+    // Build combined predicate with tenant isolation
+    const conditions = [eq(crmPersons.tenantId, tenantId)];
     if (search) {
-      query = query.where(
+      conditions.push(
         or(
           ilike(crmPersons.emailCanonical, `%${search}%`),
           ilike(crmPersons.phoneCanonical, `%${search}%`),
@@ -80,7 +74,13 @@ router.get('/persons', async (req, res) => {
       );
     }
 
-    const persons = await query;
+    const persons = await db
+      .select()
+      .from(crmPersons)
+      .where(and(...conditions))
+      .orderBy(desc(crmPersons.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
 
     res.status(200).json({
       success: true,
@@ -350,29 +350,22 @@ router.get('/leads', async (req, res) => {
     
     await setTenantContext(tenantId);
 
-    let query = db
+    // Build combined predicate with tenant isolation
+    const conditions = [eq(crmLeads.tenantId, tenantId)];
+    if (status) {
+      conditions.push(eq(crmLeads.status, status as string));
+    }
+    if (storeId) {
+      conditions.push(eq(crmLeads.storeId, storeId as string));
+    }
+
+    const leads = await db
       .select()
       .from(crmLeads)
-      .where(eq(crmLeads.tenantId, tenantId))
+      .where(and(...conditions))
       .orderBy(desc(crmLeads.createdAt))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
-
-    if (status) {
-      query = query.where(and(
-        eq(crmLeads.tenantId, tenantId),
-        eq(crmLeads.status, status as string)
-      ));
-    }
-
-    if (storeId) {
-      query = query.where(and(
-        eq(crmLeads.tenantId, tenantId),
-        eq(crmLeads.storeId, storeId as string)
-      ));
-    }
-
-    const leads = await query;
 
     res.status(200).json({
       success: true,
@@ -594,14 +587,17 @@ router.post('/leads/:id/convert', async (req, res) => {
       })
       .returning();
 
-    // Update lead status to converted
+    // Update lead status to converted (with tenant isolation)
     await db
       .update(crmLeads)
       .set({
         status: 'converted',
         updatedAt: new Date()
       })
-      .where(eq(crmLeads.id, id));
+      .where(and(
+        eq(crmLeads.id, id),
+        eq(crmLeads.tenantId, tenantId)
+      ));
 
     logger.info('Lead converted to deal', { leadId: id, dealId: deal.id, tenantId });
 
@@ -649,29 +645,22 @@ router.get('/campaigns', async (req, res) => {
     
     await setTenantContext(tenantId);
 
-    let query = db
+    // Build combined predicate with tenant isolation
+    const conditions = [eq(crmCampaigns.tenantId, tenantId)];
+    if (status) {
+      conditions.push(eq(crmCampaigns.status, status as string));
+    }
+    if (type) {
+      conditions.push(eq(crmCampaigns.type, type as string));
+    }
+
+    const campaigns = await db
       .select()
       .from(crmCampaigns)
-      .where(eq(crmCampaigns.tenantId, tenantId))
+      .where(and(...conditions))
       .orderBy(desc(crmCampaigns.createdAt))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
-
-    if (status) {
-      query = query.where(and(
-        eq(crmCampaigns.tenantId, tenantId),
-        eq(crmCampaigns.status, status as string)
-      ));
-    }
-
-    if (type) {
-      query = query.where(and(
-        eq(crmCampaigns.tenantId, tenantId),
-        eq(crmCampaigns.type, type as string)
-      ));
-    }
-
-    const campaigns = await query;
 
     res.status(200).json({
       success: true,
@@ -850,29 +839,22 @@ router.get('/pipelines', async (req, res) => {
     
     await setTenantContext(tenantId);
 
-    let query = db
+    // Build combined predicate with tenant isolation
+    const conditions = [eq(crmPipelines.tenantId, tenantId)];
+    if (domain) {
+      conditions.push(eq(crmPipelines.domain, domain as string));
+    }
+    if (isActive !== undefined) {
+      conditions.push(eq(crmPipelines.isActive, isActive === 'true'));
+    }
+
+    const pipelines = await db
       .select()
       .from(crmPipelines)
-      .where(eq(crmPipelines.tenantId, tenantId))
+      .where(and(...conditions))
       .orderBy(desc(crmPipelines.createdAt))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
-
-    if (domain) {
-      query = query.where(and(
-        eq(crmPipelines.tenantId, tenantId),
-        eq(crmPipelines.domain, domain as string)
-      ));
-    }
-
-    if (isActive !== undefined) {
-      query = query.where(and(
-        eq(crmPipelines.tenantId, tenantId),
-        eq(crmPipelines.isActive, isActive === 'true')
-      ));
-    }
-
-    const pipelines = await query;
 
     res.status(200).json({
       success: true,
@@ -1051,36 +1033,25 @@ router.get('/deals', async (req, res) => {
     
     await setTenantContext(tenantId);
 
-    let query = db
+    // Build combined predicate with tenant isolation
+    const conditions = [eq(crmDeals.tenantId, tenantId)];
+    if (status) {
+      conditions.push(eq(crmDeals.status, status as string));
+    }
+    if (pipelineId) {
+      conditions.push(eq(crmDeals.pipelineId, pipelineId as string));
+    }
+    if (stage) {
+      conditions.push(eq(crmDeals.stage, stage as string));
+    }
+
+    const deals = await db
       .select()
       .from(crmDeals)
-      .where(eq(crmDeals.tenantId, tenantId))
+      .where(and(...conditions))
       .orderBy(desc(crmDeals.createdAt))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
-
-    if (status) {
-      query = query.where(and(
-        eq(crmDeals.tenantId, tenantId),
-        eq(crmDeals.status, status as string)
-      ));
-    }
-
-    if (pipelineId) {
-      query = query.where(and(
-        eq(crmDeals.tenantId, tenantId),
-        eq(crmDeals.pipelineId, pipelineId as string)
-      ));
-    }
-
-    if (stage) {
-      query = query.where(and(
-        eq(crmDeals.tenantId, tenantId),
-        eq(crmDeals.stage, stage as string)
-      ));
-    }
-
-    const deals = await query;
 
     res.status(200).json({
       success: true,
