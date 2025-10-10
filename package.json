@@ -129,7 +129,7 @@
     "openid-client": "^6.7.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
-    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.4.296",
     "pg": "^8.16.3",
     "playwright": "^1.55.0",
     "puppeteer": "^24.22.0",
