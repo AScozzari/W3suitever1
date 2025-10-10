@@ -13,7 +13,7 @@ import { drivers, driverCategories, driverTypologies } from "../db/schema/public
 import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcement";
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
-import { Client as ObjectStorageClient } from '@replit/object-storage';
+import { Client } from '@replit/object-storage';
 
 const router = Router();
 
@@ -182,7 +182,7 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
     }
 
     // Save PDF to Object Storage (Replit native)
-    const storage = new ObjectStorageClient();
+    const storage = new Client();
     
     const fileKey = `pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
     await storage.uploadFromBytes(fileKey, req.file.buffer);
