@@ -56,10 +56,23 @@ const openai = new OpenAI({
 async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   try {
     console.log('📄 [PDF-EXTRACT] Starting text extraction with pdf-parse...');
+    console.log(`📄 [PDF-EXTRACT] Buffer size: ${pdfBuffer.length} bytes`);
+    
+    // Validate buffer
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('Empty PDF buffer received');
+    }
+    
+    // Check if it's a valid PDF
+    const pdfHeader = pdfBuffer.toString('utf8', 0, 5);
+    if (!pdfHeader.startsWith('%PDF')) {
+      throw new Error('Invalid PDF file - missing PDF header');
+    }
     
     const data = await pdfParse(pdfBuffer);
     
     console.log(`✅ [PDF-EXTRACT] Extracted ${data.text.length} characters from ${data.numpages} pages`);
+    console.log(`📄 [PDF-EXTRACT] First 100 chars: ${data.text.substring(0, 100)}`);
     
     if (!data.text || data.text.trim().length < 50) {
       throw new Error('PDF contains insufficient text (might be scanned/image-based)');
@@ -68,6 +81,7 @@ async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
     return data.text.trim();
   } catch (error) {
     console.error('❌ [PDF-EXTRACT] Error extracting text:', error);
+    console.error('❌ [PDF-EXTRACT] Error stack:', error instanceof Error ? error.stack : 'No stack');
     throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
