@@ -120,6 +120,18 @@ export default function PDCAnalyzerPage() {
   // Export state
   const [exportJson, setExportJson] = useState<any>(null);
 
+  // Flow step calculation
+  const getFlowStep = () => {
+    if (!session) return 1;
+    if (analysisResults.length === 0) return 2;
+    if (!reviewData || !reviewData.wasReviewed) return 3;
+    return 4;
+  };
+
+  const isStepCompleted = (step: number) => getFlowStep() > step;
+  const isStepActive = (step: number) => getFlowStep() === step;
+  const isStepLocked = (step: number) => getFlowStep() < step;
+
   // Query per sessioni precedenti
   const { data: previousSessions = [], isLoading: loadingSessions } = useQuery({
     queryKey: ['/api/pdc/sessions'],
@@ -178,7 +190,20 @@ export default function PDCAnalyzerPage() {
       });
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Generate export JSON from reviewed data
+      const exportData = {
+        customer: reviewData.customerData,
+        services: reviewData.servicesExtracted,
+        reviewNotes: reviewNotes,
+        sessionInfo: {
+          sessionId: session?.id,
+          sessionName: session?.sessionName,
+          reviewedAt: new Date().toISOString()
+        }
+      };
+      setExportJson(exportData);
+      setReviewData({ ...reviewData, wasReviewed: true });
       toast({ title: "✅ Review salvata" });
       setActiveView('export');
     },
@@ -356,28 +381,78 @@ export default function PDCAnalyzerPage() {
               </div>
             </div>
             
-            {/* Navigation Tabs - Stile Menu Evidente */}
-            <div className="flex gap-2 mt-6 border-b border-white/30 pb-0">
+            {/* Flow Steps Indicator */}
+            <div className="flex items-center justify-center gap-4 mt-6 mb-4">
               {[
-                { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-                { id: 'upload', label: 'Upload & Analyze', icon: Upload },
-                { id: 'review', label: 'Review & Correct', icon: FileSearch },
-                { id: 'export', label: 'Export JSON', icon: Download }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveView(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-3 font-medium transition-all duration-200 border-b-2 ${
-                    activeView === tab.id 
-                      ? 'bg-white text-windtre-orange border-white shadow-lg rounded-t-lg' 
-                      : 'text-white border-transparent hover:bg-white/10 hover:border-white/50'
-                  }`}
-                  data-testid={`button-tab-${tab.id}`}
-                >
-                  <tab.icon className="h-5 w-5" />
-                  <span>{tab.label}</span>
-                </button>
+                { step: 1, label: 'Crea Sessione', view: 'analytics' },
+                { step: 2, label: 'Upload PDF', view: 'upload' },
+                { step: 3, label: 'Review Dati', view: 'review' },
+                { step: 4, label: 'Export JSON', view: 'export' }
+              ].map((item, idx) => (
+                <div key={item.step} className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                        isStepCompleted(item.step) 
+                          ? 'bg-green-500 text-white' 
+                          : isStepActive(item.step)
+                          ? 'bg-windtre-orange text-white ring-4 ring-windtre-orange/30'
+                          : 'bg-gray-300 text-gray-600'
+                      }`}
+                      data-testid={`step-indicator-${item.step}`}
+                    >
+                      {isStepCompleted(item.step) ? <Check className="h-5 w-5" /> : item.step}
+                    </div>
+                    <span 
+                      className={`text-sm font-medium ${
+                        isStepActive(item.step) ? 'text-white' : 'text-white/70'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+                  {idx < 3 && (
+                    <div 
+                      className={`w-12 h-0.5 mx-2 ${
+                        isStepCompleted(item.step + 1) ? 'bg-green-500' : 'bg-white/30'
+                      }`}
+                    />
+                  )}
+                </div>
               ))}
+            </div>
+
+            {/* Navigation Tabs - Stile Menu Evidente */}
+            <div className="flex gap-2 mt-4 border-b border-white/30 pb-0">
+              {[
+                { id: 'analytics', label: 'Analytics', icon: BarChart3, step: 1 },
+                { id: 'upload', label: 'Upload & Analyze', icon: Upload, step: 2 },
+                { id: 'review', label: 'Review & Correct', icon: FileSearch, step: 3 },
+                { id: 'export', label: 'Export JSON', icon: Download, step: 4 }
+              ].map((tab) => {
+                const isLocked = isStepLocked(tab.step);
+                const isDisabled = tab.id === 'upload' && !session;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => !isLocked && !isDisabled && setActiveView(tab.id as any)}
+                    disabled={isLocked || isDisabled}
+                    className={`flex items-center gap-2 px-6 py-3 font-medium transition-all duration-200 border-b-2 ${
+                      activeView === tab.id 
+                        ? 'bg-white text-windtre-orange border-white shadow-lg rounded-t-lg' 
+                        : isLocked || isDisabled
+                        ? 'text-white/40 border-transparent cursor-not-allowed'
+                        : 'text-white border-transparent hover:bg-white/10 hover:border-white/50'
+                    }`}
+                    data-testid={`button-tab-${tab.id}`}
+                  >
+                    <tab.icon className="h-5 w-5" />
+                    <span>{tab.label}</span>
+                    {isLocked && <span className="text-xs ml-1">🔒</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -561,7 +636,8 @@ export default function PDCAnalyzerPage() {
                         ) : (
                           <>
                             <Plus className="h-4 w-4 mr-2" />
-                            Crea Sessione
+                            Crea Sessione e Procedi
+                            <ChevronRight className="h-4 w-4 ml-2" />
                           </>
                         )}
                       </Button>
@@ -678,6 +754,23 @@ export default function PDCAnalyzerPage() {
                             </div>
                           ))}
                         </div>
+                        
+                        {/* Navigation: Go to Review */}
+                        {analysisResults.some(r => r.status === 'completed') && (
+                          <div className="mt-6 flex justify-end">
+                            <Button
+                              onClick={() => {
+                                const completedResult = analysisResults.find(r => r.status === 'completed');
+                                if (completedResult) handleSelectResult(completedResult);
+                              }}
+                              className="bg-windtre-purple hover:bg-windtre-purple-dark text-white"
+                              data-testid="button-proceed-to-review"
+                            >
+                              Procedi al Review
+                              <ChevronRight className="h-4 w-4 ml-2" />
+                            </Button>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
@@ -806,7 +899,8 @@ export default function PDCAnalyzerPage() {
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Salva Revisione
+                      Salva e Procedi all'Export
+                      <ChevronRight className="h-4 w-4 ml-2" />
                     </>
                   )}
                 </Button>
