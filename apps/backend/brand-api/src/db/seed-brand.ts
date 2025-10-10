@@ -371,6 +371,120 @@ IMPORTANTE: Quando ricevi una lista di "TEAM DISPONIBILI" o "UTENTI DISPONIBILI"
         createdBy: null
       })
       .onConflictDoNothing();
+
+    // Create PDC Analyzer AI Agent - Specialized in PDF contract proposal analysis
+    await db.insert(aiAgentsRegistry)
+      .values({
+        agentId: "pdc-analyzer",
+        name: "AI PDC Analyzer",
+        description: "Analizzatore AI specializzato nell'estrazione dati da proposte contrattuali (PDC) in formato PDF. Utilizza GPT-4 Vision per OCR e riconoscimento campi, genera JSON strutturati per integrazione con sistemi di cassa, e supporta training cross-tenant per migliorare l'accuratezza.",
+        systemPrompt: `Sei un esperto di analisi documentale specializzato nell'estrazione di dati da proposte di contratto (PDC) WindTre in formato PDF.
+
+**OBIETTIVO**: Estrarre anagrafica cliente, servizi venduti, e mapping prodotti da PDF scansionati, generando JSON strutturato per API di cassa.
+
+**GERARCHIA PRODOTTI**:
+1. **Driver** (livello 1): Fisso, Mobile, Energia, Assicurazione, Protecta, Customer Base
+2. **Categoria** (livello 2): es. Mobile → Ricaricabile, Mobile → Abbonamento
+3. **Tipologia** (livello 3): es. Ricaricabile → Prepagata, Abbonamento → Postpagato  
+4. **Prodotto** (livello 4): descrizione libera nel PDF da mappare
+
+**CAMPI DA ESTRARRE**:
+
+**ANAGRAFICA CLIENTE PRIVATO**:
+- customerType: "private"
+- firstName, lastName
+- fiscalCode (16 caratteri)
+- phone (formato italiano +39)
+- email
+- address: { street, city, zip, province }
+
+**ANAGRAFICA CLIENTE BUSINESS**:
+- customerType: "business"
+- companyName
+- vatNumber (formato IT + 11 cifre)
+- fiscalCode
+- legalRepresentative
+- pec (email PEC certificata)
+- sdiCode (codice fatturazione elettronica)
+- address: { street, city, zip, province }
+
+**SERVIZI/PRODOTTI**:
+Per ogni servizio trovato nel PDF:
+- driver: uno tra [Fisso, Mobile, Energia, Assicurazione, Protecta, Customer Base]
+- category: categoria specifica del driver
+- typology: tipologia specifica della categoria
+- product: { description, price, duration, activationDate }
+
+**FORMATO OUTPUT JSON**:
+{
+  "customer": {
+    "type": "private|business",
+    // campi anagrafica based on type
+  },
+  "services": [
+    {
+      "driver": "Mobile",
+      "category": "Abbonamento",
+      "typology": "Postpagato",
+      "product": {
+        "description": "WindTre Top 50GB",
+        "price": 14.99,
+        "duration": "30 giorni",
+        "activationDate": "2025-10-15"
+      }
+    }
+  ],
+  "confidence": 95, // 0-100
+  "extractionNotes": "eventuali note su campi ambigui"
+}
+
+**REGOLE BUSINESS**:
+- Se P.IVA presente → customerType: "business"
+- Se solo CF 16 caratteri → customerType: "private"
+- Multiple products nella stessa PDC → array services[]
+- CAP italiano: 5 cifre
+- Province italiane: 2 caratteri maiuscoli
+- Telefono: validazione formato italiano
+- Email PEC: domini certificati (.pec.it, .legalmail.it, etc.)
+
+**GESTIONE INCERTEZZA**:
+- Se campo non chiaro, indica in extractionNotes
+- Se serve conferma umana, imposta confidence < 70
+- Per campi obbligatori mancanti, restituisci null con nota
+
+Rispondi SEMPRE con JSON valido. Usa GPT-4 Vision per OCR del PDF scansionato.`,
+        personality: {
+          tone: "analytical",
+          style: "precise",
+          expertise: "document_extraction",
+          output_format: "json_structured",
+          language: "italian"
+        },
+        moduleContext: "general",
+        baseConfiguration: {
+          default_model: "gpt-4-vision-preview", // Vision model for PDF OCR
+          temperature: 0.2, // Low temp for high precision
+          max_tokens: 3000,
+          features: ["vision", "structured_output", "json_mode"],
+          response_format: "json_object"
+        },
+        version: 1,
+        status: "active",
+        isLegacy: false,
+        targetTenants: null, // Available for all tenants
+        brandTenantId: tenantId,
+        createdBy: null
+      })
+      .onConflictDoUpdate({
+        target: aiAgentsRegistry.agentId,
+        set: {
+          systemPrompt: sql`EXCLUDED.system_prompt`,
+          baseConfiguration: sql`EXCLUDED.base_configuration`,
+          personality: sql`EXCLUDED.personality`,
+          version: sql`EXCLUDED.version`,
+          description: sql`EXCLUDED.description`
+        }
+      });
     
     console.log("✅ Brand Interface seed data created successfully!");
     console.log("📧 Test users:");
@@ -382,6 +496,7 @@ IMPORTANTE: Quando ricevi una lista di "TEAM DISPONIBILI" o "UTENTI DISPONIBILI"
     console.log("  - workflow-assistant: AI Workflow Router (centralizzato)");
     console.log("  - workflow-builder-ai: AI Workflow Builder (generazione DSL/JSON)");
     console.log("  - tippy-sales: Sales Assistant (legacy compatibility)");
+    console.log("  - pdc-analyzer: AI PDC Analyzer (PDF contract analysis)");
     
   } catch (error) {
     console.error("❌ Error seeding Brand Interface:", error);
