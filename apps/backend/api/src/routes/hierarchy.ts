@@ -33,6 +33,7 @@ import {
 } from '../db/schema/w3suite';
 import { z } from 'zod';
 import { workflowEngine } from '../services/workflow-engine';
+import { detectWorkflowRoutingNodes } from '../utils/workflow-routing-utils';
 
 const router = Router();
 
@@ -753,34 +754,6 @@ router.delete('/teams/:id', requirePermission('workflow.delete'), async (req: Re
   }
 });
 
-// GET /api/workflow-templates - Get workflow templates
-router.get('/workflow-templates', requirePermission('workflow.read'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    const category = req.query.category as string;
-    
-    if (!tenantId) {
-      return res.status(400).json({ error: 'Tenant ID is required' });
-    }
-
-    const conditions = [eq(workflowTemplates.tenantId, tenantId)];
-    if (category) {
-      conditions.push(eq(workflowTemplates.category, category));
-    }
-
-    const result = await db
-      .select()
-      .from(workflowTemplates)
-      .where(and(...conditions))
-      .orderBy(desc(workflowTemplates.createdAt));
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching workflow templates:', error);
-    res.status(500).json({ error: 'Failed to fetch workflow templates' });
-  }
-});
-
 // POST /api/workflow-templates - Create workflow template
 router.post('/workflow-templates', requirePermission('workflow.create'), async (req: Request, res: Response) => {
   try {
@@ -1224,7 +1197,13 @@ router.get('/workflow-templates', requirePermission('workflows.read'), async (re
       .where(and(...conditions))
       .orderBy(asc(workflowTemplates.name));
 
-    res.json(templates);
+    // Aggiungi routing info a ogni template
+    const templatesWithRouting = templates.map(template => ({
+      ...template,
+      routingInfo: detectWorkflowRoutingNodes(template as any)
+    }));
+
+    res.json(templatesWithRouting);
   } catch (error) {
     console.error('Error fetching workflow templates:', error);
     res.status(500).json({ error: 'Failed to fetch workflow templates' });
