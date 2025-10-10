@@ -628,4 +628,619 @@ router.post('/leads/:id/convert', async (req, res) => {
   }
 });
 
+// ==================== CAMPAIGNS ====================
+
+/**
+ * GET /api/crm/campaigns
+ * Get all campaigns for the current tenant
+ */
+router.get('/campaigns', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { status, type, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    let query = db
+      .select()
+      .from(crmCampaigns)
+      .where(eq(crmCampaigns.tenantId, tenantId))
+      .orderBy(desc(crmCampaigns.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    if (status) {
+      query = query.where(and(
+        eq(crmCampaigns.tenantId, tenantId),
+        eq(crmCampaigns.status, status as string)
+      ));
+    }
+
+    if (type) {
+      query = query.where(and(
+        eq(crmCampaigns.tenantId, tenantId),
+        eq(crmCampaigns.type, type as string)
+      ));
+    }
+
+    const campaigns = await query;
+
+    res.status(200).json({
+      success: true,
+      data: campaigns,
+      message: 'Campaigns retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaigns', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve campaigns',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/campaigns
+ * Create a new campaign
+ */
+router.post('/campaigns', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validation = insertCrmCampaignSchema.omit({ tenantId: true }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [campaign] = await db
+      .insert(crmCampaigns)
+      .values({
+        ...validation.data,
+        tenantId
+      })
+      .returning();
+
+    logger.info('Campaign created', { campaignId: campaign.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: campaign,
+      message: 'Campaign created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating campaign', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create campaign',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/campaigns/:id
+ * Update a campaign
+ */
+router.patch('/campaigns/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const updateSchema = insertCrmCampaignSchema.omit({ tenantId: true }).partial();
+    
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [updated] = await db
+      .update(crmCampaigns)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmCampaigns.id, id),
+        eq(crmCampaigns.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Campaign not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Campaign updated', { campaignId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Campaign updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating campaign', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      campaignId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update campaign',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PIPELINES ====================
+
+/**
+ * GET /api/crm/pipelines
+ * Get all pipelines for the current tenant
+ */
+router.get('/pipelines', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { domain, isActive, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    let query = db
+      .select()
+      .from(crmPipelines)
+      .where(eq(crmPipelines.tenantId, tenantId))
+      .orderBy(desc(crmPipelines.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    if (domain) {
+      query = query.where(and(
+        eq(crmPipelines.tenantId, tenantId),
+        eq(crmPipelines.domain, domain as string)
+      ));
+    }
+
+    if (isActive !== undefined) {
+      query = query.where(and(
+        eq(crmPipelines.tenantId, tenantId),
+        eq(crmPipelines.isActive, isActive === 'true')
+      ));
+    }
+
+    const pipelines = await query;
+
+    res.status(200).json({
+      success: true,
+      data: pipelines,
+      message: 'Pipelines retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving pipelines', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve pipelines',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/pipelines
+ * Create a new pipeline
+ */
+router.post('/pipelines', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validation = insertCrmPipelineSchema.omit({ tenantId: true }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [pipeline] = await db
+      .insert(crmPipelines)
+      .values({
+        ...validation.data,
+        tenantId
+      })
+      .returning();
+
+    logger.info('Pipeline created', { pipelineId: pipeline.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: pipeline,
+      message: 'Pipeline created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating pipeline', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/pipelines/:id
+ * Update a pipeline
+ */
+router.patch('/pipelines/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const updateSchema = insertCrmPipelineSchema.omit({ tenantId: true }).partial();
+    
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [updated] = await db
+      .update(crmPipelines)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmPipelines.id, id),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Pipeline updated', { pipelineId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Pipeline updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating pipeline', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== DEALS ====================
+
+/**
+ * GET /api/crm/deals
+ * Get all deals for the current tenant
+ */
+router.get('/deals', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { status, pipelineId, stage, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    let query = db
+      .select()
+      .from(crmDeals)
+      .where(eq(crmDeals.tenantId, tenantId))
+      .orderBy(desc(crmDeals.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    if (status) {
+      query = query.where(and(
+        eq(crmDeals.tenantId, tenantId),
+        eq(crmDeals.status, status as string)
+      ));
+    }
+
+    if (pipelineId) {
+      query = query.where(and(
+        eq(crmDeals.tenantId, tenantId),
+        eq(crmDeals.pipelineId, pipelineId as string)
+      ));
+    }
+
+    if (stage) {
+      query = query.where(and(
+        eq(crmDeals.tenantId, tenantId),
+        eq(crmDeals.stage, stage as string)
+      ));
+    }
+
+    const deals = await query;
+
+    res.status(200).json({
+      success: true,
+      data: deals,
+      message: 'Deals retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving deals', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve deals',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/deals
+ * Create a new deal
+ */
+router.post('/deals', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validation = insertCrmDealSchema.omit({ tenantId: true }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [deal] = await db
+      .insert(crmDeals)
+      .values({
+        ...validation.data,
+        tenantId
+      })
+      .returning();
+
+    logger.info('Deal created', { dealId: deal.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: deal,
+      message: 'Deal created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating deal', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create deal',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/deals/:id
+ * Update a deal (including stage transitions)
+ */
+router.patch('/deals/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const updateSchema = insertCrmDealSchema.omit({ tenantId: true }).partial();
+    
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Check if status is being changed to won/lost
+    let updateData = { ...validation.data, updatedAt: new Date() };
+    if (validation.data.status === 'won' && !validation.data.wonAt) {
+      updateData = { ...updateData, wonAt: new Date() };
+    } else if (validation.data.status === 'lost' && !validation.data.lostAt) {
+      updateData = { ...updateData, lostAt: new Date() };
+    }
+
+    const [updated] = await db
+      .update(crmDeals)
+      .set(updateData)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Deal not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Deal updated', { dealId: id, tenantId, status: updateData.status });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Deal updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating deal', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      dealId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update deal',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export default router;
