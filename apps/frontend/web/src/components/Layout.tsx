@@ -555,7 +555,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
     { id: 'tasks', label: 'Tasks', icon: ListTodo, path: '/tasks' },
     { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
-    { id: 'ai', label: 'AI Tools', icon: Zap, path: '/settings' },
+    { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai-tools' },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase, path: '/magazzino' },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
     { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
