@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a monorepo. It features a WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform includes the Brand Interface HQ system for centralized control and cross-tenant management, aiming to provide a scalable, secure, and robust solution for diverse business needs.
+W3 Suite is a multi-tenant enterprise platform that centralizes business management with integrated CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a monorepo. It features a distinct WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform includes the Brand Interface HQ system for centralized control and cross-tenant management, providing a scalable, secure solution for diverse business needs.
 
 # User Preferences
 
@@ -175,7 +175,7 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project employs an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`, with traffic routed via an Nginx reverse proxy.
+The project employs an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`.
 
 ## Monorepo Structure:
 - **`apps/`**: For frontend/backend services, workers, and edge renderers.
@@ -192,22 +192,23 @@ The project employs an enterprise monorepo structure, separating tenant-facing a
 - **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL Row Level Security (RLS) for multitenancy.
 - **Security**: OAuth2/OIDC with MFA, JWTs, and Role-Based Access Control (RBAC).
 - **Multitenancy**: Achieved through RLS, a `TenantProvider`, and global unique constraints.
-- **Universal Workflow System**: Features approval hierarchy, workflow-team separation, RBAC-integrated supervision, event-driven state machines, a visual workflow builder, and audit trails. Supports synchronous and asynchronous execution (BullMQ with Redis).
+- **Universal Workflow System**: Approval hierarchy, RBAC-integrated supervision, event-driven state machines, visual workflow builder, audit trails, supporting synchronous and asynchronous execution.
 - **Frontend Package (`@w3suite/frontend-kit`)**: Centralizes the design system, page templates, reusable components, UI patterns, custom React hooks, and the `shadcn/ui` library.
 - **Unified Notification System**: Real-time notifications using Redis + WebSocket with PostgreSQL fallback.
-- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, Redis queue, priority worker, deduplication, workflow engine integration, and audit trail.
-- **Task Management System**: Flexible task system with optional workflow integration, RBAC-protected API, and feature-rich frontend.
-- **MCP Multi-Provider OAuth System**: Unified credential management supporting Google Workspace, AWS, Meta/Instagram, Microsoft 365, Stripe, and GTM/Analytics with per-user OAuth isolation.
-- **AI Enforcement Middleware System**: Hierarchical API-level blocking when AI features are disabled, intercepting requests and checking tenant-level `isActive` and agent-specific `isEnabled` flags using raw SQL queries to bypass RLS for settings access.
-- **AI Workflow Builder with JSON Mode**: Natural language workflow generation using OpenAI `gpt-4o` with strict JSON mode, system prompt override, disabled tools, and ReactFlow DSL generation with Zod validation, supporting Italian prompts.
+- **Centralized Webhook System**: Enterprise webhook receiver with multi-provider support, queue, deduplication, and audit trail.
+- **Task Management System**: Flexible task system with optional workflow integration and RBAC-protected API.
+- **MCP Multi-Provider OAuth System**: Unified credential management supporting various third-party services with per-user OAuth isolation.
+- **AI Enforcement Middleware System**: Hierarchical API-level blocking of AI features based on tenant and agent flags.
+- **AI Workflow Builder with JSON Mode**: Natural language workflow generation using OpenAI `gpt-4o` with strict JSON mode and ReactFlow DSL generation.
 - **Intelligent Workflow Routing System**: Dual-mode routing (auto/manual) for team and user assignments.
-- **AI Tools Ecosystem with PDC Analyzer**: Centralized AI tools dashboard with modular tool architecture. PDC (Proposta di Contratto) Analyzer provides automated PDF contract analysis using GPT-4, extracting customer data and service mapping with WindTre product hierarchy integration. Features multi-tenant training dataset, session management, human review workflow, and JSON export for cashier API integration.
+- **AI Tools Ecosystem with PDC Analyzer**: Centralized AI tools dashboard. PDC Analyzer provides automated PDF contract analysis using GPT-4, extracting data and mapping services with WindTre product hierarchy.
+- **CRM Module Backend**: Complete customer relationship management backend with 20 tables in `w3suite` schema, featuring person-centric identity graph, omnichannel engagement tracking, pipeline management, GDPR-compliant consent, and lead-to-deal conversion workflow. Provides 25 RESTful endpoints with Zod validation, RLS, and structured logging.
 
 # External Dependencies
 
 ## Database Services
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 by Replit (via Neon).
-- **Redis**: Used for BullMQ (workflow engine) and Unified Notification System.
+- **Redis**: Used for BullMQ and Unified Notification System.
 
 ## Authentication Services
 - **OAuth2/OIDC Enterprise**: For secure user authentication.
