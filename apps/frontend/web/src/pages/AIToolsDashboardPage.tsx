@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import Layout from "../components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles, Brain, MessageSquare } from "lucide-react";
-import { useRequiredTenant } from "@/hooks/useTenantSafety";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface AITool {
   id: string;
@@ -74,12 +74,14 @@ const aiTools: AITool[] = [
 
 export default function AIToolsDashboardPage() {
   const [currentModule, setCurrentModule] = useState("ai");
-  const [, setLocation] = useLocation();
-  const { tenant } = useRequiredTenant();
+  const [location, setLocation] = useLocation();
+  
+  // Estrai tenant slug dalla URL
+  const tenantSlug = location.split('/')[1] || 'staging';
 
   const handleToolClick = (tool: AITool) => {
     if (tool.status === "available") {
-      setLocation(`/${tenant.slug}${tool.route}`);
+      setLocation(`/${tenantSlug}${tool.route}`);
     }
   };
 

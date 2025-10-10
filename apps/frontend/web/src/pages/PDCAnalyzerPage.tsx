@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import Layout from "../components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRequiredTenant } from "@/hooks/useTenantSafety";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +48,6 @@ interface TrainingEntry {
 export default function PDCAnalyzerPage() {
   const [currentModule, setCurrentModule] = useState("ai");
   const { toast } = useToast();
-  const { tenant } = useRequiredTenant();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState("");
   const [newSessionError, setNewSessionError] = useState("");
