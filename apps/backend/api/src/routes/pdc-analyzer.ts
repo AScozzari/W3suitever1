@@ -323,8 +323,16 @@ Rispondi SEMPRE con JSON valido.`,
       extractedDataId: extractedData.id,
     });
   } catch (error) {
-    console.error("Error analyzing PDF:", error);
-    res.status(500).json({ error: "Failed to analyze PDF" });
+    console.error("❌ [PDC-UPLOAD] Error analyzing PDF:", error);
+    console.error("❌ [PDC-UPLOAD] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    console.error("❌ [PDC-UPLOAD] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+    });
+    res.status(500).json({ 
+      error: "Failed to analyze PDF",
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
