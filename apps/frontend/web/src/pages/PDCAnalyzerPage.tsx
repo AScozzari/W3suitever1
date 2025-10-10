@@ -3,107 +3,86 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import Layout from "../components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, Download, Edit, Trash2, Plus, Sparkles, CheckCircle, XCircle, Clock } from "lucide-react";
+import { 
+  FileText, 
+  Upload, 
+  Check, 
+  ChevronRight, 
+  Loader2,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  Plus
+} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
-interface PDCSession {
+type Step = "create-session" | "upload" | "analyzing" | "results";
+
+interface SessionData {
   id: string;
   sessionName: string;
-  totalPdfs: number;
-  analyzedPdfs: number;
-  reviewedPdfs: number;
-  status: string;
-  createdAt: string;
 }
 
-// Type for AI extracted data from PDC
-interface PDCExtractedData {
-  customer: Record<string, unknown>;
-  services: Array<Record<string, unknown>>;
-  confidence: number;
-  extractionNotes?: string;
-}
-
-interface TrainingEntry {
-  id: string;
-  pdfFileName: string;
-  pdfFileSize: number;
-  aiRawOutput: PDCExtractedData;
-  humanCorrectedOutput?: PDCExtractedData;
-  confidenceScore: number;
-  isReviewed: boolean;
-  reviewNotes?: string;
-  analyzedAt: string;
-  reviewedAt?: string;
+interface AnalysisResult {
+  pdfId: string;
+  fileName: string;
+  status: "success" | "error";
+  data?: any;
+  error?: string;
 }
 
 export default function PDCAnalyzerPage() {
   const [currentModule, setCurrentModule] = useState("ai");
   const { toast } = useToast();
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
-  const [newSessionName, setNewSessionName] = useState("");
-  const [newSessionError, setNewSessionError] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [reviewEntry, setReviewEntry] = useState<TrainingEntry | null>(null);
-  const [correctedData, setCorrectedData] = useState("");
-  const [reviewNotes, setReviewNotes] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<Step>("create-session");
+  const [sessionName, setSessionName] = useState("");
+  const [session, setSession] = useState<SessionData | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch sessions
-  const { data: sessions = [] } = useQuery<PDCSession[]>({
-    queryKey: ["/api/pdc/sessions"],
-  });
-
-  // Fetch session details with training data
-  const { data: sessionDetails } = useQuery({
-    queryKey: ["/api/pdc/sessions", selectedSession],
-    enabled: !!selectedSession,
-  });
-
-  // Create session mutation
+  // Mutation per creare sessione
   const createSessionMutation = useMutation({
     mutationFn: async (name: string) => {
-      // Validate session name
-      if (!name || name.trim().length === 0) {
-        throw new Error("Il nome della sessione è obbligatorio");
-      }
-      if (name.trim().length < 3) {
-        throw new Error("Il nome della sessione deve essere almeno 3 caratteri");
-      }
-      return await apiRequest("POST", "/api/pdc/sessions", { name: name.trim() });
+      const response = await apiRequest("/api/pdc/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Tenant-ID": localStorage.getItem("tenantId") || "",
+        },
+        body: JSON.stringify({ sessionName: name }),
+      });
+      return response;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pdc/sessions"] });
-      toast({ title: "Sessione creata", description: "Nuova sessione di analisi PDC creata con successo" });
-      setIsCreateDialogOpen(false);
-      setNewSessionName("");
-      setNewSessionError("");
+    onSuccess: (data) => {
+      setSession(data);
+      setCurrentStep("upload");
+      toast({ title: "✅ Sessione creata", description: `Sessione "${sessionName}" pronta per l'upload` });
     },
     onError: (error: any) => {
-      const errorMessage = error.message || "Errore durante la creazione della sessione";
-      setNewSessionError(errorMessage);
-      toast({ title: "Errore", description: errorMessage, variant: "destructive" });
+      toast({ 
+        title: "❌ Errore creazione sessione", 
+        description: error.message,
+        variant: "destructive" 
+      });
     },
   });
 
-  // Upload and analyze mutation
-  const analyzeMutation = useMutation({
-    mutationFn: async ({ file, sessionId }: { file: File; sessionId: string }) => {
+  // Mutation per upload e analisi
+  const analyzeFileMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!session) throw new Error("Nessuna sessione attiva");
+      
       const formData = new FormData();
       formData.append("pdf", file);
-      formData.append("sessionId", sessionId);
-
-      const response = await fetch("/api/pdc/analyze", {
+      
+      const response = await fetch(`/api/pdc/sessions/${session.id}/upload`, {
         method: "POST",
         headers: {
           "X-Tenant-ID": localStorage.getItem("tenantId") || "",
@@ -111,113 +90,84 @@ export default function PDCAnalyzerPage() {
         body: formData,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to analyze PDF");
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pdc/sessions", selectedSession] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pdc/sessions"] });
-      toast({ title: "Analisi completata", description: "PDF analizzato con successo" });
-      setIsUploadDialogOpen(false);
-      setSelectedFile(null);
-    },
-    onError: (error: any) => {
-      toast({ title: "Errore analisi", description: error.message, variant: "destructive" });
+      if (!response.ok) throw new Error("Upload fallito");
+      return await response.json();
     },
   });
 
-  // Review mutation
-  const reviewMutation = useMutation({
-    mutationFn: async ({ entryId, correctedOutput, reviewNotes }: { entryId: string; correctedOutput: PDCExtractedData; reviewNotes: string }) => {
-      return await apiRequest("POST", "/api/pdc/training", {
-        entryId,
-        correctedOutput,
-        reviewNotes,
+  // Handle step 1: Crea sessione
+  const handleCreateSession = () => {
+    if (sessionName.trim().length < 3) {
+      toast({ 
+        title: "Nome troppo corto", 
+        description: "Il nome deve avere almeno 3 caratteri",
+        variant: "destructive" 
       });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pdc/sessions", selectedSession] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pdc/sessions"] });
-      toast({ title: "Review salvata", description: "Correzioni salvate per il training AI" });
-      setIsReviewDialogOpen(false);
-      setReviewEntry(null);
-      setCorrectedData("");
-      setReviewNotes("");
-    },
-    onError: (error: any) => {
-      toast({ title: "Errore review", description: error.message, variant: "destructive" });
-    },
-  });
+      return;
+    }
+    createSessionMutation.mutate(sessionName);
+  };
 
-  // Delete session mutation
-  const deleteSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await fetch(`/api/pdc/sessions/${sessionId}`, {
-        method: "DELETE",
-        headers: {
-          "X-Tenant-ID": localStorage.getItem("tenantId") || "",
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete session");
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pdc/sessions"] });
-      toast({ title: "Sessione eliminata", description: "Sessione e dati associati eliminati" });
-      setSelectedSession(null);
-    },
-    onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const handleExport = async (sessionId: string) => {
-    try {
-      const response = await fetch(`/api/pdc/export/${sessionId}`, {
-        headers: {
-          "X-Tenant-ID": localStorage.getItem("tenantId") || "",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to export session");
-      }
-
-      const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `pdc-export-${sessionId}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-
-      toast({ title: "Export completato", description: "JSON scaricato con successo" });
-    } catch (error: any) {
-      toast({ title: "Errore export", description: error.message, variant: "destructive" });
+  // Handle step 2: Upload files
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setUploadedFiles(prev => [...prev, ...newFiles]);
     }
   };
 
-  const openReviewDialog = (entry: TrainingEntry) => {
-    setReviewEntry(entry);
-    setCorrectedData(JSON.stringify(entry.humanCorrectedOutput || entry.aiRawOutput, null, 2));
-    setReviewNotes(entry.reviewNotes || "");
-    setIsReviewDialogOpen(true);
+  // Handle step 3: Processa tutti i file
+  const handleProcessFiles = async () => {
+    if (uploadedFiles.length === 0) {
+      toast({ title: "Nessun file", description: "Carica almeno un PDF" });
+      return;
+    }
+
+    setCurrentStep("analyzing");
+    setIsProcessing(true);
+    const results: AnalysisResult[] = [];
+
+    for (const file of uploadedFiles) {
+      try {
+        const result = await analyzeFileMutation.mutateAsync(file);
+        results.push({
+          pdfId: result.id,
+          fileName: file.name,
+          status: "success",
+          data: result.analysis,
+        });
+      } catch (error: any) {
+        results.push({
+          pdfId: "",
+          fileName: file.name,
+          status: "error",
+          error: error.message,
+        });
+      }
+    }
+
+    setAnalysisResults(results);
+    setIsProcessing(false);
+    setCurrentStep("results");
+    toast({ 
+      title: "🎉 Analisi completata!", 
+      description: `${results.filter(r => r.status === "success").length}/${results.length} documenti analizzati con successo` 
+    });
+  };
+
+  // Reset wizard
+  const handleNewSession = () => {
+    setSessionName("");
+    setSession(null);
+    setUploadedFiles([]);
+    setAnalysisResults([]);
+    setCurrentStep("create-session");
   };
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="space-y-6">
-        {/* Header con gradiente WindTre */}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
         <div
           className="rounded-2xl p-8"
           style={{
@@ -225,296 +175,253 @@ export default function PDCAnalyzerPage() {
             color: "white",
           }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <FileText className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold">PDC Analyzer</h1>
-                <p className="mt-1 text-lg text-white/90">
-                  Estrai dati da proposte contrattuali PDF con OCR intelligente e AI
-                </p>
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+              <FileText className="h-8 w-8 text-white" />
             </div>
+            <div>
+              <h1 className="text-4xl font-bold">PDC Analyzer</h1>
+              <p className="mt-1 text-lg text-white/90">
+                Analisi automatica proposte contrattuali con AI
+              </p>
+            </div>
+          </div>
+        </div>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button data-testid="button-create-session" className="bg-white text-purple-600 hover:bg-white/90">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nuova Sessione
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Crea Nuova Sessione</DialogTitle>
-                  <DialogDescription>
-                    Crea una sessione di analisi per raggruppare più PDC
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center gap-4">
+          {[
+            { step: "create-session", label: "Crea Sessione", icon: Plus },
+            { step: "upload", label: "Carica PDF", icon: Upload },
+            { step: "analyzing", label: "Analisi AI", icon: Loader2 },
+            { step: "results", label: "Risultati", icon: CheckCircle2 },
+          ].map((item, idx) => {
+            const Icon = item.icon;
+            const isActive = currentStep === item.step;
+            const isPast = ["create-session", "upload", "analyzing", "results"].indexOf(currentStep) > idx;
+            
+            return (
+              <div key={item.step} className="flex items-center">
+                <div className={`flex flex-col items-center ${isActive ? "opacity-100" : isPast ? "opacity-70" : "opacity-30"}`}>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
+                    isActive ? "bg-gradient-to-br from-orange-500 to-purple-600 text-white" :
+                    isPast ? "bg-green-500 text-white" :
+                    "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                  }`}>
+                    {isPast ? <Check className="h-6 w-6" /> : <Icon className={`h-6 w-6 ${isActive && item.step === "analyzing" ? "animate-spin" : ""}`} />}
+                  </div>
+                  <span className="mt-2 text-sm font-medium">{item.label}</span>
+                </div>
+                {idx < 3 && (
+                  <ChevronRight className={`h-5 w-5 mx-2 ${isPast ? "text-green-500" : "text-gray-300"}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Step Content */}
+        <Card>
+          <CardContent className="p-8">
+            {/* STEP 1: Create Session */}
+            {currentStep === "create-session" && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold">Inizia una nuova analisi</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Dai un nome alla sessione per organizzare i tuoi documenti PDC
+                  </p>
+                </div>
+                
+                <div className="max-w-md mx-auto space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="session-name">Nome Sessione *</Label>
                     <Input
                       id="session-name"
                       data-testid="input-session-name"
-                      placeholder="es. Analisi PDC Gennaio 2025"
-                      value={newSessionName}
-                      onChange={(e) => {
-                        setNewSessionName(e.target.value);
-                        setNewSessionError("");
-                      }}
-                      className={newSessionError ? "border-red-500" : ""}
+                      placeholder="es. Proposte Gennaio 2025"
+                      value={sessionName}
+                      onChange={(e) => setSessionName(e.target.value)}
+                      className="text-lg"
+                      onKeyDown={(e) => e.key === "Enter" && handleCreateSession()}
                     />
-                    {newSessionError && (
-                      <p className="text-sm text-red-600 dark:text-red-400" data-testid="error-session-name">
-                        {newSessionError}
-                      </p>
-                    )}
                   </div>
-                </div>
-                <DialogFooter>
+                  
                   <Button
-                    data-testid="button-confirm-create"
-                    onClick={() => createSessionMutation.mutate(newSessionName)}
-                    disabled={!newSessionName || newSessionName.trim().length < 3 || createSessionMutation.isPending}
+                    data-testid="button-create-session"
+                    onClick={handleCreateSession}
+                    disabled={sessionName.trim().length < 3 || createSessionMutation.isPending}
+                    className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                    size="lg"
                   >
-                    {createSessionMutation.isPending ? "Creazione..." : "Crea Sessione"}
+                    {createSessionMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Creazione in corso...
+                      </>
+                    ) : (
+                      <>
+                        Crea Sessione
+                        <ChevronRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        {/* Sessions List */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {sessions.map((session) => (
-          <Card
-            key={session.id}
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              selectedSession === session.id ? "ring-2 ring-orange-500" : ""
-            }`}
-            onClick={() => setSelectedSession(session.id)}
-            data-testid={`card-session-${session.id}`}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-lg">
-                {session.sessionName}
-                <Badge variant={session.status === "active" ? "default" : "secondary"}>
-                  {session.status}
-                </Badge>
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {new Date(session.createdAt).toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Tot. PDC:</span>
-                  <span className="font-medium">{session.totalPdfs}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Analizzati:</span>
-                  <span className="font-medium text-blue-600 dark:text-blue-400">{session.analyzedPdfs}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Revisionati:</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">{session.reviewedPdfs}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            )}
 
-      {/* Session Details */}
-      {selectedSession && sessionDetails && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>PDC Analizzati - {sessionDetails.sessionName}</CardTitle>
-              <div className="flex gap-2">
-                <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" data-testid="button-upload-pdf">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Carica PDF
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Carica e Analizza PDF</DialogTitle>
-                      <DialogDescription>
-                        Seleziona un PDF da analizzare con l'AI
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="pdf-file">File PDF</Label>
-                        <Input
-                          id="pdf-file"
-                          data-testid="input-pdf-file"
-                          type="file"
-                          accept=".pdf"
-                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                        />
+            {/* STEP 2: Upload Files */}
+            {currentStep === "upload" && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold">Carica i tuoi documenti PDF</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Puoi caricare più file contemporaneamente. L'AI analizzerà tutti i documenti.
+                  </p>
+                </div>
+
+                {/* Drag & Drop Area */}
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center hover:border-orange-500 transition-colors">
+                  <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg font-medium mb-2">Trascina i PDF qui o clicca per selezionare</p>
+                  <p className="text-sm text-gray-500 mb-4">PDF fino a 10MB ciascuno</p>
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <Button asChild variant="outline">
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      Seleziona File
+                    </label>
+                  </Button>
+                </div>
+
+                {/* Uploaded Files List */}
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Documenti caricati ({uploadedFiles.length})</h3>
+                    <div className="space-y-2">
+                      {uploadedFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-orange-500" />
+                            <span className="font-medium">{file.name}</span>
+                            <span className="text-sm text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))}
+                          >
+                            Rimuovi
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleNewSession}
+                    className="flex-1"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    onClick={handleProcessFiles}
+                    disabled={uploadedFiles.length === 0}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                    size="lg"
+                  >
+                    Analizza {uploadedFiles.length} {uploadedFiles.length === 1 ? "documento" : "documenti"}
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: Analyzing */}
+            {currentStep === "analyzing" && (
+              <div className="space-y-6 text-center py-12">
+                <Loader2 className="h-20 w-20 mx-auto animate-spin text-orange-500" />
+                <h2 className="text-2xl font-bold">Analisi in corso...</h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  L'intelligenza artificiale sta processando i tuoi documenti
+                </p>
+                <Progress value={65} className="max-w-md mx-auto" />
+              </div>
+            )}
+
+            {/* STEP 4: Results */}
+            {currentStep === "results" && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <CheckCircle2 className="h-20 w-20 mx-auto text-green-500" />
+                  <h2 className="text-2xl font-bold">Analisi completata!</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {analysisResults.filter(r => r.status === "success").length} documenti analizzati con successo
+                  </p>
+                </div>
+
+                {/* Results List */}
+                <div className="space-y-3">
+                  {analysisResults.map((result, idx) => (
+                    <div key={idx} className={`p-4 rounded-lg ${
+                      result.status === "success" ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" : 
+                      "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {result.status === "success" ? (
+                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                          ) : (
+                            <AlertCircle className="h-6 w-6 text-red-600" />
+                          )}
+                          <div>
+                            <p className="font-semibold">{result.fileName}</p>
+                            {result.status === "error" && (
+                              <p className="text-sm text-red-600">{result.error}</p>
+                            )}
+                          </div>
+                        </div>
+                        {result.status === "success" && (
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            Esporta JSON
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button
-                        data-testid="button-confirm-analyze"
-                        onClick={() => {
-                          if (selectedFile) {
-                            analyzeMutation.mutate({ file: selectedFile, sessionId: selectedSession });
-                          }
-                        }}
-                        disabled={!selectedFile || analyzeMutation.isPending}
-                      >
-                        {analyzeMutation.isPending ? (
-                          <>
-                            <span className="mr-2">🔄</span>
-                            Analisi in corso...
-                          </>
-                        ) : (
-                          "Analizza PDF"
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                  ))}
+                </div>
 
-                <Button
-                  variant="outline"
-                  data-testid="button-export-session"
-                  onClick={() => handleExport(selectedSession)}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Esporta JSON
-                </Button>
-
-                <Button
-                  variant="destructive"
-                  data-testid="button-delete-session"
-                  onClick={() => deleteSessionMutation.mutate(selectedSession)}
-                  disabled={deleteSessionMutation.isPending}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {deleteSessionMutation.isPending ? "Eliminazione..." : "Elimina"}
-                </Button>
+                {/* Actions */}
+                <div className="flex gap-4 pt-4">
+                  <Button
+                    onClick={handleNewSession}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Nuova Analisi
+                  </Button>
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600"
+                  >
+                    <Download className="mr-2 h-5 w-5" />
+                    Esporta Tutti i Risultati
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>File</TableHead>
-                  <TableHead>Confidence</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data Analisi</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessionDetails.trainingData?.map((entry: TrainingEntry) => (
-                  <TableRow key={entry.id} data-testid={`row-training-${entry.id}`}>
-                    <TableCell className="font-medium">{entry.pdfFileName}</TableCell>
-                    <TableCell>
-                      <Badge variant={entry.confidenceScore >= 80 ? "default" : "secondary"}>
-                        {entry.confidenceScore}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {entry.isReviewed ? (
-                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="text-sm">Revisionato</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                          <Clock className="h-4 w-4" />
-                          <span className="text-sm">Da rivedere</span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(entry.analyzedAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        data-testid={`button-review-${entry.id}`}
-                        onClick={() => openReviewDialog(entry)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            )}
           </CardContent>
         </Card>
-      )}
-
-      {/* Review Dialog */}
-      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Review & Correzione AI</DialogTitle>
-            <DialogDescription>
-              Correggi i dati estratti dall'AI. Le tue correzioni migliorano il sistema per tutti i tenant.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="corrected-data">Dati Estratti (JSON)</Label>
-              <Textarea
-                id="corrected-data"
-                data-testid="textarea-corrected-data"
-                className="font-mono text-xs min-h-[300px]"
-                value={correctedData}
-                onChange={(e) => setCorrectedData(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="review-notes">Note di Revisione</Label>
-              <Textarea
-                id="review-notes"
-                data-testid="textarea-review-notes"
-                placeholder="Es: Campo 'phone' non rilevato correttamente, CAP mancante"
-                value={reviewNotes}
-                onChange={(e) => setReviewNotes(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              data-testid="button-save-review"
-              onClick={() => {
-                if (reviewEntry) {
-                  try {
-                    const parsed: PDCExtractedData = JSON.parse(correctedData);
-                    reviewMutation.mutate({
-                      entryId: reviewEntry.id,
-                      correctedOutput: parsed,
-                      reviewNotes,
-                    });
-                  } catch (error) {
-                    toast({ title: "Errore JSON", description: "JSON non valido", variant: "destructive" });
-                  }
-                }
-              }}
-              disabled={reviewMutation.isPending}
-            >
-              {reviewMutation.isPending ? "Salvataggio..." : "Salva Correzioni"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       </div>
     </Layout>
   );
