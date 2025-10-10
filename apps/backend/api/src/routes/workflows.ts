@@ -1379,7 +1379,32 @@ router.post('/ai-generate', rbacMiddleware, requirePermission('workflow.create')
       } as ApiErrorResponse);
     }
 
-    // Build comprehensive prompt from task reminder
+    // 🔍 Fetch real tenant data for AI context
+    const [teamsData, usersData] = await Promise.all([
+      db.select({
+        id: teams.id,
+        name: teams.name,
+        department: teams.assignedDepartments
+      }).from(teams).where(sql`${teams.tenantId} = ${tenantId}`),
+      
+      db.select({
+        id: users.id,
+        fullName: users.fullName,
+        email: users.email,
+        department: users.department
+      }).from(users).where(sql`${users.tenantId} = ${tenantId}`)
+    ]);
+    
+    // Build team/user context for AI
+    const teamsContext = teamsData.length > 0 
+      ? `\n\nTEAM DISPONIBILI (usa questi ID reali):\n${teamsData.map(t => `- ${t.name} (ID: "${t.id}", Department: ${t.department || 'N/A'})`).join('\n')}`
+      : '';
+      
+    const usersContext = usersData.length > 0
+      ? `\n\nUTENTI DISPONIBILI (usa questi ID reali):\n${usersData.slice(0, 10).map(u => `- ${u.fullName} (ID: "${u.id}", Email: ${u.email}, Department: ${u.department || 'N/A'})`).join('\n')}`
+      : '';
+    
+    // Build comprehensive prompt from task reminder with REAL DATA
     const userPrompt = `Genera un workflow JSON completo con queste specifiche:
 
 Tipo Workflow: ${taskReminder.workflowType}
@@ -1392,9 +1417,12 @@ ${taskReminder.notifications ? `Notifiche: ${taskReminder.notifications}` : ''}
 ${taskReminder.businessRules ? `Regole Business: ${taskReminder.businessRules}` : ''}
 ${taskReminder.sla ? `SLA: ${taskReminder.sla}` : ''}
 ${context?.department ? `\nReparto: ${context.department}` : ''}
+${teamsContext}
+${usersContext}
 
 Genera un workflow ReactFlow JSON con nodi e collegamenti configurati correttamente.
-${taskReminder.routing ? `\nIMPORTANTE: Il nodo di routing (team-routing o user-routing) deve avere assignmentMode='${taskReminder.routing.mode}'${taskReminder.routing.department ? ` e forDepartment='${taskReminder.routing.department}'` : ''}.` : ''}`;
+${taskReminder.routing ? `\nIMPORTANTE: Il nodo di routing (team-routing o user-routing) deve avere assignmentMode='${taskReminder.routing.mode}'${taskReminder.routing.department ? ` e forDepartment='${taskReminder.routing.department}'` : ''}. USA GLI ID REALI dei team/utenti dalla lista sopra!` : ''}
+${taskReminder.routing?.mode === 'manual' ? `\nPer MANUAL routing, seleziona gli ID appropriati dei team/utenti dalla lista sopra in base al department richiesto.` : ''}`;
 
     // Initialize AI services
     const aiRegistry = new AIRegistryService(storage);

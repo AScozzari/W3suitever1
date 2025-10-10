@@ -290,19 +290,35 @@ Regole:
 5. Per team-routing/user-routing, includi assignmentMode nel data.config in base alle specifiche ricevute
 6. Rispondi SOLO con JSON valido, nessuna spiegazione
 
-Esempio nodo team-routing:
+Esempio nodo team-routing (auto mode):
 {
   "id": "node-2",
   "type": "team-routing",
   "position": { "x": 100, "y": 300 },
   "data": {
-    "label": "Assegna a Team",
+    "label": "Assegna a Team HR",
     "config": {
       "assignmentMode": "auto",
       "forDepartment": "hr"
     }
   }
-}`,
+}
+
+Esempio nodo team-routing (manual mode con ID reali):
+{
+  "id": "node-2",
+  "type": "team-routing",
+  "position": { "x": 100, "y": 300 },
+  "data": {
+    "label": "Assegna a Team Specifici",
+    "config": {
+      "assignmentMode": "manual",
+      "teamIds": ["team-hr-001", "team-mgmt-002"]
+    }
+  }
+}
+
+IMPORTANTE: Quando ricevi una lista di "TEAM DISPONIBILI" o "UTENTI DISPONIBILI" nel prompt, USA SEMPRE gli ID reali forniti nel config. NON usare placeholder o ID generici!`,
         personality: {
           tone: "technical",
           style: "precise",
