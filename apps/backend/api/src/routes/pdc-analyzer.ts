@@ -493,7 +493,10 @@ Rispondi SEMPRE con JSON valido.`,
         pdfId: pdfUpload.id,
         sessionId,
         customerType: analysisResult.customer?.type || 'private',
-        customerData: analysisResult.customer || {},
+        customerData: {
+          ...analysisResult.customer || {},
+          additionalInfo: analysisResult.additionalInfo || null // Save additional info with customer data
+        },
         servicesExtracted: analysisResult.services || [],
         aiRawOutput: analysisResult,
         extractionMethod: 'gpt-4o',

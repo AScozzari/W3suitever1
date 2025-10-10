@@ -27,7 +27,8 @@ import {
   GitBranch,
   BarChart3,
   FileSearch,
-  Trash2
+  Trash2,
+  Info
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -1286,14 +1287,14 @@ export default function PDCAnalyzerPage() {
                         onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, email: e.target.value}})} />
                     </div>
                     <div>
-                      <Label>Telefono</Label>
-                      <Input value={reviewData.customerData?.phone || ''} 
-                        onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, phone: e.target.value}})} />
-                    </div>
-                    <div>
-                      <Label>Cellulare</Label>
+                      <Label>Cellulare (+39 3xx)</Label>
                       <Input value={reviewData.customerData?.mobilePhone || ''} 
                         onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, mobilePhone: e.target.value}})} />
+                    </div>
+                    <div>
+                      <Label>Telefono Fisso (+39 0xx)</Label>
+                      <Input value={reviewData.customerData?.landlinePhone || ''} 
+                        onChange={(e) => setReviewData({...reviewData, customerData: {...reviewData.customerData, landlinePhone: e.target.value}})} />
                     </div>
                   </div>
 
@@ -1344,6 +1345,105 @@ export default function PDCAnalyzerPage() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* INFORMAZIONI AGGIUNTIVE */}
+              {reviewData.customerData?.additionalInfo && Object.keys(reviewData.customerData.additionalInfo).some(key => reviewData.customerData.additionalInfo?.[key]) && (
+                <Card className="windtre-glass-panel border-white/20 mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-blue-600">
+                      <Info className="h-5 w-5" />
+                      Informazioni Aggiuntive per Training
+                    </CardTitle>
+                    <CardDescription>
+                      Dati estratti dal PDF utili per mapping e addestramento futuro
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="grid grid-cols-3 gap-4">
+                        {reviewData.customerData.additionalInfo?.contractNumber && (
+                          <div>
+                            <Label className="text-blue-700">Numero Contratto</Label>
+                            <Input value={reviewData.customerData.additionalInfo.contractNumber || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, contractNumber: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                        {reviewData.customerData.additionalInfo?.promotionCode && (
+                          <div>
+                            <Label className="text-blue-700">Codice Promo</Label>
+                            <Input value={reviewData.customerData.additionalInfo.promotionCode || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, promotionCode: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                        {reviewData.customerData.additionalInfo?.salesAgent && (
+                          <div>
+                            <Label className="text-blue-700">Agente</Label>
+                            <Input value={reviewData.customerData.additionalInfo.salesAgent || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, salesAgent: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                        {reviewData.customerData.additionalInfo?.store && (
+                          <div>
+                            <Label className="text-blue-700">Punto Vendita</Label>
+                            <Input value={reviewData.customerData.additionalInfo.store || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, store: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                        {reviewData.customerData.additionalInfo?.campaignName && (
+                          <div>
+                            <Label className="text-blue-700">Campagna</Label>
+                            <Input value={reviewData.customerData.additionalInfo.campaignName || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, campaignName: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                        {reviewData.customerData.additionalInfo?.otherRelevantData && (
+                          <div className="col-span-3">
+                            <Label className="text-blue-700">Altre Informazioni</Label>
+                            <Input value={reviewData.customerData.additionalInfo.otherRelevantData || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, otherRelevantData: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="windtre-glass-panel border-white/20 mb-6">
                 <CardHeader>
