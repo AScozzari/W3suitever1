@@ -15,6 +15,8 @@ import mcpOAuthRoutes from "../routes/mcp-oauth";
 import mcpCredentialsRoutes from "../routes/mcp-credentials";
 import { aiSettingsRoutes } from "../routes/ai-settings";
 import entitiesRoutes from "../routes/entities";
+import productsRoutes from "../routes/products";
+import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1212,6 +1214,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== ENTITIES MANAGEMENT ROUTES ====================
   // Legal entities, stores, and users management API routes
   app.use('/api', entitiesRoutes);
+  
+  // ==================== PRODUCTS & HIERARCHY ROUTES ====================
+  // Product hierarchy API routes (drivers, categories, typologies, search)
+  app.use('/api/products', productsRoutes);
+  
+  // ==================== PDC ANALYZER AI ROUTES ====================
+  // AI-powered PDF contract proposal analyzer routes
+  app.use('/api/pdc', pdcAnalyzerRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
