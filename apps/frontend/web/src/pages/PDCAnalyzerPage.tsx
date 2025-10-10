@@ -119,8 +119,6 @@ export default function PDCAnalyzerPage() {
   // Export state
   const [exportJson, setExportJson] = useState<any>(null);
 
-  const tenantId = localStorage.getItem("tenantId") || "";
-
   // Query per sessioni precedenti
   const { data: previousSessions, isLoading: loadingSessions } = useQuery({
     queryKey: ['/api/pdc/sessions'],
@@ -134,7 +132,6 @@ export default function PDCAnalyzerPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Tenant-ID": tenantId,
         },
         body: JSON.stringify({ sessionName: name }),
       });
@@ -162,11 +159,17 @@ export default function PDCAnalyzerPage() {
       const formData = new FormData();
       formData.append("pdf", file);
       
+      // Get tenant ID dynamically (same as apiRequest)
+      const currentTenantId = localStorage.getItem("currentTenantId") || localStorage.getItem("tenantId") || "";
+      
       const response = await fetch(`/api/pdc/sessions/${session.id}/upload`, {
         method: "POST",
         headers: {
-          "X-Tenant-ID": tenantId,
+          "X-Tenant-ID": currentTenantId,
+          "X-Auth-Session": "authenticated",
+          "X-Demo-User": "admin-user",
         },
+        credentials: "include",
         body: formData,
       });
 
@@ -183,14 +186,10 @@ export default function PDCAnalyzerPage() {
     mutationFn: async ({ extractedDataId, correctedData, notes }: any) => {
       const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/review`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Tenant-ID": tenantId,
-        },
-        body: JSON.stringify({
+        body: {
           correctedData,
           reviewNotes: notes,
-        }),
+        },
       });
       return response;
     },
@@ -205,11 +204,7 @@ export default function PDCAnalyzerPage() {
     mutationFn: async ({ extractedDataId, mapping }: any) => {
       const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/service-mapping`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Tenant-ID": tenantId,
-        },
-        body: JSON.stringify(mapping),
+        body: mapping,
       });
       return response;
     },
@@ -223,14 +218,10 @@ export default function PDCAnalyzerPage() {
     mutationFn: async ({ extractedDataId, isPublic, trainingPrompt }: any) => {
       const response = await apiRequest(`/api/pdc/extracted/${extractedDataId}/training`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Tenant-ID": tenantId,
-        },
-        body: JSON.stringify({
+        body: {
           isPublic,
           trainingPrompt,
-        }),
+        },
       });
       return response;
     },
@@ -350,12 +341,7 @@ export default function PDCAnalyzerPage() {
     if (!selectedResult) return;
 
     try {
-      const response = await fetch(`/api/pdc/extracted/${selectedResult.extractedDataId}/export`, {
-        headers: {
-          "X-Tenant-ID": tenantId,
-        },
-      });
-      const json = await response.json();
+      const json = await apiRequest(`/api/pdc/extracted/${selectedResult.extractedDataId}/export`);
       setExportJson(json);
     } catch (error) {
       toast({ title: "Errore", description: "Impossibile preparare export", variant: "destructive" });
