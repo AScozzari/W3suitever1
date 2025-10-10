@@ -385,6 +385,97 @@ export const organizationAnalyticsSchema = z.object({
 
 export type OrganizationAnalytics = z.infer<typeof organizationAnalyticsSchema>;
 
+// ==================== AI PDC ANALYZER SYSTEM ====================
+
+// PDC Analysis Status Enum
+export const pdcAnalysisStatusEnum = pgEnum('pdc_analysis_status', ['pending', 'analyzing', 'review', 'training', 'completed', 'failed']);
+
+// ==================== AI PDC ANALYSIS SESSIONS ====================
+// Multi-PDF analysis sessions with attachment rate tracking
+export const aiPdcAnalysisSessions = brandInterfaceSchema.table("ai_pdc_analysis_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(), // Reference to w3suite.tenants
+  userId: varchar("user_id", { length: 255 }).notNull(), // Reference to w3suite.users
+  
+  // Session metadata
+  sessionName: varchar("session_name", { length: 255 }),
+  status: pdcAnalysisStatusEnum("status").notNull().default('pending'),
+  totalPdfs: smallint("total_pdfs").default(0),
+  processedPdfs: smallint("processed_pdfs").default(0),
+  
+  // Analysis results summary
+  extractedCustomers: jsonb("extracted_customers").default([]), // Array of customer data from all PDFs
+  extractedProducts: jsonb("extracted_products").default([]), // Array of all products found
+  attachmentRate: jsonb("attachment_rate").default({}), // Product attachment analysis
+  
+  // Final output
+  finalJson: jsonb("final_json"), // Consolidated JSON for cashier API
+  exportedAt: timestamp("exported_at"),
+  
+  // Training feedback
+  wasUsedForTraining: boolean("was_used_for_training").default(false),
+  trainingFeedback: text("training_feedback"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertAiPdcAnalysisSessionSchema = createInsertSchema(aiPdcAnalysisSessions).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertAiPdcAnalysisSession = z.infer<typeof insertAiPdcAnalysisSessionSchema>;
+export type AiPdcAnalysisSession = typeof aiPdcAnalysisSessions.$inferSelect;
+
+// ==================== AI PDC TRAINING DATASET ====================
+// Cross-tenant training data: validated PDF analyses for AI learning
+export const aiPdcTrainingDataset = brandInterfaceSchema.table("ai_pdc_training_dataset", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: uuid("session_id").notNull().references(() => aiPdcAnalysisSessions.id, { onDelete: 'cascade' }),
+  
+  // PDF reference
+  pdfUrl: text("pdf_url").notNull(), // Object storage URL
+  pdfFileName: varchar("pdf_file_name", { length: 255 }),
+  pdfHash: varchar("pdf_hash", { length: 64 }), // SHA256 for deduplication
+  
+  // AI extraction (initial)
+  aiExtractedData: jsonb("ai_extracted_data").notNull(), // Raw AI output
+  aiModel: varchar("ai_model", { length: 100 }).default('gpt-4-vision-preview'),
+  aiConfidence: smallint("ai_confidence"), // 0-100
+  
+  // Human validation (corrected)
+  correctedJson: jsonb("corrected_json").notNull(), // Human-validated JSON
+  correctionNotes: text("correction_notes"), // What was fixed
+  validatedBy: varchar("validated_by", { length: 255 }).notNull(), // User who validated
+  
+  // Product mapping
+  driverMapping: jsonb("driver_mapping"), // { driver, category, typology, product }
+  serviceType: varchar("service_type", { length: 100 }), // "Fisso", "Mobile", etc.
+  
+  // Training metadata
+  isPublicTraining: boolean("is_public_training").default(true), // Cross-tenant vs tenant-specific
+  sourceTenantId: uuid("source_tenant_id"), // Which tenant contributed this
+  useCount: smallint("use_count").default(0), // How many times used for training
+  successRate: smallint("success_rate"), // 0-100 - accuracy in subsequent matches
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("ai_pdc_training_pdf_hash_unique").on(table.pdfHash),
+]);
+
+export const insertAiPdcTrainingDatasetSchema = createInsertSchema(aiPdcTrainingDataset).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertAiPdcTrainingDataset = z.infer<typeof insertAiPdcTrainingDatasetSchema>;
+export type AiPdcTrainingDataset = typeof aiPdcTrainingDataset.$inferSelect;
+
 // ==================== CROSS-TENANT KNOWLEDGE - USE W3SUITE SCHEMA ====================
 // 
 // 🎯 NOTA ARCHITETTURALE: 
