@@ -14,19 +14,7 @@ import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcem
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
 import crypto from "crypto";
-import { createRequire } from "module";
-
-// Import pdf-parse using createRequire (CommonJS module)
-const require = createRequire(import.meta.url);
-const pdfParseModule = require("pdf-parse");
-
-// Debug what pdf-parse exports
-console.log('PDF-PARSE MODULE TYPE:', typeof pdfParseModule);
-console.log('PDF-PARSE MODULE KEYS:', Object.keys(pdfParseModule || {}));
-console.log('PDF-PARSE IS FUNCTION?:', typeof pdfParseModule === 'function');
-
-// pdf-parse is exported directly as a function
-const pdfParse = pdfParseModule;
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const router = Router();
 
@@ -58,12 +46,12 @@ const openai = new OpenAI({
 // Using in-memory storage for PDF processing
 
 /**
- * Extract text from PDF using pdf-parse
- * Simple and reliable extraction for Node.js
+ * Extract text from PDF using pdfjs-dist (Mozilla's PDF.js)
+ * More robust and reliable than pdf-parse
  */
 async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   try {
-    console.log('📄 [PDF-EXTRACT] Starting text extraction with pdf-parse...');
+    console.log('📄 [PDF-EXTRACT] Starting text extraction with PDF.js...');
     console.log(`📄 [PDF-EXTRACT] Buffer size: ${pdfBuffer.length} bytes`);
     
     // Validate buffer
@@ -77,16 +65,37 @@ async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
       throw new Error('Invalid PDF file - missing PDF header');
     }
     
-    const data = await pdfParse(pdfBuffer);
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      useSystemFonts: true,
+      standardFontDataUrl: null,
+    });
     
-    console.log(`✅ [PDF-EXTRACT] Extracted ${data.text.length} characters from ${data.numpages} pages`);
-    console.log(`📄 [PDF-EXTRACT] First 100 chars: ${data.text.substring(0, 100)}`);
+    const pdfDocument = await loadingTask.promise;
+    const numPages = pdfDocument.numPages;
     
-    if (!data.text || data.text.trim().length < 50) {
+    console.log(`📄 [PDF-EXTRACT] PDF has ${numPages} pages`);
+    
+    // Extract text from all pages
+    let fullText = '';
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    console.log(`✅ [PDF-EXTRACT] Extracted ${fullText.length} characters from ${numPages} pages`);
+    console.log(`📄 [PDF-EXTRACT] First 100 chars: ${fullText.substring(0, 100)}`);
+    
+    if (!fullText || fullText.trim().length < 50) {
       throw new Error('PDF contains insufficient text (might be scanned/image-based)');
     }
     
-    return data.text.trim();
+    return fullText.trim();
   } catch (error) {
     console.error('❌ [PDF-EXTRACT] Error extracting text:', error);
     console.error('❌ [PDF-EXTRACT] Error stack:', error instanceof Error ? error.stack : 'No stack');
