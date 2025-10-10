@@ -8,6 +8,13 @@
       "when": 1757399062649,
       "tag": "0000_magenta_mikhail_rasputin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1728576000000,
+      "tag": "0002_crm_baseline",
+      "breakpoints": true
     }
   ]
 }

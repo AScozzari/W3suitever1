@@ -468,5 +468,154 @@ CREATE TABLE IF NOT EXISTS w3suite.crm_saved_views (
 
 CREATE INDEX IF NOT EXISTS crm_saved_views_tenant_user_idx ON w3suite.crm_saved_views(tenant_id, user_id);
 
+-- ==================== FOREIGN KEY CONSTRAINTS ====================
+-- Add FK constraints after tables are created to handle dependency order
+
+-- CRM Person Consents FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_person_consents 
+    ADD CONSTRAINT crm_person_consents_person_id_fkey 
+    FOREIGN KEY (person_id) REFERENCES w3suite.crm_persons(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Person Preferences FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_person_preferences 
+    ADD CONSTRAINT crm_person_preferences_person_id_fkey 
+    FOREIGN KEY (person_id) REFERENCES w3suite.crm_persons(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Campaigns FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_campaigns 
+    ADD CONSTRAINT crm_campaigns_target_driver_id_fkey 
+    FOREIGN KEY (target_driver_id) REFERENCES public.drivers(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Leads FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_leads 
+    ADD CONSTRAINT crm_leads_person_id_fkey 
+    FOREIGN KEY (person_id) REFERENCES w3suite.crm_persons(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_leads 
+    ADD CONSTRAINT crm_leads_campaign_id_fkey 
+    FOREIGN KEY (campaign_id) REFERENCES w3suite.crm_campaigns(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_leads 
+    ADD CONSTRAINT crm_leads_driver_id_fkey 
+    FOREIGN KEY (driver_id) REFERENCES public.drivers(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Pipelines FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_pipelines 
+    ADD CONSTRAINT crm_pipelines_driver_id_fkey 
+    FOREIGN KEY (driver_id) REFERENCES public.drivers(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Pipeline Settings FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_pipeline_settings 
+    ADD CONSTRAINT crm_pipeline_settings_pipeline_id_fkey 
+    FOREIGN KEY (pipeline_id) REFERENCES w3suite.crm_pipelines(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Pipeline Stage Playbooks FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_pipeline_stage_playbooks 
+    ADD CONSTRAINT crm_pipeline_stage_playbooks_pipeline_id_fkey 
+    FOREIGN KEY (pipeline_id) REFERENCES w3suite.crm_pipelines(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Deals FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_deals 
+    ADD CONSTRAINT crm_deals_pipeline_id_fkey 
+    FOREIGN KEY (pipeline_id) REFERENCES w3suite.crm_pipelines(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_deals 
+    ADD CONSTRAINT crm_deals_lead_id_fkey 
+    FOREIGN KEY (lead_id) REFERENCES w3suite.crm_leads(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_deals 
+    ADD CONSTRAINT crm_deals_person_id_fkey 
+    FOREIGN KEY (person_id) REFERENCES w3suite.crm_persons(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_deals 
+    ADD CONSTRAINT crm_deals_driver_id_fkey 
+    FOREIGN KEY (driver_id) REFERENCES public.drivers(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Campaign Pipeline Links FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_campaign_pipeline_links 
+    ADD CONSTRAINT crm_campaign_pipeline_links_campaign_id_fkey 
+    FOREIGN KEY (campaign_id) REFERENCES w3suite.crm_campaigns(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_campaign_pipeline_links 
+    ADD CONSTRAINT crm_campaign_pipeline_links_pipeline_id_fkey 
+    FOREIGN KEY (pipeline_id) REFERENCES w3suite.crm_pipelines(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- CRM Lead Attributions FK
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_lead_attributions 
+    ADD CONSTRAINT crm_lead_attributions_lead_id_fkey 
+    FOREIGN KEY (lead_id) REFERENCES w3suite.crm_leads(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE w3suite.crm_lead_attributions 
+    ADD CONSTRAINT crm_lead_attributions_campaign_id_fkey 
+    FOREIGN KEY (campaign_id) REFERENCES w3suite.crm_campaigns(id);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
 -- Migration complete
--- CRM schema with 13 enums and 20 tables is now idempotently defined
+-- CRM schema with 13 enums, 20 tables, and 17 foreign key constraints is now idempotently defined
