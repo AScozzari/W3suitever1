@@ -366,99 +366,78 @@ export default function PDCAnalyzerPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="min-h-screen bg-white">
-        {/* Hero Header con WindTre Gradient - Full Width */}
-        <div className="bg-gradient-to-r from-windtre-orange to-windtre-purple p-8 mb-6">
-          <div className="w-full px-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  <Sparkles className="h-8 w-8" />
-                  PDC Analyzer
-                </h1>
-                <p className="text-white/90 mt-2">
-                  Analisi AI-powered dei contratti PDF con estrazione automatica dati
-                </p>
-              </div>
-            </div>
-            
-            {/* Flow Steps Indicator */}
-            <div className="flex items-center justify-center gap-4 mt-6 mb-4">
-              {[
-                { step: 1, label: 'Crea Sessione', view: 'analytics' },
-                { step: 2, label: 'Upload PDF', view: 'upload' },
-                { step: 3, label: 'Review Dati', view: 'review' },
-                { step: 4, label: 'Export JSON', view: 'export' }
-              ].map((item, idx) => (
-                <div key={item.step} className="flex items-center">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                        isStepCompleted(item.step) 
-                          ? 'bg-green-500 text-white' 
-                          : isStepActive(item.step)
-                          ? 'bg-windtre-orange text-white ring-4 ring-windtre-orange/30'
-                          : 'bg-gray-300 text-gray-600'
-                      }`}
-                      data-testid={`step-indicator-${item.step}`}
-                    >
-                      {isStepCompleted(item.step) ? <Check className="h-5 w-5" /> : item.step}
-                    </div>
-                    <span 
-                      className={`text-sm font-medium ${
-                        isStepActive(item.step) ? 'text-white' : 'text-white/70'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-                  {idx < 3 && (
-                    <div 
-                      className={`w-12 h-0.5 mx-2 ${
-                        isStepCompleted(item.step + 1) ? 'bg-green-500' : 'bg-white/30'
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Navigation Tabs - Stile Menu Evidente */}
-            <div className="flex gap-2 mt-4 border-b border-white/30 pb-0">
-              {[
-                { id: 'analytics', label: 'Analytics', icon: BarChart3, step: 1 },
-                { id: 'upload', label: 'Upload & Analyze', icon: Upload, step: 2 },
-                { id: 'review', label: 'Review & Correct', icon: FileSearch, step: 3 },
-                { id: 'export', label: 'Export JSON', icon: Download, step: 4 }
-              ].map((tab) => {
-                const isLocked = isStepLocked(tab.step);
-                const isDisabled = tab.id === 'upload' && !session;
-                
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => !isLocked && !isDisabled && setActiveView(tab.id as any)}
-                    disabled={isLocked || isDisabled}
-                    className={`flex items-center gap-2 px-6 py-3 font-medium transition-all duration-200 border-b-2 ${
-                      activeView === tab.id 
-                        ? 'bg-white text-windtre-orange border-white shadow-lg rounded-t-lg' 
-                        : isLocked || isDisabled
-                        ? 'text-white/40 border-transparent cursor-not-allowed'
-                        : 'text-white border-transparent hover:bg-white/10 hover:border-white/50'
-                    }`}
-                    data-testid={`button-tab-${tab.id}`}
-                  >
-                    <tab.icon className="h-5 w-5" />
-                    <span>{tab.label}</span>
-                    {isLocked && <span className="text-xs ml-1">🔒</span>}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Page Header */}
+        <div className="border-b border-gray-200 bg-white">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-windtre-orange" />
+              PDC Analyzer
+            </h1>
+          </div>
+          
+          {/* Barra Menu Orizzontale */}
+          <div className="px-6">
+            <nav className="flex gap-1 border-b border-gray-200">
+              <button
+                onClick={() => setActiveView('analytics')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeView === 'analytics'
+                    ? 'border-windtre-orange text-windtre-orange'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+                data-testid="tab-analytics"
+              >
+                <BarChart3 className="h-4 w-4 inline mr-2" />
+                Analytics
+              </button>
+              <button
+                onClick={() => setActiveView('upload')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeView === 'upload'
+                    ? 'border-windtre-orange text-windtre-orange'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+                data-testid="tab-genera-sessione"
+              >
+                <Plus className="h-4 w-4 inline mr-2" />
+                Genera Sessione
+              </button>
+              <button
+                onClick={() => setActiveView('review')}
+                disabled={!reviewData}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeView === 'review'
+                    ? 'border-windtre-orange text-windtre-orange'
+                    : reviewData
+                    ? 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    : 'border-transparent text-gray-400 cursor-not-allowed'
+                }`}
+                data-testid="tab-review"
+              >
+                <FileSearch className="h-4 w-4 inline mr-2" />
+                Review
+              </button>
+              <button
+                onClick={() => setActiveView('export')}
+                disabled={!exportJson}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeView === 'export'
+                    ? 'border-windtre-orange text-windtre-orange'
+                    : exportJson
+                    ? 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    : 'border-transparent text-gray-400 cursor-not-allowed'
+                }`}
+                data-testid="tab-export"
+              >
+                <Download className="h-4 w-4 inline mr-2" />
+                Export
+              </button>
+            </nav>
           </div>
         </div>
 
-        {/* Main Content - Full Width */}
-        <div className="w-full px-6 pb-6">
+        {/* Main Content */}
+        <div className="px-6 py-6">
           {activeView === 'analytics' && (
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Dashboard Analytics</h2>
@@ -639,7 +618,50 @@ export default function PDCAnalyzerPage() {
 
           {activeView === 'upload' && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Upload & Analyze PDFs</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Genera Sessione</h2>
+
+              {/* Flow Steps Indicator - DENTRO TAB */}
+              <div className="mb-8 p-6 bg-gradient-to-r from-windtre-orange/10 to-windtre-purple/10 rounded-lg">
+                <div className="flex items-center justify-center gap-4">
+                  {[
+                    { step: 1, label: 'Crea Sessione', completed: !!session },
+                    { step: 2, label: 'Upload PDF', completed: analysisResults.length > 0 },
+                    { step: 3, label: 'Review Dati', completed: !!reviewData },
+                    { step: 4, label: 'Export JSON', completed: !!exportJson }
+                  ].map((item, idx) => (
+                    <div key={item.step} className="flex items-center">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                            item.completed
+                              ? 'bg-green-500 text-white' 
+                              : item.step === (session ? (analysisResults.length > 0 ? (reviewData ? 3 : 2) : 1) : 1)
+                              ? 'bg-windtre-orange text-white ring-4 ring-windtre-orange/30'
+                              : 'bg-gray-300 text-gray-600'
+                          }`}
+                          data-testid={`workflow-step-${item.step}`}
+                        >
+                          {item.completed ? <Check className="h-5 w-5" /> : item.step}
+                        </div>
+                        <span 
+                          className={`text-sm font-medium ${
+                            item.completed ? 'text-green-600' : 'text-gray-600'
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                      {idx < 3 && (
+                        <div 
+                          className={`w-12 h-0.5 mx-2 ${
+                            item.completed ? 'bg-green-500' : 'bg-gray-300'
+                          }`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* Create Session Section */}
               {!session && (
