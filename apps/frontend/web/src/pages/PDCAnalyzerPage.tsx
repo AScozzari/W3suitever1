@@ -341,9 +341,9 @@ export default function PDCAnalyzerPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="min-h-screen bg-white">
-        {/* Hero Header con WindTre Gradient */}
+        {/* Hero Header con WindTre Gradient - Full Width */}
         <div className="bg-gradient-to-r from-windtre-orange to-windtre-purple p-8 mb-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="w-full px-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -356,35 +356,34 @@ export default function PDCAnalyzerPage() {
               </div>
             </div>
             
-            {/* Navigation Tabs */}
-            <div className="flex gap-1 mt-6">
+            {/* Navigation Tabs - Stile Menu Evidente */}
+            <div className="flex gap-2 mt-6 border-b border-white/30 pb-0">
               {[
                 { id: 'analytics', label: 'Analytics', icon: BarChart3 },
                 { id: 'upload', label: 'Upload & Analyze', icon: Upload },
                 { id: 'review', label: 'Review & Correct', icon: FileSearch },
                 { id: 'export', label: 'Export JSON', icon: Download }
               ].map((tab) => (
-                <Button
+                <button
                   key={tab.id}
-                  variant={activeView === tab.id ? 'default' : 'ghost'}
                   onClick={() => setActiveView(tab.id as any)}
-                  className={`flex items-center gap-2 ${
+                  className={`flex items-center gap-2 px-6 py-3 font-medium transition-all duration-200 border-b-2 ${
                     activeView === tab.id 
-                      ? 'bg-white text-windtre-orange hover:bg-white/90' 
-                      : 'text-white hover:bg-white/20'
+                      ? 'bg-white text-windtre-orange border-white shadow-lg rounded-t-lg' 
+                      : 'text-white border-transparent hover:bg-white/10 hover:border-white/50'
                   }`}
                   data-testid={`button-tab-${tab.id}`}
                 >
-                  <tab.icon className="h-4 w-4" />
-                  {tab.label}
-                </Button>
+                  <tab.icon className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 pb-6">
+        {/* Main Content - Full Width */}
+        <div className="w-full px-6 pb-6">
           {activeView === 'analytics' && (
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Dashboard Analytics</h2>
