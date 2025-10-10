@@ -1,19 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Users, 
   TrendingUp, 
   Target, 
-  DollarSign,
-  ArrowUpRight,
   UserPlus,
-  Phone,
-  Mail,
-  Calendar,
-  BarChart3
+  BarChart3,
+  Megaphone,
+  Settings,
+  ArrowRight
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
@@ -26,23 +25,55 @@ interface DashboardStats {
   conversionRate: number;
   openDeals: number;
   wonDeals: number;
-  lostDeals: number;
+  pipelineValue: number;
 }
+
+// Framer Motion Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
+  }
+};
+
+const cardHoverVariants = {
+  rest: { scale: 1 },
+  hover: { 
+    scale: 1.02,
+    y: -4,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 17
+    }
+  }
+};
 
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [location, navigate] = useLocation();
 
-  // Get tenant from URL
-  const getTenantFromUrl = () => {
-    const segments = location.split('/').filter(Boolean);
-    return segments[0] || 'staging';
-  };
-
   // Fetch dashboard stats
   const { data: stats, isLoading, error } = useQuery<DashboardStats>({
     queryKey: ['/api/crm/dashboard/stats'],
-    // Fallback to demo data if API not ready
     initialData: {
       totalPersons: 156,
       totalLeads: 47,
@@ -51,7 +82,7 @@ export default function CRMDashboardPage() {
       conversionRate: 48.9,
       openDeals: 15,
       wonDeals: 6,
-      lostDeals: 2
+      pipelineValue: 2400000
     }
   });
 
@@ -76,238 +107,244 @@ export default function CRMDashboardPage() {
       title: 'Contatti Totali',
       value: stats?.totalPersons || 0,
       icon: Users,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'from-blue-50 to-cyan-50',
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      description: 'Identity graph completo'
+      gradient: 'var(--brand-glass-orange)',
+      iconColor: 'hsl(var(--brand-orange))',
+      description: 'Identity graph completo',
+      href: '/crm/persons'
     },
     {
       title: 'Lead Attivi',
       value: stats?.totalLeads || 0,
       icon: UserPlus,
-      color: 'from-orange-500 to-amber-500',
-      bgColor: 'from-orange-50 to-amber-50',
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
-      description: 'In fase di qualifica'
+      gradient: 'var(--brand-glass-purple)',
+      iconColor: 'hsl(var(--brand-purple))',
+      description: 'In fase di qualifica',
+      href: '/crm/leads'
     },
     {
       title: 'Deal Aperti',
       value: stats?.openDeals || 0,
       icon: Target,
-      color: 'from-purple-500 to-pink-500',
-      bgColor: 'from-purple-50 to-pink-50',
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      description: 'In trattativa attiva'
+      gradient: 'var(--brand-glass-gradient)',
+      iconColor: 'hsl(var(--brand-orange))',
+      description: 'In trattativa attiva',
+      href: '/crm/deals'
     },
     {
-      title: 'Tasso Conversione',
-      value: `${stats?.conversionRate || 0}%`,
+      title: 'Valore Pipeline',
+      value: `€${((stats?.pipelineValue || 0) / 1000000).toFixed(1)}M`,
       icon: TrendingUp,
-      color: 'from-green-500 to-emerald-500',
-      bgColor: 'from-green-50 to-emerald-50',
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600',
-      description: 'Lead → Deal'
+      gradient: 'var(--brand-glass-orange)',
+      iconColor: 'hsl(var(--success))',
+      description: 'Valore totale deals',
+      href: '/crm/pipeline'
     }
   ];
 
   const quickActions = [
     { 
-      label: 'Gestione Contatti', 
-      icon: Users, 
-      href: '/crm/persons',
-      color: 'from-blue-500 to-blue-600'
+      label: 'Campagne', 
+      icon: Megaphone, 
+      href: '/crm/campaigns',
+      description: 'Gestisci campagne marketing'
     },
     { 
-      label: 'Gestione Lead', 
-      icon: Phone, 
-      href: '/crm/leads',
-      color: 'from-orange-500 to-orange-600'
+      label: 'Pipeline', 
+      icon: Settings, 
+      href: '/crm/pipeline',
+      description: 'Configura pipeline vendita'
     },
     { 
-      label: 'Pipeline Deals', 
-      icon: Target, 
-      href: '/crm/deals',
-      color: 'from-purple-500 to-purple-600'
-    },
-    { 
-      label: 'Report Analytics', 
+      label: 'Analytics', 
       icon: BarChart3, 
       href: '/crm/analytics',
-      color: 'from-green-500 to-green-600'
+      description: 'Insights e performance'
     }
   ];
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="space-y-6" data-testid="crm-dashboard">
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900" data-testid="text-page-title">
-              CRM Dashboard
+            <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+              Dashboard CRM
             </h1>
-            <p className="text-gray-600 mt-1">
-              Customer Relationship Management - Overview completa
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+              Customer Relationship Management - WindTre Suite
             </p>
           </div>
-          <Button 
-            onClick={() => navigate(`/${getTenantFromUrl()}/crm/leads`)}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-            data-testid="button-new-lead"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Nuovo Lead
-          </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
+        {/* Stats Cards - Glassmorphism */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {statCards.map((card, index) => (
+            <motion.div
+              key={card.title}
+              variants={cardVariants}
+              initial="rest"
+              whileHover="hover"
+              onClick={() => navigate(card.href)}
+              className="cursor-pointer"
+              data-testid={`stat-card-${card.title.toLowerCase().replace(/\s+/g, '-')}`}
+            >
               <Card 
-                key={index}
-                className={`relative overflow-hidden border-2 hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${stat.bgColor}`}
-                data-testid={`stat-card-${index}`}
+                className="glass-card glass-card-hover p-6 border-0"
+                style={{ 
+                  background: card.gradient,
+                  backdropFilter: 'blur(12px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+                  boxShadow: 'var(--shadow-glass)'
+                }}
               >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color}`} />
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-600">
-                      {stat.title}
-                    </CardTitle>
-                    <div className={`p-2 rounded-lg ${stat.iconBg}`}>
-                      <Icon className={`h-4 w-4 ${stat.iconColor}`} />
+                <motion.div variants={cardHoverVariants}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div 
+                      className="p-3 rounded-xl"
+                      style={{ 
+                        background: 'var(--glass-bg-heavy)',
+                        backdropFilter: 'blur(8px)'
+                      }}
+                    >
+                      <card.icon className="h-6 w-6" style={{ color: card.iconColor }} />
                     </div>
+                    <ArrowRight className="h-5 w-5 opacity-60" />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-1">
-                    <p className="text-3xl font-bold text-gray-900" data-testid={`stat-value-${index}`}>
-                      {stat.value}
-                    </p>
-                    <p className="text-xs text-gray-500">{stat.description}</p>
-                  </div>
-                </CardContent>
+                  
+                  <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    {card.title}
+                  </h3>
+                  <p className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    {card.value}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    {card.description}
+                  </p>
+                </motion.div>
               </Card>
-            );
-          })}
-        </div>
+            </motion.div>
+          ))}
+        </motion.div>
 
         {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-orange-600" />
-              Azioni Rapide
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    onClick={() => navigate(`/${getTenantFromUrl()}${action.href}`)}
-                    className={`h-24 flex flex-col items-center justify-center gap-2 hover:border-orange-500 hover:bg-orange-50 transition-all group`}
-                    data-testid={`quick-action-${index}`}
-                  >
-                    <div className={`p-3 rounded-full bg-gradient-to-r ${action.color} group-hover:scale-110 transition-transform`}>
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <span className="text-sm font-medium">{action.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Performance Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-600" />
-                Pipeline Deals
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border-2 border-green-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500 rounded-full">
-                      <DollarSign className="h-4 w-4 text-white" />
+        <div>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            Azioni Rapide
+          </h2>
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {quickActions.map((action) => (
+              <motion.div
+                key={action.label}
+                variants={cardVariants}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Card 
+                  className="glass-card p-6 border-0 cursor-pointer"
+                  style={{ 
+                    background: 'var(--glass-card-bg)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: '1px solid var(--glass-card-border)',
+                    boxShadow: 'var(--shadow-glass-sm)',
+                    transition: 'var(--glass-transition)'
+                  }}
+                  onClick={() => navigate(action.href)}
+                  data-testid={`action-${action.label.toLowerCase()}`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div 
+                      className="p-3 rounded-lg"
+                      style={{ 
+                        background: 'var(--brand-glass-orange)',
+                        backdropFilter: 'blur(8px)'
+                      }}
+                    >
+                      <action.icon className="h-6 w-6" style={{ color: 'hsl(var(--brand-orange))' }} />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Deal Vinti</p>
-                      <p className="text-2xl font-bold text-green-700">{stats?.wonDeals || 0}</p>
+                      <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                        {action.label}
+                      </h3>
+                      <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                        {action.description}
+                      </p>
                     </div>
                   </div>
-                  <ArrowUpRight className="h-6 w-6 text-green-600" />
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-500 rounded-full">
-                      <Target className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Deal Aperti</p>
-                      <p className="text-2xl font-bold text-orange-700">{stats?.openDeals || 0}</p>
-                    </div>
-                  </div>
-                  <Calendar className="h-6 w-6 text-orange-600" />
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-500 rounded-full">
-                      <Target className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Deal Persi</p>
-                      <p className="text-2xl font-bold text-gray-700">{stats?.lostDeals || 0}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-blue-600" />
-                Campagne Attive
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <div className="inline-flex p-4 bg-blue-50 rounded-full mb-4">
-                    <Mail className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <p className="text-4xl font-bold text-blue-600 mb-2">{stats?.totalCampaigns || 0}</p>
-                  <p className="text-gray-600">Campagne Marketing</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 border-blue-500 text-blue-600 hover:bg-blue-50"
-                    data-testid="button-view-campaigns"
-                  >
-                    Visualizza Tutte
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
+
+        {/* Conversion Funnel - Mini Preview */}
+        <Card 
+          className="glass-card p-6 border-0"
+          style={{ 
+            background: 'var(--glass-card-bg)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: '1px solid var(--glass-card-border)',
+            boxShadow: 'var(--shadow-glass-sm)'
+          }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Conversion Funnel
+            </h2>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/crm/analytics')}
+              data-testid="button-view-analytics"
+            >
+              Vedi Analytics →
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold mb-1" style={{ color: 'hsl(var(--brand-orange))' }}>
+                {stats?.totalLeads || 0}
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Lead</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold mb-1" style={{ color: 'hsl(var(--brand-purple))' }}>
+                {stats?.openDeals || 0}
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Deals</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold mb-1" style={{ color: 'hsl(var(--success))' }}>
+                {stats?.wonDeals || 0}
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Vinti</div>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--glass-card-border)' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Tasso Conversione Lead → Deal
+              </span>
+              <span className="text-lg font-bold" style={{ color: 'hsl(var(--success))' }}>
+                {stats?.conversionRate || 0}%
+              </span>
+            </div>
+          </div>
+        </Card>
       </div>
     </Layout>
   );
