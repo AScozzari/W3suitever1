@@ -1022,10 +1022,76 @@ export default function PDCAnalyzerPage() {
             </div>
           )}
 
-          {activeView === 'review' && reviewData && (
+          {activeView === 'review' && (
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Review & Correct</h2>
 
+              {/* Lista Review Storiche */}
+              {session && (session as any).extractedData?.length > 0 && (
+                <Card className="windtre-glass-panel border-white/20 mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                      <FileText className="h-5 w-5" />
+                      Review Disponibili ({(session as any).extractedData.length})
+                    </CardTitle>
+                    <CardDescription>Seleziona una review da visualizzare o modificare</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {(session as any).extractedData.map((extracted: any, idx: number) => (
+                        <div
+                          key={extracted.id}
+                          onClick={() => {
+                            setReviewData({
+                              customerData: extracted.customerData || {},
+                              servicesExtracted: extracted.servicesExtracted || []
+                            });
+                            setSelectedResult({ extractedDataId: extracted.id } as any);
+                          }}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            selectedResult?.extractedDataId === extracted.id
+                              ? 'border-windtre-orange bg-orange-50'
+                              : 'border-gray-200 hover:border-windtre-purple hover:bg-purple-50'
+                          }`}
+                          data-testid={`review-card-${idx}`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-500">
+                              #{idx + 1} - {new Date(extracted.createdAt).toLocaleDateString('it-IT', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                            {selectedResult?.extractedDataId === extracted.id && (
+                              <CheckCircle2 className="h-5 w-5 text-windtre-orange" />
+                            )}
+                          </div>
+                          <h4 className="font-semibold text-gray-900 mb-1">
+                            {extracted.customerData?.firstName} {extracted.customerData?.lastName}
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {extracted.servicesExtracted?.length || 0} servizi
+                          </p>
+                          <div className="text-xs text-gray-500">
+                            {extracted.customerData?.phone && (
+                              <div className="flex items-center gap-1">
+                                <span>📞</span>
+                                <span>{extracted.customerData.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {reviewData && (
+                <>
               <Card className="windtre-glass-panel border-white/20 mb-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-windtre-purple">
@@ -1362,6 +1428,8 @@ export default function PDCAnalyzerPage() {
                   )}
                 </Button>
               </div>
+                </>
+              )}
             </div>
           )}
 
