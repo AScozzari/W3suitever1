@@ -1,10 +1,8 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform offering a comprehensive business management solution. It consolidates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. Key features include a unique WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. The platform is complemented by the Brand Interface HQ system, designed for centralized control and cross-tenant management, aiming to deliver a scalable, secure, and robust solution for diverse business needs.
+W3 Suite is a multi-tenant enterprise platform designed for comprehensive business management. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a unique WindTre glassmorphism design, robust security via OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. Complementing this is the Brand Interface HQ system, which provides centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust solution catering to diverse business needs and offers significant market potential due to its integrated and multi-tenant approach.
 
 # User Preferences
-
-## CRITICAL RULES - VIOLAZIONE = ERRORE
 
 ### 1. DATABASE SCHEMA LOCATION (OBBLIGATORIO)
 **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
@@ -177,12 +175,12 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project utilizes an enterprise monorepo, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`. Traffic routing is managed by an embedded Nginx reverse proxy.
+The project employs an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`, with traffic routed via an Nginx reverse proxy.
 
 ## Monorepo Structure:
-- **`apps/`**: Contains frontend/backend services, workers, and edge renderers.
-- **`packages/`**: Stores shared libraries (UI, design tokens, SDK, DWH, CMS).
-- **`db/`**: Holds database migration scripts.
+- **`apps/`**: For frontend/backend services, workers, and edge renderers.
+- **`packages/`**: For shared libraries (UI, design tokens, SDK, DWH, CMS).
+- **`db/`**: For database migration scripts.
 
 ## UI/UX Design:
 - **Glassmorphism WindTre Design System**: Incorporates WindTre branding, colors, and glassmorphism effects.
@@ -204,8 +202,9 @@ The project utilizes an enterprise monorepo, separating tenant-facing applicatio
 - **MCP Multi-Provider OAuth System**: Unified credential management supporting Google Workspace, AWS, Meta/Instagram, Microsoft 365, Stripe, and GTM/Analytics with per-user OAuth isolation.
 - **Meta/Instagram OAuth Architecture**: Single global Meta App with per-tenant page authorization, supporting multiple Facebook Pages and Instagram Business accounts per tenant with page-specific access tokens.
 - **AI Enforcement Middleware System**: Hierarchical API-level blocking when AI features are disabled, intercepting requests and checking tenant-level `isActive` and agent-specific `isEnabled` flags using raw SQL queries to bypass RLS for settings access.
-- **AI Workflow Builder with JSON Mode**: Natural language workflow generation using OpenAI `gpt-4o` with strict JSON mode, system prompt override, disabled tools, and ReactFlow DSL generation with Zod validation. Supports Italian prompts.
+- **AI Workflow Builder with JSON Mode**: Natural language workflow generation using OpenAI `gpt-4o` with strict JSON mode, system prompt override, disabled tools, and ReactFlow DSL generation with Zod validation, supporting Italian prompts.
 - **Intelligent Workflow Routing System**: Dual-mode routing (auto/manual) for team and user assignments. Auto mode dynamically selects teams/users by department. Manual mode allows explicit selection in workflow node configuration.
+- **AI Tools Ecosystem with PDC Analyzer**: Centralized AI tools dashboard with modular tool architecture. PDC (Proposta di Contratto) Analyzer provides automated PDF contract analysis using GPT-4, extracting customer data and service mapping with WindTre product hierarchy integration. Features multi-tenant training dataset, session management, human review workflow, and JSON export for cashier API integration.
 
 # External Dependencies
 
