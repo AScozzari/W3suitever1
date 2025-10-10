@@ -1,0 +1,38 @@
+NANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+queryClient.ts:342  DELETE https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/pdc/sessions/c25ce885-e74b-4490-87ec-4305d2ea824a 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+onClick @ PDCAnalyzerPage.tsx:660
+callCallback2 @ chunk-ZHRYBLGQ.js?v=6e75a53d:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=6e75a53d:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=6e75a53d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=6e75a53d:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=6e75a53d:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=6e75a53d:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=6e75a53d:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=6e75a53d:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=6e75a53d:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=6e75a53d:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=6e75a53d:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=6e75a53d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=6e75a53d:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=6e75a53d:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=6e75a53d:5449Understand this error
+queryClient.ts:342  DELETE https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/pdc/sessions/c25ce885-e74b-4490-87ec-4305d2ea824a 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+onClick @ PDCAnalyzerPage.tsx:660
+callCallback2 @ chunk-ZHRYBLGQ.js?v=6e75a53d:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=6e75a53d:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=6e75a53d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=6e75a53d:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=6e75a53d:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=6e75a53d:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=6e75a53d:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=6e75a53d:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=6e75a53d:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=6e75a53d:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=6e75a53d:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=6e75a53d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=6e75a53d:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=6e75a53d:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=6e75a53d:5449Understand this error
+queryClient.ts:342  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/pdc/sessions/be11091f-8758-4364-b07a-ddb1433167ad/upload 500 (Internal Server Error)

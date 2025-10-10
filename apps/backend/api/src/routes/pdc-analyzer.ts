@@ -46,11 +46,20 @@ let objectStorageClient: Client | null = null;
 
 function getObjectStorageClient(): Client {
   if (!objectStorageClient) {
-    if (!process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID) {
-      throw new Error('Object Storage non configurato. Contattare amministratore (manca DEFAULT_OBJECT_STORAGE_BUCKET_ID)');
+    const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+    const privateDir = process.env.PRIVATE_OBJECT_DIR;
+    
+    console.log('📦 [PDC-UPLOAD] Initializing Object Storage with:');
+    console.log('📦 [PDC-UPLOAD] Bucket ID:', bucketId);
+    console.log('📦 [PDC-UPLOAD] Private Dir:', privateDir);
+    
+    if (!bucketId) {
+      throw new Error('Object Storage non configurato. Manca DEFAULT_OBJECT_STORAGE_BUCKET_ID');
     }
+    
+    // Initialize client with environment configured correctly
     objectStorageClient = new Client();
-    console.log('📦 Object Storage Client initialized for PDC Analyzer');
+    console.log('✅ [PDC-UPLOAD] Object Storage Client initialized successfully');
   }
   return objectStorageClient;
 }
@@ -195,13 +204,14 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
       return res.status(404).json({ error: "Session not found" });
     }
 
-    // Save PDF to Object Storage (Replit native)
+    // Save PDF to Object Storage (Replit native) - Use private directory for sensitive data
     let fileUrl: string;
     try {
-      console.log('📦 [PDC-UPLOAD] Initializing Object Storage client...');
       const storage = getObjectStorageClient();
+      const privateDir = process.env.PRIVATE_OBJECT_DIR || '.private';
       
-      const fileKey = `pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
+      // Store PDFs in private directory since they contain sensitive customer data
+      const fileKey = `${privateDir}/pdc-pdfs/${tenantId}/${sessionId}/${Date.now()}-${req.file.originalname}`;
       console.log('📦 [PDC-UPLOAD] Uploading file with key:', fileKey);
       console.log('📦 [PDC-UPLOAD] File size:', req.file.size, 'bytes');
       
@@ -667,9 +677,45 @@ router.delete("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    // Use transaction for atomic delete
+    // Use transaction for atomic delete (order matters for foreign key constraints)
     await db.transaction(async (tx) => {
-      // Delete training data first (foreign key constraint)
+      // 1. First get all extracted data IDs for this session
+      const extractedDataIds = await tx
+        .select({ id: aiPdcExtractedData.id })
+        .from(aiPdcExtractedData)
+        .innerJoin(aiPdcPdfUploads, eq(aiPdcExtractedData.pdfId, aiPdcPdfUploads.id))
+        .where(eq(aiPdcPdfUploads.sessionId, sessionId));
+      
+      // 2. Delete service mappings (depends on extracted data)
+      if (extractedDataIds.length > 0) {
+        const ids = extractedDataIds.map(e => e.id);
+        for (const extractedId of ids) {
+          await tx
+            .delete(aiPdcServiceMapping)
+            .where(eq(aiPdcServiceMapping.extractedDataId, extractedId));
+        }
+      }
+      
+      // 3. Delete extracted data (depends on pdf uploads)
+      const pdfIds = await tx
+        .select({ id: aiPdcPdfUploads.id })
+        .from(aiPdcPdfUploads)
+        .where(eq(aiPdcPdfUploads.sessionId, sessionId));
+      
+      if (pdfIds.length > 0) {
+        for (const pdf of pdfIds) {
+          await tx
+            .delete(aiPdcExtractedData)
+            .where(eq(aiPdcExtractedData.pdfId, pdf.id));
+        }
+      }
+      
+      // 4. Delete PDF uploads (depends on session)
+      await tx
+        .delete(aiPdcPdfUploads)
+        .where(eq(aiPdcPdfUploads.sessionId, sessionId));
+      
+      // 5. Delete training data (depends on session)
       await tx
         .delete(aiPdcTrainingDataset)
         .where(
@@ -679,7 +725,7 @@ router.delete("/sessions/:sessionId", enforceAIEnabled, enforceAgentEnabled("pdc
           )
         );
 
-      // Delete session
+      // 6. Finally delete the session itself
       const [deletedSession] = await tx
         .delete(aiPdcAnalysisSessions)
         .where(
