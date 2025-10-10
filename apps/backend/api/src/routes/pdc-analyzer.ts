@@ -437,7 +437,9 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
     "status": "active"
   },
   "additionalInfo": {
-    "contractNumber": "...",
+    "customerCode": "...",        // Codice Cliente
+    "contractCode": "...",        // Codice Contratto
+    "contractNumber": "...",      // Numero Contratto
     "promotionCode": "...",
     "salesAgent": "...",
     "store": "...",
@@ -470,7 +472,11 @@ router.post("/sessions/:sessionId/upload", enforceAIEnabled, enforceAgentEnabled
 6. **COMPLETEZZA**: confidence alta = più campi estratti correttamente
 7. **CAMPI PRESUNTI**: Per ogni servizio, estrai in "rawTextFromPdf" la descrizione ESATTA dal PDF (es. "cosa: Super Fibra 2,5 Giga & Netflix" → "Super Fibra 2,5 Giga & Netflix") per facilitare il mapping prodotti WindTre
 8. **TELEFONI**: Distingui cellulari (mobilePhone = +39 3xx) da fissi (landlinePhone = +39 0xx). Applica a cliente e contactPerson.
-9. **ADDITIONAL INFO**: Estrai tutte le informazioni aggiuntive trovate nel PDF (numero contratto, codice promo, agente, punto vendita, campagna, ecc.) nel campo additionalInfo per training/mapping futuro
+9. **ADDITIONAL INFO**: Estrai tutte le informazioni aggiuntive trovate nel PDF nel campo additionalInfo:
+   - customerCode: codice cliente (se presente)
+   - contractCode: codice contratto (se presente)
+   - contractNumber: numero contratto
+   - promotionCode, salesAgent, store, campaignName, otherRelevantData
 
 Rispondi SEMPRE con JSON valido.`,
         },

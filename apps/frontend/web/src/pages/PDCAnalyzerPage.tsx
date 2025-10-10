@@ -1361,6 +1361,32 @@ export default function PDCAnalyzerPage() {
                   <CardContent>
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <div className="grid grid-cols-3 gap-4">
+                        {reviewData.customerData.additionalInfo?.customerCode && (
+                          <div>
+                            <Label className="text-blue-700">Codice Cliente</Label>
+                            <Input value={reviewData.customerData.additionalInfo.customerCode || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, customerCode: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
+                        {reviewData.customerData.additionalInfo?.contractCode && (
+                          <div>
+                            <Label className="text-blue-700">Codice Contratto</Label>
+                            <Input value={reviewData.customerData.additionalInfo.contractCode || ''} 
+                              onChange={(e) => setReviewData({
+                                ...reviewData, 
+                                customerData: {
+                                  ...reviewData.customerData, 
+                                  additionalInfo: {...reviewData.customerData.additionalInfo, contractCode: e.target.value}
+                                }
+                              })} />
+                          </div>
+                        )}
                         {reviewData.customerData.additionalInfo?.contractNumber && (
                           <div>
                             <Label className="text-blue-700">Numero Contratto</Label>
