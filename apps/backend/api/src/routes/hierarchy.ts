@@ -20,6 +20,7 @@ import {
   workflowSteps,
   teams,
   teamWorkflowAssignments,
+  userWorkflowAssignments,
   workflowInstances,
   workflowExecutions,
   insertWorkflowActionSchema,
@@ -27,6 +28,7 @@ import {
   insertWorkflowTemplateSchema,
   insertTeamSchema,
   insertTeamWorkflowAssignmentSchema,
+  insertUserWorkflowAssignmentSchema,
   insertWorkflowInstanceSchema
 } from '../db/schema/w3suite';
 import { z } from 'zod';
@@ -1412,6 +1414,120 @@ router.post('/team-workflow-assignments', requirePermission('workflows.write'), 
     } else {
       res.status(500).json({ error: 'Failed to create/update assignment' });
     }
+  }
+});
+
+// ==================== USER-WORKFLOW ASSIGNMENTS ENDPOINTS ====================
+
+// GET /api/user-workflow-assignments - Get all user-workflow assignments
+router.get('/user-workflow-assignments', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const assignments = await db
+      .select()
+      .from(userWorkflowAssignments)
+      .where(eq(userWorkflowAssignments.tenantId, tenantId))
+      .orderBy(desc(userWorkflowAssignments.priority));
+
+    res.json(assignments);
+  } catch (error) {
+    console.error('Error fetching user-workflow assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch user assignments' });
+  }
+});
+
+// POST /api/user-workflow-assignments - Create or update user-workflow assignment
+router.post('/user-workflow-assignments', requirePermission('workflows.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const { userId: assigneeUserId, templateId, forDepartment, ...assignmentData } = req.body;
+
+    // Validate with Zod FIRST (both create and update paths)
+    const validatedData = insertUserWorkflowAssignmentSchema.parse({
+      userId: assigneeUserId,
+      templateId,
+      forDepartment,
+      ...assignmentData,
+      tenantId,
+      createdBy: userId || 'system'
+    });
+
+    // Check if assignment already exists
+    const existing = await db
+      .select()
+      .from(userWorkflowAssignments)
+      .where(and(
+        eq(userWorkflowAssignments.tenantId, tenantId),
+        eq(userWorkflowAssignments.userId, validatedData.userId),
+        eq(userWorkflowAssignments.templateId, validatedData.templateId),
+        eq(userWorkflowAssignments.forDepartment, validatedData.forDepartment)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing assignment with validated data
+      const [updated] = await db
+        .update(userWorkflowAssignments)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+          updatedBy: userId || 'system'
+        })
+        .where(eq(userWorkflowAssignments.id, existing[0].id))
+        .returning();
+
+      res.json(updated);
+    } else {
+      // Create new assignment with validated data
+      const [newAssignment] = await db
+        .insert(userWorkflowAssignments)
+        .values(validatedData)
+        .returning();
+
+      res.status(201).json(newAssignment);
+    }
+  } catch (error: any) {
+    console.error('Error creating/updating user assignment:', error);
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: 'Invalid assignment data', details: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to create/update user assignment' });
+    }
+  }
+});
+
+// DELETE /api/user-workflow-assignments/:id - Delete user-workflow assignment
+router.delete('/user-workflow-assignments/:id', requirePermission('workflows.delete'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    await db
+      .delete(userWorkflowAssignments)
+      .where(and(
+        eq(userWorkflowAssignments.id, id),
+        eq(userWorkflowAssignments.tenantId, tenantId)
+      ));
+
+    res.json({ success: true, message: 'User assignment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user assignment:', error);
+    res.status(500).json({ error: 'Failed to delete user assignment' });
   }
 });
 
