@@ -18,6 +18,7 @@ import Login from '../pages/Login';
 import NotFound from '../pages/NotFound';
 import AIToolsDashboardPage from '../pages/AIToolsDashboardPage';
 import PDCAnalyzerPage from '../pages/PDCAnalyzerPage';
+import CRMDashboardPage from '../pages/crm/CRMDashboardPage';
 import { useAuth } from '../hooks/useAuth';
 
 interface TenantShellProps {
@@ -317,6 +318,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/ai-tools`}>
         <AuthenticatedRoute>
           <AIToolsDashboardPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm`}>
+        <AuthenticatedRoute>
+          <CRMDashboardPage />
         </AuthenticatedRoute>
       </Route>
       
