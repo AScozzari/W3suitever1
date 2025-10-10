@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import Layout from "../components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRequiredTenant } from "@/hooks/useTenantSafety";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ interface TrainingEntry {
 }
 
 export default function PDCAnalyzerPage() {
+  const [currentModule, setCurrentModule] = useState("ai");
   const { toast } = useToast();
   const { tenant } = useRequiredTenant();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
@@ -214,70 +216,79 @@ export default function PDCAnalyzerPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-purple-600">
-            <FileText className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI PDC Analyzer</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Estrai dati da proposte contrattuali PDF con OCR intelligente
-            </p>
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="space-y-6">
+        {/* Header con gradiente WindTre */}
+        <div
+          className="rounded-2xl p-8"
+          style={{
+            background: "linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)",
+            color: "white",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold">PDC Analyzer</h1>
+                <p className="mt-1 text-lg text-white/90">
+                  Estrai dati da proposte contrattuali PDF con OCR intelligente e AI
+                </p>
+              </div>
+            </div>
+
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-create-session" className="bg-white text-purple-600 hover:bg-white/90">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nuova Sessione
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Crea Nuova Sessione</DialogTitle>
+                  <DialogDescription>
+                    Crea una sessione di analisi per raggruppare più PDC
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="session-name">Nome Sessione *</Label>
+                    <Input
+                      id="session-name"
+                      data-testid="input-session-name"
+                      placeholder="es. Analisi PDC Gennaio 2025"
+                      value={newSessionName}
+                      onChange={(e) => {
+                        setNewSessionName(e.target.value);
+                        setNewSessionError("");
+                      }}
+                      className={newSessionError ? "border-red-500" : ""}
+                    />
+                    {newSessionError && (
+                      <p className="text-sm text-red-600 dark:text-red-400" data-testid="error-session-name">
+                        {newSessionError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    data-testid="button-confirm-create"
+                    onClick={() => createSessionMutation.mutate(newSessionName)}
+                    disabled={!newSessionName || newSessionName.trim().length < 3 || createSessionMutation.isPending}
+                  >
+                    {createSessionMutation.isPending ? "Creazione..." : "Crea Sessione"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-session">
-              <Plus className="mr-2 h-4 w-4" />
-              Nuova Sessione
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Crea Nuova Sessione</DialogTitle>
-              <DialogDescription>
-                Crea una sessione di analisi per raggruppare più PDC
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="session-name">Nome Sessione *</Label>
-                <Input
-                  id="session-name"
-                  data-testid="input-session-name"
-                  placeholder="es. Analisi PDC Gennaio 2025"
-                  value={newSessionName}
-                  onChange={(e) => {
-                    setNewSessionName(e.target.value);
-                    setNewSessionError("");
-                  }}
-                  className={newSessionError ? "border-red-500" : ""}
-                />
-                {newSessionError && (
-                  <p className="text-sm text-red-600 dark:text-red-400" data-testid="error-session-name">
-                    {newSessionError}
-                  </p>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                data-testid="button-confirm-create"
-                onClick={() => createSessionMutation.mutate(newSessionName)}
-                disabled={!newSessionName || newSessionName.trim().length < 3 || createSessionMutation.isPending}
-              >
-                {createSessionMutation.isPending ? "Creazione..." : "Crea Sessione"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Sessions List */}
+        {/* Sessions List */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {sessions.map((session) => (
           <Card
@@ -505,6 +516,7 @@ export default function PDCAnalyzerPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }
