@@ -138,8 +138,10 @@ export default function PDCAnalyzerPage() {
   });
 
   // Query per gerarchia drivers da DB
-  const { data: driversHierarchy = [], isLoading: loadingHierarchy } = useQuery<Driver[]>({
+  const { data: driversHierarchy = [], isLoading: loadingHierarchy, error: hierarchyError } = useQuery<Driver[]>({
     queryKey: ['/api/pdc/drivers/hierarchy'],
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes - hierarchy data doesn't change often
   });
 
   // Mutation per creare sessione
@@ -316,26 +318,39 @@ export default function PDCAnalyzerPage() {
     }
   };
 
-  const handleSaveServiceMapping = async (mapping: any) => {
+  const handleSaveServiceMapping = async (serviceIndex: number) => {
     if (!selectedResult) return;
     
+    const mapping = serviceMappings[serviceIndex];
+    if (!mapping || !mapping.driverId) {
+      toast({
+        title: "❌ Mapping incompleto",
+        description: "Seleziona almeno il Driver",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convert IDs to codes/names for backend
+    const driver = driversHierarchy.find(d => d.id === mapping.driverId);
+    const category = driver?.categories.find(c => c.id === mapping.categoryId);
+    const typology = category?.typologies.find(t => t.id === mapping.typologyId);
+
     try {
       await saveServiceMappingMutation.mutateAsync({
         extractedDataId: selectedResult.extractedDataId,
         mapping: {
-          serviceIndex: currentServiceIndex,
-          ...mapping,
+          serviceIndex,
+          driverSelected: driver?.code || driver?.name,
+          categorySelected: category?.code || category?.name,
+          typologySelected: typology?.code || typology?.name,
         },
       });
 
-      if (currentServiceIndex < (reviewData?.servicesExtracted?.length || 0) - 1) {
-        setCurrentServiceIndex(currentServiceIndex + 1);
-        toast({ title: "✅ Mapping salvato", description: `Servizio ${currentServiceIndex + 1} mappato` });
-      } else {
-        setActiveView('export');
-        await handlePrepareExport();
-        toast({ title: "✅ Tutti i servizi mappati", description: "Preparazione export..." });
-      }
+      toast({ 
+        title: "✅ Mapping salvato", 
+        description: `Servizio ${serviceIndex + 1} mappato correttamente` 
+      });
     } catch (error: any) {
       toast({
         title: "❌ Errore salvataggio mapping",
@@ -919,10 +934,22 @@ export default function PDCAnalyzerPage() {
                   <CardDescription>Mappa ogni servizio estratto alla gerarchia prodotti WindTre</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {loadingHierarchy ? (
+                  {hierarchyError ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                      <p className="text-red-600 font-medium">Errore caricamento gerarchia prodotti</p>
+                      <p className="text-gray-500 text-sm mt-1">Riprova più tardi</p>
+                    </div>
+                  ) : loadingHierarchy ? (
                     <div className="text-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-windtre-orange mx-auto" />
                       <p className="text-gray-500 mt-2">Caricamento gerarchia prodotti...</p>
+                    </div>
+                  ) : driversHierarchy.length === 0 ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                      <p className="text-gray-600 font-medium">Nessun driver disponibile</p>
+                      <p className="text-gray-500 text-sm mt-1">Contatta l'amministratore per configurare la gerarchia prodotti</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -1015,6 +1042,28 @@ export default function PDCAnalyzerPage() {
                                   </SelectContent>
                                 </Select>
                               </div>
+                            </div>
+                            
+                            {/* Save Mapping Button */}
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                onClick={() => handleSaveServiceMapping(index)}
+                                disabled={!mapping.driverId || saveServiceMappingMutation.isPending}
+                                className="bg-windtre-orange hover:bg-windtre-orange/90"
+                                data-testid={`button-save-mapping-${index}`}
+                              >
+                                {saveServiceMappingMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Salvataggio...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="h-4 w-4 mr-2" />
+                                    Salva Mapping
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </div>
                         );
