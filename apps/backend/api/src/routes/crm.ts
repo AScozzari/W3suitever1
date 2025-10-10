@@ -1,0 +1,631 @@
+/**
+ * CRM API Routes
+ * 
+ * Provides REST endpoints for managing CRM entities with full tenant isolation:
+ * - Persons (identity graph)
+ * - Leads (with GDPR consent tracking)
+ * - Campaigns
+ * - Pipelines
+ * - Deals
+ */
+
+import express from 'express';
+import { z } from 'zod';
+import { db, setTenantContext } from '../core/db';
+import { correlationMiddleware, logger } from '../core/logger';
+import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
+import {
+  crmPersons,
+  crmPersonConsents,
+  crmLeads,
+  crmCampaigns,
+  crmPipelines,
+  crmDeals,
+  crmInteractions,
+  crmTasks,
+  insertCrmPersonSchema,
+  insertCrmLeadSchema,
+  insertCrmCampaignSchema,
+  insertCrmPipelineSchema,
+  insertCrmDealSchema
+} from '../db/schema/w3suite';
+import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
+
+const router = express.Router();
+
+router.use(correlationMiddleware);
+
+// Helper: Get tenant ID from request
+const getTenantId = (req: express.Request): string | null => {
+  return req.headers['x-tenant-id'] as string || req.user?.tenantId || null;
+};
+
+// ==================== PERSONS (Identity Graph) ====================
+
+/**
+ * GET /api/crm/persons
+ * Get all persons for the current tenant with optional search
+ */
+router.get('/persons', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { search, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    let query = db
+      .select()
+      .from(crmPersons)
+      .where(eq(crmPersons.tenantId, tenantId))
+      .orderBy(desc(crmPersons.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    if (search) {
+      query = query.where(
+        or(
+          ilike(crmPersons.emailCanonical, `%${search}%`),
+          ilike(crmPersons.phoneCanonical, `%${search}%`),
+          ilike(crmPersons.firstName, `%${search}%`),
+          ilike(crmPersons.lastName, `%${search}%`)
+        )
+      );
+    }
+
+    const persons = await query;
+
+    res.status(200).json({
+      success: true,
+      data: persons,
+      message: 'Persons retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving persons', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve persons',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/persons/:id
+ * Get a single person by ID
+ */
+router.get('/persons/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    
+    await setTenantContext(tenantId);
+
+    const [person] = await db
+      .select()
+      .from(crmPersons)
+      .where(and(
+        eq(crmPersons.id, id),
+        eq(crmPersons.tenantId, tenantId)
+      ));
+
+    if (!person) {
+      return res.status(404).json({
+        success: false,
+        error: 'Person not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: person,
+      message: 'Person retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving person', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      personId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve person',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/persons
+ * Create a new person (with automatic deduplication)
+ */
+router.post('/persons', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validation = insertCrmPersonSchema.omit({ tenantId: true }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Check for existing person by email or phone
+    let existingPerson = null;
+    if (validation.data.emailCanonical) {
+      [existingPerson] = await db
+        .select()
+        .from(crmPersons)
+        .where(and(
+          eq(crmPersons.tenantId, tenantId),
+          eq(crmPersons.emailCanonical, validation.data.emailCanonical)
+        ))
+        .limit(1);
+    }
+
+    if (!existingPerson && validation.data.phoneCanonical) {
+      [existingPerson] = await db
+        .select()
+        .from(crmPersons)
+        .where(and(
+          eq(crmPersons.tenantId, tenantId),
+          eq(crmPersons.phoneCanonical, validation.data.phoneCanonical)
+        ))
+        .limit(1);
+    }
+
+    if (existingPerson) {
+      return res.status(200).json({
+        success: true,
+        data: existingPerson,
+        message: 'Existing person found (deduplication)',
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse);
+    }
+
+    const [person] = await db
+      .insert(crmPersons)
+      .values({
+        ...validation.data,
+        tenantId
+      })
+      .returning();
+
+    logger.info('Person created', { personId: person.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: person,
+      message: 'Person created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating person', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create person',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/persons/:id
+ * Update a person
+ */
+router.patch('/persons/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const updateSchema = insertCrmPersonSchema.omit({ tenantId: true }).partial();
+    
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [updated] = await db
+      .update(crmPersons)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmPersons.id, id),
+        eq(crmPersons.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Person not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Person updated', { personId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Person updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating person', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      personId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update person',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== LEADS ====================
+
+/**
+ * GET /api/crm/leads
+ * Get all leads for the current tenant
+ */
+router.get('/leads', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { status, storeId, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    let query = db
+      .select()
+      .from(crmLeads)
+      .where(eq(crmLeads.tenantId, tenantId))
+      .orderBy(desc(crmLeads.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    if (status) {
+      query = query.where(and(
+        eq(crmLeads.tenantId, tenantId),
+        eq(crmLeads.status, status as string)
+      ));
+    }
+
+    if (storeId) {
+      query = query.where(and(
+        eq(crmLeads.tenantId, tenantId),
+        eq(crmLeads.storeId, storeId as string)
+      ));
+    }
+
+    const leads = await query;
+
+    res.status(200).json({
+      success: true,
+      data: leads,
+      message: 'Leads retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving leads', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve leads',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/leads
+ * Create a new lead
+ */
+router.post('/leads', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validation = insertCrmLeadSchema.omit({ tenantId: true }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [lead] = await db
+      .insert(crmLeads)
+      .values({
+        ...validation.data,
+        tenantId
+      })
+      .returning();
+
+    logger.info('Lead created', { leadId: lead.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: lead,
+      message: 'Lead created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating lead', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create lead',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/leads/:id
+ * Update a lead
+ */
+router.patch('/leads/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const updateSchema = insertCrmLeadSchema.omit({ tenantId: true }).partial();
+    
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [updated] = await db
+      .update(crmLeads)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmLeads.id, id),
+        eq(crmLeads.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lead not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Lead updated', { leadId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Lead updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating lead', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      leadId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update lead',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/leads/:id/convert
+ * Convert a lead to a deal
+ */
+router.post('/leads/:id/convert', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const { pipelineId, stage, ownerUserId } = req.body;
+
+    if (!pipelineId || !stage || !ownerUserId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: pipelineId, stage, ownerUserId',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get the lead
+    const [lead] = await db
+      .select()
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.id, id),
+        eq(crmLeads.tenantId, tenantId)
+      ));
+
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lead not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Create deal from lead
+    const [deal] = await db
+      .insert(crmDeals)
+      .values({
+        tenantId,
+        legalEntityId: lead.legalEntityId,
+        storeId: lead.storeId,
+        ownerUserId,
+        pipelineId,
+        stage,
+        status: 'open',
+        leadId: lead.id,
+        campaignId: lead.campaignId,
+        sourceChannel: lead.sourceChannel,
+        personId: lead.personId,
+        driverId: lead.driverId
+      })
+      .returning();
+
+    // Update lead status to converted
+    await db
+      .update(crmLeads)
+      .set({
+        status: 'converted',
+        updatedAt: new Date()
+      })
+      .where(eq(crmLeads.id, id));
+
+    logger.info('Lead converted to deal', { leadId: id, dealId: deal.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: deal,
+      message: 'Lead converted to deal successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error converting lead', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      leadId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to convert lead',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+export default router;

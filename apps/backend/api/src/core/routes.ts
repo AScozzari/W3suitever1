@@ -17,6 +17,7 @@ import { aiSettingsRoutes } from "../routes/ai-settings";
 import entitiesRoutes from "../routes/entities";
 import productsRoutes from "../routes/products";
 import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
+import crmRoutes from "../routes/crm";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1222,6 +1223,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== PDC ANALYZER AI ROUTES ====================
   // AI-powered PDF contract proposal analyzer routes
   app.use('/api/pdc', pdcAnalyzerRoutes);
+  
+  // ==================== CRM MODULE ROUTES ====================
+  // CRM API routes for managing persons, leads, deals, campaigns, pipelines
+  app.use('/api/crm', crmRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
