@@ -25,8 +25,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, ArrowUpDown, Download, Euro, Clock } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, Download, Euro, Clock, MoreHorizontal, Eye } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
+import { Link } from 'wouter';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -361,6 +362,29 @@ export default function DealsPage() {
           {row.original.daysInStage}g
         </div>
       ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const tenantSlug = window.location.pathname.split('/')[1];
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`actions-deal-${row.original.id}`}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+                <DropdownMenuItem>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Profilo Cliente
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 

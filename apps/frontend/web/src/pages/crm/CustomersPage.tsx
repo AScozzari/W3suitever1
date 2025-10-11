@@ -25,7 +25,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, Building, User, Euro, Calendar, Phone, Mail, Shield, MessageSquare } from 'lucide-react';
+import { Search, Plus, Building, User, Euro, Calendar, Phone, Mail, Shield, MessageSquare, Eye } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
 
 interface Account {
   id: string;
@@ -159,19 +160,21 @@ const AccountsTable = () => {
     },
     {
       id: 'actions',
-      cell: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setSelectedAccount(row.original);
-            setIsDetailOpen(true);
-          }}
-          data-testid={`view-account-${row.original.id}`}
-        >
-          Dettaglio
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const tenantSlug = window.location.pathname.split('/')[1];
+        return (
+          <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`view-account-${row.original.id}`}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Visualizza
+            </Button>
+          </Link>
+        );
+      },
     },
   ];
 
@@ -357,19 +360,21 @@ const ContactsTable = () => {
     },
     {
       id: 'actions',
-      cell: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setSelectedContact(row.original);
-            setIsDetailOpen(true);
-          }}
-          data-testid={`view-contact-${row.original.id}`}
-        >
-          Dettaglio
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const tenantSlug = window.location.pathname.split('/')[1];
+        return (
+          <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`view-contact-${row.original.id}`}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Visualizza
+            </Button>
+          </Link>
+        );
+      },
     },
   ];
 

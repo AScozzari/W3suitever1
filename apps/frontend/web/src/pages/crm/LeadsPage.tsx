@@ -29,9 +29,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp, Eye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { queryClient } from '@/lib/queryClient';
+import { Link } from 'wouter';
 
 interface Lead {
   id: string;
@@ -239,30 +240,39 @@ export default function LeadsPage() {
     },
     {
       id: 'actions',
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`actions-${row.original.id}`}>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => {
-              setSelectedLead(row.original);
-              setIsDetailOpen(true);
-            }}>
-              Visualizza dettagli
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              setSelectedLead(row.original);
-              setIsConvertDialogOpen(true);
-            }}>
-              Converti in Deal
-            </DropdownMenuItem>
-            <DropdownMenuItem>Assegna a...</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => {
+        const tenantSlug = window.location.pathname.split('/')[1];
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`actions-${row.original.id}`}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                setSelectedLead(row.original);
+                setIsDetailOpen(true);
+              }}>
+                Visualizza dettagli
+              </DropdownMenuItem>
+              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+                <DropdownMenuItem>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Profilo Cliente
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem onClick={() => {
+                setSelectedLead(row.original);
+                setIsConvertDialogOpen(true);
+              }}>
+                Converti in Deal
+              </DropdownMenuItem>
+              <DropdownMenuItem>Assegna a...</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 
