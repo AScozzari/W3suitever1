@@ -14,6 +14,7 @@ import {
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -286,6 +287,7 @@ export default function LeadsPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
         <CRMScopeBar />

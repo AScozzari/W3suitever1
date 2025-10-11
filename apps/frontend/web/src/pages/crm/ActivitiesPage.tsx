@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -276,6 +277,7 @@ export default function ActivitiesPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
         <CRMScopeBar />

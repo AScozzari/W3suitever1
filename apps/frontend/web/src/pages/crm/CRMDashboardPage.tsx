@@ -93,7 +93,14 @@ export default function CRMDashboardPage() {
   if (isLoading) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <LoadingState />
+        <CRMCommandPalette />
+        <div className="flex flex-col h-full">
+          <CRMNavigationBar />
+          <CRMScopeBar />
+          <div className="flex-1 p-6 overflow-auto">
+            <LoadingState />
+          </div>
+        </div>
       </Layout>
     );
   }
@@ -101,7 +108,14 @@ export default function CRMDashboardPage() {
   if (error) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <ErrorState message="Errore nel caricamento della dashboard CRM" />
+        <CRMCommandPalette />
+        <div className="flex flex-col h-full">
+          <CRMNavigationBar />
+          <CRMScopeBar />
+          <div className="flex-1 p-6 overflow-auto">
+            <ErrorState message="Errore nel caricamento della dashboard CRM" />
+          </div>
+        </div>
       </Layout>
     );
   }

@@ -22,6 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -415,6 +416,7 @@ export default function PipelineBoardPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
         <CRMScopeBar />

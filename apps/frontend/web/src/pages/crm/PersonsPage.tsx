@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
+import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
+import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +32,14 @@ export default function PersonsPage() {
   if (isLoading) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <LoadingState />
+        <CRMCommandPalette />
+        <div className="flex flex-col h-full">
+          <CRMNavigationBar />
+          <CRMScopeBar />
+          <div className="flex-1 p-6 overflow-auto">
+            <LoadingState />
+          </div>
+        </div>
       </Layout>
     );
   }
@@ -37,16 +47,28 @@ export default function PersonsPage() {
   if (error) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <ErrorState message="Errore nel caricamento dei contatti" />
+        <CRMCommandPalette />
+        <div className="flex flex-col h-full">
+          <CRMNavigationBar />
+          <CRMScopeBar />
+          <div className="flex-1 p-6 overflow-auto">
+            <ErrorState message="Errore nel caricamento dei contatti" />
+          </div>
+        </div>
       </Layout>
     );
   }
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <CRMCommandPalette />
+      <div className="flex flex-col h-full">
+        <CRMNavigationBar />
+        <CRMScopeBar />
+        
+        <div className="flex-1 p-6 space-y-6 overflow-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div 
               className="p-3 rounded-xl"
@@ -142,6 +164,7 @@ export default function PersonsPage() {
             </p>
           </Card>
         </motion.div>
+        </div>
       </div>
     </Layout>
   );
