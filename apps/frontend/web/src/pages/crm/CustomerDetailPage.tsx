@@ -34,7 +34,7 @@ export function CustomerDetailPage() {
 
   // Fetch customer data
   const { data: customerData, isLoading } = useQuery({
-    queryKey: ['/api/crm/persons', customerId],
+    queryKey: [`/api/crm/persons/${customerId}`],
     enabled: !!customerId,
   });
 
@@ -244,9 +244,9 @@ export function CustomerDetailPage() {
         <TabsContent value="deals">
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Deal History</h3>
-            {mockDeals.length > 0 ? (
+            {deals.length > 0 ? (
               <div className="space-y-3">
-                {mockDeals.map((deal) => (
+                {deals.map((deal) => (
                   <div 
                     key={deal.id} 
                     className="p-4 rounded-lg border"
