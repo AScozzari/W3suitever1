@@ -1,4 +1,4 @@
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { 
   LayoutDashboard, 
@@ -106,9 +106,9 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
           const isActive = activeTab === tab.value;
           
           return (
-            <button
+            <Link
               key={tab.value}
-              onClick={() => navigate(tab.path.replace(/^\/[^/]+\//, ''))}
+              href={tab.path}
               className="transition-all duration-200"
               style={{
                 flex: 1,
@@ -131,7 +131,8 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
                 gap: '8px',
                 textAlign: 'center',
                 backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)'
+                WebkitBackdropFilter: 'blur(8px)',
+                textDecoration: 'none'
               }}
               onMouseOver={(e) => {
                 if (!isActive) {
@@ -151,7 +152,7 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
             >
               <Icon className="h-4 w-4" />
               <span>{tab.label}</span>
-            </button>
+            </Link>
           );
         })}
       </div>
