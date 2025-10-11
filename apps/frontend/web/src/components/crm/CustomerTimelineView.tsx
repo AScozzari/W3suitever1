@@ -22,23 +22,27 @@ interface CustomerTimelineViewProps {
 
 export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) {
   // Fetch interactions
-  const { data: interactions, isLoading: loadingInteractions } = useQuery({
-    queryKey: ['/api/crm/interactions', { entityId: customerId }],
+  const { data: interactionsData, isLoading: loadingInteractions } = useQuery({
+    queryKey: ['/api/crm/interactions', { personId: customerId }],
   });
 
   // Fetch leads
-  const { data: leads } = useQuery({
-    queryKey: ['/api/crm/leads', { customerId }],
+  const { data: leadsData } = useQuery({
+    queryKey: ['/api/crm/leads', { personId: customerId }],
   });
 
   // Fetch deals
-  const { data: deals } = useQuery({
-    queryKey: ['/api/crm/deals', { customerId }],
+  const { data: dealsData } = useQuery({
+    queryKey: ['/api/crm/deals', { personId: customerId }],
   });
+
+  const interactions = interactionsData?.data || [];
+  const leads = leadsData?.data || [];
+  const deals = dealsData?.data || [];
 
   // Combine all events into timeline
   const timelineEvents = [
-    ...((interactions as any)?.map?.((i: any) => ({
+    ...interactions.map((i: any) => ({
       type: 'interaction',
       icon: getInteractionIcon(i.channel),
       color: getInteractionColor(i.channel),
@@ -46,8 +50,8 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
       description: i.notes || i.outcome,
       date: new Date(i.occurredAt),
       metadata: { duration: i.durationSeconds, outcome: i.outcome }
-    })) || []),
-    ...((leads as any)?.map?.((l: any) => ({
+    })),
+    ...leads.map((l: any) => ({
       type: 'lead',
       icon: UserPlus,
       color: 'hsl(var(--brand-purple))',
@@ -55,8 +59,8 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
       description: `Fonte: ${l.sourceChannel || 'N/A'} | Campagna: ${l.campaignId || 'N/A'}`,
       date: new Date(l.createdAt),
       metadata: { status: l.status, score: l.leadScore }
-    })) || []),
-    ...((deals as any)?.map?.((d: any) => ({
+    })),
+    ...deals.map((d: any) => ({
       type: 'deal',
       icon: Target,
       color: 'hsl(var(--brand-orange))',
@@ -64,7 +68,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
       description: `Pipeline: ${d.stage} | Probabilità: ${d.probability}%`,
       date: new Date(d.createdAt),
       metadata: { status: d.status, value: d.estimatedValue }
-    })) || []),
+    })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   if (loadingInteractions) {
