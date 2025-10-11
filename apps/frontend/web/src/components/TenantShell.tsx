@@ -22,6 +22,7 @@ import CRMDashboardPage from '../pages/crm/CRMDashboardPage';
 import PersonsPage from '../pages/crm/PersonsPage';
 import LeadsPage from '../pages/crm/LeadsPage';
 import DealsKanbanPage from '../pages/crm/DealsKanbanPage';
+import DealsPage from '../pages/crm/DealsPage';
 import CampaignsPage from '../pages/crm/CampaignsPage';
 import PipelinePage from '../pages/crm/PipelinePage';
 import PipelineBoardPage from '../pages/crm/PipelineBoardPage';
@@ -342,7 +343,7 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       
       <Route path={`/${tenantSlug}/crm/deals`}>
         <AuthenticatedRoute>
-          <DealsKanbanPage />
+          <DealsPage />
         </AuthenticatedRoute>
       </Route>
       
