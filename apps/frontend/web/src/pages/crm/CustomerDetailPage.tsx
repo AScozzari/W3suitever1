@@ -32,36 +32,29 @@ export function CustomerDetailPage() {
   const params = useParams();
   const customerId = params.id;
 
-  // Mock customer data for now (will be replaced with real API)
-  const mockCustomer = {
-    id: customerId,
-    firstName: 'Mario',
-    lastName: 'Rossi',
-    email: 'mario.rossi@example.com',
-    phone: '+39 340 1234567',
-    company: 'Rossi SRL',
-    address: 'Via Roma 123, Milano',
-    createdAt: '2024-01-15',
-    lastContact: '2024-10-05',
-    status: 'active' as const,
-    consentMarketing: true,
-    consentProfiling: false,
-    consentPrivacy: true,
-  };
+  // Fetch customer data
+  const { data: customerData, isLoading } = useQuery({
+    queryKey: ['/api/crm/persons', customerId],
+    enabled: !!customerId,
+  });
 
-  const isLoading = false;
-  const customer = mockCustomer;
+  const customer = customerData?.data;
 
-  // Mock deals data
-  const mockDeals = [
-    { id: '1', title: 'Fibra Business', estimatedValue: 25000, status: 'won' },
-    { id: '2', title: '5G Mobile', estimatedValue: 15000, status: 'in_progress' },
-  ];
+  // Fetch deals for this customer
+  const { data: dealsData } = useQuery({
+    queryKey: ['/api/crm/deals', { personId: customerId }],
+    enabled: !!customerId,
+  });
 
-  // Mock leads data  
-  const mockLeads = [
-    { id: '1', title: 'Lead Accessori', status: 'qualified' },
-  ];
+  const deals = dealsData?.data || [];
+
+  // Fetch leads for this customer
+  const { data: leadsData } = useQuery({
+    queryKey: ['/api/crm/leads', { personId: customerId }],
+    enabled: !!customerId,
+  });
+
+  const leads = leadsData?.data || [];
 
   if (isLoading) {
     return (
@@ -90,9 +83,9 @@ export function CustomerDetailPage() {
   }
 
   const initials = `${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase();
-  const totalDealsValue = mockDeals.reduce((sum, deal) => sum + (deal.estimatedValue || 0), 0);
-  const totalLeads = mockLeads.length;
-  const wonDeals = mockDeals.filter(d => d.status === 'won').length;
+  const totalDealsValue = deals.reduce((sum, deal) => sum + (deal.estimatedValue || 0), 0);
+  const totalLeads = leads.length;
+  const wonDeals = deals.filter(d => d.status === 'won').length;
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
@@ -133,32 +126,20 @@ export function CustomerDetailPage() {
                 <h1 className="text-3xl font-bold" style={{ color: '#1a1a1a' }} data-testid="customer-name">
                   {customer.firstName} {customer.lastName}
                 </h1>
-                {customer.company && (
-                  <Badge variant="outline" className="text-sm" data-testid="customer-company">
-                    <Building2 className="h-3 w-3 mr-1" />
-                    {customer.company}
-                  </Badge>
-                )}
               </div>
 
               {/* Contact Details */}
               <div className="grid grid-cols-2 gap-3 text-sm" style={{ color: '#6b7280' }}>
-                {customer.email && (
+                {customer.emailCanonical && (
                   <div className="flex items-center gap-2" data-testid="customer-email">
                     <Mail className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
-                    <span>{customer.email}</span>
+                    <span>{customer.emailCanonical}</span>
                   </div>
                 )}
-                {customer.phone && (
+                {customer.phoneCanonical && (
                   <div className="flex items-center gap-2" data-testid="customer-phone">
                     <Phone className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-                    <span>{customer.phone}</span>
-                  </div>
-                )}
-                {customer.address && (
-                  <div className="flex items-center gap-2" data-testid="customer-address">
-                    <MapPin className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
-                    <span>{customer.address}</span>
+                    <span>{customer.phoneCanonical}</span>
                   </div>
                 )}
                 {customer.createdAt && (
