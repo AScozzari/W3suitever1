@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { Card } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { useState } from 'react';
 
 interface DashboardStats {
@@ -69,7 +69,7 @@ const cardHoverVariants = {
 
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
-  const [location, navigate] = useLocation();
+  const { navigate, buildUrl } = useTenantNavigation();
 
   // Fetch dashboard stats
   const { data: stats, isLoading, error } = useQuery<DashboardStats>({
