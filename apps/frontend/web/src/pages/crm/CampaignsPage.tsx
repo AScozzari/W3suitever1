@@ -149,7 +149,10 @@ export default function CampaignsPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca campagne..."
+        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}

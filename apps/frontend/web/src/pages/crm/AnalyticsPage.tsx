@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { 
@@ -55,6 +55,7 @@ const cardVariants = {
 
 export default function AnalyticsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: analyticsResponse, isLoading, error } = useQuery({
     queryKey: ['/api/crm/analytics/driver-performance'],
@@ -68,7 +69,10 @@ export default function AnalyticsPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca analytics..."
+        />
           <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
@@ -83,7 +87,10 @@ export default function AnalyticsPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca analytics..."
+        />
           <div className="flex-1 p-6 overflow-auto">
             <ErrorState message="Errore nel caricamento analytics" />
           </div>
@@ -131,7 +138,10 @@ export default function AnalyticsPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca analytics..."
+        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}

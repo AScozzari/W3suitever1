@@ -21,7 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
 import { Button } from '@/components/ui/button';
@@ -215,6 +215,7 @@ const StageColumn = ({ stage }: { stage: Stage }) => {
 
 export default function PipelineBoardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPipeline, setSelectedPipeline] = useState('1');
   const [activeId, setActiveId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -310,7 +311,10 @@ export default function PipelineBoardPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca deal..."
+        />
 
         <div className="flex-1 p-6 overflow-auto">
           <Tabs defaultValue="board" className="h-full">

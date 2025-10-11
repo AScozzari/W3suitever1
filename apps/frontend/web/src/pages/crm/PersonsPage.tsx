@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,10 @@ export default function PersonsPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca persone..."
+          />
           <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
@@ -50,7 +53,10 @@ export default function PersonsPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca persone..."
+          />
           <div className="flex-1 p-6 overflow-auto">
             <ErrorState message="Errore nel caricamento dei contatti" />
           </div>
@@ -64,7 +70,10 @@ export default function PersonsPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca persone..."
+        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}

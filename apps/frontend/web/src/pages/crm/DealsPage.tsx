@@ -14,7 +14,7 @@ import {
 } from '@tanstack/react-table';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
 import { Button } from '@/components/ui/button';
@@ -382,7 +382,10 @@ export default function DealsPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setGlobalFilter}
+          placeholder="Cerca deal..."
+        />
 
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Toolbar */}
