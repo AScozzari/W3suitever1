@@ -16,6 +16,7 @@ import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
+import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -321,22 +322,7 @@ export default function LeadsPage() {
             </div>
             <div className="flex items-center gap-2">
               <CRMFilterDock />
-              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogTrigger asChild>
-                  <Button style={{ background: 'hsl(var(--brand-orange))' }} data-testid="button-create-lead">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuovo Lead
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Crea Nuovo Lead</DialogTitle>
-                    <DialogDescription>Inserisci i dati del nuovo lead</DialogDescription>
-                  </DialogHeader>
-                  {/* Form TODO */}
-                  <p>Form in arrivo...</p>
-                </DialogContent>
-              </Dialog>
+              <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
             </div>
           </div>
 
