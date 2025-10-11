@@ -81,7 +81,7 @@ export default function PipelinePage() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
 
-  const { data: pipelinesResponse, isLoading, error } = useQuery({
+  const { data: pipelinesResponse, isLoading, error } = useQuery<{ data: Pipeline[] }>({
     queryKey: ['/api/crm/pipelines'],
   });
 
@@ -187,7 +187,7 @@ export default function PipelinePage() {
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
-              €{((pipelines?.reduce((sum, p) => sum + p.totalValue, 0) || 0) / 1000000).toFixed(1)}M
+              €{((pipelines?.reduce((sum: number, p: Pipeline) => sum + p.totalValue, 0) || 0) / 1000000).toFixed(1)}M
             </div>
             <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               Valore totale pipeline
@@ -202,7 +202,7 @@ export default function PipelinePage() {
           initial="hidden"
           animate="visible"
         >
-          {pipelines?.map((pipeline) => {
+          {pipelines?.map((pipeline: Pipeline) => {
             const DriverIcon = getDriverIcon(pipeline.driver);
             
             return (
@@ -296,7 +296,7 @@ export default function PipelinePage() {
 
                     {/* Products Pills */}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {pipeline.products.slice(0, 3).map((product, idx) => (
+                      {pipeline.products.slice(0, 3).map((product: string, idx: number) => (
                         <span
                           key={idx}
                           className="text-xs px-2 py-1 rounded-md"
