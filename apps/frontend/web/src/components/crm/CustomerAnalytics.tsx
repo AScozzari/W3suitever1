@@ -24,37 +24,22 @@ interface CustomerAnalyticsProps {
 
 export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
   // Fetch analytics data
-  const { data: analytics, isLoading } = useQuery({
-    queryKey: ['/api/crm/analytics/customer', customerId],
+  const { data: analyticsResponse, isLoading } = useQuery({
+    queryKey: [`/api/crm/persons/${customerId}/analytics`],
+    enabled: !!customerId,
   });
 
   if (isLoading) {
     return <Skeleton className="h-96 w-full" />;
   }
 
-  // Mock data for demonstration (replace with real data from API)
-  const revenueData = [
-    { month: 'Gen', value: 2400 },
-    { month: 'Feb', value: 3200 },
-    { month: 'Mar', value: 2800 },
-    { month: 'Apr', value: 3900 },
-    { month: 'Mag', value: 4200 },
-    { month: 'Giu', value: 3800 },
-  ];
+  const analytics = analyticsResponse?.data;
+  const kpi = analytics?.kpi || { lifetimeValue: 0, ltvTrend: 0, dealsClosed: 0, engagementScore: 0, referrals: 0 };
+  const charts = analytics?.charts || { revenueData: [], interactionData: [], campaignData: [] };
 
-  const interactionData = [
-    { channel: 'Email', count: 45 },
-    { channel: 'Telefono', count: 28 },
-    { channel: 'WhatsApp', count: 32 },
-    { channel: 'Meeting', count: 12 },
-  ];
-
-  const campaignData = [
-    { name: 'Campagna A', value: 35 },
-    { name: 'Campagna B', value: 25 },
-    { name: 'Campagna C', value: 20 },
-    { name: 'Direct', value: 20 },
-  ];
+  const revenueData = charts.revenueData;
+  const interactionData = charts.interactionData;
+  const campaignData = charts.campaignData;
 
   const COLORS = ['#FF6900', '#7B2CBF', '#3b82f6', '#10b981'];
 
@@ -67,11 +52,17 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Lifetime Value</p>
               <p className="text-2xl font-bold mt-1" style={{ color: 'hsl(var(--brand-orange))' }}>
-                €18,450
+                €{kpi.lifetimeValue.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
               <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />
-                <span className="text-xs" style={{ color: '#22c55e' }}>+12.5%</span>
+                {kpi.ltvTrend >= 0 ? (
+                  <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />
+                ) : (
+                  <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />
+                )}
+                <span className="text-xs" style={{ color: kpi.ltvTrend >= 0 ? '#22c55e' : '#ef4444' }}>
+                  {kpi.ltvTrend >= 0 ? '+' : ''}{kpi.ltvTrend}%
+                </span>
               </div>
             </div>
             <DollarSign className="h-8 w-8" style={{ color: 'hsl(var(--brand-orange))' }} />
@@ -83,11 +74,11 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Deal Conclusi</p>
               <p className="text-2xl font-bold mt-1" style={{ color: 'hsl(var(--brand-purple))' }}>
-                8
+                {kpi.dealsClosed}
               </p>
               <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />
-                <span className="text-xs" style={{ color: '#22c55e' }}>+2 questo mese</span>
+                <Target className="h-3 w-3" style={{ color: 'hsl(var(--brand-purple))' }} />
+                <span className="text-xs" style={{ color: '#6b7280' }}>Vinti</span>
               </div>
             </div>
             <Target className="h-8 w-8" style={{ color: 'hsl(var(--brand-purple))' }} />
@@ -99,11 +90,13 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Engagement Score</p>
               <p className="text-2xl font-bold mt-1" style={{ color: '#3b82f6' }}>
-                87/100
+                {kpi.engagementScore}/100
               </p>
               <div className="flex items-center gap-1 mt-2">
                 <Activity className="h-3 w-3" style={{ color: '#3b82f6' }} />
-                <span className="text-xs" style={{ color: '#6b7280' }}>Alto</span>
+                <span className="text-xs" style={{ color: '#6b7280' }}>
+                  {kpi.engagementScore >= 70 ? 'Alto' : kpi.engagementScore >= 40 ? 'Medio' : 'Basso'}
+                </span>
               </div>
             </div>
             <Activity className="h-8 w-8" style={{ color: '#3b82f6' }} />
@@ -115,11 +108,13 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Referral Generati</p>
               <p className="text-2xl font-bold mt-1" style={{ color: '#10b981' }}>
-                3
+                {kpi.referrals}
               </p>
               <div className="flex items-center gap-1 mt-2">
                 <Users className="h-3 w-3" style={{ color: '#10b981' }} />
-                <span className="text-xs" style={{ color: '#6b7280' }}>Advocacy</span>
+                <span className="text-xs" style={{ color: '#6b7280' }}>
+                  {kpi.referrals > 0 ? 'Advocacy' : 'Nessuno'}
+                </span>
               </div>
             </div>
             <Users className="h-8 w-8" style={{ color: '#10b981' }} />
