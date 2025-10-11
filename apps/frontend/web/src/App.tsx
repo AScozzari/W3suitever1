@@ -111,8 +111,15 @@ function Router() {
           const tenantSlug = params.tenant;
           
           // Validation tenant slug - Exclude reserved paths
-          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api' || tenantSlug === 'workflows' || tenantSlug === 'tasks' || tenantSlug === 'impostazioni' || tenantSlug === 'settings') {
+          const reservedPaths = ['api', 'workflows', 'tasks', 'impostazioni', 'settings', 'crm'];
+          if (!tenantSlug || tenantSlug === '' || reservedPaths.includes(tenantSlug)) {
             console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
+            // Redirect to tenant-aware path
+            const lastTenant = localStorage.getItem('currentTenant') || 'staging';
+            if (tenantSlug === 'crm') {
+              console.log(`[APP-ROUTER] 🔄 Redirecting /crm to /${lastTenant}/crm`);
+              return <Redirect to={`/${lastTenant}/crm`} />;
+            }
             return <NotFound />;
           }
           
