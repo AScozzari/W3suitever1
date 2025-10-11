@@ -20,13 +20,18 @@ import {
   crmLeads,
   crmCampaigns,
   crmPipelines,
+  crmPipelineWorkflows,
+  crmPipelineStages,
   crmDeals,
   crmInteractions,
   crmTasks,
+  workflowTemplates,
   insertCrmPersonSchema,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmPipelineSchema,
+  insertCrmPipelineWorkflowSchema,
+  insertCrmPipelineStageSchema,
   insertCrmDealSchema
 } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
@@ -1007,6 +1012,631 @@ router.patch('/pipelines/:id', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to update pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PIPELINE WORKFLOWS (Subresource) ====================
+
+/**
+ * GET /api/crm/pipelines/:id/workflows
+ * Get all workflows assigned to a pipeline with details
+ */
+router.get('/pipelines/:pipelineId/workflows', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get assigned workflows with join
+    const workflows = await db
+      .select({
+        id: crmPipelineWorkflows.id,
+        pipelineId: crmPipelineWorkflows.pipelineId,
+        workflowTemplateId: crmPipelineWorkflows.workflowTemplateId,
+        isActive: crmPipelineWorkflows.isActive,
+        assignedBy: crmPipelineWorkflows.assignedBy,
+        assignedAt: crmPipelineWorkflows.assignedAt,
+        notes: crmPipelineWorkflows.notes,
+        workflowName: workflowTemplates.name,
+        workflowCategory: workflowTemplates.category,
+        workflowType: workflowTemplates.templateType
+      })
+      .from(crmPipelineWorkflows)
+      .innerJoin(workflowTemplates, eq(crmPipelineWorkflows.workflowTemplateId, workflowTemplates.id))
+      .where(eq(crmPipelineWorkflows.pipelineId, pipelineId))
+      .orderBy(desc(crmPipelineWorkflows.assignedAt));
+
+    res.status(200).json({
+      success: true,
+      data: workflows,
+      message: 'Pipeline workflows retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving pipeline workflows', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve pipeline workflows',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/pipelines/:id/workflows
+ * Assign a workflow to a pipeline (RBAC: admin + marketing roles)
+ */
+router.post('/pipelines/:pipelineId/workflows', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+
+    if (!tenantId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context or user authentication',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+
+    // TODO: Implement RBAC check for admin + marketing permissions via sovereignty system
+    // For now, allow any authenticated user (consistent with other CRM endpoints)
+
+    const validation = insertCrmPipelineWorkflowSchema.omit({ assignedBy: true }).safeParse({
+      ...req.body,
+      pipelineId
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Verify workflow template exists
+    const [workflow] = await db
+      .select()
+      .from(workflowTemplates)
+      .where(eq(workflowTemplates.id, validation.data.workflowTemplateId))
+      .limit(1);
+
+    if (!workflow) {
+      return res.status(404).json({
+        success: false,
+        error: 'Workflow template not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [assignment] = await db
+      .insert(crmPipelineWorkflows)
+      .values({
+        ...validation.data,
+        assignedBy: userId
+      })
+      .returning();
+
+    logger.info('Workflow assigned to pipeline', { 
+      pipelineId, 
+      workflowTemplateId: validation.data.workflowTemplateId,
+      assignedBy: userId,
+      tenantId 
+    });
+
+    res.status(201).json({
+      success: true,
+      data: assignment,
+      message: 'Workflow assigned to pipeline successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    // Handle unique constraint violation
+    if (error?.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        error: 'Conflict',
+        message: 'This workflow is already assigned to this pipeline',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.error('Error assigning workflow to pipeline', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to assign workflow to pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/pipelines/:id/workflows/:workflowId
+ * Remove a workflow assignment from a pipeline
+ */
+router.delete('/pipelines/:pipelineId/workflows/:workflowId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId, workflowId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify pipeline belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [deleted] = await db
+      .delete(crmPipelineWorkflows)
+      .where(and(
+        eq(crmPipelineWorkflows.id, workflowId),
+        eq(crmPipelineWorkflows.pipelineId, pipelineId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: 'Workflow assignment not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Workflow removed from pipeline', { 
+      pipelineId, 
+      workflowId,
+      tenantId 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: deleted,
+      message: 'Workflow removed from pipeline successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error removing workflow from pipeline', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      workflowId: req.params.workflowId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to remove workflow from pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PIPELINE STAGES (Subresource) ====================
+
+/**
+ * GET /api/crm/pipelines/:id/stages
+ * Get all custom stages for a pipeline ordered by orderIndex
+ */
+router.get('/pipelines/:pipelineId/stages', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const stages = await db
+      .select()
+      .from(crmPipelineStages)
+      .where(eq(crmPipelineStages.pipelineId, pipelineId))
+      .orderBy(crmPipelineStages.orderIndex);
+
+    res.status(200).json({
+      success: true,
+      data: stages,
+      message: 'Pipeline stages retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving pipeline stages', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve pipeline stages',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/pipelines/:id/stages
+ * Create a new custom stage for a pipeline
+ */
+router.post('/pipelines/:pipelineId/stages', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+
+    const validation = insertCrmPipelineStageSchema.safeParse({
+      ...req.body,
+      pipelineId
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [stage] = await db
+      .insert(crmPipelineStages)
+      .values(validation.data)
+      .returning();
+
+    logger.info('Pipeline stage created', { 
+      pipelineId, 
+      stageId: stage.id,
+      stageName: stage.name,
+      category: stage.category,
+      tenantId 
+    });
+
+    res.status(201).json({
+      success: true,
+      data: stage,
+      message: 'Pipeline stage created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    // Handle unique constraint violation
+    if (error?.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        error: 'Conflict',
+        message: 'A stage with this name already exists in this pipeline',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.error('Error creating pipeline stage', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create pipeline stage',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/pipelines/:id/stages/:stageId
+ * Update a custom stage
+ */
+router.patch('/pipelines/:pipelineId/stages/:stageId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId, stageId } = req.params;
+    const updateSchema = insertCrmPipelineStageSchema.omit({ pipelineId: true }).partial();
+
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify pipeline belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [updated] = await db
+      .update(crmPipelineStages)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmPipelineStages.id, stageId),
+        eq(crmPipelineStages.pipelineId, pipelineId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Stage not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Pipeline stage updated', { 
+      pipelineId, 
+      stageId,
+      tenantId 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Pipeline stage updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating pipeline stage', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      stageId: req.params.stageId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update pipeline stage',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/pipelines/:id/stages/:stageId
+ * Delete a custom stage
+ */
+router.delete('/pipelines/:pipelineId/stages/:stageId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId, stageId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify pipeline belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [deleted] = await db
+      .delete(crmPipelineStages)
+      .where(and(
+        eq(crmPipelineStages.id, stageId),
+        eq(crmPipelineStages.pipelineId, pipelineId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: 'Stage not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Pipeline stage deleted', { 
+      pipelineId, 
+      stageId,
+      tenantId 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: deleted,
+      message: 'Pipeline stage deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting pipeline stage', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      stageId: req.params.stageId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete pipeline stage',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
