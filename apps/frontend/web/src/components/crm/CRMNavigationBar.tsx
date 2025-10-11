@@ -78,16 +78,29 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
 
   return (
     <nav 
-      className={`sticky top-0 z-40 border-b ${className}`}
+      className={`sticky top-0 z-40 ${className}`}
       style={{ 
-        background: 'var(--glass-card-bg)',
-        backdropFilter: 'var(--glass-blur)',
-        WebkitBackdropFilter: 'var(--glass-blur)',
-        borderColor: 'var(--glass-card-border)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        padding: '20px',
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+        marginBottom: '24px'
       }}
     >
-      <div className="flex items-center h-14 px-4 max-w-full overflow-x-auto">
+      <div 
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(243, 244, 246, 0.5)',
+          borderRadius: '12px',
+          padding: '4px',
+          gap: '4px'
+        }}
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
@@ -96,23 +109,48 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
             <button
               key={tab.value}
               onClick={() => navigate(tab.path.replace(/^\/[^/]+\//, ''))}
-              className="relative flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-200 whitespace-nowrap hover:bg-white/10"
+              className="transition-all duration-200"
               style={{
-                background: isActive ? 'var(--brand-glass-orange)' : 'transparent',
-                color: isActive ? 'hsl(var(--brand-orange))' : 'var(--text-secondary)',
-                fontWeight: isActive ? '600' : '500'
+                flex: 1,
+                background: isActive 
+                  ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                  : 'transparent',
+                color: isActive ? 'white' : '#6b7280',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: isActive ? '600' : '500',
+                cursor: 'pointer',
+                boxShadow: isActive 
+                  ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                  : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                textAlign: 'center',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)'
+              }}
+              onMouseOver={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.color = '#374151';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
               }}
               data-testid={`crm-tab-${tab.value}`}
             >
               <Icon className="h-4 w-4" />
-              <span className="text-sm">{tab.label}</span>
-              
-              {isActive && (
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  style={{ background: 'hsl(var(--brand-orange))' }}
-                />
-              )}
+              <span>{tab.label}</span>
             </button>
           );
         })}
