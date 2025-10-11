@@ -15,7 +15,9 @@ import {
   Target, 
   CheckSquare, 
   Megaphone,
-  BarChart3
+  BarChart3,
+  User,
+  Settings
 } from 'lucide-react';
 import { CreateLeadDialog } from './CreateLeadDialog';
 import { CreateDealDialog } from './CreateDealDialog';
@@ -73,7 +75,7 @@ export function CRMCommandPalette() {
         
         <CommandGroup heading="Navigazione CRM">
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm'))}
             data-testid="cmd-nav-dashboard"
           >
             <BarChart3 className="mr-2 h-4 w-4" />
@@ -81,7 +83,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/leads').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/leads'))}
             data-testid="cmd-nav-leads"
           >
             <UserPlus className="mr-2 h-4 w-4" />
@@ -89,7 +91,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/pipeline/board').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/pipeline/board'))}
             data-testid="cmd-nav-pipeline"
           >
             <Target className="mr-2 h-4 w-4" />
@@ -97,7 +99,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/deals').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/deals'))}
             data-testid="cmd-nav-deals"
           >
             <Target className="mr-2 h-4 w-4" />
@@ -105,7 +107,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/customers').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/customers'))}
             data-testid="cmd-nav-customers"
           >
             <User className="mr-2 h-4 w-4" />
@@ -113,7 +115,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/activities').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/activities'))}
             data-testid="cmd-nav-activities"
           >
             <CheckSquare className="mr-2 h-4 w-4" />
@@ -121,7 +123,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/campaigns').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/campaigns'))}
             data-testid="cmd-nav-campaigns"
           >
             <Megaphone className="mr-2 h-4 w-4" />
@@ -129,7 +131,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => navigate(buildUrl('crm/analytics').replace(/^\/[^/]+\//, '')))}
+            onSelect={() => handleSelect(() => navigate('crm/analytics'))}
             data-testid="cmd-nav-analytics"
           >
             <BarChart3 className="mr-2 h-4 w-4" />
