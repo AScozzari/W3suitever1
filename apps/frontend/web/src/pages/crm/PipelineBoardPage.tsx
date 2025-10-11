@@ -219,122 +219,13 @@ export default function PipelineBoardPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const [stages, setStages] = useState<Stage[]>([
-    {
-      id: 'lead',
-      name: 'Lead Nuovo',
-      color: 'hsl(var(--brand-purple))',
-      deals: [
-        {
-          id: '1',
-          title: 'Fibra FTTH 2.5 Gbps - Rossi SRL',
-          value: 45000,
-          stageId: 'lead',
-          probability: 20,
-          ownerName: 'Tu',
-          ownerInitials: 'TU',
-          company: 'Rossi SRL',
-          daysInStage: 2,
-          tags: ['FISSO', 'Qualificato']
-        }
-      ]
-    },
-    {
-      id: 'qualification',
-      name: 'Qualificazione',
-      color: 'hsl(220, 90%, 56%)',
-      deals: [
-        {
-          id: '2',
-          title: 'Unlimited 5G - Bianchi Auto',
-          value: 12000,
-          stageId: 'qualification',
-          probability: 40,
-          ownerName: 'Tu',
-          ownerInitials: 'TU',
-          company: 'Bianchi Auto',
-          daysInStage: 5,
-          tags: ['MOBILE', 'Hot']
-        },
-        {
-          id: '3',
-          title: 'iPhone 17 Pro - Giuseppe Verdi',
-          value: 22000,
-          stageId: 'qualification',
-          probability: 35,
-          ownerName: 'Tu',
-          ownerInitials: 'TU',
-          daysInStage: 3,
-          tags: ['DEVICE']
-        }
-      ]
-    },
-    {
-      id: 'proposal',
-      name: 'Proposta',
-      color: 'hsl(280, 65%, 60%)',
-      deals: [
-        {
-          id: '4',
-          title: 'Super Fibra & Netflix - Tech Solutions',
-          value: 38000,
-          stageId: 'proposal',
-          probability: 60,
-          ownerName: 'Tu',
-          ownerInitials: 'TU',
-          company: 'Tech Solutions',
-          daysInStage: 7,
-          tags: ['FISSO', 'Bundle']
-        }
-      ]
-    },
-    {
-      id: 'negotiation',
-      name: 'Negoziazione',
-      color: 'hsl(var(--brand-orange))',
-      deals: [
-        {
-          id: '5',
-          title: 'Galaxy S25 FE + Unlimited - Marco Luigi',
-          value: 28000,
-          stageId: 'negotiation',
-          probability: 75,
-          ownerName: 'Tu',
-          ownerInitials: 'TU',
-          daysInStage: 12,
-          tags: ['DEVICE', 'MOBILE']
-        }
-      ]
-    },
-    {
-      id: 'closing',
-      name: 'Chiusura',
-      color: 'hsl(142, 76%, 36%)',
-      deals: [
-        {
-          id: '6',
-          title: 'Accessori Premium - Store Milano',
-          value: 8500,
-          stageId: 'closing',
-          probability: 90,
-          ownerName: 'Tu',
-          ownerInitials: 'TU',
-          company: 'Store Milano',
-          daysInStage: 4,
-          tags: ['ACCESSORI', 'Ready']
-        }
-      ]
-    }
-  ]);
+  const [stages, setStages] = useState<Stage[]>([]);
 
-  const { data: pipelines } = useQuery<Pipeline[]>({
+  const { data: pipelinesResponse } = useQuery({
     queryKey: ['/api/crm/pipelines'],
-    initialData: [
-      { id: '1', name: 'Pipeline Fisso', driver: 'FISSO' },
-      { id: '2', name: 'Pipeline Mobile', driver: 'MOBILE' },
-      { id: '3', name: 'Pipeline Device', driver: 'DEVICE' }
-    ]
   });
+
+  const pipelines = pipelinesResponse?.data || [];
 
   const moveDealMutation = useMutation({
     mutationFn: async ({ dealId, newStageId }: { dealId: string; newStageId: string }) => {

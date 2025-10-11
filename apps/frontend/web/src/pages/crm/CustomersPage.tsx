@@ -61,33 +61,11 @@ const AccountsTable = () => {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  const { data: accounts = [] } = useQuery<Account[]>({
+  const { data: accountsResponse } = useQuery({
     queryKey: ['/api/crm/accounts', globalFilter],
-    initialData: [
-      {
-        id: '1',
-        companyName: 'Rossi SRL',
-        vatNumber: 'IT12345678901',
-        contactPerson: 'Marco Rossi',
-        email: 'info@rossisrl.it',
-        phone: '+39 02 1234567',
-        activeDeals: 3,
-        ltv: 125000,
-        status: 'active'
-      },
-      {
-        id: '2',
-        companyName: 'Bianchi Auto SpA',
-        vatNumber: 'IT98765432109',
-        contactPerson: 'Giulia Bianchi',
-        email: 'giulia@bianchiauto.it',
-        phone: '+39 06 7654321',
-        activeDeals: 1,
-        ltv: 45000,
-        status: 'active'
-      }
-    ]
   });
+
+  const accounts = accountsResponse?.data || [];
 
   const columns: ColumnDef<Account>[] = [
     {
@@ -284,25 +262,11 @@ const ContactsTable = () => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  const { data: contacts = [] } = useQuery<Contact[]>({
+  const { data: contactsResponse } = useQuery({
     queryKey: ['/api/crm/contacts', globalFilter],
-    initialData: [
-      {
-        id: '1',
-        firstName: 'Mario',
-        lastName: 'Verdi',
-        email: 'mario.verdi@example.com',
-        phone: '+39 340 1234567',
-        company: 'Freelance',
-        consentMarketing: true,
-        consentProfiling: false,
-        preferredChannel: 'WHATSAPP',
-        quietHoursStart: '20:00',
-        quietHoursEnd: '09:00',
-        lastContact: '2024-10-10'
-      }
-    ]
   });
+
+  const contacts = contactsResponse?.data || [];
 
   const columns: ColumnDef<Contact>[] = [
     {

@@ -56,47 +56,11 @@ const cardVariants = {
 export default function AnalyticsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
 
-  const { data: analytics, isLoading, error } = useQuery<DriverPerformance[]>({
+  const { data: analyticsResponse, isLoading, error } = useQuery({
     queryKey: ['/api/crm/analytics/driver-performance'],
-    initialData: [
-      {
-        driver: 'FISSO',
-        totalRevenue: 1850000,
-        dealsWon: 32,
-        conversionRate: 68.5,
-        avgDealSize: 57812,
-        trend: 'up',
-        trendValue: 12.3
-      },
-      {
-        driver: 'MOBILE',
-        totalRevenue: 890000,
-        dealsWon: 89,
-        conversionRate: 72.3,
-        avgDealSize: 10000,
-        trend: 'up',
-        trendValue: 8.7
-      },
-      {
-        driver: 'DEVICE',
-        totalRevenue: 2680000,
-        dealsWon: 134,
-        conversionRate: 81.2,
-        avgDealSize: 20000,
-        trend: 'up',
-        trendValue: 15.4
-      },
-      {
-        driver: 'ACCESSORI',
-        totalRevenue: 530000,
-        dealsWon: 212,
-        conversionRate: 85.7,
-        avgDealSize: 2500,
-        trend: 'down',
-        trendValue: 3.2
-      }
-    ]
   });
+
+  const analytics = analyticsResponse?.data || [];
 
   if (isLoading) {
     return (

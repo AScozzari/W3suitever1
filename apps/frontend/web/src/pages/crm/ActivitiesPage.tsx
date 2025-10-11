@@ -205,64 +205,17 @@ export default function ActivitiesPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
-  const { data: tasks = [] } = useQuery<Task[]>({
+  const { data: tasksResponse } = useQuery({
     queryKey: ['/api/crm/tasks'],
-    initialData: [
-      {
-        id: '1',
-        title: 'Follow-up Rossi SRL',
-        description: 'Chiamare per aggiornamento su proposta fibra',
-        type: 'call',
-        priority: 'high',
-        dueDate: '2024-10-11T10:00:00Z',
-        status: 'overdue',
-        assignedTo: 'Tu',
-        relatedTo: 'Rossi SRL',
-        relatedType: 'deal'
-      },
-      {
-        id: '2',
-        title: 'Invia preventivo Bianchi',
-        description: 'Preparare e inviare preventivo Mobile 5G',
-        type: 'email',
-        priority: 'medium',
-        dueDate: '2024-10-12T14:00:00Z',
-        status: 'pending',
-        assignedTo: 'Tu',
-        relatedTo: 'Bianchi Auto',
-        relatedType: 'lead'
-      }
-    ]
   });
 
-  const { data: interactions = [] } = useQuery<Interaction[]>({
+  const tasks = tasksResponse?.data || [];
+
+  const { data: interactionsResponse } = useQuery({
     queryKey: ['/api/crm/interactions'],
-    initialData: [
-      {
-        id: '1',
-        type: 'call',
-        outcome: 'success',
-        duration: 15,
-        notes: 'Cliente interessato a upgrade fibra. Schedulato incontro per giovedì.',
-        contactName: 'Marco Rossi',
-        contactId: '1',
-        timestamp: '2024-10-10T11:30:00Z',
-        ownerId: 'me',
-        ownerName: 'Tu'
-      },
-      {
-        id: '2',
-        type: 'whatsapp',
-        outcome: 'scheduled',
-        notes: 'Inviato preventivo via WA. Cliente chiede tempo per valutare.',
-        contactName: 'Giulia Bianchi',
-        contactId: '2',
-        timestamp: '2024-10-10T15:45:00Z',
-        ownerId: 'me',
-        ownerName: 'Tu'
-      }
-    ]
   });
+
+  const interactions = interactionsResponse?.data || [];
 
   const handleCompleteTask = (id: string) => {
     console.log('Complete task:', id);

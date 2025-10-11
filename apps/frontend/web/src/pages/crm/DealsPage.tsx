@@ -118,43 +118,11 @@ export default function DealsPage() {
   const [globalFilter, setGlobalFilter] = useState('');
   const { toast } = useToast();
 
-  const { data: deals = [], isLoading } = useQuery<Deal[]>({
+  const { data: dealsResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/deals', globalFilter],
-    initialData: [
-      {
-        id: '1',
-        title: 'Fibra FTTH 2.5 Gbps - Rossi SRL',
-        value: 45000,
-        probability: 60,
-        pipelineName: 'Pipeline Fisso',
-        stageName: 'Proposta',
-        stageColor: 'hsl(280, 65%, 60%)',
-        ownerName: 'Tu',
-        ownerInitials: 'TU',
-        company: 'Rossi SRL',
-        campaignName: 'Black Friday 2024',
-        driver: 'FISSO',
-        daysInStage: 7,
-        updatedAt: '2024-10-10T15:30:00Z'
-      },
-      {
-        id: '2',
-        title: 'Unlimited 5G - Bianchi Auto',
-        value: 12000,
-        probability: 40,
-        pipelineName: 'Pipeline Mobile',
-        stageName: 'Qualificazione',
-        stageColor: 'hsl(220, 90%, 56%)',
-        ownerName: 'Tu',
-        ownerInitials: 'TU',
-        company: 'Bianchi Auto',
-        campaignName: 'Mobile 5G Promo',
-        driver: 'MOBILE',
-        daysInStage: 5,
-        updatedAt: '2024-10-11T10:00:00Z'
-      }
-    ]
   });
+
+  const deals = dealsResponse?.data || [];
 
   const updateDealMutation = useMutation({
     mutationFn: async ({ dealId, field, value }: { dealId: string; field: string; value: any }) => {

@@ -75,51 +75,11 @@ export default function PipelinePage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
 
-  const { data: pipelines, isLoading, error } = useQuery<Pipeline[]>({
+  const { data: pipelinesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/crm/pipelines'],
-    initialData: [
-      {
-        id: '1',
-        name: 'Pipeline Fisso',
-        driver: 'FISSO',
-        activeDeals: 47,
-        totalValue: 1850000,
-        conversionRate: 68.5,
-        avgDealValue: 39361,
-        products: ['Super Fibra FTTH 2.5 Gbps', 'Super Fibra & Netflix', 'Fibra Amazon Prime', 'Absolute']
-      },
-      {
-        id: '2',
-        name: 'Pipeline Mobile',
-        driver: 'MOBILE',
-        activeDeals: 89,
-        totalValue: 890000,
-        conversionRate: 72.3,
-        avgDealValue: 10000,
-        products: ['Unlimited 5G', 'Smart Pack 5G', 'Pack 5G Reload Exchange', 'Call Your Country']
-      },
-      {
-        id: '3',
-        name: 'Pipeline Device',
-        driver: 'DEVICE',
-        activeDeals: 134,
-        totalValue: 2680000,
-        conversionRate: 81.2,
-        avgDealValue: 20000,
-        products: ['Apple iPhone 17 Pro', 'Samsung Galaxy S25 FE', 'Xiaomi/Vivo/Oppo', 'Motorola/Huawei']
-      },
-      {
-        id: '4',
-        name: 'Pipeline Accessori',
-        driver: 'ACCESSORI',
-        activeDeals: 212,
-        totalValue: 530000,
-        conversionRate: 85.7,
-        avgDealValue: 2500,
-        products: ['Modem Wi-Fi 7', 'Protezioni Smartphone', 'Caricabatterie', 'Cuffie Audio']
-      }
-    ]
   });
+
+  const pipelines = pipelinesResponse?.data || [];
 
   if (isLoading) {
     return (

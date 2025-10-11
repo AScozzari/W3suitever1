@@ -79,42 +79,11 @@ export default function LeadsPage() {
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: leads = [], isLoading } = useQuery<Lead[]>({
+  const { data: leadsResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/leads', globalFilter],
-    initialData: [
-      {
-        id: '1',
-        firstName: 'Marco',
-        lastName: 'Rossi',
-        email: 'marco.rossi@example.com',
-        phone: '+39 340 1234567',
-        company: 'Rossi SRL',
-        status: 'qualified',
-        source: 'WALK_IN',
-        driver: 'FISSO',
-        campaignName: 'Black Friday 2024',
-        score: 85,
-        ownerId: 'me',
-        ownerName: 'Tu',
-        createdAt: '2024-10-10T10:00:00Z'
-      },
-      {
-        id: '2',
-        firstName: 'Giulia',
-        lastName: 'Bianchi',
-        email: 'giulia.bianchi@example.com',
-        phone: '+39 345 7654321',
-        status: 'new',
-        source: 'WEB',
-        driver: 'MOBILE',
-        campaignName: 'Mobile 5G Promo',
-        score: 72,
-        ownerId: 'me',
-        ownerName: 'Tu',
-        createdAt: '2024-10-11T14:30:00Z'
-      }
-    ]
   });
+
+  const leads = leadsResponse?.data || [];
 
   const convertMutation = useMutation({
     mutationFn: async ({ leadId, pipelineId }: { leadId: string; pipelineId: string }) => {

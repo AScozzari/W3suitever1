@@ -82,50 +82,11 @@ export default function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-  const { data: campaigns, isLoading, error } = useQuery<Campaign[]>({
+  const { data: campaignsResponse, isLoading, error } = useQuery({
     queryKey: ['/api/crm/campaigns', searchQuery],
-    initialData: [
-      {
-        id: '1',
-        name: 'Black Friday 2025 - Fibra',
-        status: 'active',
-        type: 'inbound_media',
-        totalLeads: 1247,
-        workedLeads: 823,
-        notWorkedLeads: 424,
-        conversionRate: 34.5,
-        budget: 50000,
-        startDate: '2025-10-01',
-        endDate: '2025-11-30'
-      },
-      {
-        id: '2',
-        name: 'Mobile 5G Unlimited',
-        status: 'active',
-        type: 'outbound_crm',
-        totalLeads: 892,
-        workedLeads: 645,
-        notWorkedLeads: 247,
-        conversionRate: 42.1,
-        budget: 35000,
-        startDate: '2025-09-15',
-        endDate: '2025-10-31'
-      },
-      {
-        id: '3',
-        name: 'Device iPhone 17 Pro',
-        status: 'active',
-        type: 'inbound_media',
-        totalLeads: 2156,
-        workedLeads: 1834,
-        notWorkedLeads: 322,
-        conversionRate: 56.8,
-        budget: 75000,
-        startDate: '2025-09-20',
-        endDate: '2025-12-20'
-      }
-    ]
   });
+
+  const campaigns = campaignsResponse?.data || [];
 
   if (isLoading) {
     return (

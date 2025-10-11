@@ -76,19 +76,11 @@ export default function CRMDashboardPage() {
   const { navigate, buildUrl } = useTenantNavigation();
 
   // Fetch dashboard stats
-  const { data: stats, isLoading, error } = useQuery<DashboardStats>({
+  const { data: statsResponse, isLoading, error } = useQuery({
     queryKey: ['/api/crm/dashboard/stats'],
-    initialData: {
-      totalPersons: 156,
-      totalLeads: 47,
-      totalDeals: 23,
-      totalCampaigns: 8,
-      conversionRate: 48.9,
-      openDeals: 15,
-      wonDeals: 6,
-      pipelineValue: 2400000
-    }
   });
+
+  const stats = statsResponse?.data;
 
   if (isLoading) {
     return (
@@ -442,63 +434,8 @@ export default function CRMDashboardPage() {
           </Card>
         </div>
 
-        {/* Top Performers & Conversion */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Performers */}
-          <Card 
-            className="glass-card p-6 border-0"
-            style={{ 
-              background: 'var(--glass-card-bg)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid var(--glass-card-border)',
-              boxShadow: 'var(--shadow-glass-sm)'
-            }}
-          >
-            <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
-              Top Performers
-            </h2>
-            
-            <div className="space-y-4">
-              {[
-                { name: 'Marco Rossi', deals: 15, value: '€450K', avatar: 'MR' },
-                { name: 'Laura Bianchi', deals: 12, value: '€380K', avatar: 'LB' },
-                { name: 'Giuseppe Verdi', deals: 10, value: '€320K', avatar: 'GV' }
-              ].map((performer, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg" 
-                  style={{ background: 'var(--glass-bg-light)' }}>
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
-                      style={{ 
-                        background: i === 0 ? 'var(--brand-glass-orange)' : 
-                                   i === 1 ? 'var(--brand-glass-purple)' : 
-                                   'var(--brand-glass-gradient)',
-                        color: 'hsl(var(--brand-orange))'
-                      }}
-                    >
-                      {performer.avatar}
-                    </div>
-                    <div>
-                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {performer.name}
-                      </p>
-                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {performer.deals} deals chiusi
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold" style={{ color: 'hsl(var(--success))' }}>
-                      {performer.value}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Conversion Funnel */}
+        {/* Conversion Funnel */}
+        <div className="grid grid-cols-1 gap-6">
           <Card 
             className="glass-card p-6 border-0"
             style={{ 

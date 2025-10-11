@@ -26,28 +26,20 @@ export function CRMScopeBar({ onScopeChange, className = '' }: CRMScopeBarProps)
   });
 
   // Fetch retail stores (no warehouses/offices)
-  const { data: stores } = useQuery({
+  const { data: storesResponse } = useQuery({
     queryKey: ['/api/stores'],
-    select: (data: any[]) => data.filter(store => 
-      store.type === 'RETAIL' || store.type === 'STORE'
-    ),
-    initialData: [
-      { id: 'all', name: 'Tutti gli store', type: 'RETAIL' },
-      { id: '1', name: 'WindTre Store Milano Centro', type: 'RETAIL' },
-      { id: '2', name: 'WindTre Store Roma Termini', type: 'RETAIL' }
-    ]
   });
 
+  const stores = storesResponse?.data?.filter((store: any) => 
+    store.type === 'RETAIL' || store.type === 'STORE'
+  ) || [{ id: 'all', name: 'Tutti gli store', type: 'RETAIL' }];
+
   // Fetch campaigns for selected store
-  const { data: campaigns } = useQuery({
+  const { data: campaignsResponse } = useQuery({
     queryKey: ['/api/crm/campaigns', selectedStore],
-    initialData: [
-      { id: 'all', name: 'Tutte le campagne' },
-      { id: '1', name: 'Black Friday 2024', status: 'active' },
-      { id: '2', name: 'Super Fibra Q1', status: 'active' },
-      { id: '3', name: 'Mobile 5G Promo', status: 'active' }
-    ]
   });
+
+  const campaigns = campaignsResponse?.data || [{ id: 'all', name: 'Tutte le campagne' }];
 
   const handleScopeChange = () => {
     onScopeChange?.({
