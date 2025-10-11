@@ -38,7 +38,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
 
   // Combine all events into timeline
   const timelineEvents = [
-    ...(interactions?.data?.map((i: any) => ({
+    ...((interactions as any)?.map?.((i: any) => ({
       type: 'interaction',
       icon: getInteractionIcon(i.channel),
       color: getInteractionColor(i.channel),
@@ -47,7 +47,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
       date: new Date(i.occurredAt),
       metadata: { duration: i.durationSeconds, outcome: i.outcome }
     })) || []),
-    ...(leads?.data?.map((l: any) => ({
+    ...((leads as any)?.map?.((l: any) => ({
       type: 'lead',
       icon: UserPlus,
       color: 'hsl(var(--brand-purple))',
@@ -56,7 +56,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
       date: new Date(l.createdAt),
       metadata: { status: l.status, score: l.leadScore }
     })) || []),
-    ...(deals?.data?.map((d: any) => ({
+    ...((deals as any)?.map?.((d: any) => ({
       type: 'deal',
       icon: Target,
       color: 'hsl(var(--brand-orange))',
@@ -103,7 +103,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
           {timelineEvents.map((event, index) => {
             const Icon = event.icon;
             return (
-              <div key={index} className="relative pl-20">
+              <div key={index} className="relative pl-20" data-testid={`timeline-event-${event.type}-${index}`}>
                 {/* Icon Circle */}
                 <div 
                   className="absolute left-0 flex items-center justify-center w-16 h-16 rounded-full"
@@ -111,6 +111,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
                     background: `${event.color}15`,
                     border: `2px solid ${event.color}`,
                   }}
+                  data-testid={`timeline-icon-${event.type}`}
                 >
                   <Icon className="h-6 w-6" style={{ color: event.color }} />
                 </div>
@@ -123,6 +124,7 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
                     backdropFilter: 'blur(10px)',
                     border: `1px solid ${event.color}30`,
                   }}
+                  data-testid={`timeline-card-${event.type}`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -150,17 +152,18 @@ export function CustomerTimelineView({ customerId }: CustomerTimelineViewProps) 
                         <Badge 
                           variant={event.metadata.status === 'won' ? 'default' : 'outline'}
                           className="text-xs"
+                          data-testid="badge-timeline-status"
                         >
                           {event.metadata.status}
                         </Badge>
                       )}
                       {event.metadata.score && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs" data-testid="badge-timeline-score">
                           Score: {event.metadata.score}
                         </Badge>
                       )}
                       {event.metadata.duration && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs" data-testid="badge-timeline-duration">
                           {Math.floor(event.metadata.duration / 60)}m {event.metadata.duration % 60}s
                         </Badge>
                       )}

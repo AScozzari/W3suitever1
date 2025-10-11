@@ -62,7 +62,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="p-4" style={{ background: 'rgba(255, 105, 0, 0.05)', border: '1px solid rgba(255, 105, 0, 0.2)' }}>
+        <Card className="p-4" style={{ background: 'rgba(255, 105, 0, 0.05)', border: '1px solid rgba(255, 105, 0, 0.2)' }} data-testid="analytics-ltv">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Lifetime Value</p>
@@ -78,7 +78,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
           </div>
         </Card>
 
-        <Card className="p-4" style={{ background: 'rgba(123, 44, 191, 0.05)', border: '1px solid rgba(123, 44, 191, 0.2)' }}>
+        <Card className="p-4" style={{ background: 'rgba(123, 44, 191, 0.05)', border: '1px solid rgba(123, 44, 191, 0.2)' }} data-testid="analytics-deals">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Deal Conclusi</p>
@@ -94,7 +94,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
           </div>
         </Card>
 
-        <Card className="p-4" style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+        <Card className="p-4" style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }} data-testid="analytics-engagement">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Engagement Score</p>
@@ -110,7 +110,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
           </div>
         </Card>
 
-        <Card className="p-4" style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+        <Card className="p-4" style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }} data-testid="analytics-referrals">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Referral Generati</p>
@@ -129,7 +129,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-2 gap-6">
-        <Card className="p-6">
+        <Card className="p-6" data-testid="chart-revenue-trend">
           <h4 className="font-semibold mb-4" style={{ color: '#1a1a1a' }}>
             Andamento Fatturato (6 mesi)
           </h4>
@@ -156,7 +156,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6" data-testid="chart-interaction-channels">
           <h4 className="font-semibold mb-4" style={{ color: '#1a1a1a' }}>
             Canali di Interazione
           </h4>
@@ -180,7 +180,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-2 gap-6">
-        <Card className="p-6">
+        <Card className="p-6" data-testid="chart-campaign-distribution">
           <h4 className="font-semibold mb-4" style={{ color: '#1a1a1a' }}>
             Distribuzione Campagne
           </h4>
@@ -211,7 +211,7 @@ export function CustomerAnalytics({ customerId }: CustomerAnalyticsProps) {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6" data-testid="chart-product-adoption">
           <h4 className="font-semibold mb-4" style={{ color: '#1a1a1a' }}>
             Product Adoption
           </h4>

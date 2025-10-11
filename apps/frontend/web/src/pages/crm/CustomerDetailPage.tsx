@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,59 +28,78 @@ import {
 } from 'lucide-react';
 
 export function CustomerDetailPage() {
+  const [currentModule, setCurrentModule] = useState('crm');
   const params = useParams();
   const customerId = params.id;
 
-  // Fetch customer data
-  const { data: customer, isLoading } = useQuery({
-    queryKey: ['/api/crm/customers', customerId],
-    enabled: !!customerId,
-  });
+  // Mock customer data for now (will be replaced with real API)
+  const mockCustomer = {
+    id: customerId,
+    firstName: 'Mario',
+    lastName: 'Rossi',
+    email: 'mario.rossi@example.com',
+    phone: '+39 340 1234567',
+    company: 'Rossi SRL',
+    address: 'Via Roma 123, Milano',
+    createdAt: '2024-01-15',
+    lastContact: '2024-10-05',
+    status: 'active' as const,
+    consentMarketing: true,
+    consentProfiling: false,
+    consentPrivacy: true,
+  };
 
-  // Fetch customer deals
-  const { data: deals } = useQuery({
-    queryKey: ['/api/crm/deals', { customerId }],
-    enabled: !!customerId,
-  });
+  const isLoading = false;
+  const customer = mockCustomer;
 
-  // Fetch customer leads
-  const { data: leads } = useQuery({
-    queryKey: ['/api/crm/leads', { customerId }],
-    enabled: !!customerId,
-  });
+  // Mock deals data
+  const mockDeals = [
+    { id: '1', title: 'Fibra Business', estimatedValue: 25000, status: 'won' },
+    { id: '2', title: '5G Mobile', estimatedValue: 15000, status: 'in_progress' },
+  ];
+
+  // Mock leads data  
+  const mockLeads = [
+    { id: '1', title: 'Lead Accessori', status: 'qualified' },
+  ];
 
   if (isLoading) {
     return (
-      <div className="h-screen p-8 bg-white">
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
-        <CRMNavigationBar />
-        <CRMScopeBar />
-        <Skeleton className="h-64 w-full" />
-      </div>
+        <div className="flex flex-col h-full">
+          <CRMNavigationBar />
+          <CRMScopeBar />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </Layout>
     );
   }
 
   if (!customer) {
     return (
-      <div className="h-screen p-8 bg-white">
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
-        <CRMNavigationBar />
-        <CRMScopeBar />
-        <div className="text-center py-12">Cliente non trovato</div>
-      </div>
+        <div className="flex flex-col h-full">
+          <CRMNavigationBar />
+          <CRMScopeBar />
+          <div className="text-center py-12">Cliente non trovato</div>
+        </div>
+      </Layout>
     );
   }
 
-  const initials = `${customer.data?.firstName?.[0] || ''}${customer.data?.lastName?.[0] || ''}`.toUpperCase();
-  const totalDealsValue = deals?.data?.reduce((sum: number, deal: any) => sum + (deal.estimatedValue || 0), 0) || 0;
-  const totalLeads = leads?.data?.length || 0;
-  const wonDeals = deals?.data?.filter((d: any) => d.status === 'won').length || 0;
+  const initials = `${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase();
+  const totalDealsValue = mockDeals.reduce((sum, deal) => sum + (deal.estimatedValue || 0), 0);
+  const totalLeads = mockLeads.length;
+  const wonDeals = mockDeals.filter(d => d.status === 'won').length;
 
   return (
-    <div className="min-h-screen p-8 bg-white">
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
-      <CRMNavigationBar />
-      <CRMScopeBar />
+      <div className="flex flex-col h-full">
+        <CRMNavigationBar />
+        <CRMScopeBar />
 
       {/* Header Section with KPI Cards */}
       <div className="mb-8">
@@ -109,53 +130,53 @@ export function CustomerDetailPage() {
             {/* Customer Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold" style={{ color: '#1a1a1a' }}>
-                  {customer.data?.firstName} {customer.data?.lastName}
+                <h1 className="text-3xl font-bold" style={{ color: '#1a1a1a' }} data-testid="customer-name">
+                  {customer.firstName} {customer.lastName}
                 </h1>
-                {customer.data?.companyName && (
-                  <Badge variant="outline" className="text-sm">
+                {customer.company && (
+                  <Badge variant="outline" className="text-sm" data-testid="customer-company">
                     <Building2 className="h-3 w-3 mr-1" />
-                    {customer.data.companyName}
+                    {customer.company}
                   </Badge>
                 )}
               </div>
 
               {/* Contact Details */}
               <div className="grid grid-cols-2 gap-3 text-sm" style={{ color: '#6b7280' }}>
-                {customer.data?.email && (
-                  <div className="flex items-center gap-2">
+                {customer.email && (
+                  <div className="flex items-center gap-2" data-testid="customer-email">
                     <Mail className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
-                    <span>{customer.data.email}</span>
+                    <span>{customer.email}</span>
                   </div>
                 )}
-                {customer.data?.phone && (
-                  <div className="flex items-center gap-2">
+                {customer.phone && (
+                  <div className="flex items-center gap-2" data-testid="customer-phone">
                     <Phone className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-                    <span>{customer.data.phone}</span>
+                    <span>{customer.phone}</span>
                   </div>
                 )}
-                {customer.data?.city && (
-                  <div className="flex items-center gap-2">
+                {customer.address && (
+                  <div className="flex items-center gap-2" data-testid="customer-address">
                     <MapPin className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
-                    <span>{customer.data.city}, {customer.data.country}</span>
+                    <span>{customer.address}</span>
                   </div>
                 )}
-                {customer.data?.createdAt && (
-                  <div className="flex items-center gap-2">
+                {customer.createdAt && (
+                  <div className="flex items-center gap-2" data-testid="customer-since">
                     <Calendar className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-                    <span>Cliente dal {new Date(customer.data.createdAt).toLocaleDateString('it-IT')}</span>
+                    <span>Cliente dal {new Date(customer.createdAt).toLocaleDateString('it-IT')}</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Quick Actions */}
-            <CustomerActions customerId={customerId!} customer={customer.data} />
+            <CustomerActions customerId={customerId!} customer={customer} />
           </div>
 
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4 mt-6">
-            <Card className="p-4" style={{ background: 'rgba(123, 44, 191, 0.05)', border: '1px solid rgba(123, 44, 191, 0.2)' }}>
+            <Card className="p-4" style={{ background: 'rgba(123, 44, 191, 0.05)', border: '1px solid rgba(123, 44, 191, 0.2)' }} data-testid="kpi-total-value">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Valore Totale Deal</p>
@@ -167,7 +188,7 @@ export function CustomerDetailPage() {
               </div>
             </Card>
 
-            <Card className="p-4" style={{ background: 'rgba(255, 105, 0, 0.05)', border: '1px solid rgba(255, 105, 0, 0.2)' }}>
+            <Card className="p-4" style={{ background: 'rgba(255, 105, 0, 0.05)', border: '1px solid rgba(255, 105, 0, 0.2)' }} data-testid="kpi-won-deals">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Deal Vinti</p>
@@ -179,7 +200,7 @@ export function CustomerDetailPage() {
               </div>
             </Card>
 
-            <Card className="p-4" style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+            <Card className="p-4" style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)' }} data-testid="kpi-total-leads">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Lead Totali</p>
@@ -191,7 +212,7 @@ export function CustomerDetailPage() {
               </div>
             </Card>
 
-            <Card className="p-4" style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+            <Card className="p-4" style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }} data-testid="kpi-conversion-rate">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Tasso di Conversione</p>
@@ -242,9 +263,9 @@ export function CustomerDetailPage() {
         <TabsContent value="deals">
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Deal History</h3>
-            {deals?.data?.length > 0 ? (
+            {mockDeals.length > 0 ? (
               <div className="space-y-3">
-                {deals.data.map((deal: any) => (
+                {mockDeals.map((deal) => (
                   <div 
                     key={deal.id} 
                     className="p-4 rounded-lg border"
@@ -252,8 +273,8 @@ export function CustomerDetailPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-medium">{deal.stage}</p>
-                        <p className="text-sm" style={{ color: '#6b7280' }}>Pipeline: {deal.pipelineId}</p>
+                        <p className="font-medium">{deal.title}</p>
+                        <p className="text-sm" style={{ color: '#6b7280' }}>Status: {deal.status}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
@@ -292,6 +313,7 @@ export function CustomerDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 }
