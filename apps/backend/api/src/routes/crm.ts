@@ -1214,4 +1214,137 @@ router.patch('/deals/:id', async (req, res) => {
   }
 });
 
+// ==================== INTERACTIONS ====================
+
+/**
+ * GET /api/crm/interactions
+ * Get all interactions for the current tenant with optional filters
+ */
+router.get('/interactions', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { entityId, personId, channel, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    // Build combined predicate with tenant isolation
+    const conditions = [eq(crmInteractions.tenantId, tenantId)];
+    if (entityId) {
+      conditions.push(eq(crmInteractions.entityId, entityId as string));
+    }
+    if (personId) {
+      conditions.push(eq(crmInteractions.personId, personId as string));
+    }
+    if (channel) {
+      conditions.push(eq(crmInteractions.channel, channel as string));
+    }
+
+    const interactions = await db
+      .select()
+      .from(crmInteractions)
+      .where(and(...conditions))
+      .orderBy(desc(crmInteractions.occurredAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    res.status(200).json({
+      success: true,
+      data: interactions,
+      message: 'Interactions retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving interactions', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve interactions',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== CONSENTS ====================
+
+/**
+ * GET /api/crm/persons/:id/consents
+ * Get all consents for a specific person
+ */
+router.get('/persons/:id/consents', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: personId } = req.params;
+    
+    await setTenantContext(tenantId);
+
+    // Verify person exists and belongs to tenant
+    const [person] = await db
+      .select()
+      .from(crmPersons)
+      .where(and(
+        eq(crmPersons.id, personId),
+        eq(crmPersons.tenantId, tenantId)
+      ));
+
+    if (!person) {
+      return res.status(404).json({
+        success: false,
+        error: 'Person not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const consents = await db
+      .select()
+      .from(crmPersonConsents)
+      .where(and(
+        eq(crmPersonConsents.personId, personId),
+        eq(crmPersonConsents.tenantId, tenantId)
+      ))
+      .orderBy(desc(crmPersonConsents.grantedAt));
+
+    res.status(200).json({
+      success: true,
+      data: consents,
+      message: 'Consents retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving consents', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      personId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve consents',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export default router;
