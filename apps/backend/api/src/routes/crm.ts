@@ -159,9 +159,9 @@ router.get('/dashboard/stats', async (req, res) => {
     
     const openDeals = openDealsResult[0]?.count || 0;
 
-    // Get total pipeline value (sum of all open deal values)
+    // Get total pipeline value (sum of all open deal estimated values)
     const pipelineValueResult = await db
-      .select({ total: sum(crmDeals.value) })
+      .select({ total: sum(crmDeals.estimatedValue) })
       .from(crmDeals)
       .where(
         and(
