@@ -45,6 +45,56 @@ const getTenantId = (req: express.Request): string | null => {
   return req.headers['x-tenant-id'] as string || req.user?.tenantId || null;
 };
 
+// Helper: Get or create personId with intelligent matching
+const getOrCreatePersonId = async (
+  tenantId: string,
+  email?: string | null,
+  phone?: string | null,
+  socialId?: string | null
+): Promise<string> => {
+  // Build match conditions (OR logic: match on ANY field)
+  const matchConditions = [eq(crmLeads.tenantId, tenantId)];
+  const orConditions = [];
+  
+  if (email) {
+    orConditions.push(eq(crmLeads.email, email));
+  }
+  if (phone) {
+    orConditions.push(eq(crmLeads.phone, phone));
+  }
+  if (socialId) {
+    orConditions.push(eq(crmLeads.sourceSocialAccountId, socialId));
+  }
+
+  // If we have any match conditions, search for existing personId
+  if (orConditions.length > 0) {
+    const existingLead = await db
+      .select({ personId: crmLeads.personId })
+      .from(crmLeads)
+      .where(and(...matchConditions, or(...orConditions)))
+      .limit(1);
+
+    if (existingLead[0]) {
+      logger.info('Person ID match found', {
+        personId: existingLead[0].personId,
+        tenantId,
+        matchedOn: { email, phone, socialId }
+      });
+      return existingLead[0].personId;
+    }
+  }
+
+  // No match found - generate new UUID
+  const newPersonId = crypto.randomUUID();
+  logger.info('New person ID generated', {
+    personId: newPersonId,
+    tenantId,
+    identifiers: { email, phone, socialId }
+  });
+  
+  return newPersonId;
+};
+
 // ==================== DASHBOARD STATS ====================
 
 /**
@@ -64,11 +114,11 @@ router.get('/dashboard/stats', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // Get total persons count
+    // Get total unique persons count (distinct personId from leads)
     const personsResult = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(crmPersons)
-      .where(eq(crmPersons.tenantId, tenantId));
+      .select({ count: sql<number>`count(DISTINCT ${crmLeads.personId})::int` })
+      .from(crmLeads)
+      .where(eq(crmLeads.tenantId, tenantId));
     
     const totalPersons = personsResult[0]?.count || 0;
 
@@ -210,7 +260,7 @@ router.post('/leads', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const validation = insertCrmLeadSchema.omit({ tenantId: true }).safeParse(req.body);
+    const validation = insertCrmLeadSchema.omit({ tenantId: true, personId: true }).safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         success: false,
@@ -222,11 +272,20 @@ router.post('/leads', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // Get or create personId with intelligent matching
+    const personId = await getOrCreatePersonId(
+      tenantId,
+      validation.data.email,
+      validation.data.phone,
+      validation.data.sourceSocialAccountId
+    );
+
     const [lead] = await db
       .insert(crmLeads)
       .values({
         ...validation.data,
-        tenantId
+        tenantId,
+        personId
       })
       .returning();
 
@@ -1521,7 +1580,7 @@ router.post('/deals', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const validation = insertCrmDealSchema.omit({ tenantId: true }).safeParse(req.body);
+    const validation = insertCrmDealSchema.omit({ tenantId: true, personId: true }).safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         success: false,
@@ -1533,11 +1592,45 @@ router.post('/deals', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // Get personId from lead if leadId is provided
+    let personId: string | undefined;
+    if (validation.data.leadId) {
+      const [lead] = await db
+        .select({ personId: crmLeads.personId })
+        .from(crmLeads)
+        .where(and(
+          eq(crmLeads.id, validation.data.leadId),
+          eq(crmLeads.tenantId, tenantId)
+        ));
+      
+      if (lead) {
+        personId = lead.personId;
+        logger.info('Person ID propagated from lead to deal', {
+          leadId: validation.data.leadId,
+          personId,
+          tenantId
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          error: 'Lead not found',
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'leadId is required to create a deal',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     const [deal] = await db
       .insert(crmDeals)
       .values({
         ...validation.data,
-        tenantId
+        tenantId,
+        personId
       })
       .returning();
 
