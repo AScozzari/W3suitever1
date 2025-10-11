@@ -227,7 +227,7 @@ const B2BCustomersTable = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" 
                style={{ borderColor: 'hsl(var(--brand-orange))' }} />
-          <p style={{ color: 'var(--text-tertiary)' }}>Caricamento clienti B2B...</p>
+          <p style={{ color: 'var(--text-tertiary)' }}>Caricamento clienti Business...</p>
         </div>
       </div>
     );
@@ -239,7 +239,7 @@ const B2BCustomersTable = () => {
         <div className="flex-1 relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
           <Input
-            placeholder="Cerca clienti B2B..."
+            placeholder="Cerca clienti Business..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-10"
@@ -252,7 +252,7 @@ const B2BCustomersTable = () => {
           onClick={() => setIsModalOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Nuovo Cliente B2B
+          Nuovo Cliente Business
         </Button>
       </div>
 
@@ -285,7 +285,7 @@ const B2BCustomersTable = () => {
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <Building className="h-8 w-8" style={{ color: 'var(--text-tertiary)' }} />
-                    <p style={{ color: 'var(--text-tertiary)' }}>Nessun cliente B2B trovato</p>
+                    <p style={{ color: 'var(--text-tertiary)' }}>Nessun cliente Business trovato</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -313,7 +313,7 @@ const B2BCustomersTable = () => {
         open={!!deleteCustomer}
         onOpenChange={(open) => !open && setDeleteCustomer(null)}
         onConfirm={() => deleteCustomer && deleteCustomerMutation.mutate(deleteCustomer.id)}
-        title="Elimina Cliente B2B"
+        title="Elimina Cliente Business"
         itemName={deleteCustomer?.companyName || 'questo cliente'}
         isPending={deleteCustomerMutation.isPending}
       />
@@ -468,7 +468,7 @@ const B2CCustomersTable = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" 
                style={{ borderColor: 'hsl(var(--brand-orange))' }} />
-          <p style={{ color: 'var(--text-tertiary)' }}>Caricamento clienti B2C...</p>
+          <p style={{ color: 'var(--text-tertiary)' }}>Caricamento clienti Privati...</p>
         </div>
       </div>
     );
@@ -480,7 +480,7 @@ const B2CCustomersTable = () => {
         <div className="flex-1 relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
           <Input
-            placeholder="Cerca clienti B2C..."
+            placeholder="Cerca clienti Privati..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-10"
@@ -493,7 +493,7 @@ const B2CCustomersTable = () => {
           onClick={() => setIsModalOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Nuovo Cliente B2C
+          Nuovo Cliente Privato
         </Button>
       </div>
 
@@ -526,7 +526,7 @@ const B2CCustomersTable = () => {
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <User className="h-8 w-8" style={{ color: 'var(--text-tertiary)' }} />
-                    <p style={{ color: 'var(--text-tertiary)' }}>Nessun cliente B2C trovato</p>
+                    <p style={{ color: 'var(--text-tertiary)' }}>Nessun cliente Privato trovato</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -554,7 +554,7 @@ const B2CCustomersTable = () => {
         open={!!deleteCustomer}
         onOpenChange={(open) => !open && setDeleteCustomer(null)}
         onConfirm={() => deleteCustomer && deleteCustomerMutation.mutate(deleteCustomer.id)}
-        title="Elimina Cliente B2C"
+        title="Elimina Cliente Privato"
         itemName={deleteCustomer ? `${deleteCustomer.firstName} ${deleteCustomer.lastName}` : 'questo cliente'}
         isPending={deleteCustomerMutation.isPending}
       />
@@ -581,11 +581,11 @@ export default function CustomersPage() {
             <TabsList className="mb-6">
               <TabsTrigger value="b2b" data-testid="tab-b2b-customers">
                 <Building className="mr-2 h-4 w-4" />
-                Clienti B2B
+                Clienti Business
               </TabsTrigger>
               <TabsTrigger value="b2c" data-testid="tab-b2c-customers">
                 <User className="mr-2 h-4 w-4" />
-                Clienti B2C
+                Clienti Privati
               </TabsTrigger>
             </TabsList>
 

@@ -280,7 +280,7 @@ export function CustomerFormModal({
           <DialogDescription>
             {editMode 
               ? 'Modifica i dati del cliente esistente'
-              : 'Crea un nuovo cliente B2B (azienda) o B2C (privato)'
+              : 'Crea un nuovo cliente Business (azienda) o Privato (consumatore)'
             }
           </DialogDescription>
         </DialogHeader>
@@ -289,11 +289,11 @@ export function CustomerFormModal({
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="b2c" data-testid="tab-b2c">
               <User className="h-4 w-4 mr-2" />
-              Cliente B2C (Privato)
+              Cliente Privato
             </TabsTrigger>
             <TabsTrigger value="b2b" data-testid="tab-b2b">
               <Building className="h-4 w-4 mr-2" />
-              Cliente B2B (Azienda)
+              Cliente Business
             </TabsTrigger>
           </TabsList>
 
