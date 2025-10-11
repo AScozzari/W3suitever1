@@ -17,8 +17,10 @@ import {
   Euro,
   BarChart3,
   ArrowRight,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
+import { Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
 
@@ -74,6 +76,8 @@ const metricVariants = {
 export default function PipelinePage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
 
   const { data: pipelinesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/crm/pipelines'],
@@ -240,18 +244,43 @@ export default function PipelinePage() {
                           </Badge>
                         </div>
                       </div>
-                      <motion.button
-                        whileHover={{ rotate: 90 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-2 rounded-lg"
-                        style={{ 
-                          background: 'var(--glass-bg-heavy)',
-                          color: getDriverColor(pipeline.driver)
-                        }}
-                        data-testid={`button-settings-${pipeline.driver.toLowerCase()}`}
-                      >
-                        <Settings className="h-5 w-5" />
-                      </motion.button>
+                      
+                      {/* Inline Shortcuts: View + Settings */}
+                      <div className="flex items-center gap-2">
+                        <Link href={`/staging/crm/pipelines/${pipeline.id}`}>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 rounded-lg"
+                            style={{ 
+                              background: 'var(--glass-bg-heavy)',
+                              color: getDriverColor(pipeline.driver)
+                            }}
+                            data-testid={`button-view-${pipeline.driver.toLowerCase()}`}
+                            title="Visualizza Pipeline"
+                          >
+                            <Eye className="h-5 w-5" />
+                          </motion.button>
+                        </Link>
+                        <motion.button
+                          whileHover={{ rotate: 90 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-lg"
+                          style={{ 
+                            background: 'var(--glass-bg-heavy)',
+                            color: getDriverColor(pipeline.driver)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSettingsPipelineId(pipeline.id);
+                            setSettingsDialogOpen(true);
+                          }}
+                          data-testid={`button-settings-${pipeline.driver.toLowerCase()}`}
+                          title="Impostazioni Pipeline"
+                        >
+                          <Settings className="h-5 w-5" />
+                        </motion.button>
+                      </div>
                     </div>
 
                     {/* Products Pills */}
