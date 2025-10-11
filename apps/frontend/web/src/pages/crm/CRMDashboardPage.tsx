@@ -14,7 +14,8 @@ import {
   BarChart3,
   Megaphone,
   Settings,
-  ArrowRight
+  ArrowRight,
+  CheckSquare
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
@@ -146,24 +147,44 @@ export default function CRMDashboardPage() {
 
   const quickActions = [
     { 
-      label: 'Campagne', 
+      label: 'Nuova Campagna', 
       icon: Megaphone, 
-      href: buildUrl('crm/campaigns'),
-      description: 'Gestisci campagne marketing'
+      action: 'create-campaign',
+      description: 'Avvia campagna marketing',
+      gradient: 'var(--brand-glass-orange)'
     },
     { 
-      label: 'Pipeline', 
-      icon: Settings, 
-      href: buildUrl('crm/pipeline'),
-      description: 'Configura pipeline vendita'
+      label: 'Nuovo Lead', 
+      icon: UserPlus, 
+      action: 'create-lead',
+      description: 'Aggiungi lead qualificato',
+      gradient: 'var(--brand-glass-purple)'
     },
     { 
-      label: 'Analytics', 
-      icon: BarChart3, 
-      href: buildUrl('crm/analytics'),
-      description: 'Insights e performance'
+      label: 'Nuovo Deal', 
+      icon: Target, 
+      action: 'create-deal',
+      description: 'Crea opportunità vendita',
+      gradient: 'var(--brand-glass-gradient)'
+    },
+    { 
+      label: 'Nuova Attività', 
+      icon: CheckSquare, 
+      action: 'create-task',
+      description: 'Pianifica task/follow-up',
+      gradient: 'var(--brand-glass-orange)'
     }
   ];
+
+  const handleQuickAction = (action: string) => {
+    // Trigger Command Palette with pre-filled action
+    const event = new KeyboardEvent('keydown', {
+      key: 'k',
+      metaKey: true,
+      bubbles: true
+    });
+    document.dispatchEvent(event);
+  };
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
@@ -246,7 +267,7 @@ export default function CRMDashboardPage() {
             Azioni Rapide
           </h2>
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+            className="grid grid-cols-1 md:grid-cols-4 gap-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -261,21 +282,21 @@ export default function CRMDashboardPage() {
                 <Card 
                   className="glass-card p-6 border-0 cursor-pointer"
                   style={{ 
-                    background: 'var(--glass-card-bg)',
+                    background: action.gradient,
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
                     border: '1px solid var(--glass-card-border)',
                     boxShadow: 'var(--shadow-glass-sm)',
                     transition: 'var(--glass-transition)'
                   }}
-                  onClick={() => navigate(action.href)}
-                  data-testid={`action-${action.label.toLowerCase()}`}
+                  onClick={() => handleQuickAction(action.action)}
+                  data-testid={`action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col items-center text-center gap-3">
                     <div 
                       className="p-3 rounded-lg"
                       style={{ 
-                        background: 'var(--brand-glass-orange)',
+                        background: 'var(--glass-bg-heavy)',
                         backdropFilter: 'blur(8px)'
                       }}
                     >
@@ -285,7 +306,7 @@ export default function CRMDashboardPage() {
                       <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                         {action.label}
                       </h3>
-                      <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                         {action.description}
                       </p>
                     </div>
