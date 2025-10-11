@@ -170,7 +170,7 @@ export default function LeadsPage() {
       header: 'Driver',
       cell: ({ row }) => {
         const driver = row.original.driver;
-        const config = driverConfig[driver];
+        const config = driver ? driverConfig[driver] : { icon: '❓', label: 'N/D', color: 'var(--text-tertiary)' };
         return (
           <div className="flex items-center gap-2">
             <span>{config.icon}</span>

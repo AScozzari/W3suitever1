@@ -203,7 +203,7 @@ export default function PipelinePage() {
           animate="visible"
         >
           {pipelines?.map((pipeline: Pipeline) => {
-            const DriverIcon = getDriverIcon(pipeline.driver);
+            const DriverIcon = getDriverIcon(pipeline.driver || 'FISSO');
             
             return (
               <motion.div
@@ -212,12 +212,12 @@ export default function PipelinePage() {
                 whileHover={{ y: -6 }}
                 className="cursor-pointer"
                 onClick={() => setSelectedPipeline(pipeline)}
-                data-testid={`pipeline-card-${pipeline.driver.toLowerCase()}`}
+                data-testid={`pipeline-card-${pipeline.driver?.toLowerCase() || 'unknown'}`}
               >
                 <Card 
                   className="glass-card border-0"
                   style={{ 
-                    background: getDriverGradient(pipeline.driver),
+                    background: getDriverGradient(pipeline.driver || 'FISSO'),
                     backdropFilter: 'blur(12px) saturate(180%)',
                     WebkitBackdropFilter: 'blur(12px) saturate(180%)',
                     border: '1px solid var(--glass-card-border)',
@@ -236,7 +236,7 @@ export default function PipelinePage() {
                             backdropFilter: 'blur(8px)'
                           }}
                         >
-                          <DriverIcon className="h-6 w-6" style={{ color: getDriverColor(pipeline.driver) }} />
+                          <DriverIcon className="h-6 w-6" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                         </div>
                         <div>
                           <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
@@ -246,12 +246,12 @@ export default function PipelinePage() {
                             variant="outline"
                             className="mt-1"
                             style={{ 
-                              borderColor: getDriverColor(pipeline.driver),
-                              color: getDriverColor(pipeline.driver),
+                              borderColor: getDriverColor(pipeline.driver || 'FISSO'),
+                              color: getDriverColor(pipeline.driver || 'FISSO'),
                               background: 'var(--glass-bg-light)'
                             }}
                           >
-                            {pipeline.driver}
+                            {pipeline.driver || 'N/D'}
                           </Badge>
                         </div>
                       </div>
@@ -265,9 +265,9 @@ export default function PipelinePage() {
                             className="p-2 rounded-lg"
                             style={{ 
                               background: 'var(--glass-bg-heavy)',
-                              color: getDriverColor(pipeline.driver)
+                              color: getDriverColor(pipeline.driver || 'FISSO')
                             }}
-                            data-testid={`button-view-${pipeline.driver.toLowerCase()}`}
+                            data-testid={`button-view-${pipeline.driver?.toLowerCase() || 'unknown'}`}
                             title="Visualizza Pipeline"
                           >
                             <Eye className="h-5 w-5" />
@@ -279,14 +279,14 @@ export default function PipelinePage() {
                           className="p-2 rounded-lg"
                           style={{ 
                             background: 'var(--glass-bg-heavy)',
-                            color: getDriverColor(pipeline.driver)
+                            color: getDriverColor(pipeline.driver || 'FISSO')
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSettingsPipelineId(pipeline.id);
                             setSettingsDialogOpen(true);
                           }}
-                          data-testid={`button-settings-${pipeline.driver.toLowerCase()}`}
+                          data-testid={`button-settings-${pipeline.driver?.toLowerCase() || 'unknown'}`}
                           title="Impostazioni Pipeline"
                         >
                           <Settings className="h-5 w-5" />
@@ -313,7 +313,7 @@ export default function PipelinePage() {
                           className="text-xs px-2 py-1 rounded-md font-medium"
                           style={{ 
                             background: 'var(--glass-bg-heavy)',
-                            color: getDriverColor(pipeline.driver)
+                            color: getDriverColor(pipeline.driver || 'FISSO')
                           }}
                         >
                           +{pipeline.products.length - 3}
@@ -338,7 +338,7 @@ export default function PipelinePage() {
                       }}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver) }} />
+                        <Users className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                         <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Deal Attivi</span>
                       </div>
                       <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -355,7 +355,7 @@ export default function PipelinePage() {
                       }}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <Euro className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver) }} />
+                        <Euro className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                         <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Valore Pipeline</span>
                       </div>
                       <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -389,7 +389,7 @@ export default function PipelinePage() {
                       }}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <BarChart3 className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver) }} />
+                        <BarChart3 className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                         <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Avg Deal</span>
                       </div>
                       <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -409,7 +409,7 @@ export default function PipelinePage() {
                     <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                       Vedi Kanban / DataTable
                     </span>
-                    <ArrowRight className="h-5 w-5" style={{ color: getDriverColor(pipeline.driver) }} />
+                    <ArrowRight className="h-5 w-5" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                   </div>
                 </Card>
               </motion.div>
