@@ -20,9 +20,13 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react';
+import { CreateLeadDialog } from './CreateLeadDialog';
+import { CreateDealDialog } from './CreateDealDialog';
 
 export function CRMCommandPalette() {
   const [open, setOpen] = useState(false);
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
+  const [createDealOpen, setCreateDealOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { navigate, buildUrl } = useTenantNavigation();
 
@@ -44,6 +48,7 @@ export function CRMCommandPalette() {
   };
 
   return (
+    <>
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder="Cerca o crea..." />
       <CommandList>
@@ -51,10 +56,7 @@ export function CRMCommandPalette() {
         
         <CommandGroup heading="Quick Create">
           <CommandItem
-            onSelect={() => handleSelect(() => {
-              console.log('Create lead');
-              // TODO: Open create lead dialog
-            })}
+            onSelect={() => handleSelect(() => setCreateLeadOpen(true))}
             data-testid="cmd-create-lead"
           >
             <UserPlus className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
@@ -62,10 +64,7 @@ export function CRMCommandPalette() {
           </CommandItem>
           
           <CommandItem
-            onSelect={() => handleSelect(() => {
-              console.log('Create deal');
-              // TODO: Open create deal dialog
-            })}
+            onSelect={() => handleSelect(() => setCreateDealOpen(true))}
             data-testid="cmd-create-deal"
           >
             <Target className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
@@ -206,5 +205,9 @@ export function CRMCommandPalette() {
         </CommandGroup>
       </CommandList>
     </CommandDialog>
+
+    <CreateLeadDialog open={createLeadOpen} onOpenChange={setCreateLeadOpen} />
+    <CreateDealDialog open={createDealOpen} onOpenChange={setCreateDealOpen} />
+  </>
   );
 }
