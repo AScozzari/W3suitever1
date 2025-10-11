@@ -1,5 +1,4 @@
 import { useLocation } from 'wouter';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { 
   LayoutDashboard, 
@@ -78,43 +77,46 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
   const activeTab = getActiveTab();
 
   return (
-    <div 
-      className={`border-b ${className}`}
+    <nav 
+      className={`sticky top-0 z-40 border-b ${className}`}
       style={{ 
         background: 'var(--glass-card-bg)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        borderColor: 'var(--glass-card-border)'
+        backdropFilter: 'var(--glass-blur)',
+        WebkitBackdropFilter: 'var(--glass-blur)',
+        borderColor: 'var(--glass-card-border)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
       }}
     >
-      <Tabs value={activeTab} className="w-full">
-        <TabsList 
-          className="h-14 w-full justify-start rounded-none border-0 bg-transparent p-0"
-          style={{ background: 'transparent' }}
-        >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.value;
-            
-            return (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                onClick={() => navigate(tab.path.replace(/^\/[^/]+\//, ''))}
-                className="relative h-14 rounded-none border-b-2 border-transparent px-6 data-[state=active]:border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                style={{
-                  borderBottomColor: isActive ? 'hsl(var(--brand-orange))' : 'transparent',
-                  color: isActive ? 'hsl(var(--brand-orange))' : 'var(--text-secondary)'
-                }}
-                data-testid={`crm-tab-${tab.value}`}
-              >
-                <Icon className="mr-2 h-4 w-4" />
-                <span className="font-medium">{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
-    </div>
+      <div className="flex items-center h-14 px-4 max-w-full overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.value;
+          
+          return (
+            <button
+              key={tab.value}
+              onClick={() => navigate(tab.path.replace(/^\/[^/]+\//, ''))}
+              className="relative flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-200 whitespace-nowrap hover:bg-white/10"
+              style={{
+                background: isActive ? 'var(--brand-glass-orange)' : 'transparent',
+                color: isActive ? 'hsl(var(--brand-orange))' : 'var(--text-secondary)',
+                fontWeight: isActive ? '600' : '500'
+              }}
+              data-testid={`crm-tab-${tab.value}`}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="text-sm">{tab.label}</span>
+              
+              {isActive && (
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ background: 'hsl(var(--brand-orange))' }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
