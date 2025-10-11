@@ -1801,6 +1801,255 @@ router.get('/interactions', async (req, res) => {
   }
 });
 
+// ==================== CUSTOMERS ENDPOINTS ====================
+
+/**
+ * GET /api/crm/customers
+ * Get all customers with optional filtering
+ */
+router.get('/customers', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { customerType, status, limit = '100', offset = '0' } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    const conditions = [eq(crmCustomers.tenantId, tenantId)];
+    if (customerType) {
+      conditions.push(eq(crmCustomers.customerType, customerType as any));
+    }
+    if (status) {
+      conditions.push(eq(crmCustomers.status, status as string));
+    }
+
+    const customers = await db
+      .select()
+      .from(crmCustomers)
+      .where(and(...conditions))
+      .orderBy(desc(crmCustomers.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    res.status(200).json({
+      success: true,
+      data: customers,
+      message: 'Customers retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving customers', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve customers',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/customers
+ * Create a new customer
+ */
+router.post('/customers', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validation = insertCrmCustomerSchema.omit({ tenantId: true }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [customer] = await db
+      .insert(crmCustomers)
+      .values({
+        ...validation.data,
+        tenantId
+      })
+      .returning();
+
+    logger.info('Customer created', { customerId: customer.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: customer,
+      message: 'Customer created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating customer', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create customer',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/customers/:id
+ * Update a customer
+ */
+router.patch('/customers/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const validation = insertCrmCustomerSchema.omit({ tenantId: true }).partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [customer] = await db
+      .update(crmCustomers)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmCustomers.id, id),
+        eq(crmCustomers.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Customer not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Customer updated', { customerId: customer.id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: customer,
+      message: 'Customer updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating customer', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update customer',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/customers/:id
+ * Delete a customer
+ */
+router.delete('/customers/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    
+    await setTenantContext(tenantId);
+
+    const [customer] = await db
+      .delete(crmCustomers)
+      .where(and(
+        eq(crmCustomers.id, id),
+        eq(crmCustomers.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Customer not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Customer deleted', { customerId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: customer,
+      message: 'Customer deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting customer', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete customer',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 
 
 export default router;
