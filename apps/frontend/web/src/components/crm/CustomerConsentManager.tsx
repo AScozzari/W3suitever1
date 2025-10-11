@@ -42,9 +42,12 @@ export function CustomerConsentManager({ customerId }: CustomerConsentManagerPro
   const [otpSent, setOtpSent] = useState(false);
 
   // Fetch consent data
-  const { data: consents, isLoading } = useQuery({
-    queryKey: ['/api/crm/consents', customerId],
+  const { data: consentsData, isLoading } = useQuery({
+    queryKey: [`/api/crm/persons/${customerId}/consents`],
+    enabled: !!customerId,
   });
+
+  const consents = consentsData?.data || [];
 
   // Send OTP mutation
   const sendOtpMutation = useMutation({
@@ -81,7 +84,7 @@ export function CustomerConsentManager({ customerId }: CustomerConsentManagerPro
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/consents', customerId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/persons/${customerId}/consents`] });
       toast({
         title: 'Consenso Rinnovato',
         description: 'Consenso privacy rinnovato con successo',
