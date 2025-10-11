@@ -62,7 +62,7 @@ const B2BCustomersTable = () => {
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
 
-  const { data: customersResponse, isLoading } = useQuery({
+  const { data: customersResponse, isLoading } = useQuery<{ data: Customer[] }>({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
   });
 
@@ -329,7 +329,7 @@ const B2CCustomersTable = () => {
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
 
-  const { data: customersResponse, isLoading } = useQuery({
+  const { data: customersResponse, isLoading } = useQuery<{ data: Customer[] }>({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
   });
 

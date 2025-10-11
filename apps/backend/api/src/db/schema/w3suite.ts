@@ -4548,33 +4548,36 @@ export const crmCustomers = w3suiteSchema.table("crm_customers", {
   tenantId: uuid("tenant_id").notNull(),
   personId: uuid("person_id").notNull(), // Identity tracking across lead → deal → customer
   customerType: crmCustomerTypeEnum("customer_type").notNull(),
-  status: varchar("status", { length: 20 }).default('active'), // 'active', 'inactive', 'churned'
-  sourceDealId: uuid("source_deal_id").references(() => crmDeals.id),
-  firstPurchaseDate: timestamp("first_purchase_date"),
-  ltv: real("ltv").default(0), // Lifetime value
-  totalOrders: integer("total_orders").default(0),
   
   // B2C Fields (persona fisica)
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
+  fiscalCode: text("fiscal_code"), // Codice Fiscale (16 caratteri)
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
-  fiscalCodeB2C: varchar("fiscal_code_b2c", { length: 16 }), // Codice Fiscale persona
-  billingAddress: text("billing_address"),
-  shippingAddress: text("shipping_address"),
+  birthDate: date("birth_date"),
+  addresses: jsonb("addresses"), // JSONB array of addresses { type, street, city, zip, province, country }
   
   // B2B Fields (azienda)
   companyName: varchar("company_name", { length: 255 }),
   legalForm: crmLegalFormEnum("legal_form"),
-  vatNumber: varchar("vat_number", { length: 16 }), // Partita IVA (IT + 11 cifre)
-  fiscalCodeB2B: varchar("fiscal_code_b2b", { length: 16 }), // CF azienda
-  pec: varchar("pec", { length: 255 }), // Email certificata
-  sdi: varchar("sdi", { length: 7 }), // Codice SDI fatturazione elettronica
-  ateco: varchar("ateco", { length: 10 }), // Codice attività economica
-  registeredOffice: text("registered_office"), // Sede legale
-  operationalOffice: text("operational_office"), // Sede operativa
-  secondaryContacts: jsonb("secondary_contacts"), // [{ name, role, email, phone }]
+  vatNumber: text("vat_number"), // Partita IVA (IT + 11 cifre)
+  pecEmail: text("pec_email"), // Email certificata PEC
+  sdiCode: varchar("sdi_code", { length: 7 }), // Codice SDI fatturazione elettronica (7 char alphanumeric)
+  atecoCode: varchar("ateco_code", { length: 20 }), // Codice attività economica
+  primaryContactName: varchar("primary_contact_name", { length: 200 }), // Nome referente principale per B2B
+  sedi: jsonb("sedi"), // JSONB array of locations { type, address, city, zip, province }
+  secondaryContacts: jsonb("secondary_contacts"), // JSONB array [{ name, role, email, phone }]
   
+  // Common fields
+  sourceDealId: uuid("source_deal_id").references(() => crmDeals.id),
+  convertedAt: timestamp("converted_at"),
+  status: text("status").default('prospect'), // 'active', 'inactive', 'prospect'
+  notes: text("notes"),
+  
+  // Audit fields
+  createdBy: varchar("created_by", { length: 255 }),
+  updatedBy: varchar("updated_by", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
