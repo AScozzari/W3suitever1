@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
+import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
+import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -164,18 +167,23 @@ export default function CRMDashboardPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
-              Dashboard CRM
-            </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Customer Relationship Management - WindTre Suite
-            </p>
+      <CRMCommandPalette />
+      <div className="flex flex-col h-full">
+        <CRMNavigationBar />
+        <CRMScopeBar />
+        
+        <div className="flex-1 p-6 space-y-6 overflow-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+                Dashboard CRM
+              </h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                Customer Relationship Management - WindTre Suite
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Stats Cards - Glassmorphism */}
         <motion.div 
@@ -345,6 +353,7 @@ export default function CRMDashboardPage() {
             </div>
           </div>
         </Card>
+        </div>
       </div>
     </Layout>
   );
