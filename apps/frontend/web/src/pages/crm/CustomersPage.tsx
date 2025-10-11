@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Plus, Building, User, Eye } from 'lucide-react';
 import { Link } from 'wouter';
+import { CustomerFormModal } from '@/components/crm/CustomerFormModal';
 
 interface Customer {
   id: string;
@@ -52,6 +53,7 @@ interface Customer {
 const B2BCustomersTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: customersResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
@@ -193,7 +195,11 @@ const B2BCustomersTable = () => {
             data-testid="search-b2b-customers"
           />
         </div>
-        <Button style={{ background: 'hsl(var(--brand-orange))' }} data-testid="create-b2b-customer">
+        <Button 
+          style={{ background: 'hsl(var(--brand-orange))' }} 
+          data-testid="create-b2b-customer"
+          onClick={() => setIsModalOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nuovo Cliente B2B
         </Button>
@@ -236,6 +242,12 @@ const B2BCustomersTable = () => {
           </TableBody>
         </Table>
       </div>
+
+      <CustomerFormModal 
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen}
+        defaultType="b2b"
+      />
     </div>
   );
 };
@@ -243,6 +255,7 @@ const B2BCustomersTable = () => {
 const B2CCustomersTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: customersResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
@@ -358,7 +371,11 @@ const B2CCustomersTable = () => {
             data-testid="search-b2c-customers"
           />
         </div>
-        <Button style={{ background: 'hsl(var(--brand-orange))' }} data-testid="create-b2c-customer">
+        <Button 
+          style={{ background: 'hsl(var(--brand-orange))' }} 
+          data-testid="create-b2c-customer"
+          onClick={() => setIsModalOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nuovo Cliente B2C
         </Button>
@@ -401,6 +418,12 @@ const B2CCustomersTable = () => {
           </TableBody>
         </Table>
       </div>
+
+      <CustomerFormModal 
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen}
+        defaultType="b2c"
+      />
     </div>
   );
 };
