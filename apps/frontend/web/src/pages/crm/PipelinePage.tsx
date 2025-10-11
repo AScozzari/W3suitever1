@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
+import { PipelineSettingsDialog } from '@/components/crm/PipelineSettingsDialog';
 import { useState } from 'react';
 
 interface Pipeline {
@@ -450,6 +451,18 @@ export default function PipelinePage() {
               </div>
             </Card>
           </motion.div>
+        )}
+
+        {/* Pipeline Settings Dialog */}
+        {settingsPipelineId && (
+          <PipelineSettingsDialog
+            open={settingsDialogOpen}
+            onClose={() => {
+              setSettingsDialogOpen(false);
+              setSettingsPipelineId(null);
+            }}
+            pipelineId={settingsPipelineId}
+          />
         )}
         </div>
       </div>
