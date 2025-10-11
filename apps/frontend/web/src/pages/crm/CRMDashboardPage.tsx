@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,7 @@ const cardHoverVariants = {
 
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [searchQuery, setSearchQuery] = useState('');
   const { navigate, buildUrl } = useTenantNavigation();
 
   // Fetch dashboard stats
@@ -88,7 +89,10 @@ export default function CRMDashboardPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca in dashboard..."
+          />
           <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
@@ -103,7 +107,10 @@ export default function CRMDashboardPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca in dashboard..."
+          />
           <div className="flex-1 p-6 overflow-auto">
             <ErrorState message="Errore nel caricamento della dashboard CRM" />
           </div>
@@ -197,7 +204,10 @@ export default function CRMDashboardPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca in dashboard..."
+        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}

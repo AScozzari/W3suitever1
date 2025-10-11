@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,6 +76,7 @@ const metricVariants = {
 
 export default function PipelinePage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
@@ -92,7 +93,10 @@ export default function PipelinePage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca pipeline..."
+        />
           <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
@@ -107,7 +111,10 @@ export default function PipelinePage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMScopeBar />
+          <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca pipeline..."
+        />
           <div className="flex-1 p-6 overflow-auto">
             <ErrorState message="Errore nel caricamento delle pipeline" />
           </div>
@@ -151,7 +158,10 @@ export default function PipelinePage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMScopeBar />
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca pipeline..."
+        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}
