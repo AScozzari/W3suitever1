@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
-import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, sum } from 'drizzle-orm';
 import {
   crmLeads,
   crmCampaigns,
@@ -161,7 +161,7 @@ router.get('/dashboard/stats', async (req, res) => {
 
     // Get total pipeline value (sum of all open deal values)
     const pipelineValueResult = await db
-      .select({ total: sql<number>`COALESCE(SUM(${crmDeals.value}), 0)::numeric` })
+      .select({ total: sum(crmDeals.value) })
       .from(crmDeals)
       .where(
         and(
