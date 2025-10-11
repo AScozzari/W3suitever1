@@ -24,6 +24,7 @@ import LeadsPage from '../pages/crm/LeadsPage';
 import DealsKanbanPage from '../pages/crm/DealsKanbanPage';
 import CampaignsPage from '../pages/crm/CampaignsPage';
 import PipelinePage from '../pages/crm/PipelinePage';
+import PipelineBoardPage from '../pages/crm/PipelineBoardPage';
 import AnalyticsPage from '../pages/crm/AnalyticsPage';
 import { useAuth } from '../hooks/useAuth';
 
@@ -348,6 +349,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm/campaigns`}>
         <AuthenticatedRoute>
           <CampaignsPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm/pipeline/board`}>
+        <AuthenticatedRoute>
+          <PipelineBoardPage />
         </AuthenticatedRoute>
       </Route>
       
