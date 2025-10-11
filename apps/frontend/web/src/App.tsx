@@ -104,35 +104,14 @@ function Router() {
         }}
       </Route>
       
-      {/* 🎯 CRM DIRECT ACCESS - Smart redirect to tenant */}
-      <Route path="/crm">
-        {() => {
-          console.log('[CRM-REDIRECT] 📍 Direct CRM dashboard access');
-          const lastTenant = localStorage.getItem('currentTenant') || 'staging';
-          const targetUrl = `/${lastTenant}/crm/dashboard`;
-          console.log(`[CRM-REDIRECT] 🔄 Redirecting to: ${targetUrl}`);
-          return <Redirect to={targetUrl} />;
-        }}
-      </Route>
-      
-      <Route path="/crm/:view">
-        {(params) => {
-          console.log('[CRM-REDIRECT] 📍 Direct CRM page access:', params);
-          const lastTenant = localStorage.getItem('currentTenant') || 'staging';
-          const targetUrl = `/${lastTenant}/crm/${params.view}`;
-          console.log(`[CRM-REDIRECT] 🔄 Redirecting to: ${targetUrl}`);
-          return <Redirect to={targetUrl} />;
-        }}
-      </Route>
-      
       {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto */}
       <Route path="/:tenant/*?">
         {(params) => {
           console.log('[APP-ROUTER] 📍 Route matched with params:', params);
           const tenantSlug = params.tenant;
           
-          // Validation tenant slug - Exclude reserved paths
-          const reservedPaths = ['api', 'workflows', 'tasks', 'impostazioni', 'settings', 'crm'];
+          // Validation tenant slug - Exclude reserved paths (CRM is handled by TenantShell)
+          const reservedPaths = ['api', 'workflows', 'tasks', 'impostazioni', 'settings'];
           if (!tenantSlug || tenantSlug === '' || reservedPaths.includes(tenantSlug)) {
             console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
             return <NotFound />;
