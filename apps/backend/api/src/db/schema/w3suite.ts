@@ -128,6 +128,15 @@ export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media',
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
 export const crmPipelineDomainEnum = pgEnum('crm_pipeline_domain', ['sales', 'service', 'retention']);
+export const crmPipelineStageCategoryEnum = pgEnum('crm_pipeline_stage_category', [
+  'starter',    // Fase iniziale contatto
+  'progress',   // In lavorazione attiva
+  'pending',    // In attesa cliente/interno
+  'purchase',   // Fase acquisto
+  'finalized',  // Finalizzato con successo
+  'archive',    // Archiviato
+  'ko'          // Perso/Rifiutato
+]);
 export const crmDealStatusEnum = pgEnum('crm_deal_status', ['open', 'won', 'lost', 'abandoned']);
 export const crmInteractionDirectionEnum = pgEnum('crm_interaction_direction', ['inbound', 'outbound']);
 export const crmTaskTypeEnum = pgEnum('crm_task_type', ['call', 'email', 'meeting', 'follow_up', 'demo', 'other']);
@@ -4450,6 +4459,38 @@ export const crmPipelineStagePlaybooks = w3suiteSchema.table("crm_pipeline_stage
   pipelineStageUniq: uniqueIndex("crm_pipeline_stage_playbooks_pipeline_stage_uniq").on(table.pipelineId, table.stageName),
 }));
 
+// CRM Pipeline Workflows - Many-to-many: Pipeline <-> Workflow Templates (RBAC: admin + marketing)
+export const crmPipelineWorkflows = w3suiteSchema.table("crm_pipeline_workflows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id, { onDelete: 'cascade' }),
+  workflowTemplateId: uuid("workflow_template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  isActive: boolean("is_active").default(true),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  notes: text("notes"),
+}, (table) => ({
+  pipelineWorkflowUniq: uniqueIndex("crm_pipeline_workflows_pipeline_workflow_uniq").on(table.pipelineId, table.workflowTemplateId),
+  pipelineIdIdx: index("crm_pipeline_workflows_pipeline_id_idx").on(table.pipelineId),
+  workflowTemplateIdIdx: index("crm_pipeline_workflows_workflow_template_id_idx").on(table.workflowTemplateId),
+}));
+
+// CRM Pipeline Stages - Stati personalizzati per pipeline con categorie fisse
+export const crmPipelineStages = w3suiteSchema.table("crm_pipeline_stages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 100 }).notNull(), // Nome custom stage (es: "Primo Contatto")
+  category: crmPipelineStageCategoryEnum("category").notNull(), // Categoria fissa: starter, progress, etc.
+  orderIndex: smallint("order_index").notNull(), // Ordinamento visuale
+  color: varchar("color", { length: 7 }), // Hex color (es: "#ff6900")
+  isActive: boolean("is_active").default(true),
+  requiredFields: text("required_fields").array(), // Campi obbligatori per avanzare (best practice validation)
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  pipelineStageNameUniq: uniqueIndex("crm_pipeline_stages_pipeline_name_uniq").on(table.pipelineId, table.name),
+  pipelineOrderIdx: index("crm_pipeline_stages_pipeline_order_idx").on(table.pipelineId, table.orderIndex),
+}));
+
 // CRM Deals - Opportunities in pipeline
 export const crmDeals = w3suiteSchema.table("crm_deals", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -4725,6 +4766,21 @@ export const insertCrmPipelineStagePlaybookSchema = createInsertSchema(crmPipeli
 });
 export type InsertCrmPipelineStagePlaybook = z.infer<typeof insertCrmPipelineStagePlaybookSchema>;
 export type CrmPipelineStagePlaybook = typeof crmPipelineStagePlaybooks.$inferSelect;
+
+export const insertCrmPipelineWorkflowSchema = createInsertSchema(crmPipelineWorkflows).omit({ 
+  id: true, 
+  assignedAt: true
+});
+export type InsertCrmPipelineWorkflow = z.infer<typeof insertCrmPipelineWorkflowSchema>;
+export type CrmPipelineWorkflow = typeof crmPipelineWorkflows.$inferSelect;
+
+export const insertCrmPipelineStageSchema = createInsertSchema(crmPipelineStages).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmPipelineStage = z.infer<typeof insertCrmPipelineStageSchema>;
+export type CrmPipelineStage = typeof crmPipelineStages.$inferSelect;
 
 export const insertCrmDealSchema = createInsertSchema(crmDeals).omit({ 
   id: true, 
