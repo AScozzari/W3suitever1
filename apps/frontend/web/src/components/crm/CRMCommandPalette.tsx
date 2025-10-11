@@ -14,11 +14,8 @@ import {
   UserPlus, 
   Target, 
   CheckSquare, 
-  Building, 
-  User, 
   Megaphone,
-  BarChart3,
-  Settings
+  BarChart3
 } from 'lucide-react';
 import { CreateLeadDialog } from './CreateLeadDialog';
 import { CreateDealDialog } from './CreateDealDialog';
@@ -69,50 +66,6 @@ export function CRMCommandPalette() {
           >
             <Target className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
             <span>Nuovo Deal</span>
-          </CommandItem>
-          
-          <CommandItem
-            onSelect={() => handleSelect(() => {
-              console.log('Create task');
-              // TODO: Open create task dialog
-            })}
-            data-testid="cmd-create-task"
-          >
-            <CheckSquare className="mr-2 h-4 w-4" style={{ color: 'hsl(220, 90%, 56%)' }} />
-            <span>Nuova Attività</span>
-          </CommandItem>
-          
-          <CommandItem
-            onSelect={() => handleSelect(() => {
-              console.log('Create account');
-              // TODO: Open create account dialog
-            })}
-            data-testid="cmd-create-account"
-          >
-            <Building className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-            <span>Nuovo Account</span>
-          </CommandItem>
-          
-          <CommandItem
-            onSelect={() => handleSelect(() => {
-              console.log('Create contact');
-              // TODO: Open create contact dialog
-            })}
-            data-testid="cmd-create-contact"
-          >
-            <User className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
-            <span>Nuovo Contatto</span>
-          </CommandItem>
-          
-          <CommandItem
-            onSelect={() => handleSelect(() => {
-              console.log('Create campaign');
-              // TODO: Open create campaign dialog
-            })}
-            data-testid="cmd-create-campaign"
-          >
-            <Megaphone className="mr-2 h-4 w-4" style={{ color: 'hsl(280, 65%, 60%)' }} />
-            <span>Nuova Campagna</span>
           </CommandItem>
         </CommandGroup>
         
