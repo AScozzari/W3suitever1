@@ -46,6 +46,92 @@ const getTenantId = (req: express.Request): string | null => {
   return req.headers['x-tenant-id'] as string || req.user?.tenantId || null;
 };
 
+// ==================== DASHBOARD STATS ====================
+
+/**
+ * GET /api/crm/dashboard/stats
+ * Get aggregated dashboard statistics for the current tenant
+ */
+router.get('/dashboard/stats', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get total persons count
+    const personsResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmPersons)
+      .where(eq(crmPersons.tenantId, tenantId));
+    
+    const totalPersons = personsResult[0]?.count || 0;
+
+    // Get total leads count
+    const leadsResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmLeads)
+      .where(eq(crmLeads.tenantId, tenantId));
+    
+    const totalLeads = leadsResult[0]?.count || 0;
+
+    // Get open deals count (status != 'won' AND status != 'lost')
+    const openDealsResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmDeals)
+      .where(
+        and(
+          eq(crmDeals.tenantId, tenantId),
+          sql`${crmDeals.status} NOT IN ('won', 'lost')`
+        )
+      );
+    
+    const openDeals = openDealsResult[0]?.count || 0;
+
+    // Get total pipeline value (sum of all open deal values)
+    const pipelineValueResult = await db
+      .select({ total: sql<number>`COALESCE(SUM(${crmDeals.value}), 0)::numeric` })
+      .from(crmDeals)
+      .where(
+        and(
+          eq(crmDeals.tenantId, tenantId),
+          sql`${crmDeals.status} NOT IN ('won', 'lost')`
+        )
+      );
+    
+    const pipelineValue = Number(pipelineValueResult[0]?.total || 0);
+
+    return res.json({
+      success: true,
+      data: {
+        totalPersons,
+        totalLeads,
+        openDeals,
+        pipelineValue
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+  } catch (error: any) {
+    logger.error('Failed to fetch dashboard stats', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch dashboard statistics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== PERSONS (Identity Graph) ====================
 
 /**
