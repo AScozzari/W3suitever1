@@ -79,7 +79,7 @@ export default function LeadsPage() {
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: leadsResponse, isLoading } = useQuery({
+  const { data: leadsResponse, isLoading } = useQuery<{ data: Lead[] }>({
     queryKey: ['/api/crm/leads', globalFilter],
   });
 
