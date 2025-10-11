@@ -62,11 +62,11 @@ const B2BCustomersTable = () => {
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
 
-  const { data: customersResponse, isLoading } = useQuery<{ data: Customer[] }>({
+  const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
   });
 
-  const customers: Customer[] = customersResponse?.data || [];
+  const customers: Customer[] = customersResponse || [];
 
   const deleteCustomerMutation = useMutation({
     mutationFn: async (customerId: string) => {
@@ -329,11 +329,11 @@ const B2CCustomersTable = () => {
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
 
-  const { data: customersResponse, isLoading } = useQuery<{ data: Customer[] }>({
+  const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
   });
 
-  const customers: Customer[] = customersResponse?.data || [];
+  const customers: Customer[] = customersResponse || [];
 
   const deleteCustomerMutation = useMutation({
     mutationFn: async (customerId: string) => {

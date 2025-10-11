@@ -118,11 +118,11 @@ export default function DealsPage() {
   const [globalFilter, setGlobalFilter] = useState('');
   const { toast } = useToast();
 
-  const { data: dealsResponse, isLoading } = useQuery({
+  const { data: dealsResponse, isLoading } = useQuery<Deal[]>({
     queryKey: ['/api/crm/deals', globalFilter],
   });
 
-  const deals = dealsResponse?.data || [];
+  const deals = dealsResponse || [];
 
   const updateDealMutation = useMutation({
     mutationFn: async ({ dealId, field, value }: { dealId: string; field: string; value: any }) => {

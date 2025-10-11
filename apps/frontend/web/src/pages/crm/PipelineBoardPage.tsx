@@ -222,11 +222,11 @@ export default function PipelineBoardPage() {
 
   const [stages, setStages] = useState<Stage[]>([]);
 
-  const { data: pipelinesResponse } = useQuery({
+  const { data: pipelinesResponse } = useQuery<Pipeline[]>({
     queryKey: ['/api/crm/pipelines'],
   });
 
-  const pipelines = pipelinesResponse?.data || [];
+  const pipelines = pipelinesResponse || [];
 
   const moveDealMutation = useMutation({
     mutationFn: async ({ dealId, newStageId }: { dealId: string; newStageId: string }) => {

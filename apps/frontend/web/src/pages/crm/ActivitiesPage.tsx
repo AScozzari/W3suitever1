@@ -206,17 +206,17 @@ export default function ActivitiesPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
-  const { data: tasksResponse } = useQuery({
+  const { data: tasksResponse } = useQuery<Task[]>({
     queryKey: ['/api/crm/tasks'],
   });
 
-  const tasks = tasksResponse?.data || [];
+  const tasks = tasksResponse || [];
 
-  const { data: interactionsResponse } = useQuery({
+  const { data: interactionsResponse } = useQuery<Interaction[]>({
     queryKey: ['/api/crm/interactions'],
   });
 
-  const interactions = interactionsResponse?.data || [];
+  const interactions = interactionsResponse || [];
 
   const handleCompleteTask = (id: string) => {
     console.log('Complete task:', id);

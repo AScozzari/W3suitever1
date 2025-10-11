@@ -82,11 +82,11 @@ export default function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-  const { data: campaignsResponse, isLoading, error } = useQuery({
+  const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns', searchQuery],
   });
 
-  const campaigns = campaignsResponse?.data || [];
+  const campaigns = campaignsResponse || [];
 
   if (isLoading) {
     return (

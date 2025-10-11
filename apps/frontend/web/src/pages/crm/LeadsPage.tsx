@@ -79,11 +79,11 @@ export default function LeadsPage() {
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: leadsResponse, isLoading } = useQuery<{ data: Lead[] }>({
+  const { data: leadsResponse, isLoading } = useQuery<Lead[]>({
     queryKey: ['/api/crm/leads', globalFilter],
   });
 
-  const leads = leadsResponse?.data || [];
+  const leads = leadsResponse || [];
 
   const convertMutation = useMutation({
     mutationFn: async ({ leadId, pipelineId }: { leadId: string; pipelineId: string }) => {
