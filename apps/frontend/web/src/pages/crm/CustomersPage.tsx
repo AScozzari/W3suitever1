@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   flexRender,
   getCoreRowModel,
@@ -20,9 +20,13 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Plus, Building, User, Eye } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Search, Plus, Building, User, Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Link } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CustomerFormModal } from '@/components/crm/CustomerFormModal';
+import { DeleteConfirmationDialog } from '@/components/crm/DeleteConfirmationDialog';
 
 interface Customer {
   id: string;
@@ -54,12 +58,38 @@ const B2BCustomersTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+  const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
+  const { toast } = useToast();
 
   const { data: customersResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
   });
 
   const customers: Customer[] = customersResponse?.data || [];
+
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      return apiRequest(`/api/crm/customers/${customerId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/customers'] });
+      toast({
+        title: 'Cliente eliminato',
+        description: 'Il cliente è stato eliminato con successo.',
+      });
+      setDeleteCustomer(null);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error?.message || 'Impossibile eliminare il cliente.',
+      });
+    },
+  });
 
   const columns: ColumnDef<Customer>[] = [
     {
@@ -140,19 +170,40 @@ const B2BCustomersTable = () => {
     },
     {
       id: 'actions',
+      header: 'Azioni',
       cell: ({ row }) => {
         const tenantSlug = window.location.pathname.split('/')[1];
         return (
-          <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid={`view-customer-${row.original.id}`}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Visualizza
-            </Button>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" data-testid={`actions-b2b-customer-${row.original.id}`}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+                <DropdownMenuItem data-testid={`view-b2b-customer-${row.original.id}`}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Visualizza
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem 
+                onClick={() => setEditCustomer(row.original)}
+                data-testid={`edit-b2b-customer-${row.original.id}`}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Modifica
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setDeleteCustomer(row.original)}
+                className="text-red-600"
+                data-testid={`delete-b2b-customer-${row.original.id}`}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Elimina
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
@@ -248,6 +299,24 @@ const B2BCustomersTable = () => {
         onOpenChange={setIsModalOpen}
         defaultType="b2b"
       />
+
+      <CustomerFormModal 
+        open={!!editCustomer} 
+        onOpenChange={(open) => !open && setEditCustomer(null)}
+        defaultType="b2b"
+        editMode={true}
+        customerId={editCustomer?.id}
+        initialData={editCustomer || undefined}
+      />
+
+      <DeleteConfirmationDialog
+        open={!!deleteCustomer}
+        onOpenChange={(open) => !open && setDeleteCustomer(null)}
+        onConfirm={() => deleteCustomer && deleteCustomerMutation.mutate(deleteCustomer.id)}
+        title="Elimina Cliente B2B"
+        itemName={deleteCustomer?.companyName || 'questo cliente'}
+        isPending={deleteCustomerMutation.isPending}
+      />
     </div>
   );
 };
@@ -256,12 +325,38 @@ const B2CCustomersTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+  const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
+  const { toast } = useToast();
 
   const { data: customersResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
   });
 
   const customers: Customer[] = customersResponse?.data || [];
+
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      return apiRequest(`/api/crm/customers/${customerId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/customers'] });
+      toast({
+        title: 'Cliente eliminato',
+        description: 'Il cliente è stato eliminato con successo.',
+      });
+      setDeleteCustomer(null);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error?.message || 'Impossibile eliminare il cliente.',
+      });
+    },
+  });
 
   const columns: ColumnDef<Customer>[] = [
     {
@@ -316,19 +411,40 @@ const B2CCustomersTable = () => {
     },
     {
       id: 'actions',
+      header: 'Azioni',
       cell: ({ row }) => {
         const tenantSlug = window.location.pathname.split('/')[1];
         return (
-          <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid={`view-customer-${row.original.id}`}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Visualizza
-            </Button>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" data-testid={`actions-b2c-customer-${row.original.id}`}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+                <DropdownMenuItem data-testid={`view-b2c-customer-${row.original.id}`}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Visualizza
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem 
+                onClick={() => setEditCustomer(row.original)}
+                data-testid={`edit-b2c-customer-${row.original.id}`}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Modifica
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setDeleteCustomer(row.original)}
+                className="text-red-600"
+                data-testid={`delete-b2c-customer-${row.original.id}`}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Elimina
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
@@ -423,6 +539,24 @@ const B2CCustomersTable = () => {
         open={isModalOpen} 
         onOpenChange={setIsModalOpen}
         defaultType="b2c"
+      />
+
+      <CustomerFormModal 
+        open={!!editCustomer} 
+        onOpenChange={(open) => !open && setEditCustomer(null)}
+        defaultType="b2c"
+        editMode={true}
+        customerId={editCustomer?.id}
+        initialData={editCustomer || undefined}
+      />
+
+      <DeleteConfirmationDialog
+        open={!!deleteCustomer}
+        onOpenChange={(open) => !open && setDeleteCustomer(null)}
+        onConfirm={() => deleteCustomer && deleteCustomerMutation.mutate(deleteCustomer.id)}
+        title="Elimina Cliente B2C"
+        itemName={deleteCustomer ? `${deleteCustomer.firstName} ${deleteCustomer.lastName}` : 'questo cliente'}
+        isPending={deleteCustomerMutation.isPending}
       />
     </div>
   );

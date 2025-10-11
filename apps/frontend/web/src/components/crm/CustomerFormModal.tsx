@@ -63,6 +63,9 @@ interface CustomerFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultType?: 'b2b' | 'b2c';
+  editMode?: boolean;
+  customerId?: string;
+  initialData?: Partial<CustomerFormData> & { secondaryContacts?: string };
 }
 
 interface SecondaryContact {
@@ -72,7 +75,14 @@ interface SecondaryContact {
   role: string;
 }
 
-export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: CustomerFormModalProps) {
+export function CustomerFormModal({ 
+  open, 
+  onOpenChange, 
+  defaultType = 'b2c',
+  editMode = false,
+  customerId,
+  initialData
+}: CustomerFormModalProps) {
   const [customerType, setCustomerType] = useState<'b2b' | 'b2c'>(defaultType);
   const [secondaryContacts, setSecondaryContacts] = useState<SecondaryContact[]>([]);
   const { toast } = useToast();
@@ -117,6 +127,32 @@ export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: C
     },
   });
 
+  const updateCustomerMutation = useMutation({
+    mutationFn: async (data: CustomerFormData) => {
+      if (!customerId) throw new Error('Customer ID required for update');
+      return apiRequest(`/api/crm/customers/${customerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/customers'] });
+      toast({
+        title: 'Cliente aggiornato',
+        description: 'Le modifiche sono state salvate con successo.',
+      });
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error?.message || 'Impossibile aggiornare il cliente.',
+      });
+    },
+  });
+
   const onSubmit = (data: CustomerFormData) => {
     // Validate secondary contacts before submit
     if (data.customerType === 'b2b' && secondaryContacts.length > 0) {
@@ -144,7 +180,12 @@ export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: C
 
       data.secondaryContacts = JSON.stringify(secondaryContacts);
     }
-    createCustomerMutation.mutate(data);
+    
+    if (editMode) {
+      updateCustomerMutation.mutate(data);
+    } else {
+      createCustomerMutation.mutate(data);
+    }
   };
 
   const addSecondaryContact = () => {
@@ -190,20 +231,43 @@ export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: C
   // Reset state when modal opens/closes via useEffect
   useEffect(() => {
     if (open) {
-      // Reset to defaultType on modal open
-      setCustomerType(defaultType);
-      form.setValue('customerType', defaultType);
-      setSecondaryContacts([]);
+      if (editMode && initialData) {
+        // Edit mode: populate form with existing data
+        const typeToUse = initialData.customerType || defaultType;
+        setCustomerType(typeToUse);
+        
+        // Parse secondary contacts if present
+        if (initialData.secondaryContacts) {
+          try {
+            const parsed = JSON.parse(initialData.secondaryContacts);
+            setSecondaryContacts(Array.isArray(parsed) ? parsed : []);
+          } catch {
+            setSecondaryContacts([]);
+          }
+        } else {
+          setSecondaryContacts([]);
+        }
+        
+        // Populate form with initial data
+        form.reset(initialData as CustomerFormData);
+      } else {
+        // Create mode: reset to defaults
+        setCustomerType(defaultType);
+        form.setValue('customerType', defaultType);
+        setSecondaryContacts([]);
+      }
     } else {
       // Clear state on modal close
-      setSecondaryContacts([]);
-      setCustomerType(defaultType);
-      form.reset({
-        customerType: defaultType,
-        status: 'prospect',
-      } as CustomerFormData);
+      if (!editMode) {
+        setSecondaryContacts([]);
+        setCustomerType(defaultType);
+        form.reset({
+          customerType: defaultType,
+          status: 'prospect',
+        } as CustomerFormData);
+      }
     }
-  }, [open, defaultType, form]);
+  }, [open, defaultType, form, editMode, initialData]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,9 +276,12 @@ export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: C
         style={{ background: 'var(--glass-card-bg)', borderColor: 'var(--glass-card-border)' }}
       >
         <DialogHeader>
-          <DialogTitle>Nuovo Cliente</DialogTitle>
+          <DialogTitle>{editMode ? 'Modifica Cliente' : 'Nuovo Cliente'}</DialogTitle>
           <DialogDescription>
-            Crea un nuovo cliente B2B (azienda) o B2C (privato)
+            {editMode 
+              ? 'Modifica i dati del cliente esistente'
+              : 'Crea un nuovo cliente B2B (azienda) o B2C (privato)'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -645,7 +712,7 @@ export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: C
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  disabled={createCustomerMutation.isPending}
+                  disabled={createCustomerMutation.isPending || updateCustomerMutation.isPending}
                   data-testid="button-cancel"
                 >
                   Annulla
@@ -653,10 +720,13 @@ export function CustomerFormModal({ open, onOpenChange, defaultType = 'b2c' }: C
                 <Button
                   type="submit"
                   style={{ background: 'hsl(var(--brand-orange))' }}
-                  disabled={createCustomerMutation.isPending}
+                  disabled={createCustomerMutation.isPending || updateCustomerMutation.isPending}
                   data-testid="button-submit"
                 >
-                  {createCustomerMutation.isPending ? 'Creazione...' : 'Crea Cliente'}
+                  {editMode 
+                    ? (updateCustomerMutation.isPending ? 'Salvataggio...' : 'Salva Modifiche')
+                    : (createCustomerMutation.isPending ? 'Creazione...' : 'Crea Cliente')
+                  }
                 </Button>
               </div>
             </form>
