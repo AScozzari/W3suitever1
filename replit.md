@@ -175,8 +175,6 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project employs an enterprise monorepo structure, separating tenant-facing applications (`W3 Suite`) from a centralized `Brand Interface HQ system`.
-
 ## Monorepo Structure:
 - **`apps/`**: For frontend/backend services, workers, and edge renderers.
 - **`packages/`**: For shared libraries (UI, design tokens, SDK, DWH, CMS).
@@ -203,6 +201,15 @@ The project employs an enterprise monorepo structure, separating tenant-facing a
 - **Intelligent Workflow Routing System**: Dual-mode routing (auto/manual) for team and user assignments.
 - **AI Tools Ecosystem with PDC Analyzer**: Centralized AI tools dashboard. PDC Analyzer provides automated PDF contract analysis using GPT-4, extracting data and mapping services with WindTre product hierarchy.
 - **CRM Module Backend**: Complete customer relationship management backend with 20 tables in `w3suite` schema, featuring person-centric identity graph, omnichannel engagement tracking, pipeline management, GDPR-compliant consent, and lead-to-deal conversion workflow. Provides 25 RESTful endpoints with Zod validation, RLS, and structured logging.
+
+## CRM Best Practices & Future Enhancements
+- **Deal Rotting & Activity Alerts**: Automated staleness detection and smart notifications based on deal activity.
+- **Pipeline Probability Automation**: Stage-based and AI-driven probability adjustments for deals.
+- **Stage Validation & Progression Rules**: Enforce required fields and sequential validation for pipeline stages.
+- **Forecast Categories**: Virtual categories for pipeline, best case, commit, and closed deals based on probability.
+- **Pipeline Velocity Metrics**: Track average time-in-stage, stage conversion rates, and overall pipeline velocity.
+- **Win/Loss Analysis**: Structured loss reasons and trend reporting for closed deals.
+- **Current CRM Implementation**: Pipeline workflow system with custom stages, detail and Kanban views, settings dialog, and backend REST API with tenant isolation and Zod validation.
 
 # External Dependencies
 
@@ -239,8 +246,3 @@ The project employs an enterprise monorepo structure, separating tenant-facing a
 - **Microsoft 365**
 - **Stripe**
 - **GTM/Analytics**
-
-## Replit Platform Integration
-- **Vite Plugin**: For runtime error modal and Cartographer integration.
-- **Environment Detection**: Conditional plugin loading based on `REPL_ID`.
-- **Development Banner**: Replit branding script.

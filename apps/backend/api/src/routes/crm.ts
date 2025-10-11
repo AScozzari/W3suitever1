@@ -13,6 +13,7 @@ import express from 'express';
 import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
+import { rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
 import {
   crmPersons,
@@ -1101,7 +1102,7 @@ router.get('/pipelines/:pipelineId/workflows', async (req, res) => {
  * POST /api/crm/pipelines/:id/workflows
  * Assign a workflow to a pipeline (RBAC: admin + marketing roles)
  */
-router.post('/pipelines/:pipelineId/workflows', async (req, res) => {
+router.post('/pipelines/:pipelineId/workflows', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     const userId = req.user?.id;
@@ -1220,7 +1221,7 @@ router.post('/pipelines/:pipelineId/workflows', async (req, res) => {
  * DELETE /api/crm/pipelines/:id/workflows/:workflowId
  * Remove a workflow assignment from a pipeline
  */
-router.delete('/pipelines/:pipelineId/workflows/:workflowId', async (req, res) => {
+router.delete('/pipelines/:pipelineId/workflows/:workflowId', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
@@ -1369,7 +1370,7 @@ router.get('/pipelines/:pipelineId/stages', async (req, res) => {
  * POST /api/crm/pipelines/:id/stages
  * Create a new custom stage for a pipeline
  */
-router.post('/pipelines/:pipelineId/stages', async (req, res) => {
+router.post('/pipelines/:pipelineId/stages', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
@@ -1466,7 +1467,7 @@ router.post('/pipelines/:pipelineId/stages', async (req, res) => {
  * PATCH /api/crm/pipelines/:id/stages/:stageId
  * Update a custom stage
  */
-router.patch('/pipelines/:pipelineId/stages/:stageId', async (req, res) => {
+router.patch('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
@@ -1564,7 +1565,7 @@ router.patch('/pipelines/:pipelineId/stages/:stageId', async (req, res) => {
  * DELETE /api/crm/pipelines/:id/stages/:stageId
  * Delete a custom stage
  */
-router.delete('/pipelines/:pipelineId/stages/:stageId', async (req, res) => {
+router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
