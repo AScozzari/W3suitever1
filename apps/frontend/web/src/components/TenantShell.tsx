@@ -29,6 +29,7 @@ import PipelineBoardPage from '../pages/crm/PipelineBoardPage';
 import AnalyticsPage from '../pages/crm/AnalyticsPage';
 import CustomersPage from '../pages/crm/CustomersPage';
 import ActivitiesPage from '../pages/crm/ActivitiesPage';
+import { CustomerDetailPage } from '../pages/crm/CustomerDetailPage';
 import { useAuth } from '../hooks/useAuth';
 
 interface TenantShellProps {
@@ -364,6 +365,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm/pipeline`}>
         <AuthenticatedRoute>
           <PipelinePage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm/customers/:id`}>
+        <AuthenticatedRoute>
+          <CustomerDetailPage />
         </AuthenticatedRoute>
       </Route>
       
