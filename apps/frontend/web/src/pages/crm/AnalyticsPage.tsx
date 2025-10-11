@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
@@ -16,7 +15,6 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
 
 interface DriverPerformance {
@@ -57,47 +55,8 @@ export default function AnalyticsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: analyticsResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/crm/analytics/driver-performance'],
-  });
-
-  const analytics = analyticsResponse?.data || [];
-
-  if (isLoading) {
-    return (
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <CRMCommandPalette />
-        <div className="flex flex-col h-full">
-          <CRMNavigationBar />
-          <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca analytics..."
-        />
-          <div className="flex-1 p-6 overflow-auto">
-            <LoadingState />
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <CRMCommandPalette />
-        <div className="flex flex-col h-full">
-          <CRMNavigationBar />
-          <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca analytics..."
-        />
-          <div className="flex-1 p-6 overflow-auto">
-            <ErrorState message="Errore nel caricamento analytics" />
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  // TODO: Implementare endpoint backend /api/crm/analytics/driver-performance
+  const analytics: DriverPerformance[] = [];
 
   const getDriverIcon = (driver: string) => {
     switch (driver) {
@@ -129,9 +88,9 @@ export default function AnalyticsPage() {
     }
   };
 
-  const totalRevenue = analytics?.reduce((sum, d) => sum + d.totalRevenue, 0) || 0;
-  const totalDeals = analytics?.reduce((sum, d) => sum + d.dealsWon, 0) || 0;
-  const avgConversion = analytics ? (analytics.reduce((sum, d) => sum + d.conversionRate, 0) / analytics.length) : 0;
+  const totalRevenue = 0;
+  const totalDeals = 0;
+  const avgConversion = 0;
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>

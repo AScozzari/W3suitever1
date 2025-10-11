@@ -79,11 +79,11 @@ localPort = 36397
 localPort = 38741
 
 [[ports]]
-localPort = 39131
+localPort = 39125
+externalPort = 3002
 
 [[ports]]
-localPort = 39961
-externalPort = 3002
+localPort = 39131
 
 [[ports]]
 localPort = 41029
