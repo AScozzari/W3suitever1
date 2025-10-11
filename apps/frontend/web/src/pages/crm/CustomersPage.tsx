@@ -306,7 +306,7 @@ const B2BCustomersTable = () => {
         defaultType="b2b"
         editMode={true}
         customerId={editCustomer?.id}
-        initialData={editCustomer || undefined}
+        initialData={editCustomer as any}
       />
 
       <DeleteConfirmationDialog
@@ -547,7 +547,7 @@ const B2CCustomersTable = () => {
         defaultType="b2c"
         editMode={true}
         customerId={editCustomer?.id}
-        initialData={editCustomer || undefined}
+        initialData={editCustomer as any}
       />
 
       <DeleteConfirmationDialog
