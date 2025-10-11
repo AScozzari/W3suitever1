@@ -1,147 +1,530 @@
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+} from '@tanstack/react-table';
 import Layout from '@/components/Layout';
-import { Card } from '@/components/ui/card';
+import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
+import { CRMScopeBar } from '@/components/crm/CRMScopeBar';
+import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserPlus, Search, Plus, Filter } from 'lucide-react';
-import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
-import { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { queryClient } from '@/lib/queryClient';
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { type: "spring", stiffness: 100, damping: 15 }
-  }
+interface Lead {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  company?: string;
+  status: 'new' | 'qualified' | 'contacted' | 'converted' | 'lost';
+  source: string;
+  driver: 'FISSO' | 'MOBILE' | 'DEVICE' | 'ACCESSORI';
+  campaignName?: string;
+  score: number;
+  ownerId: string;
+  ownerName: string;
+  createdAt: string;
+}
+
+const statusConfig = {
+  new: { label: 'Nuovo', color: 'hsl(var(--brand-purple))' },
+  qualified: { label: 'Qualificato', color: 'hsl(220, 90%, 56%)' },
+  contacted: { label: 'Contattato', color: 'hsl(280, 65%, 60%)' },
+  converted: { label: 'Convertito', color: 'hsl(142, 76%, 36%)' },
+  lost: { label: 'Perso', color: 'hsl(0, 84%, 60%)' }
+};
+
+const driverConfig = {
+  FISSO: { label: 'Fibra', icon: '🌐', color: 'hsl(220, 90%, 56%)' },
+  MOBILE: { label: '5G', icon: '📱', color: 'hsl(280, 65%, 60%)' },
+  DEVICE: { label: 'Device', icon: '📲', color: 'hsl(var(--brand-orange))' },
+  ACCESSORI: { label: 'Accessori', icon: '🎧', color: 'hsl(var(--brand-purple))' }
 };
 
 export default function LeadsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [rowSelection, setRowSelection] = useState({});
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const { data: leads, isLoading, error } = useQuery({
-    queryKey: ['/api/crm/leads', searchQuery],
-    initialData: []
+  const { data: leads = [], isLoading } = useQuery<Lead[]>({
+    queryKey: ['/api/crm/leads', globalFilter],
+    initialData: [
+      {
+        id: '1',
+        firstName: 'Marco',
+        lastName: 'Rossi',
+        email: 'marco.rossi@example.com',
+        phone: '+39 340 1234567',
+        company: 'Rossi SRL',
+        status: 'qualified',
+        source: 'WALK_IN',
+        driver: 'FISSO',
+        campaignName: 'Black Friday 2024',
+        score: 85,
+        ownerId: 'me',
+        ownerName: 'Tu',
+        createdAt: '2024-10-10T10:00:00Z'
+      },
+      {
+        id: '2',
+        firstName: 'Giulia',
+        lastName: 'Bianchi',
+        email: 'giulia.bianchi@example.com',
+        phone: '+39 345 7654321',
+        status: 'new',
+        source: 'WEB',
+        driver: 'MOBILE',
+        campaignName: 'Mobile 5G Promo',
+        score: 72,
+        ownerId: 'me',
+        ownerName: 'Tu',
+        createdAt: '2024-10-11T14:30:00Z'
+      }
+    ]
   });
 
-  if (isLoading) {
-    return (
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <LoadingState />
-      </Layout>
-    );
-  }
+  const convertMutation = useMutation({
+    mutationFn: async ({ leadId, pipelineId }: { leadId: string; pipelineId: string }) => {
+      const response = await fetch(`/api/crm/leads/${leadId}/convert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pipelineId })
+      });
+      if (!response.ok) throw new Error('Conversione fallita');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Lead convertito in Deal!', description: 'Il deal è stato creato con successo' });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/leads'] });
+      setIsConvertDialogOpen(false);
+    }
+  });
 
-  if (error) {
-    return (
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <ErrorState message="Errore nel caricamento dei lead" />
-      </Layout>
-    );
-  }
+  const columns: ColumnDef<Lead>[] = [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Seleziona tutto"
+          data-testid="checkbox-select-all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Seleziona riga"
+          data-testid={`checkbox-row-${row.original.id}`}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'firstName',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          data-testid="sort-name"
+        >
+          Nome
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}>
+              {row.original.firstName[0]}{row.original.lastName[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{row.original.firstName} {row.original.lastName}</div>
+            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {row.original.company || row.original.email}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Stato',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        const config = statusConfig[status];
+        return (
+          <Badge variant="outline" style={{ borderColor: config.color, color: config.color }}>
+            {config.label}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'driver',
+      header: 'Driver',
+      cell: ({ row }) => {
+        const driver = row.original.driver;
+        const config = driverConfig[driver];
+        return (
+          <div className="flex items-center gap-2">
+            <span>{config.icon}</span>
+            <span style={{ color: config.color }}>{config.label}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'campaignName',
+      header: 'Campagna',
+      cell: ({ row }) => row.original.campaignName || '-',
+    },
+    {
+      accessorKey: 'score',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          data-testid="sort-score"
+        >
+          Score
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
+          <span className="font-semibold">{row.original.score}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Data',
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('it-IT'),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`actions-${row.original.id}`}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => {
+              setSelectedLead(row.original);
+              setIsDetailOpen(true);
+            }}>
+              Visualizza dettagli
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              setSelectedLead(row.original);
+              setIsConvertDialogOpen(true);
+            }}>
+              Converti in Deal
+            </DropdownMenuItem>
+            <DropdownMenuItem>Assegna a...</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const table = useReactTable({
+    data: leads,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    state: {
+      sorting,
+      columnFilters,
+      rowSelection,
+      globalFilter,
+    },
+  });
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-3 rounded-xl"
-              style={{ 
-                background: 'var(--brand-glass-purple)',
-                backdropFilter: 'blur(8px)'
-              }}
-            >
-              <UserPlus className="h-6 w-6" style={{ color: 'hsl(var(--brand-purple))' }} />
+      <div className="flex flex-col h-full">
+        <CRMNavigationBar />
+        <CRMScopeBar />
+
+        <div className="flex-1 p-6 space-y-6 overflow-auto">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+              <Input
+                placeholder="Cerca lead..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="pl-10"
+                style={{ 
+                  background: 'var(--glass-bg-light)',
+                  borderColor: 'var(--glass-card-border)'
+                }}
+                data-testid="input-search"
+              />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-purple))' }}>
-                Lead
-              </h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Gestione opportunità e qualifica lead
-              </p>
+            <div className="flex items-center gap-2">
+              <CRMFilterDock />
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button style={{ background: 'hsl(var(--brand-orange))' }} data-testid="button-create-lead">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nuovo Lead
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crea Nuovo Lead</DialogTitle>
+                    <DialogDescription>Inserisci i dati del nuovo lead</DialogDescription>
+                  </DialogHeader>
+                  {/* Form TODO */}
+                  <p>Form in arrivo...</p>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
-          <Button
-            style={{ 
-              background: 'hsl(var(--brand-purple))',
-              color: 'white'
-            }}
-            data-testid="button-add-lead"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Lead
-          </Button>
-        </div>
 
-        {/* Search & Filters */}
-        <motion.div
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card 
-            className="glass-card p-4 border-0"
+          {/* DataTable */}
+          <div 
+            className="rounded-xl border overflow-hidden"
             style={{ 
               background: 'var(--glass-card-bg)',
               backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid var(--glass-card-border)',
-              boxShadow: 'var(--shadow-glass-sm)'
+              borderColor: 'var(--glass-card-border)'
             }}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
-                <Input
-                  placeholder="Cerca lead per nome, azienda, prodotto..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  style={{ 
-                    background: 'var(--glass-bg-light)',
-                    border: '1px solid var(--glass-card-border)'
-                  }}
-                  data-testid="input-search-leads"
-                />
-              </div>
-              <Button variant="outline" data-testid="button-filters">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtri Pipeline
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                      data-testid={`row-lead-${row.original.id}`}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      Nessun lead trovato
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {table.getFilteredSelectedRowModel().rows.length} di{' '}
+              {table.getFilteredRowModel().rows.length} righe selezionate
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                data-testid="button-prev-page"
+              >
+                Precedente
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                data-testid="button-next-page"
+              >
+                Successiva
               </Button>
             </div>
-          </Card>
-        </motion.div>
+          </div>
+        </div>
 
-        {/* Leads List - Coming Soon */}
-        <motion.div
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card 
-            className="glass-card p-12 border-0 text-center"
-            style={{ 
-              background: 'var(--glass-card-bg)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid var(--glass-card-border)',
-              boxShadow: 'var(--shadow-glass)'
-            }}
-          >
-            <UserPlus className="h-16 w-16 mx-auto mb-4 opacity-50" style={{ color: 'hsl(var(--brand-purple))' }} />
-            <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              DataTable Lead in arrivo
-            </h3>
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-              Gestione completa lead con qualifica, scoring AI e workflow automation
-            </p>
-          </Card>
-        </motion.div>
+        {/* Lead Detail Sheet */}
+        <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+          <SheetContent className="w-[600px] sm:max-w-[600px]" style={{ background: 'var(--glass-card-bg)' }}>
+            {selectedLead && (
+              <>
+                <SheetHeader>
+                  <SheetTitle>{selectedLead.firstName} {selectedLead.lastName}</SheetTitle>
+                  <SheetDescription>{selectedLead.email}</SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Button variant="outline" size="sm" data-testid="button-call">
+                      <Phone className="mr-2 h-4 w-4" />
+                      Chiama
+                    </Button>
+                    <Button variant="outline" size="sm" data-testid="button-email">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Email
+                    </Button>
+                    <Button variant="outline" size="sm" data-testid="button-whatsapp">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      WhatsApp
+                    </Button>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Stato</Label>
+                      <Badge className="mt-2" style={{ borderColor: statusConfig[selectedLead.status].color }}>
+                        {statusConfig[selectedLead.status].label}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label>Driver Prodotto</Label>
+                      <p className="mt-2">{driverConfig[selectedLead.driver].icon} {driverConfig[selectedLead.driver].label}</p>
+                    </div>
+                    <div>
+                      <Label>Score</Label>
+                      <p className="mt-2 font-semibold">{selectedLead.score}/100</p>
+                    </div>
+                    <div>
+                      <Label>Campagna</Label>
+                      <p className="mt-2">{selectedLead.campaignName || 'N/D'}</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <Button 
+                    className="w-full" 
+                    style={{ background: 'hsl(var(--brand-orange))' }}
+                    onClick={() => {
+                      setIsDetailOpen(false);
+                      setIsConvertDialogOpen(true);
+                    }}
+                    data-testid="button-convert-to-deal"
+                  >
+                    Converti in Deal
+                  </Button>
+                </div>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Convert to Deal Dialog */}
+        <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Converti Lead in Deal</DialogTitle>
+              <DialogDescription>
+                Seleziona la pipeline per creare il deal
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Pipeline</Label>
+                <Select>
+                  <SelectTrigger data-testid="select-pipeline">
+                    <SelectValue placeholder="Seleziona pipeline" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Pipeline Fisso</SelectItem>
+                    <SelectItem value="2">Pipeline Mobile</SelectItem>
+                    <SelectItem value="3">Pipeline Device</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Note iniziali</Label>
+                <Textarea placeholder="Aggiungi note..." data-testid="textarea-notes" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsConvertDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button 
+                style={{ background: 'hsl(var(--brand-orange))' }}
+                onClick={() => selectedLead && convertMutation.mutate({ leadId: selectedLead.id, pipelineId: '1' })}
+                data-testid="button-confirm-convert"
+              >
+                Converti
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
