@@ -25,6 +25,7 @@ import {
   crmCustomers,
   crmInteractions,
   crmTasks,
+  crmPersonIdentities,
   workflowTemplates,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
@@ -45,54 +46,69 @@ const getTenantId = (req: express.Request): string | null => {
   return req.headers['x-tenant-id'] as string || req.user?.tenantId || null;
 };
 
-// Helper: Get or create personId with intelligent matching
+// Helper: Get or create personId with transactional UPSERT (prevents all race conditions)
 const getOrCreatePersonId = async (
   tenantId: string,
   email?: string | null,
   phone?: string | null,
   socialId?: string | null
 ): Promise<string> => {
-  // Build match conditions (OR logic: match on ANY field)
-  const matchConditions = [eq(crmLeads.tenantId, tenantId)];
-  const orConditions = [];
+  const identifiers: Array<{type: 'email' | 'phone' | 'social', value: string}> = [];
   
-  if (email) {
-    orConditions.push(eq(crmLeads.email, email));
+  if (email) identifiers.push({type: 'email', value: email});
+  if (phone) identifiers.push({type: 'phone', value: phone});
+  if (socialId) identifiers.push({type: 'social', value: socialId});
+  
+  // No identifiers - generate new personId
+  if (identifiers.length === 0) {
+    const newPersonId = crypto.randomUUID();
+    logger.info('New person ID generated (no identifiers)', {personId: newPersonId, tenantId});
+    return newPersonId;
   }
-  if (phone) {
-    orConditions.push(eq(crmLeads.phone, phone));
-  }
-  if (socialId) {
-    orConditions.push(eq(crmLeads.sourceSocialAccountId, socialId));
-  }
-
-  // If we have any match conditions, search for existing personId
-  if (orConditions.length > 0) {
-    const existingLead = await db
-      .select({ personId: crmLeads.personId })
-      .from(crmLeads)
-      .where(and(...matchConditions, or(...orConditions)))
-      .limit(1);
-
-    if (existingLead[0]) {
-      logger.info('Person ID match found', {
-        personId: existingLead[0].personId,
-        tenantId,
-        matchedOn: { email, phone, socialId }
-      });
-      return existingLead[0].personId;
+  
+  // Wrap in transaction to ensure atomicity across all identifier UPSERTs
+  return await db.transaction(async (tx) => {
+    const firstIdentifier = identifiers[0];
+    
+    // STEP 1: UPSERT FIRST identifier to get/create canonical personId from DB
+    const firstResult = await tx.execute(sql`
+      INSERT INTO w3suite.crm_person_identities (tenant_id, person_id, identifier_type, identifier_value)
+      VALUES (${tenantId}, gen_random_uuid(), ${firstIdentifier.type}, ${firstIdentifier.value})
+      ON CONFLICT (tenant_id, identifier_type, identifier_value) 
+      DO UPDATE SET identifier_value = EXCLUDED.identifier_value
+      RETURNING person_id
+    `);
+    
+    const canonicalPersonId = (firstResult.rows[0] as {person_id: string}).person_id;
+    
+    // STEP 2: UPSERT remaining identifiers with canonical personId
+    if (identifiers.length > 1) {
+      await Promise.all(
+        identifiers.slice(1).map(({type, value}) =>
+          tx.execute(sql`
+            INSERT INTO w3suite.crm_person_identities (tenant_id, person_id, identifier_type, identifier_value)
+            VALUES (${tenantId}, ${canonicalPersonId}, ${type}, ${value})
+            ON CONFLICT (tenant_id, identifier_type, identifier_value) 
+            DO UPDATE SET person_id = ${canonicalPersonId}
+          `)
+        )
+      );
     }
-  }
-
-  // No match found - generate new UUID
-  const newPersonId = crypto.randomUUID();
-  logger.info('New person ID generated', {
-    personId: newPersonId,
-    tenantId,
-    identifiers: { email, phone, socialId }
+    
+    // STEP 3: Re-query canonical from DB to ensure final value (handles concurrent updates)
+    const finalResult = await tx.select({personId: crmPersonIdentities.personId})
+      .from(crmPersonIdentities)
+      .where(and(
+        eq(crmPersonIdentities.tenantId, tenantId),
+        eq(crmPersonIdentities.identifierType, firstIdentifier.type),
+        eq(crmPersonIdentities.identifierValue, firstIdentifier.value)
+      ))
+      .limit(1);
+    
+    const finalPersonId = finalResult[0].personId;
+    logger.info('Person ID resolved in transaction', {personId: finalPersonId, tenantId, identifiers});
+    return finalPersonId;
   });
-  
-  return newPersonId;
 };
 
 // ==================== DASHBOARD STATS ====================

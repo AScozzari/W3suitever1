@@ -162,6 +162,7 @@ export const crmConsentTypeEnum = pgEnum('crm_consent_type', ['privacy_policy', 
 export const crmConsentStatusEnum = pgEnum('crm_consent_status', ['granted', 'denied', 'withdrawn', 'pending']);
 export const crmConsentScopeEnum = pgEnum('crm_consent_scope', ['marketing', 'service', 'both']);
 export const crmSourceTypeEnum = pgEnum('crm_source_type', ['meta_page', 'google_ads', 'whatsapp_phone', 'instagram', 'tiktok']);
+export const crmIdentifierTypeEnum = pgEnum('crm_identifier_type', ['email', 'phone', 'social']);
 export const customerTypeEnum = pgEnum('customer_type', ['b2c', 'b2b']);
 
 // ✅ CRITICAL ENUM FIX: Add missing calendar_event_category enum
@@ -4306,6 +4307,20 @@ export type ActivityFeedInteraction = typeof activityFeedInteractions.$inferSele
 
 // ==================== CRM SYSTEM TABLES ====================
 
+// CRM Person Identities - Atomic identity deduplication table
+export const crmPersonIdentities = w3suiteSchema.table("crm_person_identities", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  personId: uuid("person_id").notNull(),
+  identifierType: crmIdentifierTypeEnum("identifier_type").notNull(),
+  identifierValue: varchar("identifier_value", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  tenantTypeValueUniq: uniqueIndex("crm_person_identities_tenant_type_value_uniq").on(table.tenantId, table.identifierType, table.identifierValue),
+  personIdIdx: index("crm_person_identities_person_id_idx").on(table.personId),
+  tenantIdIdx: index("crm_person_identities_tenant_id_idx").on(table.tenantId),
+}));
+
 // CRM Campaigns - Marketing containers
 export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -4708,6 +4723,13 @@ export const crmSavedViews = w3suiteSchema.table("crm_saved_views", {
 }));
 
 // ==================== CRM INSERT SCHEMAS ====================
+
+export const insertCrmPersonIdentitySchema = createInsertSchema(crmPersonIdentities).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmPersonIdentity = z.infer<typeof insertCrmPersonIdentitySchema>;
+export type CrmPersonIdentity = typeof crmPersonIdentities.$inferSelect;
 
 export const insertCrmCampaignSchema = createInsertSchema(crmCampaigns).omit({ 
   id: true, 
