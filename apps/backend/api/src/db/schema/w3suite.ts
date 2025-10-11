@@ -138,6 +138,22 @@ export const crmPipelineStageCategoryEnum = pgEnum('crm_pipeline_stage_category'
   'ko'          // Perso/Rifiutato
 ]);
 export const crmDealStatusEnum = pgEnum('crm_deal_status', ['open', 'won', 'lost', 'abandoned']);
+export const crmCustomerTypeEnum = pgEnum('crm_customer_type', ['b2b', 'b2c']);
+export const crmLegalFormEnum = pgEnum('crm_legal_form', [
+  'ditta_individuale',
+  'snc',               // Società in Nome Collettivo
+  'sas',               // Società in Accomandita Semplice
+  'srl',               // Società a Responsabilità Limitata
+  'srls',              // SRL Semplificata
+  'spa',               // Società per Azioni
+  'sapa',              // Società in Accomandita per Azioni
+  'cooperativa',
+  'consorzio',
+  'societa_semplice',
+  'geie',              // Gruppo Europeo Interesse Economico
+  'startup_innovativa',
+  'pmi_innovativa'
+]);
 export const crmInteractionDirectionEnum = pgEnum('crm_interaction_direction', ['inbound', 'outbound']);
 export const crmTaskTypeEnum = pgEnum('crm_task_type', ['call', 'email', 'meeting', 'follow_up', 'demo', 'other']);
 export const crmTaskStatusEnum = pgEnum('crm_task_status', ['pending', 'in_progress', 'completed', 'cancelled']);
@@ -4290,56 +4306,6 @@ export type ActivityFeedInteraction = typeof activityFeedInteractions.$inferSele
 
 // ==================== CRM SYSTEM TABLES ====================
 
-// CRM Persons - Identity Graph centrale
-export const crmPersons = w3suiteSchema.table("crm_persons", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull(),
-  emailCanonical: varchar("email_canonical", { length: 255 }),
-  phoneCanonical: varchar("phone_canonical", { length: 50 }),
-  firstName: varchar("first_name", { length: 255 }),
-  lastName: varchar("last_name", { length: 255 }),
-  mergedAt: timestamp("merged_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  tenantEmailIdx: uniqueIndex("crm_persons_tenant_email_idx").on(table.tenantId, table.emailCanonical),
-  tenantPhoneIdx: uniqueIndex("crm_persons_tenant_phone_idx").on(table.tenantId, table.phoneCanonical),
-  tenantIdIdx: index("crm_persons_tenant_id_idx").on(table.tenantId),
-}));
-
-// CRM Person Consents - GDPR verità operativa
-export const crmPersonConsents = w3suiteSchema.table("crm_person_consents", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull(),
-  personId: uuid("person_id").notNull().references(() => crmPersons.id),
-  consentType: crmConsentTypeEnum("consent_type").notNull(),
-  channel: text("channel").notNull(), // 'all', 'email', 'sms', 'phone', 'whatsapp', 'telegram'
-  status: crmConsentStatusEnum("status").notNull(),
-  scope: crmConsentScopeEnum("scope"),
-  grantedAt: timestamp("granted_at"),
-  withdrawnAt: timestamp("withdrawn_at"),
-  source: varchar("source", { length: 255 }),
-  proofDocumentId: uuid("proof_document_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  personChannelConsentUniq: uniqueIndex("crm_person_consents_person_channel_consent_uniq").on(table.personId, table.channel, table.consentType),
-  tenantIdIdx: index("crm_person_consents_tenant_id_idx").on(table.tenantId),
-  personIdIdx: index("crm_person_consents_person_id_idx").on(table.personId),
-}));
-
-// CRM Person Preferences - Contact preferences & quiet hours
-export const crmPersonPreferences = w3suiteSchema.table("crm_person_preferences", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  personId: uuid("person_id").notNull().unique().references(() => crmPersons.id),
-  preferredChannel: varchar("preferred_channel", { length: 50 }),
-  quietHoursStart: varchar("quiet_hours_start", { length: 5 }), // "22:00"
-  quietHoursEnd: varchar("quiet_hours_end", { length: 5 }), // "08:00"
-  language: varchar("language", { length: 5 }),
-  doNotContact: boolean("do_not_contact").default(false),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 // CRM Campaigns - Marketing containers
 export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -4370,13 +4336,13 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   tenantIdIdx: index("crm_campaigns_tenant_id_idx").on(table.tenantId),
 }));
 
-// CRM Leads - Lead con person_id e GDPR snapshot
+// CRM Leads - Lead con person_id auto-generated (match su email/phone/social)
 export const crmLeads = w3suiteSchema.table("crm_leads", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
   legalEntityId: uuid("legal_entity_id"),
   storeId: uuid("store_id").notNull(),
-  personId: uuid("person_id").notNull().references(() => crmPersons.id),
+  personId: uuid("person_id").notNull(), // Auto-generated UUID for identity tracking
   ownerUserId: uuid("owner_user_id"),
   campaignId: uuid("campaign_id").references(() => crmCampaigns.id),
   sourceChannel: varchar("source_channel", { length: 100 }),
@@ -4504,7 +4470,7 @@ export const crmDeals = w3suiteSchema.table("crm_deals", {
   leadId: uuid("lead_id").references(() => crmLeads.id),
   campaignId: uuid("campaign_id"),
   sourceChannel: varchar("source_channel", { length: 100 }),
-  personId: uuid("person_id").notNull().references(() => crmPersons.id),
+  personId: uuid("person_id").notNull(), // Propagated from lead for identity tracking
   customerId: uuid("customer_id"),
   estimatedValue: real("estimated_value"),
   probability: smallint("probability").default(0), // 0-100
@@ -4559,6 +4525,47 @@ export const crmTasks = w3suiteSchema.table("crm_tasks", {
 }, (table) => ({
   tenantAssignedStatusDueIdx: index("crm_tasks_tenant_assigned_status_due_idx").on(table.tenantId, table.assignedToUserId, table.status, table.dueDate),
   tenantIdIdx: index("crm_tasks_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Customers - B2B/B2C converted customers
+export const crmCustomers = w3suiteSchema.table("crm_customers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  personId: uuid("person_id").notNull(), // Identity tracking across lead → deal → customer
+  customerType: crmCustomerTypeEnum("customer_type").notNull(),
+  status: varchar("status", { length: 20 }).default('active'), // 'active', 'inactive', 'churned'
+  sourceDealId: uuid("source_deal_id").references(() => crmDeals.id),
+  firstPurchaseDate: timestamp("first_purchase_date"),
+  ltv: real("ltv").default(0), // Lifetime value
+  totalOrders: integer("total_orders").default(0),
+  
+  // B2C Fields (persona fisica)
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  fiscalCodeB2C: varchar("fiscal_code_b2c", { length: 16 }), // Codice Fiscale persona
+  billingAddress: text("billing_address"),
+  shippingAddress: text("shipping_address"),
+  
+  // B2B Fields (azienda)
+  companyName: varchar("company_name", { length: 255 }),
+  legalForm: crmLegalFormEnum("legal_form"),
+  vatNumber: varchar("vat_number", { length: 16 }), // Partita IVA (IT + 11 cifre)
+  fiscalCodeB2B: varchar("fiscal_code_b2b", { length: 16 }), // CF azienda
+  pec: varchar("pec", { length: 255 }), // Email certificata
+  sdi: varchar("sdi", { length: 7 }), // Codice SDI fatturazione elettronica
+  ateco: varchar("ateco", { length: 10 }), // Codice attività economica
+  registeredOffice: text("registered_office"), // Sede legale
+  operationalOffice: text("operational_office"), // Sede operativa
+  secondaryContacts: jsonb("secondary_contacts"), // [{ name, role, email, phone }]
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantPersonIdIdx: index("crm_customers_tenant_person_id_idx").on(table.tenantId, table.personId),
+  tenantTypeStatusIdx: index("crm_customers_tenant_type_status_idx").on(table.tenantId, table.customerType, table.status),
+  tenantIdIdx: index("crm_customers_tenant_id_idx").on(table.tenantId),
 }));
 
 // CRM Campaign Pipeline Links - N:N relationships
@@ -4702,29 +4709,6 @@ export const crmSavedViews = w3suiteSchema.table("crm_saved_views", {
 
 // ==================== CRM INSERT SCHEMAS ====================
 
-export const insertCrmPersonSchema = createInsertSchema(crmPersons).omit({ 
-  id: true, 
-  createdAt: true,
-  updatedAt: true
-});
-export type InsertCrmPerson = z.infer<typeof insertCrmPersonSchema>;
-export type CrmPerson = typeof crmPersons.$inferSelect;
-
-export const insertCrmPersonConsentSchema = createInsertSchema(crmPersonConsents).omit({ 
-  id: true, 
-  createdAt: true,
-  updatedAt: true
-});
-export type InsertCrmPersonConsent = z.infer<typeof insertCrmPersonConsentSchema>;
-export type CrmPersonConsent = typeof crmPersonConsents.$inferSelect;
-
-export const insertCrmPersonPreferenceSchema = createInsertSchema(crmPersonPreferences).omit({ 
-  id: true, 
-  updatedAt: true
-});
-export type InsertCrmPersonPreference = z.infer<typeof insertCrmPersonPreferenceSchema>;
-export type CrmPersonPreference = typeof crmPersonPreferences.$inferSelect;
-
 export const insertCrmCampaignSchema = createInsertSchema(crmCampaigns).omit({ 
   id: true, 
   createdAt: true,
@@ -4805,6 +4789,14 @@ export const insertCrmTaskSchema = createInsertSchema(crmTasks).omit({
 });
 export type InsertCrmTask = z.infer<typeof insertCrmTaskSchema>;
 export type CrmTask = typeof crmTasks.$inferSelect;
+
+export const insertCrmCustomerSchema = createInsertSchema(crmCustomers).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmCustomer = z.infer<typeof insertCrmCustomerSchema>;
+export type CrmCustomer = typeof crmCustomers.$inferSelect;
 
 export const insertCrmCampaignPipelineLinkSchema = createInsertSchema(crmCampaignPipelineLinks).omit({ 
   id: true, 
