@@ -1989,22 +1989,22 @@ router.get('/interactions', async (req, res) => {
     
     await setTenantContext(tenantId);
 
-    // Build combined predicate with tenant isolation
-    const conditions = [eq(crmInteractions.tenantId, tenantId)];
-    if (entityId) {
-      conditions.push(eq(crmInteractions.entityId, entityId as string));
+    // Build where clause with and()
+    const whereConditions = [eq(crmInteractions.tenantId, tenantId)];
+    
+    // Note: crmInteractions uses entityId, not personId. If personId is provided, ignore it for now
+    // as interactions are tied to entities (leads/deals/customers) not directly to persons
+    if (entityId && typeof entityId === 'string' && entityId.trim()) {
+      whereConditions.push(eq(crmInteractions.entityId, entityId));
     }
-    if (personId) {
-      conditions.push(eq(crmInteractions.personId, personId as string));
-    }
-    if (channel) {
-      conditions.push(eq(crmInteractions.channel, channel as string));
+    if (channel && typeof channel === 'string' && channel.trim()) {
+      whereConditions.push(eq(crmInteractions.channel, channel));
     }
 
     const interactions = await db
       .select()
       .from(crmInteractions)
-      .where(and(...conditions))
+      .where(whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0])
       .orderBy(desc(crmInteractions.occurredAt))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
@@ -2337,6 +2337,73 @@ router.delete('/customers/:id', async (req, res) => {
   }
 });
 
+// ==================== PERSONS ENDPOINTS ====================
 
+/**
+ * GET /api/crm/persons/:personId/consents
+ * Get consent information for a person
+ */
+router.get('/persons/:personId/consents', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { personId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Get consent data from leads associated with this person
+    const leads = await db
+      .select({
+        leadId: crmLeads.id,
+        marketingConsent: crmLeads.marketingConsent,
+        profilingConsent: crmLeads.profilingConsent,
+        consentTimestamp: crmLeads.consentTimestamp,
+        consentSource: crmLeads.consentSource
+      })
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.personId, personId),
+        eq(crmLeads.tenantId, tenantId)
+      ))
+      .limit(10);
+
+    // Return the most recent consent if available
+    const consents = leads.map(lead => ({
+      type: 'lead',
+      leadId: lead.leadId,
+      marketingConsent: lead.marketingConsent || false,
+      profilingConsent: lead.profilingConsent || false,
+      timestamp: lead.consentTimestamp,
+      source: lead.consentSource
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: consents,
+      message: 'Consents retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving person consents', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      personId: req.params.personId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve consents',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
 
 export default router;
