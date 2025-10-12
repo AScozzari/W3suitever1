@@ -2424,76 +2424,82 @@ router.get('/persons/:personId/analytics', async (req, res) => {
     const { personId } = req.params;
     await setTenantContext(tenantId);
 
-    // Calculate KPIs
+    // Calculate KPIs using raw SQL to avoid Drizzle compatibility issues
+    
     // 1. Lifetime Value & Deals Closed (from deals)
-    const dealStats = await db
-      .select({
-        totalValue: sql<string>`COALESCE(SUM(estimated_value), 0)::text`,
-        dealsClosed: sql<number>`COUNT(*)::integer`
-      })
-      .from(crmDeals)
-      .where(and(
-        eq(crmDeals.personId, personId),
-        eq(crmDeals.tenantId, tenantId),
-        eq(crmDeals.status, 'won')
-      ))
-      .then(rows => rows[0] || { totalValue: '0', dealsClosed: 0 });
+    const dealStatsResult = await db.execute(sql`
+      SELECT 
+        COALESCE(SUM(estimated_value), 0)::numeric AS total_value,
+        COUNT(*)::integer AS deals_closed
+      FROM w3suite.crm_deals
+      WHERE person_id = ${personId}::uuid 
+        AND tenant_id = ${tenantId}::uuid
+        AND status = 'won'
+    `);
+    
+    const dealStats = dealStatsResult.rows[0] || { total_value: 0, deals_closed: 0 };
+    const lifetimeValue = parseFloat(String(dealStats.total_value || '0'));
+    const dealsClosed = Number(dealStats.deals_closed || 0);
 
-    const lifetimeValue = parseFloat(dealStats.totalValue || '0');
-    const dealsClosed = dealStats.dealsClosed || 0;
+    // 2. Engagement Score (based on interactions count)
+    const interactionsResult = await db.execute(sql`
+      SELECT COUNT(*)::integer AS count
+      FROM w3suite.crm_interactions
+      WHERE entity_type = 'customer'
+        AND entity_id IN (
+          SELECT id FROM w3suite.crm_customers 
+          WHERE person_id = ${personId}::uuid 
+            AND tenant_id = ${tenantId}::uuid
+        )
+    `);
+    
+    const interactionsCount = Number(interactionsResult.rows[0]?.count || 0);
+    const engagementScore = Math.min(100, Math.round(interactionsCount * 5));
 
-    // 2. Engagement Score (based on interactions count - normalized to 0-100)
-    const interactionsCount = await db
-      .select({ count: sql<number>`COUNT(*)::integer` })
-      .from(crmInteractions)
-      .where(and(
-        eq(crmInteractions.entityType, 'customer'),
-        sql`entity_id IN (
-          SELECT id FROM w3suite.crm_customers WHERE person_id = ${personId}::uuid AND tenant_id = ${tenantId}::uuid
-        )`
-      ))
-      .then(rows => rows[0]?.count || 0);
+    // 3. Referrals count
+    const referralsResult = await db.execute(sql`
+      SELECT COUNT(*)::integer AS count
+      FROM w3suite.crm_leads
+      WHERE tenant_id = ${tenantId}::uuid
+        AND (source_channel ILIKE '%referral%' OR utm_source ILIKE '%referral%')
+    `);
+    
+    const referrals = Number(referralsResult.rows[0]?.count || 0);
 
-    const engagementScore = Math.min(100, Math.round(interactionsCount * 5)); // 20 interactions = 100 score
-
-    // 3. Referrals (leads with source containing this person's info)
-    // TEMPORARY: Disabled due to SQL compatibility issues
-    const referrals = 0;
-
-    // 4. LTV Trend (compare last 3 months vs previous 3 months)
+    // 4. LTV Trend (last 3 months vs previous 3 months)
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    const recentRevenue = await db
-      .select({ total: sql<string>`COALESCE(SUM(estimated_value), 0)::text` })
-      .from(crmDeals)
-      .where(and(
-        eq(crmDeals.personId, personId),
-        eq(crmDeals.tenantId, tenantId),
-        eq(crmDeals.status, 'won'),
-        sql`won_at >= ${threeMonthsAgo.toISOString()}`
-      ))
-      .then(rows => parseFloat(rows[0]?.total || '0'));
+    const recentRevenueResult = await db.execute(sql`
+      SELECT COALESCE(SUM(estimated_value), 0)::numeric AS total
+      FROM w3suite.crm_deals
+      WHERE person_id = ${personId}::uuid
+        AND tenant_id = ${tenantId}::uuid
+        AND status = 'won'
+        AND won_at >= ${threeMonthsAgo.toISOString()}::timestamp
+    `);
+    
+    const previousRevenueResult = await db.execute(sql`
+      SELECT COALESCE(SUM(estimated_value), 0)::numeric AS total
+      FROM w3suite.crm_deals
+      WHERE person_id = ${personId}::uuid
+        AND tenant_id = ${tenantId}::uuid
+        AND status = 'won'
+        AND won_at >= ${sixMonthsAgo.toISOString()}::timestamp
+        AND won_at < ${threeMonthsAgo.toISOString()}::timestamp
+    `);
 
-    const previousRevenue = await db
-      .select({ total: sql<string>`COALESCE(SUM(estimated_value), 0)::text` })
-      .from(crmDeals)
-      .where(and(
-        eq(crmDeals.personId, personId),
-        eq(crmDeals.tenantId, tenantId),
-        eq(crmDeals.status, 'won'),
-        sql`won_at >= ${sixMonthsAgo.toISOString()} AND won_at < ${threeMonthsAgo.toISOString()}`
-      ))
-      .then(rows => parseFloat(rows[0]?.total || '0'));
-
+    const recentRevenue = parseFloat(String(recentRevenueResult.rows[0]?.total || '0'));
+    const previousRevenue = parseFloat(String(previousRevenueResult.rows[0]?.total || '0'));
     const ltvTrend = previousRevenue > 0 ? Math.round(((recentRevenue - previousRevenue) / previousRevenue) * 100) : 0;
 
     // Charts Data
     // 1. Revenue Data (last 6 months)
     const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
     const revenueData = [];
+    
     for (let i = 5; i >= 0; i--) {
       const monthStart = new Date();
       monthStart.setMonth(monthStart.getMonth() - i);
@@ -2501,53 +2507,58 @@ router.get('/persons/:personId/analytics', async (req, res) => {
       const monthEnd = new Date(monthStart);
       monthEnd.setMonth(monthEnd.getMonth() + 1);
 
-      const monthRevenue = await db
-        .select({ total: sql<string>`COALESCE(SUM(estimated_value), 0)::text` })
-        .from(crmDeals)
-        .where(and(
-          eq(crmDeals.personId, personId),
-          eq(crmDeals.tenantId, tenantId),
-          eq(crmDeals.status, 'won'),
-          sql`won_at >= ${monthStart.toISOString()} AND won_at < ${monthEnd.toISOString()}`
-        ))
-        .then(rows => parseFloat(rows[0]?.total || '0'));
+      const monthRevenueResult = await db.execute(sql`
+        SELECT COALESCE(SUM(estimated_value), 0)::numeric AS total
+        FROM w3suite.crm_deals
+        WHERE person_id = ${personId}::uuid
+          AND tenant_id = ${tenantId}::uuid
+          AND status = 'won'
+          AND won_at >= ${monthStart.toISOString()}::timestamp
+          AND won_at < ${monthEnd.toISOString()}::timestamp
+      `);
 
       revenueData.push({
         month: monthNames[monthStart.getMonth()],
-        value: monthRevenue
+        value: parseFloat(String(monthRevenueResult.rows[0]?.total || '0'))
       });
     }
 
     // 2. Interaction Channels
-    const channelData = await db
-      .select({
-        channel: crmInteractions.type,
-        count: sql<number>`COUNT(*)::integer`
-      })
-      .from(crmInteractions)
-      .where(and(
-        eq(crmInteractions.entityType, 'customer'),
-        sql`${crmInteractions.entityId}::text IN (
-          SELECT id FROM w3suite.crm_customers WHERE person_id = ${personId} AND tenant_id = ${tenantId}
-        )`
-      ))
-      .groupBy(crmInteractions.type)
-      .then(rows => rows.map(r => ({ channel: r.channel || 'unknown', count: r.count })));
+    const channelDataResult = await db.execute(sql`
+      SELECT 
+        channel,
+        COUNT(*)::integer AS count
+      FROM w3suite.crm_interactions
+      WHERE entity_type = 'customer'
+        AND entity_id IN (
+          SELECT id FROM w3suite.crm_customers 
+          WHERE person_id = ${personId}::uuid 
+            AND tenant_id = ${tenantId}::uuid
+        )
+      GROUP BY channel
+    `);
+    
+    const channelData = channelDataResult.rows.map((r: any) => ({
+      channel: r.channel || 'unknown',
+      count: Number(r.count)
+    }));
 
     // 3. Campaign Distribution
-    const campaignData = await db
-      .select({
-        name: crmCampaigns.name,
-        count: sql<number>`COUNT(DISTINCT ${crmLeads.id})::integer`
-      })
-      .from(crmLeads)
-      .innerJoin(crmCampaigns, eq(crmLeads.campaignId, crmCampaigns.id))
-      .where(and(
-        eq(crmLeads.personId, personId),
-        eq(crmLeads.tenantId, tenantId)
-      ))
-      .groupBy(crmCampaigns.name)
-      .then(rows => rows.map(r => ({ name: r.name, value: r.count })));
+    const campaignDataResult = await db.execute(sql`
+      SELECT 
+        c.name,
+        COUNT(DISTINCT l.id)::integer AS count
+      FROM w3suite.crm_leads l
+      INNER JOIN w3suite.crm_campaigns c ON l.campaign_id = c.id
+      WHERE l.person_id = ${personId}::uuid
+        AND l.tenant_id = ${tenantId}::uuid
+      GROUP BY c.name
+    `);
+    
+    const campaignData = campaignDataResult.rows.map((r: any) => ({
+      name: r.name,
+      value: Number(r.count)
+    }));
 
     const analyticsData = {
       kpi: {
