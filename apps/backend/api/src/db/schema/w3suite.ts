@@ -4420,6 +4420,13 @@ export const crmPipelineSettings = w3suiteSchema.table("crm_pipeline_settings", 
   contactRules: jsonb("contact_rules"), // {max_attempts_per_day, quiet_hours, sla_hours}
   workflowIds: text("workflow_ids").array(),
   customStatusNames: jsonb("custom_status_names"), // {new:'Primo Contatto', in_progress:'Lavorazione'}
+  
+  // 🎯 Team & User Assignments (RBAC-integrated)
+  assignedTeams: text("assigned_teams").array().default([]), // Array of team IDs with CRM department
+  leadManagers: text("lead_managers").array().default([]), // Users who can create/manage leads
+  dealApprovers: text("deal_approvers").array().default([]), // Users who can approve high-value deals
+  pipelineAdmins: text("pipeline_admins").array().default([]), // Users with full pipeline settings access
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { eq, and, sql, asc, desc, isNull } from 'drizzle-orm';
+import { eq, and, sql, asc, desc, isNull, inArray } from 'drizzle-orm';
 import { db } from '../core/db';
 import { requirePermission } from '../middleware/tenant';
 import { 
@@ -1167,6 +1167,99 @@ router.delete('/teams/:id', requirePermission('teams.write'), async (req: Reques
   } catch (error) {
     console.error('Error deleting team:', error);
     res.status(500).json({ error: 'Failed to delete team' });
+  }
+});
+
+// GET /api/teams/:id/members - Get all members of a team (direct users + role-based users)
+router.get('/teams/:id/members', requirePermission('teams.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const teamId = req.params.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    await setTenantContext(tenantId);
+
+    // 1. Get team with members
+    const [team] = await db
+      .select()
+      .from(teams)
+      .where(and(
+        eq(teams.id, teamId),
+        eq(teams.tenantId, tenantId)
+      ));
+
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    const memberMap = new Map();
+
+    // 2. Get direct user members
+    if (team.userMembers && team.userMembers.length > 0) {
+      const directUsers = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          membershipType: sql<string>`'direct'`,
+        })
+        .from(users)
+        .where(
+          and(
+            eq(users.tenantId, tenantId),
+            inArray(users.id, team.userMembers)
+          )
+        );
+
+      directUsers.forEach(user => {
+        memberMap.set(user.id, user);
+      });
+    }
+
+    // 3. Get users via role assignments (roleMembers)
+    if (team.roleMembers && team.roleMembers.length > 0) {
+      const roleBasedUsers = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          membershipType: sql<string>`'role'`,
+        })
+        .from(users)
+        .innerJoin(userAssignments, eq(users.id, userAssignments.userId))
+        .where(
+          and(
+            eq(users.tenantId, tenantId),
+            inArray(userAssignments.roleId, team.roleMembers)
+          )
+        );
+
+      roleBasedUsers.forEach(user => {
+        if (!memberMap.has(user.id)) {
+          memberMap.set(user.id, user);
+        }
+      });
+    }
+
+    const members = Array.from(memberMap.values());
+
+    res.json({
+      team: {
+        id: team.id,
+        name: team.name,
+        assignedDepartments: team.assignedDepartments,
+      },
+      members,
+      count: members.length,
+    });
+  } catch (error) {
+    console.error('Error fetching team members:', error);
+    res.status(500).json({ error: 'Failed to fetch team members' });
   }
 });
 

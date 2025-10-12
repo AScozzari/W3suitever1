@@ -25,9 +25,11 @@ import {
   Clock,
   AlertTriangle,
   TrendingUp,
-  Info
+  Info,
+  UserPlus
 } from 'lucide-react';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
+import { TeamUserAssignmentDialog } from './TeamUserAssignmentDialog';
 
 interface PipelineSettingsDialogProps {
   open: boolean;
@@ -75,6 +77,17 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     enabled: open,
   });
 
+  // Fetch CRM teams (teams with 'crm' in assignedDepartments)
+  const { data: allTeams = [] } = useQuery({
+    queryKey: ['/api/teams'],
+    enabled: open,
+  });
+
+  // Filter teams with CRM department
+  const crmTeams = allTeams.filter((team: any) => 
+    team.assignedDepartments?.includes('crm')
+  );
+
   // General settings state
   const [pipelineName, setPipelineName] = useState('');
   const [pipelineDescription, setPipelineDescription] = useState('');
@@ -82,6 +95,16 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   const [autoAssign, setAutoAssign] = useState(false);
   const [rottenDays, setRottenDays] = useState('30');
   const [staleDays, setStaleDays] = useState('14');
+
+  // Team & User assignments state
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [leadManagers, setLeadManagers] = useState<string[]>([]);
+  const [dealApprovers, setDealApprovers] = useState<string[]>([]);
+  const [pipelineAdmins, setPipelineAdmins] = useState<string[]>([]);
+
+  // Modal state for user assignments
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentType, setAssignmentType] = useState<'lead' | 'approver' | 'admin'>('lead');
 
   // Stage form state
   const [newStageName, setNewStageName] = useState('');
@@ -794,146 +817,172 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Permessi */}
-          <TabsContent value="permissions" className="flex-1 overflow-y-auto space-y-6 py-6">
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">Visibilità e Accesso</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-gray-700">Visibilità Pipeline</Label>
-                  <Select defaultValue="team">
-                    <SelectTrigger className="bg-white border-gray-300" data-testid="select-visibility">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="private">🔒 Privata - Solo proprietario</SelectItem>
-                      <SelectItem value="team">👥 Team - Membri del team</SelectItem>
-                      <SelectItem value="organization">🏢 Organizzazione - Tutti gli utenti</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-gray-500">
-                    Definisci chi può visualizzare e gestire questa pipeline
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">Assegnazioni Utenti</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-gray-900">Gestione Lead</Label>
+          <TabsContent value="permissions" className="flex-1 overflow-y-auto space-y-6 py-6 pr-2">
+            <div className="space-y-6">
+              <Card className="p-6 bg-white border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Visibilità e Accesso</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-700">Team Assegnati alla Pipeline</Label>
+                    <Select 
+                      value={selectedTeams[0] || ''} 
+                      onValueChange={(value) => setSelectedTeams([value])}
+                    >
+                      <SelectTrigger className="bg-white border-gray-300" data-testid="select-team">
+                        <SelectValue placeholder="Seleziona un team CRM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {crmTeams.length === 0 ? (
+                          <SelectItem value="_none" disabled>Nessun team CRM disponibile</SelectItem>
+                        ) : (
+                          crmTeams.map((team: any) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              👥 {team.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                     <p className="text-sm text-gray-500">
-                      Utenti che possono creare e gestire lead in questa pipeline
+                      I membri del team selezionato avranno accesso a questa pipeline
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="button-assign-lead-managers"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assegna
-                  </Button>
                 </div>
+              </Card>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-gray-900">Approvazione Trattative</Label>
-                    <p className="text-sm text-gray-500">
-                      Utenti che possono approvare trattative ad alto valore
-                    </p>
+              <Card className="p-6 bg-white border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Assegnazioni Utenti</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-gray-900">Gestione Lead</Label>
+                      <p className="text-sm text-gray-500">
+                        Utenti che possono creare e gestire lead in questa pipeline
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAssignmentType('lead');
+                        setAssignmentModalOpen(true);
+                      }}
+                      disabled={selectedTeams.length === 0}
+                      data-testid="button-assign-lead-managers"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assegna ({leadManagers.length})
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="button-assign-approvers"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assegna
-                  </Button>
-                </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-gray-900">Amministratori Pipeline</Label>
-                    <p className="text-sm text-gray-500">
-                      Utenti con accesso completo alle impostazioni della pipeline
-                    </p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-gray-900">Approvazione Trattative</Label>
+                      <p className="text-sm text-gray-500">
+                        Utenti che possono approvare trattative ad alto valore
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAssignmentType('approver');
+                        setAssignmentModalOpen(true);
+                      }}
+                      disabled={selectedTeams.length === 0}
+                      data-testid="button-assign-approvers"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assegna ({dealApprovers.length})
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="button-assign-admins"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assegna
-                  </Button>
-                </div>
-              </div>
-            </Card>
 
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">Permessi Operativi</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-gray-900">Creazione Lead</Label>
-                    <p className="text-sm text-gray-500">
-                      Chi può creare nuovi lead in questa pipeline
-                    </p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-gray-900">Amministratori Pipeline</Label>
+                      <p className="text-sm text-gray-500">
+                        Utenti con accesso completo alle impostazioni della pipeline
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAssignmentType('admin');
+                        setAssignmentModalOpen(true);
+                      }}
+                      disabled={selectedTeams.length === 0}
+                      data-testid="button-assign-admins"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assegna ({pipelineAdmins.length})
+                    </Button>
                   </div>
-                  <Select defaultValue="team">
-                    <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-create-lead">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Solo Admin</SelectItem>
-                      <SelectItem value="team">Team Members</SelectItem>
-                      <SelectItem value="all">Tutti gli utenti</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
+              </Card>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-gray-900">Modifica Stati</Label>
-                    <p className="text-sm text-gray-500">
-                      Chi può modificare gli stati della pipeline
-                    </p>
+              <Card className="p-6 bg-white border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Permessi Operativi</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-gray-900">Creazione Lead</Label>
+                      <p className="text-sm text-gray-500">
+                        Chi può creare nuovi lead in questa pipeline
+                      </p>
+                    </div>
+                    <Select defaultValue="team">
+                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-create-lead">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Solo Admin</SelectItem>
+                        <SelectItem value="team">Team Members</SelectItem>
+                        <SelectItem value="all">Tutti gli utenti</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Select defaultValue="admin">
-                    <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-edit-stages">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Solo Admin</SelectItem>
-                      <SelectItem value="team">Team Members</SelectItem>
-                      <SelectItem value="all">Tutti gli utenti</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-gray-900">Eliminazione Trattative</Label>
-                    <p className="text-sm text-gray-500">
-                      Chi può eliminare trattative dalla pipeline
-                    </p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-gray-900">Modifica Stati</Label>
+                      <p className="text-sm text-gray-500">
+                        Chi può modificare gli stati della pipeline
+                      </p>
+                    </div>
+                    <Select defaultValue="admin">
+                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-edit-stages">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Solo Admin</SelectItem>
+                        <SelectItem value="team">Team Members</SelectItem>
+                        <SelectItem value="all">Tutti gli utenti</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Select defaultValue="admin">
-                    <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-delete-deals">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Solo Admin</SelectItem>
-                      <SelectItem value="team">Team Members</SelectItem>
-                      <SelectItem value="none">Nessuno</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-gray-900">Eliminazione Trattative</Label>
+                      <p className="text-sm text-gray-500">
+                        Chi può eliminare trattative dalla pipeline
+                      </p>
+                    </div>
+                    <Select defaultValue="admin">
+                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-delete-deals">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Solo Admin</SelectItem>
+                        <SelectItem value="team">Team Members</SelectItem>
+                        <SelectItem value="none">Nessuno</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Tab: Avanzate */}
@@ -1001,6 +1050,47 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      {/* Team User Assignment Modal */}
+      <TeamUserAssignmentDialog
+        open={assignmentModalOpen}
+        onClose={() => setAssignmentModalOpen(false)}
+        teamIds={selectedTeams}
+        currentAssignedUsers={
+          assignmentType === 'lead' 
+            ? leadManagers 
+            : assignmentType === 'approver' 
+            ? dealApprovers 
+            : pipelineAdmins
+        }
+        onSave={(selectedUserIds) => {
+          if (assignmentType === 'lead') {
+            setLeadManagers(selectedUserIds);
+          } else if (assignmentType === 'approver') {
+            setDealApprovers(selectedUserIds);
+          } else {
+            setPipelineAdmins(selectedUserIds);
+          }
+          toast({
+            title: 'Assegnazioni salvate',
+            description: `${selectedUserIds.length} utenti assegnati correttamente`,
+          });
+        }}
+        title={
+          assignmentType === 'lead' 
+            ? 'Assegna Gestori Lead' 
+            : assignmentType === 'approver' 
+            ? 'Assegna Approvatori Trattative' 
+            : 'Assegna Amministratori Pipeline'
+        }
+        description={
+          assignmentType === 'lead' 
+            ? 'Seleziona gli utenti che possono creare e gestire lead' 
+            : assignmentType === 'approver' 
+            ? 'Seleziona gli utenti che possono approvare trattative ad alto valore' 
+            : 'Seleziona gli utenti con accesso completo alle impostazioni'
+        }
+      />
     </Dialog>
   );
 }
