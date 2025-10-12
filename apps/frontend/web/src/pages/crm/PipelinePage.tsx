@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Settings, 
   Wifi,
@@ -18,7 +18,10 @@ import {
   BarChart3,
   ArrowRight,
   Users,
-  Eye
+  Eye,
+  Search,
+  Filter,
+  Calendar
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -93,10 +96,6 @@ export default function PipelinePage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca pipeline..."
-        />
           <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
@@ -111,10 +110,6 @@ export default function PipelinePage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca pipeline..."
-        />
           <div className="flex-1 p-6 overflow-auto">
             <ErrorState message="Errore nel caricamento delle pipeline" />
           </div>
@@ -158,10 +153,6 @@ export default function PipelinePage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca pipeline..."
-        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}
@@ -191,6 +182,49 @@ export default function PipelinePage() {
             </div>
           </div>
         </div>
+
+        {/* Search & Filters */}
+        <motion.div
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card 
+            className="glass-card p-4 border-0"
+            style={{ 
+              background: 'var(--glass-card-bg)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid var(--glass-card-border)',
+              boxShadow: 'var(--shadow-glass-sm)'
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+                <Input
+                  placeholder="Cerca pipeline per nome, driver o stato..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  style={{ 
+                    background: 'var(--glass-bg-light)',
+                    border: '1px solid var(--glass-card-border)'
+                  }}
+                  data-testid="input-search-pipelines"
+                />
+              </div>
+              <Button variant="outline" data-testid="button-filters">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtri Avanzati
+              </Button>
+              <Button variant="outline" data-testid="button-date-range">
+                <Calendar className="h-4 w-4 mr-2" />
+                Periodo
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Pipeline Cards Grid */}
         <motion.div 
