@@ -32,16 +32,16 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
       path: buildUrl('crm/campaigns')
     },
     {
-      value: 'leads',
-      label: 'Lead',
-      icon: UserPlus,
-      path: buildUrl('crm/leads')
-    },
-    {
       value: 'pipeline',
       label: 'Pipeline',
       icon: Target,
       path: buildUrl('crm/pipeline')
+    },
+    {
+      value: 'leads',
+      label: 'Lead',
+      icon: UserPlus,
+      path: buildUrl('crm/leads')
     },
     {
       value: 'customers',
