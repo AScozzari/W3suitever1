@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
   User, 
@@ -34,7 +34,10 @@ const employeeFormSchema = z.object({
   firstName: z.string().min(1, "Nome obbligatorio").max(100),
   lastName: z.string().min(1, "Cognome obbligatorio").max(100),
   email: z.string().email("Email non valida"),
-  phone: z.string().optional(),
+  phone: z.string()
+    .regex(/^(\+39)?[\s]?([0-9]{3})[\s]?([0-9]{6,7})$/, "Telefono non valido (formato italiano)")
+    .optional()
+    .or(z.literal('')),
   role: z.string().optional(),
   profileImageUrl: z.string().url().optional().nullable().or(z.literal('')),
   
@@ -74,7 +77,10 @@ const employeeFormSchema = z.object({
   // teams: z.array(z.string())
   
   // Tab 6: Amministrativi
-  grossAnnualSalary: z.coerce.number().positive().optional().nullable(),
+  grossAnnualSalary: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number().positive("RAL deve essere un valore positivo").optional()
+  ),
   bankIban: z.string()
     .regex(/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/, "IBAN non valido")
     .optional()
@@ -97,6 +103,12 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Load stores for Tab 3 (Punti Vendita)
+  const { data: stores = [] } = useQuery<any[]>({
+    queryKey: ['/api/stores'],
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Initialize form with default values from employee
   const form = useForm<EmployeeFormValues>({
@@ -591,24 +603,84 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                 </div>
               </TabsContent>
 
-              {/* ==================== TAB 3: PUNTI VENDITA (TODO) ==================== */}
+              {/* ==================== TAB 3: PUNTI VENDITA ==================== */}
               <TabsContent value="punti-vendita" className="space-y-4 mt-4">
-                <div className="text-center py-8 text-gray-500">
-                  Tab Punti Vendita - TODO next task
+                <div className="flex items-center gap-2 mb-4">
+                  <Store className="w-5 h-5 text-orange-600" />
+                  <h3 className="font-semibold text-lg">Assegnazione Punto Vendita</h3>
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="storeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Punto Vendita Principale</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-storeId">
+                            <SelectValue placeholder="Seleziona punto vendita..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Nessun punto vendita</SelectItem>
+                          {stores.map((store: any) => (
+                            <SelectItem key={store.id} value={store.id}>
+                              {store.name} - {store.address}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Nota:</strong> La gestione multi-store e gli assignment avanzati saranno disponibili nella prossima versione.
+                  </p>
                 </div>
               </TabsContent>
 
-              {/* ==================== TAB 4: PERMESSI (TODO) ==================== */}
+              {/* ==================== TAB 4: PERMESSI (COMING SOON) ==================== */}
               <TabsContent value="permessi" className="space-y-4 mt-4">
-                <div className="text-center py-8 text-gray-500">
-                  Tab Permessi - TODO next task
+                <div className="flex items-center gap-2 mb-4">
+                  <Shield className="w-5 h-5 text-orange-600" />
+                  <h3 className="font-semibold text-lg">Gestione Permessi RBAC</h3>
+                </div>
+                
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Shield className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Funzionalità in Sviluppo
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                    La gestione avanzata dei permessi RBAC (ruoli, scope, extra permissions) 
+                    sarà disponibile nella prossima release. Per ora, usa la sezione Impostazioni → Ruoli.
+                  </p>
                 </div>
               </TabsContent>
 
-              {/* ==================== TAB 5: TEAMS (TODO) ==================== */}
+              {/* ==================== TAB 5: TEAMS (COMING SOON) ==================== */}
               <TabsContent value="teams" className="space-y-4 mt-4">
-                <div className="text-center py-8 text-gray-500">
-                  Tab Teams - TODO next task
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-5 h-5 text-orange-600" />
+                  <h3 className="font-semibold text-lg">Team Membership</h3>
+                </div>
+                
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Funzionalità in Sviluppo
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                    La gestione dei team (assegnazione membri, supervisori, workflow routing) 
+                    sarà disponibile nella prossima release.
+                  </p>
                 </div>
               </TabsContent>
 
