@@ -337,10 +337,10 @@ router.post('/users', async (req, res) => {
       stato: z.string().default('attivo'),
       foto: z.string().nullable().optional(),
       password: z.string().min(6),
-      // ✅ Scope piramidale dal frontend
+      // ✅ Scope piramidale dal frontend - UUID strings
       selectAllLegalEntities: z.boolean().default(false),
-      selectedLegalEntities: z.array(z.number()).default([]),
-      selectedStores: z.array(z.number()).default([])
+      selectedLegalEntities: z.array(z.string()).default([]), // UUID strings
+      selectedStores: z.array(z.string()).default([]) // UUID strings
     });
 
     const validation = createSchema.safeParse(req.body);
@@ -414,7 +414,7 @@ router.post('/users', async (req, res) => {
           userId: user.id,
           roleId: role.id,
           scopeType: 'store',
-          scopeId: String(storeId) // Convert number to UUID string
+          scopeId: storeId // UUID string
         });
       }
       logger.info('User assigned store-level access', { userId: user.id, roleId: role.id, storeCount: data.selectedStores.length });
@@ -425,7 +425,7 @@ router.post('/users', async (req, res) => {
           userId: user.id,
           roleId: role.id,
           scopeType: 'legal_entity',
-          scopeId: String(legalEntityId) // Convert number to UUID string
+          scopeId: legalEntityId // UUID string
         });
       }
       logger.info('User assigned legal entity access', { userId: user.id, roleId: role.id, legalEntityCount: data.selectedLegalEntities.length });
