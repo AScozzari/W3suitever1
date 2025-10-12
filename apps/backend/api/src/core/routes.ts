@@ -1316,6 +1316,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public drivers endpoint (no authentication required) - used for dropdown selections
+  app.get('/api/public/drivers', async (req, res) => {
+    try {
+      // Get brand official drivers from public schema
+      const brandDrivers = await db
+        .select({
+          id: drivers.id,
+          code: drivers.code,
+          name: drivers.name,
+          description: drivers.description,
+          active: drivers.active,
+          sortOrder: drivers.sortOrder,
+        })
+        .from(drivers)
+        .where(eq(drivers.active, true))
+        .orderBy(drivers.sortOrder, drivers.name);
+
+      res.json(brandDrivers);
+    } catch (error) {
+      console.error('[API] Public drivers access error:', error);
+      res.status(500).json({
+        error: 'server_error',
+        message: 'Errore nel recupero dei drivers'
+      });
+    }
+  });
+
   // Only OAuth2 endpoints are available - legacy auth endpoints removed
 
   // Public health endpoints (no authentication required)

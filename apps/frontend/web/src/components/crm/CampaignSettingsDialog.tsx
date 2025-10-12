@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -266,6 +266,11 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
             <Settings2 className="h-5 w-5" />
             {mode === 'create' ? 'Nuova Campagna' : 'Modifica Campagna'}
           </DialogTitle>
+          <DialogDescription>
+            {mode === 'create' 
+              ? 'Configura una nuova campagna marketing con routing automatico e workflow integrati'
+              : 'Modifica le impostazioni della campagna marketing'}
+          </DialogDescription>
         </DialogHeader>
 
         {campaignLoading && mode === 'edit' ? (
