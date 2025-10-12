@@ -271,16 +271,19 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
           return (
             <Card 
               key={user.id}
-              className="group cursor-pointer transition-all duration-200 hover:shadow-lg border border-gray-200 bg-white"
+              className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-2 border-gray-200 hover:border-orange-500 bg-white relative overflow-hidden"
               onClick={() => onEmployeeClick?.(user.id)}
               data-testid={`card-employee-${user.id}`}
             >
+              {/* Orange accent bar on hover */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              
               <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  {/* Avatar */}
-                  <Avatar className="h-12 w-12 flex-shrink-0 border border-gray-200">
+                <div className="flex items-center gap-4">
+                  {/* Avatar - Centrally aligned */}
+                  <Avatar className="h-16 w-16 flex-shrink-0 border-2 border-orange-500 shadow-md ring-2 ring-orange-100 group-hover:ring-orange-200 transition-all duration-300">
                     <AvatarImage src={user.avatarUrl} alt={fullName} />
-                    <AvatarFallback className="bg-gray-100 text-gray-700 font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-bold text-lg">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -290,7 +293,7 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
                     {/* Name */}
                     <div>
                       <h3 
-                        className="font-semibold text-gray-900 text-base leading-tight truncate" 
+                        className="font-semibold text-gray-900 text-base leading-tight truncate group-hover:text-orange-600 transition-colors duration-200" 
                         data-testid={`text-name-${user.id}`}
                       >
                         {fullName}
@@ -299,9 +302,9 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
                       {/* Position */}
                       {user.position && (
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Briefcase className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          <Briefcase className="h-3.5 w-3.5 text-orange-400 flex-shrink-0" />
                           <p 
-                            className="text-sm text-gray-600 truncate" 
+                            className="text-sm text-gray-600 truncate font-medium" 
                             data-testid={`badge-position-${user.id}`}
                           >
                             {user.position}
