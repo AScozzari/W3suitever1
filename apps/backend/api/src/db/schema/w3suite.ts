@@ -68,6 +68,10 @@ export const supplierTypeEnum = pgEnum('supplier_type', ['distributore', 'produt
 export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'suspended', 'blocked']);
 
 // HR System Enums
+// Employee Demographics Enums
+export const genderEnum = pgEnum('gender', ['male', 'female', 'other', 'prefer_not_to_say']);
+export const maritalStatusEnum = pgEnum('marital_status', ['single', 'married', 'divorced', 'widowed', 'other']);
+
 // Calendar Event Enums
 export const calendarEventTypeEnum = pgEnum('calendar_event_type', ['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']);
 export const calendarEventVisibilityEnum = pgEnum('calendar_event_visibility', ['private', 'team', 'store', 'area', 'tenant']);
@@ -339,8 +343,55 @@ export const users = w3suiteSchema.table("users", {
   department: varchar("department", { length: 100 }),
   hireDate: date("hire_date"),
   contractType: varchar("contract_type", { length: 50 }),
+  
+  // Personal/Demographic Information (HR Best Practices 2025)
+  dateOfBirth: date("date_of_birth"),
+  fiscalCode: varchar("fiscal_code", { length: 16 }), // Codice Fiscale italiano
+  gender: genderEnum("gender"),
+  maritalStatus: maritalStatusEnum("marital_status"),
+  nationality: varchar("nationality", { length: 100 }),
+  placeOfBirth: varchar("place_of_birth", { length: 100 }),
+  
+  // Address Information
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  province: varchar("province", { length: 2 }),
+  postalCode: varchar("postal_code", { length: 5 }),
+  country: varchar("country", { length: 100 }).default("Italia"),
+  
+  // Emergency Contact
+  emergencyContactName: varchar("emergency_contact_name", { length: 200 }),
+  emergencyContactRelationship: varchar("emergency_contact_relationship", { length: 100 }),
+  emergencyContactPhone: varchar("emergency_contact_phone", { length: 20 }),
+  emergencyContactEmail: varchar("emergency_contact_email", { length: 255 }),
+  
+  // Administrative Information
+  employeeNumber: varchar("employee_number", { length: 50 }), // Matricola
+  annualCost: real("annual_cost"), // Costo aziendale annuo totale
+  grossAnnualSalary: real("gross_annual_salary"), // RAL - Retribuzione Annua Lorda
+  level: varchar("level", { length: 50 }), // Livello/Inquadramento (es: "Quadro", "Impiegato 3° Livello")
+  ccnl: varchar("ccnl", { length: 255 }), // CCNL applicato (es: "Commercio", "Telecomunicazioni")
+  managerId: varchar("manager_id").references((): any => users.id), // Responsabile diretto
+  employmentEndDate: date("employment_end_date"), // Per contratti a tempo determinato
+  probationEndDate: date("probation_end_date"), // Fine periodo di prova
+  
+  // Banking Information
+  bankIban: varchar("bank_iban", { length: 34 }), // IBAN per stipendio
+  bankName: varchar("bank_name", { length: 255 }),
+  
+  // Professional Background
+  education: text("education"), // Titolo di studio
+  certifications: text("certifications").array(), // Certificazioni possedute
+  skills: text("skills").array(), // Competenze tecniche
+  languages: text("languages").array(), // Lingue parlate
+  
+  // Notes
+  notes: text("notes"), // Note interne HR
 }, (table) => [
   index("users_tenant_idx").on(table.tenantId),
+  index("users_store_idx").on(table.storeId),
+  index("users_manager_idx").on(table.managerId),
+  index("users_employee_number_idx").on(table.employeeNumber),
 ]);
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
