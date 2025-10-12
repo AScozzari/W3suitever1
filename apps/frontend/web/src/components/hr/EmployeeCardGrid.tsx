@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -62,7 +63,7 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
     queryKey: ['/api/teams']
   });
 
-  // Fetch assignments for all users
+  // Fetch assignments for all users - using apiRequest for auth headers
   const assignmentQueries = useQuery({
     queryKey: ['/api/users/assignments-all', users.map(u => u.id)],
     queryFn: async () => {
@@ -71,13 +72,13 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
       const results = await Promise.all(
         users.map(async (user) => {
           try {
-            const response = await fetch(`/api/users/${user.id}/assignments`, {
-              headers: { 'Content-Type': 'application/json' }
-            });
-            if (!response.ok) return { userId: user.id, assignments: [] };
-            const data = await response.json();
-            return { userId: user.id, assignments: data.data || [] };
-          } catch {
+            // Use apiRequest which adds auth headers automatically
+            const response = await apiRequest(`/api/users/${user.id}/assignments`);
+            // apiRequest returns {data: [...]} or raw array, unwrap if needed
+            const assignments = response?.data ?? response;
+            return { userId: user.id, assignments: Array.isArray(assignments) ? assignments : [] };
+          } catch (error) {
+            console.warn(`Failed to fetch assignments for user ${user.id}:`, error);
             return { userId: user.id, assignments: [] };
           }
         })
