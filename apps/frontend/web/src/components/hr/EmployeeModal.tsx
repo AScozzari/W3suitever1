@@ -415,14 +415,15 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col gap-4">
               <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="grid w-full grid-cols-8">
                   <TabsTrigger value="general">Generale</TabsTrigger>
                   <TabsTrigger value="demographics">Anagrafiche</TabsTrigger>
                   <TabsTrigger value="address">Indirizzo</TabsTrigger>
-                  <TabsTrigger value="emergency">Emergenze</TabsTrigger>
                   <TabsTrigger value="admin">Amministrative</TabsTrigger>
                   <TabsTrigger value="professional">Formazione</TabsTrigger>
-                  <TabsTrigger value="rbac">Scope & RBAC</TabsTrigger>
+                  <TabsTrigger value="scope">Punti Vendita</TabsTrigger>
+                  <TabsTrigger value="permissions">Permessi</TabsTrigger>
+                  <TabsTrigger value="team">Team</TabsTrigger>
                 </TabsList>
 
                 <ScrollArea className="flex-1 pr-4">
@@ -664,51 +665,6 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                     )}
                   </TabsContent>
 
-                  {/* Tab: Emergency */}
-                  <TabsContent value="emergency" className="space-y-4 mt-4">
-                    {isEditMode ? (
-                      <>
-                        <FormField control={form.control} name="emergencyContactName" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome Contatto Emergenza</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} data-testid="input-emergency-name" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="emergencyContactRelationship" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Relazione</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} placeholder="Coniuge, Genitore, ecc." data-testid="input-emergency-relationship" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField control={form.control} name="emergencyContactPhone" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Telefono</FormLabel>
-                              <FormControl><Input {...field} value={field.value || ''} placeholder="+39 3XX XXXXXXX" data-testid="input-emergency-phone" /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="emergencyContactEmail" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl><Input type="email" {...field} value={field.value || ''} data-testid="input-emergency-email" /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-4">
-                        <InfoRow icon={<User className="h-4 w-4" />} label="Nome Contatto" value={user?.emergencyContactName} />
-                        <InfoRow icon={<Heart className="h-4 w-4" />} label="Relazione" value={user?.emergencyContactRelationship} />
-                        <InfoRow icon={<Phone className="h-4 w-4" />} label="Telefono" value={user?.emergencyContactPhone} />
-                        <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={user?.emergencyContactEmail} />
-                      </div>
-                    )}
-                  </TabsContent>
-
                   {/* Tab: Administrative */}
                   <TabsContent value="admin" className="space-y-4 mt-4">
                     {isEditMode ? (
@@ -890,32 +846,74 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                     )}
                   </TabsContent>
 
-                  {/* Tab: Scope & RBAC - View Only */}
-                  <TabsContent value="rbac" className="space-y-4 mt-4">
+                  {/* Tab: Punti Vendita (Scope) */}
+                  <TabsContent value="scope" className="space-y-4 mt-4">
+                    <div className="space-y-4">
+                      {assignments.filter(a => a.scopeType === 'store').length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3">
+                          {assignments
+                            .filter(a => a.scopeType === 'store')
+                            .map((assignment, idx) => (
+                              <div key={idx} className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-2 border-orange-200 dark:border-orange-800">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-5 w-5 text-orange-600" />
+                                    <span className="font-semibold text-base text-orange-900 dark:text-orange-100">
+                                      {assignment.scopeDetails?.name || 'Store'}
+                                    </span>
+                                  </div>
+                                  <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                                    {assignment.roleName}
+                                  </Badge>
+                                </div>
+                                {assignment.scopeDetails?.code && (
+                                  <p className="text-xs text-orange-700 dark:text-orange-300 font-mono">
+                                    Codice: {assignment.scopeDetails.code}
+                                  </p>
+                                )}
+                                {assignment.expiresAt && (
+                                  <div className="flex items-center gap-1 mt-2 text-xs text-orange-600">
+                                    <Clock className="h-3 w-3" />
+                                    <span>Scade: {new Date(assignment.expiresAt).toLocaleDateString('it-IT')}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <Building2 className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            Nessun punto vendita assegnato
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            L'utente non ha accesso a nessuno store
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Permessi (RBAC) */}
+                  <TabsContent value="permissions" className="space-y-4 mt-4">
                     <div className="space-y-6">
-                      {/* Assignments Section */}
+                      {/* Roles Section */}
                       {assignments.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-3">
-                            <Shield className="h-5 w-5 text-orange-500" />
-                            <h3 className="font-semibold text-base">Ruoli Assegnati</h3>
+                            <Shield className="h-5 w-5 text-purple-500" />
+                            <h3 className="font-semibold text-base">Ruoli</h3>
                             <Badge variant="secondary">{assignments.length}</Badge>
                           </div>
                           <div className="space-y-2">
                             {assignments.map((assignment, idx) => (
-                              <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium text-sm">{assignment.roleName}</span>
+                              <div key={idx} className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium text-sm text-purple-900 dark:text-purple-100">{assignment.roleName}</span>
                                   <ScopeBadge scopeType={assignment.scopeType} scopeName={assignment.scopeDetails?.name || assignment.scopeType} />
                                 </div>
                                 {assignment.roleDescription && (
-                                  <p className="text-xs text-gray-600 dark:text-gray-400">{assignment.roleDescription}</p>
-                                )}
-                                {assignment.expiresAt && (
-                                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-                                    <Clock className="h-3 w-3" />
-                                    <span>Scade: {new Date(assignment.expiresAt).toLocaleDateString('it-IT')}</span>
-                                  </div>
+                                  <p className="text-xs text-purple-700 dark:text-purple-300">{assignment.roleDescription}</p>
                                 )}
                               </div>
                             ))}
@@ -927,15 +925,15 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                       {permissions.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-3">
-                            <Shield className="h-5 w-5 text-purple-500" />
-                            <h3 className="font-semibold text-base">Permessi</h3>
+                            <Shield className="h-5 w-5 text-blue-500" />
+                            <h3 className="font-semibold text-base">Permessi Dettagliati</h3>
                             <Badge variant="secondary">{permissions.length}</Badge>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             {permissions.map((perm, idx) => (
-                              <div key={idx} className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
+                              <div key={idx} className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                                  <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
                                     {perm.resource}
                                   </span>
                                   <Badge variant={perm.effect === 'allow' ? 'default' : 'destructive'} className="text-xs">
@@ -948,25 +946,47 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                         </div>
                       )}
 
+                      {/* Empty State */}
+                      {assignments.length === 0 && permissions.length === 0 && (
+                        <div className="text-center py-12">
+                          <Shield className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            Nessun permesso assegnato
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            L'utente non ha ruoli o permessi assegnati
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Team */}
+                  <TabsContent value="team" className="space-y-4 mt-4">
+                    <div className="space-y-6">
                       {/* Teams Section */}
                       {userTeams.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-3">
                             <Users className="h-5 w-5 text-blue-500" />
-                            <h3 className="font-semibold text-base">Team</h3>
+                            <h3 className="font-semibold text-base">Team di Appartenenza</h3>
                             <Badge variant="secondary">{userTeams.length}</Badge>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 gap-3">
                             {userTeams.map((team) => (
-                              <div key={team.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <div className="font-medium text-sm text-blue-900 dark:text-blue-100">{team.name}</div>
+                              <div key={team.id} className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Users className="h-4 w-4 text-blue-600" />
+                                  <span className="font-semibold text-base text-blue-900 dark:text-blue-100">{team.name}</span>
+                                </div>
                                 {team.description && (
-                                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{team.description}</p>
+                                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">{team.description}</p>
                                 )}
                                 {team.department && (
-                                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                    {team.department}
-                                  </p>
+                                  <div className="flex items-center gap-1 text-xs text-blue-600">
+                                    <Building2 className="h-3 w-3" />
+                                    <span>{team.department}</span>
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -974,37 +994,45 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                         </div>
                       )}
 
-                      {/* Manager Section */}
+                      {/* Manager/Supervisor Section */}
                       {manager && (
                         <div>
                           <div className="flex items-center gap-2 mb-3">
-                            <UserCircle2 className="h-5 w-5 text-gray-500" />
-                            <h3 className="font-semibold text-base">Manager</h3>
+                            <UserCircle2 className="h-5 w-5 text-gray-600" />
+                            <h3 className="font-semibold text-base">Supervisore</h3>
                           </div>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={manager.avatarUrl} />
-                              <AvatarFallback className="bg-gray-200 text-gray-700">
-                                {`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-sm">{manager.firstName} {manager.lastName}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400">{manager.position || manager.email}</p>
+                          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={manager.avatarUrl} />
+                                <AvatarFallback className="bg-orange-100 text-orange-700 font-semibold">
+                                  {`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold text-base">{manager.firstName} {manager.lastName}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{manager.position || 'Manager'}</p>
+                                {manager.department && (
+                                  <p className="text-xs text-gray-500">{manager.department}</p>
+                                )}
+                                {manager.email && (
+                                  <p className="text-xs text-gray-500 mt-1">{manager.email}</p>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
 
                       {/* Empty State */}
-                      {assignments.length === 0 && permissions.length === 0 && userTeams.length === 0 && !manager && (
+                      {userTeams.length === 0 && !manager && (
                         <div className="text-center py-12">
-                          <Shield className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                          <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Nessun dato RBAC disponibile
+                            Nessun team assegnato
                           </h3>
                           <p className="text-sm text-gray-500">
-                            L'utente non ha ruoli, permessi o team assegnati
+                            L'utente non appartiene a nessun team e non ha supervisori assegnati
                           </p>
                         </div>
                       )}
