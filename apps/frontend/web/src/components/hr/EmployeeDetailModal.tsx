@@ -12,7 +12,7 @@ import {
   User, Mail, Phone, Building2, Briefcase, Calendar,
   Shield, Users, MapPin, Clock, DollarSign, FileText,
   Heart, Wallet, GraduationCap, Languages, Award,
-  Edit, Home, CreditCard, UserCircle2, IdCard
+  Home, CreditCard, UserCircle2, IdCard
 } from 'lucide-react';
 
 interface Employee {
@@ -106,15 +106,13 @@ interface EmployeeDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserRole?: string;
-  onEdit?: () => void;
 }
 
 export function EmployeeDetailModal({ 
   userId, 
   open, 
   onOpenChange,
-  currentUserRole,
-  onEdit
+  currentUserRole
 }: EmployeeDetailModalProps) {
   
   // Fetch user details
@@ -227,12 +225,6 @@ export function EmployeeDetailModal({
                 )}
               </div>
             </div>
-            {onEdit && (
-              <Button variant="outline" size="sm" onClick={onEdit} data-testid="button-edit-employee">
-                <Edit className="h-4 w-4 mr-2" />
-                Modifica
-              </Button>
-            )}
           </DialogTitle>
         </DialogHeader>
 
