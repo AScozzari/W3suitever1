@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ScopeBadge } from '@/components/ui/scope-badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, Users as UsersIcon, UserCog } from 'lucide-react';
+import { Search, Filter, Users as UsersIcon, UserCog, Mail, Briefcase, Building2, Shield } from 'lucide-react';
 
 interface User {
   id: string;
@@ -302,64 +302,93 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
           return (
             <Card 
               key={user.id}
-              className="group cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50"
+              className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-transparent hover:border-orange-500/30 relative overflow-hidden"
               onClick={() => onEmployeeClick?.(user.id)}
               data-testid={`card-employee-${user.id}`}
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              }}
             >
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  {/* Avatar */}
-                  <Avatar className="h-16 w-16 border-2 border-gray-200 dark:border-gray-700">
-                    <AvatarImage src={user.avatarUrl} alt={`${user.firstName || ''} ${user.lastName || ''}`} />
-                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-purple-600 text-white font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  {/* Name */}
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-name-${user.id}`}>
-                      {user.firstName || 'Utente'} {user.lastName || ''}
-                    </h3>
-                    <p className="text-sm text-muted-foreground" data-testid={`text-email-${user.id}`}>
-                      {user.email}
-                    </p>
+              {/* Gradient overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <CardContent className="p-6 relative z-10">
+                <div className="flex flex-col space-y-4">
+                  {/* Header: Avatar + Name */}
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-14 w-14 border-2 border-white shadow-lg ring-2 ring-orange-500/20 group-hover:ring-orange-500/50 transition-all">
+                      <AvatarImage src={user.avatarUrl} alt={`${user.firstName || ''} ${user.lastName || ''}`} />
+                      <AvatarFallback className="bg-gradient-to-br from-orange-500 to-purple-600 text-white font-bold text-lg">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate" data-testid={`text-name-${user.id}`}>
+                        {user.firstName || 'Utente'} {user.lastName || ''}
+                      </h3>
+                      {user.position && (
+                        <p className="text-sm font-medium text-orange-600 dark:text-orange-400 truncate" data-testid={`badge-position-${user.id}`}>
+                          {user.position}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Position/Role Badge */}
-                  {user.position && (
-                    <Badge variant="secondary" className="gap-1" data-testid={`badge-position-${user.id}`}>
-                      <UserCog className="h-3 w-3" />
-                      {user.position}
-                    </Badge>
-                  )}
-
-                  {/* Scope Badges - Real data from assignments */}
-                  {scopeBadges.length > 0 && (
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {scopeBadges.map(badge => (
-                        <ScopeBadge 
-                          key={badge.key}
-                          scopeType={badge.scopeType} 
-                          scopeName={badge.scopeName} 
-                        />
-                      ))}
+                  {/* Info List */}
+                  <div className="space-y-2 text-sm">
+                    {/* Email */}
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <Mail className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                      <span className="truncate" data-testid={`text-email-${user.id}`}>{user.email}</span>
                     </div>
-                  )}
 
-                  {/* Team Badge */}
-                  {userTeam && (
-                    <Badge variant="outline" className="gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300/50" data-testid={`badge-team-${user.id}`}>
-                      <UsersIcon className="h-3 w-3" />
-                      {userTeam.name}
-                    </Badge>
-                  )}
+                    {/* Department */}
+                    {user.department && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Building2 className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <span className="truncate" data-testid={`text-department-${user.id}`}>{user.department}</span>
+                      </div>
+                    )}
 
-                  {/* Department */}
-                  {user.department && (
-                    <p className="text-xs text-muted-foreground" data-testid={`text-department-${user.id}`}>
-                      {user.department}
-                    </p>
+                    {/* Team */}
+                    {userTeam && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <UsersIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <span className="truncate" data-testid={`badge-team-${user.id}`}>{userTeam.name}</span>
+                      </div>
+                    )}
+
+                    {/* Roles Count */}
+                    {userAssignments.length > 0 && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Shield className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <span className="text-xs">
+                          {userAssignments.length} {userAssignments.length === 1 ? 'ruolo assegnato' : 'ruoli assegnati'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scope Badges */}
+                  {scopeBadges.length > 0 && (
+                    <div className="pt-2 border-t border-gray-200/50 dark:border-gray-700/50">
+                      <div className="flex flex-wrap gap-1">
+                        {scopeBadges.slice(0, 3).map(badge => (
+                          <ScopeBadge 
+                            key={badge.key}
+                            scopeType={badge.scopeType} 
+                            scopeName={badge.scopeName} 
+                          />
+                        ))}
+                        {scopeBadges.length > 3 && (
+                          <Badge variant="outline" className="text-xs bg-gray-100/50 dark:bg-gray-800/50">
+                            +{scopeBadges.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </CardContent>
