@@ -51,7 +51,7 @@ interface Role {
 interface LegalEntity {
   id: string;
   codice: string;
-  ragioneSociale: string;
+  nome: string;
 }
 
 interface Store {
@@ -235,7 +235,7 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
             <SelectContent>
               <SelectItem value="all">Tutte le RS</SelectItem>
               {legalEntities.map(le => (
-                <SelectItem key={le.id} value={le.id}>{le.ragioneSociale}</SelectItem>
+                <SelectItem key={le.id} value={le.id}>{le.nome}</SelectItem>
               ))}
             </SelectContent>
           </Select>
