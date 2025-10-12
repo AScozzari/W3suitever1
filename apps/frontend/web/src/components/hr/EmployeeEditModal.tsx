@@ -67,8 +67,8 @@ const employeeFormSchema = z.object({
     .or(z.literal('')),
   emergencyContactRelationship: z.string().optional(),
   
-  // Tab 3: Punti Vendita (TODO: next task)
-  storeId: z.string().uuid().optional().nullable(),
+  // Tab 3: Punti Vendita
+  storeId: z.string().uuid().optional().nullable().or(z.literal('')),
   
   // Tab 4: Permessi (TODO: next task)
   // roles: z.array(z.string())
@@ -617,8 +617,8 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                     <FormItem>
                       <FormLabel>Punto Vendita Principale</FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value || undefined}
+                        onValueChange={(value) => field.onChange(value === '' ? null : value)} 
+                        value={field.value || ''}
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-storeId">
