@@ -9,8 +9,7 @@ import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
 import { EmployeeCardGrid } from '@/components/hr/EmployeeCardGrid';
-import { EmployeeDetailModal } from '@/components/hr/EmployeeDetailModal';
-import { EmployeeEditDialog } from '@/components/hr/EmployeeEditDialog';
+import { EmployeeModal } from '@/components/hr/EmployeeModal';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -108,14 +107,10 @@ const HRManagementPage: React.FC = () => {
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
   // Removed showShiftModal - ShiftTemplateManager has its own modal
-  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
-  // Employee detail modal state
+  // Employee modal state
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
-  const [showEmployeeDetailModal, setShowEmployeeDetailModal] = useState(false);
-  // Employee edit dialog state
-  const [showEmployeeEditDialog, setShowEmployeeEditDialog] = useState(false);
-  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedStore, setSelectedStore] = useState<any>(null);
@@ -1660,13 +1655,7 @@ const HRManagementPage: React.FC = () => {
 
   const handleEmployeeClick = (userId: string) => {
     setSelectedEmployeeId(userId);
-    setShowEmployeeDetailModal(true);
-  };
-
-  const handleEditEmployee = (userId: string) => {
-    setEditingEmployeeId(userId);
-    setShowEmployeeDetailModal(false);
-    setShowEmployeeEditDialog(true);
+    setShowEmployeeModal(true);
   };
 
   // Get current user role from auth context
@@ -2392,17 +2381,10 @@ const HRManagementPage: React.FC = () => {
       {/* Modals */}
       <RequestModal />
       <PushDocumentModal />
-      <EmployeeDetailModal 
+      <EmployeeModal 
         userId={selectedEmployeeId}
-        open={showEmployeeDetailModal}
-        onOpenChange={setShowEmployeeDetailModal}
-        currentUserRole={currentUserRole}
-        onEdit={handleEditEmployee}
-      />
-      <EmployeeEditDialog
-        userId={editingEmployeeId}
-        open={showEmployeeEditDialog}
-        onOpenChange={setShowEmployeeEditDialog}
+        open={showEmployeeModal}
+        onOpenChange={setShowEmployeeModal}
       />
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>

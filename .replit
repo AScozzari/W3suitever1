@@ -76,11 +76,11 @@ localPort = 24678
 localPort = 35569
 
 [[ports]]
-localPort = 36397
+localPort = 35947
+externalPort = 3000
 
 [[ports]]
-localPort = 38339
-externalPort = 3001
+localPort = 36397
 
 [[ports]]
 localPort = 38741
