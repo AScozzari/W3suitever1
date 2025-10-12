@@ -2395,6 +2395,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single user by ID
+  app.get('/api/users/:id', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.params.id;
+
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      if (!userId || userId.trim() === '') {
+        return res.status(400).json({
+          error: 'missing_parameter',
+          message: 'ID utente non specificato'
+        });
+      }
+
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+
+      // Get user from database
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.id, userId),
+            eq(users.tenantId, tenantId)
+          )
+        )
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).json({
+          error: 'user_not_found',
+          message: 'Utente non trovato'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: user
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'recupero utente');
+    }
+  });
+
+  // Update user - HR data and extended fields
+  app.put('/api/users/:id', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.params.id;
+
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      if (!userId || userId.trim() === '') {
+        return res.status(400).json({
+          error: 'missing_parameter',
+          message: 'ID utente non specificato'
+        });
+      }
+
+      // Create partial update schema (all fields optional except id/tenantId/createdAt/updatedAt)
+      const updateUserSchema = insertUserSchema.partial().omit({
+        id: true,
+        tenantId: true,
+        createdAt: true,
+        updatedAt: true
+      });
+
+      // Validate request body
+      const validatedData = validateRequestBody(updateUserSchema, req.body, res);
+      if (!validatedData) return;
+
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+
+      // Update user in database
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          ...validatedData,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(users.id, userId),
+            eq(users.tenantId, tenantId)
+          )
+        )
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).json({
+          error: 'user_not_found',
+          message: 'Utente non trovato o non autorizzato'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: updatedUser,
+        message: 'Utente aggiornato con successo'
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento utente');
+    }
+  });
+
   // Get user roles
   app.get('/api/users/:userId/roles', ...authWithRBAC, requirePermission('users.read'), async (req, res) => {
     try {

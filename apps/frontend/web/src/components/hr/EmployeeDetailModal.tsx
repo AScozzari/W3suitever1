@@ -12,7 +12,7 @@ import {
   User, Mail, Phone, Building2, Briefcase, Calendar,
   Shield, Users, MapPin, Clock, DollarSign, FileText,
   Heart, Wallet, GraduationCap, Languages, Award,
-  Home, CreditCard, UserCircle2, IdCard
+  Home, CreditCard, UserCircle2, IdCard, Edit
 } from 'lucide-react';
 
 interface Employee {
@@ -106,18 +106,32 @@ interface EmployeeDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserRole?: string;
+  onEdit?: (userId: string) => void;
 }
 
 export function EmployeeDetailModal({ 
   userId, 
   open, 
   onOpenChange,
-  currentUserRole
+  currentUserRole,
+  onEdit
 }: EmployeeDetailModalProps) {
   
   // Fetch user details
   const { data: userData, isLoading: userLoading } = useQuery<{ success: boolean; data: Employee }>({
     queryKey: ['/api/users', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch user details');
+      }
+      return response.json();
+    },
     enabled: !!userId && open
   });
 
@@ -225,6 +239,18 @@ export function EmployeeDetailModal({
                 )}
               </div>
             </div>
+            {onEdit && userId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(userId)}
+                className="gap-2"
+                data-testid="button-edit-employee"
+              >
+                <Edit className="h-4 w-4" />
+                Modifica
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
