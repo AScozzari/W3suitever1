@@ -2406,4 +2406,198 @@ router.get('/persons/:personId/consents', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/crm/persons/:personId/analytics
+ * Get analytics data for a person (KPIs and charts)
+ */
+router.get('/persons/:personId/analytics', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { personId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Calculate KPIs
+    // 1. Lifetime Value & Deals Closed (from deals)
+    const dealStats = await db
+      .select({
+        totalValue: sum(crmDeals.amount),
+        dealsClosed: sql<number>`COUNT(*)::integer`
+      })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.personId, personId),
+        eq(crmDeals.tenantId, tenantId),
+        eq(crmDeals.status, 'won')
+      ))
+      .then(rows => rows[0] || { totalValue: '0', dealsClosed: 0 });
+
+    const lifetimeValue = parseFloat(dealStats.totalValue || '0');
+    const dealsClosed = dealStats.dealsClosed || 0;
+
+    // 2. Engagement Score (based on interactions count - normalized to 0-100)
+    const interactionsCount = await db
+      .select({ count: sql<number>`COUNT(*)::integer` })
+      .from(crmInteractions)
+      .where(and(
+        eq(crmInteractions.entityType, 'customer'),
+        sql`${crmInteractions.entityId}::text IN (
+          SELECT id FROM w3suite.crm_customers WHERE person_id = ${personId} AND tenant_id = ${tenantId}
+        )`
+      ))
+      .then(rows => rows[0]?.count || 0);
+
+    const engagementScore = Math.min(100, Math.round(interactionsCount * 5)); // 20 interactions = 100 score
+
+    // 3. Referrals (leads with source containing this person's info)
+    const referrals = await db
+      .select({ count: sql<number>`COUNT(*)::integer` })
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.tenantId, tenantId),
+        sql`${crmLeads.source} ILIKE '%referral%'`,
+        sql`${crmLeads.notes} ILIKE CONCAT('%', (SELECT email FROM w3suite.crm_leads WHERE person_id = ${personId} LIMIT 1), '%')`
+      ))
+      .then(rows => rows[0]?.count || 0);
+
+    // 4. LTV Trend (compare last 3 months vs previous 3 months)
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const recentRevenue = await db
+      .select({ total: sum(crmDeals.amount) })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.personId, personId),
+        eq(crmDeals.tenantId, tenantId),
+        eq(crmDeals.status, 'won'),
+        sql`${crmDeals.closedAt} >= ${threeMonthsAgo.toISOString()}`
+      ))
+      .then(rows => parseFloat(rows[0]?.total || '0'));
+
+    const previousRevenue = await db
+      .select({ total: sum(crmDeals.amount) })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.personId, personId),
+        eq(crmDeals.tenantId, tenantId),
+        eq(crmDeals.status, 'won'),
+        sql`${crmDeals.closedAt} >= ${sixMonthsAgo.toISOString()} AND ${crmDeals.closedAt} < ${threeMonthsAgo.toISOString()}`
+      ))
+      .then(rows => parseFloat(rows[0]?.total || '0'));
+
+    const ltvTrend = previousRevenue > 0 ? Math.round(((recentRevenue - previousRevenue) / previousRevenue) * 100) : 0;
+
+    // Charts Data
+    // 1. Revenue Data (last 6 months)
+    const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+    const revenueData = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date();
+      monthStart.setMonth(monthStart.getMonth() - i);
+      monthStart.setDate(1);
+      const monthEnd = new Date(monthStart);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+      const monthRevenue = await db
+        .select({ total: sum(crmDeals.amount) })
+        .from(crmDeals)
+        .where(and(
+          eq(crmDeals.personId, personId),
+          eq(crmDeals.tenantId, tenantId),
+          eq(crmDeals.status, 'won'),
+          sql`${crmDeals.closedAt} >= ${monthStart.toISOString()} AND ${crmDeals.closedAt} < ${monthEnd.toISOString()}`
+        ))
+        .then(rows => parseFloat(rows[0]?.total || '0'));
+
+      revenueData.push({
+        month: monthNames[monthStart.getMonth()],
+        value: monthRevenue
+      });
+    }
+
+    // 2. Interaction Channels
+    const channelData = await db
+      .select({
+        channel: crmInteractions.type,
+        count: sql<number>`COUNT(*)::integer`
+      })
+      .from(crmInteractions)
+      .where(and(
+        eq(crmInteractions.entityType, 'customer'),
+        sql`${crmInteractions.entityId}::text IN (
+          SELECT id FROM w3suite.crm_customers WHERE person_id = ${personId} AND tenant_id = ${tenantId}
+        )`
+      ))
+      .groupBy(crmInteractions.type)
+      .then(rows => rows.map(r => ({ channel: r.channel || 'unknown', count: r.count })));
+
+    // 3. Campaign Distribution
+    const campaignData = await db
+      .select({
+        name: crmCampaigns.name,
+        count: sql<number>`COUNT(DISTINCT ${crmLeads.id})::integer`
+      })
+      .from(crmLeads)
+      .innerJoin(crmCampaigns, eq(crmLeads.campaignId, crmCampaigns.id))
+      .where(and(
+        eq(crmLeads.personId, personId),
+        eq(crmLeads.tenantId, tenantId)
+      ))
+      .groupBy(crmCampaigns.name)
+      .then(rows => rows.map(r => ({ name: r.name, value: r.count })));
+
+    const analyticsData = {
+      kpi: {
+        lifetimeValue,
+        ltvTrend,
+        dealsClosed,
+        engagementScore,
+        referrals
+      },
+      charts: {
+        revenueData,
+        interactionData: channelData.length > 0 ? channelData : [
+          { channel: 'Email', count: 0 },
+          { channel: 'Phone', count: 0 },
+          { channel: 'In-Store', count: 0 }
+        ],
+        campaignData: campaignData.length > 0 ? campaignData : [
+          { name: 'Nessuna Campagna', value: 1 }
+        ]
+      }
+    };
+
+    res.status(200).json({
+      success: true,
+      data: analyticsData,
+      message: 'Analytics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving person analytics', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      personId: req.params.personId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve analytics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export default router;
