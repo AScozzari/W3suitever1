@@ -1437,8 +1437,59 @@ router.patch('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requirePe
 });
 
 /**
+ * GET /api/crm/pipelines/:id/stages/:stageId/deals/count
+ * Count deals in a specific stage
+ */
+router.get('/pipelines/:pipelineId/stages/:stageId/deals/count', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { stageId } = req.params;
+    await setTenantContext(tenantId);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.stageId, stageId),
+        eq(crmDeals.tenantId, tenantId)
+      ));
+
+    const count = result[0]?.count || 0;
+
+    res.status(200).json({
+      success: true,
+      data: { count },
+      message: 'Deal count retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error counting deals for stage', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      stageId: req.params.stageId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to count deals',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * DELETE /api/crm/pipelines/:id/stages/:stageId
- * Delete a custom stage
+ * Delete or archive a custom stage (archives if deals exist, deletes if none)
  */
 router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
   try {
@@ -1472,6 +1523,69 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
       } as ApiErrorResponse);
     }
 
+    // Verify stage exists
+    const [stage] = await db
+      .select()
+      .from(crmPipelineStages)
+      .where(and(
+        eq(crmPipelineStages.id, stageId),
+        eq(crmPipelineStages.pipelineId, pipelineId)
+      ))
+      .limit(1);
+
+    if (!stage) {
+      return res.status(404).json({
+        success: false,
+        error: 'Stage not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if stage has any deals
+    const dealCountResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.stageId, stageId),
+        eq(crmDeals.tenantId, tenantId)
+      ));
+
+    const dealCount = dealCountResult[0]?.count || 0;
+
+    // If stage has deals, archive it instead of deleting
+    if (dealCount > 0) {
+      const [archived] = await db
+        .update(crmPipelineStages)
+        .set({ 
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(crmPipelineStages.id, stageId),
+          eq(crmPipelineStages.pipelineId, pipelineId)
+        ))
+        .returning();
+
+      logger.info('Pipeline stage archived (has deals)', { 
+        pipelineId, 
+        stageId,
+        dealCount,
+        tenantId 
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: { 
+          ...archived, 
+          action: 'archived',
+          dealCount 
+        },
+        message: `Stato archiviato perché ha ${dealCount} deal associati`,
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse);
+    }
+
+    // No deals, safe to delete
     const [deleted] = await db
       .delete(crmPipelineStages)
       .where(and(
@@ -1480,15 +1594,7 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
       ))
       .returning();
 
-    if (!deleted) {
-      return res.status(404).json({
-        success: false,
-        error: 'Stage not found',
-        timestamp: new Date().toISOString()
-      } as ApiErrorResponse);
-    }
-
-    logger.info('Pipeline stage deleted', { 
+    logger.info('Pipeline stage deleted (no deals)', { 
       pipelineId, 
       stageId,
       tenantId 
@@ -1496,7 +1602,10 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
 
     res.status(200).json({
       success: true,
-      data: deleted,
+      data: { 
+        ...deleted, 
+        action: 'deleted' 
+      },
       message: 'Pipeline stage deleted successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);

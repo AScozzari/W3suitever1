@@ -547,7 +547,14 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                               style={{ background: stageCategoryConfig[stage.category as StageCategory]?.color || '#6b7280' }}
                             />
                             <div>
-                              <div className="font-semibold text-gray-900">{stage.name}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-gray-900">{stage.name}</span>
+                                {!stage.isActive && (
+                                  <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-600">
+                                    Archiviato
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="flex items-center gap-3 mt-1">
                                 <Badge 
                                   variant="outline"
