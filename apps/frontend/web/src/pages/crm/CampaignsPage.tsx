@@ -338,7 +338,7 @@ export default function CampaignsPage() {
                   </div>
                 </div>
               </Card>
-              </Link>
+            </Link>
             </motion.div>
           ))}
         </motion.div>
