@@ -126,6 +126,7 @@ export const aiModelEnum = pgEnum('ai_model', [
 // CRM System Enums
 export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media', 'outbound_crm', 'retention']);
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
+export const crmCampaignRoutingModeEnum = pgEnum('crm_campaign_routing_mode', ['automatic', 'manual', 'hybrid']);
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
 export const crmPipelineDomainEnum = pgEnum('crm_pipeline_domain', ['sales', 'service', 'retention']);
 export const crmPipelineStageCategoryEnum = pgEnum('crm_pipeline_stage_category', [
@@ -4321,18 +4322,26 @@ export const crmPersonIdentities = w3suiteSchema.table("crm_person_identities", 
   tenantIdIdx: index("crm_person_identities_tenant_id_idx").on(table.tenantId),
 }));
 
-// CRM Campaigns - Marketing containers
+// CRM Campaigns - Marketing containers (STORE-LEVEL SCOPE ONLY)
 export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
-  legalEntityId: uuid("legal_entity_id"),
-  storeId: uuid("store_id"),
+  storeId: uuid("store_id").notNull(), // Store-level scope (obbligatorio)
   isBrandTemplate: boolean("is_brand_template").default(false),
   brandCampaignId: uuid("brand_campaign_id"),
   name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
   type: crmCampaignTypeEnum("type").notNull(),
   status: crmCampaignStatusEnum("status").default('draft'),
+  objective: integer("objective"), // Target numero lead
   targetDriverId: uuid("target_driver_id").references(() => drivers.id),
+  landingPageUrl: text("landing_page_url"),
+  channels: text("channels").array(), // Array canali: phone, whatsapp, form, social, email, qr
+  routingMode: crmCampaignRoutingModeEnum("routing_mode").default('manual'),
+  workflowId: uuid("workflow_id"), // Workflow intake associato
+  manualReviewTimeoutHours: integer("manual_review_timeout_hours").default(24),
+  autoAssignmentUserId: uuid("auto_assignment_user_id"),
+  autoAssignmentTeamId: uuid("auto_assignment_team_id"),
   primaryPipelineId: uuid("primary_pipeline_id"),
   budget: real("budget"),
   startDate: timestamp("start_date"),
@@ -4349,6 +4358,7 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
 }, (table) => ({
   tenantStatusStartIdx: index("crm_campaigns_tenant_status_start_idx").on(table.tenantId, table.status, table.startDate),
   tenantIdIdx: index("crm_campaigns_tenant_id_idx").on(table.tenantId),
+  storeIdIdx: index("crm_campaigns_store_id_idx").on(table.storeId),
 }));
 
 // CRM Leads - Lead con person_id auto-generated (match su email/phone/social)

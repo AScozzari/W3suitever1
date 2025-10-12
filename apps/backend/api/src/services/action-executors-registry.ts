@@ -2232,6 +2232,242 @@ export class CustomerRoutingExecutor implements ActionExecutor {
   }
 }
 
+/**
+ * 📥 CAMPAIGN LEAD INTAKE EXECUTOR
+ * Manages campaign lead intake with hybrid routing (auto/manual/timeout)
+ */
+export class CampaignLeadIntakeExecutor implements ActionExecutor {
+  executorId = 'campaign-lead-intake-executor';
+  description = 'Manages campaign lead intake with hybrid auto/manual routing and timeout logic';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📥 [EXECUTOR] Executing campaign lead intake', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const leadData = inputData?.lead || inputData;
+      const campaignData = inputData?.campaign || {};
+
+      // Get campaign routing configuration
+      const routingMode = campaignData.routingMode || config.routingMode || 'manual';
+      const timeoutHours = campaignData.manualReviewTimeoutHours || config.timeoutHours || 24;
+      const autoAssignUserId = campaignData.autoAssignmentUserId || config.autoAssignUserId;
+      const autoAssignTeamId = campaignData.autoAssignmentTeamId || config.autoAssignTeamId;
+
+      // Validate store scope
+      if (campaignData.storeId) {
+        const scopeCheck = await validateUserScope(
+          context.requesterId,
+          context.tenantId,
+          campaignData.storeId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          return {
+            success: false,
+            message: 'User lacks permissions for campaign store scope',
+            error: 'SCOPE_DENIED',
+            data: { storeId: campaignData.storeId, reason: scopeCheck.message }
+          };
+        }
+      }
+
+      // Handle routing based on mode
+      switch (routingMode) {
+        case 'automatic':
+          // Auto-route immediately
+          return {
+            success: true,
+            message: 'Lead automatically routed based on campaign settings',
+            data: {
+              leadId: leadData?.id,
+              routingMode: 'automatic',
+              assignedTo: autoAssignUserId || autoAssignTeamId,
+              nextAction: 'pipeline-assignment'
+            },
+            nextAction: 'pipeline-assignment'
+          };
+
+        case 'manual':
+          // Queue for manual review
+          return {
+            success: true,
+            message: 'Lead queued for manual review',
+            data: {
+              leadId: leadData?.id,
+              routingMode: 'manual',
+              queuedAt: new Date().toISOString(),
+              nextAction: 'manual-review'
+            },
+            nextAction: 'manual-review'
+          };
+
+        case 'hybrid':
+          // Check lead score/quality for auto-routing decision
+          const leadScore = leadData?.leadScore || 0;
+          const autoRouteThreshold = config.autoRouteThreshold || 60;
+
+          if (leadScore >= autoRouteThreshold) {
+            // High-quality lead - auto route
+            return {
+              success: true,
+              message: `Lead auto-routed (score ${leadScore} >= threshold ${autoRouteThreshold})`,
+              data: {
+                leadId: leadData?.id,
+                routingMode: 'hybrid-auto',
+                leadScore,
+                assignedTo: autoAssignUserId || autoAssignTeamId,
+                nextAction: 'pipeline-assignment'
+              },
+              nextAction: 'pipeline-assignment'
+            };
+          } else {
+            // Low-quality lead - manual review with timeout
+            const timeoutAt = new Date();
+            timeoutAt.setHours(timeoutAt.getHours() + timeoutHours);
+
+            return {
+              success: true,
+              message: `Lead queued for manual review with ${timeoutHours}h timeout`,
+              data: {
+                leadId: leadData?.id,
+                routingMode: 'hybrid-manual',
+                leadScore,
+                queuedAt: new Date().toISOString(),
+                timeoutAt: timeoutAt.toISOString(),
+                timeoutHours,
+                nextAction: 'manual-review-with-timeout'
+              },
+              nextAction: 'manual-review-with-timeout'
+            };
+          }
+
+        default:
+          throw new Error(`Invalid routing mode: ${routingMode}`);
+      }
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Campaign lead intake failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to process campaign lead intake',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🎯 PIPELINE ASSIGNMENT EXECUTOR
+ * Assigns leads/deals to specific pipeline based on campaign rules
+ */
+export class PipelineAssignmentExecutor implements ActionExecutor {
+  executorId = 'pipeline-assignment-executor';
+  description = 'Assigns leads/deals to pipeline based on campaign routing rules';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🎯 [EXECUTOR] Executing pipeline assignment', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const leadData = inputData?.lead || inputData;
+      const campaignData = inputData?.campaign || {};
+
+      // Get pipeline assignment rules
+      const pipelineRules = config.pipelineRules || [];
+      const defaultPipelineId = campaignData.primaryPipelineId || config.defaultPipelineId;
+      const productInterest = leadData?.productInterest;
+
+      // Evaluate pipeline rules based on criteria
+      for (const rule of pipelineRules) {
+        let conditionsMet = true;
+
+        // Check product interest condition
+        if (rule.productInterest && productInterest !== rule.productInterest) {
+          conditionsMet = false;
+        }
+
+        // Check source channel condition
+        if (rule.sourceChannel && leadData?.sourceChannel !== rule.sourceChannel) {
+          conditionsMet = false;
+        }
+
+        // Check lead score threshold
+        if (rule.minScore !== undefined && (leadData?.leadScore || 0) < rule.minScore) {
+          conditionsMet = false;
+        }
+
+        // If all conditions met, assign to this pipeline
+        if (conditionsMet && rule.pipelineId) {
+          return {
+            success: true,
+            message: `Lead assigned to pipeline: ${rule.pipelineName || rule.pipelineId}`,
+            data: {
+              leadId: leadData?.id,
+              pipelineId: rule.pipelineId,
+              pipelineName: rule.pipelineName,
+              assignmentReason: `Matched rule: ${rule.name || 'Unnamed rule'}`,
+              productInterest,
+              leadScore: leadData?.leadScore
+            },
+            nextAction: rule.pipelineId
+          };
+        }
+      }
+
+      // No rules matched - use default pipeline
+      if (defaultPipelineId) {
+        return {
+          success: true,
+          message: 'Lead assigned to default campaign pipeline',
+          data: {
+            leadId: leadData?.id,
+            pipelineId: defaultPipelineId,
+            assignmentReason: 'No matching rules - using default pipeline',
+            productInterest,
+            leadScore: leadData?.leadScore
+          },
+          nextAction: defaultPipelineId
+        };
+      }
+
+      // No pipeline assignment possible
+      return {
+        success: false,
+        message: 'No pipeline assignment rules matched and no default pipeline configured',
+        error: 'NO_PIPELINE_CONFIGURED',
+        data: {
+          leadId: leadData?.id,
+          productInterest,
+          leadScore: leadData?.leadScore
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Pipeline assignment failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to assign pipeline',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -2266,6 +2502,10 @@ export class ActionExecutorsRegistry {
     this.register(new LeadRoutingExecutor());
     this.register(new DealRoutingExecutor());
     this.register(new CustomerRoutingExecutor());
+    
+    // Campaign intake executors
+    this.register(new CampaignLeadIntakeExecutor());
+    this.register(new PipelineAssignmentExecutor());
     
     // Flow control executors
     this.register(new IfConditionExecutor());
