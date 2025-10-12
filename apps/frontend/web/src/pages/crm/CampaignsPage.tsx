@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
+import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 
 interface Campaign {
   id: string;
@@ -75,12 +76,29 @@ const statVariants = {
 export default function CampaignsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns'],
   });
 
   const campaigns = campaignsResponse || [];
+
+  const handleCreateCampaign = () => {
+    setEditingCampaignId(undefined);
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleEditCampaign = (campaignId: string) => {
+    setEditingCampaignId(campaignId);
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsSettingsDialogOpen(false);
+    setEditingCampaignId(undefined);
+  };
 
   if (isLoading) {
     return (
@@ -159,6 +177,7 @@ export default function CampaignsPage() {
             </div>
           </div>
           <Button
+            onClick={handleCreateCampaign}
             style={{ 
               background: 'hsl(var(--brand-orange))',
               color: 'white'
@@ -183,7 +202,7 @@ export default function CampaignsPage() {
               variants={cardVariants}
               whileHover={{ y: -6 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedCampaign(campaign)}
+              onClick={() => handleEditCampaign(campaign.id)}
               className="cursor-pointer"
               data-testid={`campaign-card-${campaign.id}`}
             >
@@ -352,6 +371,13 @@ export default function CampaignsPage() {
         </AnimatePresence>
         </div>
       </div>
+
+      {/* Campaign Settings Dialog */}
+      <CampaignSettingsDialog
+        open={isSettingsDialogOpen}
+        onClose={handleCloseDialog}
+        campaignId={editingCampaignId}
+      />
     </Layout>
   );
 }
