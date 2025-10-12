@@ -39,15 +39,15 @@ router.get('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const result = await db.execute(sql`
-      SELECT * FROM w3suite.legal_entities
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
-    `);
+    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    const entitiesList = await db.query.legalEntities.findMany({
+      where: eq(legalEntities.tenantId, tenantId),
+      orderBy: [desc(legalEntities.createdAt)]
+    });
 
     res.status(200).json({
       success: true,
-      data: result.rows,
+      data: entitiesList,
       message: 'Legal entities retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
@@ -154,15 +154,15 @@ router.get('/stores', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const storesList = await db.execute(sql`
-      SELECT * FROM w3suite.stores
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
-    `);
+    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    const storesList = await db.query.stores.findMany({
+      where: eq(stores.tenantId, tenantId),
+      orderBy: [desc(stores.createdAt)]
+    });
 
     res.status(200).json({
       success: true,
-      data: storesList.rows,
+      data: storesList,
       message: 'Stores retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);

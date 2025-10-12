@@ -42,6 +42,25 @@ interface Team {
   memberIds?: string[];
 }
 
+interface Role {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface LegalEntity {
+  id: string;
+  codice: string;
+  ragioneSociale: string;
+}
+
+interface Store {
+  id: string;
+  codice: string;
+  nome: string;
+  legalEntityId: string;
+}
+
 interface EmployeeCardGridProps {
   onEmployeeClick?: (userId: string) => void;
   currentUserRole?: string;
@@ -50,7 +69,8 @@ interface EmployeeCardGridProps {
 export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeCardGridProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [scopeFilter, setScopeFilter] = useState<string>('all');
+  const [legalEntityFilter, setLegalEntityFilter] = useState<string>('all');
+  const [storeFilter, setStoreFilter] = useState<string>('all');
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
   // Fetch users - queryClient default fetcher returns unwrapped data (data.data ?? data)
@@ -58,9 +78,24 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
     queryKey: ['/api/users']
   });
 
-  // Fetch teams - queryClient default fetcher returns unwrapped data (data.data ?? data)
+  // Fetch teams
   const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ['/api/teams']
+  });
+
+  // Fetch roles
+  const { data: roles = [] } = useQuery<Role[]>({
+    queryKey: ['/api/roles']
+  });
+
+  // Fetch legal entities
+  const { data: legalEntities = [] } = useQuery<LegalEntity[]>({
+    queryKey: ['/api/legal-entities']
+  });
+
+  // Fetch stores
+  const { data: stores = [] } = useQuery<Store[]>({
+    queryKey: ['/api/stores']
   });
 
   // Fetch assignments for all users - using apiRequest for auth headers
@@ -94,17 +129,13 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
 
   const assignmentsByUser = assignmentQueries.data || {};
 
-  // Get unique roles from all users (simplified - in real app would query roles table)
-  const uniqueRoles = useMemo(() => {
-    const roles = new Set<string>();
-    // This is simplified - would need to fetch actual role assignments
-    users.forEach(user => {
-      if (user.position) roles.add(user.position);
-    });
-    return Array.from(roles);
-  }, [users]);
+  // Filter stores based on selected legal entity
+  const filteredStores = useMemo(() => {
+    if (legalEntityFilter === 'all') return stores;
+    return stores.filter(store => store.legalEntityId === legalEntityFilter);
+  }, [stores, legalEntityFilter]);
 
-  // Filter and search logic
+  // Filter and search logic with real data
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       // Search filter
@@ -115,21 +146,32 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
         (user.position?.toLowerCase().includes(searchLower)) ||
         (user.department?.toLowerCase().includes(searchLower));
 
-      // Role filter
-      const matchesRole = roleFilter === 'all' || user.position === roleFilter;
-
-      // Scope filter (check user's assignments)
+      // Get user assignments
       const userAssignments = assignmentsByUser[user.id] || [];
-      const matchesScope = scopeFilter === 'all' || 
-        userAssignments.some(assignment => assignment.scopeType === scopeFilter);
+
+      // Role filter (based on actual role assignments)
+      const matchesRole = roleFilter === 'all' || 
+        userAssignments.some(assignment => assignment.roleId === roleFilter);
+
+      // Legal Entity filter (check if user has assignment to this LE)
+      const matchesLegalEntity = legalEntityFilter === 'all' || 
+        userAssignments.some(assignment => 
+          assignment.scopeType === 'legal_entity' && assignment.scopeId === legalEntityFilter
+        );
+
+      // Store filter (check if user has assignment to this store)
+      const matchesStore = storeFilter === 'all' || 
+        userAssignments.some(assignment => 
+          assignment.scopeType === 'store' && assignment.scopeId === storeFilter
+        );
 
       // Team filter
       const matchesTeam = teamFilter === 'all' || 
         teams.some(team => team.id === teamFilter && team.memberIds?.includes(user.id));
 
-      return matchesSearch && matchesRole && matchesScope && matchesTeam;
+      return matchesSearch && matchesRole && matchesLegalEntity && matchesStore && matchesTeam;
     });
-  }, [users, searchTerm, roleFilter, scopeFilter, teamFilter, teams, assignmentsByUser]);
+  }, [users, searchTerm, roleFilter, legalEntityFilter, storeFilter, teamFilter, teams, assignmentsByUser]);
 
   // Helper to get user team
   const getUserTeam = (userId: string) => {
@@ -167,33 +209,53 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
           />
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Role Filter */}
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[160px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-role">
+            <SelectTrigger className="w-[180px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-role">
               <SelectValue placeholder="Tutti i ruoli" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tutti i ruoli</SelectItem>
-              {uniqueRoles.map(role => (
-                <SelectItem key={role} value={role}>{role}</SelectItem>
+              {roles.map(role => (
+                <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="w-[160px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-scope">
-              <SelectValue placeholder="Tutti gli scope" />
+          {/* Legal Entity Filter */}
+          <Select value={legalEntityFilter} onValueChange={(value) => {
+            setLegalEntityFilter(value);
+            // Reset store filter when LE changes
+            if (value !== legalEntityFilter) setStoreFilter('all');
+          }}>
+            <SelectTrigger className="w-[180px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-legal-entity">
+              <SelectValue placeholder="Tutte le RS" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli scope</SelectItem>
-              <SelectItem value="tenant">Tenant</SelectItem>
-              <SelectItem value="legal_entity">Legal Entity</SelectItem>
-              <SelectItem value="store">Store</SelectItem>
+              <SelectItem value="all">Tutte le RS</SelectItem>
+              {legalEntities.map(le => (
+                <SelectItem key={le.id} value={le.id}>{le.ragioneSociale}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
+          {/* Store Filter - filtered by selected LE */}
+          <Select value={storeFilter} onValueChange={setStoreFilter} disabled={legalEntityFilter === 'all' && filteredStores.length === stores.length}>
+            <SelectTrigger className="w-[180px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-store">
+              <SelectValue placeholder="Tutti gli store" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti gli store</SelectItem>
+              {filteredStores.map(store => (
+                <SelectItem key={store.id} value={store.id}>{store.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Team Filter */}
           <Select value={teamFilter} onValueChange={setTeamFilter}>
-            <SelectTrigger className="w-[160px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-team">
+            <SelectTrigger className="w-[180px] bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm" data-testid="select-filter-team">
               <SelectValue placeholder="Tutti i team" />
             </SelectTrigger>
             <SelectContent>
@@ -212,7 +274,7 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
           <UsersIcon className="h-4 w-4" />
           <span>
             {filteredUsers.length} {filteredUsers.length === 1 ? 'employee' : 'employees'}
-            {searchTerm || roleFilter !== 'all' || teamFilter !== 'all' ? ` (filtrati da ${users.length})` : ''}
+            {searchTerm || roleFilter !== 'all' || legalEntityFilter !== 'all' || storeFilter !== 'all' || teamFilter !== 'all' ? ` (filtrati da ${users.length})` : ''}
           </span>
         </div>
       </div>
