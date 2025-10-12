@@ -430,14 +430,19 @@ router.post('/users', async (req, res) => {
       }
       logger.info('User assigned legal entity access', { userId: user.id, roleId: role.id, legalEntityCount: data.selectedLegalEntities.length });
     } else {
-      // ⚠️ Fallback: se nessuna selezione, assegna accesso tenant
-      await rbacStorage.assignRoleToUser({
-        userId: user.id,
-        roleId: role.id,
-        scopeType: 'tenant',
-        scopeId: tenantId
-      });
-      logger.warn('User assigned default tenant access (no scope selected)', { userId: user.id, roleId: role.id });
+      // 🚫 VALIDATION ERROR: Nessuno scope selezionato
+      // L'utente DEVE selezionare almeno uno scope o richiedere esplicitamente accesso tenant
+      logger.error('User creation failed - no scope selected', { userId: user.id, roleId: role.id });
+      
+      // Rollback: elimina l'utente creato
+      await db.delete(users).where(eq(users.id, user.id));
+      
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Devi selezionare almeno uno scope: accesso completo (tutte le legal entities), legal entities specifiche, o punti vendita specifici',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
     }
 
     logger.info('User created with RBAC assignments', { userId: user.id, tenantId, role: role.name });

@@ -23,6 +23,9 @@ export interface WorkflowExecutionContext {
   requestId?: string;
   instanceName?: string;
   metadata?: Record<string, any>;
+  // 🔒 Scope validation fields for RBAC enforcement
+  storeId?: string;
+  legalEntityId?: string;
 }
 
 export interface ApprovalDecision {

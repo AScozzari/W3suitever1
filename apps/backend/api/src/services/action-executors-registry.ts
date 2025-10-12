@@ -10,6 +10,9 @@ import { notificationService } from '../core/notification-service';
 import { UnifiedOpenAIService } from './unified-openai';
 import { AIRegistryService, RegistryAwareContext } from './ai-registry-service';
 import { mcpClientService } from './mcp-client-service';
+import { db } from '../core/db';
+import { userAssignments, legalEntities, stores } from '../db/schema/w3suite';
+import { eq, and } from 'drizzle-orm';
 
 // ==================== INTERFACES ====================
 
@@ -47,6 +50,113 @@ export interface ExecutionContext {
   instanceId: string;
   templateId: string;
   metadata?: Record<string, any>;
+}
+
+// ==================== SCOPE VALIDATION UTILITY ====================
+
+/**
+ * 🔒 Validates if user has permission to operate on a specific store/legal_entity
+ * This provides the second layer of defense (RBAC middleware is first)
+ */
+export async function validateUserScope(
+  userId: string,
+  tenantId: string,
+  storeId?: string,
+  legalEntityId?: string
+): Promise<{ hasAccess: boolean; message?: string }> {
+  try {
+    // Get user's scope assignments
+    const assignments = await db
+      .select({
+        scopeType: userAssignments.scopeType,
+        scopeId: userAssignments.scopeId
+      })
+      .from(userAssignments)
+      .where(
+        and(
+          eq(userAssignments.userId, userId),
+          eq(userAssignments.tenantId, tenantId)
+        )
+      );
+
+    if (assignments.length === 0) {
+      return {
+        hasAccess: false,
+        message: 'Utente non ha scope assignments configurati'
+      };
+    }
+
+    // Check if user has tenant-wide access (highest level)
+    const hasTenantAccess = assignments.some(a => a.scopeType === 'tenant');
+    if (hasTenantAccess) {
+      return { hasAccess: true };
+    }
+
+    // Check store-level access (most specific)
+    if (storeId) {
+      const hasStoreAccess = assignments.some(
+        a => a.scopeType === 'store' && a.scopeId === storeId
+      );
+      
+      if (hasStoreAccess) {
+        return { hasAccess: true };
+      }
+
+      // Get store's legal entity to check indirect access
+      const [store] = await db
+        .select({ legalEntityId: stores.legalEntityId })
+        .from(stores)
+        .where(eq(stores.id, storeId))
+        .limit(1);
+
+      if (store?.legalEntityId) {
+        const hasLegalEntityAccess = assignments.some(
+          a => a.scopeType === 'legal_entity' && a.scopeId === store.legalEntityId
+        );
+        
+        if (hasLegalEntityAccess) {
+          return { hasAccess: true };
+        }
+      }
+
+      return {
+        hasAccess: false,
+        message: `Non hai permessi per operare sul punto vendita specificato`
+      };
+    }
+
+    // Check legal_entity-level access
+    if (legalEntityId) {
+      const hasLegalEntityAccess = assignments.some(
+        a => a.scopeType === 'legal_entity' && a.scopeId === legalEntityId
+      );
+      
+      if (hasLegalEntityAccess) {
+        return { hasAccess: true };
+      }
+
+      return {
+        hasAccess: false,
+        message: `Non hai permessi per operare sulla ragione sociale specificata`
+      };
+    }
+
+    // No specific scope to check, user has some access
+    return { hasAccess: true };
+
+  } catch (error) {
+    logger.error('❌ Scope validation error', {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      tenantId,
+      storeId,
+      legalEntityId
+    });
+    return {
+      hasAccess: false,
+      message: 'Errore durante la validazione dello scope'
+    };
+  }
 }
 
 // ==================== CONCRETE EXECUTORS ====================
@@ -134,6 +244,31 @@ export class ApprovalActionExecutor implements ActionExecutor {
         stepId: step.nodeId,
         context: context?.tenantId
       });
+
+      // 🔒 SCOPE VALIDATION: Check if approver has access to this store/legal_entity
+      if (context?.currentAssigneeId && context.currentAssigneeId !== 'system') {
+        const scopeCheck = await validateUserScope(
+          context.currentAssigneeId,
+          context.tenantId,
+          context.storeId,
+          context.legalEntityId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          logger.warn('🚫 [EXECUTOR] Approval blocked - user lacks scope access', {
+            userId: context.currentAssigneeId,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId,
+            reason: scopeCheck.message
+          });
+
+          return {
+            success: false,
+            message: scopeCheck.message || 'Non hai permessi per approvare questa richiesta',
+            error: 'SCOPE_ACCESS_DENIED'
+          };
+        }
+      }
 
       const config = step.config || {};
       const approverRole = config.approverRole || 'manager';
@@ -672,6 +807,32 @@ export class TaskActionExecutor implements ActionExecutor {
         throw new Error('Tenant ID is required for task actions');
       }
 
+      // 🔒 SCOPE VALIDATION: Check if assignee has access to this store/legal_entity
+      const assigneeId = config.assignToUser || context.currentAssigneeId || context.requesterId;
+      if (assigneeId && assigneeId !== 'system') {
+        const scopeCheck = await validateUserScope(
+          assigneeId,
+          context.tenantId,
+          context.storeId,
+          context.legalEntityId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          logger.warn('🚫 [EXECUTOR] Task action blocked - user lacks scope access', {
+            userId: assigneeId,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId,
+            reason: scopeCheck.message
+          });
+
+          return {
+            success: false,
+            message: scopeCheck.message || 'Non hai permessi per gestire task su questo punto vendita',
+            error: 'SCOPE_ACCESS_DENIED'
+          };
+        }
+      }
+
       // CREATE TASK
       if (action === 'create') {
         const taskData = {
@@ -916,8 +1077,46 @@ export class UserRoutingExecutor implements ActionExecutor {
         throw new Error('Invalid user assignment configuration: no users specified');
       }
 
-      // Send notifications to all assigned users
+      // 🔒 SCOPE VALIDATION: Filter users who have access to this store/legal_entity
+      const validUserIds: string[] = [];
+      const deniedUserIds: string[] = [];
+
       for (const userId of userIds) {
+        const scopeCheck = await validateUserScope(
+          userId,
+          context.tenantId,
+          context.storeId,
+          context.legalEntityId
+        );
+
+        if (scopeCheck.hasAccess) {
+          validUserIds.push(userId);
+        } else {
+          deniedUserIds.push(userId);
+          logger.warn('🚫 [EXECUTOR] User excluded from routing - lacks scope access', {
+            userId,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId,
+            reason: scopeCheck.message
+          });
+        }
+      }
+
+      if (validUserIds.length === 0) {
+        return {
+          success: false,
+          message: 'Nessun utente ha permessi per operare su questo punto vendita',
+          error: 'ALL_USERS_SCOPE_DENIED',
+          data: {
+            deniedUsers: deniedUserIds.length,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId
+          }
+        };
+      }
+
+      // Send notifications only to users with valid scope
+      for (const userId of validUserIds) {
         await notificationService.sendNotification(
           context?.tenantId,
           userId,
@@ -936,14 +1135,15 @@ export class UserRoutingExecutor implements ActionExecutor {
 
       return {
         success: true,
-        message: `Workflow assigned to ${userIds.length} user(s) (${mode} mode)`,
+        message: `Workflow assigned to ${validUserIds.length} user(s) (${mode} mode)${deniedUserIds.length > 0 ? ` - ${deniedUserIds.length} excluded for scope restrictions` : ''}`,
         data: {
-          userIds,
+          userIds: validUserIds,
+          deniedUserIds: deniedUserIds.length > 0 ? deniedUserIds : undefined,
           assignmentType,
           mode,
           assignedAt: new Date().toISOString()
         },
-        nextAction: userIds[0] // Use first user as next action
+        nextAction: validUserIds[0] // Use first valid user as next action
       };
 
     } catch (error) {
