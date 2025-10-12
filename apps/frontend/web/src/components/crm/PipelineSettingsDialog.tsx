@@ -69,9 +69,9 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     enabled: open && !!pipelineId,
   });
 
-  // Fetch available workflow templates
+  // Fetch available workflow templates (CRM only)
   const { data: availableTemplates = [] } = useQuery({
-    queryKey: ['/api/workflows/templates'],
+    queryKey: ['/api/workflows/templates', { category: 'crm' }],
     enabled: open,
   });
 
