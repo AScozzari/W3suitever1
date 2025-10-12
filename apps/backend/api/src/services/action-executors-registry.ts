@@ -1788,6 +1788,250 @@ export class AIMCPExecutor implements ActionExecutor {
   }
 }
 
+// ==================== CRM ROUTING EXECUTORS ====================
+
+/**
+ * 📋 LEAD ROUTING EXECUTOR
+ * Routes leads based on source, status, score, age and assignment
+ */
+export class LeadRoutingExecutor implements ActionExecutor {
+  executorId = 'lead-routing-executor';
+  description = 'Routes leads based on CRM criteria (source, status, score, age)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📋 [EXECUTOR] Executing lead routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const leadData = inputData?.lead || inputData;
+
+      // Evaluate routing conditions
+      const conditions = config.outputBranches || [];
+      for (const branch of conditions) {
+        const branchConditions = branch.conditions || [];
+        let allConditionsMet = true;
+
+        for (const condition of branchConditions) {
+          const fieldValue = leadData?.[condition.field];
+          const conditionValue = condition.value;
+
+          switch (condition.operator) {
+            case 'equals':
+              if (fieldValue !== conditionValue) allConditionsMet = false;
+              break;
+            case 'greater_than':
+              if (!(fieldValue > conditionValue)) allConditionsMet = false;
+              break;
+            case 'less_than':
+              if (!(fieldValue < conditionValue)) allConditionsMet = false;
+              break;
+            case 'contains':
+              if (!String(fieldValue).includes(String(conditionValue))) allConditionsMet = false;
+              break;
+          }
+
+          if (!allConditionsMet) break;
+        }
+
+        if (allConditionsMet) {
+          return {
+            success: true,
+            message: `Lead routed to branch: ${branch.name}`,
+            data: { branch: branch.name, branchId: branch.id, leadId: leadData?.id },
+            nextAction: branch.id || branch.name
+          };
+        }
+      }
+
+      // Default branch if no conditions matched
+      return {
+        success: true,
+        message: 'Lead routed to default branch',
+        data: { branch: 'default', leadId: leadData?.id },
+        nextAction: 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Lead routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route lead',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 💰 DEAL ROUTING EXECUTOR
+ * Routes deals based on stage, value, probability, pipeline and age
+ */
+export class DealRoutingExecutor implements ActionExecutor {
+  executorId = 'deal-routing-executor';
+  description = 'Routes deals based on CRM criteria (stage, value, probability, pipeline, age)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('💰 [EXECUTOR] Executing deal routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+
+      // Evaluate routing conditions
+      const conditions = config.outputBranches || [];
+      for (const branch of conditions) {
+        const branchConditions = branch.conditions || [];
+        let allConditionsMet = true;
+
+        for (const condition of branchConditions) {
+          const fieldValue = dealData?.[condition.field];
+          const conditionValue = condition.value;
+
+          switch (condition.operator) {
+            case 'equals':
+              if (fieldValue !== conditionValue) allConditionsMet = false;
+              break;
+            case 'greater_than':
+              if (!(fieldValue > conditionValue)) allConditionsMet = false;
+              break;
+            case 'less_than':
+              if (!(fieldValue < conditionValue)) allConditionsMet = false;
+              break;
+            case 'between':
+              const [min, max] = (conditionValue as string).split('-').map(Number);
+              if (!(fieldValue >= min && fieldValue <= max)) allConditionsMet = false;
+              break;
+          }
+
+          if (!allConditionsMet) break;
+        }
+
+        if (allConditionsMet) {
+          return {
+            success: true,
+            message: `Deal routed to branch: ${branch.name}`,
+            data: { branch: branch.name, branchId: branch.id, dealId: dealData?.id, stage: dealData?.stage },
+            nextAction: branch.id || branch.name
+          };
+        }
+      }
+
+      // Default branch
+      return {
+        success: true,
+        message: 'Deal routed to default branch',
+        data: { branch: 'default', dealId: dealData?.id },
+        nextAction: 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Deal routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route deal',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 👥 CUSTOMER ROUTING EXECUTOR
+ * Routes customers based on type, segment, lifetime value and contract status
+ */
+export class CustomerRoutingExecutor implements ActionExecutor {
+  executorId = 'customer-routing-executor';
+  description = 'Routes customers based on CRM criteria (type, segment, lifetime value, contract status)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('👥 [EXECUTOR] Executing customer routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const customerData = inputData?.customer || inputData;
+
+      // Evaluate routing conditions
+      const conditions = config.outputBranches || [];
+      for (const branch of conditions) {
+        const branchConditions = branch.conditions || [];
+        let allConditionsMet = true;
+
+        for (const condition of branchConditions) {
+          const fieldValue = customerData?.[condition.field];
+          const conditionValue = condition.value;
+
+          switch (condition.operator) {
+            case 'equals':
+              if (fieldValue !== conditionValue) allConditionsMet = false;
+              break;
+            case 'greater_than':
+              if (!(fieldValue > conditionValue)) allConditionsMet = false;
+              break;
+            case 'in':
+              const values = Array.isArray(conditionValue) ? conditionValue : [conditionValue];
+              if (!values.includes(fieldValue)) allConditionsMet = false;
+              break;
+          }
+
+          if (!allConditionsMet) break;
+        }
+
+        if (allConditionsMet) {
+          return {
+            success: true,
+            message: `Customer routed to branch: ${branch.name}`,
+            data: { 
+              branch: branch.name,
+              branchId: branch.id, 
+              customerId: customerData?.id,
+              type: customerData?.type,
+              segment: customerData?.segment
+            },
+            nextAction: branch.id || branch.name
+          };
+        }
+      }
+
+      // Default branch
+      return {
+        success: true,
+        message: 'Customer routed to default branch',
+        data: { branch: 'default', customerId: customerData?.id },
+        nextAction: 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Customer routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route customer',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -1819,6 +2063,9 @@ export class ActionExecutorsRegistry {
     // Routing executors
     this.register(new TeamRoutingExecutor());
     this.register(new UserRoutingExecutor());
+    this.register(new LeadRoutingExecutor());
+    this.register(new DealRoutingExecutor());
+    this.register(new CustomerRoutingExecutor());
     
     // Flow control executors
     this.register(new IfConditionExecutor());
