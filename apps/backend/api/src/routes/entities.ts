@@ -283,15 +283,15 @@ router.get('/users', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const usersList = await db.execute(sql`
-      SELECT * FROM w3suite.users
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
-    `);
+    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    const usersList = await db.query.users.findMany({
+      where: eq(users.tenantId, tenantId),
+      orderBy: [desc(users.createdAt)]
+    });
 
     res.status(200).json({
       success: true,
-      data: usersList.rows,
+      data: usersList,
       message: 'Users retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
