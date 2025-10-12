@@ -1199,11 +1199,11 @@ const HRManagementPage: React.FC = () => {
                       className="flex items-center gap-2 cursor-pointer"
                     >
                       <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {employee.firstName[0]}{employee.lastName[0]}
+                        {employee.firstName?.[0] || 'U'}{employee.lastName?.[0] || ''}
                       </div>
-                      <span>{employee.firstName} {employee.lastName}</span>
+                      <span>{employee.firstName || 'Utente'} {employee.lastName || 'Sconosciuto'}</span>
                       <Badge variant="secondary" className="text-xs">
-                        {employee.position}
+                        {employee.position || 'N/A'}
                       </Badge>
                     </Label>
                   </div>
@@ -1698,11 +1698,11 @@ const HRManagementPage: React.FC = () => {
                   <div key={employee.id} className="flex items-center justify-between p-3 bg-white/10 rounded-lg hover:bg-white/15 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {employee.firstName[0]}{employee.lastName[0]}
+                        {employee.firstName?.[0] || 'U'}{employee.lastName?.[0] || ''}
                       </div>
                       <div>
-                        <p className="font-medium">{employee.firstName} {employee.lastName}</p>
-                        <p className="text-sm text-slate-500">{employee.position} - {employee.department}</p>
+                        <p className="font-medium">{employee.firstName || 'Utente'} {employee.lastName || 'Sconosciuto'}</p>
+                        <p className="text-sm text-slate-500">{employee.position || 'N/A'} - {employee.department || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2290,7 +2290,7 @@ const HRManagementPage: React.FC = () => {
                     <SelectItem value="all">Tutti i Dipendenti</SelectItem>
                     {employees?.map((emp: any) => (
                       <SelectItem key={emp.id} value={emp.id}>
-                        {emp.firstName} {emp.lastName}
+                        {emp.firstName || 'Utente'} {emp.lastName || 'Sconosciuto'}
                       </SelectItem>
                     ))}
                   </SelectContent>
