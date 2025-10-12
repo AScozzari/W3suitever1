@@ -89,8 +89,8 @@ const employeeFormSchema = z.object({
   
   // Administrative
   employeeNumber: z.string().max(50).optional().nullable(),
-  annualCost: z.number().positive("Costo deve essere positivo").optional().nullable(),
-  grossAnnualSalary: z.number().positive("RAL deve essere positiva").optional().nullable(),
+  annualCost: z.coerce.number().positive("Costo deve essere positivo").optional().nullable(),
+  grossAnnualSalary: z.coerce.number().positive("RAL deve essere positiva").optional().nullable(),
   level: z.string().max(50).optional().nullable(),
   ccnl: z.string().max(255).optional().nullable(),
   managerId: z.string().optional().nullable(),
@@ -821,8 +821,7 @@ export function EmployeeFormDialog({ open, onClose, userId, mode }: EmployeeForm
                             <Input 
                               type="number" 
                               {...field} 
-                              value={field.value || ''} 
-                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                              value={field.value ?? ''} 
                               step="100"
                               min={0}
                               placeholder="30000.00"
@@ -845,8 +844,7 @@ export function EmployeeFormDialog({ open, onClose, userId, mode }: EmployeeForm
                             <Input 
                               type="number" 
                               {...field} 
-                              value={field.value || ''} 
-                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                              value={field.value ?? ''} 
                               step="100"
                               min={0}
                               placeholder="45000.00"

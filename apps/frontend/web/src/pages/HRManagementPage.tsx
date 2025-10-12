@@ -10,6 +10,7 @@ import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
 import { EmployeeCardGrid } from '@/components/hr/EmployeeCardGrid';
 import { EmployeeDetailModal } from '@/components/hr/EmployeeDetailModal';
+import { EmployeeFormDialog } from '@/components/hr/EmployeeFormDialog';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -112,6 +113,10 @@ const HRManagementPage: React.FC = () => {
   // Employee detail modal state
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [showEmployeeDetailModal, setShowEmployeeDetailModal] = useState(false);
+  // Employee form dialog state (create/edit)
+  const [showEmployeeFormDialog, setShowEmployeeFormDialog] = useState(false);
+  const [employeeFormMode, setEmployeeFormMode] = useState<'create' | 'edit'>('create');
+  const [employeeFormUserId, setEmployeeFormUserId] = useState<string | null>(null);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedStore, setSelectedStore] = useState<any>(null);
@@ -1659,6 +1664,15 @@ const HRManagementPage: React.FC = () => {
     setShowEmployeeDetailModal(true);
   };
 
+  const handleEditEmployee = () => {
+    if (selectedEmployeeId) {
+      setEmployeeFormMode('edit');
+      setEmployeeFormUserId(selectedEmployeeId);
+      setShowEmployeeDetailModal(false);
+      setShowEmployeeFormDialog(true);
+    }
+  };
+
   // Get current user role from auth context
   const currentUserRole = user?.role || 'user';
 
@@ -1670,7 +1684,11 @@ const HRManagementPage: React.FC = () => {
           <p className="text-slate-600 dark:text-slate-400">Gestione scope, permessi e team assignments</p>
         </div>
         <Button 
-          onClick={() => setShowEmployeeModal(true)}
+          onClick={() => {
+            setEmployeeFormMode('create');
+            setEmployeeFormUserId(null);
+            setShowEmployeeFormDialog(true);
+          }}
           className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
           data-testid="button-add-employee"
         >
@@ -2395,6 +2413,16 @@ const HRManagementPage: React.FC = () => {
         open={showEmployeeDetailModal}
         onOpenChange={setShowEmployeeDetailModal}
         currentUserRole={currentUserRole}
+        onEdit={handleEditEmployee}
+      />
+      <EmployeeFormDialog 
+        open={showEmployeeFormDialog}
+        onClose={() => {
+          setShowEmployeeFormDialog(false);
+          setEmployeeFormUserId(null);
+        }}
+        userId={employeeFormUserId}
+        mode={employeeFormMode}
       />
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
