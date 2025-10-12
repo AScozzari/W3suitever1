@@ -251,10 +251,11 @@ export default function CampaignsPage() {
               <Card 
                 className="glass-card border-0 overflow-hidden"
                 style={{ 
-                  background: 'var(--brand-glass-orange)',
+                  background: 'var(--glass-card-bg)',
                   backdropFilter: 'blur(12px) saturate(180%)',
                   WebkitBackdropFilter: 'blur(12px) saturate(180%)',
                   border: '1px solid var(--glass-card-border)',
+                  borderLeft: `4px solid ${getStatusColor(campaign.status)}`,
                   boxShadow: 'var(--shadow-glass)',
                   transition: 'var(--glass-transition)'
                 }}

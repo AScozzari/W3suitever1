@@ -217,10 +217,11 @@ export default function PipelinePage() {
                 <Card 
                   className="glass-card border-0"
                   style={{ 
-                    background: getDriverGradient(pipeline.driver || 'FISSO'),
+                    background: 'var(--glass-card-bg)',
                     backdropFilter: 'blur(12px) saturate(180%)',
                     WebkitBackdropFilter: 'blur(12px) saturate(180%)',
                     border: '1px solid var(--glass-card-border)',
+                    borderLeft: `4px solid ${getDriverColor(pipeline.driver || 'FISSO')}`,
                     boxShadow: 'var(--shadow-glass)',
                     transition: 'var(--glass-transition)'
                   }}
