@@ -53,19 +53,19 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
 
   // Fetch pipeline details
   const { data: pipeline, isLoading: pipelineLoading } = useQuery({
-    queryKey: ['/api/crm/pipelines', pipelineId],
+    queryKey: [`/api/crm/pipelines/${pipelineId}`],
     enabled: open && !!pipelineId,
   });
 
   // Fetch assigned workflows
   const { data: assignedWorkflows = [], isLoading: workflowsLoading } = useQuery({
-    queryKey: ['/api/crm/pipelines', pipelineId, 'workflows'],
+    queryKey: [`/api/crm/pipelines/${pipelineId}/workflows`],
     enabled: open && !!pipelineId,
   });
 
   // Fetch pipeline stages
   const { data: stages = [], isLoading: stagesLoading } = useQuery({
-    queryKey: ['/api/crm/pipelines', pipelineId, 'stages'],
+    queryKey: [`/api/crm/pipelines/${pipelineId}/stages`],
     enabled: open && !!pipelineId,
   });
 
@@ -109,7 +109,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines', pipelineId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines'] });
       toast({
         title: 'Impostazioni salvate',
@@ -137,7 +137,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines', pipelineId, 'workflows'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}/workflows`] });
       toast({
         title: 'Workflow assegnato',
         description: 'Il workflow è stato assegnato con successo alla pipeline',
@@ -160,7 +160,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines', pipelineId, 'workflows'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}/workflows`] });
       toast({
         title: 'Workflow rimosso',
         description: 'Il workflow è stato rimosso dalla pipeline',
@@ -189,7 +189,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines', pipelineId, 'stages'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}/stages`] });
       setNewStageName('');
       setNewStageCategory('starter');
       setNewStageOrder('');
@@ -216,7 +216,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines', pipelineId, 'stages'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}/stages`] });
       toast({
         title: 'Stato eliminato',
         description: 'Lo stato è stato rimosso dalla pipeline',
