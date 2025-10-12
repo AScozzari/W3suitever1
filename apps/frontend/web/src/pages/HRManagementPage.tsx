@@ -140,9 +140,10 @@ const HRManagementPage: React.FC = () => {
   // Extract requests array from API response
   const hrRequests = hrRequestsResponse?.data || [];
 
-  // ✅ UPDATED: Employees data (non-HR endpoint, no dependency needed)
+  // ✅ UPDATED: Employees data with authentication readiness
   const { data: employees = [], isLoading: loadingEmployees } = useQuery<Employee[]>({
     queryKey: ['/api/users'],
+    enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 5 * 60 * 1000,
   });
 
