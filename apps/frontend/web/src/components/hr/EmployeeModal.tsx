@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -127,6 +127,22 @@ interface Assignment {
     name: string;
     code?: string;
   };
+  expiresAt?: string;
+  createdAt?: string;
+}
+
+interface Permission {
+  resource: string;
+  action: string;
+  effect: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  description?: string;
+  department?: string;
+  memberIds?: string[];
 }
 
 interface EmployeeModalProps {
@@ -139,17 +155,9 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
 
-  // Fetch user details
+  // Fetch user details - using default queryFn for proper auth
   const { data: userData, isLoading: userLoading, refetch } = useQuery<{ success: boolean; data: Employee }>({
-    queryKey: ['/api/users', userId],
-    queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}`, {
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch user details');
-      return response.json();
-    },
+    queryKey: [`/api/users/${userId}`],
     enabled: !!userId && open
   });
 
@@ -161,7 +169,31 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
     enabled: !!userId && open
   });
 
+  // Fetch permissions (admin only)
+  const { data: permissionsData } = useQuery<{ success: boolean; data: Permission[] }>({
+    queryKey: [`/api/users/${userId}/permissions`],
+    enabled: !!userId && open
+  });
+
+  // Fetch teams
+  const { data: teamsData } = useQuery<{ success: boolean; data: Team[] }>({
+    queryKey: ['/api/teams'],
+    enabled: !!userId && open
+  });
+
+  // Fetch manager details
+  const { data: managerData } = useQuery<{ success: boolean; data: Employee }>({
+    queryKey: [`/api/users/${user?.managerId}`],
+    enabled: !!user?.managerId && open
+  });
+
   const assignments = assignmentsData?.data || [];
+  const permissions = permissionsData?.data || [];
+  const teams = teamsData?.data || [];
+  const manager = managerData?.data;
+  
+  // Get user's teams
+  const userTeams = teams.filter(team => team.memberIds?.includes(userId || ''));
 
   // Initialize form
   const form = useForm<EmployeeUpdateForm>({
@@ -370,6 +402,9 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
               </Button>
             )}
           </DialogTitle>
+          <DialogDescription>
+            {isEditMode ? 'Modifica i dati del dipendente in tutti i tab disponibili' : 'Visualizza le informazioni complete del dipendente'}
+          </DialogDescription>
         </DialogHeader>
 
         {userLoading ? (
@@ -380,13 +415,14 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col gap-4">
               <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-7">
                   <TabsTrigger value="general">Generale</TabsTrigger>
                   <TabsTrigger value="demographics">Anagrafiche</TabsTrigger>
                   <TabsTrigger value="address">Indirizzo</TabsTrigger>
                   <TabsTrigger value="emergency">Emergenze</TabsTrigger>
                   <TabsTrigger value="admin">Amministrative</TabsTrigger>
                   <TabsTrigger value="professional">Formazione</TabsTrigger>
+                  <TabsTrigger value="rbac">Scope & RBAC</TabsTrigger>
                 </TabsList>
 
                 <ScrollArea className="flex-1 pr-4">
@@ -478,20 +514,9 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                         <InfoRow icon={<Building2 className="h-4 w-4" />} label="Dipartimento" value={user?.department} />
                         <InfoRow icon={<Calendar className="h-4 w-4" />} label="Data Assunzione" value={user?.hireDate ? new Date(user.hireDate).toLocaleDateString('it-IT') : undefined} />
                         <InfoRow icon={<FileText className="h-4 w-4" />} label="Tipo Contratto" value={user?.contractType} />
-                        {assignments.length > 0 && (
+                        {manager && (
                           <div className="pt-4 border-t">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Shield className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold text-sm">Ruoli Assegnati ({assignments.length})</span>
-                            </div>
-                            <div className="space-y-2">
-                              {assignments.map((assignment, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                  <span className="text-sm font-medium">{assignment.roleName}</span>
-                                  <ScopeBadge scopeType={assignment.scopeType} scopeName={assignment.scopeDetails?.name || assignment.scopeType} />
-                                </div>
-                              ))}
-                            </div>
+                            <InfoRow icon={<UserCircle2 className="h-4 w-4" />} label="Manager" value={`${manager.firstName || ''} ${manager.lastName || ''}`} />
                           </div>
                         )}
                       </div>
@@ -863,6 +888,127 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                         <InfoRow icon={<FileText className="h-4 w-4" />} label="Note" value={user?.notes} />
                       </div>
                     )}
+                  </TabsContent>
+
+                  {/* Tab: Scope & RBAC - View Only */}
+                  <TabsContent value="rbac" className="space-y-4 mt-4">
+                    <div className="space-y-6">
+                      {/* Assignments Section */}
+                      {assignments.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Shield className="h-5 w-5 text-orange-500" />
+                            <h3 className="font-semibold text-base">Ruoli Assegnati</h3>
+                            <Badge variant="secondary">{assignments.length}</Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {assignments.map((assignment, idx) => (
+                              <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-sm">{assignment.roleName}</span>
+                                  <ScopeBadge scopeType={assignment.scopeType} scopeName={assignment.scopeDetails?.name || assignment.scopeType} />
+                                </div>
+                                {assignment.roleDescription && (
+                                  <p className="text-xs text-gray-600 dark:text-gray-400">{assignment.roleDescription}</p>
+                                )}
+                                {assignment.expiresAt && (
+                                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                                    <Clock className="h-3 w-3" />
+                                    <span>Scade: {new Date(assignment.expiresAt).toLocaleDateString('it-IT')}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Permissions Section */}
+                      {permissions.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Shield className="h-5 w-5 text-purple-500" />
+                            <h3 className="font-semibold text-base">Permessi</h3>
+                            <Badge variant="secondary">{permissions.length}</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {permissions.map((perm, idx) => (
+                              <div key={idx} className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                                    {perm.resource}
+                                  </span>
+                                  <Badge variant={perm.effect === 'allow' ? 'default' : 'destructive'} className="text-xs">
+                                    {perm.action}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Teams Section */}
+                      {userTeams.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Users className="h-5 w-5 text-blue-500" />
+                            <h3 className="font-semibold text-base">Team</h3>
+                            <Badge variant="secondary">{userTeams.length}</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {userTeams.map((team) => (
+                              <div key={team.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <div className="font-medium text-sm text-blue-900 dark:text-blue-100">{team.name}</div>
+                                {team.description && (
+                                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{team.description}</p>
+                                )}
+                                {team.department && (
+                                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                    {team.department}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Manager Section */}
+                      {manager && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <UserCircle2 className="h-5 w-5 text-gray-500" />
+                            <h3 className="font-semibold text-base">Manager</h3>
+                          </div>
+                          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={manager.avatarUrl} />
+                              <AvatarFallback className="bg-gray-200 text-gray-700">
+                                {`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{manager.firstName} {manager.lastName}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{manager.position || manager.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Empty State */}
+                      {assignments.length === 0 && permissions.length === 0 && userTeams.length === 0 && !manager && (
+                        <div className="text-center py-12">
+                          <Shield className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            Nessun dato RBAC disponibile
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            L'utente non ha ruoli, permessi o team assegnati
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </TabsContent>
                 </ScrollArea>
               </Tabs>
