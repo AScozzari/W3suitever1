@@ -294,6 +294,17 @@ export default function LeadsPage() {
             </div>
             <div className="flex items-center gap-2">
               <CRMFilterDock />
+              <Button 
+                onClick={() => setIsCreateOpen(true)}
+                style={{ 
+                  background: 'hsl(var(--brand-orange))',
+                  color: 'white'
+                }}
+                data-testid="button-create-lead"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nuovo Lead
+              </Button>
               <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
             </div>
           </div>

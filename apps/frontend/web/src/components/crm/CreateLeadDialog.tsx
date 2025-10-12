@@ -80,7 +80,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
   });
 
   // Fetch campaigns for selection
-  const { data: campaigns } = useQuery({
+  const { data: campaigns } = useQuery<any[]>({
     queryKey: ['/api/crm/campaigns'],
     enabled: open,
   });
@@ -243,7 +243,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">Nessuna campagna</SelectItem>
-                        {campaigns?.data?.map((campaign: any) => (
+                        {(campaigns || [])?.map((campaign: any) => (
                           <SelectItem key={campaign.id} value={campaign.id}>
                             {campaign.name}
                           </SelectItem>
