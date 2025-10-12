@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CustomerTimelineView } from '@/components/crm/CustomerTimelineView';
 import { CustomerConsentManager } from '@/components/crm/CustomerConsentManager';
 import { CustomerActions } from '@/components/crm/CustomerActions';
@@ -29,7 +28,6 @@ import {
 
 export function CustomerDetailPage() {
   const [currentModule, setCurrentModule] = useState('crm');
-  const [searchQuery, setSearchQuery] = useState('');
   const params = useParams();
   const customerId = params.id;
 
@@ -63,10 +61,6 @@ export function CustomerDetailPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMSearchBar 
-            onSearch={setSearchQuery}
-            placeholder="Cerca..."
-          />
           <Skeleton className="h-64 w-full" />
         </div>
       </Layout>
@@ -79,10 +73,6 @@ export function CustomerDetailPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMSearchBar 
-            onSearch={setSearchQuery}
-            placeholder="Cerca..."
-          />
           <div className="text-center py-12">Cliente non trovato</div>
         </div>
       </Layout>
@@ -99,10 +89,6 @@ export function CustomerDetailPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca..."
-        />
 
       {/* Header Section with KPI Cards */}
       <div className="mb-8">
