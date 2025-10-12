@@ -14,10 +14,12 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  Target
+  Target,
+  Settings
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 
 interface Campaign {
@@ -202,44 +204,55 @@ export default function CampaignsPage() {
               variants={cardVariants}
               whileHover={{ y: -6 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => handleEditCampaign(campaign.id)}
-              className="cursor-pointer"
               data-testid={`campaign-card-${campaign.id}`}
             >
-              <Card 
-                className="glass-card border-0 overflow-hidden"
-                style={{ 
-                  background: 'var(--glass-card-bg)',
-                  backdropFilter: 'blur(12px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                  border: '1px solid var(--glass-card-border)',
-                  borderLeft: `4px solid ${getStatusColor(campaign.status)}`,
-                  boxShadow: 'var(--shadow-glass)',
-                  transition: 'var(--glass-transition)'
-                }}
-              >
-                {/* Campaign Header */}
-                <div className="p-6 pb-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-                        {campaign.name}
-                      </h3>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs"
-                        style={{ 
-                          borderColor: getStatusColor(campaign.status),
-                          color: getStatusColor(campaign.status),
-                          background: 'var(--glass-bg-light)'
-                        }}
-                      >
-                        {getStatusLabel(campaign.status)}
-                      </Badge>
+              <Link href={`crm/leads?campaign=${campaign.id}`}>
+                <Card 
+                  className="glass-card border-0 overflow-hidden cursor-pointer"
+                  style={{ 
+                    background: 'var(--glass-card-bg)',
+                    backdropFilter: 'blur(12px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+                    border: '1px solid var(--glass-card-border)',
+                    borderLeft: `4px solid ${getStatusColor(campaign.status)}`,
+                    boxShadow: 'var(--shadow-glass)',
+                    transition: 'var(--glass-transition)'
+                  }}
+                >
+                  {/* Campaign Header */}
+                  <div className="p-6 pb-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                          {campaign.name}
+                        </h3>
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs"
+                          style={{ 
+                            borderColor: getStatusColor(campaign.status),
+                            color: getStatusColor(campaign.status),
+                            background: 'var(--glass-bg-light)'
+                          }}
+                        >
+                          {getStatusLabel(campaign.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Settings 
+                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity" 
+                          style={{ color: 'hsl(var(--brand-orange))' }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEditCampaign(campaign.id);
+                          }}
+                          data-testid={`button-settings-${campaign.id}`}
+                        />
+                        <ArrowRight className="h-5 w-5 opacity-60" />
+                      </div>
                     </div>
-                    <ArrowRight className="h-5 w-5 opacity-60" />
                   </div>
-                </div>
 
                 {/* Stats Grid */}
                 <motion.div 
@@ -325,6 +338,7 @@ export default function CampaignsPage() {
                   </div>
                 </div>
               </Card>
+              </Link>
             </motion.div>
           ))}
         </motion.div>
