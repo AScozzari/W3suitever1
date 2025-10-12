@@ -1,695 +1,830 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { 
   Settings2, 
   Target, 
-  Route,
+  Route, 
   Workflow, 
-  BarChart3, 
-  ShieldCheck,
+  TrendingUp, 
+  Wrench,
   Save,
-  X
+  AlertCircle
 } from 'lucide-react';
-import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 
 interface CampaignSettingsDialogProps {
   open: boolean;
   onClose: () => void;
-  campaignId?: string; // undefined = create mode
-  storeId?: string; // Required for create mode
+  campaignId?: string | null;
+  mode: 'create' | 'edit';
 }
 
-type CampaignType = 'inbound_media' | 'outbound_crm' | 'retention';
-type CampaignStatus = 'draft' | 'scheduled' | 'active' | 'paused' | 'completed';
-type RoutingMode = 'automatic' | 'manual' | 'hybrid';
-type SourceChannel = 'phone' | 'whatsapp' | 'form' | 'social' | 'email' | 'qr';
+// Campaign routing mode enum
+const routingModes = ['automatic', 'manual', 'hybrid'] as const;
+type RoutingMode = typeof routingModes[number];
 
-const channelOptions: { value: SourceChannel; label: string }[] = [
-  { value: 'phone', label: '📞 Telefono' },
-  { value: 'whatsapp', label: '💬 WhatsApp' },
-  { value: 'form', label: '📝 Form Web' },
-  { value: 'social', label: '📱 Social Media' },
-  { value: 'email', label: '📧 Email' },
-  { value: 'qr', label: '🔲 QR Code' }
-];
+// Form schema with validation
+const campaignFormSchema = z.object({
+  name: z.string().min(1, "Nome campagna obbligatorio").max(255),
+  description: z.string().optional(),
+  objective: z.string().optional(),
+  storeId: z.string().uuid("Seleziona un negozio valido"),
+  legalEntityId: z.string().uuid().optional(),
+  driverId: z.string().optional(),
+  
+  // Routing settings
+  routingMode: z.enum(routingModes),
+  autoAssignmentUserId: z.string().uuid().optional().nullable(),
+  autoAssignmentTeamId: z.string().uuid().optional().nullable(),
+  manualReviewTimeoutHours: z.number().int().min(1).max(168).optional().nullable(),
+  
+  // Workflow & Pipelines
+  workflowId: z.string().uuid().optional().nullable(),
+  primaryPipelineId: z.string().uuid().optional().nullable(),
+  secondaryPipelineId: z.string().uuid().optional().nullable(),
+  
+  // Channels & Landing Page
+  channels: z.array(z.string()).optional().default([]),
+  landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
+  
+  // Budget & Tracking
+  budget: z.number().optional().nullable(),
+  actualSpent: z.number().optional().nullable(),
+  
+  // Dates
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  
+  // Status
+  isActive: z.boolean().default(true),
+}).refine(data => {
+  // If routing mode is automatic, require either user or team assignment
+  if (data.routingMode === 'automatic' && !data.autoAssignmentUserId && !data.autoAssignmentTeamId) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Modalità automatica richiede assegnazione a utente o team",
+  path: ['autoAssignmentUserId']
+}).refine(data => {
+  // If routing mode is hybrid, timeout is required
+  if (data.routingMode === 'hybrid' && !data.manualReviewTimeoutHours) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Modalità ibrida richiede timeout per revisione manuale",
+  path: ['manualReviewTimeoutHours']
+});
 
-export function CampaignSettingsDialog({ open, onClose, campaignId, storeId }: CampaignSettingsDialogProps) {
+type CampaignFormValues = z.infer<typeof campaignFormSchema>;
+
+export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: CampaignSettingsDialogProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('general');
-  const isEditMode = !!campaignId;
 
-  // Fetch campaign details (edit mode only)
+  // Fetch campaign data (edit mode only)
   const { data: campaign, isLoading: campaignLoading } = useQuery({
     queryKey: [`/api/crm/campaigns/${campaignId}`],
-    enabled: open && isEditMode,
+    enabled: open && mode === 'edit' && !!campaignId,
   });
 
-  // Fetch stores for dropdown
+  // Fetch dropdown data
   const { data: stores = [] } = useQuery({
     queryKey: ['/api/stores'],
     enabled: open,
   });
 
-  // Fetch drivers for dropdown
   const { data: drivers = [] } = useQuery({
-    queryKey: ['/api/drivers'],
+    queryKey: ['/api/public/drivers'],
     enabled: open,
   });
 
-  // Fetch pipelines for dropdown
   const { data: pipelines = [] } = useQuery({
     queryKey: ['/api/crm/pipelines'],
     enabled: open,
   });
 
-  // Fetch workflows for dropdown
   const { data: workflows = [] } = useQuery({
-    queryKey: ['/api/workflows', { status: 'published' }],
+    queryKey: ['/api/workflows/templates'],
     enabled: open,
   });
 
-  // Fetch users for auto-assignment dropdown
   const { data: users = [] } = useQuery({
     queryKey: ['/api/users'],
     enabled: open,
   });
 
-  // Fetch teams for auto-assignment dropdown
   const { data: teams = [] } = useQuery({
     queryKey: ['/api/teams'],
     enabled: open,
   });
 
-  // Form state - General tab
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<CampaignType>('inbound_media');
-  const [status, setStatus] = useState<CampaignStatus>('draft');
-  const [targetDriverId, setTargetDriverId] = useState<string>('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  // Initialize form
+  const form = useForm<CampaignFormValues>({
+    resolver: zodResolver(campaignFormSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      objective: '',
+      storeId: '',
+      legalEntityId: undefined,
+      driverId: undefined,
+      routingMode: 'manual',
+      autoAssignmentUserId: null,
+      autoAssignmentTeamId: null,
+      manualReviewTimeoutHours: 24,
+      workflowId: null,
+      primaryPipelineId: null,
+      secondaryPipelineId: null,
+      channels: [],
+      landingPageUrl: '',
+      budget: null,
+      actualSpent: null,
+      startDate: null,
+      endDate: null,
+      isActive: true,
+    },
+  });
 
-  // Form state - Targeting tab
-  const [selectedStoreId, setSelectedStoreId] = useState(storeId || '');
-  const [budget, setBudget] = useState('');
-  const [objective, setObjective] = useState(''); // Target numero lead
-
-  // Form state - Routing tab
-  const [routingMode, setRoutingMode] = useState<RoutingMode>('manual');
-  const [manualReviewTimeoutHours, setManualReviewTimeoutHours] = useState('24');
-  const [autoAssignmentUserId, setAutoAssignmentUserId] = useState<string>('');
-  const [autoAssignmentTeamId, setAutoAssignmentTeamId] = useState<string>('');
-
-  // Form state - Workflow tab
-  const [workflowId, setWorkflowId] = useState<string>('');
-  const [primaryPipelineId, setPrimaryPipelineId] = useState<string>('');
-
-  // Form state - Tracking tab
-  const [utmSource, setUtmSource] = useState('');
-  const [utmMedium, setUtmMedium] = useState('');
-  const [utmCampaign, setUtmCampaign] = useState('');
-  const [landingPageUrl, setLandingPageUrl] = useState('');
-  const [selectedChannels, setSelectedChannels] = useState<SourceChannel[]>([]);
-
-  // Form state - Advanced tab
-  const [isBrandTemplate, setIsBrandTemplate] = useState(false);
-  const [brandCampaignId, setBrandCampaignId] = useState<string>('');
-
-  // Populate form when campaign data loads (edit mode)
+  // Update form when campaign data loads (edit mode)
   useEffect(() => {
-    if (campaign && isEditMode) {
-      setName(campaign.name || '');
-      setDescription(campaign.description || '');
-      setType(campaign.type || 'inbound_media');
-      setStatus(campaign.status || 'draft');
-      setTargetDriverId(campaign.targetDriverId || '');
-      setStartDate(campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : '');
-      setEndDate(campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : '');
-      
-      setSelectedStoreId(campaign.storeId || '');
-      setBudget(campaign.budget?.toString() || '');
-      setObjective(campaign.objective?.toString() || '');
-      
-      setRoutingMode(campaign.routingMode || 'manual');
-      setManualReviewTimeoutHours(campaign.manualReviewTimeoutHours?.toString() || '24');
-      setAutoAssignmentUserId(campaign.autoAssignmentUserId || '');
-      setAutoAssignmentTeamId(campaign.autoAssignmentTeamId || '');
-      
-      setWorkflowId(campaign.workflowId || '');
-      setPrimaryPipelineId(campaign.primaryPipelineId || '');
-      
-      setUtmSource(campaign.utmSource || '');
-      setUtmMedium(campaign.utmMedium || '');
-      setUtmCampaign(campaign.utmCampaign || '');
-      setLandingPageUrl(campaign.landingPageUrl || '');
-      setSelectedChannels(campaign.channels || []);
-      
-      setIsBrandTemplate(campaign.isBrandTemplate || false);
-      setBrandCampaignId(campaign.brandCampaignId || '');
+    if (campaign && mode === 'edit') {
+      form.reset({
+        name: campaign.name || '',
+        description: campaign.description || '',
+        objective: campaign.objective || '',
+        storeId: campaign.storeId || '',
+        legalEntityId: campaign.legalEntityId || undefined,
+        driverId: campaign.driverId || undefined,
+        routingMode: campaign.routingMode || 'manual',
+        autoAssignmentUserId: campaign.autoAssignmentUserId || null,
+        autoAssignmentTeamId: campaign.autoAssignmentTeamId || null,
+        manualReviewTimeoutHours: campaign.manualReviewTimeoutHours || 24,
+        workflowId: campaign.workflowId || null,
+        primaryPipelineId: campaign.primaryPipelineId || null,
+        secondaryPipelineId: campaign.secondaryPipelineId || null,
+        channels: campaign.channels || [],
+        landingPageUrl: campaign.landingPageUrl || '',
+        budget: campaign.budget || null,
+        actualSpent: campaign.actualSpent || null,
+        startDate: campaign.startDate || null,
+        endDate: campaign.endDate || null,
+        isActive: campaign.isActive ?? true,
+      });
     }
-  }, [campaign, isEditMode]);
+  }, [campaign, mode, form]);
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/crm/campaigns', data);
+    mutationFn: async (data: CampaignFormValues) => {
+      // Get legalEntityId from selected store
+      const store = stores.find((s: any) => s.id === data.storeId);
+      const payload = {
+        ...data,
+        legalEntityId: store?.legalEntityId,
+        tenantId: store?.tenantId,
+      };
+      return apiRequest('/api/crm/campaigns', {
+        method: 'POST',
+        body: payload,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/campaigns'] });
       toast({
-        title: 'Campagna creata',
-        description: 'La campagna è stata creata con successo',
+        title: "Campagna creata",
+        description: "La campagna è stata creata con successo",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/campaigns'] });
       onClose();
+      form.reset();
     },
     onError: (error: any) => {
       toast({
-        title: 'Errore',
-        description: error.message || 'Impossibile creare la campagna',
-        variant: 'destructive',
+        title: "Errore",
+        description: error?.message || "Impossibile creare la campagna",
+        variant: "destructive",
       });
     },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest('PATCH', `/api/crm/campaigns/${campaignId}`, data);
+    mutationFn: async (data: CampaignFormValues) => {
+      return apiRequest(`/api/crm/campaigns/${campaignId}`, {
+        method: 'PATCH',
+        body: data,
+      });
     },
     onSuccess: () => {
+      toast({
+        title: "Campagna aggiornata",
+        description: "Le modifiche sono state salvate con successo",
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/campaigns'] });
       queryClient.invalidateQueries({ queryKey: [`/api/crm/campaigns/${campaignId}`] });
-      toast({
-        title: 'Campagna aggiornata',
-        description: 'Le modifiche sono state salvate con successo',
-      });
       onClose();
     },
     onError: (error: any) => {
       toast({
-        title: 'Errore',
-        description: error.message || 'Impossibile aggiornare la campagna',
-        variant: 'destructive',
+        title: "Errore",
+        description: error?.message || "Impossibile aggiornare la campagna",
+        variant: "destructive",
       });
     },
   });
 
-  const handleSave = () => {
-    const campaignData = {
-      name,
-      description: description || null,
-      type,
-      status,
-      storeId: selectedStoreId,
-      targetDriverId: targetDriverId || null,
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
-      budget: budget ? parseFloat(budget) : null,
-      objective: objective ? parseInt(objective) : null,
-      routingMode,
-      manualReviewTimeoutHours: parseInt(manualReviewTimeoutHours),
-      autoAssignmentUserId: autoAssignmentUserId || null,
-      autoAssignmentTeamId: autoAssignmentTeamId || null,
-      workflowId: workflowId || null,
-      primaryPipelineId: primaryPipelineId || null,
-      utmSource: utmSource || null,
-      utmMedium: utmMedium || null,
-      utmCampaign: utmCampaign || null,
-      landingPageUrl: landingPageUrl || null,
-      channels: selectedChannels.length > 0 ? selectedChannels : null,
-      isBrandTemplate,
-      brandCampaignId: brandCampaignId || null,
-    };
-
-    if (isEditMode) {
-      updateMutation.mutate(campaignData);
+  // Form submit
+  const onSubmit = (data: CampaignFormValues) => {
+    if (mode === 'create') {
+      createMutation.mutate(data);
     } else {
-      createMutation.mutate(campaignData);
+      updateMutation.mutate(data);
     }
   };
 
-  const toggleChannel = (channel: SourceChannel) => {
-    setSelectedChannels(prev =>
-      prev.includes(channel)
-        ? prev.filter(c => c !== channel)
-        : [...prev, channel]
-    );
-  };
-
-  if (campaignLoading) {
-    return (
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <LoadingState />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const isLoading = campaignLoading || createMutation.isPending || updateMutation.isPending;
+  const selectedRoutingMode = form.watch('routingMode');
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5" />
-            {isEditMode ? 'Modifica Campagna' : 'Nuova Campagna'}
+            {mode === 'create' ? 'Nuova Campagna' : 'Modifica Campagna'}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="general" className="flex items-center gap-1">
-              <Settings2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Generale</span>
-            </TabsTrigger>
-            <TabsTrigger value="targeting" className="flex items-center gap-1">
-              <Target className="h-4 w-4" />
-              <span className="hidden sm:inline">Targeting</span>
-            </TabsTrigger>
-            <TabsTrigger value="routing" className="flex items-center gap-1">
-              <Route className="h-4 w-4" />
-              <span className="hidden sm:inline">Routing</span>
-            </TabsTrigger>
-            <TabsTrigger value="workflow" className="flex items-center gap-1">
-              <Workflow className="h-4 w-4" />
-              <span className="hidden sm:inline">Workflow</span>
-            </TabsTrigger>
-            <TabsTrigger value="tracking" className="flex items-center gap-1">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Tracking</span>
-            </TabsTrigger>
-            <TabsTrigger value="advanced" className="flex items-center gap-1">
-              <ShieldCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">Avanzate</span>
-            </TabsTrigger>
-          </TabsList>
+        {campaignLoading && mode === 'edit' ? (
+          <LoadingState message="Caricamento campagna..." />
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Tabs defaultValue="general" className="w-full">
+                <TabsList className="grid grid-cols-6 w-full">
+                  <TabsTrigger value="general" data-testid="tab-general">
+                    <Settings2 className="h-4 w-4 mr-1" />
+                    Generale
+                  </TabsTrigger>
+                  <TabsTrigger value="targeting" data-testid="tab-targeting">
+                    <Target className="h-4 w-4 mr-1" />
+                    Target
+                  </TabsTrigger>
+                  <TabsTrigger value="routing" data-testid="tab-routing">
+                    <Route className="h-4 w-4 mr-1" />
+                    Routing
+                  </TabsTrigger>
+                  <TabsTrigger value="workflow" data-testid="tab-workflow">
+                    <Workflow className="h-4 w-4 mr-1" />
+                    Workflow
+                  </TabsTrigger>
+                  <TabsTrigger value="tracking" data-testid="tab-tracking">
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    Tracking
+                  </TabsTrigger>
+                  <TabsTrigger value="advanced" data-testid="tab-advanced">
+                    <Wrench className="h-4 w-4 mr-1" />
+                    Avanzate
+                  </TabsTrigger>
+                </TabsList>
 
-          {/* General Tab */}
-          <TabsContent value="general" className="space-y-4 mt-4">
-            <Card className="p-4 space-y-4">
-              <div>
-                <Label htmlFor="name">Nome Campagna *</Label>
-                <Input
-                  id="name"
-                  data-testid="input-campaign-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Es: Promo Black Friday 2024"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Descrizione</Label>
-                <Textarea
-                  id="description"
-                  data-testid="textarea-campaign-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descrizione della campagna..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="type">Tipo Campagna *</Label>
-                  <Select value={type} onValueChange={(val) => setType(val as CampaignType)}>
-                    <SelectTrigger id="type" data-testid="select-campaign-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="inbound_media">Inbound Media</SelectItem>
-                      <SelectItem value="outbound_crm">Outbound CRM</SelectItem>
-                      <SelectItem value="retention">Retention</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="status">Stato</Label>
-                  <Select value={status} onValueChange={(val) => setStatus(val as CampaignStatus)}>
-                    <SelectTrigger id="status" data-testid="select-campaign-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Bozza</SelectItem>
-                      <SelectItem value="scheduled">Programmata</SelectItem>
-                      <SelectItem value="active">Attiva</SelectItem>
-                      <SelectItem value="paused">In Pausa</SelectItem>
-                      <SelectItem value="completed">Completata</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="driver">Driver Target</Label>
-                <Select value={targetDriverId} onValueChange={setTargetDriverId}>
-                  <SelectTrigger id="driver" data-testid="select-target-driver">
-                    <SelectValue placeholder="Seleziona driver..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nessuno</SelectItem>
-                    {drivers.map((driver: any) => (
-                      <SelectItem key={driver.id} value={driver.id}>
-                        {driver.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="startDate">Data Inizio</Label>
-                  <Input
-                    id="startDate"
-                    data-testid="input-start-date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                {/* TAB 1: GENERALE */}
+                <TabsContent value="general" className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Campagna *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Es: Promo Black Friday 2025" data-testid="input-campaign-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div>
-                  <Label htmlFor="endDate">Data Fine</Label>
-                  <Input
-                    id="endDate"
-                    data-testid="input-end-date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrizione</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={3} placeholder="Descrizione della campagna..." data-testid="textarea-description" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
 
-          {/* Targeting Tab */}
-          <TabsContent value="targeting" className="space-y-4 mt-4">
-            <Card className="p-4 space-y-4">
-              <div>
-                <Label htmlFor="store">Punto Vendita *</Label>
-                <Select 
-                  value={selectedStoreId} 
-                  onValueChange={setSelectedStoreId}
-                  disabled={isEditMode} // Cannot change store in edit mode
-                >
-                  <SelectTrigger id="store" data-testid="select-store">
-                    <SelectValue placeholder="Seleziona punto vendita..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores.map((store: any) => (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isEditMode && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Il punto vendita non può essere modificato dopo la creazione
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="budget">Budget (€)</Label>
-                  <Input
-                    id="budget"
-                    data-testid="input-budget"
-                    type="number"
-                    step="0.01"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    placeholder="0.00"
+                  <FormField
+                    control={form.control}
+                    name="objective"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Obiettivo</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Es: Acquisizione lead" data-testid="input-objective" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div>
-                  <Label htmlFor="objective">Obiettivo Lead (#)</Label>
-                  <Input
-                    id="objective"
-                    data-testid="input-objective"
-                    type="number"
-                    value={objective}
-                    onChange={(e) => setObjective(e.target.value)}
-                    placeholder="Target numero lead..."
+                  <FormField
+                    control={form.control}
+                    name="storeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Negozio *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={mode === 'edit'}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-store">
+                              <SelectValue placeholder="Seleziona negozio" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {stores.map((store: any) => (
+                              <SelectItem key={store.id} value={store.id}>
+                                {store.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          {mode === 'create' && <AlertCircle className="inline h-3 w-3 mr-1" />}
+                          Tutte le campagne sono store-scoped
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
 
-          {/* Routing Tab */}
-          <TabsContent value="routing" className="space-y-4 mt-4">
-            <Card className="p-4 space-y-4">
-              <div>
-                <Label htmlFor="routingMode">Modalità Routing *</Label>
-                <Select value={routingMode} onValueChange={(val) => setRoutingMode(val as RoutingMode)}>
-                  <SelectTrigger id="routingMode" data-testid="select-routing-mode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="automatic">🤖 Automatico - Assegnazione immediata</SelectItem>
-                    <SelectItem value="manual">👤 Manuale - Review obbligatoria</SelectItem>
-                    <SelectItem value="hybrid">⚡ Hybrid - Auto se qualificato, altrimenti review</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(routingMode === 'manual' || routingMode === 'hybrid') && (
-                <div>
-                  <Label htmlFor="timeout">Timeout Review Manuale (ore)</Label>
-                  <Input
-                    id="timeout"
-                    data-testid="input-timeout"
-                    type="number"
-                    value={manualReviewTimeoutHours}
-                    onChange={(e) => setManualReviewTimeoutHours(e.target.value)}
-                    placeholder="24"
+                  <FormField
+                    control={form.control}
+                    name="driverId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Driver</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-driver">
+                              <SelectValue placeholder="Seleziona driver" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {drivers.map((driver: any) => (
+                              <SelectItem key={driver.id} value={driver.id}>
+                                {driver.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Dopo questo periodo senza review, il lead viene assegnato automaticamente
-                  </p>
-                </div>
-              )}
 
-              {(routingMode === 'automatic' || routingMode === 'hybrid') && (
-                <>
-                  <div>
-                    <Label htmlFor="autoUser">Auto-Assegnazione Utente</Label>
-                    <Select value={autoAssignmentUserId} onValueChange={setAutoAssignmentUserId}>
-                      <SelectTrigger id="autoUser" data-testid="select-auto-user">
-                        <SelectValue placeholder="Seleziona utente..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Nessuno</SelectItem>
-                        {users.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel>Campagna Attiva</FormLabel>
+                          <FormDescription>
+                            Attiva o disattiva la campagna
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-is-active"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+
+                {/* TAB 2: TARGETING */}
+                <TabsContent value="targeting" className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="channels"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Canali di Acquisizione</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Es: phone, whatsapp, form, social, email, qr (separati da virgola)"
+                            value={field.value?.join(', ') || ''}
+                            onChange={(e) => {
+                              const channels = e.target.value.split(',').map(c => c.trim()).filter(Boolean);
+                              field.onChange(channels);
+                            }}
+                            data-testid="input-channels"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Canali attraverso cui i lead possono entrare in questa campagna
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="landingPageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Landing Page URL</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ''} 
+                            placeholder="https://esempio.com/landing" 
+                            data-testid="input-landing-page-url" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data Inizio</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field} 
+                              value={field.value || ''} 
+                              data-testid="input-start-date" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="endDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data Fine</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field} 
+                              value={field.value || ''} 
+                              data-testid="input-end-date" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
+                </TabsContent>
 
-                  <div>
-                    <Label htmlFor="autoTeam">Auto-Assegnazione Team</Label>
-                    <Select value={autoAssignmentTeamId} onValueChange={setAutoAssignmentTeamId}>
-                      <SelectTrigger id="autoTeam" data-testid="select-auto-team">
-                        <SelectValue placeholder="Seleziona team..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Nessuno</SelectItem>
-                        {teams.map((team: any) => (
-                          <SelectItem key={team.id} value={team.id}>
-                            {team.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </Card>
-          </TabsContent>
+                {/* TAB 3: ROUTING */}
+                <TabsContent value="routing" className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="routingMode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Modalità Routing *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-routing-mode">
+                              <SelectValue placeholder="Seleziona modalità" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="automatic">Automatico - Assegnazione immediata</SelectItem>
+                            <SelectItem value="manual">Manuale - Revisione completa</SelectItem>
+                            <SelectItem value="hybrid">Ibrido - Auto con fallback manuale</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Determina come i lead vengono assegnati ai team/utenti
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-          {/* Workflow Tab */}
-          <TabsContent value="workflow" className="space-y-4 mt-4">
-            <Card className="p-4 space-y-4">
-              <div>
-                <Label htmlFor="workflow">Workflow Intake</Label>
-                <Select value={workflowId} onValueChange={setWorkflowId}>
-                  <SelectTrigger id="workflow" data-testid="select-workflow">
-                    <SelectValue placeholder="Seleziona workflow..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nessuno</SelectItem>
-                    {workflows.map((workflow: any) => (
-                      <SelectItem key={workflow.id} value={workflow.id}>
-                        {workflow.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Workflow eseguito quando un nuovo lead entra nella campagna
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="pipeline">Pipeline Principale</Label>
-                <Select value={primaryPipelineId} onValueChange={setPrimaryPipelineId}>
-                  <SelectTrigger id="pipeline" data-testid="select-pipeline">
-                    <SelectValue placeholder="Seleziona pipeline..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nessuna</SelectItem>
-                    {pipelines.map((pipeline: any) => (
-                      <SelectItem key={pipeline.id} value={pipeline.id}>
-                        {pipeline.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Pipeline di default per i lead qualificati
-                </p>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Tracking Tab */}
-          <TabsContent value="tracking" className="space-y-4 mt-4">
-            <Card className="p-4 space-y-4">
-              <div>
-                <Label>Canali Sorgente</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {channelOptions.map((channel) => (
-                    <div key={channel.value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`channel-${channel.value}`}
-                        data-testid={`checkbox-channel-${channel.value}`}
-                        checked={selectedChannels.includes(channel.value)}
-                        onCheckedChange={() => toggleChannel(channel.value)}
+                  {(selectedRoutingMode === 'automatic' || selectedRoutingMode === 'hybrid') && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="autoAssignmentUserId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Assegna a Utente</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-auto-assign-user">
+                                  <SelectValue placeholder="Seleziona utente" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nessuno</SelectItem>
+                                {users.map((user: any) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.displayName || user.email}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                      <Label htmlFor={`channel-${channel.value}`} className="cursor-pointer">
-                        {channel.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <div>
-                <Label htmlFor="landingPage">Landing Page URL</Label>
-                <Input
-                  id="landingPage"
-                  data-testid="input-landing-page"
-                  type="url"
-                  value={landingPageUrl}
-                  onChange={(e) => setLandingPageUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </div>
+                      <FormField
+                        control={form.control}
+                        name="autoAssignmentTeamId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Assegna a Team</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-auto-assign-team">
+                                  <SelectValue placeholder="Seleziona team" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nessuno</SelectItem>
+                                {teams.map((team: any) => (
+                                  <SelectItem key={team.id} value={team.id}>
+                                    {team.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
 
-              <div className="space-y-2">
-                <Label>Parametri UTM</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Input
-                      data-testid="input-utm-source"
-                      placeholder="utm_source"
-                      value={utmSource}
-                      onChange={(e) => setUtmSource(e.target.value)}
+                  {selectedRoutingMode === 'hybrid' && (
+                    <FormField
+                      control={form.control}
+                      name="manualReviewTimeoutHours"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Timeout Revisione Manuale (ore) *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              value={field.value || ''} 
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                              min={1}
+                              max={168}
+                              data-testid="input-timeout-hours" 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Se un lead non viene gestito entro queste ore, viene assegnato automaticamente
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div>
-                    <Input
-                      data-testid="input-utm-medium"
-                      placeholder="utm_medium"
-                      value={utmMedium}
-                      onChange={(e) => setUtmMedium(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      data-testid="input-utm-campaign"
-                      placeholder="utm_campaign"
-                      value={utmCampaign}
-                      onChange={(e) => setUtmCampaign(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
+                  )}
+                </TabsContent>
 
-          {/* Advanced Tab */}
-          <TabsContent value="advanced" className="space-y-4 mt-4">
-            <Card className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="brandTemplate">Template Brand HQ</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Campagna gestita dal Brand Interface HQ
-                  </p>
-                </div>
-                <Checkbox
-                  id="brandTemplate"
-                  data-testid="checkbox-brand-template"
-                  checked={isBrandTemplate}
-                  onCheckedChange={(checked) => setIsBrandTemplate(checked as boolean)}
-                />
-              </div>
-
-              {isBrandTemplate && (
-                <div>
-                  <Label htmlFor="brandCampaign">ID Campagna Brand</Label>
-                  <Input
-                    id="brandCampaign"
-                    data-testid="input-brand-campaign-id"
-                    value={brandCampaignId}
-                    onChange={(e) => setBrandCampaignId(e.target.value)}
-                    placeholder="UUID campagna Brand HQ..."
+                {/* TAB 4: WORKFLOW */}
+                <TabsContent value="workflow" className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="workflowId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Workflow Automazione</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-workflow">
+                              <SelectValue placeholder="Seleziona workflow" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nessuno</SelectItem>
+                            {workflows.map((workflow: any) => (
+                              <SelectItem key={workflow.id} value={workflow.id}>
+                                {workflow.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Workflow che gestisce automaticamente i lead in ingresso
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-        </Tabs>
 
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            data-testid="button-cancel"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Annulla
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!name || !selectedStoreId || createMutation.isPending || updateMutation.isPending}
-            data-testid="button-save"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {createMutation.isPending || updateMutation.isPending ? 'Salvataggio...' : 'Salva'}
-          </Button>
-        </div>
+                  <FormField
+                    control={form.control}
+                    name="primaryPipelineId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pipeline Primaria</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-primary-pipeline">
+                              <SelectValue placeholder="Seleziona pipeline" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nessuna</SelectItem>
+                            {pipelines.map((pipeline: any) => (
+                              <SelectItem key={pipeline.id} value={pipeline.id}>
+                                {pipeline.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Pipeline principale per i lead di questa campagna
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="secondaryPipelineId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pipeline Secondaria</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-secondary-pipeline">
+                              <SelectValue placeholder="Seleziona pipeline" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nessuna</SelectItem>
+                            {pipelines.map((pipeline: any) => (
+                              <SelectItem key={pipeline.id} value={pipeline.id}>
+                                {pipeline.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Pipeline alternativa per routing avanzato
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+
+                {/* TAB 5: TRACKING */}
+                <TabsContent value="tracking" className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="budget"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Budget (€)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            value={field.value || ''} 
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            step="0.01"
+                            min={0}
+                            placeholder="0.00"
+                            data-testid="input-budget" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="actualSpent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Spesa Effettiva (€)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            value={field.value || ''} 
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            step="0.01"
+                            min={0}
+                            placeholder="0.00"
+                            data-testid="input-actual-spent" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <p className="text-sm text-muted-foreground">
+                      Le metriche lead, deal e revenue vengono calcolate automaticamente dal sistema.
+                    </p>
+                  </div>
+                </TabsContent>
+
+                {/* TAB 6: AVANZATE */}
+                <TabsContent value="advanced" className="space-y-4 mt-4">
+                  <div className="rounded-lg border p-4">
+                    <h4 className="font-medium mb-2">Regole RBAC</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Le campagne sono sempre store-scoped. Solo gli utenti con accesso al negozio selezionato possono gestire questa campagna.
+                    </p>
+                    
+                    <h4 className="font-medium mb-2">Workflow Executors</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li><code>campaign-lead-intake-executor</code>: Gestisce intake lead con routing ibrido</li>
+                      <li><code>pipeline-assignment-executor</code>: Assegna lead a pipeline basato su regole</li>
+                    </ul>
+                  </div>
+
+                  {mode === 'edit' && campaign && (
+                    <div className="rounded-lg border p-4 bg-muted/50">
+                      <h4 className="font-medium mb-2">Statistiche Campagna</h4>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Lead Totali</p>
+                          <p className="text-lg font-semibold">{campaign.totalLeads || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Deal Totali</p>
+                          <p className="text-lg font-semibold">{campaign.totalDeals || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Revenue Totale</p>
+                          <p className="text-lg font-semibold">€{campaign.totalRevenue?.toFixed(2) || '0.00'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isLoading}
+                  data-testid="button-cancel"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  data-testid="button-save"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isLoading ? 'Salvataggio...' : mode === 'create' ? 'Crea Campagna' : 'Salva Modifiche'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

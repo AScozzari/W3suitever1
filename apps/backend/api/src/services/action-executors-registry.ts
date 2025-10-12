@@ -2383,6 +2383,25 @@ export class PipelineAssignmentExecutor implements ActionExecutor {
       const leadData = inputData?.lead || inputData;
       const campaignData = inputData?.campaign || {};
 
+      // Validate store scope for pipeline assignment
+      const storeId = campaignData.storeId || leadData?.storeId || config.storeId;
+      if (storeId) {
+        const scopeCheck = await validateUserScope(
+          context.requesterId,
+          context.tenantId,
+          storeId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          return {
+            success: false,
+            message: 'User lacks permissions for pipeline store scope',
+            error: 'SCOPE_DENIED',
+            data: { storeId, reason: scopeCheck.message }
+          };
+        }
+      }
+
       // Get pipeline assignment rules
       const pipelineRules = config.pipelineRules || [];
       const defaultPipelineId = campaignData.primaryPipelineId || config.defaultPipelineId;
