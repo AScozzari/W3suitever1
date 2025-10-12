@@ -11,9 +11,10 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants } from '../db/schema/w3suite';
+import { legalEntities, stores, users, tenants, roles } from '../db/schema/w3suite';
 import { channels, commercialAreas } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
+import { RBACStorage } from '../core/rbac-storage';
 
 const router = express.Router();
 
@@ -312,7 +313,7 @@ router.get('/users', async (req, res) => {
 
 /**
  * POST /api/users
- * Create a new user
+ * Create a new user with RBAC scope assignments
  */
 router.post('/users', async (req, res) => {
   try {
@@ -325,14 +326,21 @@ router.post('/users', async (req, res) => {
       } as ApiErrorResponse);
     }
 
+    // ✅ Schema che corrisponde ai campi inviati dal frontend
     const createSchema = z.object({
+      username: z.string().min(1).max(100),
+      nome: z.string().min(1).max(100),
+      cognome: z.string().min(1).max(100),
       email: z.string().email(),
-      firstName: z.string().min(1).max(100),
-      lastName: z.string().min(1).max(100),
-      phoneNumber: z.string().optional(),
-      department: z.string().optional(),
-      jobTitle: z.string().optional(),
-      hireDate: z.string().optional()
+      telefono: z.string().optional(),
+      ruolo: z.string().min(1), // Nome del ruolo (non UUID)
+      stato: z.string().default('attivo'),
+      foto: z.string().nullable().optional(),
+      password: z.string().min(6),
+      // ✅ Scope piramidale dal frontend
+      selectAllLegalEntities: z.boolean().default(false),
+      selectedLegalEntities: z.array(z.number()).default([]),
+      selectedStores: z.array(z.number()).default([])
     });
 
     const validation = createSchema.safeParse(req.body);
@@ -345,28 +353,99 @@ router.post('/users', async (req, res) => {
       } as ApiErrorResponse);
     }
 
+    const data = validation.data;
+
     await setTenantContext(tenantId);
 
-    // Generate user ID (in production this would come from OAuth)
-    const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // 1️⃣ Cerca il ruolo per nome nel database
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(
+        and(
+          eq(roles.tenantId, tenantId),
+          eq(roles.name, data.ruolo)
+        )
+      )
+      .limit(1);
 
+    if (!role) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid role',
+        message: `Role '${data.ruolo}' not found for tenant`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // 2️⃣ Crea l'utente
+    const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const [user] = await db
       .insert(users)
       .values({
         id: userId,
-        ...validation.data,
+        firstName: data.nome,
+        lastName: data.cognome,
+        email: data.email,
+        phoneNumber: data.telefono || null,
         tenantId,
-        isActive: true,
-        oauthProvider: 'manual' // In production, this would be the actual OAuth provider
+        isActive: data.stato === 'attivo',
+        oauthProvider: 'manual'
       })
       .returning();
 
-    logger.info('User created', { userId: user.id, tenantId });
+    // 3️⃣ Crea userAssignments con logica scope piramidale
+    const rbacStorage = new RBACStorage();
+    
+    if (data.selectAllLegalEntities) {
+      // ✅ LIVELLO 1: Accesso completo tenant
+      await rbacStorage.assignRoleToUser({
+        userId: user.id,
+        roleId: role.id,
+        scopeType: 'tenant',
+        scopeId: tenantId
+      });
+      logger.info('User assigned tenant-wide access', { userId: user.id, roleId: role.id, tenantId });
+    } else if (data.selectedStores.length > 0) {
+      // ✅ LIVELLO 3: Accesso specifico a punti vendita
+      for (const storeId of data.selectedStores) {
+        await rbacStorage.assignRoleToUser({
+          userId: user.id,
+          roleId: role.id,
+          scopeType: 'store',
+          scopeId: String(storeId) // Convert number to UUID string
+        });
+      }
+      logger.info('User assigned store-level access', { userId: user.id, roleId: role.id, storeCount: data.selectedStores.length });
+    } else if (data.selectedLegalEntities.length > 0) {
+      // ✅ LIVELLO 2: Accesso specifico a ragioni sociali
+      for (const legalEntityId of data.selectedLegalEntities) {
+        await rbacStorage.assignRoleToUser({
+          userId: user.id,
+          roleId: role.id,
+          scopeType: 'legal_entity',
+          scopeId: String(legalEntityId) // Convert number to UUID string
+        });
+      }
+      logger.info('User assigned legal entity access', { userId: user.id, roleId: role.id, legalEntityCount: data.selectedLegalEntities.length });
+    } else {
+      // ⚠️ Fallback: se nessuna selezione, assegna accesso tenant
+      await rbacStorage.assignRoleToUser({
+        userId: user.id,
+        roleId: role.id,
+        scopeType: 'tenant',
+        scopeId: tenantId
+      });
+      logger.warn('User assigned default tenant access (no scope selected)', { userId: user.id, roleId: role.id });
+    }
+
+    logger.info('User created with RBAC assignments', { userId: user.id, tenantId, role: role.name });
 
     res.status(201).json({
       success: true,
       data: user,
-      message: 'User created successfully',
+      message: 'User created successfully with role assignments',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse<typeof user>);
 
