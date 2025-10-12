@@ -617,4 +617,53 @@ router.get('/users/:id/permissions', requirePermission('users', 'read'), async (
   }
 });
 
+// ==================== ROLES ====================
+
+/**
+ * GET /api/roles
+ * Get all roles for the current tenant
+ */
+router.get('/roles', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get all roles for this tenant
+    const rolesList = await db.query.roles.findMany({
+      where: eq(roles.tenantId, tenantId),
+      orderBy: [desc(roles.createdAt)]
+    });
+
+    logger.info('Roles retrieved', { rolesCount: rolesList.length, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: rolesList,
+      message: 'Roles retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving roles', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve roles',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export default router;
