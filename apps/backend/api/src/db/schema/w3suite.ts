@@ -374,7 +374,7 @@ export const users = w3suiteSchema.table("users", {
   position: varchar("position", { length: 100 }),
   department: varchar("department", { length: 100 }),
   hireDate: date("hire_date"),
-  contractType: employmentContractTypeEnum("contract_type"),
+  contractType: varchar("contract_type", { length: 50 }), // Keep as varchar to preserve existing data
   
   // Personal/Demographic Information (HR Best Practices 2025)
   dateOfBirth: date("date_of_birth"),
@@ -401,7 +401,7 @@ export const users = w3suiteSchema.table("users", {
   employeeNumber: varchar("employee_number", { length: 50 }), // Matricola
   annualCost: real("annual_cost"), // Costo aziendale annuo totale
   grossAnnualSalary: real("gross_annual_salary"), // RAL - Retribuzione Annua Lorda
-  level: ccnlLevelEnum("level"), // Livello CCNL (Quadro, 1°-7° Livello, Op.Vendita A/B)
+  level: varchar("level", { length: 50 }), // Livello CCNL (keep as varchar to preserve existing data)
   ccnl: varchar("ccnl", { length: 255 }), // CCNL applicato (es: "Commercio", "Telecomunicazioni")
   managerId: varchar("manager_id").references((): any => users.id), // Responsabile diretto
   employmentEndDate: date("employment_end_date"), // Per contratti a tempo determinato
