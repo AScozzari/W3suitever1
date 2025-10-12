@@ -9981,7 +9981,11 @@ export default function SettingsPage() {
                           stato: newUser.stato,
                           foto: newUser.avatar?.url || null, // ✅ INCLUDE AVATAR URL
                           password: newUser.password,
-                          tenant_id: getCurrentTenantId()
+                          tenant_id: getCurrentTenantId(),
+                          // ✅ SCOPE DATA - Invia dati scope piramidale al backend
+                          selectAllLegalEntities: newUser.selectAllLegalEntities,
+                          selectedLegalEntities: newUser.selectedLegalEntities,
+                          selectedStores: newUser.selectedStores
                         };
 
                         console.log('📤 Sending user data to API:', userData);
