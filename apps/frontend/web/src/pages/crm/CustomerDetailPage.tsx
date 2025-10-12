@@ -33,7 +33,7 @@ export function CustomerDetailPage() {
 
   // Fetch customer data
   const { data: customer, isLoading } = useQuery<any>({
-    queryKey: [`/api/crm/persons/${customerId}`],
+    queryKey: [`/api/crm/customers/${customerId}`],
     enabled: !!customerId,
   });
 

@@ -2150,6 +2150,63 @@ router.post('/customers', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/customers/:id
+ * Get a single customer by ID
+ */
+router.get('/customers/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const [customer] = await db
+      .select()
+      .from(crmCustomers)
+      .where(and(
+        eq(crmCustomers.id, id),
+        eq(crmCustomers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Customer not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: customer,
+      message: 'Customer retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving customer', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve customer',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * PATCH /api/crm/customers/:id
  * Update a customer
  */
