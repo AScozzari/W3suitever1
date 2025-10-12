@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   flexRender,
@@ -30,10 +30,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp, Eye } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp, Eye, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { queryClient } from '@/lib/queryClient';
-import { Link } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 
 interface Lead {
   id: string;
@@ -78,12 +78,34 @@ export default function LeadsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const { toast } = useToast();
+  const searchParams = useSearch();
+  const [, setLocation] = useLocation();
+
+  // Extract campaign ID from URL query params
+  const campaignIdFromUrl = new URLSearchParams(searchParams).get('campaign');
 
   const { data: leadsResponse, isLoading } = useQuery<Lead[]>({
     queryKey: ['/api/crm/leads', globalFilter],
   });
 
+  const { data: campaignsResponse } = useQuery<any[]>({
+    queryKey: ['/api/crm/campaigns'],
+    enabled: !!campaignIdFromUrl,
+  });
+
   const leads = leadsResponse || [];
+  
+  // Find campaign name if filtering by campaign
+  const filteredCampaign = campaignsResponse?.find(c => c.id === campaignIdFromUrl);
+
+  // Apply campaign filter from URL
+  useEffect(() => {
+    if (campaignIdFromUrl) {
+      setColumnFilters([{ id: 'campaignName', value: filteredCampaign?.name || campaignIdFromUrl }]);
+    } else {
+      setColumnFilters([]);
+    }
+  }, [campaignIdFromUrl, filteredCampaign?.name]);
 
   const convertMutation = useMutation({
     mutationFn: async ({ leadId, pipelineId }: { leadId: string; pipelineId: string }) => {
@@ -308,6 +330,40 @@ export default function LeadsPage() {
               <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
             </div>
           </div>
+
+          {/* Campaign Filter Badge */}
+          {campaignIdFromUrl && (
+            <div 
+              className="flex items-center justify-between px-4 py-3 rounded-lg"
+              style={{ 
+                background: 'var(--glass-bg-heavy)',
+                border: '1px solid var(--glass-card-border)',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant="outline"
+                  style={{ 
+                    borderColor: 'hsl(var(--brand-orange))',
+                    color: 'hsl(var(--brand-orange))',
+                    background: 'var(--glass-bg-light)'
+                  }}
+                >
+                  Filtrato per campagna: {filteredCampaign?.name || campaignIdFromUrl}
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocation('crm/leads')}
+                data-testid="button-clear-campaign-filter"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Rimuovi filtro
+              </Button>
+            </div>
+          )}
 
           {/* DataTable */}
           <div 
