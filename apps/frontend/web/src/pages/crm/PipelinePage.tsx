@@ -296,7 +296,7 @@ export default function PipelinePage() {
 
                     {/* Products Pills */}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {pipeline.products.slice(0, 3).map((product: string, idx: number) => (
+                      {(pipeline.products || []).slice(0, 3).map((product: string, idx: number) => (
                         <span
                           key={idx}
                           className="text-xs px-2 py-1 rounded-md"
@@ -308,7 +308,7 @@ export default function PipelinePage() {
                           {product}
                         </span>
                       ))}
-                      {pipeline.products.length > 3 && (
+                      {(pipeline.products || []).length > 3 && (
                         <span
                           className="text-xs px-2 py-1 rounded-md font-medium"
                           style={{ 
@@ -316,7 +316,7 @@ export default function PipelinePage() {
                             color: getDriverColor(pipeline.driver || 'FISSO')
                           }}
                         >
-                          +{pipeline.products.length - 3}
+                          +{(pipeline.products || []).length - 3}
                         </span>
                       )}
                     </div>
