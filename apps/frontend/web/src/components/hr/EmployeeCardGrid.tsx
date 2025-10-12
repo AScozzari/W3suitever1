@@ -59,7 +59,7 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
 
   // Fetch teams
   const { data: teamsData } = useQuery<{ success: boolean; data: Team[] }>({
-    queryKey: ['/api/workflow-teams']
+    queryKey: ['/api/teams']
   });
 
   const users = usersData?.data || [];

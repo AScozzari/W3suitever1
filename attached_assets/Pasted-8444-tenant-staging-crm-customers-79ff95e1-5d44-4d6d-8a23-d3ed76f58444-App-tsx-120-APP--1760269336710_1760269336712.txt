@@ -1,0 +1,460 @@
+8444', tenant: 'staging', *: 'crm/customers/79ff95e1-5d44-4d6d-8a23-d3ed76f58444'}
+App.tsx:120 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:121 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=7676aa17:103
+flush @ @tanstack_react-query.js?v=7676aa17:610
+batch @ @tanstack_react-query.js?v=7676aa17:628
+dispatch_fn @ @tanstack_react-query.js?v=7676aa17:1260
+setData @ @tanstack_react-query.js?v=7676aa17:931
+fetch @ @tanstack_react-query.js?v=7676aa17:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=7676aa17:103
+flush @ @tanstack_react-query.js?v=7676aa17:610
+batch @ @tanstack_react-query.js?v=7676aa17:628
+dispatch_fn @ @tanstack_react-query.js?v=7676aa17:1260
+setData @ @tanstack_react-query.js?v=7676aa17:931
+fetch @ @tanstack_react-query.js?v=7676aa17:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=7676aa17:103
+flush @ @tanstack_react-query.js?v=7676aa17:610
+batch @ @tanstack_react-query.js?v=7676aa17:628
+dispatch_fn @ @tanstack_react-query.js?v=7676aa17:1260
+setData @ @tanstack_react-query.js?v=7676aa17:931
+fetch @ @tanstack_react-query.js?v=7676aa17:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=7676aa17:103
+flush @ @tanstack_react-query.js?v=7676aa17:610
+batch @ @tanstack_react-query.js?v=7676aa17:628
+dispatch_fn @ @tanstack_react-query.js?v=7676aa17:1260
+setData @ @tanstack_react-query.js?v=7676aa17:931
+fetch @ @tanstack_react-query.js?v=7676aa17:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/persons/79ff95e1-5d44-4d6d-8a23-d3ed76f58444/consents 404 (Not Found)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/persons/79ff95e1-5d44-4d6d-8a23-d3ed76f58444/analytics 404 (Not Found)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/persons/79ff95e1-5d44-4d6d-8a23-d3ed76f58444/analytics 404 (Not Found)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/persons/79ff95e1-5d44-4d6d-8a23-d3ed76f58444/consents 404 (Not Found)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+onSubscribe @ @tanstack_react-query.js?v=7676aa17:1335
+subscribe @ @tanstack_react-query.js?v=7676aa17:24
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=7676aa17:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+fetch @ @tanstack_react-query.js?v=7676aa17:1449
+refetch @ @tanstack_react-query.js?v=7676aa17:1439
+onFocus @ @tanstack_react-query.js?v=7676aa17:998
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:2713
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:2712
+batch @ @tanstack_react-query.js?v=7676aa17:624
+onFocus @ @tanstack_react-query.js?v=7676aa17:2711
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:390
+onFocus @ @tanstack_react-query.js?v=7676aa17:389
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:376
+listener @ @tanstack_react-query.js?v=7676aa17:347Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/interactions?personId=79ff95e1-5d44-4d6d-8a23-d3ed76f58444 500 (Internal Server Error)

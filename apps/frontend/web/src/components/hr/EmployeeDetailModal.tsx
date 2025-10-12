@@ -87,7 +87,7 @@ export function EmployeeDetailModal({
 
   // Fetch teams
   const { data: teamsData } = useQuery<{ success: boolean; data: Team[] }>({
-    queryKey: ['/api/workflow-teams'],
+    queryKey: ['/api/teams'],
     enabled: !!userId && open
   });
 
