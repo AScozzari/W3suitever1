@@ -5,14 +5,10 @@ import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   Megaphone, 
-  Search, 
   Plus, 
-  Filter,
-  Calendar,
   TrendingUp,
   Users,
   CheckCircle2,
@@ -78,11 +74,10 @@ const statVariants = {
 
 export default function CampaignsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
-    queryKey: ['/api/crm/campaigns', searchQuery],
+    queryKey: ['/api/crm/campaigns'],
   });
 
   const campaigns = campaignsResponse || [];
@@ -174,49 +169,6 @@ export default function CampaignsPage() {
             Nuova Campagna
           </Button>
         </div>
-
-        {/* Search & Filters */}
-        <motion.div
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card 
-            className="glass-card p-4 border-0"
-            style={{ 
-              background: 'var(--glass-card-bg)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid var(--glass-card-border)',
-              boxShadow: 'var(--shadow-glass-sm)'
-            }}
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
-                <Input
-                  placeholder="Cerca campagne per nome, tipo o stato..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  style={{ 
-                    background: 'var(--glass-bg-light)',
-                    border: '1px solid var(--glass-card-border)'
-                  }}
-                  data-testid="input-search-campaigns"
-                />
-              </div>
-              <Button variant="outline" data-testid="button-filters">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtri Avanzati
-              </Button>
-              <Button variant="outline" data-testid="button-date-range">
-                <Calendar className="h-4 w-4 mr-2" />
-                Periodo
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
 
         {/* Campaign Cards Grid */}
         <motion.div 
