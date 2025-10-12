@@ -62,9 +62,39 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
     queryKey: ['/api/workflow-teams']
   });
 
-  // Fetch all assignments (we'll need to query for each user)
   const users = usersData?.data || [];
   const teams = teamsData?.data || [];
+
+  // Fetch assignments for all users
+  const assignmentQueries = useQuery({
+    queryKey: ['/api/users/assignments-all', users.map(u => u.id)],
+    queryFn: async () => {
+      if (users.length === 0) return {};
+      
+      const results = await Promise.all(
+        users.map(async (user) => {
+          try {
+            const response = await fetch(`/api/users/${user.id}/assignments`, {
+              headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.ok) return { userId: user.id, assignments: [] };
+            const data = await response.json();
+            return { userId: user.id, assignments: data.data || [] };
+          } catch {
+            return { userId: user.id, assignments: [] };
+          }
+        })
+      );
+      
+      return results.reduce((acc, curr) => {
+        acc[curr.userId] = curr.assignments;
+        return acc;
+      }, {} as Record<string, Assignment[]>);
+    },
+    enabled: users.length > 0
+  });
+
+  const assignmentsByUser = assignmentQueries.data || {};
 
   // Get unique roles from all users (simplified - in real app would query roles table)
   const uniqueRoles = useMemo(() => {
@@ -90,13 +120,18 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
       // Role filter
       const matchesRole = roleFilter === 'all' || user.position === roleFilter;
 
+      // Scope filter (check user's assignments)
+      const userAssignments = assignmentsByUser[user.id] || [];
+      const matchesScope = scopeFilter === 'all' || 
+        userAssignments.some(assignment => assignment.scopeType === scopeFilter);
+
       // Team filter
       const matchesTeam = teamFilter === 'all' || 
         teams.some(team => team.id === teamFilter && team.memberIds?.includes(user.id));
 
-      return matchesSearch && matchesRole && matchesTeam;
+      return matchesSearch && matchesRole && matchesScope && matchesTeam;
     });
-  }, [users, searchTerm, roleFilter, teamFilter, teams]);
+  }, [users, searchTerm, roleFilter, scopeFilter, teamFilter, teams, assignmentsByUser]);
 
   // Helper to get user team
   const getUserTeam = (userId: string) => {
@@ -188,8 +223,22 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredUsers.map(user => {
           const userTeam = getUserTeam(user.id);
+          const userAssignments = assignmentsByUser[user.id] || [];
           const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
           
+          // Get unique scope badges from assignments
+          const scopeBadges = userAssignments.reduce((acc, assignment) => {
+            const key = `${assignment.scopeType}-${assignment.scopeId}`;
+            if (!acc.find(item => item.key === key)) {
+              acc.push({
+                key,
+                scopeType: assignment.scopeType,
+                scopeName: assignment.scopeDetails?.name || assignment.scopeType
+              });
+            }
+            return acc;
+          }, [] as Array<{ key: string; scopeType: 'tenant' | 'legal_entity' | 'store'; scopeName: string }>);
+
           return (
             <Card 
               key={user.id}
@@ -225,10 +274,18 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
                     </Badge>
                   )}
 
-                  {/* Scope Badges - Placeholder for now, will fetch from assignments */}
-                  <div className="flex flex-wrap gap-1 justify-center">
-                    <ScopeBadge scopeType="tenant" scopeName="WindTre" />
-                  </div>
+                  {/* Scope Badges - Real data from assignments */}
+                  {scopeBadges.length > 0 && (
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {scopeBadges.map(badge => (
+                        <ScopeBadge 
+                          key={badge.key}
+                          scopeType={badge.scopeType} 
+                          scopeName={badge.scopeName} 
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   {/* Team Badge */}
                   {userTeam && (

@@ -467,8 +467,9 @@ router.post('/users', async (req, res) => {
 /**
  * GET /api/users/:id/assignments
  * Get user scope assignments with details
+ * RBAC: Requires admin permission
  */
-router.get('/users/:id/assignments', async (req, res) => {
+router.get('/users/:id/assignments', requirePermission('users', 'read'), async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     const userId = req.params.id;
@@ -566,8 +567,9 @@ router.get('/users/:id/assignments', async (req, res) => {
 /**
  * GET /api/users/:id/permissions
  * Get calculated permissions from user's role(s)
+ * RBAC: Requires admin permission
  */
-router.get('/users/:id/permissions', async (req, res) => {
+router.get('/users/:id/permissions', requirePermission('users', 'read'), async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     const userId = req.params.id;

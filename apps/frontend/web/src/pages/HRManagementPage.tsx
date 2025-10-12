@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
+import { useAuth } from '@/hooks/useAuth';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
@@ -96,6 +97,7 @@ interface HRDocument {
 
 const HRManagementPage: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get current user from auth context
   const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees' | 'monitoring'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
@@ -1656,8 +1658,8 @@ const HRManagementPage: React.FC = () => {
     setShowEmployeeDetailModal(true);
   };
 
-  // Get current user role (simplified - would normally come from auth context)
-  const currentUserRole = 'admin'; // TODO: Get from auth context
+  // Get current user role from auth context
+  const currentUserRole = user?.role || 'user';
 
   const EmployeesSection = () => (
     <div className="space-y-6">
