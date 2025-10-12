@@ -9,7 +9,7 @@ import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
 import { EmployeeCardGrid } from '@/components/hr/EmployeeCardGrid';
-import { EmployeeModal } from '@/components/hr/EmployeeModal';
+import { EmployeeEditModal } from '@/components/hr/EmployeeEditModal';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -109,10 +109,9 @@ const HRManagementPage: React.FC = () => {
   // Removed showShiftModal - ShiftTemplateManager has its own modal
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
   // Employee modal state
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pushDocumentData, setPushDocumentData] = useState<{
@@ -1654,8 +1653,12 @@ const HRManagementPage: React.FC = () => {
   // ==================== EMPLOYEES SECTION ====================
 
   const handleEmployeeClick = (userId: string) => {
-    setSelectedEmployeeId(userId);
-    setShowEmployeeModal(true);
+    // Find the full employee object from the employees array
+    const employee = employees.find(emp => emp.id === userId);
+    if (employee) {
+      setSelectedEmployee(employee);
+      setShowEmployeeModal(true);
+    }
   };
 
   // Get current user role from auth context
@@ -2381,11 +2384,16 @@ const HRManagementPage: React.FC = () => {
       {/* Modals */}
       <RequestModal />
       <PushDocumentModal />
-      <EmployeeModal 
-        userId={selectedEmployeeId}
-        open={showEmployeeModal}
-        onOpenChange={setShowEmployeeModal}
-      />
+      {selectedEmployee && (
+        <EmployeeEditModal 
+          employee={selectedEmployee}
+          open={showEmployeeModal}
+          onClose={() => {
+            setShowEmployeeModal(false);
+            setSelectedEmployee(null);
+          }}
+        />
+      )}
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header */}
