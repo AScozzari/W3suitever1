@@ -155,36 +155,48 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
 
+  // Reset edit mode when modal closes
+  useEffect(() => {
+    if (!open) {
+      setIsEditMode(false);
+    }
+  }, [open]);
+
   // Fetch user details - using default queryFn for proper auth
-  const { data: userData, isLoading: userLoading, refetch } = useQuery<{ success: boolean; data: Employee }>({
+  const { data: userData, isLoading: userLoading, isFetching: userFetching, refetch } = useQuery<{ success: boolean; data: Employee }>({
     queryKey: [`/api/users/${userId}`],
-    enabled: !!userId && open
+    enabled: !!userId && open,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   const user = userData?.data;
 
   // Fetch assignments
-  const { data: assignmentsData } = useQuery<{ success: boolean; data: Assignment[] }>({
+  const { data: assignmentsData, isLoading: assignmentsLoading } = useQuery<{ success: boolean; data: Assignment[] }>({
     queryKey: [`/api/users/${userId}/assignments`],
-    enabled: !!userId && open
+    enabled: !!userId && open,
+    staleTime: 30000,
   });
 
   // Fetch permissions (admin only)
-  const { data: permissionsData } = useQuery<{ success: boolean; data: Permission[] }>({
+  const { data: permissionsData, isLoading: permissionsLoading } = useQuery<{ success: boolean; data: Permission[] }>({
     queryKey: [`/api/users/${userId}/permissions`],
-    enabled: !!userId && open
+    enabled: !!userId && open,
+    staleTime: 30000,
   });
 
   // Fetch teams
-  const { data: teamsData } = useQuery<{ success: boolean; data: Team[] }>({
+  const { data: teamsData, isLoading: teamsLoading } = useQuery<{ success: boolean; data: Team[] }>({
     queryKey: ['/api/teams'],
-    enabled: !!userId && open
+    enabled: !!userId && open,
+    staleTime: 60000, // Teams change less frequently
   });
 
   // Fetch manager details
   const { data: managerData } = useQuery<{ success: boolean; data: Employee }>({
     queryKey: [`/api/users/${user?.managerId}`],
-    enabled: !!user?.managerId && open
+    enabled: !!user?.managerId && open,
+    staleTime: 30000,
   });
 
   const assignments = assignmentsData?.data || [];
@@ -194,6 +206,9 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
   
   // Get user's teams
   const userTeams = teams.filter(team => team.memberIds?.includes(userId || ''));
+
+  // Combined loading state
+  const isLoadingData = userLoading || assignmentsLoading || permissionsLoading || teamsLoading;
 
   // Initialize form
   const form = useForm<EmployeeUpdateForm>({
@@ -407,24 +422,19 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
           </DialogDescription>
         </DialogHeader>
 
-        {userLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <Skeleton className="h-64 w-full" />
-          </div>
-        ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col gap-4">
-              <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
-                <TabsList className="grid w-full grid-cols-8 gap-1">
-                  <TabsTrigger value="general" className="text-xs px-2">Info</TabsTrigger>
-                  <TabsTrigger value="demographics" className="text-xs px-2">Anagrafica</TabsTrigger>
-                  <TabsTrigger value="address" className="text-xs px-2">Indirizzo</TabsTrigger>
-                  <TabsTrigger value="admin" className="text-xs px-2">Lavoro</TabsTrigger>
-                  <TabsTrigger value="professional" className="text-xs px-2">Formazione</TabsTrigger>
-                  <TabsTrigger value="scope" className="text-xs px-2">Store</TabsTrigger>
-                  <TabsTrigger value="permissions" className="text-xs px-2">Permessi</TabsTrigger>
-                  <TabsTrigger value="team" className="text-xs px-2">Team</TabsTrigger>
-                </TabsList>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col gap-4">
+            <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
+              <TabsList className="grid w-full grid-cols-8 gap-1">
+                <TabsTrigger value="general" className="text-xs px-2">Info</TabsTrigger>
+                <TabsTrigger value="demographics" className="text-xs px-2">Anagrafica</TabsTrigger>
+                <TabsTrigger value="address" className="text-xs px-2">Indirizzo</TabsTrigger>
+                <TabsTrigger value="admin" className="text-xs px-2">Lavoro</TabsTrigger>
+                <TabsTrigger value="professional" className="text-xs px-2">Formazione</TabsTrigger>
+                <TabsTrigger value="scope" className="text-xs px-2">Store</TabsTrigger>
+                <TabsTrigger value="permissions" className="text-xs px-2">Permessi</TabsTrigger>
+                <TabsTrigger value="team" className="text-xs px-2">Team</TabsTrigger>
+              </TabsList>
 
                 <ScrollArea className="flex-1 pr-4">
                   {/* Tab: General */}
@@ -1077,7 +1087,6 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
               )}
             </form>
           </Form>
-        )}
       </DialogContent>
     </Dialog>
   );
