@@ -7,6 +7,8 @@ import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
+import { EmployeeCardGrid } from '@/components/hr/EmployeeCardGrid';
+import { EmployeeDetailModal } from '@/components/hr/EmployeeDetailModal';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -105,6 +107,9 @@ const HRManagementPage: React.FC = () => {
   // Removed showShiftModal - ShiftTemplateManager has its own modal
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
+  // Employee detail modal state
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [showEmployeeDetailModal, setShowEmployeeDetailModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedStore, setSelectedStore] = useState<any>(null);
@@ -1646,12 +1651,20 @@ const HRManagementPage: React.FC = () => {
 
   // ==================== EMPLOYEES SECTION ====================
 
+  const handleEmployeeClick = (userId: string) => {
+    setSelectedEmployeeId(userId);
+    setShowEmployeeDetailModal(true);
+  };
+
+  // Get current user role (simplified - would normally come from auth context)
+  const currentUserRole = 'admin'; // TODO: Get from auth context
+
   const EmployeesSection = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Directory Dipendenti</h2>
-          <p className="text-slate-600 dark:text-slate-400">Anagrafica e organigramma</p>
+          <p className="text-slate-600 dark:text-slate-400">Gestione scope, permessi e team assignments</p>
         </div>
         <Button 
           onClick={() => setShowEmployeeModal(true)}
@@ -1663,79 +1676,11 @@ const HRManagementPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Employee Stats */}
-        <div className="space-y-4">
-          <Card className="backdrop-blur-md bg-white/10 border-white/20">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <Users className="w-8 h-8 mx-auto mb-2 text-orange-500" />
-                <p className="text-2xl font-bold">{employees.length}</p>
-                <p className="text-sm text-slate-500">Totale Dipendenti</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="backdrop-blur-md bg-white/10 border-white/20">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <Building className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-                <p className="text-2xl font-bold">8</p>
-                <p className="text-sm text-slate-500">Dipartimenti</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Employee List */}
-        <Card className="lg:col-span-3 backdrop-blur-md bg-white/10 border-white/20">
-          <CardHeader>
-            <CardTitle>Lista Dipendenti</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-96">
-              <div className="space-y-3">
-                {employees.map((employee) => (
-                  <div key={employee.id} className="flex items-center justify-between p-3 bg-white/10 rounded-lg hover:bg-white/15 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {employee.firstName?.[0] || 'U'}{employee.lastName?.[0] || ''}
-                      </div>
-                      <div>
-                        <p className="font-medium">{employee.firstName || 'Utente'} {employee.lastName || 'Sconosciuto'}</p>
-                        <p className="text-sm text-slate-500">{employee.position || 'N/A'} - {employee.department || 'N/A'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
-                        {employee.status}
-                      </Badge>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Org Chart */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20">
-        <CardHeader>
-          <CardTitle>Organigramma</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="aspect-[16/9] bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-            <div className="text-center text-slate-500">
-              <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p>Organigramma Interattivo</p>
-              <p className="text-sm">Struttura gerarchica con skill matrix</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Employee Card Grid with Filters */}
+      <EmployeeCardGrid 
+        onEmployeeClick={handleEmployeeClick}
+        currentUserRole={currentUserRole}
+      />
     </div>
   );
 
@@ -2442,6 +2387,12 @@ const HRManagementPage: React.FC = () => {
       {/* Modals */}
       <RequestModal />
       <PushDocumentModal />
+      <EmployeeDetailModal 
+        userId={selectedEmployeeId}
+        open={showEmployeeDetailModal}
+        onOpenChange={setShowEmployeeDetailModal}
+        currentUserRole={currentUserRole}
+      />
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header */}
