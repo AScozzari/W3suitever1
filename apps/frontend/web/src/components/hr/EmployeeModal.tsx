@@ -415,15 +415,15 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col gap-4">
               <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
-                <TabsList className="grid w-full grid-cols-8">
-                  <TabsTrigger value="general">Generale</TabsTrigger>
-                  <TabsTrigger value="demographics">Anagrafiche</TabsTrigger>
-                  <TabsTrigger value="address">Indirizzo</TabsTrigger>
-                  <TabsTrigger value="admin">Amministrative</TabsTrigger>
-                  <TabsTrigger value="professional">Formazione</TabsTrigger>
-                  <TabsTrigger value="scope">Punti Vendita</TabsTrigger>
-                  <TabsTrigger value="permissions">Permessi</TabsTrigger>
-                  <TabsTrigger value="team">Team</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-8 gap-1">
+                  <TabsTrigger value="general" className="text-xs px-2">Info</TabsTrigger>
+                  <TabsTrigger value="demographics" className="text-xs px-2">Anagrafica</TabsTrigger>
+                  <TabsTrigger value="address" className="text-xs px-2">Indirizzo</TabsTrigger>
+                  <TabsTrigger value="admin" className="text-xs px-2">Lavoro</TabsTrigger>
+                  <TabsTrigger value="professional" className="text-xs px-2">Formazione</TabsTrigger>
+                  <TabsTrigger value="scope" className="text-xs px-2">Store</TabsTrigger>
+                  <TabsTrigger value="permissions" className="text-xs px-2">Permessi</TabsTrigger>
+                  <TabsTrigger value="team" className="text-xs px-2">Team</TabsTrigger>
                 </TabsList>
 
                 <ScrollArea className="flex-1 pr-4">
@@ -677,6 +677,22 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                           </FormItem>
                         )} />
                         <div className="grid grid-cols-2 gap-4">
+                          <FormField control={form.control} name="hireDate" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Data Assunzione *</FormLabel>
+                              <FormControl><Input type="date" {...field} value={field.value || ''} data-testid="input-hire-date" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name="contractType" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tipo Contratto</FormLabel>
+                              <FormControl><Input {...field} value={field.value || ''} placeholder="Tempo indeterminato, Determinato, ecc." data-testid="input-contract-type" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <FormField control={form.control} name="annualCost" render={({ field }) => (
                             <FormItem>
                               <FormLabel>Costo Annuo (€)</FormLabel>
@@ -744,6 +760,8 @@ export function EmployeeModal({ userId, open, onOpenChange }: EmployeeModalProps
                     ) : (
                       <div className="space-y-4">
                         <InfoRow icon={<IdCard className="h-4 w-4" />} label="Matricola" value={user?.employeeNumber} />
+                        <InfoRow icon={<Calendar className="h-4 w-4" />} label="Data Assunzione" value={user?.hireDate ? new Date(user.hireDate).toLocaleDateString('it-IT') : undefined} />
+                        <InfoRow icon={<FileText className="h-4 w-4" />} label="Tipo Contratto" value={user?.contractType} />
                         <InfoRow icon={<DollarSign className="h-4 w-4" />} label="Costo Annuo" value={user?.annualCost ? `€ ${user.annualCost.toLocaleString()}` : undefined} />
                         <InfoRow icon={<DollarSign className="h-4 w-4" />} label="RAL" value={user?.grossAnnualSalary ? `€ ${user.grossAnnualSalary.toLocaleString()}` : undefined} />
                         <InfoRow icon={<Award className="h-4 w-4" />} label="Livello" value={user?.level} />
