@@ -72,6 +72,38 @@ export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'suspende
 export const genderEnum = pgEnum('gender', ['male', 'female', 'other', 'prefer_not_to_say']);
 export const maritalStatusEnum = pgEnum('marital_status', ['single', 'married', 'divorced', 'widowed', 'other']);
 
+// ==================== ITALIAN HR COMPLIANCE ENUMS (CCNL Commercio 2024) ====================
+// CCNL Level Enum - Contratto Collettivo Nazionale Lavoro - Settore Commercio
+export const ccnlLevelEnum = pgEnum('ccnl_level', [
+  'quadro',                    // Quadri - Management Level
+  'livello_1',                 // 1° Livello - Senior Professional
+  'livello_2',                 // 2° Livello - Professional
+  'livello_3',                 // 3° Livello - Skilled Employee
+  'livello_4',                 // 4° Livello - Mid-level Employee
+  'livello_5',                 // 5° Livello - Junior Employee
+  'livello_6',                 // 6° Livello - Entry Level
+  'livello_7',                 // 7° Livello - Basic Level
+  'operatore_vendita_a',       // Operatore Vendita A - Sales Operator A
+  'operatore_vendita_b',       // Operatore Vendita B - Sales Operator B
+]);
+
+// Contract Type Enum - Italian Labor Law Compliance
+export const employmentContractTypeEnum = pgEnum('employment_contract_type', [
+  'tempo_indeterminato',              // Permanent Contract
+  'tempo_determinato',                // Fixed-term Contract
+  'apprendistato_professionalizzante', // Professional Apprenticeship
+  'apprendistato_qualifica',          // Qualification Apprenticeship
+  'collaborazione_coordinata',        // Coordinated Collaboration
+  'parttime_verticale',               // Part-time Vertical (some days full)
+  'parttime_orizzontale',             // Part-time Horizontal (reduced daily hours)
+  'parttime_misto',                   // Part-time Mixed
+  'intermittente',                    // Intermittent Work
+  'somministrazione',                 // Temporary Agency Work
+  'stage_tirocinio',                  // Internship/Training
+  'contratto_inserimento',            // Integration Contract
+  'lavoro_occasionale',               // Occasional Work
+]);
+
 // Calendar Event Enums
 export const calendarEventTypeEnum = pgEnum('calendar_event_type', ['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']);
 export const calendarEventVisibilityEnum = pgEnum('calendar_event_visibility', ['private', 'team', 'store', 'area', 'tenant']);
@@ -342,7 +374,7 @@ export const users = w3suiteSchema.table("users", {
   position: varchar("position", { length: 100 }),
   department: varchar("department", { length: 100 }),
   hireDate: date("hire_date"),
-  contractType: varchar("contract_type", { length: 50 }),
+  contractType: employmentContractTypeEnum("contract_type"),
   
   // Personal/Demographic Information (HR Best Practices 2025)
   dateOfBirth: date("date_of_birth"),
@@ -369,11 +401,21 @@ export const users = w3suiteSchema.table("users", {
   employeeNumber: varchar("employee_number", { length: 50 }), // Matricola
   annualCost: real("annual_cost"), // Costo aziendale annuo totale
   grossAnnualSalary: real("gross_annual_salary"), // RAL - Retribuzione Annua Lorda
-  level: varchar("level", { length: 50 }), // Livello/Inquadramento (es: "Quadro", "Impiegato 3° Livello")
+  level: ccnlLevelEnum("level"), // Livello CCNL (Quadro, 1°-7° Livello, Op.Vendita A/B)
   ccnl: varchar("ccnl", { length: 255 }), // CCNL applicato (es: "Commercio", "Telecomunicazioni")
   managerId: varchar("manager_id").references((): any => users.id), // Responsabile diretto
   employmentEndDate: date("employment_end_date"), // Per contratti a tempo determinato
   probationEndDate: date("probation_end_date"), // Fine periodo di prova
+  offboardingDate: date("offboarding_date"), // Data offboarding
+  
+  // Italian Social Security (INPS/INAIL)
+  inpsPosition: varchar("inps_position", { length: 50 }), // Matricola INPS
+  inailPosition: varchar("inail_position", { length: 50 }), // Posizione assicurativa INAIL
+  
+  // Identity Document
+  idDocumentType: varchar("id_document_type", { length: 50 }), // Tipo documento (Carta Identità, Passaporto, Patente)
+  idDocumentNumber: varchar("id_document_number", { length: 50 }), // Numero documento
+  idDocumentExpiryDate: date("id_document_expiry_date"), // Scadenza documento
   
   // Banking Information
   bankIban: varchar("bank_iban", { length: 34 }), // IBAN per stipendio
