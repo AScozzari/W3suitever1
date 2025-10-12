@@ -254,7 +254,32 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     },
   });
 
+  // Pipeline settings mutation (team/user assignments)
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (settings: any) => {
+      return apiRequest(`/api/crm/pipelines/${pipelineId}/settings`, {
+        method: 'PATCH',
+        body: JSON.stringify(settings),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}`] });
+      toast({
+        title: 'Assegnazioni salvate',
+        description: 'Le assegnazioni team/utenti sono state aggiornate',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile salvare le assegnazioni',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleSaveGeneral = () => {
+    // Save pipeline basic info
     updatePipelineMutation.mutate({
       name: pipelineName || pipeline?.name,
       description: pipelineDescription || pipeline?.description,
@@ -262,6 +287,14 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       autoAssign,
       rottenDaysThreshold: parseInt(rottenDays) || 30,
       staleDaysThreshold: parseInt(staleDays) || 14,
+    });
+
+    // Save settings (assignments) separately
+    updateSettingsMutation.mutate({
+      assignedTeams: selectedTeams,
+      leadManagers,
+      dealApprovers,
+      pipelineAdmins,
     });
   };
 

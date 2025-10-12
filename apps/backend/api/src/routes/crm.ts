@@ -19,6 +19,7 @@ import {
   crmLeads,
   crmCampaigns,
   crmPipelines,
+  crmPipelineSettings,
   crmPipelineWorkflows,
   crmPipelineStages,
   crmDeals,
@@ -30,6 +31,7 @@ import {
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmPipelineSchema,
+  insertCrmPipelineSettingsSchema,
   insertCrmPipelineWorkflowSchema,
   insertCrmPipelineStageSchema,
   insertCrmDealSchema,
@@ -888,6 +890,109 @@ router.patch('/pipelines/:id', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to update pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/pipelines/:id/settings
+ * Update pipeline settings (team/user assignments, channels, etc.)
+ */
+router.patch('/pipelines/:id/settings', rbacMiddleware, requirePermission('crm.manage_pipelines'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: pipelineId } = req.params;
+    
+    // Validate request body
+    const updateSchema = insertCrmPipelineSettingsSchema.omit({ pipelineId: true }).partial();
+    const validation = updateSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ));
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if settings exist
+    const [existingSettings] = await db
+      .select()
+      .from(crmPipelineSettings)
+      .where(eq(crmPipelineSettings.pipelineId, pipelineId));
+
+    let settings;
+    
+    if (existingSettings) {
+      // Update existing settings
+      [settings] = await db
+        .update(crmPipelineSettings)
+        .set({
+          ...validation.data,
+          updatedAt: new Date()
+        })
+        .where(eq(crmPipelineSettings.pipelineId, pipelineId))
+        .returning();
+    } else {
+      // Create new settings
+      [settings] = await db
+        .insert(crmPipelineSettings)
+        .values({
+          pipelineId,
+          ...validation.data,
+        })
+        .returning();
+    }
+
+    logger.info('Pipeline settings updated', { pipelineId, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: settings,
+      message: 'Pipeline settings updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating pipeline settings', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update pipeline settings',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
