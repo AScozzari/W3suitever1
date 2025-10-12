@@ -11,7 +11,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles } from '../db/schema/w3suite';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms } from '../db/schema/w3suite';
 import { channels, commercialAreas } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -459,6 +459,152 @@ router.post('/users', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to create user',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/users/:id/assignments
+ * Get user scope assignments with details
+ */
+router.get('/users/:id/assignments', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get user assignments with role and scope details
+    const assignments = await db
+      .select({
+        userId: userAssignments.userId,
+        roleId: userAssignments.roleId,
+        roleName: roles.name,
+        roleDescription: roles.description,
+        scopeType: userAssignments.scopeType,
+        scopeId: userAssignments.scopeId,
+        expiresAt: userAssignments.expiresAt,
+        createdAt: userAssignments.createdAt
+      })
+      .from(userAssignments)
+      .innerJoin(roles, eq(userAssignments.roleId, roles.id))
+      .where(
+        and(
+          eq(userAssignments.userId, userId),
+          eq(roles.tenantId, tenantId)
+        )
+      );
+
+    // Enrich with scope details (legal entity or store names)
+    const enrichedAssignments = await Promise.all(
+      assignments.map(async (assignment) => {
+        let scopeDetails = null;
+
+        if (assignment.scopeType === 'legal_entity') {
+          const [legalEntity] = await db
+            .select({ id: legalEntities.id, name: legalEntities.nome, code: legalEntities.codice })
+            .from(legalEntities)
+            .where(eq(legalEntities.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = legalEntity;
+        } else if (assignment.scopeType === 'store') {
+          const [store] = await db
+            .select({ id: stores.id, name: stores.nome, code: stores.code })
+            .from(stores)
+            .where(eq(stores.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = store;
+        } else if (assignment.scopeType === 'tenant') {
+          const [tenant] = await db
+            .select({ id: tenants.id, name: tenants.name })
+            .from(tenants)
+            .where(eq(tenants.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = tenant;
+        }
+
+        return {
+          ...assignment,
+          scopeDetails
+        };
+      })
+    );
+
+    logger.info('User assignments retrieved', { userId, assignmentsCount: enrichedAssignments.length });
+
+    res.status(200).json({
+      success: true,
+      data: enrichedAssignments,
+      message: 'User assignments retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving user assignments', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      userId: req.params.id 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve user assignments',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/users/:id/permissions
+ * Get calculated permissions from user's role(s)
+ */
+router.get('/users/:id/permissions', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Use RBACStorage to get calculated permissions
+    const rbacStorage = new RBACStorage();
+    const permissions = await rbacStorage.getUserPermissions(userId, tenantId);
+
+    logger.info('User permissions calculated', { userId, permissionsCount: permissions.length });
+
+    res.status(200).json({
+      success: true,
+      data: permissions,
+      message: 'User permissions calculated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error calculating user permissions', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      userId: req.params.id 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to calculate user permissions',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
