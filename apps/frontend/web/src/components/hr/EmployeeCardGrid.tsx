@@ -52,18 +52,15 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
   const [scopeFilter, setScopeFilter] = useState<string>('all');
   const [teamFilter, setTeamFilter] = useState<string>('all');
 
-  // Fetch users
-  const { data: usersData, isLoading: usersLoading } = useQuery<{ success: boolean; data: User[] }>({
+  // Fetch users - queryClient default fetcher returns unwrapped data (data.data ?? data)
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users']
   });
 
-  // Fetch teams
-  const { data: teamsData } = useQuery<{ success: boolean; data: Team[] }>({
+  // Fetch teams - queryClient default fetcher returns unwrapped data (data.data ?? data)
+  const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ['/api/teams']
   });
-
-  const users = usersData?.data || [];
-  const teams = teamsData?.data || [];
 
   // Fetch assignments for all users
   const assignmentQueries = useQuery({
