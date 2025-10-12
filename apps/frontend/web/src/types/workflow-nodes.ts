@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 // ==================== BASE NODE TYPES ====================
 
-export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'integration' | 'mcp-outbound' | 'mcp-inbound';
+export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'routing' | 'integration' | 'mcp-outbound' | 'mcp-inbound';
 
 export interface BaseNodeDefinition {
   id: string;
@@ -352,6 +352,74 @@ export const MCPConnectorConfigSchema = z.object({
   }).optional()
 });
 
+// ==================== CRM ROUTING NODES ====================
+
+// Lead Routing Configuration
+export const LeadRoutingConfigSchema = z.object({
+  eventType: z.string().default('lead_routing'),
+  source: z.enum(['api', 'database', 'webhook', 'internal']).default('internal'),
+  filters: z.object({
+    source: z.array(z.string()).optional(), // Lead source filter (website, referral, campaign, etc.)
+    status: z.array(z.enum(['new', 'contacted', 'qualified', 'unqualified'])).optional(),
+    scoreMin: z.number().min(0).max(100).optional(),
+    scoreMax: z.number().min(0).max(100).optional(),
+    ageDays: z.number().min(0).optional(), // Lead age in days
+    assignedTo: z.array(z.string()).optional() // User IDs
+  }).optional(),
+  branches: z.array(z.object({
+    name: z.enum(['Qualificato', 'Non qualificato', 'Hot', 'Warm', 'Cold']),
+    conditions: z.array(z.object({
+      field: z.string(),
+      operator: z.enum(['equals', 'not_equals', 'contains', 'greater_than', 'less_than', 'in', 'not_in']),
+      value: z.any()
+    }))
+  })).optional()
+});
+
+// Deal Routing Configuration
+export const DealRoutingConfigSchema = z.object({
+  eventType: z.string().default('deal_routing'),
+  source: z.enum(['api', 'database', 'webhook', 'internal']).default('internal'),
+  filters: z.object({
+    stage: z.array(z.string()).optional(), // Deal stage IDs
+    valueMin: z.number().min(0).optional(),
+    valueMax: z.number().min(0).optional(),
+    probabilityMin: z.number().min(0).max(100).optional(),
+    probabilityMax: z.number().min(0).max(100).optional(),
+    pipeline: z.array(z.string()).optional(), // Pipeline IDs
+    ageDays: z.number().min(0).optional() // Deal age in days
+  }).optional(),
+  branches: z.array(z.object({
+    name: z.enum(['Iniziale', 'In Progress', 'In Attesa', 'Acquisto', 'Finalizzato', 'Archiviato', 'Perso/KO']),
+    conditions: z.array(z.object({
+      field: z.string(),
+      operator: z.enum(['equals', 'not_equals', 'contains', 'greater_than', 'less_than', 'in', 'not_in']),
+      value: z.any()
+    }))
+  })).optional()
+});
+
+// Customer Routing Configuration
+export const CustomerRoutingConfigSchema = z.object({
+  eventType: z.string().default('customer_routing'),
+  source: z.enum(['api', 'database', 'webhook', 'internal']).default('internal'),
+  filters: z.object({
+    type: z.array(z.enum(['B2B', 'B2C'])).optional(),
+    segment: z.array(z.enum(['VIP', 'Premium', 'Standard', 'Basic'])).optional(),
+    lifetimeValueMin: z.number().min(0).optional(),
+    lifetimeValueMax: z.number().min(0).optional(),
+    contractStatus: z.array(z.enum(['active', 'inactive', 'churned', 'pending'])).optional()
+  }).optional(),
+  branches: z.array(z.object({
+    name: z.enum(['Business', 'Privati', 'VIP', 'Standard', 'Attivo', 'Inattivo']),
+    conditions: z.array(z.object({
+      field: z.string(),
+      operator: z.enum(['equals', 'not_equals', 'contains', 'greater_than', 'less_than', 'in', 'not_in']),
+      value: z.any()
+    }))
+  })).optional()
+});
+
 // ==================== TYPE EXPORTS ====================
 
 export type EmailActionConfig = z.infer<typeof EmailActionConfigSchema>;
@@ -371,10 +439,15 @@ export type AiClassificationConfig = z.infer<typeof AiClassificationConfigSchema
 export type AiContentConfig = z.infer<typeof AiContentConfigSchema>;
 export type AIMCPNodeConfig = z.infer<typeof AIMCPNodeConfigSchema>;
 
+export type LeadRoutingConfig = z.infer<typeof LeadRoutingConfigSchema>;
+export type DealRoutingConfig = z.infer<typeof DealRoutingConfigSchema>;
+export type CustomerRoutingConfig = z.infer<typeof CustomerRoutingConfigSchema>;
+
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
 export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
 export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig;
 export type IntegrationConfig = MCPConnectorConfig;
+export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig;
 
-export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig;
+export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig | RoutingConfig;

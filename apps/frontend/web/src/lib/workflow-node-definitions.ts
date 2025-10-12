@@ -10,7 +10,10 @@ import {
   AiDecisionConfigSchema,
   EventTriggerConfigSchema,
   MCPConnectorConfigSchema,
-  AIMCPNodeConfigSchema
+  AIMCPNodeConfigSchema,
+  LeadRoutingConfigSchema,
+  DealRoutingConfigSchema,
+  CustomerRoutingConfigSchema
 } from '../types/workflow-nodes';
 import { ALL_MCP_NODES } from './mcp-node-definitions';
 
@@ -356,6 +359,96 @@ export const ROUTING_NODES: BaseNodeDefinition[] = [
         escalateTo: []
       }
     }
+  },
+  {
+    id: 'lead-routing',
+    name: 'Lead Routing',
+    description: 'Route leads based on source, status, score, age and assignment',
+    category: 'routing',
+    icon: 'UserSearch',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: LeadRoutingConfigSchema,
+    defaultConfig: {
+      eventType: 'lead_routing',
+      source: 'internal',
+      filters: {
+        source: [],
+        status: [],
+        scoreMin: 0,
+        scoreMax: 100,
+        ageDays: null,
+        assignedTo: []
+      },
+      branches: [
+        { name: 'Qualificato', conditions: [{ field: 'status', operator: 'equals', value: 'qualified' }] },
+        { name: 'Non qualificato', conditions: [{ field: 'status', operator: 'equals', value: 'unqualified' }] },
+        { name: 'Hot', conditions: [{ field: 'score', operator: 'greater_than', value: 80 }] },
+        { name: 'Warm', conditions: [{ field: 'score', operator: 'greater_than', value: 50 }] },
+        { name: 'Cold', conditions: [{ field: 'score', operator: 'less_than', value: 50 }] }
+      ]
+    }
+  },
+  {
+    id: 'deal-routing',
+    name: 'Deal Routing',
+    description: 'Route deals based on stage, value, probability, pipeline and age',
+    category: 'routing',
+    icon: 'DollarSign',
+    color: '#7B2CBF', // WindTre Purple
+    version: '1.0.0',
+    configSchema: DealRoutingConfigSchema,
+    defaultConfig: {
+      eventType: 'deal_routing',
+      source: 'internal',
+      filters: {
+        stage: [],
+        valueMin: 0,
+        valueMax: null,
+        probabilityMin: 0,
+        probabilityMax: 100,
+        pipeline: [],
+        ageDays: null
+      },
+      branches: [
+        { name: 'Iniziale', conditions: [{ field: 'stage', operator: 'equals', value: 'initial' }] },
+        { name: 'In Progress', conditions: [{ field: 'stage', operator: 'equals', value: 'in_progress' }] },
+        { name: 'In Attesa', conditions: [{ field: 'stage', operator: 'equals', value: 'waiting' }] },
+        { name: 'Acquisto', conditions: [{ field: 'stage', operator: 'equals', value: 'purchase' }] },
+        { name: 'Finalizzato', conditions: [{ field: 'stage', operator: 'equals', value: 'finalized' }] },
+        { name: 'Archiviato', conditions: [{ field: 'stage', operator: 'equals', value: 'archived' }] },
+        { name: 'Perso/KO', conditions: [{ field: 'stage', operator: 'equals', value: 'lost' }] }
+      ]
+    }
+  },
+  {
+    id: 'customer-routing',
+    name: 'Customer Routing',
+    description: 'Route customers based on type, segment, lifetime value and contract status',
+    category: 'routing',
+    icon: 'Users2',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: CustomerRoutingConfigSchema,
+    defaultConfig: {
+      eventType: 'customer_routing',
+      source: 'internal',
+      filters: {
+        type: [],
+        segment: [],
+        lifetimeValueMin: 0,
+        lifetimeValueMax: null,
+        contractStatus: []
+      },
+      branches: [
+        { name: 'Business', conditions: [{ field: 'type', operator: 'equals', value: 'B2B' }] },
+        { name: 'Privati', conditions: [{ field: 'type', operator: 'equals', value: 'B2C' }] },
+        { name: 'VIP', conditions: [{ field: 'segment', operator: 'equals', value: 'VIP' }] },
+        { name: 'Standard', conditions: [{ field: 'segment', operator: 'equals', value: 'Standard' }] },
+        { name: 'Attivo', conditions: [{ field: 'contractStatus', operator: 'equals', value: 'active' }] },
+        { name: 'Inattivo', conditions: [{ field: 'contractStatus', operator: 'in', value: ['inactive', 'churned'] }] }
+      ]
+    }
   }
 ];
 
@@ -536,6 +629,9 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   // Routing nodes
   'team-assignment': 'team-routing-executor',
   'user-assignment': 'user-routing-executor',
+  'lead-routing': 'lead-routing-executor',
+  'deal-routing': 'deal-routing-executor',
+  'customer-routing': 'customer-routing-executor',
   // Flow control nodes
   'if-condition': 'if-condition-executor',
   'switch-case': 'switch-case-executor',
