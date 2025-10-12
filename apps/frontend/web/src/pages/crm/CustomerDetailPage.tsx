@@ -32,28 +32,22 @@ export function CustomerDetailPage() {
   const customerId = params.id;
 
   // Fetch customer data
-  const { data: customerData, isLoading } = useQuery({
+  const { data: customer, isLoading } = useQuery<any>({
     queryKey: [`/api/crm/persons/${customerId}`],
     enabled: !!customerId,
   });
 
-  const customer = customerData?.data;
-
   // Fetch deals for this customer
-  const { data: dealsData } = useQuery({
+  const { data: deals = [] } = useQuery<any[]>({
     queryKey: ['/api/crm/deals', { personId: customerId }],
     enabled: !!customerId,
   });
 
-  const deals = dealsData?.data || [];
-
   // Fetch leads for this customer
-  const { data: leadsData } = useQuery({
+  const { data: leads = [] } = useQuery<any[]>({
     queryKey: ['/api/crm/leads', { personId: customerId }],
     enabled: !!customerId,
   });
-
-  const leads = leadsData?.data || [];
 
   if (isLoading) {
     return (
@@ -80,9 +74,9 @@ export function CustomerDetailPage() {
   }
 
   const initials = `${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase();
-  const totalDealsValue = deals.reduce((sum, deal) => sum + (deal.estimatedValue || 0), 0);
+  const totalDealsValue = deals.reduce((sum: number, deal: any) => sum + (deal.estimatedValue || 0), 0);
   const totalLeads = leads.length;
-  const wonDeals = deals.filter(d => d.status === 'won').length;
+  const wonDeals = deals.filter((d: any) => d.status === 'won').length;
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
@@ -242,7 +236,7 @@ export function CustomerDetailPage() {
             <h3 className="text-lg font-semibold mb-4">Deal History</h3>
             {deals.length > 0 ? (
               <div className="space-y-3">
-                {deals.map((deal) => (
+                {deals.map((deal: any) => (
                   <div 
                     key={deal.id} 
                     className="p-4 rounded-lg border"
