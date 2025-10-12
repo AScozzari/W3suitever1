@@ -180,9 +180,6 @@ export default function PipelinePage() {
               <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-purple))' }}>
                 Pipeline Vendita
               </h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Driver WindTre - FISSO, MOBILE, DEVICE, ACCESSORI
-              </p>
             </div>
           </div>
           <div className="text-right">
