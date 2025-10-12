@@ -1,74 +1,156 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout from "../components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles, Brain, MessageSquare } from "lucide-react";
-import { useTenant } from "@/contexts/TenantContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles, Brain, MessageSquare, Zap, TrendingUp, CheckCircle2, ArrowRight } from "lucide-react";
 
 interface AITool {
   id: string;
   title: string;
+  subtitle: string;
   description: string;
+  benefits: string[];
+  useCases: string[];
   icon: React.ReactNode;
   route: string;
   status: "available" | "coming_soon";
-  color: string;
+  gradient: string;
+  iconColor: string;
 }
 
 const aiTools: AITool[] = [
   {
     id: "pdc-analyzer",
     title: "PDC Analyzer",
-    description: "Estrai automaticamente dati da proposte contrattuali PDF con OCR e AI. Genera JSON strutturati per integrazione cassa.",
-    icon: <FileText className="h-8 w-8" />,
+    subtitle: "Intelligenza Artificiale per Contratti",
+    description: "Trasforma i tuoi documenti contrattuali in dati strutturati in pochi secondi. Il nostro motore AI avanzato legge, comprende ed estrae automaticamente ogni informazione rilevante da PDF complessi, risparmiandoti ore di lavoro manuale.",
+    benefits: [
+      "Estrazione automatica con precisione 98%",
+      "OCR avanzato per documenti scansionati",
+      "Machine Learning che impara dal tuo feedback",
+      "Export JSON/CSV ready per ERP"
+    ],
+    useCases: [
+      "Proposte commerciali WindTre",
+      "Contratti B2B e B2C",
+      "Pratiche amministrative"
+    ],
+    icon: <FileText className="h-10 w-10" />,
     route: "/ai-tools/pdc-analyzer",
     status: "available",
-    color: "text-orange-500 dark:text-orange-400",
+    gradient: "from-orange-500 to-red-600",
+    iconColor: "text-orange-500"
   },
   {
     id: "workflow-builder",
     title: "Workflow Builder AI",
-    description: "Crea workflow aziendali complessi usando linguaggio naturale. L'AI genera automaticamente diagrammi e logica di processo.",
-    icon: <Brain className="h-8 w-8" />,
+    subtitle: "Processi Aziendali in Linguaggio Naturale",
+    description: "Dimentica i complicati tool di workflow design. Descrivi il tuo processo aziendale a parole e l'AI creerà automaticamente il flusso completo con approvazioni, notifiche e logica condizionale. È come avere un analista di business sempre disponibile.",
+    benefits: [
+      "Generazione workflow da testo naturale",
+      "Diagrammi visuali auto-generati",
+      "Integrazione con RBAC e approvazioni",
+      "Testing automatico del flusso"
+    ],
+    useCases: [
+      "Approvazione budget e spese",
+      "Onboarding dipendenti",
+      "Gestione ordini clienti"
+    ],
+    icon: <Brain className="h-10 w-10" />,
     route: "/ai-tools/workflow-builder",
     status: "coming_soon",
-    color: "text-purple-500 dark:text-purple-400",
+    gradient: "from-purple-600 to-indigo-700",
+    iconColor: "text-purple-600"
   },
   {
     id: "financial-insights",
     title: "Financial Insights",
-    description: "Analisi predittiva di bilanci, flussi di cassa e KPI finanziari. Forecasting automatico con machine learning.",
-    icon: <BarChart3 className="h-8 w-8" />,
+    subtitle: "Previsioni Finanziarie Intelligenti",
+    description: "Analisi predittiva che va oltre i numeri. Il nostro AI studia i pattern storici, identifica anomalie e prevede trend futuri con accuratezza sorprendente. Prendi decisioni strategiche basate su dati, non su intuizioni.",
+    benefits: [
+      "Forecasting automatico cashflow",
+      "Anomaly detection su KPI finanziari",
+      "Scenario analysis con AI",
+      "Alert predittivi su rischi"
+    ],
+    useCases: [
+      "Budget planning trimestrale",
+      "Analisi margini per canale",
+      "Credit risk assessment"
+    ],
+    icon: <BarChart3 className="h-10 w-10" />,
     route: "/ai-tools/financial-insights",
     status: "coming_soon",
-    color: "text-blue-500 dark:text-blue-400",
+    gradient: "from-blue-500 to-cyan-600",
+    iconColor: "text-blue-500"
   },
   {
     id: "commissioning-analysis",
     title: "Commissioning AI",
-    description: "Calcolo intelligente delle provvigioni venditori. Analisi pattern vendita e suggerimenti incentivi.",
-    icon: <Calculator className="h-8 w-8" />,
+    subtitle: "Incentivi Vendita Ottimizzati",
+    description: "Sistema intelligente che calcola provvigioni complesse in automatico e suggerisce strategie di incentivazione basate su performance reali. Massimizza la motivazione del team sales identificando pattern vincenti e opportunità nascoste.",
+    benefits: [
+      "Calcolo provvigioni multi-livello",
+      "Pattern analysis performance venditori",
+      "Suggerimenti incentivi personalizzati",
+      "Simulazioni payout scenari"
+    ],
+    useCases: [
+      "Rete vendita diretta",
+      "Agenti multi-canale",
+      "Store manager rewards"
+    ],
+    icon: <Calculator className="h-10 w-10" />,
     route: "/ai-tools/commissioning",
     status: "coming_soon",
-    color: "text-green-500 dark:text-green-400",
+    gradient: "from-green-500 to-emerald-600",
+    iconColor: "text-green-500"
   },
   {
     id: "report-generator",
     title: "Report Generator",
-    description: "Genera report esecutivi automatici da dati grezzi. Natural language queries per business intelligence.",
-    icon: <FileSpreadsheet className="h-8 w-8" />,
+    subtitle: "Business Intelligence Conversazionale",
+    description: "Chiedi al tuo database in linguaggio naturale e ricevi report esecutivi professionali in secondi. Niente più query SQL complicate o pivot table infinite - l'AI comprende la tua domanda e genera visualizzazioni perfette automaticamente.",
+    benefits: [
+      "Natural Language Queries (NLQ)",
+      "Auto-generazione grafici e tabelle",
+      "Export multi-formato (PDF/Excel/PPT)",
+      "Scheduling report periodici"
+    ],
+    useCases: [
+      "Report vendite settimanali",
+      "Dashboard executive C-level",
+      "Analisi performance punti vendita"
+    ],
+    icon: <FileSpreadsheet className="h-10 w-10" />,
     route: "/ai-tools/reports",
     status: "coming_soon",
-    color: "text-indigo-500 dark:text-indigo-400",
+    gradient: "from-indigo-600 to-violet-700",
+    iconColor: "text-indigo-600"
   },
   {
     id: "customer-assistant",
     title: "Customer Assistant",
-    description: "Chatbot AI per assistenza clienti multilingua. Integrazione con knowledge base aziendale e CRM.",
-    icon: <MessageSquare className="h-8 w-8" />,
+    subtitle: "Supporto Clienti H24 Intelligente",
+    description: "Chatbot AI multilingua che comprende contesto, tono ed emozioni. Risponde istantaneamente attingendo alla knowledge base aziendale e al CRM, escalando al team umano solo quando necessario. Soddisfazione clienti al massimo livello, costi di supporto ridotti.",
+    benefits: [
+      "Supporto 24/7 multilingua (IT/EN/ES)",
+      "Integrazione CRM e knowledge base",
+      "Sentiment analysis conversazioni",
+      "Handoff intelligente a operatori umani"
+    ],
+    useCases: [
+      "FAQ automatiche prodotti",
+      "Tracking ordini e spedizioni",
+      "Assistenza tecnica first-level"
+    ],
+    icon: <MessageSquare className="h-10 w-10" />,
     route: "/ai-tools/customer-assistant",
     status: "coming_soon",
-    color: "text-pink-500 dark:text-pink-400",
+    gradient: "from-pink-500 to-rose-600",
+    iconColor: "text-pink-500"
   },
 ];
 
@@ -76,7 +158,6 @@ export default function AIToolsDashboardPage() {
   const [currentModule, setCurrentModule] = useState("ai");
   const [location, setLocation] = useLocation();
   
-  // Estrai tenant slug dalla URL
   const tenantSlug = location.split('/')[1] || 'staging';
 
   const handleToolClick = (tool: AITool) => {
@@ -87,123 +168,138 @@ export default function AIToolsDashboardPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="space-y-6">
-        {/* Header con gradiente WindTre */}
+      <div className="space-y-8">
+        {/* Hero Header con gradiente WindTre */}
         <div
-          className="rounded-2xl p-8"
+          className="rounded-3xl p-10 relative overflow-hidden"
           style={{
             background: "linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)",
-            color: "white",
           }}
         >
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <Sparkles className="h-8 w-8 text-white" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-5 mb-4">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30">
+                <Sparkles className="h-10 w-10 text-white" />
+              </div>
+              <div>
+                <h1 className="text-5xl font-bold text-white mb-2">AI Tools Ecosystem</h1>
+                <p className="text-xl text-white/95 font-medium">
+                  Potenzia il tuo business con l'intelligenza artificiale
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold">AI Tools Ecosystem</h1>
-              <p className="mt-1 text-lg text-white/90">
-                Strumenti intelligenti powered by AI per automatizzare processi aziendali
-              </p>
-            </div>
+            <p className="text-white/90 text-lg max-w-3xl">
+              Scopri gli strumenti AI che stanno rivoluzionando il modo di lavorare. Automazione intelligente, insights predittivi e decisioni data-driven a portata di click.
+            </p>
           </div>
+          
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
         </div>
 
-        {/* Tools Grid - Vista a Blocchi */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Tools Grid - 2 Colonne per card più grandi */}
+        <div className="grid gap-8 lg:grid-cols-2">
           {aiTools.map((tool) => (
             <Card
               key={tool.id}
-              className={`group relative overflow-hidden border-2 transition-all duration-300 ${
+              className={`group relative overflow-hidden border-2 transition-all duration-500 ${
                 tool.status === "available"
-                  ? "cursor-pointer border-gray-200 hover:border-orange-400 hover:shadow-xl hover:scale-[1.03] dark:border-gray-700 dark:hover:border-orange-500"
-                  : "opacity-60 cursor-not-allowed border-gray-200 dark:border-gray-700"
+                  ? "cursor-pointer border-gray-200 hover:border-orange-400 hover:shadow-2xl hover:scale-[1.02] dark:border-gray-700 dark:hover:border-orange-500"
+                  : "opacity-75 cursor-not-allowed border-gray-200 dark:border-gray-700"
               }`}
               onClick={() => handleToolClick(tool)}
               data-testid={`card-ai-tool-${tool.id}`}
             >
-              {/* Coming Soon Badge */}
-              {tool.status === "coming_soon" && (
-                <div className="absolute top-4 right-4 z-10">
-                  <span className="inline-flex items-center rounded-full bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 shadow-sm">
+              {/* Status Badge */}
+              <div className="absolute top-6 right-6 z-10">
+                {tool.status === "coming_soon" ? (
+                  <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold px-4 py-1.5 text-sm">
                     Coming Soon
-                  </span>
-                </div>
-              )}
-
-              <CardHeader className="space-y-4 pb-4">
-                <div className={`${tool.color} transition-transform group-hover:scale-110 group-hover:rotate-3`}>
-                  {tool.icon}
-                </div>
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {tool.title}
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="pt-0">
-                <CardDescription className="text-base leading-relaxed text-gray-600 dark:text-gray-400">
-                  {tool.description}
-                </CardDescription>
-              </CardContent>
-
-              {/* Hover Effect Overlay con gradiente WindTre */}
-              {tool.status === "available" && (
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-purple-600/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              )}
-
-              {/* Indicatore di status */}
-              <div className="absolute bottom-4 right-4">
-                {tool.status === "available" && (
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    Disponibile
-                  </div>
+                  </Badge>
+                ) : (
+                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold px-4 py-1.5 text-sm border-0 shadow-lg">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                      Disponibile Ora
+                    </div>
+                  </Badge>
                 )}
               </div>
+
+              <CardHeader className="space-y-6 pb-6">
+                {/* Icon con gradiente */}
+                <div className={`inline-flex p-5 rounded-2xl bg-gradient-to-br ${tool.gradient} shadow-xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+                  <div className="text-white">
+                    {tool.icon}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {tool.title}
+                  </CardTitle>
+                  <p className={`text-lg font-semibold bg-gradient-to-r ${tool.gradient} bg-clip-text text-transparent`}>
+                    {tool.subtitle}
+                  </p>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-6 pt-0">
+                {/* Descrizione principale */}
+                <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                  {tool.description}
+                </p>
+
+                {/* Benefits */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                    <Zap className="h-4 w-4 text-orange-500" />
+                    Key Benefits
+                  </div>
+                  <div className="space-y-2">
+                    {tool.benefits.map((benefit, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Use Cases */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                    <TrendingUp className="h-4 w-4 text-purple-600" />
+                    Perfect For
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {tool.useCases.map((useCase, idx) => (
+                      <Badge key={idx} variant="outline" className="bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1">
+                        {useCase}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA per tool disponibili */}
+                {tool.status === "available" && (
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className={`flex items-center justify-between text-sm font-semibold bg-gradient-to-r ${tool.gradient} bg-clip-text text-transparent group-hover:translate-x-2 transition-transform duration-300`}>
+                      <span>Inizia Subito →</span>
+                      <ArrowRight className={`h-4 w-4 ${tool.iconColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+
+              {/* Hover Effect Overlay */}
+              {tool.status === "available" && (
+                <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradient} opacity-0 transition-opacity duration-500 group-hover:opacity-[0.03]`} />
+              )}
             </Card>
           ))}
         </div>
-
-        {/* Info Section con design WindTre */}
-        <Card className="border-2 border-orange-200 dark:border-orange-900 bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950/20 dark:to-purple-950/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-2xl text-orange-700 dark:text-orange-400">
-              <Sparkles className="h-6 w-6" />
-              Come funzionano i tool AI?
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-base text-gray-700 dark:text-gray-300">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white font-bold">
-                1
-              </div>
-              <div>
-                <strong className="text-gray-900 dark:text-white">Upload & Analisi:</strong> Carica i tuoi documenti (PDF, Excel, immagini) e lascia che l'AI estragga i dati automaticamente con precisione.
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-bold">
-                2
-              </div>
-              <div>
-                <strong className="text-gray-900 dark:text-white">Review & Training:</strong> Correggi eventuali errori di estrazione. Il sistema impara dalle tue correzioni per migliorare nel tempo grazie al machine learning.
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white font-bold">
-                3
-              </div>
-              <div>
-                <strong className="text-gray-900 dark:text-white">Export & Integrazione:</strong> Esporta i dati strutturati in JSON, CSV o Excel. Integra direttamente con API di cassa e ERP aziendali.
-              </div>
-            </div>
-            <div className="mt-6 rounded-lg bg-white/50 dark:bg-gray-800/50 p-4 border border-orange-200 dark:border-orange-800">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                💡 <strong className="text-orange-600 dark:text-orange-400">Pro Tip:</strong> I tool AI sono condivisi tra tutti i tenant del sistema. Le correzioni e i training di un tenant migliorano la precisione per tutti, creando un ecosistema intelligente collaborativo!
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </Layout>
   );
