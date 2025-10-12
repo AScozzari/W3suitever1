@@ -271,7 +271,7 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
           return (
             <Card 
               key={user.id}
-              className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-2 border-gray-200 hover:border-orange-500 bg-white relative overflow-hidden"
+              className="group cursor-pointer transition-all duration-300 hover:shadow-xl border-2 border-gray-200 border-l-orange-500 border-r-orange-500 bg-white relative overflow-hidden"
               onClick={() => onEmployeeClick?.(user.id)}
               data-testid={`card-employee-${user.id}`}
             >
@@ -280,10 +280,10 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
               
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  {/* Avatar - Centrally aligned */}
-                  <Avatar className="h-16 w-16 flex-shrink-0 border-2 border-orange-500 shadow-md ring-2 ring-orange-100 group-hover:ring-orange-200 transition-all duration-300">
+                  {/* Avatar - Smaller and vertically centered */}
+                  <Avatar className="h-12 w-12 flex-shrink-0 shadow-md transition-all duration-300">
                     <AvatarImage src={user.avatarUrl} alt={fullName} />
-                    <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-bold text-lg">
+                    <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-semibold text-base">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
