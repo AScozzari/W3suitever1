@@ -6,7 +6,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon } from 'lucide-react';
+import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon, CheckSquare } from 'lucide-react';
 import { TasksDataTable } from '@/components/tasks/TasksDataTable';
 import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
 import { TaskDetailDialog } from '@/components/tasks/TaskDetailDialog';

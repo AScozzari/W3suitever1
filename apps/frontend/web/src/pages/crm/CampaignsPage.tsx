@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '@/components/Layout';
-import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

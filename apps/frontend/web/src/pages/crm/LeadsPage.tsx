@@ -12,7 +12,6 @@ import {
   type ColumnFiltersState,
 } from '@tanstack/react-table';
 import Layout from '@/components/Layout';
-import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
