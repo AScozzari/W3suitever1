@@ -167,9 +167,9 @@ export const useTenantNavigation = () => {
   
   /**
    * Naviga verso una pagina mantenendo il tenant context
+   * Usa path ASSOLUTO completo per evitare doppi slug
    */
   const navigate = (path: string) => {
-    // Assicurati che il path inizi con /
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     const fullPath = `/${tenantSlug}/${cleanPath}`;
     
@@ -178,11 +178,14 @@ export const useTenantNavigation = () => {
   };
   
   /**
-   * Costruisce un URL completo con tenant
+   * Costruisce un URL ASSOLUTO COMPLETO con tenant
+   * CRITICAL: Ritorna path ASSOLUTO per evitare che Wouter lo appenda alla location corrente
    */
   const buildUrl = (path: string): string => {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    return `/${tenantSlug}/${cleanPath}`;
+    const result = `/${tenantSlug}/${cleanPath}`;
+    console.log(`[BUILD-URL] Input: "${path}" → Output: "${result}"`);
+    return result;
   };
   
   /**
