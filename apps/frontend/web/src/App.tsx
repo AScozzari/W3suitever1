@@ -104,8 +104,23 @@ function Router() {
         }}
       </Route>
       
+      {/* 🎯 TENANT ROOT - Redirect to dashboard */}
+      <Route path="/:tenant">
+        {(params) => {
+          const tenantSlug = params.tenant;
+          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin'];
+          
+          if (!tenantSlug || reservedPaths.includes(tenantSlug)) {
+            return <NotFound />;
+          }
+          
+          console.log(`[APP-ROUTER] 🔄 Redirecting ${tenantSlug} root to dashboard`);
+          return <Redirect to={`/${tenantSlug}/dashboard`} />;
+        }}
+      </Route>
+      
       {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto */}
-      <Route path="/:tenant/*?">
+      <Route path="/:tenant/*">
         {(params) => {
           console.log('[APP-ROUTER] 📍 Route matched with params:', params);
           const tenantSlug = params.tenant;
