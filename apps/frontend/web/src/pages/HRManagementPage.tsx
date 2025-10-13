@@ -98,7 +98,7 @@ interface HRDocument {
 const HRManagementPage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth(); // Get current user from auth context
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees' | 'monitoring'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'attendance' | 'coverage' | 'documents' | 'analytics' | 'employees' | 'monitoring'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
   // ✅ NEW: HR Authentication Readiness Hook - usando useHRQueryReadiness per abilitazione immediata
@@ -371,38 +371,8 @@ const HRManagementPage: React.FC = () => {
 
     return (
       <div className="space-y-6">
-        {/* Hero Section with Glassmorphism */}
+        {/* KPI Cards Grid */}
         <div className="backdrop-blur-md bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-8 shadow-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                HR Management Center
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Centro gestionale risorse umane con integrazione workflow
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                onClick={() => setShowRequestModal(true)}
-                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white shadow-lg"
-                data-testid="button-new-request"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuova Richiesta
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setActiveTab('shifts')}
-                className="backdrop-blur-sm bg-white/10 border-white/30 hover:bg-white/20"
-                data-testid="button-manage-shifts"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Gestisci Turni
-              </Button>
-            </div>
-          </div>
-
           {/* KPI Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg hover:bg-white/15 transition-all">
@@ -2396,100 +2366,61 @@ const HRManagementPage: React.FC = () => {
       )}
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#111827',
-            margin: '0 0 8px 0'
-          }}>
-            Sistema HR Management
-          </h1>
-          <p style={{
-            fontSize: '15px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Gestione completa risorse umane con workflow automatizzati
-          </p>
-        </div>
-
-        {/* Tabs Container */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '16px',
-          padding: '20px',
-          marginBottom: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{
-            display: 'flex',
-            background: 'rgba(243, 244, 246, 0.5)',
-            borderRadius: '12px',
-            padding: '4px',
-            gap: '4px'
-          }}>
-            {hrTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  style={{
-                    flex: 1,
-                    background: isActive 
-                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
-                      : 'transparent',
-                    color: isActive ? 'white' : '#6b7280',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '14px 20px',
-                    fontSize: '14px',
-                    fontWeight: isActive ? '600' : '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: isActive 
-                      ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
-                      : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    textAlign: 'center',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
-                      e.currentTarget.style.color = '#374151';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = '#6b7280';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }
-                  }}
-                  data-testid={`hr-tab-${tab.id}`}
-                >
-                  <Icon size={16} />
-                  {tab.label}
-                </button>
-              );
-            })}
+        <div className="h-full flex flex-col">
+          {/* 🎯 WindTre Glassmorphism Header */}
+          <div className="windtre-glass-panel border-b border-white/20 mb-6">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Users className="h-6 w-6 text-windtre-orange" />
+                    HR Management Center
+                  </h1>
+                  <p className="text-gray-600 mt-1">Gestione completa risorse umane con workflow automatizzati</p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button 
+                    onClick={() => setShowRequestModal(true)}
+                    className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                    data-testid="button-new-request"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuova Richiesta
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setActiveTab('shifts')}
+                    data-testid="button-manage-shifts"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Gestisci Turni
+                  </Button>
+                </div>
+              </div>
+              
+              {/* 🎯 Navigation Tabs */}
+              <div className="flex gap-1 mt-4 overflow-x-auto">
+                {hrTabs.map((tab) => (
+                  <Button
+                    key={tab.id}
+                    variant={activeTab === tab.id ? 'default' : 'ghost'}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className="flex items-center gap-2 flex-shrink-0"
+                    data-testid={`hr-tab-${tab.id}`}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    {tab.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Content Area - Responsive to sidebar changes */}
-        <div className="w-full max-w-full overflow-x-auto">
-          {renderContent()}
+          {/* Content Area - Responsive to sidebar changes */}
+          <div className="flex-1 px-6 overflow-x-auto">
+            {renderContent()}
+          </div>
         </div>
       </Layout>
     </>

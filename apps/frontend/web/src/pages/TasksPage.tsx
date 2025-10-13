@@ -6,7 +6,6 @@ import { useTenant } from '@/contexts/TenantContext';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon } from 'lucide-react';
 import { TasksDataTable } from '@/components/tasks/TasksDataTable';
 import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
@@ -314,28 +313,57 @@ export default function TasksPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="flex-1 flex flex-col min-h-0 bg-white">
-      <div className="border-b border-gray-200 bg-white">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Gestisci tutte le tue attività in un'unica vista unificata
-              </p>
+      <div className="h-full flex flex-col">
+        {/* 🎯 WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <CheckSquare className="h-6 w-6 text-windtre-orange" />
+                  Task Management
+                </h1>
+                <p className="text-gray-600 mt-1">Gestisci tutte le tue attività in un'unica vista unificata</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <TemplateSelector />
+                <Button 
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  data-testid="button-create-task"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuovo Task
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <TemplateSelector />
-              <Button 
-                onClick={() => setIsCreateDialogOpen(true)}
-                data-testid="button-create-task"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo Task
-              </Button>
+            
+            {/* 🎯 Navigation Tabs */}
+            <div className="flex gap-1 mt-4">
+              {[
+                { id: 'list', label: 'Lista', icon: List },
+                { id: 'board', label: 'Board', icon: LayoutGrid },
+                { id: 'matrix', label: 'Matrice', icon: Grid2X2 },
+                { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+              ].map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant={activeTab === tab.id ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  className="flex items-center gap-2"
+                  data-testid={`tab-${tab.id}`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </Button>
+              ))}
             </div>
           </div>
+        </div>
 
+        {/* Search & Filters */}
+        <div className="px-6 mb-4">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex-1 min-w-[200px] max-w-md">
               <div className="relative">
@@ -356,32 +384,11 @@ export default function TasksPage() {
             />
           </div>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto min-w-0">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="h-full flex flex-col min-w-0">
-          <div className="border-b border-gray-200 bg-white px-6">
-            <TabsList className="bg-transparent border-b-0 h-12">
-              <TabsTrigger value="list" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-list">
-                <List className="h-4 w-4 mr-2" />
-                Lista
-              </TabsTrigger>
-              <TabsTrigger value="board" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-board">
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Board
-              </TabsTrigger>
-              <TabsTrigger value="matrix" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-matrix">
-                <Grid2X2 className="h-4 w-4 mr-2" />
-                Matrice
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="data-[state=active]:border-b-2 data-[state=active]:border-windtre-orange rounded-none" data-testid="tab-analytics">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="list" className="flex-1 p-6 m-0">
+        {/* Main Content */}
+        <div className="flex-1 px-6 overflow-y-auto min-w-0">
+          {activeTab === 'list' && (
+            <div className="pb-6">
             {isLoading ? (
               <LoadingState variant="spinner" message="Caricamento tasks..." />
             ) : filteredTasks.length === 0 ? (
@@ -420,9 +427,11 @@ export default function TasksPage() {
                 onStartTimer={handleStartTimer}
               />
             )}
-          </TabsContent>
+            </div>
+          )}
 
-          <TabsContent value="board" className="flex-1 m-0 flex flex-col">
+          {activeTab === 'board' && (
+            <div className="flex flex-col h-full">
             <div className="border-b border-gray-200 bg-white px-6 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
@@ -472,9 +481,11 @@ export default function TasksPage() {
                 />
               )}
             </div>
-          </TabsContent>
+            </div>
+          )}
 
-          <TabsContent value="matrix" className="flex-1 p-6 m-0">
+          {activeTab === 'matrix' && (
+            <div className="pb-6">
             {isLoading ? (
               <LoadingState variant="spinner" message="Caricamento matrix..." />
             ) : (
@@ -489,12 +500,15 @@ export default function TasksPage() {
                 }}
               />
             )}
-          </TabsContent>
+            </div>
+          )}
 
-          <TabsContent value="analytics" className="flex-1 p-6 m-0 overflow-y-auto">
-            <TaskAnalytics />
-          </TabsContent>
-        </Tabs>
+          {activeTab === 'analytics' && (
+            <div className="pb-6">
+              <TaskAnalytics />
+            </div>
+          )}
+        </div>
       </div>
 
       <BulkActionsBar
@@ -550,7 +564,6 @@ export default function TasksPage() {
           })) || []}
         />
       )}
-      </div>
     </Layout>
   );
 }

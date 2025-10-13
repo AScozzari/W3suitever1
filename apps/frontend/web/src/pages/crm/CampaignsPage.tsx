@@ -15,11 +15,16 @@ import {
   Clock,
   ArrowRight,
   Target,
-  Settings
+  Settings,
+  LayoutDashboard,
+  UserPlus,
+  CheckSquare,
+  BarChart3
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 
 interface Campaign {
@@ -80,6 +85,8 @@ export default function CampaignsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
+  const [location] = useLocation();
+  const { navigate, buildUrl } = useTenantNavigation();
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns'],
@@ -102,13 +109,77 @@ export default function CampaignsPage() {
     setEditingCampaignId(undefined);
   };
 
+  // CRM Tabs Configuration
+  const crmTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
+    { id: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
+    { id: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
+    { id: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
+    { id: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
+    { id: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
+    { id: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+  ];
+
+  const getActiveTab = () => {
+    if (location.includes('/crm/campaigns')) return 'campaigns';
+    if (location.includes('/crm/leads')) return 'leads';
+    if (location.includes('/crm/pipeline')) return 'pipeline';
+    if (location.includes('/crm/customers')) return 'customers';
+    if (location.includes('/crm/activities')) return 'activities';
+    if (location.includes('/crm/analytics')) return 'analytics';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTab();
+
+  const CRMHeader = () => (
+    <div className="windtre-glass-panel border-b border-white/20 mb-6">
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Users className="h-6 w-6 text-windtre-orange" />
+              CRM
+            </h1>
+            <p className="text-gray-600 mt-1">Customer Relationship Management - Lead, Pipeline, Clienti</p>
+          </div>
+          
+          <Button
+            onClick={handleCreateCampaign}
+            className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+            data-testid="button-create-campaign"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuova Campagna
+          </Button>
+        </div>
+        
+        {/* 🎯 Navigation Tabs */}
+        <div className="flex gap-1 mt-4 overflow-x-auto">
+          {crmTabs.map((tab) => (
+            <Button
+              key={tab.id}
+              variant={activeTab === tab.id ? 'default' : 'ghost'}
+              onClick={() => navigate(tab.path)}
+              className="flex items-center gap-2 flex-shrink-0"
+              data-testid={`crm-tab-${tab.id}`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
-        <div className="flex flex-col h-full">
-          <CRMNavigationBar />
-          <div className="flex-1 p-6 overflow-auto">
+        <div className="h-full flex flex-col">
+          <CRMHeader />
+          <div className="flex-1 px-6 overflow-auto">
             <LoadingState />
           </div>
         </div>
@@ -120,9 +191,9 @@ export default function CampaignsPage() {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
-        <div className="flex flex-col h-full">
-          <CRMNavigationBar />
-          <div className="flex-1 p-6 overflow-auto">
+        <div className="h-full flex flex-col">
+          <CRMHeader />
+          <div className="flex-1 px-6 overflow-auto">
             <ErrorState message="Errore nel caricamento delle campagne" />
           </div>
         </div>
@@ -153,45 +224,11 @@ export default function CampaignsPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
-      <div className="flex flex-col h-full">
-        <CRMNavigationBar />
+      <div className="h-full flex flex-col">
+        <CRMHeader />
         
-        <div className="flex-1 p-6 space-y-6 overflow-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-3 rounded-xl"
-              style={{ 
-                background: 'var(--brand-glass-orange)',
-                backdropFilter: 'blur(8px)'
-              }}
-            >
-              <Megaphone className="h-6 w-6" style={{ color: 'hsl(var(--brand-orange))' }} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
-                Campagne Marketing
-              </h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Gestione campagne e lead generation
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={handleCreateCampaign}
-            style={{ 
-              background: 'hsl(var(--brand-orange))',
-              color: 'white'
-            }}
-            data-testid="button-create-campaign"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Campagna
-          </Button>
-        </div>
-
-        {/* Campaign Cards Grid */}
+        <div className="flex-1 px-6 space-y-6 overflow-auto">
+          {/* Campaign Cards Grid */}
         <motion.div 
           className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
           variants={containerVariants}

@@ -30,10 +30,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp, Eye, X } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp, Eye, X, LayoutDashboard, Megaphone, Target, UserPlus, Users, CheckSquare, BarChart3 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { queryClient } from '@/lib/queryClient';
 import { Link, useLocation, useSearch } from 'wouter';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface Lead {
   id: string;
@@ -79,7 +80,8 @@ export default function LeadsPage() {
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const { toast } = useToast();
   const searchParams = useSearch();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { navigate, buildUrl } = useTenantNavigation();
 
   // Extract campaign ID from URL query params
   const campaignIdFromUrl = new URLSearchParams(searchParams).get('campaign');
@@ -287,50 +289,78 @@ export default function LeadsPage() {
     },
   });
 
+  // CRM Tabs Configuration
+  const crmTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
+    { id: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
+    { id: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
+    { id: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
+    { id: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
+    { id: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
+    { id: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+  ];
+
+  const getActiveTab = () => {
+    if (location.includes('/crm/campaigns')) return 'campaigns';
+    if (location.includes('/crm/leads')) return 'leads';
+    if (location.includes('/crm/pipeline')) return 'pipeline';
+    if (location.includes('/crm/customers')) return 'customers';
+    if (location.includes('/crm/activities')) return 'activities';
+    if (location.includes('/crm/analytics')) return 'analytics';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTab();
+
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
-      <div className="flex flex-col h-full">
-        <CRMNavigationBar />
-        <CRMSearchBar 
-          onSearch={setGlobalFilter}
-          placeholder="Cerca lead..."
-        />
-
-        <div className="flex-1 p-6 space-y-6 overflow-auto">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
-              <Input
-                placeholder="Cerca lead..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-10"
-                style={{ 
-                  background: 'var(--glass-bg-light)',
-                  borderColor: 'var(--glass-card-border)'
-                }}
-                data-testid="input-search"
-              />
+      <div className="h-full flex flex-col">
+        {/* 🎯 WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Users className="h-6 w-6 text-windtre-orange" />
+                  CRM
+                </h1>
+                <p className="text-gray-600 mt-1">Customer Relationship Management - Lead, Pipeline, Clienti</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <CRMFilterDock />
+                <Button 
+                  onClick={() => setIsCreateOpen(true)}
+                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  data-testid="button-create-lead"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuovo Lead
+                </Button>
+                <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <CRMFilterDock />
-              <Button 
-                onClick={() => setIsCreateOpen(true)}
-                style={{ 
-                  background: 'hsl(var(--brand-orange))',
-                  color: 'white'
-                }}
-                data-testid="button-create-lead"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Nuovo Lead
-              </Button>
-              <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+            
+            {/* 🎯 Navigation Tabs */}
+            <div className="flex gap-1 mt-4 overflow-x-auto">
+              {crmTabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant={activeTab === tab.id ? 'default' : 'ghost'}
+                  onClick={() => navigate(tab.path)}
+                  className="flex items-center gap-2 flex-shrink-0"
+                  data-testid={`crm-tab-${tab.id}`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </Button>
+              ))}
             </div>
           </div>
+        </div>
 
+        <div className="flex-1 px-6 space-y-6 overflow-auto">
           {/* Campaign Filter Badge */}
           {campaignIdFromUrl && (
             <div 
