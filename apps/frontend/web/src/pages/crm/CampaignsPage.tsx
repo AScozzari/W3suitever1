@@ -229,7 +229,7 @@ export default function CampaignsPage() {
         <div className="flex-1 px-6 space-y-6 overflow-auto">
           {/* Campaign Cards Grid */}
         <motion.div 
-          className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 py-5"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
