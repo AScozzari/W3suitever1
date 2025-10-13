@@ -78,15 +78,15 @@ export default function CRMDashboardPage() {
   const { navigate, buildUrl } = useTenantNavigation();
   const [location] = useLocation();
 
-  // CRM Navigation Tabs
+  // CRM Navigation Tabs (percorsi relativi al tenant - wouter gestisce automaticamente il base path)
   const crmTabs = [
-    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
-    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
-    { value: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
-    { value: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
-    { value: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
-    { value: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { value: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: 'crm' },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: 'crm/campaigns' },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: 'crm/pipeline' },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: 'crm/leads' },
+    { value: 'customers', label: 'Clienti', icon: Users, path: 'crm/customers' },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: 'crm/activities' },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: 'crm/analytics' }
   ];
 
   const getActiveTab = () => {
@@ -132,11 +132,15 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <Link key={tab.value} href={tab.path} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive 
-                        ? 'bg-windtre-orange text-white' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}>
+                    <Link 
+                      key={tab.value} 
+                      to={tab.path}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-windtre-orange text-white' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
                       <Icon className="h-4 w-4" />
                       {tab.label}
                     </Link>
@@ -182,11 +186,15 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <Link key={tab.value} href={tab.path} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive 
-                        ? 'bg-windtre-orange text-white' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}>
+                    <Link 
+                      key={tab.value} 
+                      to={tab.path}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-windtre-orange text-white' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
                       <Icon className="h-4 w-4" />
                       {tab.label}
                     </Link>
