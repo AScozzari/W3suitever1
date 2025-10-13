@@ -289,7 +289,7 @@ export default function TasksPage() {
     setSelectedTask(null);
   };
 
-  const handleEditTask = (task: Task) => {
+  const handleEditTask = (task: any) => {
     setTaskToEdit(task);
     setIsEditDialogOpen(true);
     setSelectedTask(null);
@@ -540,7 +540,9 @@ export default function TasksPage() {
             setIsEditDialogOpen(false);
             setTaskToEdit(null);
           }}
-          onSubmit={(data) => editTaskMutation.mutateAsync({ taskId: taskToEdit.id, data })}
+          onSubmit={async (data) => {
+            await editTaskMutation.mutateAsync({ taskId: taskToEdit.id, data });
+          }}
           isSubmitting={editTaskMutation.isPending}
           mode="edit"
           initialData={{
