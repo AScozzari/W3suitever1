@@ -258,7 +258,7 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
 
             <Separator />
 
-            <DetailSection title="Documenti Fiscali Italiani" icon={FileText}>
+            <DetailSection title="Documenti" icon={FileText}>
               <DetailRow label="Codice Fiscale" value={lead.fiscalCode} />
               <DetailRow label="Partita IVA" value={lead.vatNumber} />
               <DetailRow label="Tipo Documento" value={lead.documentType} />
