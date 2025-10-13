@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
-import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
-import { CRMFilterDock, CRMFilters } from '@/components/crm/CRMFilterDock';
+import { Input } from '@/components/ui/input';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,9 @@ import {
   User,
   Building,
   Hash,
-  Brain
+  Brain,
+  Search,
+  Filter
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -103,7 +104,6 @@ const rowVariants = {
 export default function LeadsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<CRMFilters>({});
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -135,7 +135,7 @@ export default function LeadsPage() {
   const activeTab = getActiveTab();
 
   const { data: leadsResponse, isLoading, error } = useQuery<Lead[]>({
-    queryKey: ['/api/crm/leads', searchQuery, filters],
+    queryKey: ['/api/crm/leads', searchQuery],
   });
 
   const leads = leadsResponse || [];
@@ -178,7 +178,7 @@ export default function LeadsPage() {
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
-          <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="windtre-glass-panel border-b border-white/20">
             <div className="px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -212,12 +212,6 @@ export default function LeadsPage() {
               </div>
             </div>
           </div>
-          
-          <CRMSearchBar 
-            onSearch={setSearchQuery}
-            placeholder="Cerca lead..."
-            enableAutocomplete={false}
-          />
           <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
@@ -253,19 +247,6 @@ export default function LeadsPage() {
                   {leads.length} lead totali • Tracking GTM • Multi-PDV Attribution
                 </p>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <CRMFilterDock onFiltersChange={setFilters} />
-                <Button
-                  onClick={() => setIsCreateOpen(true)}
-                  style={{ background: 'hsl(var(--brand-orange))' }}
-                  className="text-white"
-                  data-testid="button-create-lead"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nuovo Lead
-                </Button>
-              </div>
             </div>
             
             {/* Navigation Tabs */}
@@ -293,17 +274,53 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        {/* Search Bar with Autocomplete */}
-        <CRMSearchBar 
-          onSearch={setSearchQuery}
-          onFilterClick={() => {}}
-          onLeadSelect={(leadId) => {
-            const lead = leads.find(l => l.id === leadId);
-            setSelectedLead(lead || null);
-          }}
-          placeholder="Cerca per nome, email, telefono, CF, P.IVA, GTM ID..."
-          enableAutocomplete={true}
-        />
+        {/* Search & Filters Card */}
+        <div className="px-6 pt-6">
+          <Card 
+            className="glass-card p-4 border-0"
+            style={{ 
+              background: 'var(--glass-card-bg)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid var(--glass-card-border)',
+              boxShadow: 'var(--shadow-glass-sm)'
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+                <Input
+                  placeholder="Cerca per nome, email, telefono, CF, P.IVA, GTM ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  style={{ 
+                    background: 'var(--glass-bg-light)',
+                    border: '1px solid var(--glass-card-border)'
+                  }}
+                  data-testid="input-search-leads"
+                />
+              </div>
+              <Button variant="outline" data-testid="button-filters">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtri Avanzati
+              </Button>
+              <Button variant="outline" data-testid="button-date-range">
+                <Calendar className="h-4 w-4 mr-2" />
+                Periodo
+              </Button>
+              <Button
+                onClick={() => setIsCreateOpen(true)}
+                style={{ background: 'hsl(var(--brand-orange))' }}
+                className="text-white"
+                data-testid="button-create-lead"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nuovo Lead
+              </Button>
+            </div>
+          </Card>
+        </div>
 
         {/* Leads Data Table */}
         <div className="flex-1 overflow-auto">
