@@ -278,12 +278,12 @@ export function EmployeeCardGrid({ onEmployeeClick, currentUserRole }: EmployeeC
               {/* Orange accent bar on hover */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
               
-              <CardContent className="p-5">
-                <div className="flex items-center gap-4">
+              <CardContent className="p-5 flex items-center">
+                <div className="flex items-center gap-4 w-full">
                   {/* Avatar - Smaller and vertically centered */}
-                  <Avatar className="h-12 w-12 flex-shrink-0 shadow-md transition-all duration-300">
+                  <Avatar className="h-10 w-10 flex-shrink-0 shadow-md transition-all duration-300">
                     <AvatarImage src={user.avatarUrl} alt={fullName} />
-                    <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-semibold text-base">
+                    <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-semibold text-sm">
                       {initials}
                     </AvatarFallback>
                   </Avatar>

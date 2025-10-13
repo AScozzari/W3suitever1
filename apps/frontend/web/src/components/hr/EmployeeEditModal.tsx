@@ -739,12 +739,6 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                     </div>
                   </div>
 
-                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      <strong>Prossimamente:</strong> La gestione avanzata RBAC (scope, extra permissions, 
-                      role inheritance) sarà disponibile nella prossima release.
-                    </p>
-                  </div>
                 </div>
               </TabsContent>
 
@@ -783,12 +777,6 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                     </div>
                   </div>
 
-                  <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <p className="text-sm text-amber-700 dark:text-amber-300">
-                      <strong>Prossimamente:</strong> La gestione avanzata dei team con assignment, supervisori 
-                      e workflow routing sarà disponibile nella prossima release.
-                    </p>
-                  </div>
                 </div>
               </TabsContent>
 
