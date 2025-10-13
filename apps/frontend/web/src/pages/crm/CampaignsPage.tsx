@@ -236,7 +236,7 @@ export default function CampaignsPage() {
           >
             <div className="flex items-center gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
                 <Input
                   placeholder="Cerca campagna per nome, canale, tipo o stato..."
                   value={searchQuery}
@@ -246,6 +246,7 @@ export default function CampaignsPage() {
                     background: 'var(--glass-bg-light)',
                     border: '1px solid var(--glass-card-border)'
                   }}
+                  aria-label="Cerca campagne"
                   data-testid="input-search-campaigns"
                 />
               </div>
