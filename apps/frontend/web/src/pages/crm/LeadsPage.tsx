@@ -1,39 +1,43 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef,
-  type SortingState,
-  type ColumnFiltersState,
-} from '@tanstack/react-table';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
-import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
+import { CRMFilterDock, CRMFilters } from '@/components/crm/CRMFilterDock';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
+import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, ArrowUpDown, MoreHorizontal, Phone, Mail, MessageSquare, TrendingUp, Eye, X, LayoutDashboard, Megaphone, Target, UserPlus, Users, CheckSquare, BarChart3 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { queryClient } from '@/lib/queryClient';
-import { Link, useLocation, useSearch } from 'wouter';
-import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { Card } from '@/components/ui/card';
+import { 
+  LayoutDashboard, 
+  Megaphone, 
+  Target, 
+  UserPlus, 
+  Users, 
+  CheckSquare, 
+  BarChart3,
+  Plus,
+  Eye,
+  Phone,
+  Mail,
+  Sparkles,
+  ArrowRight,
+  TrendingUp,
+  Store,
+  Calendar,
+  User,
+  Building,
+  Hash,
+  Brain
+} from 'lucide-react';
+import { useLocation } from 'wouter';
+import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 interface Lead {
   id: string;
@@ -41,262 +45,81 @@ interface Lead {
   lastName: string;
   email: string;
   phone: string;
-  company?: string;
+  companyName?: string;
   status: 'new' | 'qualified' | 'contacted' | 'converted' | 'lost';
-  source: string;
-  driver: 'FISSO' | 'MOBILE' | 'DEVICE' | 'ACCESSORI';
+  leadScore: number;
+  lifecycleStage?: string;
+  conversionProbability?: number;
+  originStoreName?: string;
+  originStoreId?: string;
   campaignName?: string;
-  score: number;
-  ownerId: string;
-  ownerName: string;
+  sourceChannel?: string;
+  gtmClientId?: string;
+  ownerName?: string;
   createdAt: string;
+  
+  // Campi opzionali
+  customerType?: 'B2B' | 'B2C';
+  budgetRange?: { min: number; max: number };
+  companySector?: string;
+  purchaseTimeframe?: string;
+  fiscalCode?: string;
+  vatNumber?: string;
+  pecEmail?: string;
+  engagementScore?: number;
+  totalFormsCompleted?: number;
+  totalFormsStarted?: number;
+  storesVisited?: string[];
+  gtmProductsViewed?: string[];
+  aiSentimentScore?: number;
+  aiPredictedValue?: number;
+  aiIntentSignals?: string[];
 }
 
-const statusConfig = {
-  new: { label: 'Nuovo', color: 'hsl(var(--brand-purple))' },
-  qualified: { label: 'Qualificato', color: 'hsl(220, 90%, 56%)' },
-  contacted: { label: 'Contattato', color: 'hsl(280, 65%, 60%)' },
-  converted: { label: 'Convertito', color: 'hsl(142, 76%, 36%)' },
-  lost: { label: 'Perso', color: 'hsl(0, 84%, 60%)' }
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    }
+  }
 };
 
-const driverConfig = {
-  FISSO: { label: 'Fibra', icon: '🌐', color: 'hsl(220, 90%, 56%)' },
-  MOBILE: { label: '5G', icon: '📱', color: 'hsl(280, 65%, 60%)' },
-  DEVICE: { label: 'Device', icon: '📲', color: 'hsl(var(--brand-orange))' },
-  ACCESSORI: { label: 'Accessori', icon: '🎧', color: 'hsl(var(--brand-purple))' }
+const rowVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
 };
 
 export default function LeadsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState({});
-  const [globalFilter, setGlobalFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<CRMFilters>({});
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const searchParams = useSearch();
-  const [location, setLocation] = useLocation();
-  const { navigate, buildUrl } = useTenantNavigation();
-
-  // Extract campaign ID from URL query params
-  const campaignIdFromUrl = new URLSearchParams(searchParams).get('campaign');
-
-  const { data: leadsResponse, isLoading } = useQuery<Lead[]>({
-    queryKey: ['/api/crm/leads', globalFilter],
-  });
-
-  const { data: campaignsResponse } = useQuery<any[]>({
-    queryKey: ['/api/crm/campaigns'],
-    enabled: !!campaignIdFromUrl,
-  });
-
-  const leads = leadsResponse || [];
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  // Find campaign name if filtering by campaign
-  const filteredCampaign = campaignsResponse?.find(c => c.id === campaignIdFromUrl);
+  const tenantSlug = window.location.pathname.split('/')[1];
+  const [location, setLocation] = useLocation();
 
-  // Apply campaign filter from URL
-  useEffect(() => {
-    if (campaignIdFromUrl) {
-      setColumnFilters([{ id: 'campaignName', value: filteredCampaign?.name || campaignIdFromUrl }]);
-    } else {
-      setColumnFilters([]);
-    }
-  }, [campaignIdFromUrl, filteredCampaign?.name]);
-
-  const convertMutation = useMutation({
-    mutationFn: async ({ leadId, pipelineId }: { leadId: string; pipelineId: string }) => {
-      const response = await fetch(`/api/crm/leads/${leadId}/convert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pipelineId })
-      });
-      if (!response.ok) throw new Error('Conversione fallita');
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: 'Lead convertito in Deal!', description: 'Il deal è stato creato con successo' });
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/leads'] });
-      setIsConvertDialogOpen(false);
-    }
-  });
-
-  const columns: ColumnDef<Lead>[] = [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Seleziona tutto"
-          data-testid="checkbox-select-all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Seleziona riga"
-          data-testid={`checkbox-row-${row.original.id}`}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'firstName',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          data-testid="sort-name"
-        >
-          Nome
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}>
-              {row.original.firstName[0]}{row.original.lastName[0]}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="font-medium">{row.original.firstName} {row.original.lastName}</div>
-            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {row.original.company || row.original.email}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'status',
-      header: 'Stato',
-      cell: ({ row }) => {
-        const status = row.original.status;
-        const config = statusConfig[status];
-        return (
-          <Badge variant="outline" style={{ borderColor: config.color, color: config.color }}>
-            {config.label}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: 'driver',
-      header: 'Driver',
-      cell: ({ row }) => {
-        const driver = row.original.driver;
-        const config = driver ? driverConfig[driver] : { icon: '❓', label: 'N/D', color: 'var(--text-tertiary)' };
-        return (
-          <div className="flex items-center gap-2">
-            <span>{config.icon}</span>
-            <span style={{ color: config.color }}>{config.label}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'campaignName',
-      header: 'Campagna',
-      cell: ({ row }) => row.original.campaignName || '-',
-    },
-    {
-      accessorKey: 'score',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          data-testid="sort-score"
-        >
-          Score
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-          <span className="font-semibold">{row.original.score}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: 'Data',
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('it-IT'),
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const tenantSlug = window.location.pathname.split('/')[1];
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`actions-${row.original.id}`}>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => {
-                setSelectedLead(row.original);
-                setIsDetailOpen(true);
-              }}>
-                Visualizza dettagli
-              </DropdownMenuItem>
-              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
-                <DropdownMenuItem>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Profilo Cliente
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuItem onClick={() => {
-                setSelectedLead(row.original);
-                setIsConvertDialogOpen(true);
-              }}>
-                Converti in Deal
-              </DropdownMenuItem>
-              <DropdownMenuItem>Assegna a...</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
-  ];
-
-  const table = useReactTable({
-    data: leads,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    state: {
-      sorting,
-      columnFilters,
-      rowSelection,
-      globalFilter,
-    },
-  });
-
-  // CRM Tabs Configuration
   const crmTabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
-    { id: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
-    { id: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
-    { id: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
-    { id: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
-    { id: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { id: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: `/${tenantSlug}/crm` },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: `/${tenantSlug}/crm/campaigns` },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: `/${tenantSlug}/crm/pipeline` },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: `/${tenantSlug}/crm/leads` },
+    { value: 'customers', label: 'Clienti', icon: Users, path: `/${tenantSlug}/crm/customers` },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: `/${tenantSlug}/crm/activities` },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: `/${tenantSlug}/crm/analytics` }
   ];
 
   const getActiveTab = () => {
@@ -311,287 +134,398 @@ export default function LeadsPage() {
 
   const activeTab = getActiveTab();
 
+  const { data: leadsResponse, isLoading, error } = useQuery<Lead[]>({
+    queryKey: ['/api/crm/leads', searchQuery, filters],
+  });
+
+  const leads = leadsResponse || [];
+
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { label: string; color: string }> = {
+      new: { label: 'Nuovo', color: 'hsl(var(--brand-purple))' },
+      qualified: { label: 'Qualificato', color: 'hsl(220, 90%, 56%)' },
+      contacted: { label: 'Contattato', color: 'hsl(280, 65%, 60%)' },
+      converted: { label: 'Convertito', color: 'hsl(142, 76%, 36%)' },
+      lost: { label: 'Perso', color: 'hsl(0, 84%, 60%)' }
+    };
+    return configs[status] || { label: status, color: 'gray' };
+  };
+
+  const getLifecycleStageColor = (stage: string) => {
+    const colors: Record<string, string> = {
+      Subscriber: 'hsl(200, 70%, 50%)',
+      Lead: 'hsl(var(--brand-purple))',
+      MQL: 'hsl(280, 65%, 60%)',
+      SQL: 'hsl(var(--brand-orange))',
+      Opportunity: 'hsl(45, 100%, 51%)',
+      Customer: 'hsl(142, 76%, 36%)'
+    };
+    return colors[stage] || 'gray';
+  };
+
+  const toggleRowExpansion = (leadId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(leadId)) {
+      newExpanded.delete(leadId);
+    } else {
+      newExpanded.add(leadId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  if (isLoading) {
+    return (
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <CRMCommandPalette />
+        <div className="flex flex-col h-full">
+          <div className="windtre-glass-panel border-b border-white/20 mb-6">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <UserPlus className="h-6 w-6 text-windtre-orange" />
+                    CRM - Lead Management
+                  </h1>
+                  <p className="text-gray-600 mt-1">Gestione lead con tracking GTM e multi-PDV</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-1 mt-4">
+                {crmTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.value;
+                  return (
+                    <button
+                      key={tab.value}
+                      onClick={() => setLocation(tab.path)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-windtre-orange text-white' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca lead..."
+            enableAutocomplete={false}
+          />
+          <div className="flex-1 p-6 overflow-auto">
+            <LoadingState />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <CRMCommandPalette />
+        <ErrorState message="Errore nel caricamento dei lead" />
+      </Layout>
+    );
+  }
+
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
-      <div className="h-full flex flex-col">
-        {/* 🎯 WindTre Glassmorphism Header */}
-        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+      
+      <div className="flex flex-col h-full">
+        {/* WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Users className="h-6 w-6 text-windtre-orange" />
-                  CRM
+                  <UserPlus className="h-6 w-6 text-windtre-orange" />
+                  CRM - Lead Management
                 </h1>
-                <p className="text-gray-600 mt-1">Customer Relationship Management - Lead, Pipeline, Clienti</p>
+                <p className="text-gray-600 mt-1">
+                  {leads.length} lead totali • Tracking GTM • Multi-PDV Attribution
+                </p>
               </div>
               
               <div className="flex items-center gap-3">
-                <CRMFilterDock />
-                <Button 
+                <CRMFilterDock onFiltersChange={setFilters} />
+                <Button
                   onClick={() => setIsCreateOpen(true)}
-                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  style={{ background: 'hsl(var(--brand-orange))' }}
+                  className="text-white"
                   data-testid="button-create-lead"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Nuovo Lead
                 </Button>
-                <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
               </div>
             </div>
             
-            {/* 🎯 Navigation Tabs */}
-            <div className="flex gap-1 mt-4 overflow-x-auto">
-              {crmTabs.map((tab) => (
-                <Button
-                  key={tab.id}
-                  variant={activeTab === tab.id ? 'default' : 'ghost'}
-                  onClick={() => navigate(tab.path)}
-                  className="flex items-center gap-2 flex-shrink-0"
-                  data-testid={`crm-tab-${tab.id}`}
-                >
-                  <tab.icon className="h-4 w-4" />
-                  {tab.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 px-6 space-y-6 overflow-auto">
-          {/* Campaign Filter Badge */}
-          {campaignIdFromUrl && (
-            <div 
-              className="flex items-center justify-between px-4 py-3 rounded-lg"
-              style={{ 
-                background: 'var(--glass-bg-heavy)',
-                border: '1px solid var(--glass-card-border)',
-                backdropFilter: 'blur(8px)'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <Badge 
-                  variant="outline"
-                  style={{ 
-                    borderColor: 'hsl(var(--brand-orange))',
-                    color: 'hsl(var(--brand-orange))',
-                    background: 'var(--glass-bg-light)'
-                  }}
-                >
-                  Filtrato per campagna: {filteredCampaign?.name || campaignIdFromUrl}
-                </Badge>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation('crm/leads')}
-                data-testid="button-clear-campaign-filter"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Rimuovi filtro
-              </Button>
-            </div>
-          )}
-
-          {/* DataTable */}
-          <div 
-            className="rounded-xl border overflow-hidden"
-            style={{ 
-              background: 'var(--glass-card-bg)',
-              backdropFilter: 'blur(10px)',
-              borderColor: 'var(--glass-card-border)'
-            }}
-          >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && 'selected'}
-                      data-testid={`row-lead-${row.original.id}`}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      Nessun lead trovato
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {table.getFilteredSelectedRowModel().rows.length} di{' '}
-              {table.getFilteredRowModel().rows.length} righe selezionate
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                data-testid="button-prev-page"
-              >
-                Precedente
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                data-testid="button-next-page"
-              >
-                Successiva
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Lead Detail Sheet */}
-        <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <SheetContent className="w-[600px] sm:max-w-[600px]" style={{ background: 'var(--glass-card-bg)' }}>
-            {selectedLead && (
-              <>
-                <SheetHeader>
-                  <SheetTitle>{selectedLead.firstName} {selectedLead.lastName}</SheetTitle>
-                  <SheetDescription>{selectedLead.email}</SheetDescription>
-                </SheetHeader>
-
-                <div className="mt-6 space-y-6">
-                  <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm" data-testid="button-call">
-                      <Phone className="mr-2 h-4 w-4" />
-                      Chiama
-                    </Button>
-                    <Button variant="outline" size="sm" data-testid="button-email">
-                      <Mail className="mr-2 h-4 w-4" />
-                      Email
-                    </Button>
-                    <Button variant="outline" size="sm" data-testid="button-whatsapp">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      WhatsApp
-                    </Button>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Stato</Label>
-                      <Badge className="mt-2" style={{ borderColor: statusConfig[selectedLead.status].color }}>
-                        {statusConfig[selectedLead.status].label}
-                      </Badge>
-                    </div>
-                    <div>
-                      <Label>Driver Prodotto</Label>
-                      <p className="mt-2">{driverConfig[selectedLead.driver].icon} {driverConfig[selectedLead.driver].label}</p>
-                    </div>
-                    <div>
-                      <Label>Score</Label>
-                      <p className="mt-2 font-semibold">{selectedLead.score}/100</p>
-                    </div>
-                    <div>
-                      <Label>Campagna</Label>
-                      <p className="mt-2">{selectedLead.campaignName || 'N/D'}</p>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <Button 
-                    className="w-full" 
-                    style={{ background: 'hsl(var(--brand-orange))' }}
-                    onClick={() => {
-                      setIsDetailOpen(false);
-                      setIsConvertDialogOpen(true);
-                    }}
-                    data-testid="button-convert-to-deal"
+            {/* Navigation Tabs */}
+            <div className="flex gap-1 mt-4">
+              {crmTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setLocation(tab.path)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-windtre-orange text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    data-testid={`tab-${tab.value}`}
                   >
-                    Converti in Deal
-                  </Button>
-                </div>
-              </>
-            )}
-          </SheetContent>
-        </Sheet>
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
-        {/* Convert to Deal Dialog */}
-        <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Converti Lead in Deal</DialogTitle>
-              <DialogDescription>
-                Seleziona la pipeline per creare il deal
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Pipeline</Label>
-                <Select>
-                  <SelectTrigger data-testid="select-pipeline">
-                    <SelectValue placeholder="Seleziona pipeline" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Pipeline Fisso</SelectItem>
-                    <SelectItem value="2">Pipeline Mobile</SelectItem>
-                    <SelectItem value="3">Pipeline Device</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Note iniziali</Label>
-                <Textarea placeholder="Aggiungi note..." data-testid="textarea-notes" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsConvertDialogOpen(false)}>
-                Annulla
-              </Button>
-              <Button 
-                style={{ background: 'hsl(var(--brand-orange))' }}
-                onClick={() => selectedLead && convertMutation.mutate({ leadId: selectedLead.id, pipelineId: '1' })}
-                data-testid="button-confirm-convert"
-              >
-                Converti
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Search Bar with Autocomplete */}
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          onFilterClick={() => {}}
+          onLeadSelect={(leadId) => {
+            const lead = leads.find(l => l.id === leadId);
+            setSelectedLead(lead || null);
+          }}
+          placeholder="Cerca per nome, email, telefono, CF, P.IVA, GTM ID..."
+          enableAutocomplete={true}
+        />
+
+        {/* Leads Data Table */}
+        <div className="flex-1 overflow-auto">
+          <motion.div 
+            className="p-6 space-y-3"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {leads.length === 0 ? (
+              <Card className="p-12 text-center">
+                <UserPlus className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Nessun lead trovato</h3>
+                <p className="text-gray-600 mb-6">
+                  Inizia creando il tuo primo lead o modifica i filtri di ricerca
+                </p>
+                <Button
+                  onClick={() => setIsCreateOpen(true)}
+                  style={{ background: 'hsl(var(--brand-orange))' }}
+                  className="text-white"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crea Primo Lead
+                </Button>
+              </Card>
+            ) : (
+              leads.map((lead) => (
+                <motion.div key={lead.id} variants={rowVariants}>
+                  <Card 
+                    className="p-4 hover:shadow-lg transition-all cursor-pointer"
+                    style={{ 
+                      background: 'var(--glass-card-bg)',
+                      borderColor: 'var(--glass-card-border)'
+                    }}
+                    onClick={() => toggleRowExpansion(lead.id)}
+                    data-testid={`lead-card-${lead.id}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Lead Score */}
+                      <div className="flex-shrink-0 text-center w-16">
+                        <div className="text-2xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+                          {lead.leadScore}
+                        </div>
+                        <div className="text-xs text-gray-500">Score</div>
+                        <Progress 
+                          value={lead.leadScore} 
+                          className="h-1 mt-1"
+                          style={{ 
+                            background: 'hsl(var(--brand-orange))/20'
+                          }}
+                        />
+                      </div>
+
+                      {/* Avatar + Nome */}
+                      <div className="flex items-center gap-3 min-w-[200px]">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}>
+                            {lead.firstName[0]}{lead.lastName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {lead.firstName} {lead.lastName}
+                          </div>
+                          {lead.companyName && (
+                            <div className="text-xs flex items-center gap-1 text-gray-600">
+                              <Building className="h-3 w-3" />
+                              {lead.companyName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Email + Phone */}
+                      <div className="flex-1 min-w-[250px]">
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Mail className="h-3 w-3" />
+                          <span className="truncate">{lead.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                          <Phone className="h-3 w-3" />
+                          {lead.phone}
+                        </div>
+                      </div>
+
+                      {/* Store Origine */}
+                      {lead.originStoreName && (
+                        <div className="min-w-[150px]">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Store className="h-3 w-3" style={{ color: 'hsl(var(--brand-orange))' }} />
+                            <span className="font-medium">{lead.originStoreName}</span>
+                          </div>
+                          <div className="text-xs text-gray-500">PDV Origine</div>
+                        </div>
+                      )}
+
+                      {/* Status */}
+                      <Badge 
+                        variant="outline"
+                        style={{ 
+                          borderColor: getStatusConfig(lead.status).color,
+                          color: getStatusConfig(lead.status).color
+                        }}
+                      >
+                        {getStatusConfig(lead.status).label}
+                      </Badge>
+
+                      {/* Lifecycle Stage */}
+                      {lead.lifecycleStage && (
+                        <Badge 
+                          variant="outline"
+                          style={{ 
+                            borderColor: getLifecycleStageColor(lead.lifecycleStage),
+                            color: getLifecycleStageColor(lead.lifecycleStage)
+                          }}
+                        >
+                          {lead.lifecycleStage}
+                        </Badge>
+                      )}
+
+                      {/* Conversion Probability */}
+                      {lead.conversionProbability !== undefined && (
+                        <div className="min-w-[80px] text-center">
+                          <div className="text-lg font-bold text-green-600">
+                            {Math.round(lead.conversionProbability)}%
+                          </div>
+                          <div className="text-xs text-gray-500">Conv.</div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLead(lead);
+                            setIsDetailOpen(true);
+                          }}
+                          data-testid={`button-view-${lead.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          style={{ color: 'hsl(var(--brand-orange))' }}
+                          data-testid={`button-enrich-${lead.id}`}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Details */}
+                    {expandedRows.has(lead.id) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-4"
+                      >
+                        {/* Campagna + Canale */}
+                        <div>
+                          <div className="text-xs text-gray-500">Campagna</div>
+                          <div className="text-sm font-medium">{lead.campaignName || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">Canale</div>
+                          <div className="text-sm font-medium">{lead.sourceChannel || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">Owner</div>
+                          <div className="text-sm font-medium">{lead.ownerName || 'Non assegnato'}</div>
+                        </div>
+
+                        {/* GTM Client ID */}
+                        {lead.gtmClientId && (
+                          <div>
+                            <div className="text-xs text-gray-500">GTM Client ID</div>
+                            <div className="text-sm font-mono">{lead.gtmClientId.substring(0, 20)}...</div>
+                          </div>
+                        )}
+
+                        {/* Data Creazione */}
+                        <div>
+                          <div className="text-xs text-gray-500">Creato il</div>
+                          <div className="text-sm font-medium">
+                            {format(new Date(lead.createdAt), 'dd MMM yyyy', { locale: it })}
+                          </div>
+                        </div>
+
+                        {/* Engagement Score */}
+                        {lead.engagementScore !== undefined && (
+                          <div>
+                            <div className="text-xs text-gray-500">Engagement</div>
+                            <div className="flex items-center gap-2">
+                              <Progress value={lead.engagementScore} className="h-2 flex-1" />
+                              <span className="text-sm font-medium">{lead.engagementScore}</span>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </Card>
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        </div>
       </div>
+
+      {/* Create Lead Dialog */}
+      <CreateLeadDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      
+      {/* Lead Detail Modal */}
+      <LeadDetailModal 
+        lead={selectedLead} 
+        open={isDetailOpen} 
+        onOpenChange={setIsDetailOpen} 
+      />
     </Layout>
   );
 }
