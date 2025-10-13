@@ -287,7 +287,7 @@ export default function CampaignsPage() {
               whileTap={{ scale: 0.98 }}
               data-testid={`campaign-card-${campaign.id}`}
             >
-              <Link href={`../leads?campaign=${campaign.id}`}>
+              <Link href={buildUrl(`crm/leads?campaign=${campaign.id}`)}>
                 <Card 
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
