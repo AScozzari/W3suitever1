@@ -20,8 +20,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Layout from '@/components/Layout';
-import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { CRMFilterDock } from '@/components/crm/CRMFilterDock';
 import { Button } from '@/components/ui/button';
@@ -32,9 +30,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Euro, Clock, User, MoreVertical, Plus } from 'lucide-react';
+import { Euro, Clock, User, MoreVertical, Plus, LayoutDashboard, Megaphone, Target, UserPlus, Users, CheckSquare, BarChart3 } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useLocation } from 'wouter';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface Deal {
   id: string;
@@ -219,8 +219,33 @@ export default function PipelineBoardPage() {
   const [selectedPipeline, setSelectedPipeline] = useState('1');
   const [activeId, setActiveId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { navigate, buildUrl } = useTenantNavigation();
+  const [location] = useLocation();
 
   const [stages, setStages] = useState<Stage[]>([]);
+
+  // CRM Tabs Configuration
+  const crmTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
+    { id: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
+    { id: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
+    { id: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
+    { id: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
+    { id: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
+    { id: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+  ];
+
+  const getActiveTab = () => {
+    if (location.includes('/crm/campaigns')) return 'campaigns';
+    if (location.includes('/crm/leads')) return 'leads';
+    if (location.includes('/crm/pipeline')) return 'pipeline';
+    if (location.includes('/crm/customers')) return 'customers';
+    if (location.includes('/crm/activities')) return 'activities';
+    if (location.includes('/crm/analytics')) return 'analytics';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTab();
 
   const { data: pipelinesResponse } = useQuery<Pipeline[]>({
     queryKey: ['/api/crm/pipelines'],
@@ -309,14 +334,39 @@ export default function PipelineBoardPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
-      <div className="flex flex-col h-full">
-        <CRMNavigationBar />
-        <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca deal..."
-        />
+      <div className="h-full flex flex-col">
+        {/* 🎯 WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Users className="h-6 w-6 text-windtre-orange" />
+                  CRM
+                </h1>
+                <p className="text-gray-600 mt-1">Customer Relationship Management - Lead, Pipeline, Clienti</p>
+              </div>
+            </div>
+            
+            {/* 🎯 Navigation Tabs */}
+            <div className="flex gap-1 mt-4 overflow-x-auto">
+              {crmTabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant={activeTab === tab.id ? 'default' : 'ghost'}
+                  onClick={() => navigate(tab.path)}
+                  className="flex items-center gap-2 flex-shrink-0"
+                  data-testid={`crm-tab-${tab.id}`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
 
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 px-6 overflow-auto">
           <Tabs defaultValue="board" className="h-full">
             <div className="flex items-center justify-between mb-6">
               <TabsList>
