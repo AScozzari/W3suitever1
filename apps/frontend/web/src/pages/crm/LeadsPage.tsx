@@ -6,7 +6,7 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Input } from '@/components/ui/input';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
-import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { useTenantNavigation, useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -111,8 +111,9 @@ export default function LeadsPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { buildUrl, navigate } = useTenantNavigation();
+  const tenantId = useRequiredTenantId();
   
   // Extract campaign filter from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -141,7 +142,7 @@ export default function LeadsPage() {
   const activeTab = getActiveTab();
 
   const { data: leadsResponse, isLoading, error } = useQuery<Lead[]>({
-    queryKey: ['/api/crm/leads', searchQuery, campaignId],
+    queryKey: ['/api/crm/leads', searchQuery, campaignId, tenantId],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (campaignId) params.set('campaign', campaignId);
@@ -149,9 +150,9 @@ export default function LeadsPage() {
       const res = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
-          'X-Tenant-ID': sessionStorage.getItem('tenantId') || '',
+          'X-Tenant-ID': tenantId,
           'X-Auth-Session': 'authenticated',
-          'X-Auth-User': sessionStorage.getItem('userId') || 'admin-user'
+          'X-Auth-User': 'admin-user'
         }
       });
       if (!res.ok) throw new Error('Failed to fetch leads');
