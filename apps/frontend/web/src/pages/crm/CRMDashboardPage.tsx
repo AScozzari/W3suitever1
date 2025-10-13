@@ -78,15 +78,16 @@ export default function CRMDashboardPage() {
   const { navigate, buildUrl } = useTenantNavigation();
   const [location] = useLocation();
 
-  // CRM Navigation Tabs (percorsi relativi al tenant - wouter gestisce automaticamente il base path)
+  // CRM Navigation Tabs - percorsi relativi al tenant corrente 
+  // Quando siamo in /staging/crm, usiamo percorsi relativi senza buildUrl
   const crmTabs = [
-    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: 'crm' },
-    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: 'crm/campaigns' },
-    { value: 'pipeline', label: 'Pipeline', icon: Target, path: 'crm/pipeline' },
-    { value: 'leads', label: 'Lead', icon: UserPlus, path: 'crm/leads' },
-    { value: 'customers', label: 'Clienti', icon: Users, path: 'crm/customers' },
-    { value: 'activities', label: 'Attività', icon: CheckSquare, path: 'crm/activities' },
-    { value: 'analytics', label: 'Report', icon: BarChart3, path: 'crm/analytics' }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '.' },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: 'campaigns' },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: 'pipeline' },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: 'leads' },
+    { value: 'customers', label: 'Clienti', icon: Users, path: 'customers' },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: 'activities' },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: 'analytics' }
   ];
 
   const getActiveTab = () => {
