@@ -18,7 +18,9 @@ import {
   Eye,
   Search,
   Filter,
-  Calendar
+  Calendar,
+  Users,
+  BarChart3
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
