@@ -19,7 +19,7 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
-import { useCurrentTenantSlug } from '@/hooks/useTenantSafety';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { useState } from 'react';
 
 interface DashboardStats {
@@ -75,18 +75,18 @@ const cardHoverVariants = {
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const tenantSlug = useCurrentTenantSlug(); // Get tenant from URL
-  const [location, setLocation] = useLocation(); // Use Wouter's setLocation for navigation
+  const [location, setLocation] = useLocation();
+  const { buildUrl } = useTenantNavigation();
 
-  // CRM Navigation Tabs - costruiamo percorsi assoluti con tenant (come fa il Sidebar)
+  // CRM Navigation Tabs
   const crmTabs = [
-    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: `/${tenantSlug}/crm` },
-    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: `/${tenantSlug}/crm/campaigns` },
-    { value: 'pipeline', label: 'Pipeline', icon: Target, path: `/${tenantSlug}/crm/pipeline` },
-    { value: 'leads', label: 'Lead', icon: UserPlus, path: `/${tenantSlug}/crm/leads` },
-    { value: 'customers', label: 'Clienti', icon: Users, path: `/${tenantSlug}/crm/customers` },
-    { value: 'activities', label: 'Attività', icon: CheckSquare, path: `/${tenantSlug}/crm/activities` },
-    { value: 'analytics', label: 'Report', icon: BarChart3, path: `/${tenantSlug}/crm/analytics` }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
+    { value: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
   ];
 
   const getActiveTab = () => {

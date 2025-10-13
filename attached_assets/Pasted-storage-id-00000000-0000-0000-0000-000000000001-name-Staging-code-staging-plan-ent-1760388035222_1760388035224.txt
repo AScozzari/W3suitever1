@@ -1,0 +1,37 @@
+storage: 
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+LeadsPage.tsx:115 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/leads 400 (Bad Request)
+LeadsPage.tsx:115 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/leads 400 (Bad Request)
+LeadsPage.tsx:115 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/leads 400 (Bad Request)
+LeadsPage.tsx:115 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/leads 400 (Bad Request)
+LeadsPage.tsx:122 Uncaught ReferenceError: buildUrl is not defined
+    at LeadsPage (LeadsPage.tsx:122:76)
+LeadsPage.tsx:122 Uncaught ReferenceError: buildUrl is not defined
+    at LeadsPage (LeadsPage.tsx:122:76)
+@react-refresh:228 The above error occurred in the <LeadsPage> component:
+
+    at LeadsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/LeadsPage.tsx?t=1760388013510:80:45)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:727:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:190:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:48:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:262:17)
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:29:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+LeadsPage.tsx:122 Uncaught (in promise) ReferenceError: buildUrl is not defined
+    at LeadsPage (LeadsPage.tsx:122:76)
