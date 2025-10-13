@@ -1,0 +1,118 @@
+IVE] 🚀 Session keep-alive initialized (12-min interval)
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+LeadDetailModal.tsx:401 Uncaught TypeError: Cannot read properties of null (reading 'toFixed')
+    at LeadDetailModal (LeadDetailModal.tsx:401:86)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=2f97fb70:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=2f97fb70:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=2f97fb70:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=2f97fb70:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=2f97fb70:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=2f97fb70:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=2f97fb70:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=2f97fb70:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=2f97fb70:19137:13)
+LeadDetailModal @ LeadDetailModal.tsx:401
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=2f97fb70:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=2f97fb70:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=2f97fb70:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=2f97fb70:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=2f97fb70:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this error
+LeadDetailModal.tsx:401 Uncaught TypeError: Cannot read properties of null (reading 'toFixed')
+    at LeadDetailModal (LeadDetailModal.tsx:401:86)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=2f97fb70:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=2f97fb70:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=2f97fb70:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=2f97fb70:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=2f97fb70:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=2f97fb70:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=2f97fb70:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=2f97fb70:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=2f97fb70:19137:13)
+LeadDetailModal @ LeadDetailModal.tsx:401
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=2f97fb70:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=2f97fb70:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=2f97fb70:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=2f97fb70:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=2f97fb70:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=2f97fb70:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this error
+hook.js:608 The above error occurred in the <LeadDetailModal> component:
+
+    at LeadDetailModal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/crm/LeadDetailModal.tsx:43:35)
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:199:34)
+    at LeadsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/LeadsPage.tsx:76:45)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:727:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:190:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:48:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:262:17)
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:29:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=2f97fb70:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=2f97fb70:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=2f97fb70:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=2f97fb70:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=2f97fb70:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=2f97fb70:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=2f97fb70:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this error
+chunk-ZHRYBLGQ.js?v=2f97fb70:9129 Uncaught TypeError: Cannot read properties of null (reading 'toFixed')
+    at LeadDetailModal (LeadDetailModal.tsx:401:86)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=2f97fb70:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=2f97fb70:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=2f97fb70:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=2f97fb70:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=2f97fb70:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=2f97fb70:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=2f97fb70:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=2f97fb70:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=2f97fb70:18879:28)
+LeadDetailModal @ LeadDetailModal.tsx:401
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=2f97fb70:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=2f97fb70:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=2f97fb70:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=2f97fb70:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
