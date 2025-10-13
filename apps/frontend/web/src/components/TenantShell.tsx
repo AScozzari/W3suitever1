@@ -209,6 +209,14 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
   
   return (
     <Switch>
+      {/* 🎯 TENANT ROOT - Exact match redirect to dashboard */}
+      <Route path={`/${tenantSlug}`}>
+        {() => {
+          console.log(`[TENANT-ROUTES] 🔄 Redirecting ${tenantSlug} root to dashboard`);
+          return <Redirect to={`/${tenantSlug}/dashboard`} />;
+        }}
+      </Route>
+      
       {/* Login route - no auth required */}
       <Route path={`/${tenantSlug}/login`}>
         <Login tenantCode={tenantSlug} />
