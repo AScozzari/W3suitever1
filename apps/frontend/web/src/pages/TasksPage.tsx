@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon, CheckSquare } from 'lucide-react';
 import { TasksDataTable } from '@/components/tasks/TasksDataTable';
 import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
-import { TaskDetailDialog } from '@/components/tasks/TaskDetailDialog';
+import { TaskDetailDialog, TaskDetailProps } from '@/components/tasks/TaskDetailDialog';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
 import { TemplateSelector } from '@/components/tasks/TemplateSelector';
 import { BulkActionsBar } from '@/components/tasks/BulkActionsBar';
@@ -289,8 +289,8 @@ export default function TasksPage() {
     setSelectedTask(null);
   };
 
-  const handleEditTask = (task: any) => {
-    setTaskToEdit(task);
+  const handleEditTask = (task: TaskDetailProps['task']) => {
+    setTaskToEdit(task as Task);
     setIsEditDialogOpen(true);
     setSelectedTask(null);
   };
