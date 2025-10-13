@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +41,7 @@ const employeeFormSchema = z.object({
     .or(z.literal('')),
   role: z.string().optional(),
   profileImageUrl: z.string().url().optional().nullable().or(z.literal('')),
+  notes: z.string().optional(),
   
   // Tab 2: Anagrafica + Indirizzo
   fiscalCode: z.string()
@@ -107,6 +109,12 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
   // Load stores for Tab 3 (Punti Vendita)
   const { data: stores = [] } = useQuery<any[]>({
     queryKey: ['/api/stores'],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Load roles for Tab 1 (Generale - role select)
+  const { data: roles = [] } = useQuery<any[]>({
+    queryKey: ['/api/roles'],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -347,14 +355,23 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Ruolo</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            value={field.value || ''} 
-                            placeholder="Store Manager" 
-                            data-testid="input-role"
-                          />
-                        </FormControl>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || undefined}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-role">
+                              <SelectValue placeholder="Seleziona ruolo..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {roles.map((role: any) => (
+                              <SelectItem key={role.id} value={role.id}>
+                                {role.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -373,6 +390,26 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                           value={field.value || ''} 
                           placeholder="https://..." 
                           data-testid="input-profileImageUrl"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Note</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          value={field.value || ''} 
+                          placeholder="Inserisci note o annotazioni sul dipendente..." 
+                          rows={4}
+                          data-testid="textarea-notes"
                         />
                       </FormControl>
                       <FormMessage />
@@ -617,19 +654,18 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                     <FormItem>
                       <FormLabel>Punto Vendita Principale</FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(value === '' ? null : value)} 
-                        value={field.value || ''}
+                        onValueChange={field.onChange} 
+                        value={field.value || undefined}
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-storeId">
-                            <SelectValue placeholder="Seleziona punto vendita..." />
+                            <SelectValue placeholder="Nessun punto vendita assegnato" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nessun punto vendita</SelectItem>
                           {stores.map((store: any) => (
                             <SelectItem key={store.id} value={store.id}>
-                              {store.name} - {store.address}
+                              {store.name} {store.address ? `- ${store.address}` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
