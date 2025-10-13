@@ -148,7 +148,10 @@ export default function LeadsPage() {
       const url = `/api/crm/leads${params.toString() ? '?' + params.toString() : ''}`;
       const res = await fetch(url, {
         headers: {
-          'X-Tenant-ID': sessionStorage.getItem('tenantId') || ''
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': sessionStorage.getItem('tenantId') || '',
+          'X-Auth-Session': 'authenticated',
+          'X-Auth-User': sessionStorage.getItem('userId') || 'admin-user'
         }
       });
       if (!res.ok) throw new Error('Failed to fetch leads');
