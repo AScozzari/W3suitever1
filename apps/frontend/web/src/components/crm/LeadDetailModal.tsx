@@ -391,7 +391,7 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
 
             <DetailSection title="AI Sentiment Analysis" icon={BarChart3}>
               <div className="space-y-2">
-                {lead.aiSentimentScore !== undefined && (
+                {lead.aiSentimentScore !== undefined && lead.aiSentimentScore !== null && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600">Sentiment Score</span>
@@ -410,6 +410,9 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
                       <span>Positivo</span>
                     </div>
                   </div>
+                )}
+                {(lead.aiSentimentScore === undefined || lead.aiSentimentScore === null) && (
+                  <p className="text-sm text-gray-500">Nessun dato di sentiment disponibile</p>
                 )}
               </div>
             </DetailSection>
