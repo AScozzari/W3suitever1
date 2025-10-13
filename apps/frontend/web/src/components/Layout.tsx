@@ -68,7 +68,7 @@ interface LayoutProps {
 }
 
 // Chat Icon Button Component with Unread Badge
-function ChatIconButton({ isMobile, navigate, isIdle }: { isMobile: boolean; navigate: (path: string) => void; isIdle: boolean }) {
+function ChatIconButton({ isMobile, isIdle }: { isMobile: boolean; isIdle: boolean }) {
   const [location] = useLocation();
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/chat/unread-count'],
@@ -83,7 +83,7 @@ function ChatIconButton({ isMobile, navigate, isIdle }: { isMobile: boolean; nav
 
   return (
     <button
-      onClick={() => navigate(`/${tenantSlug}/chat`)}
+      onClick={() => window.location.href = `/${tenantSlug}/chat`}
       data-testid="button-chat"
       style={{
         position: 'relative',
@@ -159,7 +159,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   
   const { isIdle } = useIdleDetection();
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
-  const [location, navigate] = useLocation();
+  const [location] = useLocation();
   
   // ✅ Sicuro: Ottieni e valida tenant dal path URL con fallback robusto
   const getTenantFromUrl = () => {
@@ -681,7 +681,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           {user && <NotificationBell isMobile={isMobile} />}
           
           {/* Chat Icon with Unread Badge */}
-          {user && <ChatIconButton isMobile={isMobile} navigate={navigate} isIdle={isIdle} />}
+          {user && <ChatIconButton isMobile={isMobile} isIdle={isIdle} />}
           
           {/* Selettore Punto Vendita - Professional */}
           {!isMobile && (
@@ -1114,7 +1114,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   onClick={() => {
                     // ✅ Navigation sicura usando tenant dall'URL (sempre funzionante)
                     const tenantSlug = getTenantFromUrl();
-                    navigate(`/${tenantSlug}${item.path}`);
+                    window.location.href = `/${tenantSlug}${item.path}`;
                   }}
                   className={`
                     w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200
