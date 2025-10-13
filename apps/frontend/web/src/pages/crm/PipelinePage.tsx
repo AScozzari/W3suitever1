@@ -88,9 +88,7 @@ export default function PipelinePage() {
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
-  const tenantSlug = window.location.pathname.split('/')[1];
   const [location, setLocation] = useLocation();
-
   const { buildUrl } = useTenantNavigation();
   
   // CRM Navigation Tabs
