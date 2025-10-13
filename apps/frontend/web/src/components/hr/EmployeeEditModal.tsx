@@ -229,7 +229,13 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking outside
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -682,41 +688,107 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                 </div>
               </TabsContent>
 
-              {/* ==================== TAB 4: PERMESSI (COMING SOON) ==================== */}
+              {/* ==================== TAB 4: PERMESSI ==================== */}
               <TabsContent value="permessi" className="space-y-4 mt-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Shield className="w-5 h-5 text-orange-600" />
                   <h3 className="font-semibold text-lg">Gestione Permessi RBAC</h3>
                 </div>
                 
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Shield className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-                  <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Funzionalità in Sviluppo
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                    La gestione avanzata dei permessi RBAC (ruoli, scope, extra permissions) 
-                    sarà disponibile nella prossima release. Per ora, usa la sezione Impostazioni → Ruoli.
-                  </p>
+                <div className="space-y-4">
+                  {/* Ruolo corrente (read-only view) */}
+                  <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Ruolo Principale</p>
+                        <p className="text-lg font-semibold mt-1">
+                          {roles.find((r: any) => r.id === form.watch('role'))?.name || 'Nessun ruolo assegnato'}
+                        </p>
+                      </div>
+                      <Shield className="w-8 h-8 text-orange-500" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Per modificare il ruolo, vai al <strong>Tab Generale</strong>
+                    </p>
+                  </div>
+
+                  <div className="p-6 border-2 border-dashed rounded-lg bg-gray-50 dark:bg-gray-900/20">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <Shield className="w-10 h-10 text-orange-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                          Sistema RBAC Avanzato
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          Il sistema di permessi RBAC completo include gestione avanzata di ruoli, scope e permessi extra.
+                        </p>
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            • Scope permissions per moduli specifici (CRM, HR, Warehouse)
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            • Extra permissions per funzionalità avanzate
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            • Gestione granulare accessi a risorse
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <strong>Prossimamente:</strong> La gestione avanzata RBAC (scope, extra permissions, 
+                      role inheritance) sarà disponibile nella prossima release.
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
 
-              {/* ==================== TAB 5: TEAMS (COMING SOON) ==================== */}
+              {/* ==================== TAB 5: TEAMS ==================== */}
               <TabsContent value="teams" className="space-y-4 mt-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-orange-600" />
                   <h3 className="font-semibold text-lg">Team Membership</h3>
                 </div>
                 
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-                  <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Funzionalità in Sviluppo
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                    La gestione dei team (assegnazione membri, supervisori, workflow routing) 
-                    sarà disponibile nella prossima release.
-                  </p>
+                <div className="space-y-4">
+                  <div className="p-6 border-2 border-dashed rounded-lg bg-gray-50 dark:bg-gray-900/20">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <Users className="w-10 h-10 text-orange-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                          Team Assignment
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          Assegna questo dipendente a uno o più team per organizzare il lavoro e gestire i workflow.
+                        </p>
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            • Assegnazione a team di vendita, supporto o gestione
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            • Definizione supervisori e gerarchie
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            • Routing automatico workflow basato su team
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      <strong>Prossimamente:</strong> La gestione avanzata dei team con assignment, supervisori 
+                      e workflow routing sarà disponibile nella prossima release.
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
 
