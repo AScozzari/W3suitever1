@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { Link, useLocation } from 'wouter';
 import Layout from '@/components/Layout';
+import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +21,6 @@ import {
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { useState } from 'react';
-import { useLocation } from 'wouter';
 
 interface DashboardStats {
   totalPersons: number;
@@ -77,22 +78,15 @@ export default function CRMDashboardPage() {
   const { navigate, buildUrl } = useTenantNavigation();
   const [location] = useLocation();
 
-  // Fetch dashboard stats
-  const { data: statsResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/crm/dashboard/stats'],
-  });
-
-  const stats = statsResponse?.data;
-
-  // CRM Tabs Configuration
+  // CRM Navigation Tabs
   const crmTabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
-    { id: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
-    { id: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
-    { id: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
-    { id: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
-    { id: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { id: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
+    { value: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
   ];
 
   const getActiveTab = () => {
@@ -107,45 +101,58 @@ export default function CRMDashboardPage() {
 
   const activeTab = getActiveTab();
 
-  const CRMHeader = () => (
-    <div className="windtre-glass-panel border-b border-white/20 mb-6">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="h-6 w-6 text-windtre-orange" />
-              CRM
-            </h1>
-            <p className="text-gray-600 mt-1">Customer Relationship Management - Lead, Pipeline, Clienti</p>
-          </div>
-        </div>
-        
-        {/* 🎯 Navigation Tabs */}
-        <div className="flex gap-1 mt-4 overflow-x-auto">
-          {crmTabs.map((tab) => (
-            <Button
-              key={tab.id}
-              variant={activeTab === tab.id ? 'default' : 'ghost'}
-              onClick={() => navigate(tab.path)}
-              className="flex items-center gap-2 flex-shrink-0"
-              data-testid={`crm-tab-${tab.id}`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  // Fetch dashboard stats
+  const { data: statsResponse, isLoading, error } = useQuery({
+    queryKey: ['/api/crm/dashboard/stats'],
+  });
+
+  const stats = statsResponse?.data;
 
   if (isLoading) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
-        <div className="h-full flex flex-col">
-          <CRMHeader />
-          <div className="flex-1 px-6 overflow-auto">
+        <div className="flex flex-col h-full">
+          {/* WindTre Glassmorphism Header */}
+          <div className="windtre-glass-panel border-b border-white/20 mb-6">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <LayoutDashboard className="h-6 w-6 text-windtre-orange" />
+                    CRM Dashboard
+                  </h1>
+                  <p className="text-gray-600 mt-1">Panoramica completa del Customer Relationship Management</p>
+                </div>
+              </div>
+              
+              {/* Navigation Tabs */}
+              <div className="flex gap-1 mt-4">
+                {crmTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.value;
+                  return (
+                    <Link key={tab.value} href={tab.path}>
+                      <a className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-windtre-orange text-white' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}>
+                        <Icon className="h-4 w-4" />
+                        {tab.label}
+                      </a>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca in dashboard..."
+          />
+          <div className="flex-1 p-6 overflow-auto">
             <LoadingState />
           </div>
         </div>
@@ -157,9 +164,47 @@ export default function CRMDashboardPage() {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
-        <div className="h-full flex flex-col">
-          <CRMHeader />
-          <div className="flex-1 px-6 overflow-auto">
+        <div className="flex flex-col h-full">
+          {/* WindTre Glassmorphism Header */}
+          <div className="windtre-glass-panel border-b border-white/20 mb-6">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <LayoutDashboard className="h-6 w-6 text-windtre-orange" />
+                    CRM Dashboard
+                  </h1>
+                  <p className="text-gray-600 mt-1">Panoramica completa del Customer Relationship Management</p>
+                </div>
+              </div>
+              
+              {/* Navigation Tabs */}
+              <div className="flex gap-1 mt-4">
+                {crmTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.value;
+                  return (
+                    <Link key={tab.value} href={tab.path}>
+                      <a className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-windtre-orange text-white' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}>
+                        <Icon className="h-4 w-4" />
+                        {tab.label}
+                      </a>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          <CRMSearchBar 
+            onSearch={setSearchQuery}
+            placeholder="Cerca in dashboard..."
+          />
+          <div className="flex-1 p-6 overflow-auto">
             <ErrorState message="Errore nel caricamento della dashboard CRM" />
           </div>
         </div>
@@ -250,11 +295,48 @@ export default function CRMDashboardPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
-      <div className="h-full flex flex-col">
-        <CRMHeader />
+      <div className="flex flex-col h-full">
+        {/* WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <LayoutDashboard className="h-6 w-6 text-windtre-orange" />
+                  CRM Dashboard
+                </h1>
+                <p className="text-gray-600 mt-1">Panoramica completa del Customer Relationship Management</p>
+              </div>
+            </div>
+            
+            {/* Navigation Tabs */}
+            <div className="flex gap-1 mt-4">
+              {crmTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.value;
+                return (
+                  <Link key={tab.value} href={tab.path}>
+                    <a className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-windtre-orange text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}>
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
+                    </a>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
         
-        <div className="flex-1 px-6 space-y-6 overflow-auto">
-
+        <CRMSearchBar 
+          onSearch={setSearchQuery}
+          placeholder="Cerca in dashboard..."
+        />
+        
+        <div className="flex-1 p-6 space-y-6 overflow-auto">
         {/* Stats Cards - Glassmorphism */}
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
