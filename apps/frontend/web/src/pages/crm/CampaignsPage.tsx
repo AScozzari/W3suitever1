@@ -5,6 +5,7 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Megaphone, 
   Plus, 
@@ -18,7 +19,10 @@ import {
   LayoutDashboard,
   UserPlus,
   CheckSquare,
-  BarChart3
+  BarChart3,
+  Search,
+  Filter,
+  Calendar
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
@@ -81,6 +85,7 @@ const statVariants = {
 
 export default function CampaignsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
@@ -132,25 +137,16 @@ export default function CampaignsPage() {
   const activeTab = getActiveTab();
 
   const CRMHeader = () => (
-    <div className="windtre-glass-panel border-b border-white/20 mb-6">
+    <div className="windtre-glass-panel border-b border-white/20">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="h-6 w-6 text-windtre-orange" />
-              CRM
+              <Megaphone className="h-6 w-6 text-windtre-orange" />
+              CRM - Campagne Marketing
             </h1>
-            <p className="text-gray-600 mt-1">Customer Relationship Management - Lead, Pipeline, Clienti</p>
+            <p className="text-gray-600 mt-1">Gestione campagne inbound, outbound e retention</p>
           </div>
-          
-          <Button
-            onClick={handleCreateCampaign}
-            className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-            data-testid="button-create-campaign"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Campagna
-          </Button>
         </div>
         
         {/* 🎯 Navigation Tabs */}
@@ -225,6 +221,54 @@ export default function CampaignsPage() {
       <CRMCommandPalette />
       <div className="h-full flex flex-col">
         <CRMHeader />
+        
+        {/* Search & Filters Card */}
+        <div className="px-6 pt-6">
+          <Card 
+            className="glass-card p-4 border-0"
+            style={{ 
+              background: 'var(--glass-card-bg)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid var(--glass-card-border)',
+              boxShadow: 'var(--shadow-glass-sm)'
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+                <Input
+                  placeholder="Cerca campagna per nome, canale, tipo o stato..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  style={{ 
+                    background: 'var(--glass-bg-light)',
+                    border: '1px solid var(--glass-card-border)'
+                  }}
+                  data-testid="input-search-campaigns"
+                />
+              </div>
+              <Button variant="outline" data-testid="button-filters">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtri Avanzati
+              </Button>
+              <Button variant="outline" data-testid="button-date-range">
+                <Calendar className="h-4 w-4 mr-2" />
+                Periodo
+              </Button>
+              <Button
+                onClick={handleCreateCampaign}
+                style={{ background: 'hsl(var(--brand-orange))' }}
+                className="text-white"
+                data-testid="button-create-campaign"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nuova Campagna
+              </Button>
+            </div>
+          </Card>
+        </div>
         
         <div className="flex-1 px-6 space-y-6 overflow-auto">
           {/* Campaign Cards Grid */}
