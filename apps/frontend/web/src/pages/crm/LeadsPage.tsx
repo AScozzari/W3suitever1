@@ -6,7 +6,7 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Input } from '@/components/ui/input';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
-import { useCurrentTenantSlug } from '@/hooks/useTenantSafety';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -111,8 +111,8 @@ export default function LeadsPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  const tenantSlug = useCurrentTenantSlug();
   const [location, setLocation] = useLocation();
+  const { buildUrl, navigate } = useTenantNavigation();
   
   // Extract campaign filter from URL
   const urlParams = new URLSearchParams(window.location.search);
