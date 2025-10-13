@@ -4589,9 +4589,32 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
+  // Indici esistenti
   tenantStatusScoreCreatedIdx: index("crm_leads_tenant_status_score_created_idx").on(table.tenantId, table.status, table.leadScore, table.createdAt),
   personIdIdx: index("crm_leads_person_id_idx").on(table.personId),
   tenantIdIdx: index("crm_leads_tenant_id_idx").on(table.tenantId),
+  
+  // ==================== NUOVI INDICI PER GTM & TRACKING ====================
+  gtmClientIdx: index("crm_leads_gtm_client_idx").on(table.gtmClientId),
+  gtmSessionIdx: index("crm_leads_gtm_session_idx").on(table.gtmSessionId),
+  originStoreIdx: index("crm_leads_origin_store_idx").on(table.originStoreId),
+  
+  // ==================== INDICI PER RICERCA E FILTRAGGIO ====================
+  emailIdx: index("crm_leads_email_idx").on(table.email),
+  phoneIdx: index("crm_leads_phone_idx").on(table.phone),
+  fiscalCodeIdx: index("crm_leads_fiscal_code_idx").on(table.fiscalCode),
+  vatNumberIdx: index("crm_leads_vat_number_idx").on(table.vatNumber),
+  
+  // ==================== INDICI PER PERFORMANCE QUERIES ====================
+  campaignStatusIdx: index("crm_leads_campaign_status_idx").on(table.campaignId, table.status),
+  ownerStatusIdx: index("crm_leads_owner_status_idx").on(table.ownerUserId, table.status),
+  engagementScoreIdx: index("crm_leads_engagement_score_idx").on(table.engagementScore),
+  conversionDateIdx: index("crm_leads_conversion_date_idx").on(table.conversionDate),
+  
+  // ==================== INDICI COMPOSITI PER ANALYTICS ====================
+  tenantOriginStoreIdx: index("crm_leads_tenant_origin_store_idx").on(table.tenantId, table.originStoreId),
+  tenantCampaignIdx: index("crm_leads_tenant_campaign_idx").on(table.tenantId, table.campaignId),
+  tenantLifecycleIdx: index("crm_leads_tenant_lifecycle_idx").on(table.tenantId, table.lifecycleStage),
 }));
 
 // CRM Pipelines - Sales processes
