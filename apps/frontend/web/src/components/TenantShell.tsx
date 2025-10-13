@@ -18,18 +18,8 @@ import Login from '../pages/Login';
 import NotFound from '../pages/NotFound';
 import AIToolsDashboardPage from '../pages/AIToolsDashboardPage';
 import PDCAnalyzerPage from '../pages/PDCAnalyzerPage';
-import CRMDashboardPage from '../pages/crm/CRMDashboardPage';
-import LeadsPage from '../pages/crm/LeadsPage';
-import DealsKanbanPage from '../pages/crm/DealsKanbanPage';
-import DealsPage from '../pages/crm/DealsPage';
-import CampaignsPage from '../pages/crm/CampaignsPage';
-import PipelinePage from '../pages/crm/PipelinePage';
-import PipelineDetailPage from '../pages/crm/PipelineDetailPage';
-import PipelineBoardPage from '../pages/crm/PipelineBoardPage';
-import AnalyticsPage from '../pages/crm/AnalyticsPage';
-import CustomersPage from '../pages/crm/CustomersPage';
-import ActivitiesPage from '../pages/crm/ActivitiesPage';
-import { CustomerDetailPage } from '../pages/crm/CustomerDetailPage';
+// Import del nuovo CRM unificato con state-based tabs (come HR)
+import CRMPage from '../pages/CRMPage';
 import { useAuth } from '../hooks/useAuth';
 
 interface TenantShellProps {
@@ -332,69 +322,10 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
-      <Route path={`/${tenantSlug}/crm/leads`}>
-        <AuthenticatedRoute>
-          <LeadsPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/deals`}>
-        <AuthenticatedRoute>
-          <DealsPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/campaigns`}>
-        <AuthenticatedRoute>
-          <CampaignsPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/pipeline/board`}>
-        <AuthenticatedRoute>
-          <PipelineBoardPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/pipelines/:id`}>
-        <AuthenticatedRoute>
-          <PipelineDetailPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/pipeline`}>
-        <AuthenticatedRoute>
-          <PipelinePage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/customers/:id`}>
-        <AuthenticatedRoute>
-          <CustomerDetailPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/customers`}>
-        <AuthenticatedRoute>
-          <CustomersPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/activities`}>
-        <AuthenticatedRoute>
-          <ActivitiesPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      <Route path={`/${tenantSlug}/crm/analytics`}>
-        <AuthenticatedRoute>
-          <AnalyticsPage />
-        </AuthenticatedRoute>
-      </Route>
-      
+      {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs come HR (niente più sub-routes!) */}
       <Route path={`/${tenantSlug}/crm`}>
         <AuthenticatedRoute>
-          <CRMDashboardPage />
+          <CRMPage />
         </AuthenticatedRoute>
       </Route>
       
