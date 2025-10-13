@@ -242,16 +242,20 @@ export default function ChatPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div style={{
-        minHeight: 'calc(100vh - 64px)',
+        height: 'calc(100vh - 64px)',
         background: '#ffffff',
-        padding: '24px'
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
       }}>
         {/* Page Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '24px'
+          marginBottom: '24px',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
@@ -320,11 +324,12 @@ export default function ChatPage() {
           display: 'grid',
           gridTemplateColumns: '350px 1fr',
           gap: '24px',
-          height: 'calc(100vh - 180px)',
+          flex: 1,
           background: 'white',
           borderRadius: '16px',
           border: '1px solid #e5e7eb',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          minHeight: 0
         }}>
           {/* Sidebar - Lista Chat */}
           <div style={{
