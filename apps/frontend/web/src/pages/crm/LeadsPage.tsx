@@ -34,7 +34,8 @@ import {
   Hash,
   Brain,
   Search,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -112,6 +113,10 @@ export default function LeadsPage() {
   
   const tenantSlug = useCurrentTenantSlug();
   const [location, setLocation] = useLocation();
+  
+  // Extract campaign filter from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const campaignId = urlParams.get('campaign');
 
   const crmTabs = [
     { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: `/${tenantSlug}/crm` },
@@ -136,10 +141,30 @@ export default function LeadsPage() {
   const activeTab = getActiveTab();
 
   const { data: leadsResponse, isLoading, error } = useQuery<Lead[]>({
-    queryKey: ['/api/crm/leads', searchQuery],
+    queryKey: ['/api/crm/leads', searchQuery, campaignId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (campaignId) params.set('campaign', campaignId);
+      const url = `/api/crm/leads${params.toString() ? '?' + params.toString() : ''}`;
+      const res = await fetch(url, {
+        headers: {
+          'X-Tenant-ID': sessionStorage.getItem('tenantId') || ''
+        }
+      });
+      if (!res.ok) throw new Error('Failed to fetch leads');
+      const json = await res.json();
+      return json.data || json;
+    }
   });
 
   const leads = leadsResponse || [];
+  
+  // Get campaign name from first lead (all leads have same campaign when filtered)
+  const campaignName = campaignId && leads.length > 0 ? leads[0].campaignName : null;
+  
+  const handleClearCampaignFilter = () => {
+    setLocation(`/${tenantSlug}/crm/leads`);
+  };
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { label: string; color: string }> = {
@@ -274,6 +299,35 @@ export default function LeadsPage() {
             </div>
           </div>
         </div>
+
+        {/* Campaign Filter Badge */}
+        {campaignId && campaignName && (
+          <div className="px-6 pt-4">
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg"
+              style={{ 
+                background: 'var(--glass-card-bg)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid hsl(var(--brand-orange))',
+                boxShadow: 'var(--shadow-glass-sm)'
+              }}
+            >
+              <Megaphone className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
+              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                Campagna: {campaignName}
+              </span>
+              <button
+                onClick={handleClearCampaignFilter}
+                className="ml-2 p-1 rounded hover:bg-black/10 transition-colors"
+                data-testid="button-clear-campaign-filter"
+                aria-label="Rimuovi filtro campagna"
+              >
+                <X className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Search & Filters Card */}
         <div className="px-6 pt-6">
@@ -418,16 +472,17 @@ export default function LeadsPage() {
                         </div>
                       )}
 
-                      {/* Status */}
-                      <Badge 
-                        variant="outline"
+                      {/* Status - Badge Solido */}
+                      <div 
+                        className="px-3 py-1.5 rounded-md font-semibold text-white text-sm min-w-[110px] text-center"
                         style={{ 
-                          borderColor: getStatusConfig(lead.status).color,
-                          color: getStatusConfig(lead.status).color
+                          background: getStatusConfig(lead.status).color,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}
+                        data-testid={`status-${lead.id}`}
                       >
                         {getStatusConfig(lead.status).label}
-                      </Badge>
+                      </div>
 
                       {/* Lifecycle Stage */}
                       {lead.lifecycleStage && (
