@@ -365,7 +365,7 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {roles.map((role: any) => (
+                            {roles.filter((role: any) => role.id && role.id !== '').map((role: any) => (
                               <SelectItem key={role.id} value={role.id}>
                                 {role.name}
                               </SelectItem>
@@ -663,7 +663,7 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {stores.map((store: any) => (
+                          {stores.filter((store: any) => store.id && store.id !== '').map((store: any) => (
                             <SelectItem key={store.id} value={store.id}>
                               {store.name} {store.address ? `- ${store.address}` : ''}
                             </SelectItem>
