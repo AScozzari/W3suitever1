@@ -88,7 +88,7 @@ export default function PipelinePage() {
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
   
   // CRM Navigation Tabs
@@ -144,9 +144,9 @@ export default function PipelinePage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <button
+                    <Link
                       key={tab.value}
-                      onClick={() => setLocation(tab.path)}
+                      href={tab.path}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         isActive 
                           ? 'bg-windtre-orange text-white' 
@@ -155,7 +155,7 @@ export default function PipelinePage() {
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
@@ -198,9 +198,9 @@ export default function PipelinePage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <button
+                    <Link
                       key={tab.value}
-                      onClick={() => setLocation(tab.path)}
+                      href={tab.path}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         isActive 
                           ? 'bg-windtre-orange text-white' 
@@ -209,7 +209,7 @@ export default function PipelinePage() {
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
@@ -281,9 +281,9 @@ export default function PipelinePage() {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
-                  <button
+                  <Link
                     key={tab.value}
-                    onClick={() => setLocation(tab.path)}
+                    href={tab.path}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-windtre-orange text-white' 
@@ -292,7 +292,7 @@ export default function PipelinePage() {
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
-                  </button>
+                  </Link>
                 );
               })}
             </div>

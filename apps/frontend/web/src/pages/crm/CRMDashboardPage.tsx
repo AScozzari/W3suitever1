@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import Layout from '@/components/Layout';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
@@ -75,8 +75,8 @@ const cardHoverVariants = {
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useLocation();
-  const { buildUrl } = useTenantNavigation();
+  const [location] = useLocation();
+  const { buildUrl, navigate } = useTenantNavigation();
 
   // CRM Navigation Tabs
   const crmTabs = [
@@ -132,9 +132,9 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <button
+                    <Link
                       key={tab.value}
-                      onClick={() => setLocation(tab.path)}
+                      href={tab.path}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         isActive 
                           ? 'bg-windtre-orange text-white' 
@@ -143,7 +143,7 @@ export default function CRMDashboardPage() {
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
@@ -186,9 +186,9 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <button
+                    <Link
                       key={tab.value}
-                      onClick={() => setLocation(tab.path)}
+                      href={tab.path}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         isActive 
                           ? 'bg-windtre-orange text-white' 
@@ -197,7 +197,7 @@ export default function CRMDashboardPage() {
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
@@ -319,9 +319,9 @@ export default function CRMDashboardPage() {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
-                  <button
+                  <Link
                     key={tab.value}
-                    onClick={() => setLocation(tab.path)}
+                    href={tab.path}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-windtre-orange text-white' 
@@ -330,7 +330,7 @@ export default function CRMDashboardPage() {
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -356,7 +356,7 @@ export default function CRMDashboardPage() {
               variants={cardVariants}
               initial="rest"
               whileHover="hover"
-              onClick={() => setLocation(card.href)}
+              onClick={() => navigate(card.href)}
               className="cursor-pointer"
               data-testid={`stat-card-${card.title.toLowerCase().replace(/\s+/g, '-')}`}
             >

@@ -568,7 +568,7 @@ const B2CCustomersTable = () => {
 export default function CustomersPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
 
   // CRM Navigation Tabs
@@ -617,9 +617,9 @@ export default function CustomersPage() {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
-                  <button
+                  <Link
                     key={tab.value}
-                    onClick={() => setLocation(tab.path)}
+                    href={tab.path}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-windtre-orange text-white' 
@@ -628,7 +628,7 @@ export default function CustomersPage() {
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
-                  </button>
+                  </Link>
                 );
               })}
             </div>

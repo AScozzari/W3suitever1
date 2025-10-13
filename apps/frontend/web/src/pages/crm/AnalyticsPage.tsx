@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface DriverPerformance {
@@ -60,7 +60,7 @@ const cardVariants = {
 export default function AnalyticsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
 
   // CRM Navigation Tabs
@@ -146,9 +146,9 @@ export default function AnalyticsPage() {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
-                  <button
+                  <Link
                     key={tab.value}
-                    onClick={() => setLocation(tab.path)}
+                    href={tab.path}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-windtre-orange text-white' 
@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
-                  </button>
+                  </Link>
                 );
               })}
             </div>

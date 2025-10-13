@@ -34,7 +34,7 @@ import {
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface Task {
@@ -212,7 +212,7 @@ export default function ActivitiesPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
 
   // CRM Navigation Tabs
@@ -284,9 +284,9 @@ export default function ActivitiesPage() {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
-                  <button
+                  <Link
                     key={tab.value}
-                    onClick={() => setLocation(tab.path)}
+                    href={tab.path}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-windtre-orange text-white' 
@@ -295,7 +295,7 @@ export default function ActivitiesPage() {
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
