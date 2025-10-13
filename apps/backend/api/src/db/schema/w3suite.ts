@@ -4490,6 +4490,102 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   consentTimestamp: timestamp("consent_timestamp"),
   consentSource: varchar("consent_source", { length: 255 }),
   rawEventPayload: jsonb("raw_event_payload"),
+  
+  // ==================== FASE 1: GTM TRACKING ====================
+  gtmClientId: varchar("gtm_client_id", { length: 255 }), // GA Client ID univoco
+  gtmSessionId: varchar("gtm_session_id", { length: 255 }), // Session ID corrente
+  gtmUserId: varchar("gtm_user_id", { length: 255 }), // User ID cross-device
+  gtmEvents: jsonb("gtm_events"), // Array completo eventi GTM
+  gtmProductsViewed: text("gtm_products_viewed").array(), // Prodotti visualizzati
+  gtmConversionEvents: text("gtm_conversion_events").array(), // Eventi conversione
+  gtmGoalsCompleted: text("gtm_goals_completed").array(), // Obiettivi GA completati
+  
+  // ==================== FASE 1: MULTI-PDV TRACKING ====================
+  originStoreId: uuid("origin_store_id"), // PDV che ha generato il lead
+  originStoreName: varchar("origin_store_name", { length: 255 }), // Nome store per reporting
+  storesVisited: text("stores_visited").array(), // Lista PDV visitati
+  storeInteractions: jsonb("store_interactions"), // Interazioni dettagliate per store
+  preferredStoreId: uuid("preferred_store_id"), // Store preferito dal cliente
+  nearestStoreId: uuid("nearest_store_id"), // Store più vicino geograficamente
+  
+  // ==================== FASE 1: SOCIAL & FORM TRACKING ====================
+  socialProfiles: jsonb("social_profiles"), // Profili social collegati {facebook:{}, instagram:{}}
+  socialInteractionsByStore: jsonb("social_interactions_by_store"), // Interazioni social per PDV
+  socialCampaignResponses: jsonb("social_campaign_responses").array(), // Array risposte campagne
+  formsSubmitted: jsonb("forms_submitted").array(), // Form compilati con tutti i dettagli
+  totalFormsStarted: integer("total_forms_started").default(0),
+  totalFormsCompleted: integer("total_forms_completed").default(0),
+  formCompletionRate: real("form_completion_rate"),
+  averageFormTime: real("average_form_time"), // Tempo medio in secondi
+  
+  // ==================== FASE 1: DOCUMENTI FISCALI ITALIANI ====================
+  fiscalCode: varchar("fiscal_code", { length: 16 }), // Codice Fiscale
+  vatNumber: varchar("vat_number", { length: 11 }), // Partita IVA
+  documentType: varchar("document_type", { length: 50 }), // CI/Patente/Passaporto
+  documentNumber: varchar("document_number", { length: 50 }),
+  documentExpiry: date("document_expiry"),
+  pecEmail: varchar("pec_email", { length: 255 }), // PEC certificata
+  
+  // ==================== FASE 2: CUSTOMER JOURNEY & ATTRIBUTION ====================
+  customerJourney: jsonb("customer_journey").array(), // Journey completo con touchpoints
+  firstTouchAttribution: jsonb("first_touch_attribution"),
+  lastTouchAttribution: jsonb("last_touch_attribution"),
+  firstContactDate: timestamp("first_contact_date"),
+  lastContactDate: timestamp("last_contact_date"),
+  contactCount: integer("contact_count").default(0),
+  nextActionDate: date("next_action_date"),
+  nextActionType: varchar("next_action_type", { length: 100 }),
+  
+  // ==================== FASE 2: BUSINESS PROFILING ====================
+  customerType: customerTypeEnum("customer_type"), // B2B/B2C (usa enum esistente)
+  companyRole: varchar("company_role", { length: 100 }), // Ruolo in azienda
+  companySize: varchar("company_size", { length: 50 }), // Micro/Small/Medium/Large
+  companySector: varchar("company_sector", { length: 100 }), // Settore merceologico
+  annualRevenue: real("annual_revenue"), // Fatturato stimato
+  employeeCount: integer("employee_count"),
+  budgetRange: jsonb("budget_range"), // {min: 0, max: 1000}
+  purchaseTimeframe: varchar("purchase_timeframe", { length: 50 }), // Immediate/1month/3months/6months
+  painPoints: text("pain_points").array(), // Problemi da risolvere
+  competitors: text("competitors").array(), // Competitor attuali
+  
+  // ==================== FASE 2: INDIRIZZO COMPLETO ====================
+  addressStreet: varchar("address_street", { length: 255 }),
+  addressNumber: varchar("address_number", { length: 20 }),
+  addressCity: varchar("address_city", { length: 100 }),
+  addressProvince: varchar("address_province", { length: 2 }),
+  addressPostalCode: varchar("address_postal_code", { length: 5 }),
+  addressCountry: varchar("address_country", { length: 50 }),
+  geoLat: real("geo_lat"), // Latitudine
+  geoLng: real("geo_lng"), // Longitudine
+  deliveryAddress: jsonb("delivery_address"), // Indirizzo spedizione alternativo
+  
+  // ==================== FASE 3: ENGAGEMENT METRICS ====================
+  pageViewsCount: integer("page_views_count").default(0),
+  emailsOpenedCount: integer("emails_opened_count").default(0),
+  emailsClickedCount: integer("emails_clicked_count").default(0),
+  documentsDownloaded: text("documents_downloaded").array(),
+  videosWatched: text("videos_watched").array(),
+  sessionDuration: integer("session_duration"), // Durata sessione in secondi
+  deviceType: varchar("device_type", { length: 50 }), // Mobile/Desktop/Tablet
+  browserInfo: jsonb("browser_info"), // User agent e info browser
+  engagementScore: real("engagement_score"), // Score 0-100
+  
+  // ==================== FASE 3: CONVERSION TRACKING ====================
+  convertedToCustomerId: uuid("converted_to_customer_id"),
+  conversionDate: timestamp("conversion_date"),
+  conversionValue: real("conversion_value"), // Valore prima vendita
+  lifecycleStage: varchar("lifecycle_stage", { length: 50 }), // Subscriber/Lead/MQL/SQL/Opportunity/Customer
+  conversionProbability: real("conversion_probability"), // % probabilità conversione
+  lostReason: varchar("lost_reason", { length: 255 }), // Motivo perdita lead
+  
+  // ==================== FASE 3: AI ENRICHMENT ====================
+  aiEnrichmentDate: timestamp("ai_enrichment_date"),
+  aiSentimentScore: real("ai_sentiment_score"), // Sentiment analysis -1 to 1
+  aiIntentSignals: text("ai_intent_signals").array(), // Segnali intento rilevati
+  aiPredictedValue: real("ai_predicted_value"), // LTV predetto
+  aiRecommendations: jsonb("ai_recommendations"), // Suggerimenti AI per vendita
+  
+  // Timestamps e metadati
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
