@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import Layout from '@/components/Layout';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
@@ -19,7 +19,7 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
-import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { useCurrentTenantSlug } from '@/hooks/useTenantSafety';
 import { useState } from 'react';
 
 interface DashboardStats {
@@ -75,19 +75,18 @@ const cardHoverVariants = {
 export default function CRMDashboardPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const { navigate, buildUrl } = useTenantNavigation();
-  const [location] = useLocation();
+  const tenantSlug = useCurrentTenantSlug(); // Get tenant from URL
+  const [location, setLocation] = useLocation(); // Use Wouter's setLocation for navigation
 
-  // CRM Navigation Tabs - percorsi relativi al tenant corrente 
-  // Quando siamo in /staging/crm, usiamo percorsi relativi senza buildUrl
+  // CRM Navigation Tabs - costruiamo percorsi assoluti con tenant (come fa il Sidebar)
   const crmTabs = [
-    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '.' },
-    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: 'campaigns' },
-    { value: 'pipeline', label: 'Pipeline', icon: Target, path: 'pipeline' },
-    { value: 'leads', label: 'Lead', icon: UserPlus, path: 'leads' },
-    { value: 'customers', label: 'Clienti', icon: Users, path: 'customers' },
-    { value: 'activities', label: 'Attività', icon: CheckSquare, path: 'activities' },
-    { value: 'analytics', label: 'Report', icon: BarChart3, path: 'analytics' }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: `/${tenantSlug}/crm` },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: `/${tenantSlug}/crm/campaigns` },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: `/${tenantSlug}/crm/pipeline` },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: `/${tenantSlug}/crm/leads` },
+    { value: 'customers', label: 'Clienti', icon: Users, path: `/${tenantSlug}/crm/customers` },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: `/${tenantSlug}/crm/activities` },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: `/${tenantSlug}/crm/analytics` }
   ];
 
   const getActiveTab = () => {
@@ -107,7 +106,7 @@ export default function CRMDashboardPage() {
     queryKey: ['/api/crm/dashboard/stats'],
   });
 
-  const stats = statsResponse?.data;
+  const stats = statsResponse;
 
   if (isLoading) {
     return (
@@ -133,9 +132,9 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <Link 
-                      key={tab.value} 
-                      to={tab.path}
+                    <button
+                      key={tab.value}
+                      onClick={() => setLocation(tab.path)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         isActive 
                           ? 'bg-windtre-orange text-white' 
@@ -144,7 +143,7 @@ export default function CRMDashboardPage() {
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
-                    </Link>
+                    </button>
                   );
                 })}
               </div>
@@ -187,9 +186,9 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <Link 
-                      key={tab.value} 
-                      to={tab.path}
+                    <button
+                      key={tab.value}
+                      onClick={() => setLocation(tab.path)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         isActive 
                           ? 'bg-windtre-orange text-white' 
@@ -198,7 +197,7 @@ export default function CRMDashboardPage() {
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
-                    </Link>
+                    </button>
                   );
                 })}
               </div>
@@ -225,7 +224,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'Identity graph completo',
-      href: buildUrl('crm/persons')
+      href: `/${tenantSlug}/crm/persons`
     },
     {
       title: 'Lead Attivi',
@@ -234,7 +233,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-purple)',
       iconColor: 'hsl(var(--brand-purple))',
       description: 'In fase di qualifica',
-      href: buildUrl('crm/leads')
+      href: `/${tenantSlug}/crm/leads`
     },
     {
       title: 'Deal Aperti',
@@ -243,7 +242,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-gradient)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'In trattativa attiva',
-      href: buildUrl('crm/deals')
+      href: `/${tenantSlug}/crm/deals`
     },
     {
       title: 'Valore Pipeline',
@@ -252,7 +251,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--success))',
       description: 'Valore totale deals',
-      href: buildUrl('crm/pipeline')
+      href: `/${tenantSlug}/crm/pipeline`
     }
   ];
 
@@ -320,16 +319,18 @@ export default function CRMDashboardPage() {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
-                  <Link key={tab.value} href={tab.path}>
-                    <a className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  <button
+                    key={tab.value}
+                    onClick={() => setLocation(tab.path)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-windtre-orange text-white' 
                         : 'text-gray-700 hover:bg-gray-100'
-                    }`}>
-                      <Icon className="h-4 w-4" />
-                      {tab.label}
-                    </a>
-                  </Link>
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
                 );
               })}
             </div>
@@ -355,7 +356,7 @@ export default function CRMDashboardPage() {
               variants={cardVariants}
               initial="rest"
               whileHover="hover"
-              onClick={() => navigate(card.href)}
+              onClick={() => setLocation(card.href)}
               className="cursor-pointer"
               data-testid={`stat-card-${card.title.toLowerCase().replace(/\s+/g, '-')}`}
             >
@@ -473,7 +474,7 @@ export default function CRMDashboardPage() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => navigate('crm/analytics')}
+                onClick={() => setLocation(`/${tenantSlug}/crm/analytics`)}
                 data-testid="button-view-analytics"
               >
                 Analytics →
