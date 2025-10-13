@@ -224,7 +224,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'Identity graph completo',
-      href: `/${tenantSlug}/crm/persons`
+      href: buildUrl('crm/persons')
     },
     {
       title: 'Lead Attivi',
@@ -233,7 +233,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-purple)',
       iconColor: 'hsl(var(--brand-purple))',
       description: 'In fase di qualifica',
-      href: `/${tenantSlug}/crm/leads`
+      href: buildUrl('crm/leads')
     },
     {
       title: 'Deal Aperti',
@@ -242,7 +242,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-gradient)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'In trattativa attiva',
-      href: `/${tenantSlug}/crm/deals`
+      href: buildUrl('crm/deals')
     },
     {
       title: 'Valore Pipeline',
@@ -251,7 +251,7 @@ export default function CRMDashboardPage() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--success))',
       description: 'Valore totale deals',
-      href: `/${tenantSlug}/crm/pipeline`
+      href: buildUrl('crm/pipeline')
     }
   ];
 
@@ -474,7 +474,7 @@ export default function CRMDashboardPage() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => setLocation(`/${tenantSlug}/crm/analytics`)}
+                onClick={() => navigate('crm/analytics')}
                 data-testid="button-view-analytics"
               >
                 Analytics →

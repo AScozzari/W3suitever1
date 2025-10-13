@@ -28,6 +28,7 @@ import { queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -334,7 +335,7 @@ export default function DealsPage() {
     {
       id: 'actions',
       cell: ({ row }) => {
-        const tenantSlug = window.location.pathname.split('/')[1];
+        const { buildUrl } = useTenantNavigation();
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -343,7 +344,7 @@ export default function DealsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+              <Link href={buildUrl(`crm/customers/${row.original.id}`)}>
                 <DropdownMenuItem>
                   <Eye className="h-4 w-4 mr-2" />
                   Profilo Cliente

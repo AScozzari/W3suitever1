@@ -175,7 +175,7 @@ const B2BCustomersTable = () => {
       id: 'actions',
       header: 'Azioni',
       cell: ({ row }) => {
-        const tenantSlug = window.location.pathname.split('/')[1];
+        const { buildUrl } = useTenantNavigation();
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -184,7 +184,7 @@ const B2BCustomersTable = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+              <Link href={buildUrl(`crm/customers/${row.original.id}`)}>
                 <DropdownMenuItem data-testid={`view-b2b-customer-${row.original.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
                   Visualizza
@@ -416,7 +416,7 @@ const B2CCustomersTable = () => {
       id: 'actions',
       header: 'Azioni',
       cell: ({ row }) => {
-        const tenantSlug = window.location.pathname.split('/')[1];
+        const { buildUrl } = useTenantNavigation();
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -425,7 +425,7 @@ const B2CCustomersTable = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <Link href={`/${tenantSlug}/crm/customers/${row.original.id}`}>
+              <Link href={buildUrl(`crm/customers/${row.original.id}`)}>
                 <DropdownMenuItem data-testid={`view-b2c-customer-${row.original.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
                   Visualizza

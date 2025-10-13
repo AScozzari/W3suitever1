@@ -166,7 +166,7 @@ export default function LeadsPage() {
   const campaignName = campaignId && leads.length > 0 ? leads[0].campaignName : null;
   
   const handleClearCampaignFilter = () => {
-    setLocation(`/${tenantSlug}/crm/leads`);
+    navigate('crm/leads');
   };
 
   const getStatusConfig = (status: string) => {
