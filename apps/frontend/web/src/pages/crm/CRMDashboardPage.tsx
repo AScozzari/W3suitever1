@@ -132,15 +132,13 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <Link key={tab.value} href={tab.path}>
-                      <a className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                        isActive 
-                          ? 'bg-windtre-orange text-white' 
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}>
-                        <Icon className="h-4 w-4" />
-                        {tab.label}
-                      </a>
+                    <Link key={tab.value} href={tab.path} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-windtre-orange text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}>
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
                     </Link>
                   );
                 })}
@@ -184,15 +182,13 @@ export default function CRMDashboardPage() {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.value;
                   return (
-                    <Link key={tab.value} href={tab.path}>
-                      <a className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                        isActive 
-                          ? 'bg-windtre-orange text-white' 
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}>
-                        <Icon className="h-4 w-4" />
-                        {tab.label}
-                      </a>
+                    <Link key={tab.value} href={tab.path} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-windtre-orange text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}>
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
                     </Link>
                   );
                 })}
