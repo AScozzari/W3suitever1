@@ -220,7 +220,7 @@ router.get('/leads', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const { status, storeId, limit = '100', offset = '0' } = req.query;
+    const { status, storeId, campaign, limit = '100', offset = '0' } = req.query;
     
     await setTenantContext(tenantId);
 
@@ -231,6 +231,9 @@ router.get('/leads', async (req, res) => {
     }
     if (storeId) {
       conditions.push(eq(crmLeads.storeId, storeId as string));
+    }
+    if (campaign) {
+      conditions.push(eq(crmLeads.campaignId, campaign as string));
     }
 
     const leads = await db
