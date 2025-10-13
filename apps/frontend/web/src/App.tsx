@@ -104,7 +104,22 @@ function Router() {
         }}
       </Route>
       
-      {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto (incluso /:tenant root) */}
+      {/* 🎯 TENANT ROOT - Exact match for /:tenant (no subpath) */}
+      <Route path="/:tenant">
+        {(params) => {
+          const tenantSlug = params.tenant;
+          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin'];
+          
+          if (!tenantSlug || reservedPaths.includes(tenantSlug)) {
+            return <NotFound />;
+          }
+          
+          console.log(`[APP-ROUTER] 🔄 Tenant root accessed: ${tenantSlug}, redirecting to dashboard`);
+          return <TenantShell tenantSlug={tenantSlug} />;
+        }}
+      </Route>
+      
+      {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto con subpath */}
       <Route path="/:tenant/*">
         {(params) => {
           console.log('[APP-ROUTER] 📍 Route matched with params:', params);
