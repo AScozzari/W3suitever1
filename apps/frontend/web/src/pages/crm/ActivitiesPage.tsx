@@ -23,12 +23,18 @@ import {
   Clock, 
   AlertCircle,
   CalendarIcon,
-  User
+  User,
+  LayoutDashboard,
+  Megaphone,
+  Target,
+  UserPlus,
+  Users,
+  BarChart3
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
+import { useLocation } from 'wouter';
 
 interface Task {
   id: string;
@@ -205,6 +211,31 @@ export default function ActivitiesPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const tenantSlug = window.location.pathname.split('/')[1];
+  const [location, setLocation] = useLocation();
+
+  // CRM Navigation Tabs
+  const crmTabs = [
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: `/${tenantSlug}/crm` },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: `/${tenantSlug}/crm/campaigns` },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: `/${tenantSlug}/crm/pipeline` },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: `/${tenantSlug}/crm/leads` },
+    { value: 'customers', label: 'Clienti', icon: Users, path: `/${tenantSlug}/crm/customers` },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: `/${tenantSlug}/crm/activities` },
+    { value: 'analytics', label: 'Report', icon: BarChart3, path: `/${tenantSlug}/crm/analytics` }
+  ];
+
+  const getActiveTab = () => {
+    if (location.includes('/crm/campaigns')) return 'campaigns';
+    if (location.includes('/crm/leads')) return 'leads';
+    if (location.includes('/crm/pipeline')) return 'pipeline';
+    if (location.includes('/crm/customers')) return 'customers';
+    if (location.includes('/crm/activities')) return 'activities';
+    if (location.includes('/crm/analytics')) return 'analytics';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTab();
 
   const { data: tasksResponse } = useQuery<Task[]>({
     queryKey: ['/api/crm/tasks'],
@@ -233,7 +264,43 @@ export default function ActivitiesPage() {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
-        <CRMNavigationBar />
+        {/* WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <CheckSquare className="h-6 w-6 text-windtre-orange" />
+                  CRM - Attività e Tasks
+                </h1>
+                <p className="text-gray-600 mt-1">Gestione task, interazioni e calendario</p>
+              </div>
+            </div>
+            
+            {/* Navigation Tabs */}
+            <div className="flex gap-1 mt-4">
+              {crmTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setLocation(tab.path)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-windtre-orange text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        
         <CRMSearchBar 
           onSearch={setSearchQuery}
           placeholder="Cerca attività..."

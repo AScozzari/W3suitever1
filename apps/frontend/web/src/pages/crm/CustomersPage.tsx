@@ -29,7 +29,6 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CustomerFormModal } from '@/components/crm/CustomerFormModal';
 import { DeleteConfirmationDialog } from '@/components/crm/DeleteConfirmationDialog';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
-import { useCurrentTenantSlug } from '@/hooks/useCurrentTenantSlug';
 
 interface Customer {
   id: string;
@@ -568,7 +567,7 @@ const B2CCustomersTable = () => {
 export default function CustomersPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
-  const tenantSlug = useCurrentTenantSlug();
+  const tenantSlug = window.location.pathname.split('/')[1];
   const [location, setLocation] = useLocation();
 
   // CRM Navigation Tabs
