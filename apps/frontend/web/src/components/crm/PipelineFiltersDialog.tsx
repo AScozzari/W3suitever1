@@ -178,7 +178,7 @@ export function PipelineFiltersDialog({
                           className="text-sm cursor-pointer"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          {store.name} {store.code ? `(${store.code})` : ''}
+                          {store.name || store.code || 'Store senza nome'}
                         </Label>
                       </div>
                     ))}

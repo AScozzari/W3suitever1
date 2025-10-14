@@ -643,17 +643,6 @@ export default function PipelinePage() {
                   </Badge>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setDefaultFilterTab('temporali');
-                  setFiltersDialogOpen(true);
-                }}
-                data-testid="button-date-range"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Periodo
-              </Button>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
                 style={{ background: 'hsl(var(--brand-orange))' }}
@@ -1191,17 +1180,6 @@ export function PipelineContent() {
                   {activeFiltersCount}
                 </Badge>
               )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setDefaultFilterTab('temporal');
-                setFiltersDialogOpen(true);
-              }}
-              data-testid="button-date-range"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Periodo
             </Button>
             <Button
               onClick={() => setCreateDialogOpen(true)}
