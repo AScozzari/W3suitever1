@@ -43,6 +43,11 @@ interface Deal {
   lastContactChannel?: string | null;
   lastContactDate?: string | null;
   
+  // Real names from JOINs
+  ownerName?: string | null;
+  customerName?: string | null;
+  customerType?: 'b2b' | 'b2c' | null;
+  
   createdAt: string;
   updatedAt: string;
 }
