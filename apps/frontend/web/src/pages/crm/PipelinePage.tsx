@@ -186,7 +186,7 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
   return (
     <div className="px-6 pb-4">
       <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
-        Canali di Acquisizione
+        Canali di Contatto
       </div>
       <div className="space-y-2">
         {displayChannels.map((stat, idx) => {
