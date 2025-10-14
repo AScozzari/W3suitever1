@@ -178,7 +178,7 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-280px)]">
         {stages.map((stage) => (
           <KanbanColumn
             key={stage.id}
