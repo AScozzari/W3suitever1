@@ -570,6 +570,109 @@ router.get('/users/:id/assignments', requirePermission('users', 'read'), async (
 });
 
 /**
+ * POST /api/users/assignments-batch
+ * Get assignments for multiple users in a single request (performance optimization)
+ * RBAC: Requires users:read permission
+ */
+router.post('/users/assignments-batch', requirePermission('users', 'read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { userIds } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request',
+        message: 'userIds must be a non-empty array',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+    const rbacStorage = new RBACStorage();
+
+    // Fetch all assignments for all users in parallel
+    const assignmentPromises = userIds.map(async (userId: string) => {
+      const rawAssignments = await rbacStorage.getUserRoles(userId, tenantId);
+
+      // Enrich with scope details
+      const enrichedAssignments = await Promise.all(
+        rawAssignments.map(async (assignment: any) => {
+          let scopeDetails = null;
+
+          if (assignment.scopeType === 'legal_entity') {
+            const [legalEntity] = await db
+              .select({ id: legalEntities.id, name: legalEntities.businessName })
+              .from(legalEntities)
+              .where(eq(legalEntities.id, assignment.scopeId))
+              .limit(1);
+            scopeDetails = legalEntity;
+          } else if (assignment.scopeType === 'store') {
+            const [store] = await db
+              .select({ id: stores.id, name: stores.nome, code: stores.code })
+              .from(stores)
+              .where(eq(stores.id, assignment.scopeId))
+              .limit(1);
+            scopeDetails = store;
+          } else if (assignment.scopeType === 'tenant') {
+            const [tenant] = await db
+              .select({ id: tenants.id, name: tenants.name })
+              .from(tenants)
+              .where(eq(tenants.id, assignment.scopeId))
+              .limit(1);
+            scopeDetails = tenant;
+          }
+
+          return {
+            ...assignment,
+            scopeDetails
+          };
+        })
+      );
+
+      return {
+        userId,
+        assignments: enrichedAssignments
+      };
+    });
+
+    const results = await Promise.all(assignmentPromises);
+
+    logger.info('Batch user assignments retrieved', { 
+      userCount: userIds.length, 
+      totalAssignments: results.reduce((sum, r) => sum + r.assignments.length, 0) 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: results,
+      message: 'Batch user assignments retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving batch user assignments', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve batch user assignments',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * GET /api/users/:id/permissions
  * Get calculated permissions from user's role(s)
  * RBAC: Requires admin permission

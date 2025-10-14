@@ -138,28 +138,33 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
     queryKey: ['/api/stores']
   });
 
-  // Fetch assignments for all users
+  // Fetch assignments for all users using batch endpoint for performance
   const assignmentQueries = useQuery({
-    queryKey: ['/api/users/assignments-all', users.map(u => u.id)],
+    queryKey: ['/api/users/assignments-batch', users.map(u => u.id)],
     queryFn: async () => {
       if (users.length === 0) return {};
       
-      const results = await Promise.all(
-        users.map(async (user) => {
-          try {
-            const response = await apiRequest(`/api/users/${user.id}/assignments`);
-            const assignments = response?.data ?? response;
-            return { userId: user.id, assignments: Array.isArray(assignments) ? assignments : [] };
-          } catch (error) {
-            return { userId: user.id, assignments: [] };
-          }
-        })
-      );
-      
-      return results.reduce((acc, curr) => {
-        acc[curr.userId] = curr.assignments;
-        return acc;
-      }, {} as Record<string, Assignment[]>);
+      try {
+        const response = await apiRequest('/api/users/assignments-batch', {
+          method: 'POST',
+          body: JSON.stringify({ userIds: users.map(u => u.id) })
+        });
+        
+        const results = response?.data ?? response;
+        
+        // Convert array response to object keyed by userId
+        if (Array.isArray(results)) {
+          return results.reduce((acc, curr) => {
+            acc[curr.userId] = curr.assignments;
+            return acc;
+          }, {} as Record<string, Assignment[]>);
+        }
+        
+        return {};
+      } catch (error) {
+        console.error('Failed to fetch batch assignments:', error);
+        return {};
+      }
     },
     enabled: users.length > 0
   });
@@ -351,29 +356,27 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           
           if (scopeInfo.type === 'multiple' && scopeInfo.items) {
             return (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge 
-                      variant="outline" 
-                      className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
-                      data-testid={`badge-scope-${row.original.id}`}
-                    >
-                      🏪 {scopeInfo.displayName}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
-                    <div className="text-sm">
-                      <p className="font-semibold mb-2">Punti Vendita:</p>
-                      <ul className="space-y-1">
-                        {scopeInfo.items.map((item, idx) => (
-                          <li key={idx} className="text-gray-700">• {item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
+                    data-testid={`badge-scope-${row.original.id}`}
+                  >
+                    🏪 {scopeInfo.displayName}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
+                  <div className="text-sm">
+                    <p className="font-semibold mb-2">Punti Vendita:</p>
+                    <ul className="space-y-1">
+                      {scopeInfo.items.map((item, idx) => (
+                        <li key={idx} className="text-gray-700">• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             );
           }
           
@@ -402,29 +405,27 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           
           if (row.original.teamsList && row.original.teamsList.length > 0) {
             return (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge 
-                      variant="outline" 
-                      className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
-                      data-testid={`badge-teams-${row.original.id}`}
-                    >
-                      {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
-                    <div className="text-sm">
-                      <p className="font-semibold mb-2">Team:</p>
-                      <ul className="space-y-1">
-                        {row.original.teamsList.map((team, idx) => (
-                          <li key={idx} className="text-gray-700">• {team}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
+                    data-testid={`badge-teams-${row.original.id}`}
+                  >
+                    {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
+                  <div className="text-sm">
+                    <p className="font-semibold mb-2">Team:</p>
+                    <ul className="space-y-1">
+                      {row.original.teamsList.map((team, idx) => (
+                        <li key={idx} className="text-gray-700">• {team}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             );
           }
           
@@ -552,9 +553,10 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -676,5 +678,6 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
         </Table>
       </div>
     </div>
+    </TooltipProvider>
   );
 }

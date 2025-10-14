@@ -1,0 +1,143 @@
+e: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+hook.js:608 Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `Primitive.button.SlotClone`. Error Component Stack
+    at Badge (badge.tsx:33:18)
+    at chunk-TCRT5IO7.js?v=2f97fb70:43:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:20:13
+    at chunk-7IUWE4IP.js?v=2f97fb70:42:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:43:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:20:13
+    at chunk-7IUWE4IP.js?v=2f97fb70:42:13
+    at chunk-RYXUWBRH.js?v=2f97fb70:77:13
+    at @radix-ui_react-tooltip.js?v=2f97fb70:203:13
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at Popper (chunk-RYXUWBRH.js?v=2f97fb70:69:11)
+    at Tooltip (@radix-ui_react-tooltip.js?v=2f97fb70:112:5)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=2f97fb70:68:5)
+    at cell (EmployeeDataTable.tsx:398:18)
+    at td (<anonymous>)
+    at _c11 (table.tsx:83:6)
+    at tr (<anonymous>)
+    at _c9 (table.tsx:53:6)
+    at tbody (<anonymous>)
+    at _c5 (table.tsx:29:6)
+    at table (<anonymous>)
+    at div (<anonymous>)
+    at _c (table.tsx:7:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at EmployeeDataTable (EmployeeDataTable.tsx:116:37)
+    at div (<anonymous>)
+    at EmployeesSection (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at HRManagementPage (HRManagementPage.tsx:99:21)
+    at AuthenticatedRoute (TenantShell.tsx:415:72)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:216:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:71:59)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (App.tsx:39:3)
+overrideMethod @ hook.js:608
+printWarning @ chunk-ZHRYBLGQ.js?v=2f97fb70:521
+error @ chunk-ZHRYBLGQ.js?v=2f97fb70:505
+validateFunctionComponentInDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:15013
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=2f97fb70:14988
+beginWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=2f97fb70:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=2f97fb70:197
+flushWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=2f97fb70:384Understand this error
+hook.js:608 Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `Primitive.button.SlotClone`. Error Component Stack
+    at Badge (badge.tsx:33:18)
+    at chunk-TCRT5IO7.js?v=2f97fb70:43:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:20:13
+    at chunk-7IUWE4IP.js?v=2f97fb70:42:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:43:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:20:13
+    at chunk-7IUWE4IP.js?v=2f97fb70:42:13
+    at chunk-RYXUWBRH.js?v=2f97fb70:77:13
+    at @radix-ui_react-tooltip.js?v=2f97fb70:203:13
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at Popper (chunk-RYXUWBRH.js?v=2f97fb70:69:11)
+    at Tooltip (@radix-ui_react-tooltip.js?v=2f97fb70:112:5)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=2f97fb70:68:5)
+    at cell (EmployeeDataTable.tsx:324:18)
+    at td (<anonymous>)
+    at _c11 (table.tsx:83:6)
+    at tr (<anonymous>)
+    at _c9 (table.tsx:53:6)
+    at tbody (<anonymous>)
+    at _c5 (table.tsx:29:6)
+    at table (<anonymous>)
+    at div (<anonymous>)
+    at _c (table.tsx:7:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at EmployeeDataTable (EmployeeDataTable.tsx:116:37)
+    at div (<anonymous>)
+    at EmployeesSection (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at HRManagementPage (HRManagementPage.tsx:99:21)
+    at AuthenticatedRoute (TenantShell.tsx:415:72)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:216:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:71:59)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (App.tsx:39:3)
+overrideMethod @ hook.js:608
+printWarning @ chunk-ZHRYBLGQ.js?v=2f97fb70:521
+error @ chunk-ZHRYBLGQ.js?v=2f97fb70:505
+validateFunctionComponentInDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:15013
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=2f97fb70:14988
+beginWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=2f97fb70:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=2f97fb70:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=2f97fb70:197
+flushWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=2f97fb70:384Understand this error
+6hr-management:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2EmployeeDataTable.tsx:482 Gestisci permessi per: demo-user
+EmployeeDataTable.tsx:482 Gestisci permessi per: user-1760256175055-g7zek98zi
