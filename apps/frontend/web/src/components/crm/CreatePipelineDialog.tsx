@@ -152,7 +152,7 @@ export function CreatePipelineDialog({ open, onClose }: CreatePipelineDialogProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent 
         className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col"
         style={{
