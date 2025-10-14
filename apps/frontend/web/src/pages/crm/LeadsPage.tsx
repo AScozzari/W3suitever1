@@ -625,7 +625,7 @@ export function LeadsContent() {
 
   // Lead Data Query
   const { data: leads = [], isLoading, error } = useQuery<Lead[]>({
-    queryKey: [`/api/${tenantId}/crm/leads`, campaignId],
+    queryKey: ['/api/crm/leads', campaignId],
     enabled: !!tenantId
   });
 
