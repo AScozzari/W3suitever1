@@ -150,7 +150,9 @@ function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverC
             className="flex items-center gap-2"
             style={{ transformOrigin: 'left' }}
           >
-            <span className="text-xs capitalize min-w-[80px]" style={{ color: stat.percentage > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
+            {/* Placeholder per allineamento con ChannelBars che ha icone */}
+            <div className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="text-xs capitalize min-w-[120px]" style={{ color: stat.percentage > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
               {stat.category}
             </span>
             <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--glass-bg-heavy)' }}>
