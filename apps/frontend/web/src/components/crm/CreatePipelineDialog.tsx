@@ -98,7 +98,7 @@ export function CreatePipelineDialog({ open, onClose }: CreatePipelineDialogProp
             <div>
               <div style={{ color: '#1f2937' }}>Nuova Pipeline</div>
               <div className="text-sm font-normal text-gray-500 mt-1">
-                Crea una nuova pipeline CRM per gestire le tue opportunità
+                Configura nome, descrizione, driver e impostazioni di base per questa nuova pipeline
               </div>
             </div>
           </DialogTitle>
