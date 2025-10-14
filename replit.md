@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules. Built as a monorepo, it features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and PostgreSQL with Row Level Security (RLS) for stringent tenant isolation. The platform includes a Brand Interface HQ system for centralized control and cross-tenant management, aiming to provide a scalable, secure, and complete solution for diverse business needs.
+W3 Suite is a multi-tenant enterprise platform for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules. It features a unique WindTre glassmorphism design and robust OAuth2/OIDC security with MFA. The platform utilizes PostgreSQL with Row Level Security (RLS) for stringent tenant isolation and includes a Brand Interface HQ system for centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and complete solution for diverse business needs.
 
 # User Preferences
 
@@ -46,11 +46,6 @@ import { brandTenants } from './db/schema/brand-interface';
 // ✅ ACCEPTABLE - Backward compatibility (index.ts re-exports)
 import { users, stores } from './db/schema'; // Re-exported from w3suite
 import { brands, channels } from './db/schema'; // Re-exported from public
-
-// ❌ WRONG - OBSOLETE FILES REMOVED
-import { users } from './db/schema/core'; // FILE REMOVED 2024/09/24
-import { roles } from './db/schema/rbac'; // FILE REMOVED 2024/09/24
-import { stores } from './db/schema/organization'; // NEVER EXISTED
 ```
 
 #### 🚫 FORBIDDEN ACTIONS:
@@ -168,9 +163,6 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
 import { ListPageTemplate } from '@w3suite/frontend-kit/templates';
 import { DataTable } from '@w3suite/frontend-kit/components/blocks';
 import { glassmorphism } from '@w3suite/frontend-kit/design-system';
-
-// WRONG - Don't recreate components
-const MyTable = () => { /* custom implementation */ }
 ```
 
 ### CSS Variables Available:
@@ -212,18 +204,15 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-## Monorepo Structure
-The project is structured as a monorepo with `apps/` for services, `packages/` for shared libraries, and `db/` for database migrations.
-
 ## UI/UX Design
-Adheres to a **Glassmorphism WindTre Design System** with WindTre branding and colors. It follows a **Component-First Approach**, utilizing `shadcn/ui` for consistency and accessibility, enhanced with CSS variables and Tailwind CSS.
+Adheres to a **Glassmorphism WindTre Design System** with WindTre branding and colors. It follows a **Component-First Approach**, utilizing `shadcn/ui` for consistency and accessibility, enhanced with CSS variables and Tailwind CSS. The frontend package (`@w3suite/frontend-kit`) centralizes the design system, page templates, reusable components, UI patterns, and custom React hooks.
 
 ## Technical Implementations
+-   **Monorepo Structure**: `apps/` for services, `packages/` for shared libraries, `db/` for database migrations.
 -   **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
 -   **Security**: OAuth2/OIDC with MFA, JWTs, RBAC with a 3-level security hierarchy.
 -   **Multitenancy**: Achieved via RLS, a `TenantProvider`, and global unique constraints.
 -   **Universal Workflow System**: Supports approval hierarchies, RBAC-integrated supervision, event-driven state machines, visual builder, and audit trails.
--   **Frontend Package (`@w3suite/frontend-kit`)**: Centralizes design system, page templates, reusable components, UI patterns, and custom React hooks.
 -   **Unified Notification System**: Real-time notifications using Redis + WebSockets with PostgreSQL fallback.
 -   **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, deduplication, and audit trail.
 -   **Task Management System**: Flexible task system with optional workflow integration and RBAC-protected API.
@@ -233,6 +222,7 @@ Adheres to a **Glassmorphism WindTre Design System** with WindTre branding and c
 -   **Intelligent Workflow Routing System**: Dual-mode routing (auto/manual) for team and user assignments.
 -   **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
 -   **CRM Module Backend**: Comprehensive CRM backend with 20 tables in `w3suite` schema, person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows. Provides 25 RESTful endpoints with Zod validation, RLS, and structured logging.
+-   **CRM Pipeline Visualization System**: 3-view pipeline management (Table, Kanban, Gantt) with TanStack Table for advanced data grids, @dnd-kit for drag & drop stage transitions, workflow validation (stage locking, forbidden transitions), multi-column sorting, advanced filters (stage, owner, value, date, source), localStorage view persistence, category/channel distribution analytics, acquisition source tracking, and WindTre glassmorphism design.
 
 # External Dependencies
 
