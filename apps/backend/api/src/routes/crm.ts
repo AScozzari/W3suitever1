@@ -1487,7 +1487,6 @@ router.get('/pipelines/:pipelineId/category-stats', async (req, res) => {
         LEFT JOIN w3suite.crm_deals d ON d.stage = s.name 
           AND d.pipeline_id = s.pipeline_id 
           AND d.tenant_id = ${tenantId}
-          AND d.status NOT IN ('won', 'lost')
         WHERE s.pipeline_id = ${pipelineId}
         GROUP BY s.category
       ),
@@ -1581,7 +1580,6 @@ router.get('/pipelines/:pipelineId/channel-stats', async (req, res) => {
         FROM w3suite.crm_deals
         WHERE pipeline_id = ${pipelineId}
           AND tenant_id = ${tenantId}
-          AND status NOT IN ('won', 'lost')
         GROUP BY last_contact_channel
       ),
       total_deals AS (
