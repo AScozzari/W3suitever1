@@ -2487,6 +2487,82 @@ export class PipelineAssignmentExecutor implements ActionExecutor {
   }
 }
 
+/**
+ * 🤖 AI LEAD ROUTING EXECUTOR
+ * Uses AI to analyze interactions and intelligently route leads
+ */
+export class AILeadRoutingExecutor implements ActionExecutor {
+  executorId = 'ai-lead-routing-executor';
+  description = 'AI-powered lead routing based on interaction analysis';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing AI lead routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const interactionData = inputData?.interaction || inputData;
+
+      // Import AI service
+      const { AILeadRoutingService } = await import('./ai-lead-routing.service');
+      const aiService = new AILeadRoutingService();
+
+      // Prepare AI routing input
+      const routingInput = {
+        tenantId: context?.tenantId || '',
+        leadId: interactionData?.leadId,
+        interactionType: interactionData?.type || config.interactionType || 'unknown',
+        interactionContent: interactionData?.content || config.interactionContent || '',
+        leadName: interactionData?.leadName,
+        leadEmail: interactionData?.leadEmail,
+        leadPhone: interactionData?.leadPhone,
+        leadCompany: interactionData?.leadCompany,
+        acquisitionSourceId: interactionData?.acquisitionSourceId,
+      };
+
+      // Call AI service
+      const routing = await aiService.routeLead(routingInput);
+
+      logger.info('✅ [EXECUTOR] AI Lead Routing completed', {
+        stepId: step.nodeId,
+        driver: routing.recommendedDriver,
+        confidence: routing.driverConfidence,
+        pipeline: routing.targetPipelineId,
+        channel: routing.primaryOutboundChannel,
+      });
+
+      return {
+        success: true,
+        message: `Lead routed by AI: ${routing.driverReasoning}`,
+        data: {
+          routing,
+          driver: routing.recommendedDriver,
+          driverConfidence: routing.driverConfidence,
+          pipeline: routing.targetPipelineId,
+          channel: routing.primaryOutboundChannel,
+          estimatedValue: routing.estimatedValue,
+          priority: routing.priority,
+        },
+        nextAction: routing.targetPipelineId || 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI Lead Routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route lead with AI',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -2519,6 +2595,7 @@ export class ActionExecutorsRegistry {
     this.register(new TeamRoutingExecutor());
     this.register(new UserRoutingExecutor());
     this.register(new LeadRoutingExecutor());
+    this.register(new AILeadRoutingExecutor());
     this.register(new DealRoutingExecutor());
     this.register(new CustomerRoutingExecutor());
     
