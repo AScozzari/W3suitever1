@@ -381,10 +381,15 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       </Route>
       
       {/* 🎯 CRM PIPELINE LIST - Lista delle pipeline standalone */}
-      <Route path={`/${tenantSlug}/crm/pipeline`}>
+      <Route path={`/${tenantSlug}/crm/pipelines`}>
         <AuthenticatedRoute>
           <PipelinePage />
         </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🔄 LEGACY REDIRECT - Singular to Plural */}
+      <Route path={`/${tenantSlug}/crm/pipeline`}>
+        <Redirect to={`/${tenantSlug}/crm/pipelines`} replace />
       </Route>
       
       {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs come HR (niente più sub-routes!) */}
