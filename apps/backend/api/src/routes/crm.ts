@@ -932,6 +932,78 @@ router.patch('/pipelines/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/pipelines/:id/settings
+ * Get pipeline settings (team/user assignments, channels, etc.)
+ */
+router.get('/pipelines/:id/settings', rbacMiddleware, requirePermission('crm.view_pipeline'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: pipelineId } = req.params;
+
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ));
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get settings
+    const [settings] = await db
+      .select()
+      .from(crmPipelineSettings)
+      .where(eq(crmPipelineSettings.pipelineId, pipelineId));
+
+    // Return settings or empty object if not created yet
+    res.status(200).json({
+      success: true,
+      data: settings || {
+        pipelineId,
+        assignedTeams: [],
+        leadManagers: [],
+        dealApprovers: [],
+        pipelineAdmins: [],
+      },
+      message: 'Pipeline settings retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error getting pipeline settings', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to get pipeline settings',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * PATCH /api/crm/pipelines/:id/settings
  * Update pipeline settings (team/user assignments, channels, etc.)
  */

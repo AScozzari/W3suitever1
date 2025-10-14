@@ -71,6 +71,12 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     enabled: open && !!pipelineId,
   });
 
+  // Fetch pipeline settings
+  const { data: pipelineSettings } = useQuery({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/settings`],
+    enabled: open && !!pipelineId,
+  });
+
   // Fetch available workflow templates (CRM only)
   const { data: availableTemplates = [] } = useQuery({
     queryKey: ['/api/workflows/templates', { category: 'crm' }],
@@ -339,6 +345,16 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       setStaleDays(String(pipeline.staleDaysThreshold || 14));
     }
   }, [pipeline]);
+
+  // Load pipeline settings into form when settings change
+  useEffect(() => {
+    if (pipelineSettings) {
+      setSelectedTeams(pipelineSettings.assignedTeams || []);
+      setLeadManagers(pipelineSettings.leadManagers || []);
+      setDealApprovers(pipelineSettings.dealApprovers || []);
+      setPipelineAdmins(pipelineSettings.pipelineAdmins || []);
+    }
+  }, [pipelineSettings]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
