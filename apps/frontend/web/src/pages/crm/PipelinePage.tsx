@@ -28,7 +28,8 @@ import {
   Handshake,
   Mail,
   Phone,
-  Linkedin
+  Linkedin,
+  MinusCircle
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -172,14 +173,15 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
 
   // 🎯 Top 5 canali + placeholder se necessario (altezza costante)
   const topChannels = channelStats?.slice(0, 5) || [];
-  const displayChannels = [...topChannels];
+  const displayChannels = [...topChannels.map(ch => ({ ...ch, isPlaceholder: false }))];
   
   // Aggiungi placeholder per arrivare a 5 righe
   while (displayChannels.length < 5) {
     displayChannels.push({
       channel: displayChannels.length === 0 ? 'Nessun canale' : 'Altri canali',
       count: 0,
-      percentage: 0
+      percentage: 0,
+      isPlaceholder: true
     });
   }
 
@@ -190,9 +192,9 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
       </div>
       <div className="space-y-2">
         {displayChannels.map((stat, idx) => {
-          const ChannelIcon = getChannelIcon(stat.channel);
-          const isPlaceholder = stat.percentage === 0;
+          const isPlaceholder = stat.isPlaceholder || false;
           const isNotContacted = stat.channel === 'Non contattato';
+          const ChannelIcon = isPlaceholder ? MinusCircle : getChannelIcon(stat.channel);
           const barColor = isPlaceholder ? 'transparent' : isNotContacted ? 'hsl(0, 84%, 60%)' : driverColor;
           const iconColor = isPlaceholder ? 'var(--text-tertiary)' : isNotContacted ? 'hsl(0, 84%, 60%)' : driverColor;
           
