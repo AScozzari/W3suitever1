@@ -120,18 +120,15 @@ export function PipelineFiltersDialog({
       <DialogContent 
         className="sm:max-w-[700px] max-h-[85vh]"
         style={{
-          background: 'var(--glass-card-bg)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid var(--glass-card-border)',
-          boxShadow: 'var(--shadow-glass-lg)'
+          background: 'white',
+          border: '1px solid rgba(0, 0, 0, 0.1)'
         }}
       >
-        <DialogHeader>
-          <DialogTitle style={{ color: 'var(--text-primary)' }}>
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="text-2xl" style={{ color: '#1f2937' }}>
             Filtri Avanzati Pipeline
           </DialogTitle>
-          <DialogDescription style={{ color: 'var(--text-secondary)' }}>
+          <DialogDescription className="text-sm text-gray-500 mt-1">
             Applica filtri avanzati per affinare la ricerca delle pipeline
           </DialogDescription>
         </DialogHeader>
@@ -422,8 +419,8 @@ export function PipelineFiltersDialog({
             <div className="space-y-2">
               <Label htmlFor="owner-select" style={{ color: 'var(--text-primary)' }}>Responsabile/Owner</Label>
               <Select
-                value={localFilters.ownerId || ''}
-                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, ownerId: value || undefined }))}
+                value={localFilters.ownerId || 'all'}
+                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, ownerId: value === 'all' ? undefined : value }))}
               >
                 <SelectTrigger
                   id="owner-select"
@@ -436,7 +433,7 @@ export function PipelineFiltersDialog({
                   <SelectValue placeholder="Seleziona responsabile" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tutti</SelectItem>
+                  <SelectItem value="all">Tutti</SelectItem>
                   {users.map((user: any) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
@@ -450,8 +447,8 @@ export function PipelineFiltersDialog({
             <div className="space-y-2">
               <Label htmlFor="team-select" style={{ color: 'var(--text-primary)' }}>Team</Label>
               <Select
-                value={localFilters.teamId || ''}
-                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, teamId: value || undefined }))}
+                value={localFilters.teamId || 'all'}
+                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, teamId: value === 'all' ? undefined : value }))}
               >
                 <SelectTrigger
                   id="team-select"
@@ -464,7 +461,7 @@ export function PipelineFiltersDialog({
                   <SelectValue placeholder="Seleziona team" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tutti i team</SelectItem>
+                  <SelectItem value="all">Tutti i team</SelectItem>
                   <SelectItem value="sales">Sales</SelectItem>
                   <SelectItem value="marketing">Marketing</SelectItem>
                   <SelectItem value="support">Support</SelectItem>
@@ -474,7 +471,7 @@ export function PipelineFiltersDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-6">
+        <DialogFooter className="mt-6 pt-4 border-t flex justify-between">
           <Button
             type="button"
             variant="outline"
@@ -484,23 +481,24 @@ export function PipelineFiltersDialog({
             <RotateCcw className="mr-2 h-4 w-4" />
             Reset Tutto
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            data-testid="button-cancel-filters"
-          >
-            Annulla
-          </Button>
-          <Button
-            type="button"
-            onClick={handleApply}
-            style={{ background: '#FF6900' }}
-            className="text-white"
-            data-testid="button-apply-filters"
-          >
-            Applica Filtri
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              data-testid="button-cancel-filters"
+            >
+              Annulla
+            </Button>
+            <Button
+              type="button"
+              onClick={handleApply}
+              style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+              data-testid="button-apply-filters"
+            >
+              Applica Filtri
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
