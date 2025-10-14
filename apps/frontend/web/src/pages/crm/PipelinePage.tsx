@@ -884,6 +884,15 @@ export function PipelineContent() {
               <Calendar className="h-4 w-4 mr-2" />
               Periodo
             </Button>
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              style={{ background: 'hsl(var(--brand-orange))' }}
+              className="text-white"
+              data-testid="button-create-pipeline"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nuova Pipeline
+            </Button>
           </div>
         </Card>
       </motion.div>
