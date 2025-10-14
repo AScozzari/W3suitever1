@@ -37,6 +37,12 @@ interface Deal {
   probability?: number | null;
   agingDays?: number | null;
   wonAt?: string | null;
+  
+  // Outbound channel tracking
+  preferredContactChannel?: string | null;
+  lastContactChannel?: string | null;
+  lastContactDate?: string | null;
+  
   createdAt: string;
   updatedAt: string;
 }

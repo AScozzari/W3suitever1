@@ -192,6 +192,32 @@ export const crmLegalFormEnum = pgEnum('crm_legal_form', [
   'pmi_innovativa'
 ]);
 export const crmInteractionDirectionEnum = pgEnum('crm_interaction_direction', ['inbound', 'outbound']);
+
+// CRM Channel Enums - Dual Tracking: Inbound (Lead Source) + Outbound (Contact Method)
+export const crmInboundChannelEnum = pgEnum('crm_inbound_channel', [
+  'landing_page',       // URL/Landing page
+  'web_form',          // Form compilato su sito
+  'whatsapp_inbound',  // Messaggio WhatsApp ricevuto
+  'cold_call_inbound', // Chiamata ricevuta da prospect
+  'linkedin_campaign', // Campagna LinkedIn Ads
+  'partner_referral',  // Segnalazione partner
+  'facebook',          // Social: Facebook
+  'instagram',         // Social: Instagram
+  'tiktok',           // Social: TikTok
+  'youtube',          // Social: YouTube
+  'twitter'           // Social: Twitter/X
+]);
+
+export const crmOutboundChannelEnum = pgEnum('crm_outbound_channel', [
+  'email',            // Email outbound
+  'telegram',         // Messaggio Telegram
+  'whatsapp',         // WhatsApp Business outbound
+  'phone',            // Chiamata telefonica
+  'linkedin',         // LinkedIn InMail/Message
+  'social_dm',        // Direct Message social (FB/IG)
+  'sms'              // SMS
+]);
+
 export const crmTaskTypeEnum = pgEnum('crm_task_type', ['call', 'email', 'meeting', 'follow_up', 'demo', 'other']);
 export const crmTaskStatusEnum = pgEnum('crm_task_status', ['pending', 'in_progress', 'completed', 'cancelled']);
 export const crmTaskPriorityEnum = pgEnum('crm_task_priority', ['low', 'medium', 'high', 'urgent']);
@@ -4463,7 +4489,7 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   personId: uuid("person_id").notNull(), // Auto-generated UUID for identity tracking
   ownerUserId: varchar("owner_user_id"),
   campaignId: uuid("campaign_id").references(() => crmCampaigns.id),
-  sourceChannel: varchar("source_channel", { length: 100 }),
+  sourceChannel: crmInboundChannelEnum("source_channel"), // INBOUND: Lead acquisition source
   sourceSocialAccountId: uuid("source_social_account_id"),
   status: crmLeadStatusEnum("status").default('new'),
   leadScore: smallint("lead_score").default(0), // 0-100
@@ -4713,9 +4739,17 @@ export const crmDeals = w3suiteSchema.table("crm_deals", {
   status: crmDealStatusEnum("status").default('open'),
   leadId: uuid("lead_id").references(() => crmLeads.id),
   campaignId: uuid("campaign_id"),
-  sourceChannel: varchar("source_channel", { length: 100 }),
+  sourceChannel: crmInboundChannelEnum("source_channel"), // INBOUND: Inherited from lead
   personId: uuid("person_id").notNull(), // Propagated from lead for identity tracking
   customerId: uuid("customer_id"),
+  
+  // ==================== OUTBOUND CHANNEL TRACKING ====================
+  preferredContactChannel: crmOutboundChannelEnum("preferred_contact_channel"), // Primary contact method
+  lastContactChannel: crmOutboundChannelEnum("last_contact_channel"), // Last used outbound channel
+  lastContactDate: timestamp("last_contact_date"), // When last contacted
+  contactHistory: jsonb("contact_history"), // Array of {channel, date, outcome}
+  contactChannelsUsed: text("contact_channels_used").array(), // All channels tried
+  
   estimatedValue: real("estimated_value"),
   probability: smallint("probability").default(0), // 0-100
   driverId: uuid("driver_id").references(() => drivers.id),

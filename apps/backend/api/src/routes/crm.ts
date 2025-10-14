@@ -1629,6 +1629,350 @@ router.get('/pipelines/:pipelineId/channel-stats', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/pipelines/:id/channel-matrix
+ * Get win rate matrix for inbound x outbound channel combinations
+ */
+router.get('/pipelines/:pipelineId/channel-matrix', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Query: Win rate per inbound×outbound combination
+    const matrixData = await db.execute(sql`
+      SELECT 
+        COALESCE(source_channel::text, 'Unknown') as inbound_channel,
+        COALESCE(last_contact_channel::text, 'No Contact') as outbound_channel,
+        COUNT(*) FILTER (WHERE status = 'won')::int as won_count,
+        COUNT(*)::int as total_count,
+        CASE 
+          WHEN COUNT(*) > 0 THEN ROUND((COUNT(*) FILTER (WHERE status = 'won')::float / COUNT(*)::float * 100)::numeric, 1)
+          ELSE 0
+        END as win_rate
+      FROM w3suite.crm_deals
+      WHERE pipeline_id = ${pipelineId}
+        AND tenant_id = ${tenantId}
+        AND status IN ('won', 'lost')
+      GROUP BY source_channel, last_contact_channel
+      HAVING COUNT(*) >= 2
+      ORDER BY win_rate DESC
+    `);
+
+    const matrix = matrixData.rows.map((row: any) => ({
+      inboundChannel: row.inbound_channel,
+      outboundChannel: row.outbound_channel,
+      wonCount: row.won_count,
+      totalCount: row.total_count,
+      winRate: parseFloat(row.win_rate)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: matrix,
+      message: 'Channel attribution matrix retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving channel matrix', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve channel matrix',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/pipelines/:id/best-pairs
+ * Get top 5 inbound×outbound channel pairs by conversion rate
+ */
+router.get('/pipelines/:pipelineId/best-pairs', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    const bestPairs = await db.execute(sql`
+      SELECT 
+        COALESCE(source_channel::text, 'Unknown') as inbound_channel,
+        COALESCE(last_contact_channel::text, 'No Contact') as outbound_channel,
+        COUNT(*) FILTER (WHERE status = 'won')::int as won_count,
+        COUNT(*)::int as total_count,
+        CASE 
+          WHEN COUNT(*) > 0 THEN ROUND((COUNT(*) FILTER (WHERE status = 'won')::float / COUNT(*)::float * 100)::numeric, 1)
+          ELSE 0
+        END as conversion_rate,
+        CONCAT(COALESCE(source_channel::text, 'Unknown'), ' + ', COALESCE(last_contact_channel::text, 'No Contact')) as pair_name
+      FROM w3suite.crm_deals
+      WHERE pipeline_id = ${pipelineId}
+        AND tenant_id = ${tenantId}
+        AND status IN ('won', 'lost')
+      GROUP BY source_channel, last_contact_channel
+      HAVING COUNT(*) >= 3
+      ORDER BY conversion_rate DESC, total_count DESC
+      LIMIT 5
+    `);
+
+    const pairs = bestPairs.rows.map((row: any) => ({
+      pairName: row.pair_name,
+      inboundChannel: row.inbound_channel,
+      outboundChannel: row.outbound_channel,
+      wonCount: row.won_count,
+      totalCount: row.total_count,
+      conversionRate: parseFloat(row.conversion_rate)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: pairs,
+      message: 'Best performing pairs retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving best pairs', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve best pairs',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/pipelines/:id/funnel-by-source
+ * Get conversion funnel breakdown by inbound source channel
+ */
+router.get('/pipelines/:pipelineId/funnel-by-source', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    const funnelData = await db.execute(sql`
+      WITH stage_categories AS (
+        SELECT DISTINCT
+          s.category,
+          s.order_index
+        FROM w3suite.crm_pipeline_stages s
+        WHERE s.pipeline_id = ${pipelineId}
+        ORDER BY s.order_index
+      )
+      SELECT 
+        COALESCE(d.source_channel::text, 'Unknown') as source_channel,
+        s.category as stage_category,
+        COUNT(*)::int as deal_count,
+        s.order_index
+      FROM w3suite.crm_deals d
+      JOIN w3suite.crm_pipeline_stages s ON s.name = d.stage AND s.pipeline_id = d.pipeline_id
+      WHERE d.pipeline_id = ${pipelineId}
+        AND d.tenant_id = ${tenantId}
+      GROUP BY d.source_channel, s.category, s.order_index
+      ORDER BY d.source_channel, s.order_index
+    `);
+
+    const funnel = funnelData.rows.map((row: any) => ({
+      sourceChannel: row.source_channel,
+      stageCategory: row.stage_category,
+      dealCount: row.deal_count,
+      orderIndex: row.order_index
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: funnel,
+      message: 'Funnel by source retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving funnel by source', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve funnel by source',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/pipelines/:id/outbound-efficiency
+ * Get overall performance metrics for each outbound contact channel
+ */
+router.get('/pipelines/:pipelineId/outbound-efficiency', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    const efficiencyData = await db.execute(sql`
+      SELECT 
+        COALESCE(last_contact_channel::text, 'No Contact') as channel,
+        COUNT(*)::int as total_deals,
+        COUNT(*) FILTER (WHERE status = 'won')::int as won_deals,
+        COUNT(*) FILTER (WHERE status = 'lost')::int as lost_deals,
+        CASE 
+          WHEN COUNT(*) > 0 THEN ROUND((COUNT(*) FILTER (WHERE status = 'won')::float / COUNT(*)::float * 100)::numeric, 1)
+          ELSE 0
+        END as win_rate,
+        ROUND(AVG(estimated_value) FILTER (WHERE status = 'won')::numeric, 2) as avg_deal_value
+      FROM w3suite.crm_deals
+      WHERE pipeline_id = ${pipelineId}
+        AND tenant_id = ${tenantId}
+        AND status IN ('won', 'lost', 'open')
+      GROUP BY last_contact_channel
+      ORDER BY win_rate DESC, total_deals DESC
+    `);
+
+    const efficiency = efficiencyData.rows.map((row: any) => ({
+      channel: row.channel,
+      totalDeals: row.total_deals,
+      wonDeals: row.won_deals,
+      lostDeals: row.lost_deals,
+      winRate: parseFloat(row.win_rate),
+      avgDealValue: parseFloat(row.avg_deal_value || 0)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: efficiency,
+      message: 'Outbound channel efficiency retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving outbound efficiency', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve outbound efficiency',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/pipelines/:id/time-to-close
+ * Get average time to close deals by inbound×outbound channel pair
+ */
+router.get('/pipelines/:pipelineId/time-to-close', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    const timeData = await db.execute(sql`
+      SELECT 
+        COALESCE(source_channel::text, 'Unknown') as inbound_channel,
+        COALESCE(last_contact_channel::text, 'No Contact') as outbound_channel,
+        COUNT(*)::int as deal_count,
+        ROUND(AVG(EXTRACT(EPOCH FROM (COALESCE(won_at, NOW()) - created_at)) / 86400)::numeric, 1) as avg_days_to_close,
+        CONCAT(COALESCE(source_channel::text, 'Unknown'), ' + ', COALESCE(last_contact_channel::text, 'No Contact')) as pair_name
+      FROM w3suite.crm_deals
+      WHERE pipeline_id = ${pipelineId}
+        AND tenant_id = ${tenantId}
+        AND status = 'won'
+      GROUP BY source_channel, last_contact_channel
+      HAVING COUNT(*) >= 2
+      ORDER BY avg_days_to_close ASC
+    `);
+
+    const timeToClose = timeData.rows.map((row: any) => ({
+      pairName: row.pair_name,
+      inboundChannel: row.inbound_channel,
+      outboundChannel: row.outbound_channel,
+      dealCount: row.deal_count,
+      avgDaysToClose: parseFloat(row.avg_days_to_close)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: timeToClose,
+      message: 'Time to close analysis retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving time to close', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve time to close',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/crm/pipelines/:id/stages
  * Create a new custom stage for a pipeline
  */

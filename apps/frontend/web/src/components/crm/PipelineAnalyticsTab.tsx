@@ -35,6 +35,47 @@ interface ChannelStat {
   percentage: number;
 }
 
+interface ChannelMatrix {
+  inboundChannel: string;
+  outboundChannel: string;
+  wonCount: number;
+  totalCount: number;
+  winRate: number;
+}
+
+interface BestPair {
+  pairName: string;
+  inboundChannel: string;
+  outboundChannel: string;
+  wonCount: number;
+  totalCount: number;
+  conversionRate: number;
+}
+
+interface FunnelBySource {
+  sourceChannel: string;
+  stageCategory: string;
+  dealCount: number;
+  orderIndex: number;
+}
+
+interface OutboundEfficiency {
+  channel: string;
+  totalDeals: number;
+  wonDeals: number;
+  lostDeals: number;
+  winRate: number;
+  avgDealValue: number;
+}
+
+interface TimeToClose {
+  pairName: string;
+  inboundChannel: string;
+  outboundChannel: string;
+  dealCount: number;
+  avgDaysToClose: number;
+}
+
 // 🎨 Design Tokens
 const COLORS = {
   orange: 'hsl(var(--brand-orange))',
@@ -94,6 +135,31 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
     queryKey: [`/api/crm/pipelines/${pipelineId}/channel-stats`],
   });
 
+  // ✅ NEW ANALYTICS: Channel Attribution Matrix
+  const { data: channelMatrix, isLoading: matrixLoading } = useQuery<ChannelMatrix[]>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/channel-matrix`],
+  });
+
+  // ✅ NEW ANALYTICS: Best Performing Pairs
+  const { data: bestPairs, isLoading: pairsLoading } = useQuery<BestPair[]>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/best-pairs`],
+  });
+
+  // ✅ NEW ANALYTICS: Funnel by Source
+  const { data: funnelBySource, isLoading: funnelLoading } = useQuery<FunnelBySource[]>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/funnel-by-source`],
+  });
+
+  // ✅ NEW ANALYTICS: Outbound Efficiency
+  const { data: outboundEfficiency, isLoading: efficiencyLoading } = useQuery<OutboundEfficiency[]>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/outbound-efficiency`],
+  });
+
+  // ✅ NEW ANALYTICS: Time to Close
+  const { data: timeToClose, isLoading: timeLoading } = useQuery<TimeToClose[]>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/time-to-close`],
+  });
+
   // Transform channel stats to chart format
   const channelPerformanceData = channelStats?.map(stat => ({
     channel: stat.channel,
@@ -102,7 +168,7 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
     conversion: stat.percentage
   })) || [];
 
-  if (categoryLoading || channelLoading) {
+  if (categoryLoading || channelLoading || matrixLoading || pairsLoading || funnelLoading || efficiencyLoading || timeLoading) {
     return <LoadingState />;
   }
   return (
@@ -143,9 +209,9 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
         />
       </div>
 
-      {/* Charts Row 1: Funnel + Win Rate Trend */}
+      {/* Charts Row 1: Best Pairs + Channel Matrix Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Conversion Funnel */}
+        {/* ✅ Best Performing Channel Pairs */}
         <motion.div variants={cardVariants} initial="hidden" animate="visible">
           <Card 
             className="glass-card p-6 border-0"
@@ -158,20 +224,20 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold" style={{ color: COLORS.primary }}>
-                  Conversion Funnel
+                  🏆 Top Inbound × Outbound Pairs
                 </h3>
                 <p className="text-sm" style={{ color: COLORS.tertiary }}>
-                  Stage-by-stage progression
+                  Best channel combinations by win rate
                 </p>
               </div>
               <Target className="h-5 w-5" style={{ color: COLORS.orange }} />
             </div>
             
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={conversionFunnelData} layout="vertical">
+              <BarChart data={bestPairs || []} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-card-border)" />
                 <XAxis type="number" stroke={COLORS.secondary} />
-                <YAxis dataKey="stage" type="category" stroke={COLORS.secondary} width={80} />
+                <YAxis dataKey="pairName" type="category" stroke={COLORS.secondary} width={180} />
                 <Tooltip 
                   contentStyle={{ 
                     background: 'var(--glass-card-bg)', 
@@ -179,15 +245,15 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
                     borderRadius: '8px'
                   }}
                 />
-                <Bar dataKey="count" fill={COLORS.orange} radius={[0, 8, 8, 0]}>
-                  <LabelList dataKey="percentage" position="right" formatter={(value: number) => `${value}%`} />
+                <Bar dataKey="conversionRate" fill={COLORS.orange} radius={[0, 8, 8, 0]}>
+                  <LabelList dataKey="conversionRate" position="right" formatter={(value: number) => `${value}%`} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Card>
         </motion.div>
 
-        {/* Win Rate Trend */}
+        {/* ✅ Channel Attribution Matrix Heatmap */}
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
           <Card 
             className="glass-card p-6 border-0"
@@ -200,43 +266,46 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold" style={{ color: COLORS.primary }}>
-                  Win Rate Trend
+                  📊 Attribution Matrix
                 </h3>
                 <p className="text-sm" style={{ color: COLORS.tertiary }}>
-                  Last 6 months performance
+                  Win rate by inbound × outbound channels
                 </p>
               </div>
               <Activity className="h-5 w-5" style={{ color: COLORS.success }} />
             </div>
             
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={winRateTrendData}>
-                <defs>
-                  <linearGradient id="winRateGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={COLORS.success} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-card-border)" />
-                <XAxis dataKey="month" stroke={COLORS.secondary} />
-                <YAxis stroke={COLORS.secondary} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--glass-card-bg)', 
-                    border: '1px solid var(--glass-card-border)',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="winRate" 
-                  stroke={COLORS.success} 
-                  fillOpacity={1} 
-                  fill="url(#winRateGradient)" 
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {channelMatrix?.map((item, idx) => (
+                <motion.div
+                  key={`${item.inboundChannel}-${item.outboundChannel}`}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 + idx * 0.03 }}
+                  className="p-3 rounded-lg flex items-center justify-between"
+                  style={{ background: 'var(--glass-bg-heavy)' }}
+                >
+                  <div className="flex-1">
+                    <div className="text-sm font-medium" style={{ color: COLORS.primary }}>
+                      {item.inboundChannel} → {item.outboundChannel}
+                    </div>
+                    <div className="text-xs" style={{ color: COLORS.tertiary }}>
+                      {item.wonCount}/{item.totalCount} deals won
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold" style={{ color: item.winRate >= 50 ? COLORS.success : COLORS.orange }}>
+                      {item.winRate}%
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              {(!channelMatrix || channelMatrix.length === 0) && (
+                <div className="text-center py-8" style={{ color: COLORS.tertiary }}>
+                  No channel combinations data available
+                </div>
+              )}
+            </div>
           </Card>
         </motion.div>
       </div>
@@ -284,9 +353,9 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
         </Card>
       </motion.div>
 
-      {/* Charts Row 3: Contact Activity + Lead Profiling */}
+      {/* Charts Row 3: Outbound Efficiency + Time to Close */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Contact Activity */}
+        {/* ✅ Outbound Channel Efficiency */}
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
           <Card 
             className="glass-card p-6 border-0"
@@ -299,56 +368,36 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold" style={{ color: COLORS.primary }}>
-                  Contact Activity
+                  📞 Outbound Channel Efficiency
                 </h3>
                 <p className="text-sm" style={{ color: COLORS.tertiary }}>
-                  Engagement channels breakdown
+                  Performance by contact method
                 </p>
               </div>
               <Mail className="h-5 w-5" style={{ color: COLORS.orange }} />
             </div>
             
-            <div className="space-y-4">
-              {contactActivityData.map((activity, idx) => {
-                const icons = {
-                  'Email': Mail,
-                  'Phone': Phone,
-                  'Meeting': Users,
-                  'Demo': Globe
-                };
-                const Icon = icons[activity.type as keyof typeof icons] || Activity;
-                
-                return (
-                  <motion.div
-                    key={activity.type}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 + idx * 0.05 }}
-                    className="p-4 rounded-lg"
-                    style={{ background: 'var(--glass-bg-heavy)' }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-5 w-5" style={{ color: COLORS.orange }} />
-                        <span className="font-medium" style={{ color: COLORS.primary }}>
-                          {activity.type}
-                        </span>
-                      </div>
-                      <Badge variant="outline" style={{ borderColor: COLORS.orange }}>
-                        {activity.count}
-                      </Badge>
-                    </div>
-                    <div className="text-sm" style={{ color: COLORS.tertiary }}>
-                      Avg Response: {activity.avgResponse}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={outboundEfficiency || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-card-border)" />
+                <XAxis dataKey="channel" stroke={COLORS.secondary} angle={-15} textAnchor="end" height={80} />
+                <YAxis stroke={COLORS.secondary} />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'var(--glass-card-bg)', 
+                    border: '1px solid var(--glass-card-border)',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Bar dataKey="winRate" fill={COLORS.purple} radius={[8, 8, 0, 0]} name="Win Rate %">
+                  <LabelList dataKey="winRate" position="top" formatter={(value: number) => `${value}%`} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
         </motion.div>
 
-        {/* Lead Profiling */}
+        {/* ✅ Time to Close Analysis */}
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
           <Card 
             className="glass-card p-6 border-0"
@@ -361,59 +410,45 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold" style={{ color: COLORS.primary }}>
-                  Lead Profiling
+                  ⏱️ Time to Close
                 </h3>
                 <p className="text-sm" style={{ color: COLORS.tertiary }}>
-                  Segment distribution
+                  Average days by channel pair
                 </p>
               </div>
-              <PieChart className="h-5 w-5" style={{ color: COLORS.purple }} />
+              <Calendar className="h-5 w-5" style={{ color: COLORS.success }} />
             </div>
             
-            <ResponsiveContainer width="100%" height={250}>
-              <RechartsPie>
-                <Pie
-                  data={leadProfileData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ segment, percent }) => `${segment} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill={COLORS.orange}
-                  dataKey="count"
+            <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              {timeToClose?.map((item, idx) => (
+                <motion.div
+                  key={item.pairName}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 + idx * 0.05 }}
+                  className="p-3 rounded-lg flex items-center justify-between"
+                  style={{ background: 'var(--glass-bg-heavy)' }}
                 >
-                  {leadProfileData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={[COLORS.orange, COLORS.purple, COLORS.success][index % 3]} 
-                    />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--glass-card-bg)', 
-                    border: '1px solid var(--glass-card-border)',
-                    borderRadius: '8px'
-                  }}
-                />
-              </RechartsPie>
-            </ResponsiveContainer>
-
-            <div className="mt-4 space-y-2">
-              {leadProfileData.map((segment, idx) => (
-                <div key={segment.segment} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ background: [COLORS.orange, COLORS.purple, COLORS.success][idx % 3] }}
-                    />
-                    <span style={{ color: COLORS.secondary }}>{segment.segment}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium" style={{ color: COLORS.primary }}>
+                      {item.pairName}
+                    </div>
+                    <div className="text-xs" style={{ color: COLORS.tertiary }}>
+                      {item.dealCount} deals closed
+                    </div>
                   </div>
-                  <span className="font-medium" style={{ color: COLORS.primary }}>
-                    €{(segment.value / 1000).toFixed(0)}k
-                  </span>
-                </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold" style={{ color: COLORS.success }}>
+                      {item.avgDaysToClose} days
+                    </div>
+                  </div>
+                </motion.div>
               ))}
+              {(!timeToClose || timeToClose.length === 0) && (
+                <div className="text-center py-8" style={{ color: COLORS.tertiary }}>
+                  No time to close data available
+                </div>
+              )}
             </div>
           </Card>
         </motion.div>

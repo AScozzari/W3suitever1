@@ -20,7 +20,7 @@ export function KanbanColumn({ id, title, category, count, color, children }: Ka
     <div
       ref={setNodeRef}
       className={cn(
-        'flex-shrink-0 w-[320px] transition-all duration-200',
+        'flex-shrink-0 w-[380px] transition-all duration-200',
         isOver && 'scale-105'
       )}
       data-testid={`kanban-column-${id}`}
@@ -53,7 +53,7 @@ export function KanbanColumn({ id, title, category, count, color, children }: Ka
 
         <div
           className={cn(
-            'p-4 min-h-[400px] max-h-[600px] overflow-y-auto transition-colors',
+            'p-4 min-h-[500px] h-full overflow-y-auto transition-colors',
             isOver && 'bg-muted/30'
           )}
         >
