@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
+import { CampaignFiltersDialog, type CampaignFilters } from '@/components/crm/CampaignFiltersDialog';
 
 interface Campaign {
   id: string;
@@ -36,6 +37,7 @@ interface Campaign {
   status: 'active' | 'paused' | 'completed' | 'draft';
   type: 'inbound_media' | 'outbound_crm' | 'retention';
   brandSourceType?: 'tenant_only' | 'brand_derived';
+  storeId?: string;
   totalLeads: number;
   workedLeads: number;
   notWorkedLeads: number;
@@ -90,6 +92,13 @@ export default function CampaignsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<CampaignFilters>({
+    stores: [],
+    drivers: [],
+    status: [],
+    brandSourceType: [],
+  });
   const [location] = useLocation();
   const { navigate, buildUrl } = useTenantNavigation();
 
@@ -97,7 +106,68 @@ export default function CampaignsPage() {
     queryKey: ['/api/crm/campaigns'],
   });
 
-  const campaigns = campaignsResponse || [];
+  const allCampaigns = campaignsResponse || [];
+
+  // Apply filters to campaigns
+  const campaigns = allCampaigns.filter((campaign) => {
+    // Search filter
+    if (searchQuery && !campaign.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Stores filter
+    if (filters.stores.length > 0 && !filters.stores.includes(campaign.storeId || '')) {
+      return false;
+    }
+
+    // Drivers filter (campaigns can have multiple drivers)
+    if (filters.drivers.length > 0) {
+      // Backend returns targetDriverIds array
+      const campaignDrivers = (campaign as any).targetDriverIds || [];
+      if (!Array.isArray(campaignDrivers) || campaignDrivers.length === 0 || !campaignDrivers.some((id: string) => filters.drivers.includes(id))) {
+        return false;
+      }
+    }
+
+    // Status filter
+    if (filters.status.length > 0 && !filters.status.includes(campaign.status)) {
+      return false;
+    }
+
+    // Brand Source Type filter
+    if (filters.brandSourceType.length > 0) {
+      // Exclude campaigns without brandSourceType when filter is active
+      if (!campaign.brandSourceType || !filters.brandSourceType.includes(campaign.brandSourceType)) {
+        return false;
+      }
+    }
+
+    // Budget filter
+    if (filters.budgetMin !== undefined && campaign.budget < filters.budgetMin) {
+      return false;
+    }
+    if (filters.budgetMax !== undefined && campaign.budget > filters.budgetMax) {
+      return false;
+    }
+
+    // Start Date filter
+    if (filters.startDateFrom && new Date(campaign.startDate) < filters.startDateFrom) {
+      return false;
+    }
+    if (filters.startDateTo && new Date(campaign.startDate) > filters.startDateTo) {
+      return false;
+    }
+
+    // End Date filter
+    if (filters.endDateFrom && new Date(campaign.endDate) < filters.endDateFrom) {
+      return false;
+    }
+    if (filters.endDateTo && new Date(campaign.endDate) > filters.endDateTo) {
+      return false;
+    }
+
+    return true;
+  });
 
   const handleCreateCampaign = () => {
     setEditingCampaignId(undefined);
@@ -251,7 +321,11 @@ export default function CampaignsPage() {
                   data-testid="input-search-campaigns"
                 />
               </div>
-              <Button variant="outline" data-testid="button-filters">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsFiltersOpen(true)}
+                data-testid="button-filters"
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtri Avanzati
               </Button>
@@ -505,6 +579,17 @@ export default function CampaignsPage() {
         campaignId={editingCampaignId}
         mode={editingCampaignId ? 'edit' : 'create'}
       />
+
+      {/* Campaign Filters Dialog */}
+      <CampaignFiltersDialog
+        open={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        filters={filters}
+        onApplyFilters={(newFilters) => {
+          setFilters(newFilters);
+          setIsFiltersOpen(false);
+        }}
+      />
     </Layout>
   );
 }
@@ -521,7 +606,68 @@ export function CampaignsContent() {
     queryKey: ['/api/crm/campaigns'],
   });
 
-  const campaigns = campaignsResponse || [];
+  const allCampaigns = campaignsResponse || [];
+
+  // Apply filters to campaigns
+  const campaigns = allCampaigns.filter((campaign) => {
+    // Search filter
+    if (searchQuery && !campaign.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Stores filter
+    if (filters.stores.length > 0 && !filters.stores.includes(campaign.storeId || '')) {
+      return false;
+    }
+
+    // Drivers filter (campaigns can have multiple drivers)
+    if (filters.drivers.length > 0) {
+      // Backend returns targetDriverIds array
+      const campaignDrivers = (campaign as any).targetDriverIds || [];
+      if (!Array.isArray(campaignDrivers) || campaignDrivers.length === 0 || !campaignDrivers.some((id: string) => filters.drivers.includes(id))) {
+        return false;
+      }
+    }
+
+    // Status filter
+    if (filters.status.length > 0 && !filters.status.includes(campaign.status)) {
+      return false;
+    }
+
+    // Brand Source Type filter
+    if (filters.brandSourceType.length > 0) {
+      // Exclude campaigns without brandSourceType when filter is active
+      if (!campaign.brandSourceType || !filters.brandSourceType.includes(campaign.brandSourceType)) {
+        return false;
+      }
+    }
+
+    // Budget filter
+    if (filters.budgetMin !== undefined && campaign.budget < filters.budgetMin) {
+      return false;
+    }
+    if (filters.budgetMax !== undefined && campaign.budget > filters.budgetMax) {
+      return false;
+    }
+
+    // Start Date filter
+    if (filters.startDateFrom && new Date(campaign.startDate) < filters.startDateFrom) {
+      return false;
+    }
+    if (filters.startDateTo && new Date(campaign.startDate) > filters.startDateTo) {
+      return false;
+    }
+
+    // End Date filter
+    if (filters.endDateFrom && new Date(campaign.endDate) < filters.endDateFrom) {
+      return false;
+    }
+    if (filters.endDateTo && new Date(campaign.endDate) > filters.endDateTo) {
+      return false;
+    }
+
+    return true;
+  });
 
   const handleCreateCampaign = () => {
     setEditingCampaignId(undefined);
