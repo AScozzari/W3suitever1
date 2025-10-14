@@ -26,6 +26,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Search,
   ArrowUpDown,
   Eye,
@@ -84,13 +90,20 @@ interface Store {
   legalEntityId: string;
 }
 
+interface ScopeInfo {
+  type: 'tenant' | 'legal_entity' | 'store' | 'multiple' | 'none';
+  displayName: string;
+  items?: string[];  // For tooltip when multiple
+}
+
 interface EmployeeRow extends User {
   fullName: string;
   initials: string;
   primaryRole: string;
   rolesCount: number;
-  primaryStore: string;
+  scopeInfo: ScopeInfo;
   teamsCount: number;
+  teamsList?: string[];  // For tooltip
   assignments?: Assignment[];
 }
 
@@ -164,12 +177,38 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
       const primaryRole = assignments[0]?.roleName || user.position || 'N/D';
       const rolesCount = new Set(assignments.map(a => a.roleId)).size;
       
-      // Get primary store
-      const storeAssignment = assignments.find(a => a.scopeType === 'store');
-      const primaryStore = storeAssignment?.scopeDetails?.name || 'N/D';
+      // Build scope info
+      let scopeInfo: ScopeInfo;
+      const tenantAssignment = assignments.find(a => a.scopeType === 'tenant');
+      const legalEntityAssignment = assignments.find(a => a.scopeType === 'legal_entity');
+      const storeAssignments = assignments.filter(a => a.scopeType === 'store');
       
-      // Count teams
-      const teamsCount = teams.filter(t => t.userMembers?.includes(user.id)).length;
+      if (tenantAssignment) {
+        scopeInfo = { type: 'tenant', displayName: 'Organizzazione' };
+      } else if (legalEntityAssignment) {
+        scopeInfo = { 
+          type: 'legal_entity', 
+          displayName: legalEntityAssignment.scopeDetails?.name || 'Ragione Sociale' 
+        };
+      } else if (storeAssignments.length > 1) {
+        scopeInfo = {
+          type: 'multiple',
+          displayName: `${storeAssignments.length} PDV`,
+          items: storeAssignments.map(a => a.scopeDetails?.name || 'PDV').filter(Boolean)
+        };
+      } else if (storeAssignments.length === 1) {
+        scopeInfo = { 
+          type: 'store', 
+          displayName: storeAssignments[0].scopeDetails?.name || 'PDV' 
+        };
+      } else {
+        scopeInfo = { type: 'none', displayName: 'N/D' };
+      }
+      
+      // Get teams info
+      const userTeams = teams.filter(t => t.userMembers?.includes(user.id));
+      const teamsCount = userTeams.length;
+      const teamsList = userTeams.map(t => t.name);
 
       return {
         ...user,
@@ -177,8 +216,9 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
         initials,
         primaryRole,
         rolesCount,
-        primaryStore,
+        scopeInfo,
         teamsCount,
+        teamsList,
         assignments,
       };
     });
@@ -279,30 +319,125 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
         size: 120,
       },
       {
-        accessorKey: 'primaryStore',
-        header: 'Store',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-blue-500" />
-            <span className="text-sm" data-testid={`text-store-${row.original.id}`}>
-              {row.original.primaryStore}
-            </span>
-          </div>
-        ),
+        accessorKey: 'scopeInfo',
+        header: 'Scope',
+        cell: ({ row }) => {
+          const scopeInfo = row.original.scopeInfo;
+          
+          // Render based on scope type
+          if (scopeInfo.type === 'tenant') {
+            return (
+              <Badge 
+                variant="outline" 
+                className="border-orange-200 bg-orange-50 text-orange-700"
+                data-testid={`badge-scope-${row.original.id}`}
+              >
+                🏢 Organizzazione
+              </Badge>
+            );
+          }
+          
+          if (scopeInfo.type === 'legal_entity') {
+            return (
+              <Badge 
+                variant="outline" 
+                className="border-blue-200 bg-blue-50 text-blue-700"
+                data-testid={`badge-scope-${row.original.id}`}
+              >
+                {scopeInfo.displayName}
+              </Badge>
+            );
+          }
+          
+          if (scopeInfo.type === 'multiple' && scopeInfo.items) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
+                      data-testid={`badge-scope-${row.original.id}`}
+                    >
+                      🏪 {scopeInfo.displayName}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
+                    <div className="text-sm">
+                      <p className="font-semibold mb-2">Punti Vendita:</p>
+                      <ul className="space-y-1">
+                        {scopeInfo.items.map((item, idx) => (
+                          <li key={idx} className="text-gray-700">• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+          
+          if (scopeInfo.type === 'store') {
+            return (
+              <div className="flex items-center gap-2">
+                <Building2 className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-sm" data-testid={`text-scope-${row.original.id}`}>
+                  {scopeInfo.displayName}
+                </span>
+              </div>
+            );
+          }
+          
+          return <span className="text-sm text-gray-400">N/D</span>;
+        },
         size: 180,
       },
       {
         accessorKey: 'teamsCount',
         header: 'Team',
-        cell: ({ row }) => (
-          <Badge 
-            variant="outline" 
-            className="border-emerald-200 bg-emerald-50 text-emerald-700"
-            data-testid={`badge-teams-${row.original.id}`}
-          >
-            {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          if (row.original.teamsCount === 0) {
+            return <span className="text-sm text-gray-400">Nessun team</span>;
+          }
+          
+          if (row.original.teamsList && row.original.teamsList.length > 0) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
+                      data-testid={`badge-teams-${row.original.id}`}
+                    >
+                      {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
+                    <div className="text-sm">
+                      <p className="font-semibold mb-2">Team:</p>
+                      <ul className="space-y-1">
+                        {row.original.teamsList.map((team, idx) => (
+                          <li key={idx} className="text-gray-700">• {team}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+          
+          return (
+            <Badge 
+              variant="outline" 
+              className="border-emerald-200 bg-emerald-50 text-emerald-700"
+              data-testid={`badge-teams-${row.original.id}`}
+            >
+              {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
+            </Badge>
+          );
+        },
         size: 120,
       },
       {
