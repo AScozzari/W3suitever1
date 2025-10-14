@@ -1665,7 +1665,7 @@ router.get('/pipelines/:pipelineId/channel-matrix', async (req, res) => {
         AND tenant_id = ${tenantId}
         AND status IN ('won', 'lost')
       GROUP BY source_channel, last_contact_channel
-      HAVING COUNT(*) >= 2
+      HAVING COUNT(*) >= 1
       ORDER BY win_rate DESC
     `);
 
@@ -1734,7 +1734,7 @@ router.get('/pipelines/:pipelineId/best-pairs', async (req, res) => {
         AND tenant_id = ${tenantId}
         AND status IN ('won', 'lost')
       GROUP BY source_channel, last_contact_channel
-      HAVING COUNT(*) >= 3
+      HAVING COUNT(*) >= 1
       ORDER BY conversion_rate DESC, total_count DESC
       LIMIT 5
     `);
@@ -1940,7 +1940,7 @@ router.get('/pipelines/:pipelineId/time-to-close', async (req, res) => {
         AND tenant_id = ${tenantId}
         AND status = 'won'
       GROUP BY source_channel, last_contact_channel
-      HAVING COUNT(*) >= 2
+      HAVING COUNT(*) >= 1
       ORDER BY avg_days_to_close ASC
     `);
 
