@@ -29,6 +29,8 @@ import {
   crmTasks,
   crmPersonIdentities,
   workflowTemplates,
+  leadRoutingHistory,
+  leadAiInsights,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmPipelineSchema,
@@ -3505,6 +3507,215 @@ router.get('/persons/:personId/analytics', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve analytics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== AI LEAD ROUTING ====================
+
+/**
+ * POST /api/crm/ai/route-lead
+ * Analyze customer interaction and route lead using AI
+ */
+router.post('/ai/route-lead', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Import AI service
+    const { AILeadRoutingService } = await import('../services/ai-lead-routing.service');
+    const aiService = new AILeadRoutingService();
+
+    // Validate input
+    const inputSchema = z.object({
+      leadId: z.string().uuid().optional(),
+      interactionType: z.string().min(1),
+      interactionContent: z.string().min(1),
+      leadName: z.string().optional(),
+      leadEmail: z.string().email().optional(),
+      leadPhone: z.string().optional(),
+      leadCompany: z.string().optional(),
+      acquisitionSourceId: z.string().uuid().optional(),
+    });
+
+    const validatedInput = inputSchema.parse(req.body);
+
+    // Call AI service
+    const routing = await aiService.routeLead({
+      tenantId,
+      ...validatedInput,
+    });
+
+    // Save to lead_routing_history
+    const [routingHistory] = await db.insert(leadRoutingHistory).values({
+      tenantId,
+      leadId: validatedInput.leadId || null,
+      interactionType: validatedInput.interactionType,
+      interactionContent: validatedInput.interactionContent,
+      acquisitionSourceId: validatedInput.acquisitionSourceId || null,
+      recommendedDriver: routing.recommendedDriver,
+      driverConfidence: routing.driverConfidence,
+      driverReasoning: routing.driverReasoning,
+      targetPipelineId: routing.targetPipelineId,
+      campaignSuggestion: routing.campaignSuggestion,
+      primaryOutboundChannel: routing.primaryOutboundChannel,
+      secondaryOutboundChannel: routing.secondaryOutboundChannel,
+      channelReasoning: routing.channelReasoning,
+      estimatedValue: routing.estimatedValue,
+      expectedCloseDate: routing.expectedCloseDate ? new Date(routing.expectedCloseDate) : null,
+      priority: routing.priority,
+      aiModel: routing.aiModel,
+      responseTimeMs: routing.responseTimeMs,
+      tokenUsage: routing.tokenUsage,
+      fullAiResponse: routing.fullAiResponse,
+    }).returning();
+
+    // Save insights if lead exists
+    if (validatedInput.leadId && routing.insights.length > 0) {
+      await db.insert(leadAiInsights).values({
+        tenantId,
+        leadId: validatedInput.leadId,
+        insightType: 'routing_analysis',
+        insights: { items: routing.insights },
+        nextAction: routing.nextAction,
+        riskFactors: { items: routing.riskFactors },
+        score: routing.driverConfidence === 'high' ? 90 : routing.driverConfidence === 'medium' ? 70 : 50,
+        confidence: routing.driverConfidence === 'high' ? 0.9 : routing.driverConfidence === 'medium' ? 0.7 : 0.5,
+        generatedBy: 'lead-routing-agent',
+        aiModel: routing.aiModel,
+      });
+    }
+
+    logger.info('AI Lead Routing completed', {
+      routingHistoryId: routingHistory.id,
+      leadId: validatedInput.leadId,
+      driver: routing.recommendedDriver,
+      confidence: routing.driverConfidence,
+      tenantId,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        routing,
+        routingHistoryId: routingHistory.id,
+      },
+      message: 'Lead routed successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error routing lead with AI', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to route lead',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/ai/routing-history/:leadId
+ * Get AI routing history for a specific lead
+ */
+router.get('/ai/routing-history/:leadId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const history = await db.select()
+      .from(leadRoutingHistory)
+      .where(and(
+        eq(leadRoutingHistory.tenantId, tenantId),
+        eq(leadRoutingHistory.leadId, req.params.leadId)
+      ))
+      .orderBy(desc(leadRoutingHistory.createdAt));
+
+    res.status(200).json({
+      success: true,
+      data: history,
+      message: 'Routing history retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving routing history', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      leadId: req.params.leadId,
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve routing history',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/ai/insights/:leadId
+ * Get AI insights for a specific lead
+ */
+router.get('/ai/insights/:leadId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const insights = await db.select()
+      .from(leadAiInsights)
+      .where(and(
+        eq(leadAiInsights.tenantId, tenantId),
+        eq(leadAiInsights.leadId, req.params.leadId)
+      ))
+      .orderBy(desc(leadAiInsights.createdAt));
+
+    res.status(200).json({
+      success: true,
+      data: insights,
+      message: 'AI insights retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving AI insights', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      leadId: req.params.leadId,
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve AI insights',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
