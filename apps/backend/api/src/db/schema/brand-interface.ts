@@ -17,6 +17,7 @@ import {
   smallint,
   integer,
   index,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -659,6 +660,46 @@ export const insertBrandTemplateDeploymentSchema = createInsertSchema(brandTempl
 });
 export type InsertBrandTemplateDeployment = z.infer<typeof insertBrandTemplateDeploymentSchema>;
 export type BrandTemplateDeployment = typeof brandTemplateDeployments.$inferSelect;
+
+// Brand AI Agents - Centralized AI agent configuration
+export const brandAiAgents = brandInterfaceSchema.table("brand_ai_agents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  brandId: uuid("brand_id").notNull(), // For RLS
+  
+  // Agent Identity
+  agentId: varchar("agent_id", { length: 100 }).notNull().unique(), // 'lead-routing-agent', 'tippy-sales', etc.
+  agentName: varchar("agent_name", { length: 255 }).notNull(),
+  agentDescription: text("agent_description"),
+  
+  // AI Configuration
+  model: varchar("model", { length: 50 }).default('gpt-4o').notNull(),
+  temperature: real("temperature").default(0.3).notNull(), // 0.0-2.0
+  maxTokens: integer("max_tokens").default(1000).notNull(),
+  systemPrompt: text("system_prompt").notNull(),
+  responseFormat: varchar("response_format", { length: 20 }).default('json_object'), // 'text', 'json_object'
+  
+  // Feature Flags
+  isActive: boolean("is_active").default(true).notNull(),
+  enabledForWorkflows: boolean("enabled_for_workflows").default(true).notNull(),
+  
+  // Deployment
+  deployToAllTenants: boolean("deploy_to_all_tenants").default(true).notNull(),
+  specificTenants: jsonb("specific_tenants"), // Array of tenant IDs if not deploy to all
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_brand_ai_agents_brand").on(table.brandId),
+  index("idx_brand_ai_agents_agent_id").on(table.agentId),
+]);
+
+export const insertBrandAiAgentSchema = createInsertSchema(brandAiAgents).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertBrandAiAgent = z.infer<typeof insertBrandAiAgentSchema>;
+export type BrandAiAgent = typeof brandAiAgents.$inferSelect;
 
 // ==================== CROSS-TENANT KNOWLEDGE - USE W3SUITE SCHEMA ====================
 // 

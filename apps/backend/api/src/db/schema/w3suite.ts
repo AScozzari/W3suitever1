@@ -159,6 +159,10 @@ export const aiModelEnum = pgEnum('ai_model', [
   'dall-e-3'
 ]);
 
+// Lead Routing AI Enums
+export const leadRoutingConfidenceEnum = pgEnum('lead_routing_confidence', ['low', 'medium', 'high', 'very_high']);
+export const outboundChannelEnum = pgEnum('outbound_channel', ['email', 'phone', 'whatsapp', 'linkedin', 'sms']);
+
 // CRM System Enums
 export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media', 'outbound_crm', 'retention']);
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
@@ -3779,6 +3783,81 @@ export const aiConversations = w3suiteSchema.table("ai_conversations", {
   expiresIndex: index("ai_conversations_expires_idx").on(table.expiresAt),
 }));
 
+// ==================== LEAD ROUTING AI SYSTEM ====================
+// Lead Routing History - Tracks AI routing decisions for leads
+export const leadRoutingHistory = w3suiteSchema.table("lead_routing_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  leadId: uuid("lead_id").references(() => crmLeads.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Interaction Context
+  interactionType: varchar("interaction_type", { length: 50 }).notNull(), // social_post_view, email_open, webinar, etc.
+  interactionContent: text("interaction_content"), // Content description
+  acquisitionSourceId: uuid("acquisition_source_id"), // FK to be added later when acquisition_sources table exists
+  
+  // AI Routing Decision
+  recommendedDriver: uuid("recommended_driver").references(() => drivers.id),
+  driverConfidence: leadRoutingConfidenceEnum("driver_confidence").default('medium').notNull(),
+  driverReasoning: text("driver_reasoning"),
+  
+  // Pipeline Assignment
+  targetPipelineId: uuid("target_pipeline_id").references(() => crmPipelines.id),
+  campaignSuggestion: varchar("campaign_suggestion", { length: 255 }),
+  
+  // Outbound Channel Recommendation
+  primaryOutboundChannel: outboundChannelEnum("primary_outbound_channel").notNull(),
+  secondaryOutboundChannel: outboundChannelEnum("secondary_outbound_channel"),
+  channelReasoning: text("channel_reasoning"),
+  
+  // Deal Prediction
+  estimatedValue: integer("estimated_value"), // in cents
+  expectedCloseDate: date("expected_close_date"),
+  priority: varchar("priority", { length: 20 }), // High, Medium, Low
+  
+  // AI Response Metadata
+  aiModel: aiModelEnum("ai_model").default('gpt-4o').notNull(),
+  responseTimeMs: integer("response_time_ms"),
+  tokenUsage: integer("token_usage"),
+  fullAiResponse: jsonb("full_ai_response"), // Complete AI JSON response
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIndex: index("lead_routing_history_tenant_idx").on(table.tenantId),
+  leadIndex: index("lead_routing_history_lead_idx").on(table.leadId),
+  driverIndex: index("lead_routing_history_driver_idx").on(table.recommendedDriver),
+  pipelineIndex: index("lead_routing_history_pipeline_idx").on(table.targetPipelineId),
+  createdAtIndex: index("lead_routing_history_created_at_idx").on(table.createdAt),
+}));
+
+// Lead AI Insights - AI-generated insights and recommendations for leads
+export const leadAiInsights = w3suiteSchema.table("lead_ai_insights", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  leadId: uuid("lead_id").references(() => crmLeads.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Insight Data
+  insightType: varchar("insight_type", { length: 50 }).notNull(), // routing, scoring, next_action
+  insights: jsonb("insights").notNull(), // Array of insight strings
+  nextAction: text("next_action"),
+  riskFactors: jsonb("risk_factors"), // Array of risk strings
+  
+  // Scoring
+  score: integer("score"), // 0-100
+  confidence: real("confidence"), // 0.0-1.0
+  
+  // Metadata
+  generatedBy: varchar("generated_by", { length: 50 }).default('lead-routing-agent').notNull(),
+  aiModel: aiModelEnum("ai_model").default('gpt-4o').notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"), // Optional expiration for insights
+}, (table) => ({
+  tenantIndex: index("lead_ai_insights_tenant_idx").on(table.tenantId),
+  leadIndex: index("lead_ai_insights_lead_idx").on(table.leadId),
+  typeIndex: index("lead_ai_insights_type_idx").on(table.insightType),
+  createdAtIndex: index("lead_ai_insights_created_at_idx").on(table.createdAt),
+}));
+
 // ==================== MCP (MODEL CONTEXT PROTOCOL) SYSTEM ====================
 // Enterprise-grade integration system for external services via MCP protocol
 // Supports Google Workspace, Meta/Instagram, GTM, AWS S3, Microsoft Teams, etc.
@@ -4177,6 +4256,19 @@ export const aiConversationsRelations = relations(aiConversations, ({ one }) => 
   user: one(users, { fields: [aiConversations.userId], references: [users.id] }),
 }));
 
+// Lead Routing AI Relations
+export const leadRoutingHistoryRelations = relations(leadRoutingHistory, ({ one }) => ({
+  tenant: one(tenants, { fields: [leadRoutingHistory.tenantId], references: [tenants.id] }),
+  lead: one(crmLeads, { fields: [leadRoutingHistory.leadId], references: [crmLeads.id] }),
+  driver: one(drivers, { fields: [leadRoutingHistory.recommendedDriver], references: [drivers.id] }),
+  pipeline: one(crmPipelines, { fields: [leadRoutingHistory.targetPipelineId], references: [crmPipelines.id] }),
+}));
+
+export const leadAiInsightsRelations = relations(leadAiInsights, ({ one }) => ({
+  tenant: one(tenants, { fields: [leadAiInsights.tenantId], references: [tenants.id] }),
+  lead: one(crmLeads, { fields: [leadAiInsights.leadId], references: [crmLeads.id] }),
+}));
+
 // Vector Embeddings Relations
 export const vectorEmbeddingsRelations = relations(vectorEmbeddings, ({ one }) => ({
   tenant: one(tenants, { fields: [vectorEmbeddings.tenantId], references: [tenants.id] }),
@@ -4224,6 +4316,21 @@ export const insertAISettingsSchema = createInsertSchema(aiSettings).omit({
 });
 export type InsertAISettings = z.infer<typeof insertAISettingsSchema>;
 export type AISettings = typeof aiSettings.$inferSelect;
+
+// Lead Routing AI Insert Schemas and Types
+export const insertLeadRoutingHistorySchema = createInsertSchema(leadRoutingHistory).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertLeadRoutingHistory = z.infer<typeof insertLeadRoutingHistorySchema>;
+export type LeadRoutingHistory = typeof leadRoutingHistory.$inferSelect;
+
+export const insertLeadAiInsightsSchema = createInsertSchema(leadAiInsights).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertLeadAiInsights = z.infer<typeof insertLeadAiInsightsSchema>;
+export type LeadAiInsights = typeof leadAiInsights.$inferSelect;
 
 export const insertAIUsageLogSchema = createInsertSchema(aiUsageLogs).omit({ 
   id: true, 
