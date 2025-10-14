@@ -1596,7 +1596,9 @@ router.get('/pipelines/:pipelineId/channel-stats', async (req, res) => {
         END as percentage
       FROM channel_counts cc
       CROSS JOIN total_deals td
-      ORDER BY cc.deal_count DESC
+      ORDER BY 
+        CASE WHEN cc.channel = 'Non contattato' THEN 0 ELSE 1 END,
+        cc.deal_count DESC
       LIMIT 5
     `);
 
