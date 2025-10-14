@@ -71,7 +71,7 @@ export function PipelineFiltersDialog({
   });
 
   const filteredStores = stores.filter((store: any) => 
-    store.name?.toLowerCase().includes(storeSearch.toLowerCase()) ||
+    store.nome?.toLowerCase().includes(storeSearch.toLowerCase()) ||
     store.code?.toLowerCase().includes(storeSearch.toLowerCase())
   );
 
@@ -178,7 +178,7 @@ export function PipelineFiltersDialog({
                           className="text-sm cursor-pointer"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          {store.name || store.code || 'Store senza nome'}
+                          {store.nome || store.code || 'Store senza nome'}
                         </Label>
                       </div>
                     ))}
