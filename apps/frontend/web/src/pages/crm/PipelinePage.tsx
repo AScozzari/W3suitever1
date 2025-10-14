@@ -129,7 +129,7 @@ function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverC
   });
 
   return (
-    <div className="px-6 pb-4" style={{ minHeight: '240px' }}>
+    <div className="px-6 pb-4">
       <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
         Distribuzione per Categoria
       </div>
@@ -186,7 +186,7 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
   }
 
   return (
-    <div className="px-6 pb-4" style={{ minHeight: '180px' }}>
+    <div className="px-6 pb-4">
       <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
         Canali di Contatto
       </div>
@@ -712,12 +712,12 @@ export default function PipelinePage() {
                   </motion.div>
 
                   {/* Category Distribution Bars */}
-                  <div style={{ minHeight: '220px' }}>
+                  <div style={{ minHeight: '240px' }}>
                     <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                   </div>
 
                   {/* Channel Attribution Bars */}
-                  <div style={{ minHeight: '180px' }}>
+                  <div style={{ minHeight: '240px' }}>
                     <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                   </div>
 
@@ -1123,12 +1123,12 @@ export function PipelineContent() {
                 </motion.div>
 
                 {/* Category Distribution Bars */}
-                <div style={{ minHeight: '220px' }}>
+                <div style={{ minHeight: '240px' }}>
                   <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                 </div>
 
                 {/* Channel Attribution Bars */}
-                <div style={{ minHeight: '180px' }}>
+                <div style={{ minHeight: '240px' }}>
                   <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                 </div>
 
