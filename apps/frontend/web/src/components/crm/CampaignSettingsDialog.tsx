@@ -23,7 +23,8 @@ import {
   TrendingUp, 
   Wrench,
   Save,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 
 interface CampaignSettingsDialogProps {
@@ -71,6 +72,19 @@ const campaignFormSchema = z.object({
   
   // Status
   isActive: z.boolean().default(true),
+  
+  // GDPR Consents
+  requiredConsents: z.object({
+    privacy_policy: z.boolean().default(false),
+    marketing: z.boolean().default(false),
+    profiling: z.boolean().default(false),
+    third_party: z.boolean().default(false),
+  }).optional().default({
+    privacy_policy: false,
+    marketing: false,
+    profiling: false,
+    third_party: false,
+  }),
 }).refine(data => {
   // If routing mode is automatic, require either user or team assignment
   if (data.routingMode === 'automatic' && !data.autoAssignmentUserId && !data.autoAssignmentTeamId) {
@@ -169,6 +183,12 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       startDate: null,
       endDate: null,
       isActive: true,
+      requiredConsents: {
+        privacy_policy: false,
+        marketing: false,
+        profiling: false,
+        third_party: false,
+      },
     },
   });
 
@@ -196,6 +216,12 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         startDate: campaign.startDate || null,
         endDate: campaign.endDate || null,
         isActive: campaign.isActive ?? true,
+        requiredConsents: campaign.requiredConsents || {
+          privacy_policy: false,
+          marketing: false,
+          profiling: false,
+          third_party: false,
+        },
       });
     }
   }, [campaign, mode, form]);
@@ -292,7 +318,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid grid-cols-6 w-full">
+                <TabsList className="grid grid-cols-7 w-full">
                   <TabsTrigger value="general" data-testid="tab-general">
                     <Settings2 className="h-4 w-4 mr-1" />
                     Generale
@@ -308,6 +334,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   <TabsTrigger value="workflow" data-testid="tab-workflow">
                     <Workflow className="h-4 w-4 mr-1" />
                     Workflow
+                  </TabsTrigger>
+                  <TabsTrigger value="privacy" data-testid="tab-privacy">
+                    <Shield className="h-4 w-4 mr-1" />
+                    Privacy
                   </TabsTrigger>
                   <TabsTrigger value="tracking" data-testid="tab-tracking">
                     <TrendingUp className="h-4 w-4 mr-1" />
@@ -765,7 +795,123 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   />
                 </TabsContent>
 
-                {/* TAB 5: TRACKING */}
+                {/* TAB 5: PRIVACY & GDPR */}
+                <TabsContent value="privacy" className="space-y-4 mt-4">
+                  <div className="space-y-1 mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-green-600" />
+                      Consensi GDPR Richiesti
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Configura quali consensi privacy sono richiesti per i lead di questa campagna
+                    </p>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="requiredConsents.privacy_policy"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base font-semibold">
+                            Informativa Privacy
+                          </FormLabel>
+                          <FormDescription>
+                            Consenso obbligatorio al trattamento dati personali secondo GDPR Art. 13
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-consent-privacy-policy"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="requiredConsents.marketing"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base font-semibold">
+                            Consenso Marketing
+                          </FormLabel>
+                          <FormDescription>
+                            Consenso per attività di marketing e comunicazioni promozionali
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-consent-marketing"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="requiredConsents.profiling"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base font-semibold">
+                            Consenso Profilazione
+                          </FormLabel>
+                          <FormDescription>
+                            Consenso per profilazione e analisi comportamentale degli utenti
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-consent-profiling"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="requiredConsents.third_party"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base font-semibold">
+                            Consenso Terze Parti
+                          </FormLabel>
+                          <FormDescription>
+                            Consenso per condivisione dati con partner e fornitori terzi
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-consent-third-party"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      <strong>Nota:</strong> I consensi selezionati saranno richiesti durante la creazione di nuovi lead. 
+                      I lead senza consensi richiesti potrebbero essere soggetti a restrizioni nel trattamento.
+                    </p>
+                  </div>
+                </TabsContent>
+
+                {/* TAB 6: TRACKING */}
                 <TabsContent value="tracking" className="space-y-4 mt-4">
                   <FormField
                     control={form.control}
