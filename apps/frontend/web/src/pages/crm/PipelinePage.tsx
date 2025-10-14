@@ -970,6 +970,13 @@ export function PipelineContent() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [filtersDialogOpen, setFiltersDialogOpen] = useState(false);
+  const [filters, setFilters] = useState<PipelineFilters>({
+    stores: [],
+    drivers: [],
+    stato: 'tutte',
+  });
+  const [defaultFilterTab, setDefaultFilterTab] = useState<'base' | 'metriche' | 'temporali' | 'organizzazione'>('base');
 
   const { data: pipelinesResponse, isLoading, error } = useQuery<Pipeline[]>({
     queryKey: ['/api/crm/pipelines'],
