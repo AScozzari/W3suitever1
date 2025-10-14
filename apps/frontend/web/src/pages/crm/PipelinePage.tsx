@@ -192,6 +192,10 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
         {displayChannels.map((stat, idx) => {
           const ChannelIcon = getChannelIcon(stat.channel);
           const isPlaceholder = stat.percentage === 0;
+          const isNotContacted = stat.channel === 'Non contattato';
+          const barColor = isPlaceholder ? 'transparent' : isNotContacted ? 'hsl(0, 84%, 60%)' : driverColor;
+          const iconColor = isPlaceholder ? 'var(--text-tertiary)' : isNotContacted ? 'hsl(0, 84%, 60%)' : driverColor;
+          
           return (
             <motion.div
               key={`${stat.channel}-${idx}`}
@@ -200,7 +204,7 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
               transition={{ delay: idx * 0.03, duration: 0.3 }}
               className="flex items-center gap-2"
             >
-              <ChannelIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isPlaceholder ? 'var(--text-tertiary)' : driverColor }} />
+              <ChannelIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: iconColor }} />
               <span className="text-xs min-w-[120px] truncate" style={{ color: isPlaceholder ? 'var(--text-tertiary)' : 'var(--text-secondary)' }} title={stat.channel}>
                 {stat.channel}
               </span>
@@ -210,7 +214,7 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
                   animate={{ width: `${stat.percentage}%` }}
                   transition={{ delay: idx * 0.03 + 0.1, duration: 0.4 }}
                   className="h-full"
-                  style={{ background: isPlaceholder ? 'transparent' : driverColor }}
+                  style={{ background: barColor }}
                 />
               </div>
               <span className="text-xs font-medium min-w-[40px] text-right" style={{ color: isPlaceholder ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
