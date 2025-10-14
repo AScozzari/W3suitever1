@@ -295,33 +295,20 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             className="hover:bg-orange-500/10 hover:text-orange-600"
             data-testid="header-role"
           >
-            Posizione
+            Ruolo
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-3.5 w-3.5 text-orange-500" />
-            <span className="text-sm font-medium" data-testid={`text-role-${row.original.id}`}>
-              {row.original.primaryRole}
-            </span>
-          </div>
-        ),
-        size: 180,
-      },
-      {
-        accessorKey: 'rolesCount',
-        header: 'Ruoli',
-        cell: ({ row }) => (
           <Badge 
             variant="outline" 
             className="border-purple-200 bg-purple-50 text-purple-700"
-            data-testid={`badge-roles-${row.original.id}`}
+            data-testid={`badge-role-${row.original.id}`}
           >
-            {row.original.rolesCount} {row.original.rolesCount === 1 ? 'ruolo' : 'ruoli'}
+            {row.original.primaryRole}
           </Badge>
         ),
-        size: 120,
+        size: 180,
       },
       {
         accessorKey: 'scopeInfo',
@@ -358,13 +345,15 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge 
-                    variant="outline" 
-                    className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
-                    data-testid={`badge-scope-${row.original.id}`}
-                  >
-                    🏪 {scopeInfo.displayName}
-                  </Badge>
+                  <span>
+                    <Badge 
+                      variant="outline" 
+                      className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
+                      data-testid={`badge-scope-${row.original.id}`}
+                    >
+                      🏪 {scopeInfo.displayName}
+                    </Badge>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
                   <div className="text-sm">
@@ -407,13 +396,15 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge 
-                    variant="outline" 
-                    className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
-                    data-testid={`badge-teams-${row.original.id}`}
-                  >
-                    {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
-                  </Badge>
+                  <span>
+                    <Badge 
+                      variant="outline" 
+                      className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
+                      data-testid={`badge-teams-${row.original.id}`}
+                    >
+                      {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
+                    </Badge>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
                   <div className="text-sm">
@@ -447,10 +438,13 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
         cell: ({ row }) => (
           <div className="flex items-center justify-center gap-1">
             <button
-              onClick={() => onEmployeeClick?.(row.original.id)}
+              onClick={() => {
+                // View/Edit unificato - visualizza e se modifico salvo
+                onEmployeeClick?.(row.original.id);
+              }}
               className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-colors"
-              title="Visualizza dettagli"
-              data-testid={`action-view-${row.original.id}`}
+              title="Visualizza/Modifica"
+              data-testid={`action-view-edit-${row.original.id}`}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgb(239, 246, 255)';
                 e.currentTarget.style.borderColor = 'rgb(147, 197, 253)';
@@ -461,22 +455,6 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
               }}
             >
               <Eye size={14} style={{ color: '#3b82f6' }} />
-            </button>
-            <button
-              onClick={() => onEditEmployee?.(row.original.id)}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors"
-              title="Modifica dipendente"
-              data-testid={`action-edit-${row.original.id}`}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgb(249, 250, 251)';
-                e.currentTarget.style.borderColor = 'rgb(209, 213, 219)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.borderColor = '#e5e7eb';
-              }}
-            >
-              <Edit3 size={14} style={{ color: '#6b7280' }} />
             </button>
             <button
               onClick={() => {
@@ -516,7 +494,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             </button>
           </div>
         ),
-        size: 160,
+        size: 130,
       },
     ],
     [onEmployeeClick, onEditEmployee]
