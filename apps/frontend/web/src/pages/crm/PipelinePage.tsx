@@ -984,6 +984,98 @@ export function PipelineContent() {
 
   const pipelines = pipelinesResponse || [];
 
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.stores.length > 0) count++;
+    if (filters.drivers.length > 0) count++;
+    if (filters.stato !== 'tutte') count++;
+    if (filters.valoreMin !== undefined || filters.valoreMax !== undefined) count++;
+    if (filters.conversionMin !== undefined || filters.conversionMax !== undefined) count++;
+    if (filters.dealsMin !== undefined || filters.dealsMax !== undefined) count++;
+    if (filters.avgDealMin !== undefined || filters.avgDealMax !== undefined) count++;
+    if (filters.dataCreazioneDa || filters.dataCreazioneA) count++;
+    if (filters.dataAggiornamentoDa || filters.dataAggiornamentoA) count++;
+    if (filters.ownerId) count++;
+    if (filters.teamId) count++;
+    return count;
+  }, [filters]);
+
+  // Filter pipelines based on search and advanced filters
+  const filteredPipelines = useMemo(() => {
+    let result = [...pipelines];
+
+    // Apply search query first
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.name?.toLowerCase().includes(query) ||
+        p.driver?.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query) ||
+        p.ownerName?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply advanced filters
+    if (filters.drivers.length > 0) {
+      result = result.filter(p => filters.drivers.includes(p.driver));
+    }
+
+    if (filters.stato === 'attiva') {
+      result = result.filter(p => p.isActive !== false);
+    } else if (filters.stato === 'non_attiva') {
+      result = result.filter(p => p.isActive === false);
+    }
+
+    if (filters.valoreMin !== undefined) {
+      result = result.filter(p => p.totalValue >= filters.valoreMin!);
+    }
+    if (filters.valoreMax !== undefined) {
+      result = result.filter(p => p.totalValue <= filters.valoreMax!);
+    }
+
+    if (filters.conversionMin !== undefined) {
+      result = result.filter(p => p.conversionRate >= filters.conversionMin!);
+    }
+    if (filters.conversionMax !== undefined) {
+      result = result.filter(p => p.conversionRate <= filters.conversionMax!);
+    }
+
+    if (filters.dealsMin !== undefined) {
+      result = result.filter(p => p.activeDeals >= filters.dealsMin!);
+    }
+    if (filters.dealsMax !== undefined) {
+      result = result.filter(p => p.activeDeals <= filters.dealsMax!);
+    }
+
+    if (filters.avgDealMin !== undefined) {
+      result = result.filter(p => p.avgDealValue >= filters.avgDealMin!);
+    }
+    if (filters.avgDealMax !== undefined) {
+      result = result.filter(p => p.avgDealValue <= filters.avgDealMax!);
+    }
+
+    if (filters.dataCreazioneDa) {
+      result = result.filter(p => p.createdAt && new Date(p.createdAt) >= filters.dataCreazioneDa!);
+    }
+    if (filters.dataCreazioneA) {
+      result = result.filter(p => p.createdAt && new Date(p.createdAt) <= filters.dataCreazioneA!);
+    }
+
+    if (filters.dataAggiornamentoDa) {
+      result = result.filter(p => p.updatedAt && new Date(p.updatedAt) >= filters.dataAggiornamentoDa!);
+    }
+    if (filters.dataAggiornamentoA) {
+      result = result.filter(p => p.updatedAt && new Date(p.updatedAt) <= filters.dataAggiornamentoA!);
+    }
+
+    if (filters.ownerId) {
+      result = result.filter(p => p.ownerId === filters.ownerId);
+    }
+
+    return result;
+  }, [pipelines, searchQuery, filters]);
+
   const getDriverGradient = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'var(--brand-glass-orange)';
@@ -1065,11 +1157,34 @@ export function PipelineContent() {
                 data-testid="input-search-pipelines"
               />
             </div>
-            <Button variant="outline" data-testid="button-filters">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDefaultFilterTab('base');
+                setFiltersDialogOpen(true);
+              }}
+              data-testid="button-filters"
+            >
               <Filter className="h-4 w-4 mr-2" />
               Filtri Avanzati
+              {activeFiltersCount > 0 && (
+                <Badge 
+                  className="ml-2" 
+                  style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                  data-testid="badge-filters-count"
+                >
+                  {activeFiltersCount}
+                </Badge>
+              )}
             </Button>
-            <Button variant="outline" data-testid="button-date-range">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDefaultFilterTab('temporal');
+                setFiltersDialogOpen(true);
+              }}
+              data-testid="button-date-range"
+            >
               <Calendar className="h-4 w-4 mr-2" />
               Periodo
             </Button>
@@ -1093,7 +1208,7 @@ export function PipelineContent() {
         initial="hidden"
         animate="visible"
       >
-        {pipelines?.map((pipeline: Pipeline) => {
+        {filteredPipelines?.map((pipeline: Pipeline) => {
           return (
             <motion.div
               key={pipeline.id}
