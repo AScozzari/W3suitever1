@@ -1572,17 +1572,17 @@ router.get('/pipelines/:pipelineId/channel-stats', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    // Query: COUNT deals grouped by source_channel (top 5) with percentage
+    // Query: COUNT deals grouped by last_contact_channel (OUTBOUND) with percentage
     const channelStats = await db.execute(sql`
       WITH channel_counts AS (
         SELECT 
-          COALESCE(source_channel, 'Unknown') as channel,
+          COALESCE(last_contact_channel::text, 'Non contattato') as channel,
           COUNT(*)::int as deal_count
         FROM w3suite.crm_deals
         WHERE pipeline_id = ${pipelineId}
           AND tenant_id = ${tenantId}
           AND status NOT IN ('won', 'lost')
-        GROUP BY source_channel
+        GROUP BY last_contact_channel
       ),
       total_deals AS (
         SELECT SUM(deal_count)::int as total FROM channel_counts
