@@ -126,38 +126,45 @@ const cardVariants = {
 
 export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) {
   // ✅ REAL DATA: Category stats (stage distribution)
-  const { data: categoryStats, isLoading: categoryLoading } = useQuery<CategoryStat[]>({
+  const { data: categoryStats, isLoading: categoryLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/category-stats`],
+    select: (response: any) => response.data as CategoryStat[]
   });
 
   // ✅ REAL DATA: Channel stats (acquisition sources)
-  const { data: channelStats, isLoading: channelLoading } = useQuery<ChannelStat[]>({
+  const { data: channelStats, isLoading: channelLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/channel-stats`],
+    select: (response: any) => response.data as ChannelStat[]
   });
 
   // ✅ NEW ANALYTICS: Channel Attribution Matrix
-  const { data: channelMatrix, isLoading: matrixLoading } = useQuery<ChannelMatrix[]>({
+  const { data: channelMatrix, isLoading: matrixLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/channel-matrix`],
+    select: (response: any) => response.data as ChannelMatrix[]
   });
 
   // ✅ NEW ANALYTICS: Best Performing Pairs
-  const { data: bestPairs, isLoading: pairsLoading } = useQuery<BestPair[]>({
+  const { data: bestPairs, isLoading: pairsLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/best-pairs`],
+    select: (response: any) => response.data as BestPair[]
   });
 
   // ✅ NEW ANALYTICS: Funnel by Source
-  const { data: funnelBySource, isLoading: funnelLoading } = useQuery<FunnelBySource[]>({
+  const { data: funnelBySource, isLoading: funnelLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/funnel-by-source`],
+    select: (response: any) => response.data as FunnelBySource[]
   });
 
   // ✅ NEW ANALYTICS: Outbound Efficiency
-  const { data: outboundEfficiency, isLoading: efficiencyLoading } = useQuery<OutboundEfficiency[]>({
+  const { data: outboundEfficiency, isLoading: efficiencyLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/outbound-efficiency`],
+    select: (response: any) => response.data as OutboundEfficiency[]
   });
 
   // ✅ NEW ANALYTICS: Time to Close
-  const { data: timeToClose, isLoading: timeLoading } = useQuery<TimeToClose[]>({
+  const { data: timeToClose, isLoading: timeLoading } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/time-to-close`],
+    select: (response: any) => response.data as TimeToClose[]
   });
 
   // Transform channel stats to chart format
@@ -233,7 +240,7 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
               <Target className="h-5 w-5" style={{ color: COLORS.orange }} />
             </div>
             
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <BarChart data={bestPairs || []} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-card-border)" />
                 <XAxis type="number" stroke={COLORS.secondary} />
@@ -377,7 +384,7 @@ export function PipelineAnalyticsTab({ pipelineId }: PipelineAnalyticsTabProps) 
               <Mail className="h-5 w-5" style={{ color: COLORS.orange }} />
             </div>
             
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <BarChart data={outboundEfficiency || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-card-border)" />
                 <XAxis dataKey="channel" stroke={COLORS.secondary} angle={-15} textAnchor="end" height={80} />
