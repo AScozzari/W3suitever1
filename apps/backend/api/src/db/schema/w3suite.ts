@@ -4560,7 +4560,9 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   type: crmCampaignTypeEnum("type").notNull(),
   status: crmCampaignStatusEnum("status").default('draft'),
   objective: integer("objective"), // Target numero lead
-  targetDriverId: uuid("target_driver_id").references(() => drivers.id),
+  targetDriverIds: uuid("target_driver_ids").array(), // Multi-driver support (FISSO, MOBILE, DEVICE, etc.)
+  brandSourceType: varchar("brand_source_type", { length: 50 }).default('tenant_only'), // 'tenant_only' | 'brand_derived'
+  requiredConsents: jsonb("required_consents"), // { privacy_policy: true, marketing: false, profiling: true, third_party: false }
   landingPageUrl: text("landing_page_url"),
   channels: text("channels").array(), // Array canali: phone, whatsapp, form, social, email, qr
   routingMode: crmCampaignRoutingModeEnum("routing_mode").default('manual'),
@@ -4623,6 +4625,11 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   consentTimestamp: timestamp("consent_timestamp"),
   consentSource: varchar("consent_source", { length: 255 }),
   rawEventPayload: jsonb("raw_event_payload"),
+  
+  // ==================== SLA & DATE RANGE MANAGEMENT ====================
+  campaignValidUntil: timestamp("campaign_valid_until"), // Eredita end_date dalla campagna (offerta scade con campagna)
+  slaDeadline: timestamp("sla_deadline"), // Deadline gestione interna (es: created_at + 7 giorni)
+  slaConfig: jsonb("sla_config"), // Configurazione SLA { default_days: 7, urgent_days: 2, high_value_days: 3 }
   
   // ==================== FASE 1: GTM TRACKING ====================
   gtmClientId: varchar("gtm_client_id", { length: 255 }), // GA Client ID univoco
