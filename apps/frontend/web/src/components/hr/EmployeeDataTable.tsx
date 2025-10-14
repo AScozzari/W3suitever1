@@ -21,24 +21,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Search,
-  MoreHorizontal,
   ArrowUpDown,
   Eye,
-  Edit,
+  Edit3,
   Shield,
   Trash2,
   Users as UsersIcon,
@@ -226,7 +217,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="flex items-center gap-3 min-w-[250px]">
+          <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9 shadow-sm">
               <AvatarImage src={row.original.avatarUrl} alt={row.original.fullName} />
               <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-semibold text-xs">
@@ -248,6 +239,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             </div>
           </div>
         ),
+        size: 300,
       },
       {
         accessorKey: 'primaryRole',
@@ -270,6 +262,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             </span>
           </div>
         ),
+        size: 180,
       },
       {
         accessorKey: 'rolesCount',
@@ -283,6 +276,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             {row.original.rolesCount} {row.original.rolesCount === 1 ? 'ruolo' : 'ruoli'}
           </Badge>
         ),
+        size: 120,
       },
       {
         accessorKey: 'primaryStore',
@@ -295,6 +289,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             </span>
           </div>
         ),
+        size: 180,
       },
       {
         accessorKey: 'teamsCount',
@@ -308,63 +303,84 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
           </Badge>
         ),
+        size: 120,
       },
       {
         id: 'actions',
-        header: () => <div className="text-right">Azioni</div>,
+        header: () => <div className="text-center">Azioni</div>,
         cell: ({ row }) => (
-          <div className="text-right">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-8 w-8 p-0 hover:bg-orange-500/10"
-                  data-testid={`button-actions-${row.original.id}`}
-                >
-                  <span className="sr-only">Apri menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Azioni</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onEmployeeClick?.(row.original.id)}
-                  className="cursor-pointer"
-                  data-testid={`action-view-${row.original.id}`}
-                >
-                  <Eye className="mr-2 h-4 w-4 text-blue-500" />
-                  Visualizza dettagli
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onEditEmployee?.(row.original.id)}
-                  className="cursor-pointer"
-                  data-testid={`action-edit-${row.original.id}`}
-                >
-                  <Edit className="mr-2 h-4 w-4 text-orange-500" />
-                  Modifica dipendente
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {/* TODO: Implement permissions */}}
-                  className="cursor-pointer"
-                  data-testid={`action-permissions-${row.original.id}`}
-                >
-                  <Shield className="mr-2 h-4 w-4 text-purple-500" />
-                  Gestisci permessi
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {/* TODO: Implement remove */}}
-                  className="cursor-pointer text-red-600 focus:text-red-600"
-                  data-testid={`action-remove-${row.original.id}`}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Rimuovi
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => onEmployeeClick?.(row.original.id)}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              title="Visualizza dettagli"
+              data-testid={`action-view-${row.original.id}`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgb(239, 246, 255)';
+                e.currentTarget.style.borderColor = 'rgb(147, 197, 253)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}
+            >
+              <Eye size={14} style={{ color: '#3b82f6' }} />
+            </button>
+            <button
+              onClick={() => onEditEmployee?.(row.original.id)}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors"
+              title="Modifica dipendente"
+              data-testid={`action-edit-${row.original.id}`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgb(249, 250, 251)';
+                e.currentTarget.style.borderColor = 'rgb(209, 213, 219)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}
+            >
+              <Edit3 size={14} style={{ color: '#6b7280' }} />
+            </button>
+            <button
+              onClick={() => {
+                console.log('Gestisci permessi per:', row.original.id);
+              }}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-colors"
+              title="Gestisci permessi"
+              data-testid={`action-permissions-${row.original.id}`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgb(250, 245, 255)';
+                e.currentTarget.style.borderColor = 'rgb(216, 180, 254)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}
+            >
+              <Shield size={14} style={{ color: '#a855f7' }} />
+            </button>
+            <button
+              onClick={() => {
+                console.log('Rimuovi dipendente:', row.original.id);
+              }}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-200 bg-white hover:bg-red-50 hover:border-red-300 transition-colors"
+              title="Rimuovi"
+              data-testid={`action-remove-${row.original.id}`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgb(254, 242, 242)';
+                e.currentTarget.style.borderColor = 'rgb(252, 165, 165)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}
+            >
+              <Trash2 size={14} style={{ color: '#ef4444' }} />
+            </button>
           </div>
         ),
+        size: 160,
       },
     ],
     [onEmployeeClick, onEditEmployee]
@@ -471,7 +487,11 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-white/20 bg-gradient-to-r from-orange-500/10 via-purple-500/10 to-orange-500/10">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="font-semibold text-gray-900">
+                  <TableHead 
+                    key={header.id} 
+                    className="font-semibold text-gray-900"
+                    style={{ width: header.getSize() }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -492,7 +512,10 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
                   data-testid={`row-employee-${row.original.id}`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell 
+                      key={cell.id}
+                      style={{ width: cell.column.getSize() }}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
