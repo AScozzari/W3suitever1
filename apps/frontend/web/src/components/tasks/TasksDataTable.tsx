@@ -214,7 +214,7 @@ export function TasksDataTable({
             <TableHead className="w-12">
               <span className="sr-only">Stato</span>
             </TableHead>
-            <TableHead>
+            <TableHead className="min-w-[200px]">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('title')}
@@ -225,55 +225,55 @@ export function TasksDataTable({
                 <SortIcon field="title" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[180px] text-center">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('role')}
-                className="h-auto p-0 hover:bg-transparent font-semibold"
+                className="h-auto p-0 hover:bg-transparent font-semibold mx-auto"
                 data-testid="sort-role"
               >
                 Il Mio Ruolo
                 <SortIcon field="role" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[140px] text-center">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('status')}
-                className="h-auto p-0 hover:bg-transparent font-semibold"
+                className="h-auto p-0 hover:bg-transparent font-semibold mx-auto"
                 data-testid="sort-status"
               >
                 Stato
                 <SortIcon field="status" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[160px] text-center">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('priority')}
-                className="h-auto p-0 hover:bg-transparent font-semibold"
+                className="h-auto p-0 hover:bg-transparent font-semibold mx-auto"
                 data-testid="sort-priority"
               >
                 Priorità/Urgenza
                 <SortIcon field="priority" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[140px] text-center">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('dueDate')}
-                className="h-auto p-0 hover:bg-transparent font-semibold"
+                className="h-auto p-0 hover:bg-transparent font-semibold mx-auto"
                 data-testid="sort-dueDate"
               >
                 Scadenza
                 <SortIcon field="dueDate" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[140px] text-center">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('createdAt')}
-                className="h-auto p-0 hover:bg-transparent font-semibold"
+                className="h-auto p-0 hover:bg-transparent font-semibold mx-auto"
                 data-testid="sort-createdAt"
               >
                 Creato
@@ -344,7 +344,7 @@ export function TasksDataTable({
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <Badge
                     className={cn('whitespace-nowrap', roleInfo.color)}
                     data-testid={`badge-role-${task.id}`}
@@ -352,19 +352,19 @@ export function TasksDataTable({
                     {roleInfo.label}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <Badge variant="outline" className={cn('whitespace-nowrap', statusInfo.bg, statusInfo.color)}>
                     {statusInfo.label}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <PriorityUrgencyBadge
                     priority={task.priority}
                     urgency={task.urgency || 'medium'}
                     size="sm"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   {task.dueDate ? (
                     <span className={cn(
                       'text-sm',
@@ -376,7 +376,7 @@ export function TasksDataTable({
                     <span className="text-sm text-gray-400">-</span>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <span className="text-sm text-gray-600">
                     {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true, locale: it })}
                   </span>
