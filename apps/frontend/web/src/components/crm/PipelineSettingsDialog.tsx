@@ -295,7 +295,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     updatePipelineMutation.mutate({
       name: pipelineName || pipeline?.name,
       description: pipelineDescription || pipeline?.description,
-      driver: pipelineDriver || pipeline?.driver,
+      driverId: pipelineDriver || pipeline?.driverId,
       autoAssign,
       rottenDaysThreshold: parseInt(rottenDays) || 30,
       staleDaysThreshold: parseInt(staleDays) || 14,
@@ -339,7 +339,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     if (pipeline) {
       setPipelineName(pipeline.name || '');
       setPipelineDescription(pipeline.description || '');
-      setPipelineDriver(pipeline.driver || 'FISSO');
+      setPipelineDriver(pipeline.driverId || 'FISSO');
       setAutoAssign(pipeline.autoAssign || false);
       setRottenDays(String(pipeline.rottenDaysThreshold || 30));
       setStaleDays(String(pipeline.staleDaysThreshold || 14));
