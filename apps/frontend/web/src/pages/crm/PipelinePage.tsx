@@ -5,6 +5,7 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
   Settings, 
   TrendingUp,
@@ -26,13 +27,15 @@ import {
   Phone,
   Linkedin,
   MinusCircle,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { PipelineSettingsDialog } from '@/components/crm/PipelineSettingsDialog';
 import { CreatePipelineDialog } from '@/components/crm/CreatePipelineDialog';
-import { useState } from 'react';
+import { PipelineFiltersDialog, PipelineFilters } from '@/components/crm/PipelineFiltersDialog';
+import { useState, useEffect, useMemo } from 'react';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
@@ -45,6 +48,12 @@ interface Pipeline {
   conversionRate: number;
   avgDealValue: number;
   products: string[];
+  description?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  ownerId?: string;
+  ownerName?: string;
 }
 
 // Framer Motion Variants
@@ -235,8 +244,38 @@ export default function PipelinePage() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [filtersDialogOpen, setFiltersDialogOpen] = useState(false);
+  const [defaultFilterTab, setDefaultFilterTab] = useState<string>('base');
+  const [filters, setFilters] = useState<PipelineFilters>({
+    stores: [],
+    drivers: [],
+    stato: 'tutte',
+  });
   const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
+
+  // Load filters from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('pipeline-filters-v1');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Restore dates from ISO strings
+        if (parsed.dataCreazioneDa) parsed.dataCreazioneDa = new Date(parsed.dataCreazioneDa);
+        if (parsed.dataCreazioneA) parsed.dataCreazioneA = new Date(parsed.dataCreazioneA);
+        if (parsed.dataAggiornamentoDa) parsed.dataAggiornamentoDa = new Date(parsed.dataAggiornamentoDa);
+        if (parsed.dataAggiornamentoA) parsed.dataAggiornamentoA = new Date(parsed.dataAggiornamentoA);
+        setFilters(parsed);
+      } catch (e) {
+        console.error('Error loading filters from localStorage:', e);
+      }
+    }
+  }, []);
+
+  // Save filters to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('pipeline-filters-v1', JSON.stringify(filters));
+  }, [filters]);
   
   // CRM Navigation Tabs
   const crmTabs = [
@@ -266,6 +305,98 @@ export default function PipelinePage() {
   });
 
   const pipelines = pipelinesResponse || [];
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.stores.length > 0) count++;
+    if (filters.drivers.length > 0) count++;
+    if (filters.stato !== 'tutte') count++;
+    if (filters.valoreMin !== undefined || filters.valoreMax !== undefined) count++;
+    if (filters.conversionMin !== undefined || filters.conversionMax !== undefined) count++;
+    if (filters.dealsMin !== undefined || filters.dealsMax !== undefined) count++;
+    if (filters.avgDealMin !== undefined || filters.avgDealMax !== undefined) count++;
+    if (filters.dataCreazioneDa || filters.dataCreazioneA) count++;
+    if (filters.dataAggiornamentoDa || filters.dataAggiornamentoA) count++;
+    if (filters.ownerId) count++;
+    if (filters.teamId) count++;
+    return count;
+  }, [filters]);
+
+  // Filter pipelines based on search and advanced filters
+  const filteredPipelines = useMemo(() => {
+    let result = [...pipelines];
+
+    // Apply search query first
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.name?.toLowerCase().includes(query) ||
+        p.driver?.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query) ||
+        p.ownerName?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply advanced filters
+    if (filters.drivers.length > 0) {
+      result = result.filter(p => filters.drivers.includes(p.driver));
+    }
+
+    if (filters.stato === 'attiva') {
+      result = result.filter(p => p.isActive !== false);
+    } else if (filters.stato === 'non_attiva') {
+      result = result.filter(p => p.isActive === false);
+    }
+
+    if (filters.valoreMin !== undefined) {
+      result = result.filter(p => p.totalValue >= filters.valoreMin!);
+    }
+    if (filters.valoreMax !== undefined) {
+      result = result.filter(p => p.totalValue <= filters.valoreMax!);
+    }
+
+    if (filters.conversionMin !== undefined) {
+      result = result.filter(p => p.conversionRate >= filters.conversionMin!);
+    }
+    if (filters.conversionMax !== undefined) {
+      result = result.filter(p => p.conversionRate <= filters.conversionMax!);
+    }
+
+    if (filters.dealsMin !== undefined) {
+      result = result.filter(p => p.activeDeals >= filters.dealsMin!);
+    }
+    if (filters.dealsMax !== undefined) {
+      result = result.filter(p => p.activeDeals <= filters.dealsMax!);
+    }
+
+    if (filters.avgDealMin !== undefined) {
+      result = result.filter(p => p.avgDealValue >= filters.avgDealMin!);
+    }
+    if (filters.avgDealMax !== undefined) {
+      result = result.filter(p => p.avgDealValue <= filters.avgDealMax!);
+    }
+
+    if (filters.dataCreazioneDa) {
+      result = result.filter(p => p.createdAt && new Date(p.createdAt) >= filters.dataCreazioneDa!);
+    }
+    if (filters.dataCreazioneA) {
+      result = result.filter(p => p.createdAt && new Date(p.createdAt) <= filters.dataCreazioneA!);
+    }
+
+    if (filters.dataAggiornamentoDa) {
+      result = result.filter(p => p.updatedAt && new Date(p.updatedAt) >= filters.dataAggiornamentoDa!);
+    }
+    if (filters.dataAggiornamentoA) {
+      result = result.filter(p => p.updatedAt && new Date(p.updatedAt) <= filters.dataAggiornamentoA!);
+    }
+
+    if (filters.ownerId) {
+      result = result.filter(p => p.ownerId === filters.ownerId);
+    }
+
+    return result;
+  }, [pipelines, searchQuery, filters]);
 
   if (isLoading) {
     return (
@@ -473,22 +604,53 @@ export default function PipelinePage() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
                 <Input
-                  placeholder="Cerca pipeline per nome, driver o stato..."
+                  placeholder="Cerca pipeline per nome, driver, descrizione o responsabile..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   style={{ 
-                    background: 'var(--glass-bg-light)',
-                    border: '1px solid var(--glass-card-border)'
+                    background: searchQuery ? 'var(--glass-bg-heavy)' : 'var(--glass-bg-light)',
+                    border: searchQuery ? '2px solid hsl(var(--brand-orange))' : '1px solid var(--glass-card-border)',
+                    transition: 'all 0.2s ease'
                   }}
                   data-testid="input-search-pipelines"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-200 transition-colors"
+                    data-testid="button-clear-search"
+                    title="Cancella ricerca"
+                  >
+                    <X className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+                  </button>
+                )}
               </div>
-              <Button variant="outline" data-testid="button-filters">
+              <Button 
+                variant="outline" 
+                onClick={() => setFiltersDialogOpen(true)}
+                data-testid="button-filters"
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtri Avanzati
+                {activeFiltersCount > 0 && (
+                  <Badge 
+                    className="ml-2" 
+                    style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                    data-testid="badge-filters-count"
+                  >
+                    {activeFiltersCount}
+                  </Badge>
+                )}
               </Button>
-              <Button variant="outline" data-testid="button-date-range">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDefaultFilterTab('temporali');
+                  setFiltersDialogOpen(true);
+                }}
+                data-testid="button-date-range"
+              >
                 <Calendar className="h-4 w-4 mr-2" />
                 Periodo
               </Button>
@@ -502,6 +664,26 @@ export default function PipelinePage() {
                 Nuova Pipeline
               </Button>
             </div>
+
+            {/* Results Counter */}
+            {(searchQuery || activeFiltersCount > 0) && (
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }} data-testid="text-results-count">
+                  Trovate <strong style={{ color: 'hsl(var(--brand-orange))' }}>{filteredPipelines.length}</strong> pipeline su <strong>{pipelines.length}</strong>
+                </p>
+                {activeFiltersCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFilters({ stores: [], drivers: [], stato: 'tutte' })}
+                    data-testid="button-reset-all-filters"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Rimuovi filtri
+                  </Button>
+                )}
+              </div>
+            )}
           </Card>
         </motion.div>
 
@@ -512,7 +694,7 @@ export default function PipelinePage() {
           initial="hidden"
           animate="visible"
         >
-          {pipelines?.map((pipeline: Pipeline) => {
+          {filteredPipelines?.map((pipeline: Pipeline) => {
             return (
               <motion.div
                 key={pipeline.id}
@@ -1172,6 +1354,15 @@ export function PipelineContent() {
       <CreatePipelineDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
+      />
+
+      {/* Pipeline Filters Dialog */}
+      <PipelineFiltersDialog
+        open={filtersDialogOpen}
+        onClose={() => setFiltersDialogOpen(false)}
+        filters={filters}
+        onApplyFilters={setFilters}
+        defaultTab={defaultFilterTab}
       />
     </div>
   );
