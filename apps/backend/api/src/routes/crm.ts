@@ -16,6 +16,7 @@ import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
 import {
+  users,
   crmLeads,
   crmCampaigns,
   crmPipelines,
@@ -2392,8 +2393,39 @@ router.get('/deals', async (req, res) => {
     }
 
     const deals = await db
-      .select()
+      .select({
+        id: crmDeals.id,
+        tenantId: crmDeals.tenantId,
+        storeId: crmDeals.storeId,
+        ownerUserId: crmDeals.ownerUserId,
+        pipelineId: crmDeals.pipelineId,
+        stage: crmDeals.stage,
+        status: crmDeals.status,
+        leadId: crmDeals.leadId,
+        sourceChannel: crmDeals.sourceChannel,
+        personId: crmDeals.personId,
+        customerId: crmDeals.customerId,
+        estimatedValue: crmDeals.estimatedValue,
+        probability: crmDeals.probability,
+        agingDays: crmDeals.agingDays,
+        wonAt: crmDeals.wonAt,
+        preferredContactChannel: crmDeals.preferredContactChannel,
+        lastContactChannel: crmDeals.lastContactChannel,
+        lastContactDate: crmDeals.lastContactDate,
+        createdAt: crmDeals.createdAt,
+        updatedAt: crmDeals.updatedAt,
+        // Join fields
+        ownerName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        customerName: sql<string>`CASE 
+          WHEN ${crmCustomers.customerType} = 'b2b' THEN ${crmCustomers.companyName}
+          WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName})
+          ELSE NULL
+        END`,
+        customerType: crmCustomers.customerType,
+      })
       .from(crmDeals)
+      .leftJoin(users, eq(crmDeals.ownerUserId, users.id))
+      .leftJoin(crmCustomers, eq(crmDeals.customerId, crmCustomers.id))
       .where(and(...conditions))
       .orderBy(desc(crmDeals.createdAt))
       .limit(parseInt(limit as string))
