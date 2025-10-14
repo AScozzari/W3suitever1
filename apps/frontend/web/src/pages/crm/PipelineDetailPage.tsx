@@ -3,7 +3,6 @@ import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
-import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Button } from '@/components/ui/button';
 import DealsDataTable from '@/components/crm/DealsDataTable';
@@ -56,10 +55,6 @@ export default function PipelineDetailPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMSearchBar 
-            onSearch={() => {}}
-            placeholder="Cerca deal..."
-          />
           <div className="flex-1 p-6">
             <LoadingState />
           </div>
@@ -74,10 +69,6 @@ export default function PipelineDetailPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <CRMSearchBar 
-            onSearch={() => {}}
-            placeholder="Cerca deal..."
-          />
           <div className="flex-1 p-6">
             <ErrorState message="Errore nel caricamento della pipeline" />
           </div>
@@ -91,10 +82,6 @@ export default function PipelineDetailPage() {
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
-        <CRMSearchBar 
-          onSearch={setGlobalFilter}
-          placeholder="Cerca deal..."
-        />
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}
@@ -120,7 +107,7 @@ export default function PipelineDetailPage() {
                     {pipeline?.name || 'Pipeline'}
                   </h1>
                   <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    {deals.length} deal attivi • Driver: {pipeline?.driver || 'N/A'}
+                    Driver: {pipeline?.driver || 'N/A'}
                   </p>
                 </div>
               </div>
