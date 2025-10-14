@@ -12,7 +12,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middlewa
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms } from '../db/schema/w3suite';
-import { channels, commercialAreas } from '../db/schema/public';
+import { channels, commercialAreas, drivers } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 
@@ -764,6 +764,41 @@ router.get('/roles', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve roles',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PUBLIC REFERENCE DATA ====================
+
+/**
+ * GET /api/drivers
+ * Get all active drivers from public schema (no tenant context needed)
+ */
+router.get('/drivers', async (req, res) => {
+  try {
+    // Query public.drivers - no tenant isolation needed
+    const driversList = await db.query.drivers.findMany({
+      where: eq(drivers.active, true),
+      orderBy: [desc(drivers.name)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: driversList,
+      message: 'Drivers retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving drivers', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve drivers',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
