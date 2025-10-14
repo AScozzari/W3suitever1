@@ -4461,7 +4461,7 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   legalEntityId: uuid("legal_entity_id"),
   storeId: uuid("store_id").notNull(),
   personId: uuid("person_id").notNull(), // Auto-generated UUID for identity tracking
-  ownerUserId: uuid("owner_user_id"),
+  ownerUserId: varchar("owner_user_id"),
   campaignId: uuid("campaign_id").references(() => crmCampaigns.id),
   sourceChannel: varchar("source_channel", { length: 100 }),
   sourceSocialAccountId: uuid("source_social_account_id"),
@@ -4707,7 +4707,7 @@ export const crmDeals = w3suiteSchema.table("crm_deals", {
   tenantId: uuid("tenant_id").notNull(),
   legalEntityId: uuid("legal_entity_id"),
   storeId: uuid("store_id").notNull(),
-  ownerUserId: uuid("owner_user_id").notNull(),
+  ownerUserId: varchar("owner_user_id").notNull(),
   pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id),
   stage: varchar("stage", { length: 100 }).notNull(),
   status: crmDealStatusEnum("status").default('open'),

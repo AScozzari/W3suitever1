@@ -708,7 +708,7 @@ router.patch('/campaigns/:id', async (req, res) => {
 
 /**
  * GET /api/crm/pipelines
- * Get all pipelines for the current tenant
+ * Get all pipelines with aggregated metrics for the current tenant
  */
 router.get('/pipelines', async (req, res) => {
   try {
@@ -742,9 +742,41 @@ router.get('/pipelines', async (req, res) => {
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
 
+    // Enrich pipelines with aggregated metrics from deals
+    const enrichedPipelines = await Promise.all(
+      pipelines.map(async (pipeline) => {
+        const dealsMetrics = await db.execute(sql`
+          SELECT 
+            COUNT(*) FILTER (WHERE status NOT IN ('won', 'lost'))::int as active_deals,
+            COALESCE(SUM(estimated_value) FILTER (WHERE status NOT IN ('won', 'lost')), 0)::float as total_value,
+            COUNT(*) FILTER (WHERE status = 'won')::int as won_deals,
+            COUNT(*) FILTER (WHERE status IN ('won', 'lost'))::int as closed_deals,
+            COALESCE(AVG(estimated_value) FILTER (WHERE status NOT IN ('won', 'lost')), 0)::float as avg_deal_value
+          FROM w3suite.crm_deals
+          WHERE pipeline_id = ${pipeline.id}
+          AND tenant_id = ${tenantId}
+        `);
+
+        const metrics = dealsMetrics.rows[0] as any;
+        const conversionRate = metrics.closed_deals > 0 
+          ? Math.round((metrics.won_deals / metrics.closed_deals) * 100) 
+          : 0;
+
+        return {
+          ...pipeline,
+          driver: pipeline.driverId || 'FISSO',
+          activeDeals: metrics.active_deals || 0,
+          totalValue: metrics.total_value || 0,
+          conversionRate,
+          avgDealValue: Math.round(metrics.avg_deal_value || 0),
+          products: [] // TODO: Add products from deal metadata or relations
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: pipelines,
+      data: enrichedPipelines,
       message: 'Pipelines retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
