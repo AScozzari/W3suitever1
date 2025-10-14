@@ -122,7 +122,7 @@ const formatCurrency = (value?: number | null): string => {
 };
 
 export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'wonAt', desc: true }]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
