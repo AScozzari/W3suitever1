@@ -103,7 +103,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   // General settings state
   const [pipelineName, setPipelineName] = useState('');
   const [pipelineDescription, setPipelineDescription] = useState('');
-  const [pipelineDriver, setPipelineDriver] = useState<string>('FISSO');
+  const [pipelineDriver, setPipelineDriver] = useState<string>('');
   const [autoAssign, setAutoAssign] = useState(false);
   const [rottenDays, setRottenDays] = useState('30');
   const [staleDays, setStaleDays] = useState('14');
@@ -339,7 +339,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     if (pipeline) {
       setPipelineName(pipeline.name || '');
       setPipelineDescription(pipeline.description || '');
-      setPipelineDriver(pipeline.driverId || 'FISSO');
+      setPipelineDriver(pipeline.driverId || '');
       setAutoAssign(pipeline.autoAssign || false);
       setRottenDays(String(pipeline.rottenDaysThreshold || 30));
       setStaleDays(String(pipeline.staleDaysThreshold || 14));
@@ -482,7 +482,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                         </SelectTrigger>
                         <SelectContent>
                           {drivers.map((driver: any) => (
-                            <SelectItem key={driver.id} value={driver.code}>
+                            <SelectItem key={driver.id} value={driver.id}>
                               {driver.name}
                             </SelectItem>
                           ))}

@@ -273,7 +273,7 @@ export function CreatePipelineDialog({ open, onClose }: CreatePipelineDialogProp
                     </SelectTrigger>
                     <SelectContent>
                       {drivers.map((driver: any) => (
-                        <SelectItem key={driver.code} value={driver.code}>
+                        <SelectItem key={driver.id} value={driver.id}>
                           {driver.name}
                         </SelectItem>
                       ))}
