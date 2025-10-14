@@ -111,8 +111,9 @@ const getChannelIcon = (channel: string) => {
 
 // CategoryBars Component - Tutte le 7 categorie standard
 function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverColor: string }) {
-  const { data: categoryStats } = useQuery<Array<{ category: string; count: number; percentage: number }>>({
+  const { data: categoryStats } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/category-stats`],
+    select: (response: any) => response.data as Array<{ category: string; count: number; percentage: number }>
   });
 
   // 🎯 Categorie standard in ordine fisso (sempre mostrate)
@@ -167,8 +168,9 @@ function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverC
 
 // ChannelBars Component - Sempre 5 righe standardizzate
 function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverColor: string }) {
-  const { data: channelStats } = useQuery<Array<{ channel: string; count: number; percentage: number }>>({
+  const { data: channelStats } = useQuery({
     queryKey: [`/api/crm/pipelines/${pipelineId}/channel-stats`],
+    select: (response: any) => response.data as Array<{ channel: string; count: number; percentage: number }>
   });
 
   // 🎯 Top 5 canali + placeholder se necessario (altezza costante)
