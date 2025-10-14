@@ -903,52 +903,6 @@ export default function PipelinePage() {
           })}
         </motion.div>
 
-        {/* Pipeline View - Coming Soon */}
-        {selectedPipeline && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card 
-              className="glass-card p-6 border-0"
-              style={{ 
-                background: 'var(--glass-card-bg)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid var(--glass-card-border)',
-                boxShadow: 'var(--shadow-glass-lg)'
-              }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {selectedPipeline.name} - Vista Kanban/DataTable
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    Kanban
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    DataTable
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setSelectedPipeline(null)}
-                  >
-                    Chiudi
-                  </Button>
-                </div>
-              </div>
-              <div className="text-center py-8">
-                <Target className="h-12 w-12 mx-auto mb-3 opacity-50" style={{ color: getDriverColor(selectedPipeline.driver) }} />
-                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                  Vista Kanban dinamica con drag & drop e DataTable deals in arrivo
-                </p>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-
         {/* Pipeline Settings Dialog */}
         {settingsPipelineId && (
           <PipelineSettingsDialog
@@ -1432,52 +1386,6 @@ export function PipelineContent() {
           );
         })}
       </motion.div>
-
-      {/* Pipeline View - Coming Soon */}
-      {selectedPipeline && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card 
-            className="glass-card p-6 border-0"
-            style={{ 
-              background: 'var(--glass-card-bg)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid var(--glass-card-border)',
-              boxShadow: 'var(--shadow-glass-lg)'
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                {selectedPipeline.name} - Vista Kanban/DataTable
-              </h3>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  Kanban
-                </Button>
-                <Button variant="outline" size="sm">
-                  DataTable
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setSelectedPipeline(null)}
-                >
-                  Chiudi
-                </Button>
-              </div>
-            </div>
-            <div className="text-center py-8">
-              <Target className="h-12 w-12 mx-auto mb-3 opacity-50" style={{ color: getDriverColor(selectedPipeline.driver) }} />
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                Vista Kanban dinamica con drag & drop e DataTable deals in arrivo
-              </p>
-            </div>
-          </Card>
-        </motion.div>
-      )}
 
       {/* Pipeline Settings Dialog */}
       {settingsPipelineId && (
