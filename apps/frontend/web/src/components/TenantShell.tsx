@@ -25,6 +25,7 @@ const PDCAnalyzerPage = lazy(() => import('../pages/PDCAnalyzerPage'));
 const CRMPage = lazy(() => import('../pages/CRMPage'));
 const PipelinePage = lazy(() => import('../pages/crm/PipelinePage'));
 const PipelineDetailPage = lazy(() => import('../pages/crm/PipelineDetailPage'));
+const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -354,6 +355,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/ai-tools`}>
         <AuthenticatedRoute>
           <AIToolsDashboardPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🎯 CRM CAMPAIGN DETAIL - Route specifica per visualizzazione campagna */}
+      <Route path={`/${tenantSlug}/crm/campaigns/:id`}>
+        <AuthenticatedRoute>
+          <CampaignDetailPage />
         </AuthenticatedRoute>
       </Route>
       
