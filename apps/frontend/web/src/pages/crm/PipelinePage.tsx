@@ -787,6 +787,7 @@ export function PipelineContent() {
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data: pipelinesResponse, isLoading, error } = useQuery<Pipeline[]>({
     queryKey: ['/api/crm/pipelines'],
