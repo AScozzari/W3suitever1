@@ -25,11 +25,13 @@ import {
   Mail,
   Phone,
   Linkedin,
-  MinusCircle
+  MinusCircle,
+  Plus
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { PipelineSettingsDialog } from '@/components/crm/PipelineSettingsDialog';
+import { CreatePipelineDialog } from '@/components/crm/CreatePipelineDialog';
 import { useState } from 'react';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
@@ -232,6 +234,7 @@ export default function PipelinePage() {
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
   
@@ -488,6 +491,15 @@ export default function PipelinePage() {
               <Button variant="outline" data-testid="button-date-range">
                 <Calendar className="h-4 w-4 mr-2" />
                 Periodo
+              </Button>
+              <Button
+                onClick={() => setCreateDialogOpen(true)}
+                style={{ background: 'hsl(var(--brand-orange))' }}
+                className="text-white"
+                data-testid="button-create-pipeline"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nuova Pipeline
               </Button>
             </div>
           </Card>
@@ -1145,6 +1157,12 @@ export function PipelineContent() {
           pipelineId={settingsPipelineId}
         />
       )}
+
+      {/* Create Pipeline Dialog */}
+      <CreatePipelineDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      />
     </div>
   );
 }
