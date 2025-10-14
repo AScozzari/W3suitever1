@@ -218,7 +218,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-orange-500/10 hover:text-orange-600"
+            className="hover:bg-orange-500/10 hover:text-orange-600 -ml-4"
             data-testid="header-name"
           >
             Dipendente
@@ -226,34 +226,27 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-[250px]">
             <Avatar className="h-9 w-9 shadow-sm">
               <AvatarImage src={row.original.avatarUrl} alt={row.original.fullName} />
               <AvatarFallback className="bg-gradient-to-br from-orange-100 to-orange-50 text-orange-700 font-semibold text-xs">
                 {row.original.initials}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium text-gray-900" data-testid={`text-name-${row.original.id}`}>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 truncate" data-testid={`text-name-${row.original.id}`}>
                 {row.original.fullName}
               </p>
-              <p className="text-xs text-gray-500">{row.original.email}</p>
+              <a
+                href={`mailto:${row.original.email}`}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600 transition-colors truncate"
+                data-testid={`link-email-${row.original.id}`}
+              >
+                <Mail className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{row.original.email}</span>
+              </a>
             </div>
           </div>
-        ),
-      },
-      {
-        accessorKey: 'email',
-        header: 'Email',
-        cell: ({ row }) => (
-          <a
-            href={`mailto:${row.original.email}`}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-orange-600 transition-colors"
-            data-testid={`link-email-${row.original.id}`}
-          >
-            <Mail className="h-3.5 w-3.5" />
-            {row.original.email}
-          </a>
         ),
       },
       {
@@ -472,7 +465,7 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-white/20 backdrop-blur-md bg-white/30 overflow-hidden shadow-xl">
+      <div className="rounded-xl border border-white/20 backdrop-blur-md bg-white/30 overflow-x-auto shadow-xl">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
