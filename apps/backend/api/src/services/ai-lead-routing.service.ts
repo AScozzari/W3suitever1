@@ -10,10 +10,10 @@
 
 import OpenAI from 'openai';
 import { logger } from '../core/logger';
-import { db } from '../core/db';
+import { db, setTenantContext } from '../core/db';
 import { drivers } from '../db/schema/public';
 import { crmPipelines, brandAiAgents } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -80,6 +80,9 @@ export class AILeadRoutingService {
     const startTime = Date.now();
     
     try {
+      // 🔒 CRITICAL: Set tenant context for RLS before any w3suite table access
+      await setTenantContext(input.tenantId);
+      
       // 1. Fetch available drivers for this tenant
       const availableDrivers = await db.select({
         id: drivers.id,
@@ -87,7 +90,7 @@ export class AILeadRoutingService {
         category: drivers.category,
       }).from(drivers);
       
-      // 2. Fetch available pipelines for this tenant
+      // 2. Fetch available pipelines for this tenant (RLS enforced)
       const availablePipelines = await db.select({
         id: crmPipelines.id,
         name: crmPipelines.name,
@@ -96,12 +99,14 @@ export class AILeadRoutingService {
       .from(crmPipelines)
       .where(eq(crmPipelines.tenantId, input.tenantId));
       
-      // 3. Get AI agent configuration (if exists)
+      // 3. Get AI agent configuration from Brand Interface
+      // Note: brandAiAgents is in brand_interface schema (no RLS), but we should still scope it
       const agentConfig = await db.select()
         .from(brandAiAgents)
         .where(and(
           eq(brandAiAgents.agentId, 'lead-routing-agent'),
-          eq(brandAiAgents.isActive, true)
+          eq(brandAiAgents.isActive, true),
+          eq(brandAiAgents.deployToAllTenants, true) // Only get globally-deployed agents
         ))
         .limit(1);
       

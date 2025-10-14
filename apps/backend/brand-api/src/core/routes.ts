@@ -2010,6 +2010,156 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== AI AGENTS CONFIGURATION ENDPOINTS ====================
+  
+  /**
+   * POST /brand-api/ai-agents
+   * Create new AI agent configuration
+   */
+  app.post("/brand-api/ai-agents", async (req, res) => {
+    const user = (req as any).user;
+    
+    // Only super_admin can manage AI agents
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can create AI agents" });
+    }
+    
+    try {
+      const agentData = req.body;
+      const agent = await brandStorage.createAIAgent(agentData);
+      
+      res.json({
+        success: true,
+        data: agent,
+        message: 'AI agent created successfully'
+      });
+    } catch (error) {
+      console.error("Error creating AI agent:", error);
+      res.status(500).json({ 
+        error: "Failed to create AI agent",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  /**
+   * GET /brand-api/ai-agents
+   * List all AI agents with optional filters
+   */
+  app.get("/brand-api/ai-agents", async (req, res) => {
+    try {
+      const filters = {
+        moduleContext: req.query.moduleContext as string,
+        status: req.query.status as string,
+        search: req.query.search as string
+      };
+      
+      const agents = await brandStorage.getAIAgents(filters);
+      
+      res.json({
+        success: true,
+        data: agents
+      });
+    } catch (error) {
+      console.error("Error fetching AI agents:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch AI agents",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  /**
+   * GET /brand-api/ai-agents/:id
+   * Get AI agent by ID
+   */
+  app.get("/brand-api/ai-agents/:id", async (req, res) => {
+    try {
+      const agent = await brandStorage.getAIAgent(req.params.id);
+      
+      if (!agent) {
+        return res.status(404).json({ error: "AI agent not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: agent
+      });
+    } catch (error) {
+      console.error("Error fetching AI agent:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch AI agent",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  /**
+   * PUT /brand-api/ai-agents/:id
+   * Update AI agent configuration
+   */
+  app.put("/brand-api/ai-agents/:id", async (req, res) => {
+    const user = (req as any).user;
+    
+    // Only super_admin can manage AI agents
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can update AI agents" });
+    }
+    
+    try {
+      const agentData = req.body;
+      const agent = await brandStorage.updateAIAgent(req.params.id, agentData);
+      
+      if (!agent) {
+        return res.status(404).json({ error: "AI agent not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: agent,
+        message: 'AI agent updated successfully'
+      });
+    } catch (error) {
+      console.error("Error updating AI agent:", error);
+      res.status(500).json({ 
+        error: "Failed to update AI agent",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
+  /**
+   * DELETE /brand-api/ai-agents/:id
+   * Delete AI agent
+   */
+  app.delete("/brand-api/ai-agents/:id", async (req, res) => {
+    const user = (req as any).user;
+    
+    // Only super_admin can manage AI agents
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete AI agents" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteAIAgent(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "AI agent not found" });
+      }
+      
+      res.json({
+        success: true,
+        message: 'AI agent deleted successfully'
+      });
+    } catch (error) {
+      console.error("Error deleting AI agent:", error);
+      res.status(500).json({ 
+        error: "Failed to delete AI agent",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // ==================== REFERENCE DATA ENDPOINTS ====================
   
   // Get Italian cities from public schema - NO auth required (reference data)
