@@ -521,10 +521,12 @@ export default function PipelinePage() {
   const getDriverColor = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'hsl(var(--brand-orange))';
+      case 'VARIABILE': return 'hsl(var(--brand-purple))';
+      case 'MISTO': return 'hsl(20, 100%, 50%)'; // Mix arancione-viola
       case 'MOBILE': return 'hsl(var(--brand-purple))';
       case 'DEVICE': return 'hsl(var(--brand-orange))';
       case 'ACCESSORI': return 'hsl(var(--brand-purple))';
-      default: return 'var(--text-primary)';
+      default: return 'hsl(var(--brand-orange))'; // Default arancione invece di nero
     }
   };
 
@@ -1095,10 +1097,12 @@ export function PipelineContent() {
   const getDriverColor = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'hsl(var(--brand-orange))';
+      case 'VARIABILE': return 'hsl(var(--brand-purple))';
+      case 'MISTO': return 'hsl(20, 100%, 50%)'; // Mix arancione-viola
       case 'MOBILE': return 'hsl(var(--brand-purple))';
       case 'DEVICE': return 'hsl(var(--brand-orange))';
       case 'ACCESSORI': return 'hsl(var(--brand-purple))';
-      default: return 'var(--text-primary)';
+      default: return 'hsl(var(--brand-orange))'; // Default arancione invece di nero
     }
   };
 
