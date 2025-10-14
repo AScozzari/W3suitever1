@@ -1382,6 +1382,194 @@ router.get('/pipelines/:pipelineId/stages', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/pipelines/:id/category-stats
+ * Get deal distribution by stage category with percentages (only categories > 0)
+ */
+router.get('/pipelines/:pipelineId/category-stats', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Query: COUNT deals grouped by stage category with percentage calculation
+    const categoryStats = await db.execute(sql`
+      WITH category_counts AS (
+        SELECT 
+          s.category,
+          COUNT(d.id)::int as deal_count
+        FROM w3suite.crm_pipeline_stages s
+        LEFT JOIN w3suite.crm_deals d ON d.stage = s.name 
+          AND d.pipeline_id = s.pipeline_id 
+          AND d.tenant_id = ${tenantId}
+          AND d.status NOT IN ('won', 'lost')
+        WHERE s.pipeline_id = ${pipelineId}
+        GROUP BY s.category
+      ),
+      total_deals AS (
+        SELECT SUM(deal_count)::int as total FROM category_counts
+      )
+      SELECT 
+        cc.category,
+        cc.deal_count,
+        CASE 
+          WHEN td.total > 0 THEN ROUND((cc.deal_count::float / td.total::float * 100)::numeric, 1)
+          ELSE 0
+        END as percentage
+      FROM category_counts cc
+      CROSS JOIN total_deals td
+      WHERE cc.deal_count > 0
+      ORDER BY cc.deal_count DESC
+    `);
+
+    const stats = categoryStats.rows.map((row: any) => ({
+      category: row.category,
+      count: row.deal_count,
+      percentage: parseFloat(row.percentage)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+      message: 'Category stats retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving category stats', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve category stats',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/pipelines/:id/channel-stats
+ * Get top 5 acquisition channels with deal count and percentages
+ */
+router.get('/pipelines/:pipelineId/channel-stats', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { pipelineId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify pipeline exists and belongs to tenant
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, pipelineId),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Query: COUNT deals grouped by source_channel (top 5) with percentage
+    const channelStats = await db.execute(sql`
+      WITH channel_counts AS (
+        SELECT 
+          COALESCE(source_channel, 'Unknown') as channel,
+          COUNT(*)::int as deal_count
+        FROM w3suite.crm_deals
+        WHERE pipeline_id = ${pipelineId}
+          AND tenant_id = ${tenantId}
+          AND status NOT IN ('won', 'lost')
+        GROUP BY source_channel
+      ),
+      total_deals AS (
+        SELECT SUM(deal_count)::int as total FROM channel_counts
+      )
+      SELECT 
+        cc.channel,
+        cc.deal_count,
+        CASE 
+          WHEN td.total > 0 THEN ROUND((cc.deal_count::float / td.total::float * 100)::numeric, 1)
+          ELSE 0
+        END as percentage
+      FROM channel_counts cc
+      CROSS JOIN total_deals td
+      ORDER BY cc.deal_count DESC
+      LIMIT 5
+    `);
+
+    const stats = channelStats.rows.map((row: any) => ({
+      channel: row.channel,
+      count: row.deal_count,
+      percentage: parseFloat(row.percentage)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+      message: 'Channel stats retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving channel stats', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.pipelineId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve channel stats',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/crm/pipelines/:id/stages
  * Create a new custom stage for a pipeline
  */
