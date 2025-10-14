@@ -358,7 +358,15 @@ IMPORTANTE: Quando ricevi una lista di "TEAM DISPONIBILI" o "UTENTI DISPONIBILI"
         brandTenantId: tenantId,
         createdBy: null
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: aiAgentsRegistry.agentId,
+        set: {
+          systemPrompt: sql`EXCLUDED.system_prompt`,
+          baseConfiguration: sql`EXCLUDED.base_configuration`,
+          personality: sql`EXCLUDED.personality`,
+          version: sql`EXCLUDED.version`
+        }
+      });
 
     // Create Tippy Sales Agent (legacy compatibility)
     await db.insert(aiAgentsRegistry)
