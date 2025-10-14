@@ -1094,6 +1094,12 @@ export function PipelineContent() {
                   </motion.div>
                 </motion.div>
 
+                {/* Category Distribution Bars */}
+                <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+
+                {/* Channel Attribution Bars */}
+                <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+
                 {/* Footer CTA */}
                 <div 
                   className="px-6 py-4 flex items-center justify-between"

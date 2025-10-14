@@ -2,31 +2,33 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Button } from '@/components/ui/button';
 import DealsDataTable from '@/components/crm/DealsDataTable';
 import DealsKanban from '@/components/crm/DealsKanban';
 import DealsGantt from '@/components/crm/DealsGantt';
+import { PipelineAnalyticsTab } from '@/components/crm/PipelineAnalyticsTab';
 import { 
   LayoutGrid, 
   Table as TableIcon, 
   GanttChartSquare,
+  BarChart3,
   Plus, 
   Target,
   Settings,
-  ChevronLeft
+  ArrowLeft
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
-import { Link } from 'wouter';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
-type ViewMode = 'table' | 'kanban' | 'gantt';
+type ViewMode = 'table' | 'kanban' | 'gantt' | 'analytics';
 
 const STORAGE_KEY = 'pipeline-view-mode';
 
 export default function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [currentModule, setCurrentModule] = useState('crm');
+  const { navigate } = useTenantNavigation();
   
   // Initialize view mode from localStorage
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -54,7 +56,6 @@ export default function PipelineDetailPage() {
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
-          <CRMNavigationBar />
           <div className="flex-1 p-6">
             <LoadingState />
           </div>
@@ -68,7 +69,6 @@ export default function PipelineDetailPage() {
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
-          <CRMNavigationBar />
           <div className="flex-1 p-6">
             <ErrorState message="Errore nel caricamento della pipeline" />
           </div>
@@ -81,35 +81,49 @@ export default function PipelineDetailPage() {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
       <div className="flex flex-col h-full">
-        <CRMNavigationBar />
+        
+        {/* Professional Breadcrumb Navigation */}
+        <div 
+          className="mx-6 mt-4 px-6 py-3 rounded-xl"
+          style={{
+            background: 'var(--glass-bg-heavy)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid var(--glass-card-border)',
+            boxShadow: 'var(--shadow-glass-sm)'
+          }}
+        >
+          <button
+            onClick={() => navigate('crm/pipeline')}
+            className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-windtre-orange"
+            style={{ color: 'var(--text-secondary)' }}
+            data-testid="breadcrumb-back-to-pipelines"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Torna a Pipeline</span>
+          </button>
+        </div>
         
         <div className="flex-1 p-6 space-y-6 overflow-auto">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/staging/crm/pipelines">
-                <Button variant="ghost" size="sm" data-testid="button-back">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="p-3 rounded-xl"
-                  style={{ 
-                    background: 'var(--brand-glass-gradient)',
-                    backdropFilter: 'blur(8px)'
-                  }}
-                >
-                  <Target className="h-6 w-6" style={{ color: 'hsl(var(--brand-orange))' }} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
-                    {pipeline?.name || 'Pipeline'}
-                  </h1>
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    Driver: {pipeline?.driver || 'N/A'}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div 
+                className="p-3 rounded-xl"
+                style={{ 
+                  background: 'var(--brand-glass-gradient)',
+                  backdropFilter: 'blur(8px)'
+                }}
+              >
+                <Target className="h-6 w-6" style={{ color: 'hsl(var(--brand-orange))' }} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+                  {pipeline?.name || 'Pipeline'}
+                </h1>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  Driver: {pipeline?.driver || 'N/A'}
+                </p>
               </div>
             </div>
 
@@ -155,6 +169,19 @@ export default function PipelineDetailPage() {
                   <GanttChartSquare className="h-4 w-4 mr-2" />
                   Gantt
                 </Button>
+                <Button
+                  variant={viewMode === 'analytics' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('analytics')}
+                  data-testid="toggle-analytics-view"
+                  style={viewMode === 'analytics' ? {
+                    background: 'hsl(var(--brand-orange))',
+                    color: 'white'
+                  } : {}}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Button>
               </div>
 
               <Button
@@ -181,6 +208,7 @@ export default function PipelineDetailPage() {
           {viewMode === 'table' && <DealsDataTable pipelineId={id} />}
           {viewMode === 'kanban' && <DealsKanban pipelineId={id} />}
           {viewMode === 'gantt' && <DealsGantt pipelineId={id} />}
+          {viewMode === 'analytics' && <PipelineAnalyticsTab pipelineId={id} />}
         </div>
       </div>
     </Layout>
