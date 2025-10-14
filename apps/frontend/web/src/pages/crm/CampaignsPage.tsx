@@ -35,6 +35,7 @@ interface Campaign {
   name: string;
   status: 'active' | 'paused' | 'completed' | 'draft';
   type: 'inbound_media' | 'outbound_crm' | 'retention';
+  brandSourceType?: 'tenant_only' | 'brand_derived';
   totalLeads: number;
   workedLeads: number;
   notWorkedLeads: number;
@@ -307,17 +308,37 @@ export default function CampaignsPage() {
                         <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
                           {campaign.name}
                         </h3>
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs"
-                          style={{ 
-                            borderColor: getStatusColor(campaign.status),
-                            color: getStatusColor(campaign.status),
-                            background: 'var(--glass-bg-light)'
-                          }}
-                        >
-                          {getStatusLabel(campaign.status)}
-                        </Badge>
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ 
+                              borderColor: getStatusColor(campaign.status),
+                              color: getStatusColor(campaign.status),
+                              background: 'var(--glass-bg-light)'
+                            }}
+                          >
+                            {getStatusLabel(campaign.status)}
+                          </Badge>
+                          {campaign.brandSourceType && (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs font-semibold"
+                              style={{ 
+                                borderColor: campaign.brandSourceType === 'brand_derived' 
+                                  ? 'hsl(var(--brand-purple))' 
+                                  : 'hsl(var(--brand-orange))',
+                                color: campaign.brandSourceType === 'brand_derived' 
+                                  ? 'hsl(var(--brand-purple))' 
+                                  : 'hsl(var(--brand-orange))',
+                                background: 'var(--glass-bg-light)'
+                              }}
+                              data-testid={`badge-brand-type-${campaign.id}`}
+                            >
+                              {campaign.brandSourceType === 'brand_derived' ? '🔗 Brand HQ' : '🏢 Tenant'}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Eye 
@@ -640,17 +661,37 @@ export function CampaignsContent() {
                         <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
                           {campaign.name}
                         </h3>
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs"
-                          style={{ 
-                            borderColor: getStatusColor(campaign.status),
-                            color: getStatusColor(campaign.status),
-                            background: 'var(--glass-bg-light)'
-                          }}
-                        >
-                          {getStatusLabel(campaign.status)}
-                        </Badge>
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ 
+                              borderColor: getStatusColor(campaign.status),
+                              color: getStatusColor(campaign.status),
+                              background: 'var(--glass-bg-light)'
+                            }}
+                          >
+                            {getStatusLabel(campaign.status)}
+                          </Badge>
+                          {campaign.brandSourceType && (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs font-semibold"
+                              style={{ 
+                                borderColor: campaign.brandSourceType === 'brand_derived' 
+                                  ? 'hsl(var(--brand-purple))' 
+                                  : 'hsl(var(--brand-orange))',
+                                color: campaign.brandSourceType === 'brand_derived' 
+                                  ? 'hsl(var(--brand-purple))' 
+                                  : 'hsl(var(--brand-orange))',
+                                background: 'var(--glass-bg-light)'
+                              }}
+                              data-testid={`badge-brand-type-${campaign.id}`}
+                            >
+                              {campaign.brandSourceType === 'brand_derived' ? '🔗 Brand HQ' : '🏢 Tenant'}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Eye 
