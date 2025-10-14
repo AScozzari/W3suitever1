@@ -610,7 +610,7 @@ router.post('/users/assignments-batch', requirePermission('users', 'read'), asyn
 
           if (assignment.scopeType === 'legal_entity') {
             const [legalEntity] = await db
-              .select({ id: legalEntities.id, name: legalEntities.businessName })
+              .select({ id: legalEntities.id, name: legalEntities.nome, code: legalEntities.codice })
               .from(legalEntities)
               .where(eq(legalEntities.id, assignment.scopeId))
               .limit(1);
