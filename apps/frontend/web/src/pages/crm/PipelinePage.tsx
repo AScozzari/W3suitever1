@@ -108,13 +108,24 @@ const getChannelIcon = (channel: string) => {
   return Users;
 };
 
-// CategoryBars Component
+// CategoryBars Component - Tutte le 7 categorie standard
 function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverColor: string }) {
   const { data: categoryStats } = useQuery<Array<{ category: string; count: number; percentage: number }>>({
     queryKey: [`/api/crm/pipelines/${pipelineId}/category-stats`],
   });
 
-  if (!categoryStats || categoryStats.length === 0) return null;
+  // 🎯 Categorie standard in ordine fisso (sempre mostrate)
+  const standardCategories = ['starter', 'progress', 'pending', 'purchase', 'finalized', 'ko', 'archive'];
+  
+  // Combina dati API con categorie standard
+  const fullCategories = standardCategories.map(category => {
+    const stat = categoryStats?.find(s => s.category === category);
+    return {
+      category,
+      count: stat?.count || 0,
+      percentage: stat?.percentage || 0
+    };
+  });
 
   return (
     <div className="px-6 pb-4">
@@ -122,28 +133,28 @@ function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverC
         Distribuzione per Categoria
       </div>
       <div className="space-y-2">
-        {categoryStats.map((stat, idx) => (
+        {fullCategories.map((stat, idx) => (
           <motion.div
             key={stat.category}
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ delay: idx * 0.05, duration: 0.3 }}
+            transition={{ delay: idx * 0.03, duration: 0.3 }}
             className="flex items-center gap-2"
             style={{ transformOrigin: 'left' }}
           >
-            <span className="text-xs capitalize min-w-[70px]" style={{ color: 'var(--text-secondary)' }}>
+            <span className="text-xs capitalize min-w-[80px]" style={{ color: stat.percentage > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
               {stat.category}
             </span>
             <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--glass-bg-heavy)' }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${stat.percentage}%` }}
-                transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
+                transition={{ delay: idx * 0.03 + 0.1, duration: 0.4 }}
                 className="h-full"
-                style={{ background: categoryColors[stat.category] || driverColor }}
+                style={{ background: stat.percentage > 0 ? (categoryColors[stat.category] || driverColor) : 'transparent' }}
               />
             </div>
-            <span className="text-xs font-medium min-w-[40px] text-right" style={{ color: 'var(--text-secondary)' }}>
+            <span className="text-xs font-medium min-w-[40px] text-right" style={{ color: stat.percentage > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
               {stat.percentage.toFixed(0)}%
             </span>
           </motion.div>
@@ -153,16 +164,24 @@ function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverC
   );
 }
 
-// ChannelBars Component
+// ChannelBars Component - Sempre 5 righe standardizzate
 function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverColor: string }) {
   const { data: channelStats } = useQuery<Array<{ channel: string; count: number; percentage: number }>>({
     queryKey: [`/api/crm/pipelines/${pipelineId}/channel-stats`],
   });
 
-  if (!channelStats || channelStats.length === 0) return null;
-
-  // Show top 4-5 channels to avoid clutter
-  const topChannels = channelStats.slice(0, 5);
+  // 🎯 Top 5 canali + placeholder se necessario (altezza costante)
+  const topChannels = channelStats?.slice(0, 5) || [];
+  const displayChannels = [...topChannels];
+  
+  // Aggiungi placeholder per arrivare a 5 righe
+  while (displayChannels.length < 5) {
+    displayChannels.push({
+      channel: displayChannels.length === 0 ? 'Nessun canale' : 'Altri canali',
+      count: 0,
+      percentage: 0
+    });
+  }
 
   return (
     <div className="px-6 pb-4">
@@ -170,30 +189,31 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
         Canali di Acquisizione
       </div>
       <div className="space-y-2">
-        {topChannels.map((stat, idx) => {
+        {displayChannels.map((stat, idx) => {
           const ChannelIcon = getChannelIcon(stat.channel);
+          const isPlaceholder = stat.percentage === 0;
           return (
             <motion.div
-              key={stat.channel}
+              key={`${stat.channel}-${idx}`}
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: idx * 0.05, duration: 0.3 }}
+              transition={{ delay: idx * 0.03, duration: 0.3 }}
               className="flex items-center gap-2"
             >
-              <ChannelIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: driverColor }} />
-              <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-secondary)' }} title={stat.channel}>
+              <ChannelIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isPlaceholder ? 'var(--text-tertiary)' : driverColor }} />
+              <span className="text-xs min-w-[120px] truncate" style={{ color: isPlaceholder ? 'var(--text-tertiary)' : 'var(--text-secondary)' }} title={stat.channel}>
                 {stat.channel}
               </span>
-              <div className="flex-1 h-2 rounded-full overflow-hidden max-w-[120px]" style={{ background: 'var(--glass-bg-heavy)' }}>
+              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--glass-bg-heavy)' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${stat.percentage}%` }}
-                  transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
+                  transition={{ delay: idx * 0.03 + 0.1, duration: 0.4 }}
                   className="h-full"
-                  style={{ background: driverColor }}
+                  style={{ background: isPlaceholder ? 'transparent' : driverColor }}
                 />
               </div>
-              <span className="text-xs font-medium min-w-[35px] text-right" style={{ color: 'var(--text-secondary)' }}>
+              <span className="text-xs font-medium min-w-[40px] text-right" style={{ color: isPlaceholder ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
                 {stat.percentage.toFixed(0)}%
               </span>
             </motion.div>
@@ -609,9 +629,9 @@ export default function PipelinePage() {
                     </div>
                   </div>
 
-                  {/* Metrics Grid */}
+                  {/* Metrics Grid - 1x4 orizzontale */}
                   <motion.div 
-                    className="px-6 pb-6 grid grid-cols-2 gap-4"
+                    className="px-6 pb-6 grid grid-cols-4 gap-3"
                     initial="rest"
                     whileHover="hover"
                     variants={{ hover: { transition: { staggerChildren: 0.05 } } }}
@@ -1016,9 +1036,9 @@ export function PipelineContent() {
                   </div>
                 </div>
 
-                {/* Metrics Grid */}
+                {/* Metrics Grid - 1x4 orizzontale */}
                 <motion.div 
-                  className="px-6 pb-6 grid grid-cols-2 gap-4"
+                  className="px-6 pb-6 grid grid-cols-4 gap-3"
                   initial="rest"
                   whileHover="hover"
                   variants={{ hover: { transition: { staggerChildren: 0.05 } } }}
