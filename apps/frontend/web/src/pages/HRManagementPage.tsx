@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
-import { EmployeeCardGrid } from '@/components/hr/EmployeeCardGrid';
+import { EmployeeDataTable } from '@/components/hr/EmployeeDataTable';
 import { EmployeeEditModal } from '@/components/hr/EmployeeEditModal';
 
 // UI Components
@@ -1639,13 +1639,14 @@ const HRManagementPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Directory Dipendenti</h2>
-          <p className="text-slate-600 dark:text-slate-400">Visualizza dettagli, scope, permessi e team assignments • Crea nuovi utenti in Impostazioni → Entità</p>
+          <p className="text-slate-600 dark:text-slate-400">Gestione completa dipendenti con filtri avanzati, scope e permessi</p>
         </div>
       </div>
 
-      {/* Employee Card Grid with Filters */}
-      <EmployeeCardGrid 
+      {/* Employee Data Table with Advanced Filters */}
+      <EmployeeDataTable 
         onEmployeeClick={handleEmployeeClick}
+        onEditEmployee={handleEmployeeClick}
         currentUserRole={currentUserRole}
       />
     </div>
