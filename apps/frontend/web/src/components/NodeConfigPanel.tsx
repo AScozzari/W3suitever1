@@ -88,6 +88,10 @@ export default function NodeConfigPanel({ node, allNodes, edges, isOpen, onClose
             <AiDecisionConfig node={node} allNodes={allNodes} onSave={onSave} onClose={onClose} />
           )}
           
+          {node.data.id === 'ai-lead-routing' && (
+            <AILeadRoutingConfig node={node} onSave={onSave} onClose={onClose} />
+          )}
+          
           {/* ========== ACTION NODES ========== */}
           {node.data.id === 'send-email' && (
             <SendEmailConfig node={node} onSave={onSave} onClose={onClose} />
@@ -486,6 +490,240 @@ function AiDecisionConfig({ node, allNodes, onSave, onClose }: { node: Node; all
           data-testid="button-save-ai-config"
         >
           💾 Salva Configurazione
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 🤖 AI Lead Routing Configuration - Intelligent CRM Routing
+ */
+function AILeadRoutingConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
+  const config = (node.data.config || {}) as any;
+  const params = config.parameters || {};
+  
+  const [agentId, setAgentId] = useState(config.agentId || 'lead-routing-assistant');
+  const [considerDrivers, setConsiderDrivers] = useState(config.considerDrivers ?? true);
+  const [considerChannels, setConsiderChannels] = useState(config.considerChannels ?? true);
+  const [considerValue, setConsiderValue] = useState(config.considerValue ?? true);
+  const [considerGeo, setConsiderGeo] = useState(config.considerGeo ?? false);
+  const [autoAssignThreshold, setAutoAssignThreshold] = useState(config.autoAssignThreshold || 80);
+  const [temperature, setTemperature] = useState(params.temperature || 0.2);
+  const [maxTokens, setMaxTokens] = useState(params.maxTokens || 1500);
+  const [escalateToManager, setEscalateToManager] = useState(config.fallback?.escalateToManager ?? true);
+
+  const handleSave = useCallback(() => {
+    onSave(node.id, {
+      agentId,
+      considerDrivers,
+      considerChannels,
+      considerValue,
+      considerGeo,
+      autoAssignThreshold,
+      parameters: {
+        temperature,
+        maxTokens,
+        topP: 1,
+        frequencyPenalty: 0
+      },
+      fallback: {
+        enabled: true,
+        escalateToManager
+      },
+      outputMapping: {
+        savePipelineIdTo: 'assignedPipelineId',
+        saveOwnerIdTo: 'assignedOwnerId',
+        saveConfidenceTo: 'routingConfidence',
+        saveReasoningTo: 'routingReasoning'
+      }
+    });
+    onClose();
+  }, [agentId, considerDrivers, considerChannels, considerValue, considerGeo, autoAssignThreshold, temperature, maxTokens, escalateToManager, node.id, onSave, onClose]);
+
+  return (
+    <div className="space-y-6">
+      {/* Agent Info Banner */}
+      <div className="bg-gradient-to-r from-windtre-orange/10 to-windtre-purple/10 border border-windtre-orange/30 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-6 w-6 text-windtre-orange mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-gray-900">🤖 AI Lead Routing Assistant</p>
+            <p className="text-xs text-gray-700 mt-1">
+              Analizza driver WindTre (FISSO, MOBILE, ENERGIA...), canali di acquisizione, valore lead e contesto per determinare pipeline e owner ottimali
+            </p>
+            <p className="text-xs text-windtre-orange font-medium mt-2">
+              Modello: GPT-4o • Temperatura: {temperature} • Deterministic Routing
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Analysis Factors */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-3">
+          🎯 Fattori di Analisi AI
+        </label>
+        <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">📊 Considera Driver WindTre</span>
+              <InfoTooltip
+                title="Driver WindTre"
+                description="Analizza i driver di business: FISSO, MOBILE, DEVICE, ACCESSORI, ASSICURAZIONE, CUSTOMER_BASE, ENERGIA, PROTEZIONE"
+                notes="Consigliato: SEMPRE ABILITATO per routing preciso"
+              />
+            </div>
+            <Switch checked={considerDrivers} onCheckedChange={setConsiderDrivers} data-testid="switch-consider-drivers" />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">📡 Considera Canali Acquisizione</span>
+              <InfoTooltip
+                title="Canali Inbound/Outbound"
+                description="Analizza fonte lead (Web Form, Social, Call Center) e canale contatto preferito (Phone, Email, WhatsApp)"
+                notes="Migliora precisione routing del +25%"
+              />
+            </div>
+            <Switch checked={considerChannels} onCheckedChange={setConsiderChannels} data-testid="switch-consider-channels" />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">💰 Considera Valore Lead</span>
+              <InfoTooltip
+                title="Valore Stimato"
+                description="Assegna lead ad alto valore (>€500) a Senior Sales, medio valore a Sales Rep, basso valore a Junior"
+                notes="Ottimizza conversion rate"
+              />
+            </div>
+            <Switch checked={considerValue} onCheckedChange={setConsiderValue} data-testid="switch-consider-value" />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">🌍 Geo-Routing (Nord/Centro/Sud)</span>
+              <InfoTooltip
+                title="Routing Geografico"
+                description="Assegna lead a team regionali basandosi su localizzazione cliente"
+                notes="Opzionale: utile per team distribuiti geograficamente"
+              />
+            </div>
+            <Switch checked={considerGeo} onCheckedChange={setConsiderGeo} data-testid="switch-consider-geo" />
+          </div>
+        </div>
+      </div>
+
+      {/* Auto-Assign Threshold */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+          🎯 Soglia Auto-Assegnazione (Confidence): {autoAssignThreshold}%
+          <InfoTooltip
+            title="Soglia Confidence"
+            description="Confidence minima per auto-assegnazione. Se inferiore, richiede review manuale."
+            examples={[
+              ">80%: Routing automatico immediato",
+              "50-80%: Suggerimento con review",
+              "<50%: Escalation a manager"
+            ]}
+          />
+        </label>
+        <input
+          type="range"
+          value={autoAssignThreshold}
+          onChange={(e) => setAutoAssignThreshold(Number(e.target.value))}
+          min={50}
+          max={100}
+          step={5}
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-windtre-orange"
+          data-testid="slider-auto-assign-threshold"
+        />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Conservativo (50%)</span>
+          <span>Deterministic (100%)</span>
+        </div>
+      </div>
+
+      {/* AI Parameters */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            🌡️ Temperature: {temperature}
+          </label>
+          <input
+            type="range"
+            value={temperature}
+            onChange={(e) => setTemperature(Number(e.target.value))}
+            min={0}
+            max={0.5}
+            step={0.1}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-windtre-purple"
+            data-testid="slider-temperature"
+          />
+          <p className="text-xs text-gray-500 mt-1">Deterministic: 0.0-0.5 (consigliato: 0.2)</p>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            📏 Max Tokens: {maxTokens}
+          </label>
+          <input
+            type="range"
+            value={maxTokens}
+            onChange={(e) => setMaxTokens(Number(e.target.value))}
+            min={500}
+            max={2000}
+            step={100}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-windtre-purple"
+            data-testid="slider-max-tokens-lead"
+          />
+          <p className="text-xs text-gray-500 mt-1">Analisi completa: 1000-1500</p>
+        </div>
+      </div>
+
+      {/* Fallback Settings */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-3">
+          🔄 Fallback & Escalation
+        </label>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">⬆️ Escalate a Manager se Confidence Bassa</span>
+              <InfoTooltip
+                title="Escalation Automatica"
+                description="Se confidence <50%, escalation automatica a team leader per decisione manuale"
+                notes="Previene routing errati"
+              />
+            </div>
+            <Switch checked={escalateToManager} onCheckedChange={setEscalateToManager} data-testid="switch-escalate-manager" />
+          </div>
+        </div>
+      </div>
+
+      {/* Output Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm font-medium text-blue-900 mb-2">📤 Output Automatici</p>
+        <div className="space-y-1 text-xs text-blue-700">
+          <p>• <code className="bg-blue-100 px-1 rounded">assignedPipelineId</code> - UUID pipeline assegnata</p>
+          <p>• <code className="bg-blue-100 px-1 rounded">assignedOwnerId</code> - UUID owner/team assegnato</p>
+          <p>• <code className="bg-blue-100 px-1 rounded">routingConfidence</code> - Confidence % (0-100)</p>
+          <p>• <code className="bg-blue-100 px-1 rounded">routingReasoning</code> - Spiegazione AI della decisione</p>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+        <Button variant="outline" onClick={onClose} data-testid="button-cancel-ai-lead-routing">
+          Annulla
+        </Button>
+        <Button 
+          onClick={handleSave}
+          className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white hover:shadow-lg"
+          data-testid="button-save-ai-lead-routing"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          Salva Routing AI
         </Button>
       </div>
     </div>

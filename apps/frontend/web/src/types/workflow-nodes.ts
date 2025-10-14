@@ -331,6 +331,34 @@ export const AIMCPNodeConfigSchema = z.object({
   }).optional()
 });
 
+// AI Lead Routing Configuration (CRM intelligent routing)
+export const AILeadRoutingConfigSchema = z.object({
+  agentId: z.string().default('lead-routing-assistant'),
+  considerDrivers: z.boolean().default(true),
+  considerChannels: z.boolean().default(true),
+  considerValue: z.boolean().default(true),
+  considerGeo: z.boolean().default(false),
+  autoAssignThreshold: z.number().min(0).max(100).default(80),
+  parameters: z.object({
+    temperature: z.number().min(0).max(2).default(0.2),
+    maxTokens: z.number().min(100).max(2000).default(1500),
+    topP: z.number().min(0).max(1).default(1),
+    frequencyPenalty: z.number().min(0).max(2).default(0)
+  }).optional(),
+  fallback: z.object({
+    enabled: z.boolean().default(true),
+    defaultPipelineId: z.string().uuid().optional(),
+    defaultOwnerId: z.string().uuid().optional(),
+    escalateToManager: z.boolean().default(true)
+  }).optional(),
+  outputMapping: z.object({
+    savePipelineIdTo: z.string().default('assignedPipelineId'),
+    saveOwnerIdTo: z.string().default('assignedOwnerId'),
+    saveConfidenceTo: z.string().default('routingConfidence'),
+    saveReasoningTo: z.string().default('routingReasoning')
+  }).optional()
+});
+
 // ==================== INTEGRATION NODES ====================
 
 // MCP Connector Configuration
@@ -438,6 +466,7 @@ export type AiDecisionConfig = z.infer<typeof AiDecisionConfigSchema>;
 export type AiClassificationConfig = z.infer<typeof AiClassificationConfigSchema>;
 export type AiContentConfig = z.infer<typeof AiContentConfigSchema>;
 export type AIMCPNodeConfig = z.infer<typeof AIMCPNodeConfigSchema>;
+export type AILeadRoutingConfig = z.infer<typeof AILeadRoutingConfigSchema>;
 
 export type LeadRoutingConfig = z.infer<typeof LeadRoutingConfigSchema>;
 export type DealRoutingConfig = z.infer<typeof DealRoutingConfigSchema>;
@@ -446,7 +475,7 @@ export type CustomerRoutingConfig = z.infer<typeof CustomerRoutingConfigSchema>;
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
 export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
-export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig;
+export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig | AILeadRoutingConfig;
 export type IntegrationConfig = MCPConnectorConfig;
 export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig;
 

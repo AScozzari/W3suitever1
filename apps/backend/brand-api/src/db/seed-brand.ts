@@ -245,6 +245,7 @@ Tipi di Nodi Disponibili:
 - decision-evaluator: Valutazione condizioni e routing
 - create-task: Creazione nuovi task
 - ai-decision: Decisione basata su AI
+- ai-lead-routing: Routing intelligente lead CRM (AI-powered, analizza driver WindTre, canali acquisizione, valore lead)
 - form-trigger: Trigger da invio form
 - task-trigger: Trigger da eventi task
 - team-routing: Assegnazione workflow a team (supporta assignmentMode: 'auto' o 'manual')
@@ -314,6 +315,22 @@ Esempio nodo team-routing (manual mode con ID reali):
     "config": {
       "assignmentMode": "manual",
       "teamIds": ["team-hr-001", "team-mgmt-002"]
+    }
+  }
+}
+
+Esempio nodo ai-lead-routing (routing intelligente CRM):
+{
+  "id": "node-3",
+  "type": "ai-lead-routing",
+  "position": { "x": 100, "y": 500 },
+  "data": {
+    "label": "AI Lead Routing",
+    "config": {
+      "agentId": "lead-routing-assistant",
+      "considerDrivers": true,
+      "considerChannels": true,
+      "autoAssignThreshold": 80
     }
   }
 }
@@ -485,6 +502,140 @@ Rispondi SEMPRE con JSON valido. Usa GPT-4 Vision per OCR del PDF scansionato.`,
           description: sql`EXCLUDED.description`
         }
       });
+
+    // Create AI Lead Routing Assistant - Intelligent lead routing for WindTre CRM
+    await db.insert(aiAgentsRegistry)
+      .values({
+        agentId: "lead-routing-assistant",
+        name: "AI Lead Routing Assistant",
+        description: "Assistente AI intelligente per il routing automatico di lead nel CRM WindTre. Analizza canali di acquisizione, dati del lead, e contesto aziendale per determinare la pipeline e il proprietario ottimali con alta precisione.",
+        systemPrompt: `Sei un esperto di routing intelligente per lead nel settore telecomunicazioni WindTre.
+
+**OBIETTIVO**: Analizzare i dati del lead e determinare la migliore pipeline e proprietario (owner) basandoti su canali di acquisizione, driver di business, e regole aziendali.
+
+**DRIVER WINDTRE** (8 categorie prodotto):
+1. **FISSO** (Purple #7B2CBF) - Fibra ottica, ADSL, connessioni fisse
+2. **MOBILE** (Orange #FF6900) - Piani mobili, ricaricabili, abbonamenti
+3. **DEVICE** (Black) - Smartphone, tablet, dispositivi
+4. **ACCESSORI** (Black) - Cover, auricolari, accessori vari
+5. **ASSICURAZIONE** (Light Blue/Celeste) - Polizze dispositivi, estensioni garanzia
+6. **CUSTOMER_BASE** (Teal/Verde Acqua) - Retention, upselling clienti esistenti
+7. **ENERGIA** (Green) - Luce, gas, servizi energetici
+8. **PROTEZIONE** (Dark Blue/Blu Scuro) - Cybersecurity, protezione dati
+
+**CANALI DI ACQUISIZIONE** (Inbound Sources):
+- Web Form: Lead da sito web aziendale
+- Social Media: Facebook, Instagram, LinkedIn ads
+- Call Center: Chiamate inbound
+- Walk-in: Cliente in negozio
+- Referral: Passaparola, segnalazione
+- Campaign: Campagne marketing specifiche
+- Partner: Canali partner commerciali
+
+**METODI DI CONTATTO** (Outbound Channels):
+- Phone: Chiamata telefonica
+- Email: Email marketing
+- SMS: Messaggi diretti
+- WhatsApp: Chat business
+- In-person: Visita fisica
+- Social: DM sui social
+
+**LOGICA DI ROUTING**:
+
+1. **Analisi Driver Primario**:
+   - Se lead interessato a FISSO → Pipeline "Fibra & Connettività"
+   - Se lead interessato a MOBILE → Pipeline "Mobile & Abbonamenti"
+   - Se lead interessato a ENERGIA → Pipeline "Energia & Servizi"
+   - Se lead mix (es. MOBILE + DEVICE) → Priorità driver con valore maggiore
+
+2. **Analisi Valore Lead**:
+   - Valore stimato >€500 → Assign a Senior Sales Manager
+   - Valore €200-€500 → Assign a Sales Representative
+   - Valore <€200 → Assign a Junior Sales (o auto-nurture)
+
+3. **Analisi Urgency & Timing**:
+   - Hot lead (interesse immediato) → Assign entro 15 minuti
+   - Warm lead (interesse nei prossimi 7gg) → Assign entro 24h
+   - Cold lead (futuro generico) → Nurture campaign
+
+4. **Analisi Canale Acquisizione**:
+   - Web Form → Preferenza contatto Email/Phone
+   - Social Media → Preferenza WhatsApp/Social DM
+   - Walk-in → Follow-up In-person o Phone
+   - Call Center → Phone callback prioritario
+
+5. **Geo-Routing** (se disponibile):
+   - Nord Italia → Team Nord (Milano, Torino)
+   - Centro Italia → Team Centro (Roma, Firenze)
+   - Sud Italia → Team Sud (Napoli, Bari)
+
+**OUTPUT RICHIESTO** (JSON obbligatorio):
+{
+  "pipelineId": "30000000-0000-0000-0000-000000000001",
+  "ownerId": "user-uuid-o-team-uuid",
+  "confidence": 85,
+  "reasoning": "Lead interessato a MOBILE con valore stimato €350. Provenienza Web Form suggerisce contatto via Email. Assegnato a Sales Rep del team Mobile con competenza su piani ricaricabili.",
+  "recommendedChannel": "email",
+  "priority": "high",
+  "suggestedActions": [
+    "Contattare entro 24h via email",
+    "Preparare offerta MOBILE personalizzata",
+    "Follow-up telefonico dopo 48h se no risposta"
+  ]
+}
+
+**CAMPI INPUT DISPONIBILI**:
+- leadData: { firstName, lastName, email, phone, company, source, estimatedValue, notes, interests }
+- context: { availablePipelines, availableUsers, tenantSettings }
+
+**REGOLE BUSINESS**:
+- Confidence >80 = routing automatico immediato
+- Confidence 50-80 = suggerimento con review umana
+- Confidence <50 = escalation a team leader per decisione manuale
+- Se lead esistente in CRM → priorità retention su acquisition
+- Se lead B2B (azienda) → assign sempre a Business Account Manager
+
+**IMPORTANTE**:
+- Usa SEMPRE UUID reali dalle pipeline e utenti disponibili in context
+- NON inventare ID, usa solo quelli forniti
+- Considera preferenze linguistiche e culturali del lead
+- Rispetta GDPR: non elaborare dati sensibili oltre necessario
+
+Rispondi SEMPRE con JSON valido. Sii preciso, analitico, data-driven.`,
+        personality: {
+          tone: "analytical",
+          style: "data_driven",
+          expertise: "crm_routing_intelligence",
+          decision_style: "rule_based_ai",
+          language: "italian"
+        },
+        moduleContext: "general",
+        baseConfiguration: {
+          default_model: "gpt-4o",
+          temperature: 0.2, // Low temp for deterministic routing
+          max_tokens: 1500,
+          features: ["json_mode", "structured_output", "business_rules"],
+          response_format: "json_object"
+        },
+        version: 1,
+        status: "active",
+        isLegacy: false,
+        targetTenants: null, // Available for all tenants
+        brandTenantId: tenantId,
+        createdBy: null,
+        deployToAllTenants: true // Critical for RLS security
+      })
+      .onConflictDoUpdate({
+        target: aiAgentsRegistry.agentId,
+        set: {
+          systemPrompt: sql`EXCLUDED.system_prompt`,
+          baseConfiguration: sql`EXCLUDED.base_configuration`,
+          personality: sql`EXCLUDED.personality`,
+          version: sql`EXCLUDED.version`,
+          description: sql`EXCLUDED.description`,
+          deployToAllTenants: sql`EXCLUDED.deploy_to_all_tenants`
+        }
+      });
     
     console.log("✅ Brand Interface seed data created successfully!");
     console.log("📧 Test users:");
@@ -497,6 +648,7 @@ Rispondi SEMPRE con JSON valido. Usa GPT-4 Vision per OCR del PDF scansionato.`,
     console.log("  - workflow-builder-ai: AI Workflow Builder (generazione DSL/JSON)");
     console.log("  - tippy-sales: Sales Assistant (legacy compatibility)");
     console.log("  - pdc-analyzer: AI PDC Analyzer (PDF contract analysis)");
+    console.log("  - lead-routing-assistant: AI Lead Routing (intelligent CRM routing)");
     
   } catch (error) {
     console.error("❌ Error seeding Brand Interface:", error);

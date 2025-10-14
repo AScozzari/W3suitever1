@@ -8,6 +8,7 @@ import {
   EmailActionConfigSchema,
   ApprovalActionConfigSchema,
   AiDecisionConfigSchema,
+  AILeadRoutingConfigSchema,
   EventTriggerConfigSchema,
   MCPConnectorConfigSchema,
   AIMCPNodeConfigSchema,
@@ -317,6 +318,42 @@ export const AI_NODES: BaseNodeDefinition[] = [
         saveFunctionCallsTo: 'executedFunctions'
       }
     }
+  },
+  {
+    id: 'ai-lead-routing',
+    name: 'AI Lead Routing',
+    description: 'Intelligent CRM lead routing using AI analysis of drivers, channels, and business context',
+    category: 'ai',
+    icon: 'Sparkles',
+    color: '#FF6900', // WindTre Orange for CRM
+    version: '1.0.0',
+    configSchema: AILeadRoutingConfigSchema,
+    defaultConfig: {
+      agentId: 'lead-routing-assistant',
+      considerDrivers: true,
+      considerChannels: true,
+      considerValue: true,
+      considerGeo: false,
+      autoAssignThreshold: 80,
+      parameters: {
+        temperature: 0.2,
+        maxTokens: 1500,
+        topP: 1,
+        frequencyPenalty: 0
+      },
+      fallback: {
+        enabled: true,
+        defaultPipelineId: undefined,
+        defaultOwnerId: undefined,
+        escalateToManager: true
+      },
+      outputMapping: {
+        savePipelineIdTo: 'assignedPipelineId',
+        saveOwnerIdTo: 'assignedOwnerId',
+        saveConfidenceTo: 'routingConfidence',
+        saveReasoningTo: 'routingReasoning'
+      }
+    }
   }
 ];
 
@@ -620,6 +657,7 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   'form-trigger': 'form-trigger-executor',
   'ai-decision': 'ai-decision-executor',
   'ai-mcp-node': 'ai-mcp-executor',
+  'ai-lead-routing': 'ai-lead-routing-executor',
   'create-task': 'task-action-executor',
   'assign-task': 'task-action-executor',
   'update-task-status': 'task-action-executor',

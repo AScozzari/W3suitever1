@@ -12,7 +12,8 @@ import OpenAI from 'openai';
 import { logger } from '../core/logger';
 import { db, setTenantContext } from '../core/db';
 import { drivers } from '../db/schema/public';
-import { crmPipelines, brandAiAgents } from '../db/schema';
+import { crmPipelines } from '../db/schema/w3suite';
+import { aiAgentsRegistry } from '../db/schema/brand-interface';
 import { eq, and, sql } from 'drizzle-orm';
 
 const openai = new OpenAI({
@@ -100,34 +101,42 @@ export class AILeadRoutingService {
       .where(eq(crmPipelines.tenantId, input.tenantId));
       
       // 3. Get AI agent configuration from Brand Interface
-      // Note: brandAiAgents is in brand_interface schema (no RLS), but we should still scope it
+      // Note: aiAgentsRegistry is in brand_interface schema (no RLS), but we scope to deployToAllTenants=true
       const agentConfig = await db.select()
-        .from(brandAiAgents)
+        .from(aiAgentsRegistry)
         .where(and(
-          eq(brandAiAgents.agentId, 'lead-routing-agent'),
-          eq(brandAiAgents.isActive, true),
-          eq(brandAiAgents.deployToAllTenants, true) // Only get globally-deployed agents
+          eq(aiAgentsRegistry.agentId, 'lead-routing-assistant'),
+          eq(aiAgentsRegistry.status, 'active'),
+          eq(aiAgentsRegistry.deployToAllTenants, true) // Only get globally-deployed agents
         ))
         .limit(1);
       
-      const config = agentConfig[0] || {
-        model: 'gpt-4o',
-        temperature: 0.2,
-        maxTokens: 1000,
-        systemPrompt: this.getDefaultSystemPrompt()
-      };
+      const agent = agentConfig[0];
+      const baseConfig = agent?.baseConfiguration as any || {};
+      
+      const model = baseConfig.default_model || 'gpt-4o';
+      const temperature = baseConfig.temperature || 0.2;
+      const maxTokens = baseConfig.max_tokens || 1500;
+      const systemPrompt = agent?.systemPrompt || this.getDefaultSystemPrompt();
+      
+      logger.info('AI Lead Routing Agent loaded', {
+        agentId: agent?.agentId || 'default',
+        model,
+        temperature,
+        maxTokens: maxTokens
+      });
       
       // 4. Build AI prompt
       const userPrompt = this.buildUserPrompt(input, availableDrivers, availablePipelines);
       
       // 5. Call OpenAI API
       const completion = await openai.chat.completions.create({
-        model: config.model,
-        temperature: config.temperature,
-        max_tokens: config.maxTokens,
+        model,
+        temperature,
+        max_tokens: maxTokens,
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: config.systemPrompt },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
       });
@@ -152,7 +161,7 @@ export class AILeadRoutingService {
         expectedCloseDate: aiResponse.expected_close_date || null,
         priority: aiResponse.priority || 'medium',
         
-        aiModel: config.model,
+        aiModel: model,
         responseTimeMs,
         tokenUsage: completion.usage?.total_tokens || 0,
         fullAiResponse: aiResponse,
