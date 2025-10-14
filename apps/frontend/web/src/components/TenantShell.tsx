@@ -250,6 +250,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
+      <Route path={`/${tenantSlug}/hr`}>
+        <AuthenticatedRoute>
+          <HRManagementPage />
+        </AuthenticatedRoute>
+      </Route>
+      
       <Route path={`/${tenantSlug}/settings`}>
         <AuthenticatedRoute>
           <SettingsPage />
