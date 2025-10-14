@@ -326,6 +326,7 @@ export default function CampaignsPage() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            navigate(`crm/campaigns/${campaign.id}`);
                           }}
                           data-testid={`button-view-${campaign.id}`}
                           title="Visualizza Campagna"
@@ -659,6 +660,7 @@ export function CampaignsContent() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            navigate(`crm/campaigns/${campaign.id}`);
                           }}
                           data-testid={`button-view-${campaign.id}`}
                           title="Visualizza Campagna"
