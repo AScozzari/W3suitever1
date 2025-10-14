@@ -712,10 +712,14 @@ export default function PipelinePage() {
                   </motion.div>
 
                   {/* Category Distribution Bars */}
-                  <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                  <div style={{ minHeight: '220px' }}>
+                    <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                  </div>
 
                   {/* Channel Attribution Bars */}
-                  <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                  <div style={{ minHeight: '180px' }}>
+                    <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                  </div>
 
                   {/* Footer CTA */}
                   <div 
@@ -1119,10 +1123,14 @@ export function PipelineContent() {
                 </motion.div>
 
                 {/* Category Distribution Bars */}
-                <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                <div style={{ minHeight: '220px' }}>
+                  <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                </div>
 
                 {/* Channel Attribution Bars */}
-                <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                <div style={{ minHeight: '180px' }}>
+                  <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+                </div>
 
                 {/* Footer CTA */}
                 <div 
