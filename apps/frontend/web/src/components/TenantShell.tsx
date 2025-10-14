@@ -23,6 +23,7 @@ const ChatPage = lazy(() => import('../pages/ChatPage'));
 const AIToolsDashboardPage = lazy(() => import('../pages/AIToolsDashboardPage'));
 const PDCAnalyzerPage = lazy(() => import('../pages/PDCAnalyzerPage'));
 const CRMPage = lazy(() => import('../pages/CRMPage'));
+const PipelineDetailPage = lazy(() => import('../pages/crm/PipelineDetailPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -352,6 +353,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/ai-tools`}>
         <AuthenticatedRoute>
           <AIToolsDashboardPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🎯 CRM PIPELINE DETAIL - Route specifica per visualizzazione pipeline */}
+      <Route path={`/${tenantSlug}/crm/pipelines/:id`}>
+        <AuthenticatedRoute>
+          <PipelineDetailPage />
         </AuthenticatedRoute>
       </Route>
       
