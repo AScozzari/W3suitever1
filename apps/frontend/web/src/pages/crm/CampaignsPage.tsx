@@ -13,7 +13,7 @@ import {
   Users,
   CheckCircle2,
   Clock,
-  ArrowRight,
+  Eye,
   Target,
   Settings,
   LayoutDashboard,
@@ -320,8 +320,18 @@ export default function CampaignsPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Eye 
+                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
+                          style={{ color: 'hsl(var(--brand-orange))' }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          data-testid={`button-view-${campaign.id}`}
+                          title="Visualizza Campagna"
+                        />
                         <Settings 
-                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity" 
+                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
                           style={{ color: 'hsl(var(--brand-orange))' }}
                           onClick={(e) => {
                             e.preventDefault();
@@ -329,8 +339,8 @@ export default function CampaignsPage() {
                             handleEditCampaign(campaign.id);
                           }}
                           data-testid={`button-settings-${campaign.id}`}
+                          title="Impostazioni Campagna"
                         />
-                        <ArrowRight className="h-5 w-5 opacity-60" />
                       </div>
                     </div>
                   </div>
@@ -643,8 +653,18 @@ export function CampaignsContent() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Eye 
+                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
+                          style={{ color: 'hsl(var(--brand-orange))' }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          data-testid={`button-view-${campaign.id}`}
+                          title="Visualizza Campagna"
+                        />
                         <Settings 
-                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity" 
+                          className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
                           style={{ color: 'hsl(var(--brand-orange))' }}
                           onClick={(e) => {
                             e.preventDefault();
@@ -652,8 +672,8 @@ export function CampaignsContent() {
                             handleEditCampaign(campaign.id);
                           }}
                           data-testid={`button-settings-${campaign.id}`}
+                          title="Impostazioni Campagna"
                         />
-                        <ArrowRight className="h-5 w-5 opacity-60" />
                       </div>
                     </div>
                   </div>

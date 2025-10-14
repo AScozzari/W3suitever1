@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Target,
   Euro,
-  ArrowRight,
   Eye,
   Search,
   Filter,
@@ -703,7 +702,6 @@ export default function PipelinePage() {
                     <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                       Vedi Kanban / DataTable
                     </span>
-                    <ArrowRight className="h-5 w-5" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                   </div>
                 </Card>
               </motion.div>
@@ -1111,7 +1109,6 @@ export function PipelineContent() {
                   <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                     Vedi Kanban / DataTable
                   </span>
-                  <ArrowRight className="h-5 w-5" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
                 </div>
               </Card>
             </motion.div>
