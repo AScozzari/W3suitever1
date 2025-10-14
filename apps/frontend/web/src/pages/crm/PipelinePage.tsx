@@ -520,23 +520,23 @@ export default function PipelinePage() {
 
   const getDriverColor = (driver: string) => {
     switch (driver) {
-      // Driver principali WindTre (Fisso + Mobile)
-      case 'FISSO': return 'hsl(var(--brand-orange))';        // Arancione WindTre
-      case 'MOBILE': return 'hsl(var(--brand-purple))';       // Viola WindTre
+      // Driver principali WindTre
+      case 'FISSO': return 'hsl(var(--brand-purple))';        // Viola
+      case 'MOBILE': return 'hsl(var(--brand-orange))';       // Arancione
       
       // Prodotti/Servizi correlati
-      case 'DEVICE': return 'hsl(200, 90%, 45%)';             // Blu elettrico
-      case 'ACCESSORI': return 'hsl(280, 70%, 55%)';          // Viola chiaro
+      case 'DEVICE': return 'hsl(0, 0%, 20%)';                // Nero
+      case 'ACCESSORI': return 'hsl(0, 0%, 20%)';             // Nero
       
       // Servizi finanziari/assicurativi
-      case 'ASSICURAZIONE': return 'hsl(210, 85%, 50%)';      // Blu affidabile
-      case 'PROTEZIONE': return 'hsl(0, 75%, 55%)';           // Rosso sicurezza
+      case 'ASSICURAZIONE': return 'hsl(200, 80%, 60%)';      // Celeste
+      case 'PROTEZIONE': return 'hsl(220, 70%, 35%)';         // Blu scuro
       
       // Servizi aggiuntivi
-      case 'ENERGIA': return 'hsl(45, 95%, 50%)';             // Giallo energia
-      case 'CUSTOMER_BASE': return 'hsl(160, 65%, 45%)';      // Verde acqua loyalty
+      case 'ENERGIA': return 'hsl(120, 60%, 45%)';            // Verde
+      case 'CUSTOMER_BASE': return 'hsl(160, 65%, 45%)';      // Verde acqua
       
-      default: return 'hsl(var(--brand-orange))';             // Default arancione WindTre
+      default: return 'hsl(var(--brand-orange))';             // Default arancione
     }
   };
 
@@ -1106,23 +1106,23 @@ export function PipelineContent() {
 
   const getDriverColor = (driver: string) => {
     switch (driver) {
-      // Driver principali WindTre (Fisso + Mobile)
-      case 'FISSO': return 'hsl(var(--brand-orange))';        // Arancione WindTre
-      case 'MOBILE': return 'hsl(var(--brand-purple))';       // Viola WindTre
+      // Driver principali WindTre
+      case 'FISSO': return 'hsl(var(--brand-purple))';        // Viola
+      case 'MOBILE': return 'hsl(var(--brand-orange))';       // Arancione
       
       // Prodotti/Servizi correlati
-      case 'DEVICE': return 'hsl(200, 90%, 45%)';             // Blu elettrico
-      case 'ACCESSORI': return 'hsl(280, 70%, 55%)';          // Viola chiaro
+      case 'DEVICE': return 'hsl(0, 0%, 20%)';                // Nero
+      case 'ACCESSORI': return 'hsl(0, 0%, 20%)';             // Nero
       
       // Servizi finanziari/assicurativi
-      case 'ASSICURAZIONE': return 'hsl(210, 85%, 50%)';      // Blu affidabile
-      case 'PROTEZIONE': return 'hsl(0, 75%, 55%)';           // Rosso sicurezza
+      case 'ASSICURAZIONE': return 'hsl(200, 80%, 60%)';      // Celeste
+      case 'PROTEZIONE': return 'hsl(220, 70%, 35%)';         // Blu scuro
       
       // Servizi aggiuntivi
-      case 'ENERGIA': return 'hsl(45, 95%, 50%)';             // Giallo energia
-      case 'CUSTOMER_BASE': return 'hsl(160, 65%, 45%)';      // Verde acqua loyalty
+      case 'ENERGIA': return 'hsl(120, 60%, 45%)';            // Verde
+      case 'CUSTOMER_BASE': return 'hsl(160, 65%, 45%)';      // Verde acqua
       
-      default: return 'hsl(var(--brand-orange))';             // Default arancione WindTre
+      default: return 'hsl(var(--brand-orange))';             // Default arancione
     }
   };
 
