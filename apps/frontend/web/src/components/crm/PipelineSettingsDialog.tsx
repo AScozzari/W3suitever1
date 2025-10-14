@@ -150,6 +150,8 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
         title: 'Impostazioni salvate',
         description: 'Le impostazioni della pipeline sono state aggiornate',
       });
+      // Chiudi il dialog dopo aver mostrato il toast
+      setTimeout(() => onClose(), 500);
     },
     onError: (error: any) => {
       toast({

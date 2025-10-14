@@ -38,6 +38,7 @@ import {
   insertCrmDealSchema,
   insertCrmCustomerSchema
 } from '../db/schema/w3suite';
+import { drivers } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 
 const router = express.Router();
@@ -736,8 +737,12 @@ router.get('/pipelines', async (req, res) => {
     }
 
     const pipelines = await db
-      .select()
+      .select({
+        pipeline: crmPipelines,
+        driverName: drivers.name
+      })
       .from(crmPipelines)
+      .leftJoin(drivers, eq(crmPipelines.driverId, drivers.id))
       .where(and(...conditions))
       .orderBy(desc(crmPipelines.createdAt))
       .limit(parseInt(limit as string))
@@ -745,7 +750,8 @@ router.get('/pipelines', async (req, res) => {
 
     // Enrich pipelines with aggregated metrics from deals
     const enrichedPipelines = await Promise.all(
-      pipelines.map(async (pipeline) => {
+      pipelines.map(async (row) => {
+        const pipelineData = row.pipeline;
         const dealsMetrics = await db.execute(sql`
           SELECT 
             COUNT(*) FILTER (WHERE status NOT IN ('won', 'lost'))::int as active_deals,
@@ -754,7 +760,7 @@ router.get('/pipelines', async (req, res) => {
             COUNT(*) FILTER (WHERE status IN ('won', 'lost'))::int as closed_deals,
             COALESCE(AVG(estimated_value) FILTER (WHERE status NOT IN ('won', 'lost')), 0)::float as avg_deal_value
           FROM w3suite.crm_deals
-          WHERE pipeline_id = ${pipeline.id}
+          WHERE pipeline_id = ${pipelineData.id}
           AND tenant_id = ${tenantId}
         `);
 
@@ -764,8 +770,9 @@ router.get('/pipelines', async (req, res) => {
           : 0;
 
         return {
-          ...pipeline,
-          driver: pipeline.driverId || 'FISSO',
+          ...pipelineData,
+          driver: pipelineData.driverId || 'FISSO',
+          driverName: row.driverName || 'FISSO',
           activeDeals: metrics.active_deals || 0,
           totalValue: metrics.total_value || 0,
           conversionRate,
@@ -1124,16 +1131,31 @@ router.get('/pipelines/:id', async (req, res) => {
     const { id } = req.params;
     await setTenantContext(tenantId);
 
-    const [pipeline] = await db
-      .select()
+    const [result] = await db
+      .select({
+        id: crmPipelines.id,
+        tenantId: crmPipelines.tenantId,
+        isBrandTemplate: crmPipelines.isBrandTemplate,
+        brandPipelineId: crmPipelines.brandPipelineId,
+        name: crmPipelines.name,
+        domain: crmPipelines.domain,
+        driverId: crmPipelines.driverId,
+        driver: drivers.code,
+        driverName: drivers.name,
+        isActive: crmPipelines.isActive,
+        stagesConfig: crmPipelines.stagesConfig,
+        createdAt: crmPipelines.createdAt,
+        updatedAt: crmPipelines.updatedAt,
+      })
       .from(crmPipelines)
+      .leftJoin(drivers, eq(crmPipelines.driverId, drivers.id))
       .where(and(
         eq(crmPipelines.id, id),
         eq(crmPipelines.tenantId, tenantId)
       ))
       .limit(1);
 
-    if (!pipeline) {
+    if (!result) {
       return res.status(404).json({
         success: false,
         error: 'Pipeline not found',
@@ -1144,7 +1166,7 @@ router.get('/pipelines/:id', async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: pipeline,
+      data: result,
       message: 'Pipeline retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);

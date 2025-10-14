@@ -714,7 +714,7 @@ export default function PipelinePage() {
                         </h3>
                         <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                           Driver: <span style={{ color: getDriverColor(pipeline.driver || 'FISSO'), fontWeight: 500 }}>
-                            {pipeline.driver || 'N/D'}
+                            {pipeline.driverName || pipeline.driver || 'N/D'}
                           </span>
                         </p>
                       </div>
