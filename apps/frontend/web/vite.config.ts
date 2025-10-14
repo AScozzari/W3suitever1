@@ -13,6 +13,58 @@ export default defineConfig({
       "@w3suite/frontend-kit": path.resolve(__dirname, "../../../packages/frontend-kit"),
     },
   },
+  // 🚀 PERFORMANCE: Build optimization with manual chunk splitting
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core - loaded first, cached long-term
+          'react-core': ['react', 'react-dom', 'wouter'],
+          
+          // Radix UI - shared across all pages
+          'radix-ui': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-label',
+            '@radix-ui/react-slot',
+          ],
+          
+          // State management & data fetching
+          'query': ['@tanstack/react-query'],
+          
+          // Heavy UI libraries - split separately
+          'calendar': ['@fullcalendar/core', '@fullcalendar/react', '@fullcalendar/daygrid', '@fullcalendar/timegrid', '@fullcalendar/list', '@fullcalendar/interaction'],
+          'flow': ['@xyflow/react', 'reactflow'],
+          
+          // Icons
+          'icons': ['lucide-react', 'react-icons'],
+          
+          // Form libraries
+          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+        },
+      },
+    },
+    // Code splitting & minification
+    chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console for debugging
+        drop_debugger: true,
+        pure_funcs: ['console.log'], // Remove console.log in production
+      },
+    },
+    // Source maps for debugging
+    sourcemap: false, // Disable in production for smaller bundle
+  },
   server: {
     port: 3000,
     host: "0.0.0.0",

@@ -5,11 +5,14 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { IdleDetectionProvider } from "./contexts/IdleDetectionContext";
 import { TenantShell } from "./components/TenantShell";
 import { useSessionKeepAlive } from "./hooks/useSessionKeepAlive";
+import { lazy, Suspense } from "react";
 
-// Import pages that don't need tenant context
+// Critical pages loaded immediately
 import NotFound from "./pages/NotFound";
-import HRManagementPage from "./pages/HRManagementPage";
-import QRCheckinPage from "./pages/QRCheckinPage";
+
+// 🚀 PERFORMANCE: Lazy load pages for code splitting
+const HRManagementPage = lazy(() => import("./pages/HRManagementPage"));
+const QRCheckinPage = lazy(() => import("./pages/QRCheckinPage"));
 
 /**
  * 🎯 NEW APP ARCHITECTURE - Automatic Tenant Management
@@ -66,11 +69,12 @@ function Router() {
   console.log('[APP-ROUTER] 🚀 Router component rendered');
   
   return (
-    <Switch>
-      {/* 🎯 QR CHECK-IN - Public route for QR code scanning */}
-      <Route path="/qr-checkin">
-        <QRCheckinPage />
-      </Route>
+    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><div style={{ width: '48px', height: '48px', border: '4px solid #f3f4f6', borderTop: '4px solid #FF6900', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /></div>}>
+      <Switch>
+        {/* 🎯 QR CHECK-IN - Public route for QR code scanning */}
+        <Route path="/qr-checkin">
+          <QRCheckinPage />
+        </Route>
       
       {/* 🎯 WORKFLOW DIRECT ACCESS - Smart redirect to tenant */}
       <Route path="/workflows">
@@ -151,6 +155,7 @@ function Router() {
         <NotFound />
       </Route>
     </Switch>
+    </Suspense>
   );
 }
 

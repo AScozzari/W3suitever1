@@ -101,13 +101,11 @@ export const queryClient = new QueryClient({
         
         // Auto-prefix /api if string starts with 'notifications' but doesn't start with '/api'
         if (baseUrl.startsWith('notifications') && !baseUrl.startsWith('/api')) {
-          console.warn(`⚠️ Auto-prefixing /api to URL: ${baseUrl}`);
           baseUrl = `/api/${baseUrl}`;
         }
         
         // Ensure all requests go to /api endpoints
         if (!baseUrl.startsWith('/api/') && !baseUrl.startsWith('http')) {
-          console.error(`❌ Non-API endpoint attempted: ${baseUrl}`);
           throw new Error(`All API calls must use /api/* endpoints. Got: ${baseUrl}`);
         }
         
@@ -131,22 +129,17 @@ export const queryClient = new QueryClient({
           try {
             const u = new URL(finalUrl, window.location.origin);
             finalUrl = u.pathname + u.search;
-            // Normalized absolute URL to relative
           } catch (e) {
-            console.error('Failed to normalize URL:', e);
+            // Silently fallback to original URL
           }
         }
         
-        // ✅ NEW: Special handling per endpoint HR
+        // ✅ Special handling per endpoint HR
         if (finalUrl.includes('/hr/')) {
           await validateHRPrerequisites(finalUrl);
         }
         
-        // Making API request
-        
         const tenantId = getCurrentTenantId();
-        
-        // Making API request (verbose logs removed for performance)
         
         // CRITICAL SECURITY CHECK: Block API calls with undefined/invalid tenant IDs  
         if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
@@ -197,18 +190,13 @@ export const queryClient = new QueryClient({
           throw new Error(`Unknown AUTH_MODE: ${AUTH_MODE}. Must be 'development' or 'oauth2'`);
         }
         
-        // Request headers configured
-        
         const res = await fetch(finalUrl, {
           credentials: "include",
           headers,
         });
         
-        // Response received
-        
         if (!res.ok) {
           if (res.status === 401) {
-            console.log('❌ 401 Unauthorized');
             
             // Only trigger OAuth flow in oauth2 mode
             if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress) {
@@ -229,8 +217,13 @@ export const queryClient = new QueryClient({
         // API response processed - handle both wrapped {data: ...} and raw responses
         return data?.data ?? data;
       },
-      staleTime: 1000 * 60,
-      gcTime: 1000 * 60 * 5,
+      // 🚀 PERFORMANCE: Optimized cache strategy for better navigation
+      staleTime: 1000 * 60 * 5, // 5 minutes - data considered fresh longer
+      gcTime: 1000 * 60 * 15, // 15 minutes - keep in memory longer
+      refetchOnWindowFocus: false, // Don't refetch when returning to tab
+      refetchOnMount: false, // Use cached data on component mount
+      refetchOnReconnect: false, // Don't refetch on network reconnect
+      retry: 1, // Retry failed requests only once (faster failures)
     },
   },
 });
@@ -245,16 +238,12 @@ export async function apiRequest(
     try {
       const u = new URL(url, window.location.origin);
       finalUrl = u.pathname + u.search;
-      // Normalized absolute URL to relative
     } catch (e) {
-      console.error('Failed to normalize URL:', e);
       finalUrl = url;
     }
   }
   
   const tenantId = getCurrentTenantId();
-  
-  // CRITICAL SECURITY CHECK: Block apiRequest calls with undefined/invalid tenant IDs
   if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
     console.error(`[TENANT-ERROR] ❌ BLOCKING API REQUEST - Invalid tenant ID detected!`);
     console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
@@ -263,10 +252,8 @@ export async function apiRequest(
   }
   
   let headers: Record<string, string> = {
-    'X-Tenant-ID': tenantId, // Header per il tenant ID
+    'X-Tenant-ID': tenantId,
   };
-  
-  // Making API request (debug logs reduced for performance)
   
   // Mode-based authentication for API requests
   if (AUTH_MODE === 'development') {
@@ -312,7 +299,6 @@ export async function apiRequest(
     if (!isSpecialBody) {
       // If body is an object (including arrays), serialize it
       if (typeof processedOptions.body === 'object') {
-        // Serializing object body to JSON
         processedOptions.body = JSON.stringify(processedOptions.body);
         // Set Content-Type for JSON if not already set
         const existingHeaders = options?.headers as Record<string, string> | undefined;
@@ -350,7 +336,6 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
-      console.log('❌ 401 Unauthorized in apiRequest');
       
       // Only trigger OAuth flow in oauth2 mode
       if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress) {

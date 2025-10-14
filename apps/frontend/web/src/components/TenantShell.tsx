@@ -1,26 +1,52 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useLocation, Switch, Route, Redirect } from 'wouter';
 import { setCurrentTenantId } from '../lib/queryClient';
 import { TenantProvider } from '../contexts/TenantContext';
+import { useAuth } from '../hooks/useAuth';
 
-// Import all pages
-import DashboardPage from '../pages/DashboardPage';
-import SettingsPage from '../pages/SettingsPage';
-import WorkflowManagementPage from '../pages/WorkflowManagementPage';
-import StandardFieldsDemo from '../pages/StandardFieldsDemo';
-import MyPortal from '../pages/MyPortal';
-import HRManagementPage from '../pages/HRManagementPage';
-import NotificationCenter from '../pages/NotificationCenter';
-import TenantVerificationTest from '../pages/TenantVerificationTest';
-import TasksPage from '../pages/TasksPage';
-import ChatPage from '../pages/ChatPage';
+// 🚀 PERFORMANCE: Lazy load all pages for code splitting
+// Critical pages (Login, NotFound) loaded immediately for UX
 import Login from '../pages/Login';
 import NotFound from '../pages/NotFound';
-import AIToolsDashboardPage from '../pages/AIToolsDashboardPage';
-import PDCAnalyzerPage from '../pages/PDCAnalyzerPage';
-// Import del nuovo CRM unificato con state-based tabs (come HR)
-import CRMPage from '../pages/CRMPage';
-import { useAuth } from '../hooks/useAuth';
+
+// All other pages lazy loaded to reduce initial bundle size
+const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const SettingsPage = lazy(() => import('../pages/SettingsPage'));
+const WorkflowManagementPage = lazy(() => import('../pages/WorkflowManagementPage'));
+const StandardFieldsDemo = lazy(() => import('../pages/StandardFieldsDemo'));
+const MyPortal = lazy(() => import('../pages/MyPortal'));
+const HRManagementPage = lazy(() => import('../pages/HRManagementPage'));
+const NotificationCenter = lazy(() => import('../pages/NotificationCenter'));
+const TenantVerificationTest = lazy(() => import('../pages/TenantVerificationTest'));
+const TasksPage = lazy(() => import('../pages/TasksPage'));
+const ChatPage = lazy(() => import('../pages/ChatPage'));
+const AIToolsDashboardPage = lazy(() => import('../pages/AIToolsDashboardPage'));
+const PDCAnalyzerPage = lazy(() => import('../pages/PDCAnalyzerPage'));
+const CRMPage = lazy(() => import('../pages/CRMPage'));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '400px',
+    width: '100%'
+  }}>
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        width: '48px',
+        height: '48px',
+        border: '4px solid #f3f4f6',
+        borderTop: '4px solid #FF6900',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        margin: '0 auto 16px'
+      }} />
+      <p style={{ color: '#6b7280', fontSize: '14px' }}>Caricamento...</p>
+    </div>
+  </div>
+);
 
 interface TenantShellProps {
   tenantSlug: string;
@@ -198,11 +224,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
   // Route handling managed by TenantShell
   
   return (
-    <Switch>
-      {/* Login route - no auth required */}
-      <Route path={`/${tenantSlug}/login`}>
-        <Login tenantCode={tenantSlug} />
-      </Route>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        {/* Login route - no auth required */}
+        <Route path={`/${tenantSlug}/login`}>
+          <Login tenantCode={tenantSlug} />
+        </Route>
       
       {/* All other routes require authentication */}
       <Route path={`/${tenantSlug}/portale`}>
@@ -377,6 +404,7 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         <NotFound />
       </Route>
     </Switch>
+    </Suspense>
   );
 };
 
