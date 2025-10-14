@@ -24,7 +24,12 @@ import {
   LayoutDashboard,
   Megaphone,
   UserPlus,
-  CheckSquare
+  CheckSquare,
+  Globe,
+  Handshake,
+  Mail,
+  Phone,
+  Linkedin
 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -81,6 +86,124 @@ const metricVariants = {
     }
   }
 };
+
+// Category color mapping
+const categoryColors: Record<string, string> = {
+  starter: '#10b981',    // green
+  progress: '#3b82f6',   // blue
+  pending: '#f59e0b',    // amber
+  purchase: '#8b5cf6',   // violet
+  finalized: '#22c55e',  // success green
+  ko: '#ef4444',         // red
+  archive: '#6b7280'     // gray
+};
+
+// Channel icon mapping
+const getChannelIcon = (channel: string) => {
+  if (channel.toLowerCase().includes('web') || channel.toLowerCase().includes('inbound')) return Globe;
+  if (channel.toLowerCase().includes('partner') || channel.toLowerCase().includes('referral')) return Handshake;
+  if (channel.toLowerCase().includes('email') || channel.toLowerCase().includes('campaign')) return Mail;
+  if (channel.toLowerCase().includes('call') || channel.toLowerCase().includes('cold')) return Phone;
+  if (channel.toLowerCase().includes('linkedin')) return Linkedin;
+  if (channel.toLowerCase().includes('event')) return Target;
+  return Users;
+};
+
+// CategoryBars Component
+function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverColor: string }) {
+  const { data: categoryStats } = useQuery<Array<{ category: string; count: number; percentage: number }>>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/category-stats`],
+  });
+
+  if (!categoryStats || categoryStats.length === 0) return null;
+
+  return (
+    <div className="px-6 pb-4">
+      <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
+        Distribuzione per Categoria
+      </div>
+      <div className="space-y-2">
+        {categoryStats.map((stat, idx) => (
+          <motion.div
+            key={stat.category}
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ delay: idx * 0.05, duration: 0.3 }}
+            className="flex items-center gap-2"
+            style={{ transformOrigin: 'left' }}
+          >
+            <span className="text-xs capitalize min-w-[70px]" style={{ color: 'var(--text-secondary)' }}>
+              {stat.category}
+            </span>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--glass-bg-heavy)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${stat.percentage}%` }}
+                transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
+                className="h-full"
+                style={{ background: categoryColors[stat.category] || driverColor }}
+              />
+            </div>
+            <span className="text-xs font-medium min-w-[40px] text-right" style={{ color: 'var(--text-secondary)' }}>
+              {stat.percentage.toFixed(0)}%
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ChannelBars Component
+function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverColor: string }) {
+  const { data: channelStats } = useQuery<Array<{ channel: string; count: number; percentage: number }>>({
+    queryKey: [`/api/crm/pipelines/${pipelineId}/channel-stats`],
+  });
+
+  if (!channelStats || channelStats.length === 0) return null;
+
+  // Show top 4-5 channels to avoid clutter
+  const topChannels = channelStats.slice(0, 5);
+
+  return (
+    <div className="px-6 pb-4">
+      <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
+        Canali di Acquisizione
+      </div>
+      <div className="space-y-2">
+        {topChannels.map((stat, idx) => {
+          const ChannelIcon = getChannelIcon(stat.channel);
+          return (
+            <motion.div
+              key={stat.channel}
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: idx * 0.05, duration: 0.3 }}
+              className="flex items-center gap-2"
+            >
+              <ChannelIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: driverColor }} />
+              <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-secondary)' }} title={stat.channel}>
+                {stat.channel}
+              </span>
+              <div className="flex-1 h-2 rounded-full overflow-hidden max-w-[120px]" style={{ background: 'var(--glass-bg-heavy)' }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${stat.percentage}%` }}
+                  transition={{ delay: idx * 0.05 + 0.1, duration: 0.4 }}
+                  className="h-full"
+                  style={{ background: driverColor }}
+                />
+              </div>
+              <span className="text-xs font-medium min-w-[35px] text-right" style={{ color: 'var(--text-secondary)' }}>
+                {stat.percentage.toFixed(0)}%
+              </span>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function PipelinePage() {
   const [currentModule, setCurrentModule] = useState('crm');
@@ -562,6 +685,12 @@ export default function PipelinePage() {
                       </div>
                     </motion.div>
                   </motion.div>
+
+                  {/* Category Distribution Bars */}
+                  <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
+
+                  {/* Channel Attribution Bars */}
+                  <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
 
                   {/* Footer CTA */}
                   <div 
