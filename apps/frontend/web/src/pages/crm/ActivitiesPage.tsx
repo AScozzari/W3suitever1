@@ -239,7 +239,7 @@ export default function ActivitiesPage() {
   const activeTab = getActiveTab();
 
   const { data: tasksResponse } = useQuery<Task[]>({
-    queryKey: ['/api/crm/tasks'],
+    queryKey: ['/api/tasks'],
   });
 
   const tasks = tasksResponse || [];
@@ -472,7 +472,7 @@ export function ActivitiesContent() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
   const { data: tasksResponse } = useQuery<Task[]>({
-    queryKey: ['/api/crm/tasks'],
+    queryKey: ['/api/tasks'],
   });
 
   const tasks = tasksResponse || [];
