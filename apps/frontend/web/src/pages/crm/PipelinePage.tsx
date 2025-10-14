@@ -128,7 +128,7 @@ function CategoryBars({ pipelineId, driverColor }: { pipelineId: string; driverC
   });
 
   return (
-    <div className="px-6 pb-4">
+    <div className="px-6 pb-4" style={{ minHeight: '240px' }}>
       <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
         Distribuzione per Categoria
       </div>
@@ -184,7 +184,7 @@ function ChannelBars({ pipelineId, driverColor }: { pipelineId: string; driverCo
   }
 
   return (
-    <div className="px-6 pb-4">
+    <div className="px-6 pb-4" style={{ minHeight: '180px' }}>
       <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-tertiary)' }}>
         Canali di Contatto
       </div>
