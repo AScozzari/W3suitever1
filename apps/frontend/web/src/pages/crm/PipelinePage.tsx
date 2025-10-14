@@ -4,13 +4,9 @@ import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
   Settings, 
-  Wifi,
-  Smartphone,
-  ShoppingBag,
   TrendingUp,
   Target,
   Euro,
@@ -376,16 +372,6 @@ export default function PipelinePage() {
     );
   }
 
-  const getDriverIcon = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return Wifi;
-      case 'MOBILE': return Smartphone;
-      case 'DEVICE': return Smartphone;
-      case 'ACCESSORI': return ShoppingBag;
-      default: return Target;
-    }
-  };
-
   const getDriverGradient = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'var(--brand-glass-orange)';
@@ -515,8 +501,6 @@ export default function PipelinePage() {
           animate="visible"
         >
           {pipelines?.map((pipeline: Pipeline) => {
-            const DriverIcon = getDriverIcon(pipeline.driver || 'FISSO');
-            
             return (
               <motion.div
                 key={pipeline.id}
@@ -541,32 +525,15 @@ export default function PipelinePage() {
                   {/* Header */}
                   <div className="p-6 pb-4">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="p-3 rounded-lg"
-                          style={{ 
-                            background: 'var(--glass-bg-heavy)',
-                            backdropFilter: 'blur(8px)'
-                          }}
-                        >
-                          <DriverIcon className="h-6 w-6" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
-                            {pipeline.name}
-                          </h3>
-                          <Badge 
-                            variant="outline"
-                            className="mt-1"
-                            style={{ 
-                              borderColor: getDriverColor(pipeline.driver || 'FISSO'),
-                              color: getDriverColor(pipeline.driver || 'FISSO'),
-                              background: 'var(--glass-bg-light)'
-                            }}
-                          >
+                      <div>
+                        <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+                          {pipeline.name}
+                        </h3>
+                        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                          Driver: <span style={{ color: getDriverColor(pipeline.driver || 'FISSO'), fontWeight: 500 }}>
                             {pipeline.driver || 'N/D'}
-                          </Badge>
-                        </div>
+                          </span>
+                        </p>
                       </div>
                       
                       {/* Inline Shortcuts: View + Settings */}
@@ -815,16 +782,6 @@ export function PipelineContent() {
 
   const pipelines = pipelinesResponse || [];
 
-  const getDriverIcon = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return Wifi;
-      case 'MOBILE': return Smartphone;
-      case 'DEVICE': return Smartphone;
-      case 'ACCESSORI': return ShoppingBag;
-      default: return Target;
-    }
-  };
-
   const getDriverGradient = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'var(--brand-glass-orange)';
@@ -926,8 +883,6 @@ export function PipelineContent() {
         animate="visible"
       >
         {pipelines?.map((pipeline: Pipeline) => {
-          const DriverIcon = getDriverIcon(pipeline.driver || 'FISSO');
-          
           return (
             <motion.div
               key={pipeline.id}
@@ -952,32 +907,15 @@ export function PipelineContent() {
                 {/* Header */}
                 <div className="p-6 pb-4">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="p-3 rounded-lg"
-                        style={{ 
-                          background: 'var(--glass-bg-heavy)',
-                          backdropFilter: 'blur(8px)'
-                        }}
-                      >
-                        <DriverIcon className="h-6 w-6" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
-                          {pipeline.name}
-                        </h3>
-                        <Badge 
-                          variant="outline"
-                          className="mt-1"
-                          style={{ 
-                            borderColor: getDriverColor(pipeline.driver || 'FISSO'),
-                            color: getDriverColor(pipeline.driver || 'FISSO'),
-                            background: 'var(--glass-bg-light)'
-                          }}
-                        >
+                    <div>
+                      <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+                        {pipeline.name}
+                      </h3>
+                      <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        Driver: <span style={{ color: getDriverColor(pipeline.driver || 'FISSO'), fontWeight: 500 }}>
                           {pipeline.driver || 'N/D'}
-                        </Badge>
-                      </div>
+                        </span>
+                      </p>
                     </div>
                     
                     {/* Inline Shortcuts: View + Settings */}
