@@ -64,6 +64,7 @@ const B2BCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
+  const { buildUrl, navigate } = useTenantNavigation();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
@@ -174,41 +175,39 @@ const B2BCustomersTable = () => {
     {
       id: 'actions',
       header: 'Azioni',
-      cell: ({ row }) => {
-        const { buildUrl } = useTenantNavigation();
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" data-testid={`actions-b2b-customer-${row.original.id}`}>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <Link href={buildUrl(`crm/customers/${row.original.id}`)}>
-                <DropdownMenuItem data-testid={`view-b2b-customer-${row.original.id}`}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Visualizza
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuItem 
-                onClick={() => setEditCustomer(row.original)}
-                data-testid={`edit-b2b-customer-${row.original.id}`}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Modifica
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setDeleteCustomer(row.original)}
-                className="text-red-600"
-                data-testid={`delete-b2b-customer-${row.original.id}`}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Elimina
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" data-testid={`actions-b2b-customer-${row.original.id}`}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem 
+              onClick={() => navigate(`crm/customers/${row.original.id}`)}
+              data-testid={`view-b2b-customer-${row.original.id}`}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Visualizza
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setEditCustomer(row.original)}
+              data-testid={`edit-b2b-customer-${row.original.id}`}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Modifica
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setDeleteCustomer(row.original)}
+              className="text-red-600"
+              data-testid={`delete-b2b-customer-${row.original.id}`}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Elimina
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
@@ -331,6 +330,7 @@ const B2CCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
+  const { buildUrl, navigate } = useTenantNavigation();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
@@ -415,41 +415,39 @@ const B2CCustomersTable = () => {
     {
       id: 'actions',
       header: 'Azioni',
-      cell: ({ row }) => {
-        const { buildUrl } = useTenantNavigation();
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" data-testid={`actions-b2c-customer-${row.original.id}`}>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <Link href={buildUrl(`crm/customers/${row.original.id}`)}>
-                <DropdownMenuItem data-testid={`view-b2c-customer-${row.original.id}`}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Visualizza
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuItem 
-                onClick={() => setEditCustomer(row.original)}
-                data-testid={`edit-b2c-customer-${row.original.id}`}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Modifica
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setDeleteCustomer(row.original)}
-                className="text-red-600"
-                data-testid={`delete-b2c-customer-${row.original.id}`}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Elimina
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" data-testid={`actions-b2c-customer-${row.original.id}`}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem 
+              onClick={() => navigate(`crm/customers/${row.original.id}`)}
+              data-testid={`view-b2c-customer-${row.original.id}`}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Visualizza
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setEditCustomer(row.original)}
+              data-testid={`edit-b2c-customer-${row.original.id}`}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Modifica
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setDeleteCustomer(row.original)}
+              className="text-red-600"
+              data-testid={`delete-b2c-customer-${row.original.id}`}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Elimina
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
