@@ -957,6 +957,21 @@ export default function PipelinePage() {
             pipelineId={settingsPipelineId}
           />
         )}
+
+        {/* Create Pipeline Dialog */}
+        <CreatePipelineDialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+        />
+
+        {/* Pipeline Filters Dialog */}
+        <PipelineFiltersDialog
+          open={filtersDialogOpen}
+          onClose={() => setFiltersDialogOpen(false)}
+          filters={filters}
+          onApplyFilters={setFilters}
+          defaultTab={defaultFilterTab}
+        />
         </div>
       </div>
     </Layout>
