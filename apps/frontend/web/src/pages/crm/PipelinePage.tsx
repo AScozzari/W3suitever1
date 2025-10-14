@@ -644,3 +644,403 @@ export default function PipelinePage() {
     </Layout>
   );
 }
+
+// 🎯 EXPORT CONTENT-ONLY per CRMPage unificato (senza Layout/tabs)
+export function PipelineContent() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [settingsPipelineId, setSettingsPipelineId] = useState<string | null>(null);
+
+  const { data: pipelinesResponse, isLoading, error } = useQuery<Pipeline[]>({
+    queryKey: ['/api/crm/pipelines'],
+  });
+
+  const pipelines = pipelinesResponse || [];
+
+  const getDriverIcon = (driver: string) => {
+    switch (driver) {
+      case 'FISSO': return Wifi;
+      case 'MOBILE': return Smartphone;
+      case 'DEVICE': return Smartphone;
+      case 'ACCESSORI': return ShoppingBag;
+      default: return Target;
+    }
+  };
+
+  const getDriverGradient = (driver: string) => {
+    switch (driver) {
+      case 'FISSO': return 'var(--brand-glass-orange)';
+      case 'MOBILE': return 'var(--brand-glass-purple)';
+      case 'DEVICE': return 'var(--brand-glass-gradient)';
+      case 'ACCESSORI': return 'var(--brand-glass-orange)';
+      default: return 'var(--glass-card-bg)';
+    }
+  };
+
+  const getDriverColor = (driver: string) => {
+    switch (driver) {
+      case 'FISSO': return 'hsl(var(--brand-orange))';
+      case 'MOBILE': return 'hsl(var(--brand-purple))';
+      case 'DEVICE': return 'hsl(var(--brand-orange))';
+      case 'ACCESSORI': return 'hsl(var(--brand-purple))';
+      default: return 'var(--text-primary)';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-6 overflow-auto">
+        <LoadingState />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-6 overflow-auto">
+        <ErrorState message="Errore nel caricamento delle pipeline" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 p-6 overflow-auto space-y-6">
+      {/* Summary */}
+      <div className="flex items-center justify-between">
+        <div className="text-right">
+          <div className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+            €{((pipelines?.reduce((sum: number, p: Pipeline) => sum + p.totalValue, 0) || 0) / 1000000).toFixed(1)}M
+          </div>
+          <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            Valore totale pipeline
+          </div>
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <Card 
+          className="glass-card p-4 border-0"
+          style={{ 
+            background: 'var(--glass-card-bg)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: '1px solid var(--glass-card-border)',
+            boxShadow: 'var(--shadow-glass-sm)'
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+              <Input
+                placeholder="Cerca pipeline per nome, driver o stato..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                style={{ 
+                  background: 'var(--glass-bg-light)',
+                  border: '1px solid var(--glass-card-border)'
+                }}
+                data-testid="input-search-pipelines"
+              />
+            </div>
+            <Button variant="outline" data-testid="button-filters">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtri Avanzati
+            </Button>
+            <Button variant="outline" data-testid="button-date-range">
+              <Calendar className="h-4 w-4 mr-2" />
+              Periodo
+            </Button>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Pipeline Cards Grid */}
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {pipelines?.map((pipeline: Pipeline) => {
+          const DriverIcon = getDriverIcon(pipeline.driver || 'FISSO');
+          
+          return (
+            <motion.div
+              key={pipeline.id}
+              variants={cardVariants}
+              whileHover={{ y: -6 }}
+              className="cursor-pointer"
+              onClick={() => setSelectedPipeline(pipeline)}
+              data-testid={`pipeline-card-${pipeline.driver?.toLowerCase() || 'unknown'}`}
+            >
+              <Card 
+                className="glass-card border-0"
+                style={{ 
+                  background: 'var(--glass-card-bg)',
+                  backdropFilter: 'blur(12px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+                  border: '1px solid var(--glass-card-border)',
+                  borderLeft: `4px solid ${getDriverColor(pipeline.driver || 'FISSO')}`,
+                  boxShadow: 'var(--shadow-glass)',
+                  transition: 'var(--glass-transition)'
+                }}
+              >
+                {/* Header */}
+                <div className="p-6 pb-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="p-3 rounded-lg"
+                        style={{ 
+                          background: 'var(--glass-bg-heavy)',
+                          backdropFilter: 'blur(8px)'
+                        }}
+                      >
+                        <DriverIcon className="h-6 w-6" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+                          {pipeline.name}
+                        </h3>
+                        <Badge 
+                          variant="outline"
+                          className="mt-1"
+                          style={{ 
+                            borderColor: getDriverColor(pipeline.driver || 'FISSO'),
+                            color: getDriverColor(pipeline.driver || 'FISSO'),
+                            background: 'var(--glass-bg-light)'
+                          }}
+                        >
+                          {pipeline.driver || 'N/D'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {/* Inline Shortcuts: View + Settings */}
+                    <div className="flex items-center gap-2">
+                      <Link href={`/staging/crm/pipelines/${pipeline.id}`}>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-lg"
+                          style={{ 
+                            background: 'var(--glass-bg-heavy)',
+                            color: getDriverColor(pipeline.driver || 'FISSO')
+                          }}
+                          data-testid={`button-view-${pipeline.driver?.toLowerCase() || 'unknown'}`}
+                          title="Visualizza Pipeline"
+                        >
+                          <Eye className="h-5 w-5" />
+                        </motion.button>
+                      </Link>
+                      <motion.button
+                        whileHover={{ rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-lg"
+                        style={{ 
+                          background: 'var(--glass-bg-heavy)',
+                          color: getDriverColor(pipeline.driver || 'FISSO')
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSettingsPipelineId(pipeline.id);
+                          setSettingsDialogOpen(true);
+                        }}
+                        data-testid={`button-settings-${pipeline.driver?.toLowerCase() || 'unknown'}`}
+                        title="Impostazioni Pipeline"
+                      >
+                        <Settings className="h-5 w-5" />
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Products Pills */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {(pipeline.products || []).slice(0, 3).map((product: string, idx: number) => (
+                      <span
+                        key={idx}
+                        className="text-xs px-2 py-1 rounded-md"
+                        style={{ 
+                          background: 'var(--glass-bg-heavy)',
+                          color: 'var(--text-secondary)'
+                        }}
+                      >
+                        {product}
+                      </span>
+                    ))}
+                    {(pipeline.products || []).length > 3 && (
+                      <span
+                        className="text-xs px-2 py-1 rounded-md font-medium"
+                        style={{ 
+                          background: 'var(--glass-bg-heavy)',
+                          color: getDriverColor(pipeline.driver || 'FISSO')
+                        }}
+                      >
+                        +{(pipeline.products || []).length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Metrics Grid */}
+                <motion.div 
+                  className="px-6 pb-6 grid grid-cols-2 gap-4"
+                  initial="rest"
+                  whileHover="hover"
+                  variants={{ hover: { transition: { staggerChildren: 0.05 } } }}
+                >
+                  <motion.div 
+                    className="p-4 rounded-lg"
+                    variants={metricVariants}
+                    style={{ 
+                      background: 'var(--glass-bg-heavy)',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Deal Attivi</span>
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                      {pipeline.activeDeals}
+                    </div>
+                  </motion.div>
+
+                  <motion.div 
+                    className="p-4 rounded-lg"
+                    variants={metricVariants}
+                    style={{ 
+                      background: 'var(--glass-bg-heavy)',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Euro className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Valore Pipeline</span>
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                      €{(pipeline.totalValue / 1000000).toFixed(1)}M
+                    </div>
+                  </motion.div>
+
+                  <motion.div 
+                    className="p-4 rounded-lg"
+                    variants={metricVariants}
+                    style={{ 
+                      background: 'var(--glass-bg-heavy)',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4" style={{ color: 'hsl(var(--success))' }} />
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Win Rate</span>
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: 'hsl(var(--success))' }}>
+                      {pipeline.conversionRate}%
+                    </div>
+                  </motion.div>
+
+                  <motion.div 
+                    className="p-4 rounded-lg"
+                    variants={metricVariants}
+                    style={{ 
+                      background: 'var(--glass-bg-heavy)',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <BarChart3 className="h-4 w-4" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Avg Deal</span>
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                      €{(pipeline.avgDealValue / 1000).toFixed(0)}k
+                    </div>
+                  </motion.div>
+                </motion.div>
+
+                {/* Footer CTA */}
+                <div 
+                  className="px-6 py-4 flex items-center justify-between"
+                  style={{ 
+                    background: 'var(--glass-bg-heavy)',
+                    borderTop: '1px solid var(--glass-card-border)'
+                  }}
+                >
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    Vedi Kanban / DataTable
+                  </span>
+                  <ArrowRight className="h-5 w-5" style={{ color: getDriverColor(pipeline.driver || 'FISSO') }} />
+                </div>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+
+      {/* Pipeline View - Coming Soon */}
+      {selectedPipeline && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card 
+            className="glass-card p-6 border-0"
+            style={{ 
+              background: 'var(--glass-card-bg)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid var(--glass-card-border)',
+              boxShadow: 'var(--shadow-glass-lg)'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {selectedPipeline.name} - Vista Kanban/DataTable
+              </h3>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  Kanban
+                </Button>
+                <Button variant="outline" size="sm">
+                  DataTable
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setSelectedPipeline(null)}
+                >
+                  Chiudi
+                </Button>
+              </div>
+            </div>
+            <div className="text-center py-8">
+              <Target className="h-12 w-12 mx-auto mb-3 opacity-50" style={{ color: getDriverColor(selectedPipeline.driver) }} />
+              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                Vista Kanban dinamica con drag & drop e DataTable deals in arrivo
+              </p>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Pipeline Settings Dialog */}
+      {settingsPipelineId && (
+        <PipelineSettingsDialog
+          open={settingsDialogOpen}
+          onClose={() => {
+            setSettingsDialogOpen(false);
+            setSettingsPipelineId(null);
+          }}
+          pipelineId={settingsPipelineId}
+        />
+      )}
+    </div>
+  );
+}

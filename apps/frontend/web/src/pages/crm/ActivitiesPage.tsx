@@ -465,3 +465,190 @@ export default function ActivitiesPage() {
     </Layout>
   );
 }
+
+// 🎯 EXPORT CONTENT-ONLY per CRMPage unificato (senza Layout/tabs)
+export function ActivitiesContent() {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+
+  const { data: tasksResponse } = useQuery<Task[]>({
+    queryKey: ['/api/crm/tasks'],
+  });
+
+  const tasks = tasksResponse || [];
+
+  const { data: interactionsResponse } = useQuery<Interaction[]>({
+    queryKey: ['/api/crm/interactions'],
+  });
+
+  const interactions = interactionsResponse || [];
+
+  const handleCompleteTask = (id: string) => {
+    console.log('Complete task:', id);
+  };
+
+  const todayTasks = tasks.filter(t => {
+    const taskDate = new Date(t.dueDate);
+    return taskDate.toDateString() === new Date().toDateString();
+  });
+
+  const overdueTasks = tasks.filter(t => t.status === 'overdue');
+
+  return (
+    <div className="flex-1 p-6 overflow-auto">
+      <Tabs defaultValue="tasks" className="h-full">
+        <div className="flex items-center justify-between mb-6">
+          <TabsList>
+            <TabsTrigger value="tasks" data-testid="tab-tasks">
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="interactions" data-testid="tab-interactions">
+              <Phone className="mr-2 h-4 w-4" />
+              Interazioni
+            </TabsTrigger>
+            <TabsTrigger value="calendar" data-testid="tab-calendar">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Calendario
+            </TabsTrigger>
+          </TabsList>
+
+          <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
+            <DialogTrigger asChild>
+              <Button style={{ background: 'hsl(var(--brand-orange))' }} data-testid="create-task">
+                <Plus className="mr-2 h-4 w-4" />
+                Nuova Attività
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Crea Nuova Attività</DialogTitle>
+                <DialogDescription>Pianifica una task o interazione con cliente</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select>
+                    <SelectTrigger data-testid="task-type">
+                      <SelectValue placeholder="Seleziona tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="call">Chiamata</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="follow_up">Follow-up</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Titolo</Label>
+                  <Input placeholder="Es: Follow-up cliente X" data-testid="task-title" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Descrizione</Label>
+                  <Textarea placeholder="Dettagli..." data-testid="task-description" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Priorità</Label>
+                    <Select>
+                      <SelectTrigger data-testid="task-priority">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">Alta</SelectItem>
+                        <SelectItem value="medium">Media</SelectItem>
+                        <SelectItem value="low">Bassa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data Scadenza</Label>
+                    <Input type="date" data-testid="task-due-date" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCreateTaskOpen(false)}>
+                  Annulla
+                </Button>
+                <Button style={{ background: 'hsl(var(--brand-orange))' }} data-testid="save-task">
+                  Salva
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <TabsContent value="tasks" className="mt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {overdueTasks.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" style={{ color: 'hsl(0, 84%, 60%)' }} />
+                    Scadute ({overdueTasks.length})
+                  </h3>
+                  {overdueTasks.map(task => (
+                    <TaskCard key={task.id} task={task} onComplete={handleCompleteTask} />
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Oggi ({todayTasks.length})</h3>
+                {todayTasks.map(task => (
+                  <TaskCard key={task.id} task={task} onComplete={handleCompleteTask} />
+                ))}
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Prossime</h3>
+                {tasks.filter(t => 
+                  t.status === 'pending' && 
+                  new Date(t.dueDate) > new Date() &&
+                  new Date(t.dueDate).toDateString() !== new Date().toDateString()
+                ).map(task => (
+                  <TaskCard key={task.id} task={task} onComplete={handleCompleteTask} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Card 
+                className="p-4"
+                style={{ 
+                  background: 'var(--glass-card-bg)',
+                  borderColor: 'var(--glass-card-border)'
+                }}
+              >
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  locale={it}
+                  className="rounded-md"
+                />
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="interactions" className="mt-0">
+          <div className="max-w-4xl">
+            <h3 className="text-lg font-semibold mb-4">Ultime Interazioni</h3>
+            {interactions.map(interaction => (
+              <InteractionCard key={interaction.id} interaction={interaction} />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-0">
+          <div className="flex justify-center items-center h-[400px]">
+            <p style={{ color: 'var(--text-tertiary)' }}>Vista calendario completa in arrivo...</p>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

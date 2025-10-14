@@ -665,3 +665,33 @@ export default function CustomersPage() {
     </Layout>
   );
 }
+
+// 🎯 EXPORT CONTENT-ONLY per CRMPage unificato (senza Layout/tabs)
+export function CustomersContent() {
+  return (
+    <div className="flex-1 p-6 overflow-auto">
+      <Tabs defaultValue="b2b">
+        <div className="flex items-center justify-between mb-6">
+          <TabsList>
+            <TabsTrigger value="b2b" data-testid="tab-b2b-customers">
+              <Building className="mr-2 h-4 w-4" />
+              Clienti Business (B2B)
+            </TabsTrigger>
+            <TabsTrigger value="b2c" data-testid="tab-b2c-customers">
+              <User className="mr-2 h-4 w-4" />
+              Clienti Privati (B2C)
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="b2b" className="mt-0">
+          <B2BCustomersTable />
+        </TabsContent>
+
+        <TabsContent value="b2c" className="mt-0">
+          <B2CCustomersTable />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
