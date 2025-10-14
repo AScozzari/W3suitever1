@@ -2191,6 +2191,160 @@ router.patch('/deals/:id', async (req, res) => {
   }
 });
 
+/**
+ * PATCH /api/crm/deals/:id/move
+ * Move deal to a different stage with workflow validation
+ * 
+ * Workflow Rules:
+ * 1. Cannot return to "starter" category from any other stage
+ * 2. finalized/ko/archive stages are LOCKED (require confirmOverride=true)
+ */
+router.patch('/deals/:id/move', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const moveSchema = z.object({
+      targetStage: z.string().min(1, 'Target stage is required'),
+      confirmOverride: z.boolean().optional().default(false)
+    });
+
+    const validation = moveSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { targetStage, confirmOverride } = validation.data;
+    await setTenantContext(tenantId);
+
+    // Get current deal with its stage category
+    const dealResult = await db.execute(sql`
+      SELECT 
+        d.id,
+        d.stage as current_stage,
+        d.pipeline_id,
+        s_current.category as current_category
+      FROM w3suite.crm_deals d
+      LEFT JOIN w3suite.crm_pipeline_stages s_current 
+        ON s_current.name = d.stage 
+        AND s_current.pipeline_id = d.pipeline_id
+      WHERE d.id = ${id} 
+        AND d.tenant_id = ${tenantId}
+    `);
+
+    if (dealResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Deal not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const deal = dealResult.rows[0] as any;
+
+    // Get target stage category
+    const targetStageResult = await db.execute(sql`
+      SELECT category, name
+      FROM w3suite.crm_pipeline_stages
+      WHERE name = ${targetStage}
+        AND pipeline_id = ${deal.pipeline_id}
+    `);
+
+    if (targetStageResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid target stage',
+        message: `Stage "${targetStage}" does not exist in this pipeline`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const targetStageData = targetStageResult.rows[0] as any;
+    const targetCategory = targetStageData.category;
+    const currentCategory = deal.current_category;
+
+    // WORKFLOW VALIDATION RULE 1: Cannot return to "starter" category
+    if (targetCategory === 'starter' && currentCategory !== 'starter') {
+      return res.status(403).json({
+        success: false,
+        error: 'Workflow violation',
+        message: 'Non puoi tornare allo stage iniziale da uno stage successivo',
+        code: 'FORBIDDEN_TRANSITION_TO_STARTER',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // WORKFLOW VALIDATION RULE 2: finalized/ko/archive are LOCKED
+    const lockedCategories = ['finalized', 'ko', 'archive'];
+    if (lockedCategories.includes(currentCategory) && !confirmOverride) {
+      return res.status(403).json({
+        success: false,
+        error: 'Stage locked',
+        message: `Questo deal è in uno stage bloccato (${currentCategory}). Conferma per riaprirlo.`,
+        code: 'STAGE_LOCKED_NEEDS_CONFIRMATION',
+        currentCategory,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Validation passed - update stage
+    const [updated] = await db
+      .update(crmDeals)
+      .set({
+        stage: targetStage,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ))
+      .returning();
+
+    logger.info('Deal stage moved', { 
+      dealId: id, 
+      tenantId, 
+      from: deal.current_stage,
+      to: targetStage,
+      fromCategory: currentCategory,
+      toCategory: targetCategory,
+      confirmOverride 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: `Deal spostato in "${targetStage}" con successo`,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error moving deal', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      dealId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to move deal',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== INTERACTIONS ====================
 
 /**
