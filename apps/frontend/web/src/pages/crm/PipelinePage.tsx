@@ -521,12 +521,14 @@ export default function PipelinePage() {
   const getDriverColor = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'hsl(var(--brand-orange))';
-      case 'VARIABILE': return 'hsl(var(--brand-purple))';
-      case 'MISTO': return 'hsl(20, 100%, 50%)'; // Mix arancione-viola
       case 'MOBILE': return 'hsl(var(--brand-purple))';
       case 'DEVICE': return 'hsl(var(--brand-orange))';
       case 'ACCESSORI': return 'hsl(var(--brand-purple))';
-      default: return 'hsl(var(--brand-orange))'; // Default arancione invece di nero
+      case 'ASSICURAZIONE': return 'hsl(210, 100%, 50%)'; // Blue
+      case 'CUSTOMER_BASE': return 'hsl(160, 60%, 50%)'; // Teal
+      case 'ENERGIA': return 'hsl(45, 100%, 50%)'; // Yellow
+      case 'PROTEZIONE': return 'hsl(0, 70%, 50%)'; // Red
+      default: return 'hsl(var(--brand-orange))'; // Default arancione
     }
   };
 
@@ -1097,12 +1099,14 @@ export function PipelineContent() {
   const getDriverColor = (driver: string) => {
     switch (driver) {
       case 'FISSO': return 'hsl(var(--brand-orange))';
-      case 'VARIABILE': return 'hsl(var(--brand-purple))';
-      case 'MISTO': return 'hsl(20, 100%, 50%)'; // Mix arancione-viola
       case 'MOBILE': return 'hsl(var(--brand-purple))';
       case 'DEVICE': return 'hsl(var(--brand-orange))';
       case 'ACCESSORI': return 'hsl(var(--brand-purple))';
-      default: return 'hsl(var(--brand-orange))'; // Default arancione invece di nero
+      case 'ASSICURAZIONE': return 'hsl(210, 100%, 50%)'; // Blue
+      case 'CUSTOMER_BASE': return 'hsl(160, 60%, 50%)'; // Teal
+      case 'ENERGIA': return 'hsl(45, 100%, 50%)'; // Yellow
+      case 'PROTEZIONE': return 'hsl(0, 70%, 50%)'; // Red
+      default: return 'hsl(var(--brand-orange))'; // Default arancione
     }
   };
 
