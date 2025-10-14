@@ -1033,6 +1033,65 @@ router.patch('/pipelines/:id/settings', rbacMiddleware, requirePermission('crm.m
   }
 });
 
+/**
+ * GET /api/crm/pipelines/:id
+ * Get a single pipeline by ID with all details
+ */
+router.get('/pipelines/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const [pipeline] = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.id, id),
+        eq(crmPipelines.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!pipeline) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pipeline not found',
+        message: `Pipeline with ID ${id} not found`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: pipeline,
+      message: 'Pipeline retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving pipeline', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      pipelineId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== PIPELINE WORKFLOWS (Subresource) ====================
 
 /**

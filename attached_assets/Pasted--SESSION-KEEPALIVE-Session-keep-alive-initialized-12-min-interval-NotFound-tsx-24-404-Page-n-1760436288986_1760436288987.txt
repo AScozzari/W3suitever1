@@ -1,0 +1,48 @@
+[SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+NotFound.tsx:24 [404] Page not found - segment: staging Error Component Stack
+    at NotFound (NotFound.tsx:11:27)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:217:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:72:59)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (App.tsx:39:3)
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=2f97fb70:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=2f97fb70:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=2f97fb70:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=2f97fb70:197
+flushWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=2f97fb70:384Understand this warning
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+NotFound.tsx:24 [404] Page not found - segment: staging
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=2f97fb70:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=2f97fb70:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=2f97fb70:197
+flushWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=2f97fb70:384Understand this warning
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin-user
+TenantContext.tsx:100 [TENANT-PROVIDER] 🏢 Tenant updated from session: {id: '00000000-0000-0000-0000-000000000001', name: 'Demo Organization', code: 'DEMO001', plan: 'Enterprise', isActive: true}
