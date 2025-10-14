@@ -88,6 +88,12 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     team.assignedDepartments?.includes('crm')
   );
 
+  // Fetch drivers from public schema
+  const { data: drivers = [], isLoading: driversLoading } = useQuery({
+    queryKey: ['/api/drivers'],
+    enabled: open,
+  });
+
   // General settings state
   const [pipelineName, setPipelineName] = useState('');
   const [pipelineDescription, setPipelineDescription] = useState('');
@@ -454,15 +460,16 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pipeline-driver" className="text-gray-700">Driver Tecnologico</Label>
-                      <Select value={pipelineDriver} onValueChange={setPipelineDriver}>
+                      <Select value={pipelineDriver} onValueChange={setPipelineDriver} disabled={driversLoading}>
                         <SelectTrigger id="pipeline-driver" className="bg-white border-gray-300" data-testid="select-driver">
-                          <SelectValue />
+                          <SelectValue placeholder={driversLoading ? "Caricamento..." : "Seleziona driver"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="FISSO">Fibra FTTH</SelectItem>
-                          <SelectItem value="FWA">FWA Wireless</SelectItem>
-                          <SelectItem value="MOBILE">Mobile 5G</SelectItem>
-                          <SelectItem value="MISTO">Convergente</SelectItem>
+                          {drivers.map((driver: any) => (
+                            <SelectItem key={driver.id} value={driver.code}>
+                              {driver.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
