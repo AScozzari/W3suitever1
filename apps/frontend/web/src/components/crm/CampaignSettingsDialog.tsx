@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -43,7 +44,7 @@ const campaignFormSchema = z.object({
   objective: z.string().optional(),
   storeId: z.string().uuid("Seleziona un negozio valido"),
   legalEntityId: z.string().uuid().optional(),
-  driverId: z.string().optional(),
+  driverIds: z.array(z.string().uuid()).optional().default([]),
   
   // Routing settings
   routingMode: z.enum(routingModes),
@@ -91,6 +92,18 @@ const campaignFormSchema = z.object({
 });
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
+
+// WindTre Driver Colors Mapping (8 drivers esatti del sistema)
+const DRIVER_COLORS: Record<string, string> = {
+  'FISSO': 'hsl(24, 100%, 52%)',          // WindTre Orange
+  'MOBILE': 'hsl(271, 56%, 46%)',         // WindTre Purple  
+  'DEVICE': 'hsl(200, 70%, 50%)',         // Blue
+  'ACCESSORI': 'hsl(142, 76%, 36%)',      // Green
+  'ASSICURAZIONE': 'hsl(45, 100%, 51%)',  // Gold
+  'PROTEZIONE': 'hsl(0, 84%, 60%)',       // Red
+  'ENERGIA': 'hsl(280, 65%, 60%)',        // Light Purple
+  'CUSTOMER_BASE': 'hsl(220, 90%, 56%)',  // Sky Blue
+};
 
 export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: CampaignSettingsDialogProps) {
   const { toast } = useToast();
@@ -141,7 +154,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       objective: '',
       storeId: '',
       legalEntityId: undefined,
-      driverId: undefined,
+      driverIds: [],
       routingMode: 'manual',
       autoAssignmentUserId: null,
       autoAssignmentTeamId: null,
@@ -168,7 +181,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         objective: campaign.objective || '',
         storeId: campaign.storeId || '',
         legalEntityId: campaign.legalEntityId || undefined,
-        driverId: campaign.driverId || undefined,
+        driverIds: campaign.driverIds || [],
         routingMode: campaign.routingMode || 'manual',
         autoAssignmentUserId: campaign.autoAssignmentUserId || null,
         autoAssignmentTeamId: campaign.autoAssignmentTeamId || null,
@@ -381,24 +394,60 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                   <FormField
                     control={form.control}
-                    name="driverId"
+                    name="driverIds"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Driver</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-driver">
-                              <SelectValue placeholder="Seleziona driver" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {drivers.map((driver: any) => (
-                              <SelectItem key={driver.id} value={driver.id}>
-                                {driver.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Driver Target (Multi-selezione)</FormLabel>
+                        <FormDescription className="mb-3">
+                          Seleziona uno o più driver per questa campagna
+                        </FormDescription>
+                        <div className="grid grid-cols-2 gap-3">
+                          {drivers.map((driver: any) => {
+                            const isChecked = field.value?.includes(driver.id) || false;
+                            const driverColor = DRIVER_COLORS[driver.name] || 'hsl(var(--brand-orange))';
+                            
+                            return (
+                              <div
+                                key={driver.id}
+                                className="flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer"
+                                style={{
+                                  background: isChecked ? 'var(--glass-card-bg)' : 'transparent',
+                                  borderColor: isChecked ? driverColor : 'var(--glass-card-border)',
+                                  borderWidth: isChecked ? '2px' : '1px'
+                                }}
+                                onClick={() => {
+                                  const currentValue = field.value || [];
+                                  const newValue = isChecked
+                                    ? currentValue.filter((id: string) => id !== driver.id)
+                                    : [...currentValue, driver.id];
+                                  field.onChange(newValue);
+                                }}
+                                data-testid={`checkbox-driver-${driver.name.toLowerCase()}`}
+                              >
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) => {
+                                    const currentValue = field.value || [];
+                                    const newValue = checked
+                                      ? [...currentValue, driver.id]
+                                      : currentValue.filter((id: string) => id !== driver.id);
+                                    field.onChange(newValue);
+                                  }}
+                                  style={{ borderColor: driverColor }}
+                                />
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: driverColor }}
+                                  />
+                                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                                    {driver.name}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
