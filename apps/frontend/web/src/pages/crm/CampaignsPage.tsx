@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 
@@ -287,8 +287,8 @@ export default function CampaignsPage() {
               whileTap={{ scale: 0.98 }}
               data-testid={`campaign-card-${campaign.id}`}
             >
-              <Link href={buildUrl(`crm/leads?campaign=${campaign.id}`)}>
-                <Card 
+              <Card 
+                  onClick={() => navigate(buildUrl(`crm/leads?campaign=${campaign.id}`))}
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
                     background: 'var(--glass-card-bg)',
@@ -326,10 +326,10 @@ export default function CampaignsPage() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigate(`crm/campaigns/${campaign.id}`);
+                            navigate(buildUrl(`crm/leads?campaign=${campaign.id}`));
                           }}
                           data-testid={`button-view-${campaign.id}`}
-                          title="Visualizza Campagna"
+                          title="Visualizza Lead Campagna"
                         />
                         <Settings 
                           className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
@@ -430,7 +430,6 @@ export default function CampaignsPage() {
                   </div>
                 </div>
               </Card>
-            </Link>
             </motion.div>
           ))}
         </motion.div>
@@ -621,8 +620,8 @@ export function CampaignsContent() {
               whileTap={{ scale: 0.98 }}
               data-testid={`campaign-card-${campaign.id}`}
             >
-              <Link href={buildUrl(`crm/leads?campaign=${campaign.id}`)}>
-                <Card 
+              <Card 
+                  onClick={() => navigate(buildUrl(`crm/leads?campaign=${campaign.id}`))}
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
                     background: 'var(--glass-card-bg)',
@@ -660,10 +659,10 @@ export function CampaignsContent() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigate(`crm/campaigns/${campaign.id}`);
+                            navigate(buildUrl(`crm/leads?campaign=${campaign.id}`));
                           }}
                           data-testid={`button-view-${campaign.id}`}
-                          title="Visualizza Campagna"
+                          title="Visualizza Lead Campagna"
                         />
                         <Settings 
                           className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
@@ -764,7 +763,6 @@ export function CampaignsContent() {
                   </div>
                 </div>
               </Card>
-            </Link>
             </motion.div>
           ))}
         </motion.div>
