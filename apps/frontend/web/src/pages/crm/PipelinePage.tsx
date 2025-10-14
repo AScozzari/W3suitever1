@@ -712,12 +712,12 @@ export default function PipelinePage() {
                   </motion.div>
 
                   {/* Category Distribution Bars */}
-                  <div style={{ minHeight: '240px' }}>
+                  <div style={{ minHeight: '200px' }}>
                     <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                   </div>
 
                   {/* Channel Attribution Bars */}
-                  <div style={{ minHeight: '240px' }}>
+                  <div style={{ minHeight: '200px' }}>
                     <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                   </div>
 
@@ -1123,12 +1123,12 @@ export function PipelineContent() {
                 </motion.div>
 
                 {/* Category Distribution Bars */}
-                <div style={{ minHeight: '240px' }}>
+                <div style={{ minHeight: '200px' }}>
                   <CategoryBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                 </div>
 
                 {/* Channel Attribution Bars */}
-                <div style={{ minHeight: '240px' }}>
+                <div style={{ minHeight: '200px' }}>
                   <ChannelBars pipelineId={pipeline.id} driverColor={getDriverColor(pipeline.driver || 'FISSO')} />
                 </div>
 
