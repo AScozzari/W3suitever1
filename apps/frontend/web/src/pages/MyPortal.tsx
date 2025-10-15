@@ -59,6 +59,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AvatarSelector from '@/components/AvatarSelector';
 import QuickActions, { type QuickAction } from '@/components/QuickActions';
+import UniversalRequestModal from '@/components/Requests/UniversalRequestModal';
 
 // Tab configuration for Employee Dashboard
 const EMPLOYEE_TABS = [
@@ -163,6 +164,7 @@ export default function MyPortal() {
     | { open: false; data: null }
     | { open: true; data: Record<string, unknown> };
   const [hrRequestModal, setHrRequestModal] = useState<ModalState>({ open: false, data: null });
+  const [universalRequestModal, setUniversalRequestModal] = useState<ModalState>({ open: false, data: null });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('all');
   const [documentViewerModal, setDocumentViewerModal] = useState<ModalState>({ open: false, data: null });
@@ -753,7 +755,7 @@ export default function MyPortal() {
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-900">Le mie Richieste</h2>
                   <Button 
-                    onClick={() => setHrRequestModal({ open: true, data: {} })}
+                    onClick={() => setUniversalRequestModal({ open: true, data: {} })}
                     className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
                     data-testid="button-new-request"
                   >
@@ -1433,15 +1435,14 @@ export default function MyPortal() {
               </div>
             )}
           
-          {/* HR Request Modal - Restored Original Complete Form */}
-          <HRRequestForm
-            open={hrRequestModal.open}
-            onOpenChange={(open) => setHrRequestModal(open ? { open, data: {} } : { open: false, data: null })}
+          {/* Universal Request Modal - Dynamic forms for all departments */}
+          <UniversalRequestModal
+            open={universalRequestModal.open}
+            onOpenChange={(open) => setUniversalRequestModal(open ? { open, data: {} } : { open: false, data: null })}
             onSubmit={(data) => {
               createRequestMutation.mutate(data);
             }}
             isSubmitting={createRequestMutation.isPending}
-            initialData={hrRequestModal.data}
           />
       </div>
     </Layout>
