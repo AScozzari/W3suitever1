@@ -30,7 +30,6 @@ import { useLocation } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 import { CampaignFiltersDialog, type CampaignFilters } from '@/components/crm/CampaignFiltersDialog';
-// import { CampaignLeadsDialog } from '@/components/crm/CampaignLeadsDialog'; // Temporarily disabled
 
 interface Campaign {
   id: string;
@@ -94,7 +93,6 @@ export default function CampaignsPage() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [leadsDialogCampaign, setLeadsDialogCampaign] = useState<{ id: string; name: string } | null>(null);
   const [filters, setFilters] = useState<CampaignFilters>({
     stores: [],
     drivers: [],
