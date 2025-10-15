@@ -329,6 +329,7 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
 
 export function requirePermission(permission: string) {
   return (req: Request, res: Response, next: NextFunction) => {
+    console.log("[REQ-PERM] Checking permission:", permission, "| userPermissions:", req.userPermissions, "| userId:", req.user?.id);
     if (!req.userPermissions) {
       return res.status(403).json({ error: 'No permissions assigned' });
     }
