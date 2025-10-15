@@ -30,6 +30,7 @@ import { useLocation } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 import { CampaignFiltersDialog, type CampaignFilters } from '@/components/crm/CampaignFiltersDialog';
+import { CampaignLeadsDialog } from '@/components/crm/CampaignLeadsDialog';
 
 interface Campaign {
   id: string;
@@ -93,6 +94,7 @@ export default function CampaignsPage() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [leadsDialogCampaign, setLeadsDialogCampaign] = useState<{ id: string; name: string } | null>(null);
   const [filters, setFilters] = useState<CampaignFilters>({
     stores: [],
     drivers: [],
@@ -108,8 +110,43 @@ export default function CampaignsPage() {
 
   const allCampaigns = campaignsResponse || [];
 
-  // Apply filters to campaigns
-  const campaigns = allCampaigns.filter((campaign) => {
+  // Load stats for all campaigns
+  const campaignIds = allCampaigns.map(c => c.id);
+  const statsQueries = useQuery({
+    queryKey: ['/api/crm/campaigns/stats', campaignIds],
+    queryFn: async () => {
+      const results = await Promise.all(
+        campaignIds.map(async (id) => {
+          const response = await fetch(`/api/crm/campaigns/${id}/stats`, {
+            headers: { 'x-tenant-id': campaignsResponse?.[0]?.tenantId || '' }
+          });
+          if (!response.ok) return null;
+          const data = await response.json();
+          return { campaignId: id, stats: data.data };
+        })
+      );
+      return results.filter(r => r !== null);
+    },
+    enabled: campaignIds.length > 0
+  });
+
+  const statsMap = new Map(
+    (statsQueries.data || []).map(item => [item.campaignId, item.stats])
+  );
+
+  // Merge campaigns with their stats
+  const campaignsWithStats = allCampaigns.map(campaign => ({
+    ...campaign,
+    ...(statsMap.get(campaign.id) || {
+      totalLeads: 0,
+      workedLeads: 0,
+      notWorkedLeads: 0,
+      conversionRate: 0
+    })
+  }));
+
+  // Apply filters to campaigns with stats
+  const campaigns = campaignsWithStats.filter((campaign) => {
     // Search filter
     if (searchQuery && !campaign.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -363,7 +400,7 @@ export default function CampaignsPage() {
               data-testid={`campaign-card-${campaign.id}`}
             >
               <Card 
-                  onClick={() => navigate(`crm/leads?campaign=${campaign.id}`)}
+                  onClick={() => setLeadsDialogCampaign({ id: campaign.id, name: campaign.name })}
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
                     background: 'var(--glass-card-bg)',
@@ -421,7 +458,7 @@ export default function CampaignsPage() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigate(`crm/leads?campaign=${campaign.id}`);
+                            setLeadsDialogCampaign({ id: campaign.id, name: campaign.name });
                           }}
                           data-testid={`button-view-${campaign.id}`}
                           title="Visualizza Lead Campagna"
@@ -733,7 +770,7 @@ export function CampaignsContent() {
               data-testid={`campaign-card-${campaign.id}`}
             >
               <Card 
-                  onClick={() => navigate(`crm/leads?campaign=${campaign.id}`)}
+                  onClick={() => setLeadsDialogCampaign({ id: campaign.id, name: campaign.name })}
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
                     background: 'var(--glass-card-bg)',
@@ -791,7 +828,7 @@ export function CampaignsContent() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigate(`crm/leads?campaign=${campaign.id}`);
+                            setLeadsDialogCampaign({ id: campaign.id, name: campaign.name });
                           }}
                           data-testid={`button-view-${campaign.id}`}
                           title="Visualizza Lead Campagna"
@@ -948,6 +985,27 @@ export function CampaignsContent() {
         campaignId={editingCampaignId}
         mode={editingCampaignId ? 'edit' : 'create'}
       />
+
+      {/* Campaign Filters Dialog */}
+      <CampaignFiltersDialog
+        open={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        filters={filters}
+        onApplyFilters={(newFilters) => {
+          setFilters(newFilters);
+          setIsFiltersOpen(false);
+        }}
+      />
+
+      {/* Campaign Leads Dialog */}
+      {leadsDialogCampaign && (
+        <CampaignLeadsDialog
+          open={!!leadsDialogCampaign}
+          onClose={() => setLeadsDialogCampaign(null)}
+          campaignId={leadsDialogCampaign.id}
+          campaignName={leadsDialogCampaign.name}
+        />
+      )}
     </>
   );
 }
