@@ -8676,9 +8676,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = jwt.sign(tokenPayload, JWT_SECRET, { algorithm: 'HS256' });
       
-      // Generate URL for QR code
+      // Generate URL for QR code with tenant slug
       const baseUrl = req.protocol + '://' + req.get('host');
-      const qrUrl = `${baseUrl}/qr-checkin?token=${token}`;
+      const tenantSlug = req.tenant?.code || 'staging'; // Fallback to staging in dev
+      const qrUrl = `${baseUrl}/${tenantSlug}/qr-checkin?token=${token}`;
 
       res.json({ 
         token, 

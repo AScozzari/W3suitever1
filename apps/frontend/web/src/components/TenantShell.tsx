@@ -29,6 +29,7 @@ const CampaignsPage = lazy(() => import('../pages/crm/CampaignsPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
 const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
+const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -235,6 +236,11 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         {/* Login route - no auth required */}
         <Route path={`/${tenantSlug}/login`}>
           <Login tenantCode={tenantSlug} />
+        </Route>
+        
+        {/* QR Check-in route - no auth required */}
+        <Route path={`/${tenantSlug}/qr-checkin`}>
+          <QRCheckinPage />
         </Route>
       
       {/* All other routes require authentication */}
