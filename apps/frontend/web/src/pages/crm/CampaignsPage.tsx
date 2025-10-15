@@ -606,66 +606,11 @@ export function CampaignsContent() {
     queryKey: ['/api/crm/campaigns'],
   });
 
-  const allCampaigns = campaignsResponse || [];
-
-  // Apply filters to campaigns
-  const campaigns = allCampaigns.filter((campaign) => {
-    // Search filter
+  // Apply search filter only (CampaignsContent is simplified version without advanced filters)
+  const campaigns = (campaignsResponse || []).filter((campaign) => {
     if (searchQuery && !campaign.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
-
-    // Stores filter
-    if (filters.stores.length > 0 && !filters.stores.includes(campaign.storeId || '')) {
-      return false;
-    }
-
-    // Drivers filter (campaigns can have multiple drivers)
-    if (filters.drivers.length > 0) {
-      // Backend returns targetDriverIds array
-      const campaignDrivers = (campaign as any).targetDriverIds || [];
-      if (!Array.isArray(campaignDrivers) || campaignDrivers.length === 0 || !campaignDrivers.some((id: string) => filters.drivers.includes(id))) {
-        return false;
-      }
-    }
-
-    // Status filter
-    if (filters.status.length > 0 && !filters.status.includes(campaign.status)) {
-      return false;
-    }
-
-    // Brand Source Type filter
-    if (filters.brandSourceType.length > 0) {
-      // Exclude campaigns without brandSourceType when filter is active
-      if (!campaign.brandSourceType || !filters.brandSourceType.includes(campaign.brandSourceType)) {
-        return false;
-      }
-    }
-
-    // Budget filter
-    if (filters.budgetMin !== undefined && campaign.budget < filters.budgetMin) {
-      return false;
-    }
-    if (filters.budgetMax !== undefined && campaign.budget > filters.budgetMax) {
-      return false;
-    }
-
-    // Start Date filter
-    if (filters.startDateFrom && new Date(campaign.startDate) < filters.startDateFrom) {
-      return false;
-    }
-    if (filters.startDateTo && new Date(campaign.startDate) > filters.startDateTo) {
-      return false;
-    }
-
-    // End Date filter
-    if (filters.endDateFrom && new Date(campaign.endDate) < filters.endDateFrom) {
-      return false;
-    }
-    if (filters.endDateTo && new Date(campaign.endDate) > filters.endDateTo) {
-      return false;
-    }
-
     return true;
   });
 
