@@ -1,6 +1,7 @@
 // QR Strategy - Enterprise QR-based time tracking with token validation and countdown
 import React, { useState, useEffect, useRef } from 'react';
 import { QrCode, CheckCircle, AlertCircle, Loader2, RefreshCw, Timer, Camera } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { BaseStrategy } from './BaseStrategy';
 import { 
   StrategyValidationResult,
@@ -366,9 +367,18 @@ function QRPanel({ isActive, isLoading, context, onAction, compact, strategy }: 
         
         {code ? (
           <div className="space-y-1">
-            {/* Mini QR Code Display */}
-            <div className="w-16 h-16 bg-gray-100 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
-              <QrCode className="h-8 w-8 text-purple-400" />
+            {/* Mini Scannable QR Code */}
+            <div className="w-24 h-24 bg-white border-2 border-purple-300 rounded p-1 flex items-center justify-center">
+              {!isExpired ? (
+                <QRCodeSVG 
+                  value={code} 
+                  size={80}
+                  level="M"
+                  includeMargin={false}
+                />
+              ) : (
+                <QrCode className="h-8 w-8 text-red-400" />
+              )}
             </div>
             
             <div className="text-xs space-y-1">
@@ -411,26 +421,32 @@ function QRPanel({ isActive, isLoading, context, onAction, compact, strategy }: 
         {/* QR Code Display */}
         {code ? (
           <div className="space-y-3">
-            {/* Large QR Code Placeholder */}
+            {/* Real Scannable QR Code */}
             <div 
               ref={qrRef}
               className={cn(
-                "w-32 h-32 mx-auto border-4 rounded-lg flex items-center justify-center",
+                "w-48 h-48 mx-auto border-4 rounded-lg p-3 bg-white flex items-center justify-center",
                 isExpired 
-                  ? "border-red-300 bg-red-50" 
+                  ? "border-red-300" 
                   : timeRemaining < 10000 
-                    ? "border-yellow-300 bg-yellow-50" 
-                    : "border-purple-300 bg-purple-50"
+                    ? "border-yellow-300" 
+                    : "border-purple-300"
               )}
             >
-              <QrCode className={cn(
-                "h-20 w-20",
-                isExpired 
-                  ? "text-red-400" 
-                  : timeRemaining < 10000 
-                    ? "text-yellow-500" 
-                    : "text-purple-500"
-              )} />
+              {!isExpired ? (
+                <QRCodeSVG 
+                  value={code} 
+                  size={168}
+                  level="H"
+                  includeMargin={false}
+                  data-testid="qr-code-image"
+                />
+              ) : (
+                <div className="text-center">
+                  <QrCode className="h-20 w-20 mx-auto text-red-400" />
+                  <p className="text-xs text-red-600 mt-2">QR Scaduto</p>
+                </div>
+              )}
             </div>
 
             {/* Timer and Status */}
