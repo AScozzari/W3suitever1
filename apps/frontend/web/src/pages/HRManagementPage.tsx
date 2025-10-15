@@ -535,13 +535,19 @@ const HRManagementPage: React.FC = () => {
     const [dateFromFilter, setDateFromFilter] = useState<string>('');
     const [dateToFilter, setDateToFilter] = useState<string>('');
 
+    // Extract unique categories from HR requests
+    const uniqueCategories = useMemo(() => {
+      const categories = new Set(hrRequests.map(req => req.category).filter(Boolean));
+      return Array.from(categories).sort();
+    }, [hrRequests]);
+
     // Enhanced filtering logic
     const filteredRequests = hrRequests.filter(request => {
       // Status filter
       const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
       
-      // Category filter (currently all HR, but prepared for future Finance/Operations)
-      const matchesCategory = categoryFilter === 'all' || categoryFilter === 'hr';
+      // Category filter - use actual request category
+      const matchesCategory = categoryFilter === 'all' || request.category === categoryFilter;
       
       // Enhanced search: name, type, description
       const requesterFullName = request.requesterName || '';
@@ -693,42 +699,14 @@ const HRManagementPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le categorie</SelectItem>
-                      <SelectItem value="hr">
-                        <div className="flex items-center gap-2">
-                          <UserCog className="w-4 h-4 text-indigo-600" />
-                          HR - Risorse Umane
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="support">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-blue-600" />
-                          Support - Assistenza
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="finance">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-green-600" />
-                          Finance
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="operations">
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-purple-600" />
-                          Operations
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="sales">
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-orange-600" />
-                          Sales
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="marketing">
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-purple-600" />
-                          Marketing
-                        </div>
-                      </SelectItem>
+                      {uniqueCategories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          <div className="flex items-center gap-2">
+                            <UserCog className="w-4 h-4 text-indigo-600" />
+                            {category.toUpperCase()}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -828,7 +806,7 @@ const HRManagementPage: React.FC = () => {
                     <th className="text-left p-4 font-medium">Categoria</th>
                     <th className="text-left p-4 font-medium">Tipologia</th>
                     <th className="text-left p-4 font-medium">Descrizione</th>
-                    <th className="text-left p-4 font-medium">Periodo/Importo</th>
+                    <th className="text-left p-4 font-medium">Periodo</th>
                     <th className="text-left p-4 font-medium">Stato</th>
                     <th className="text-left p-4 font-medium">Workflow</th>
                     <th className="text-left p-4 font-medium">Azioni</th>
