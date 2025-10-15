@@ -8804,7 +8804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).returning();
 
       // Get store name for response
-      const [storeData] = await db.select({ name: stores.name }).from(stores).where(
+      const [storeData] = await db.select({ name: stores.nome }).from(stores).where(
         eq(stores.id, decoded.storeId)
       ).limit(1);
 
@@ -8924,7 +8924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get store name for response
-      const [storeData] = await db.select({ name: stores.name }).from(stores).where(
+      const [storeData] = await db.select({ name: stores.nome }).from(stores).where(
         eq(stores.id, decoded.storeId)
       ).limit(1);
 
