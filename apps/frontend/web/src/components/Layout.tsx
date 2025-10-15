@@ -18,6 +18,7 @@ import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../hooks/useAuth';
 import { useIdleDetection } from '@/contexts/IdleDetectionContext';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
@@ -157,6 +158,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const { isIdle } = useIdleDetection();
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const [location] = useLocation();
+  const { navigate } = useTenantNavigation();
   
   // ✅ Sicuro: Ottieni e valida tenant dal path URL con fallback robusto
   const getTenantFromUrl = () => {
@@ -1109,8 +1111,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <button
                   key={item.id}
                   onClick={() => {
-                    // ✅ Navigation sicura usando useTenantNavigation
-                    const { navigate } = useTenantNavigation();
+                    // ✅ Navigation sicura usando useTenantNavigation hook
                     navigate(item.path.replace(/^\//, ''));
                   }}
                   className={`

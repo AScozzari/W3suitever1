@@ -43,7 +43,7 @@ export function TasksWidget({
   limit = 5,
   className 
 }: TasksWidgetProps) {
-  const [, navigate] = useLocation();
+  const { navigate } = useTenantNavigation();
 
   const { data: tasks, isLoading } = useQuery<Task[]>({
     queryKey: ['/api/tasks/my-tasks', { limit }],
@@ -61,15 +61,15 @@ export function TasksWidget({
   });
 
   const handleViewAll = () => {
-    navigate(`/${tenantSlug}/tasks`);
+    navigate('tasks');
   };
 
   const handleCreateTask = () => {
-    navigate(`/${tenantSlug}/tasks?action=create`);
+    navigate('tasks?action=create');
   };
 
   const handleTaskClick = (taskId: string) => {
-    navigate(`/${tenantSlug}/tasks?id=${taskId}`);
+    navigate(`tasks?id=${taskId}`);
   };
 
   return (

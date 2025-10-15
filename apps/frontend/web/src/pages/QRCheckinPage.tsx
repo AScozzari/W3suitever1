@@ -1,17 +1,17 @@
 // QR Check-in Page - Handles QR code scanning with multiple actions
 import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
 import { CheckCircle, XCircle, Loader2, Clock, Coffee, LogOut, LogIn } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 type CheckinStatus = 'loading' | 'success' | 'error' | 'expired' | 'auth_required' | 'choose_action';
 type QRAction = 'clock-in' | 'clock-out' | 'break-start' | 'break-end';
 
 export default function QRCheckinPage() {
-  const [, navigate] = useLocation();
+  const { navigate } = useTenantNavigation();
   
   const [status, setStatus] = useState<CheckinStatus>('loading');
   const [message, setMessage] = useState<string>('');
@@ -88,8 +88,7 @@ export default function QRCheckinPage() {
         
         // Redirect to my-portal after 3 seconds
         setTimeout(() => {
-          const tenantSlug = localStorage.getItem('currentTenant') || 'staging';
-          navigate(`/${tenantSlug}/my-portal`);
+          navigate('my-portal');
         }, 3000);
       } else {
         // Check error type
@@ -119,8 +118,7 @@ export default function QRCheckinPage() {
   const handleLogin = () => {
     // Redirect to login preserving token
     const returnUrl = encodeURIComponent(`/qr-checkin?token=${token}`);
-    const tenantSlug = localStorage.getItem('currentTenant') || 'staging';
-    navigate(`/${tenantSlug}/login?return=${returnUrl}`);
+    navigate(`login?return=${returnUrl}`);
   };
 
   const handleActionChoice = (action: QRAction) => {
@@ -258,10 +256,7 @@ export default function QRCheckinPage() {
           {(status === 'error' || status === 'expired') && (
             <div className="flex gap-2">
               <Button
-                onClick={() => {
-                  const tenantSlug = localStorage.getItem('currentTenant') || 'staging';
-                  navigate(`/${tenantSlug}/my-portal`);
-                }}
+                onClick={() => navigate('my-portal')}
                 className="w-full"
                 data-testid="button-return-portal"
               >
