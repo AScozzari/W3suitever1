@@ -19,10 +19,12 @@ export default function QRCheckinPage() {
   const [token, setToken] = useState<string | null>(null);
   const [actionType, setActionType] = useState<QRAction>('clock-in');
 
-  // Check if user is authenticated
-  const { data: user } = useQuery({
+  // Check if user is authenticated (skip in development mode)
+  const isDevelopment = import.meta.env.MODE === 'development';
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['/api/users/me'],
-    retry: false
+    retry: false,
+    enabled: !isDevelopment // Skip auth check in development mode
   });
 
   useEffect(() => {
@@ -37,16 +39,25 @@ export default function QRCheckinPage() {
 
     setToken(tokenParam);
 
-    // Check authentication
-    if (!user) {
+    // In development mode, skip auth check and process directly
+    if (isDevelopment) {
+      console.log('[QR-CHECKIN] Development mode - skipping auth check');
+      processQRAction(tokenParam, 'clock-in');
+      return;
+    }
+
+    // Check authentication (only in production)
+    if (!user && !userLoading) {
       setStatus('auth_required');
       setMessage('Accesso richiesto. Effettua il login per completare la timbratura.');
       return;
     }
 
-    // Try automatic clock-in first
-    processQRAction(tokenParam, 'clock-in');
-  }, [user]);
+    // User authenticated, process QR action
+    if (user) {
+      processQRAction(tokenParam, 'clock-in');
+    }
+  }, [user, userLoading, isDevelopment]);
 
   const processQRAction = async (qrToken: string, action: QRAction) => {
     try {
