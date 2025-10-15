@@ -16,6 +16,10 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
+  // Get return URL from query params
+  const params = new URLSearchParams(window.location.search);
+  const returnUrl = params.get('return') || `/${propTenantCode || 'staging'}/dashboard`;
+  
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
     'w3suite': { name: 'W3 Suite Enterprise', color: '#FF6900' },
@@ -70,8 +74,8 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         localStorage.setItem('currentTenant', propTenantCode || 'staging');
         localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
         
-        // Redirect to dashboard
-        window.location.href = `/${propTenantCode || 'staging'}/dashboard`;
+        // Redirect to return URL or dashboard
+        window.location.href = returnUrl;
         return;
       } catch (error) {
         console.error('Development login error:', error);
@@ -153,10 +157,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               scope: tokenData.scope
             });
             
-            console.log('🔄 Redirecting to dashboard...');
-            // Redirect alla dashboard del tenant dopo login
-            const tenantCode = propTenantCode || 'staging';
-            window.location.href = `/${tenantCode}/dashboard`;
+            console.log('🔄 Redirecting to:', returnUrl);
+            // Redirect to return URL or dashboard
+            window.location.href = returnUrl;
           } else {
             const errorData = await tokenResponse.json();
             console.error('Token exchange failed:', errorData);

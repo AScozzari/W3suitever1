@@ -118,7 +118,7 @@ export default function QRCheckinPage() {
   const handleLogin = () => {
     // Redirect to login preserving token
     const returnUrl = encodeURIComponent(`/qr-checkin?token=${token}`);
-    navigate(`login?return=${returnUrl}`);
+    window.location.href = `/login?return=${returnUrl}`;
   };
 
   const handleActionChoice = (action: QRAction) => {
