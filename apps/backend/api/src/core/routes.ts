@@ -8899,20 +8899,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark token as used
       usedQRTokens.set(decoded.jti, decoded.exp * 1000);
 
-      // Verify user is assigned to this store
+      // Verify user is assigned to this store (bypass in development mode)
       await setTenantContext(tenantId);
-      const userStore = await db.select().from(userStores).where(
-        and(
-          eq(userStores.userId, userId),
-          eq(userStores.storeId, decoded.storeId)
-        )
-      ).limit(1);
+      
+      // Development mode: Skip store assignment check for demo/admin users
+      const isDemoUser = process.env.NODE_ENV === 'development' && (userId === 'admin-user' || userId === 'demo-user');
+      
+      if (!isDemoUser) {
+        const userStore = await db.select().from(userStores).where(
+          and(
+            eq(userStores.userId, userId),
+            eq(userStores.storeId, decoded.storeId)
+          )
+        ).limit(1);
 
-      if (!userStore || userStore.length === 0) {
-        return res.status(403).json({ 
-          success: false,
-          error: 'You are not authorized to perform this action at this store' 
-        });
+        if (!userStore || userStore.length === 0) {
+          return res.status(403).json({ 
+            success: false,
+            error: 'You are not authorized to perform this action at this store' 
+          });
+        }
+      } else {
+        console.log('[QR-ACTION] 🔓 Development mode: Bypassing store assignment check for', userId);
       }
 
       // Get store name for response

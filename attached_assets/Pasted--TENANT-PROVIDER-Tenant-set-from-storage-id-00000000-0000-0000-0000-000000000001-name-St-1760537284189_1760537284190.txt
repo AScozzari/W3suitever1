@@ -1,0 +1,36 @@
+[TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin-user
+TenantContext.tsx:100 [TENANT-PROVIDER] 🏢 Tenant updated from session: {id: '00000000-0000-0000-0000-000000000001', name: 'Demo Organization', code: 'DEMO001', plan: 'Enterprise', isActive: true}
+QRCheckinPage.tsx:45 [QR-CHECKIN] Development mode - skipping auth check
+QRCheckinPage.tsx:45 [QR-CHECKIN] Development mode - skipping auth check
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/qr-action 400 (Bad Request)
+apiRequest @ queryClient.ts:328
+processQRAction @ QRCheckinPage.tsx:77
+(anonymous) @ QRCheckinPage.tsx:46
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7e526652:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=7e526652:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=7e526652:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=7e526652:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7e526652:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7e526652:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7e526652:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=7e526652:197
+flushWork @ chunk-ZHRYBLGQ.js?v=7e526652:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=7e526652:384Understand this error
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/qr-action 403 (Forbidden)
+apiRequest @ queryClient.ts:328
+processQRAction @ QRCheckinPage.tsx:77
+(anonymous) @ QRCheckinPage.tsx:46
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7e526652:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7e526652:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7e526652:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7e526652:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7e526652:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7e526652:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7e526652:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7e526652:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=7e526652:197
+flushWork @ chunk-ZHRYBLGQ.js?v=7e526652:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=7e526652:384Understand this error
