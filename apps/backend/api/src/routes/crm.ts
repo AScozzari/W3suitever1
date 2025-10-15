@@ -575,6 +575,65 @@ router.get('/campaigns', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/campaigns/:id
+ * Get a single campaign by ID
+ */
+router.get('/campaigns/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    
+    await setTenantContext(tenantId);
+
+    const [campaign] = await db
+      .select()
+      .from(crmCampaigns)
+      .where(and(
+        eq(crmCampaigns.id, id),
+        eq(crmCampaigns.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: 'Campaign not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: campaign,
+      message: 'Campaign retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaign', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      campaignId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve campaign',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/crm/campaigns
  * Create a new campaign
  */
