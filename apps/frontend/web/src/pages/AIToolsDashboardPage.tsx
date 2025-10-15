@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import Layout from "../components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles, Brain, MessageSquare, Zap, TrendingUp, CheckCircle2, ArrowRight } from "lucide-react";
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface AITool {
   id: string;
@@ -156,13 +156,11 @@ const aiTools: AITool[] = [
 
 export default function AIToolsDashboardPage() {
   const [currentModule, setCurrentModule] = useState("ai");
-  const [location, setLocation] = useLocation();
-  
-  const tenantSlug = location.split('/')[1] || 'staging';
+  const { navigate } = useTenantNavigation();
 
   const handleToolClick = (tool: AITool) => {
     if (tool.status === "available") {
-      setLocation(`/${tenantSlug}${tool.route}`);
+      navigate(tool.route.replace(/^\//, ''));
     }
   };
 

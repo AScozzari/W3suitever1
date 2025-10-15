@@ -69,7 +69,6 @@ interface LayoutProps {
 
 // Chat Icon Button Component with Unread Badge
 function ChatIconButton({ isMobile, isIdle }: { isMobile: boolean; isIdle: boolean }) {
-  const [location] = useLocation();
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/chat/unread-count'],
     refetchInterval: isIdle ? false : 10000, // Only poll when user is active
@@ -77,13 +76,11 @@ function ChatIconButton({ isMobile, isIdle }: { isMobile: boolean; isIdle: boole
   });
 
   const unreadCount = unreadData?.unreadCount || 0;
-  
-  // Extract tenant slug from current location
-  const tenantSlug = location.split('/')[1] || 'staging';
+  const { navigate } = useTenantNavigation();
 
   return (
     <button
-      onClick={() => window.location.href = `/${tenantSlug}/chat`}
+      onClick={() => navigate('chat')}
       data-testid="button-chat"
       style={{
         position: 'relative',
@@ -1112,9 +1109,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <button
                   key={item.id}
                   onClick={() => {
-                    // ✅ Navigation sicura usando tenant dall'URL (sempre funzionante)
-                    const tenantSlug = getTenantFromUrl();
-                    window.location.href = `/${tenantSlug}${item.path}`;
+                    // ✅ Navigation sicura usando useTenantNavigation
+                    const { navigate } = useTenantNavigation();
+                    navigate(item.path.replace(/^\//, ''));
                   }}
                   className={`
                     w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200
