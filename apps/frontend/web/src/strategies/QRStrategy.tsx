@@ -189,10 +189,17 @@ export class QRStrategy extends BaseStrategy {
 
   private async generateQRCode(storeId: string): Promise<void> {
     try {
-      // Fetch server-signed token
+      // Get tenant ID from localStorage (set by TenantProvider)
+      const tenantData = localStorage.getItem('current-tenant');
+      const tenantId = tenantData ? JSON.parse(tenantData).id : '00000000-0000-0000-0000-000000000001';
+      
+      // Fetch server-signed token with proper authentication headers
       const response = await fetch(`/api/hr/time-tracking/qr-token?storeId=${storeId}`, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': tenantId,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': 'admin-user'
         },
         credentials: 'include'
       });
