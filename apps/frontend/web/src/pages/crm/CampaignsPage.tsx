@@ -30,7 +30,7 @@ import { useLocation } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 import { CampaignFiltersDialog, type CampaignFilters } from '@/components/crm/CampaignFiltersDialog';
-import { CampaignLeadsDialog } from '@/components/crm/CampaignLeadsDialog';
+// import { CampaignLeadsDialog } from '@/components/crm/CampaignLeadsDialog'; // Temporarily disabled
 
 interface Campaign {
   id: string;
@@ -110,40 +110,8 @@ export default function CampaignsPage() {
 
   const allCampaigns = campaignsResponse || [];
 
-  // Load stats for all campaigns
-  const campaignIds = allCampaigns.map(c => c.id);
-  const statsQueries = useQuery({
-    queryKey: ['/api/crm/campaigns/stats', campaignIds],
-    queryFn: async () => {
-      const results = await Promise.all(
-        campaignIds.map(async (id) => {
-          const response = await fetch(`/api/crm/campaigns/${id}/stats`, {
-            headers: { 'x-tenant-id': campaignsResponse?.[0]?.tenantId || '' }
-          });
-          if (!response.ok) return null;
-          const data = await response.json();
-          return { campaignId: id, stats: data.data };
-        })
-      );
-      return results.filter(r => r !== null);
-    },
-    enabled: campaignIds.length > 0
-  });
-
-  const statsMap = new Map(
-    (statsQueries.data || []).map(item => [item.campaignId, item.stats])
-  );
-
-  // Merge campaigns with their stats
-  const campaignsWithStats = allCampaigns.map(campaign => ({
-    ...campaign,
-    ...(statsMap.get(campaign.id) || {
-      totalLeads: 0,
-      workedLeads: 0,
-      notWorkedLeads: 0,
-      conversionRate: 0
-    })
-  }));
+  // For now, use campaigns as-is without stats (stats will be added in next iteration)
+  const campaignsWithStats = allCampaigns;
 
   // Apply filters to campaigns with stats
   const campaigns = campaignsWithStats.filter((campaign) => {
@@ -997,15 +965,15 @@ export function CampaignsContent() {
         }}
       />
 
-      {/* Campaign Leads Dialog */}
-      {leadsDialogCampaign && (
+      {/* Campaign Leads Dialog - Temporarily disabled for debugging */}
+      {/* {leadsDialogCampaign && (
         <CampaignLeadsDialog
           open={!!leadsDialogCampaign}
           onClose={() => setLeadsDialogCampaign(null)}
           campaignId={leadsDialogCampaign.id}
           campaignName={leadsDialogCampaign.name}
         />
-      )}
+      )} */}
     </>
   );
 }
