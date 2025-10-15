@@ -815,6 +815,7 @@ export default function MyPortal() {
                           <thead>
                             <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
                               <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Richiesta</th>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
                               <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Categoria</th>
                               <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Tipologia</th>
                               <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Data</th>
@@ -858,6 +859,33 @@ export default function MyPortal() {
                                       )}
                                     </div>
                                   </div>
+                                </td>
+                                <td style={{ padding: '16px' }} data-testid={`text-request-department-${request.id}`}>
+                                  <span style={{
+                                    fontSize: '12px',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    ...(request.department === 'hr' && { background: '#FFF4ED', color: '#FF6900' }),
+                                    ...(request.department === 'finance' && { background: '#F3E8FF', color: '#7B2CBF' }),
+                                    ...(request.department === 'operations' && { background: '#ECFDF5', color: '#10B981' }),
+                                    ...(request.department === 'support' && { background: '#EFF6FF', color: '#3B82F6' }),
+                                    ...(request.department === 'crm' && { background: '#FEF3C7', color: '#F59E0B' }),
+                                    ...(request.department === 'sales' && { background: '#FEE2E2', color: '#EF4444' }),
+                                    ...(request.department === 'marketing' && { background: '#F5F3FF', color: '#8B5CF6' }),
+                                    ...(!['hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'].includes(request.department) && { background: '#F3F4F6', color: '#6B7280' })
+                                  }}>
+                                    {request.department === 'hr' && 'HR'}
+                                    {request.department === 'finance' && 'Finance'}
+                                    {request.department === 'operations' && 'Operations'}
+                                    {request.department === 'support' && 'IT Support'}
+                                    {request.department === 'crm' && 'CRM'}
+                                    {request.department === 'sales' && 'Sales'}
+                                    {request.department === 'marketing' && 'Marketing'}
+                                    {!['hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'].includes(request.department) && (request.department || 'N/A')}
+                                  </span>
                                 </td>
                                 <td style={{ padding: '16px' }} data-testid={`text-request-category-${request.id}`}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
