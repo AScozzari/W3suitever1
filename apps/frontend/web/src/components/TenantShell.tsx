@@ -27,6 +27,7 @@ const PipelinePage = lazy(() => import('../pages/crm/PipelinePage'));
 const PipelineDetailPage = lazy(() => import('../pages/crm/PipelineDetailPage'));
 const CampaignsPage = lazy(() => import('../pages/crm/CampaignsPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
+const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -390,6 +391,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       {/* 🔄 LEGACY REDIRECT - Singular to Plural */}
       <Route path={`/${tenantSlug}/crm/pipeline`}>
         <Redirect to={`/${tenantSlug}/crm/pipelines`} replace />
+      </Route>
+      
+      {/* 🎯 CRM LEADS - Lista dei lead standalone */}
+      <Route path={`/${tenantSlug}/crm/leads`}>
+        <AuthenticatedRoute>
+          <LeadsPage />
+        </AuthenticatedRoute>
       </Route>
       
       {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs come HR (niente più sub-routes!) */}
