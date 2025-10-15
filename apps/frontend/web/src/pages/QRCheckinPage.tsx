@@ -11,6 +11,39 @@ import { apiRequest } from '@/lib/queryClient';
 type CheckinStatus = 'loading' | 'success' | 'error' | 'expired' | 'auth_required' | 'choose_action';
 type QRAction = 'clock-in' | 'clock-out' | 'break-start' | 'break-end';
 
+function TimeTracker({ startTime }: { startTime?: string }) {
+  const [elapsed, setElapsed] = useState<number>(0);
+
+  useEffect(() => {
+    if (!startTime) return;
+
+    const start = new Date(startTime).getTime();
+    
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.floor((now - start) / 1000);
+      setElapsed(diff);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="text-center">
+      <p className="text-4xl font-bold bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] bg-clip-text text-transparent">
+        {formatTime(elapsed)}
+      </p>
+    </div>
+  );
+}
+
 export default function QRCheckinPage() {
   const { navigate } = useTenantNavigation();
   
@@ -94,11 +127,6 @@ export default function QRCheckinPage() {
         
         setMessage(successMessages[action]);
         setDetails(data.data);
-        
-        // Redirect to my-portal after 3 seconds
-        setTimeout(() => {
-          navigate('my-portal');
-        }, 3000);
       } else if (data.error) {
         // Handle error in successful response
         const errorMsg = data.error;
@@ -221,10 +249,32 @@ export default function QRCheckinPage() {
             </div>
           )}
 
-          {status === 'success' && (
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              Reindirizzamento al portale in corso...
-            </p>
+          {status === 'success' && actionType === 'clock-in' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gradient-to-r from-[#FF6900]/10 to-[#7B2CBF]/10 rounded-lg border border-[#FF6900]/20">
+                <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  🕐 Tempo in Turno
+                </p>
+                <TimeTracker startTime={details?.timestamp} />
+              </div>
+              <Button
+                onClick={() => navigate('my-portal')}
+                className="w-full bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] text-white"
+                data-testid="button-back-portal"
+              >
+                Torna al Portale
+              </Button>
+            </div>
+          )}
+
+          {status === 'success' && actionType !== 'clock-in' && (
+            <Button
+              onClick={() => navigate('my-portal')}
+              className="w-full bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] text-white"
+              data-testid="button-back-portal"
+            >
+              Torna al Portale
+            </Button>
           )}
 
           {status === 'choose_action' && (
