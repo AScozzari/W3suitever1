@@ -1354,17 +1354,43 @@ export default function MyPortal() {
                           try {
                             if (!displayUser.matricola) {
                               console.error('❌ No user ID available for avatar update');
+                              alert('ID utente mancante');
                               return;
                             }
 
                             if (!avatarData.blob) {
                               console.error('❌ No file blob provided');
+                              alert('Nessun file selezionato');
                               return;
                             }
                             
-                            // Step 1: Upload file to Object Storage
+                            // Step 1: Generate presigned upload URL
+                            const initResponse = await fetch('/api/avatar/upload', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'X-Tenant-ID': localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001',
+                                'X-Auth-Session': 'authenticated',
+                                'X-Demo-User': 'admin-user'
+                              },
+                              body: JSON.stringify({
+                                fileName: 'avatar.jpg',
+                                contentType: avatarData.blob.type,
+                                fileSize: avatarData.blob.size
+                              })
+                            });
+
+                            if (!initResponse.ok) {
+                              const initError = await initResponse.json();
+                              throw new Error(initError.message || 'Errore generazione URL upload');
+                            }
+
+                            const initResult = await initResponse.json();
+                            console.log('✅ Upload URL generated:', initResult);
+                            
+                            // Step 2: Upload file to Object Storage
                             const uploadFormData = new FormData();
-                            uploadFormData.append('file', avatarData.blob);
+                            uploadFormData.append('file', avatarData.blob, 'avatar.jpg');
                             uploadFormData.append('fileName', 'avatar.jpg');
                             uploadFormData.append('contentType', avatarData.blob.type);
                             uploadFormData.append('visibility', 'public');
@@ -1381,14 +1407,14 @@ export default function MyPortal() {
                             });
 
                             if (!uploadResponse.ok) {
-                              const uploadError = await uploadResponse.json();
+                              const uploadError = await uploadResponse.json().catch(() => ({ message: 'Errore upload' }));
                               throw new Error(uploadError.message || 'Errore durante l\'upload del file');
                             }
 
                             const uploadResult = await uploadResponse.json();
                             console.log('✅ File uploaded to storage:', uploadResult);
 
-                            // Step 2: Update user avatar with objectPath
+                            // Step 3: Update user avatar with objectPath
                             const response = await fetch(`/api/users/${displayUser.matricola}/avatar`, {
                               method: 'PUT',
                               headers: {
@@ -1405,20 +1431,21 @@ export default function MyPortal() {
 
                             if (!response.ok) {
                               const errorData = await response.json();
-                              throw new Error(errorData.message || `Failed to update avatar: ${response.statusText}`);
+                              throw new Error(errorData.message || 'Errore aggiornamento avatar');
                             }
 
                             const result = await response.json();
                             console.log('✅ Avatar updated successfully:', result);
                             
                             // Refresh user data to show updated avatar
+                            alert('Avatar aggiornato con successo!');
                             setTimeout(() => {
                               window.location.reload();
-                            }, 1000);
+                            }, 500);
 
                           } catch (error) {
                             console.error('❌ Error updating avatar:', error);
-                            alert('Errore durante l\'aggiornamento dell\'avatar. Riprova.');
+                            alert(error instanceof Error ? error.message : 'Errore durante l\'aggiornamento dell\'avatar');
                           }
                         }}
                         loading={false}
