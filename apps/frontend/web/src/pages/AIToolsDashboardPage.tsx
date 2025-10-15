@@ -201,11 +201,17 @@ export default function AIToolsDashboardPage() {
           {aiTools.map((tool) => (
             <Card
               key={tool.id}
-              className={`group relative overflow-hidden border-2 transition-all duration-500 ${
+              className={`group relative overflow-hidden transition-all duration-500 max-w-[calc(100%-76px)] mx-auto ${
                 tool.status === "available"
-                  ? "cursor-pointer border-gray-200 hover:border-orange-400 hover:shadow-2xl hover:scale-[1.02] dark:border-gray-700 dark:hover:border-orange-500"
-                  : "opacity-75 cursor-not-allowed border-gray-200 dark:border-gray-700"
+                  ? "cursor-pointer hover:shadow-2xl hover:scale-[1.02]"
+                  : "opacity-75 cursor-not-allowed"
               }`}
+              style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)'
+              }}
               onClick={() => handleToolClick(tool)}
               data-testid={`card-ai-tool-${tool.id}`}
             >
@@ -225,9 +231,9 @@ export default function AIToolsDashboardPage() {
                 )}
               </div>
 
-              <CardHeader className="space-y-6 pb-6">
+              <CardHeader className="space-y-3 !pb-2 !pt-3 !px-4">
                 {/* Icon con gradiente */}
-                <div className={`inline-flex p-5 rounded-2xl bg-gradient-to-br ${tool.gradient} shadow-xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${tool.gradient} shadow-xl transition-transform duration-500 group-hover:scale-110`}>
                   <div className="text-white">
                     {tool.icon}
                   </div>
@@ -243,7 +249,7 @@ export default function AIToolsDashboardPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6 pt-0">
+              <CardContent className="space-y-3 !pt-0 !px-4 !pb-3">
                 {/* Descrizione principale */}
                 <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
                   {tool.description}
