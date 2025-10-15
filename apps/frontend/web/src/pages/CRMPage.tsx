@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 
-// Import dei content exports (senza Layout/tabs) dalle pagine CRM esistenti
-import { DashboardContent } from './crm/CRMDashboardPage';
-import { CampaignsContent } from './crm/CampaignsPage';
-import { PipelineContent } from './crm/PipelinePage';
-import { LeadsContent } from './crm/LeadsPage';
-import { CustomersContent } from './crm/CustomersPage';
-import { ActivitiesContent } from './crm/ActivitiesPage';
-import { AnalyticsContent } from './crm/AnalyticsPage';
+// Lazy import dei content exports per ottimizzare il caricamento
+const DashboardContent = lazy(() => import('./crm/CRMDashboardPage').then(m => ({ default: m.DashboardContent })));
+const CampaignsContent = lazy(() => import('./crm/CampaignsPage').then(m => ({ default: m.CampaignsContent })));
+const PipelineContent = lazy(() => import('./crm/PipelinePage').then(m => ({ default: m.PipelineContent })));
+const LeadsContent = lazy(() => import('./crm/LeadsPage').then(m => ({ default: m.LeadsContent })));
+const CustomersContent = lazy(() => import('./crm/CustomersPage').then(m => ({ default: m.CustomersContent })));
+const ActivitiesContent = lazy(() => import('./crm/ActivitiesPage').then(m => ({ default: m.ActivitiesContent })));
+const AnalyticsContent = lazy(() => import('./crm/AnalyticsPage').then(m => ({ default: m.AnalyticsContent })));
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -156,7 +156,16 @@ export default function CRMPage() {
           animate="animate"
           exit="exit"
         >
-          {renderContent()}
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 border-4 border-windtre-orange border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-gray-600">Caricamento...</p>
+              </div>
+            </div>
+          }>
+            {renderContent()}
+          </Suspense>
         </motion.div>
       </div>
     </Layout>
