@@ -161,20 +161,13 @@ export default function UnifiedClockingPanel({
     }
   });
 
-  // Real Store Data Hook - Direct API call to working endpoint
+  // Real Store Data Hook - Using default queryFn with correct headers
   const {
     data: storesData,
     isLoading: isLoadingStores,
     error: storesError
   } = useQuery({
-    queryKey: ['stores'],
-    queryFn: () => fetch('/api/stores', {
-      headers: {
-        'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
-        'X-Auth-Session': 'authenticated',
-        'X-Demo-User': 'demo-user'
-      }
-    }).then(res => res.json())
+    queryKey: ['/api/stores']
   });
 
   // 🔥 CRITICAL FIX: Declare state variables BEFORE using them in hooks
@@ -187,14 +180,7 @@ export default function UnifiedClockingPanel({
     isLoading: isLoadingMethods,
     error: methodsError
   } = useQuery({
-    queryKey: ['store-timetracking-methods', selectedStoreId],
-    queryFn: () => fetch(`/api/stores/${selectedStoreId}/timetracking-methods`, {
-      headers: {
-        'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
-        'X-Auth-Session': 'authenticated',
-        'X-Demo-User': 'demo-user'
-      }
-    }).then(res => res.json()),
+    queryKey: [`/api/stores/${selectedStoreId}/timetracking-methods`],
     enabled: !!selectedStoreId // Only run when PDV is selected
   });
 
