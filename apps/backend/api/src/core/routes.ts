@@ -8829,6 +8829,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // QR Action Dispatcher (clock-out, break-start, break-end)
   app.post('/api/hr/time-tracking/qr-action', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.clock'), async (req: any, res) => {
+      console.log("[QR-ACTION] 📥 Request received:", { body: req.body, contentType: req.headers["content-type"], tenantId: req.user?.tenantId, userId: req.user?.id });
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
