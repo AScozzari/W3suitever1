@@ -1393,6 +1393,7 @@ export default function MyPortal() {
                             uploadFormData.append('file', avatarData.blob, 'avatar.jpg');
                             uploadFormData.append('fileName', 'avatar.jpg');
                             uploadFormData.append('contentType', avatarData.blob.type);
+                            uploadFormData.append('objectPath', initResult.data.objectPath);
                             uploadFormData.append('visibility', 'public');
                             uploadFormData.append('category', 'avatars');
 
