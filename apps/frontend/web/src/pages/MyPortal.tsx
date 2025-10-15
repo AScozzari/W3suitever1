@@ -814,13 +814,13 @@ export default function MyPortal() {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                           <thead>
                             <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Richiesta</th>
-                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
-                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Categoria</th>
-                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Tipologia</th>
-                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Data</th>
-                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '20%' }}>Nome Richiesta</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '12%' }}>Dipartimento</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '13%' }}>Categoria</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '13%' }}>Tipologia</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '14%' }}>Data</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '10%' }}>Stato</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '18%' }}>Azioni</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -835,8 +835,8 @@ export default function MyPortal() {
                                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}
                               >
-                                <td style={{ padding: '16px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <td style={{ padding: '16px', textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
                                     <div style={{
                                       background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                                       color: 'white',
@@ -860,7 +860,7 @@ export default function MyPortal() {
                                     </div>
                                   </div>
                                 </td>
-                                <td style={{ padding: '16px' }} data-testid={`text-request-department-${request.id}`}>
+                                <td style={{ padding: '16px', textAlign: 'center' }} data-testid={`text-request-department-${request.id}`}>
                                   <span style={{
                                     fontSize: '12px',
                                     padding: '6px 12px',
@@ -887,8 +887,8 @@ export default function MyPortal() {
                                     {!['hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'].includes(request.department) && (request.department || 'N/A')}
                                   </span>
                                 </td>
-                                <td style={{ padding: '16px' }} data-testid={`text-request-category-${request.id}`}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <td style={{ padding: '16px', textAlign: 'center' }} data-testid={`text-request-category-${request.id}`}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                                     <span style={{ fontSize: '16px' }}>
                                       {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.icon || '📋'}
                                     </span>
@@ -897,7 +897,7 @@ export default function MyPortal() {
                                     </span>
                                   </div>
                                 </td>
-                                <td style={{ padding: '16px' }} data-testid={`text-request-type-${request.id}`}>
+                                <td style={{ padding: '16px', textAlign: 'center' }} data-testid={`text-request-type-${request.id}`}>
                                   <span style={{
                                     fontSize: '12px',
                                     padding: '4px 8px',
@@ -909,10 +909,10 @@ export default function MyPortal() {
                                     {request.type && ITALIAN_REQUEST_TYPES[request.type as keyof typeof ITALIAN_REQUEST_TYPES] || request.type || 'N/A'}
                                   </span>
                                 </td>
-                                <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }} data-testid={`text-request-date-${request.id}`}>
+                                <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280', textAlign: 'center' }} data-testid={`text-request-date-${request.id}`}>
                                   {request.createdAt ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm') : 'N/A'}
                                 </td>
-                                <td style={{ padding: '16px' }}>
+                                <td style={{ padding: '16px', textAlign: 'center' }}>
                                   <span 
                                     style={{
                                       fontSize: '11px',
