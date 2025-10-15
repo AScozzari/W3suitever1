@@ -368,7 +368,7 @@ export default function CampaignsPage() {
               data-testid={`campaign-card-${campaign.id}`}
             >
               <Card 
-                  onClick={() => setLeadsDialogCampaign({ id: campaign.id, name: campaign.name })}
+                  onClick={() => navigate(`crm/leads?campaign=${campaign.id}`)}
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
                     background: 'var(--glass-card-bg)',
@@ -426,10 +426,9 @@ export default function CampaignsPage() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setLeadsDialogCampaign({ id: campaign.id, name: campaign.name });
+                            navigate(`crm/leads?campaign=${campaign.id}`);
                           }}
                           data-testid={`button-view-${campaign.id}`}
-                          title="Visualizza Lead Campagna"
                         />
                         <Settings 
                           className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
@@ -738,7 +737,7 @@ export function CampaignsContent() {
               data-testid={`campaign-card-${campaign.id}`}
             >
               <Card 
-                  onClick={() => setLeadsDialogCampaign({ id: campaign.id, name: campaign.name })}
+                  onClick={() => navigate(`crm/leads?campaign=${campaign.id}`)}
                   className="glass-card border-0 overflow-hidden cursor-pointer"
                   style={{ 
                     background: 'var(--glass-card-bg)',
@@ -796,10 +795,9 @@ export function CampaignsContent() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setLeadsDialogCampaign({ id: campaign.id, name: campaign.name });
+                            navigate(`crm/leads?campaign=${campaign.id}`);
                           }}
                           data-testid={`button-view-${campaign.id}`}
-                          title="Visualizza Lead Campagna"
                         />
                         <Settings 
                           className="h-5 w-5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" 
@@ -954,26 +952,7 @@ export function CampaignsContent() {
         mode={editingCampaignId ? 'edit' : 'create'}
       />
 
-      {/* Campaign Filters Dialog */}
-      <CampaignFiltersDialog
-        open={isFiltersOpen}
-        onClose={() => setIsFiltersOpen(false)}
-        filters={filters}
-        onApplyFilters={(newFilters) => {
-          setFilters(newFilters);
-          setIsFiltersOpen(false);
-        }}
-      />
-
-      {/* Campaign Leads Dialog - Temporarily disabled for debugging */}
-      {/* {leadsDialogCampaign && (
-        <CampaignLeadsDialog
-          open={!!leadsDialogCampaign}
-          onClose={() => setLeadsDialogCampaign(null)}
-          campaignId={leadsDialogCampaign.id}
-          campaignName={leadsDialogCampaign.name}
-        />
-      )} */}
+      {/* Note: CampaignsContent is simplified - no filters dialog */}
     </>
   );
 }

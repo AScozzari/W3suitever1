@@ -1,0 +1,46 @@
+[APP-ROUTER] 🎯 Routing to tenant: "staging"
+NotFound.tsx:24 [404] Page not found - segment: staging Error Component Stack
+    at NotFound (NotFound.tsx:11:27)
+    at Route (wouter.js?v=f76bd004:206:16)
+    at Switch (wouter.js?v=f76bd004:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:221:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:76:59)
+    at Route (wouter.js?v=f76bd004:206:16)
+    at Switch (wouter.js?v=f76bd004:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f76bd004:3081:3)
+    at App (App.tsx:39:3)
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f76bd004:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f76bd004:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f76bd004:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f76bd004:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f76bd004:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f76bd004:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f76bd004:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f76bd004:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f76bd004:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f76bd004:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f76bd004:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f76bd004:18627Understand this warning
+NotFound.tsx:24 [404] Page not found - segment: staging
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f76bd004:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=f76bd004:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=f76bd004:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=f76bd004:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f76bd004:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f76bd004:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f76bd004:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f76bd004:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f76bd004:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f76bd004:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f76bd004:18627Understand this warning
+9customers:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
