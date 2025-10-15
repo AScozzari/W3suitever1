@@ -62,6 +62,11 @@ const campaignFormSchema = z.object({
   channels: z.array(z.string()).optional().default([]),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   
+  // UTM Parameters
+  utmSourceId: z.string().uuid().optional().nullable(),
+  utmMediumId: z.string().uuid().optional().nullable(),
+  utmCampaign: z.string().optional().nullable(),
+  
   // Budget & Tracking
   budget: z.number().optional().nullable(),
   actualSpent: z.number().optional().nullable(),
@@ -159,6 +164,16 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
+  const { data: utmSources = [] } = useQuery({
+    queryKey: ['/api/utm-sources'],
+    enabled: open,
+  });
+
+  const { data: utmMediums = [] } = useQuery({
+    queryKey: ['/api/utm-mediums'],
+    enabled: open,
+  });
+
   // Initialize form
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -178,6 +193,9 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       secondaryPipelineId: null,
       channels: [],
       landingPageUrl: '',
+      utmSourceId: null,
+      utmMediumId: null,
+      utmCampaign: null,
       budget: null,
       actualSpent: null,
       startDate: null,
@@ -211,6 +229,9 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         secondaryPipelineId: campaign.secondaryPipelineId || null,
         channels: campaign.channels || [],
         landingPageUrl: campaign.landingPageUrl || '',
+        utmSourceId: campaign.utmSourceId || null,
+        utmMediumId: campaign.utmMediumId || null,
+        utmCampaign: campaign.utmCampaign || null,
         budget: campaign.budget || null,
         actualSpent: campaign.actualSpent || null,
         startDate: campaign.startDate || null,
@@ -551,6 +572,96 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       </FormItem>
                     )}
                   />
+
+                  <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800">
+                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Parametri UTM (Marketing Attribution)
+                    </h4>
+                    <p className="text-xs text-orange-700 dark:text-orange-300 mb-4">
+                      Traccia la performance di questa campagna per source, medium e nome specifico
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="utmSourceId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>UTM Source *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-utm-source">
+                                  <SelectValue placeholder="Seleziona source" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {utmSources.map((source: any) => (
+                                  <SelectItem key={source.id} value={source.id}>
+                                    {source.displayName} ({source.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription className="text-xs">
+                              Es: Facebook, Instagram, Google
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="utmMediumId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>UTM Medium *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-utm-medium">
+                                  <SelectValue placeholder="Seleziona medium" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {utmMediums.map((medium: any) => (
+                                  <SelectItem key={medium.id} value={medium.id}>
+                                    {medium.displayName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription className="text-xs">
+                              Es: Story Ad, Feed Post, CPC
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="utmCampaign"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>UTM Campaign</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                value={field.value || ''} 
+                                placeholder="promo_black_friday_2025" 
+                                data-testid="input-utm-campaign" 
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Nome specifico campagna
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField

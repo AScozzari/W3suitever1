@@ -101,6 +101,7 @@ import {
   structuredLogs,
   insertEntityLogSchema
 } from "../db/schema/w3suite";
+import { utmSources, utmMediums } from "../db/schema/public";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -1056,6 +1057,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath.startsWith('/public/') ||
         apiPath === '/health' ||
         apiPath === '/tenants/resolve' ||
+        apiPath === '/utm-sources' || // UTM parameters are public reference data
+        apiPath === '/utm-mediums' || // UTM parameters are public reference data
         apiPath === '/' // Skip auth for /api/ root endpoint
       ) {
         const reason = isBrowserRequest ? 'browser page request' : 'static/public asset';
@@ -1169,12 +1172,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path.startsWith('/public/') ||
         req.path.startsWith('/mcp/oauth/') || // OAuth endpoints use query params, not headers
         req.path === '/health' ||
-        req.path === '/tenants/resolve') {  // CRITICAL FIX: Path is relative to /api mount point
+        req.path === '/tenants/resolve' ||
+        req.path === '/utm-sources' || // UTM parameters are public reference data
+        req.path === '/utm-mediums') {  // UTM parameters are public reference data
       console.log(`[TENANT-SKIP] Bypassing tenant middleware for public endpoint: ${req.path}`);
       return next();
     }
     // Apply tenant middleware to all other API routes
     tenantMiddleware(req, res, next);
+  });
+
+  // ==================== UTM PARAMETERS ROUTES (PUBLIC REFERENCE DATA) ====================
+  // GET /api/utm-sources - Get all active UTM sources (public reference data, no auth/tenant required)
+  app.get('/api/utm-sources', async (req: any, res) => {
+    try {
+      const sources = await db.select()
+        .from(utmSources)
+        .where(eq(utmSources.isActive, true))
+        .orderBy(utmSources.sortOrder);
+      
+      res.json(sources);
+    } catch (error) {
+      console.error('[UTM-SOURCES] Error fetching UTM sources:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero UTM sources',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // GET /api/utm-mediums - Get all active UTM mediums (public reference data, no auth/tenant required)
+  app.get('/api/utm-mediums', async (req: any, res) => {
+    try {
+      const { sourceCode } = req.query;
+      
+      let query = db.select()
+        .from(utmMediums)
+        .where(eq(utmMediums.isActive, true));
+      
+      const allMediums = await query.orderBy(utmMediums.sortOrder);
+      
+      // Filter by applicable sources if sourceCode is provided
+      let mediums = allMediums;
+      if (sourceCode) {
+        mediums = allMediums.filter((medium: any) => {
+          const applicableSources = medium.applicableSources || [];
+          return applicableSources.includes(sourceCode);
+        });
+      }
+      
+      res.json(mediums);
+    } catch (error) {
+      console.error('[UTM-MEDIUMS] Error fetching UTM mediums:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero UTM mediums',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   // ==================== WEBHOOK ROUTES ====================
@@ -14054,7 +14108,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount the hierarchy system router with authentication
   app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
   
-  // Direct health check route (outside /api prefix)
+  // ==================== PUBLIC ROUTES (OUTSIDE /api PREFIX) ====================
+  
+  // Direct health check route
   app.get("/health", async (req, res) => {
     try {
       await db.select().from(tenants).limit(1);

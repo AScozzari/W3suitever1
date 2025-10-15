@@ -239,3 +239,48 @@ export const insertPaymentMethodsConditionSchema = createInsertSchema(paymentMet
 });
 export type InsertPaymentMethodsCondition = z.infer<typeof insertPaymentMethodsConditionSchema>;
 export type PaymentMethodsCondition = typeof paymentMethodsConditions.$inferSelect;
+
+// ==================== UTM SOURCES (Marketing Attribution) ====================
+export const utmSources = pgTable("utm_sources", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(), // 'social', 'search', 'email', 'referral', 'direct', 'partner'
+  iconUrl: text("icon_url"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_utm_sources_category").on(table.category),
+  index("idx_utm_sources_active").on(table.isActive),
+]);
+
+export const insertUtmSourceSchema = createInsertSchema(utmSources).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertUtmSource = z.infer<typeof insertUtmSourceSchema>;
+export type UtmSource = typeof utmSources.$inferSelect;
+
+// ==================== UTM MEDIUMS (Marketing Attribution) ====================
+export const utmMediums = pgTable("utm_mediums", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  description: text("description"),
+  applicableSources: jsonb("applicable_sources").$type<string[]>(), // Array of source codes that can use this medium
+  isActive: boolean("is_active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_utm_mediums_active").on(table.isActive),
+]);
+
+export const insertUtmMediumSchema = createInsertSchema(utmMediums).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertUtmMedium = z.infer<typeof insertUtmMediumSchema>;
+export type UtmMedium = typeof utmMediums.$inferSelect;
