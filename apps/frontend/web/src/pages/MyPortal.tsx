@@ -814,7 +814,7 @@ export default function MyPortal() {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                           <thead>
                             <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '20%' }}>Nome Richiesta</th>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '20%' }}>Nome Richiesta</th>
                               <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '12%' }}>Dipartimento</th>
                               <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '13%' }}>Categoria</th>
                               <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', width: '13%' }}>Tipologia</th>
@@ -835,8 +835,8 @@ export default function MyPortal() {
                                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}
                               >
-                                <td style={{ padding: '16px', textAlign: 'center' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                                <td style={{ padding: '16px', textAlign: 'left' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-start' }}>
                                     <div style={{
                                       background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                                       color: 'white',
