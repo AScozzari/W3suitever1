@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'wouter';
-import { useQuery } from '@tantml:parameter/react-query';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
