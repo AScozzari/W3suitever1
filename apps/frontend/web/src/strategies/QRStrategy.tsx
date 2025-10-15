@@ -215,8 +215,17 @@ export class QRStrategy extends BaseStrategy {
       this.expiresAt = data.expiresAt;
       this.generationCount++;
       
+      // 🔍 DEBUG: Log URL length for QR optimization
+      console.log('[QR-STRATEGY] Generated QR URL:', {
+        url: data.url,
+        urlLength: data.url.length,
+        expiresAt: this.expiresAt,
+        generationCount: this.generationCount
+      });
+      
       this.log('info', 'QR code generated from server', {
         url: data.url,
+        urlLength: data.url.length,
         expiresAt: this.expiresAt,
         generationCount: this.generationCount
       });
@@ -373,7 +382,7 @@ function QRPanel({ isActive, isLoading, context, onAction, compact, strategy }: 
                 <QRCodeSVG 
                   value={code} 
                   size={80}
-                  level="M"
+                  level="L"
                   includeMargin={false}
                 />
               ) : (
@@ -437,7 +446,7 @@ function QRPanel({ isActive, isLoading, context, onAction, compact, strategy }: 
                 <QRCodeSVG 
                   value={code} 
                   size={168}
-                  level="H"
+                  level="L"
                   includeMargin={false}
                   data-testid="qr-code-image"
                 />
