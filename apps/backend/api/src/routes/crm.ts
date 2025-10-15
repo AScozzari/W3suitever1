@@ -634,6 +634,93 @@ router.get('/campaigns/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/campaigns/:id/stats
+ * Get real-time campaign statistics (lead counts, conversion rate)
+ */
+router.get('/campaigns/:id/stats', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    
+    await setTenantContext(tenantId);
+
+    // Verify campaign exists
+    const [campaign] = await db
+      .select()
+      .from(crmCampaigns)
+      .where(and(
+        eq(crmCampaigns.id, id),
+        eq(crmCampaigns.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: 'Campaign not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Calculate real-time statistics
+    const statsResult = await db
+      .select({
+        totalLeads: sql<number>`COUNT(*)::int`,
+        workedLeads: sql<number>`COUNT(CASE WHEN status != 'new' THEN 1 END)::int`,
+        notWorkedLeads: sql<number>`COUNT(CASE WHEN status = 'new' THEN 1 END)::int`,
+        wonLeads: sql<number>`COUNT(CASE WHEN status = 'won' THEN 1 END)::int`,
+      })
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.campaignId, id),
+        eq(crmLeads.tenantId, tenantId)
+      ));
+
+    const stats = statsResult[0];
+    const conversionRate = stats.totalLeads > 0 
+      ? parseFloat(((stats.wonLeads / stats.totalLeads) * 100).toFixed(2))
+      : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        campaignId: id,
+        totalLeads: stats.totalLeads,
+        workedLeads: stats.workedLeads,
+        notWorkedLeads: stats.notWorkedLeads,
+        wonLeads: stats.wonLeads,
+        conversionRate,
+        budget: campaign.budget || 0
+      },
+      message: 'Campaign statistics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaign stats', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      campaignId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve campaign statistics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/crm/campaigns
  * Create a new campaign
  */
