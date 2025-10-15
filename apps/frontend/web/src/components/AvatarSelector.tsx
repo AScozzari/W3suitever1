@@ -37,14 +37,14 @@ export default function AvatarSelector({
   // Validate uploaded file
   const validateFile = (file: File): string | null => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 5 * 1024 * 1024; // 5MB
 
     if (!allowedTypes.includes(file.type)) {
       return 'Formato file non supportato. Usa JPEG, PNG, GIF o WEBP.';
     }
 
     if (file.size > maxSize) {
-      return 'File troppo grande. Dimensione massima: 2MB.';
+      return 'File troppo grande. Dimensione massima: 5MB.';
     }
 
     return null;
