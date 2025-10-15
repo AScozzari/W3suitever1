@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { apiRequest } from '@/lib/queryClient';
 
 type CheckinStatus = 'loading' | 'success' | 'error' | 'expired' | 'auth_required' | 'choose_action';
 type QRAction = 'clock-in' | 'clock-out' | 'break-start' | 'break-end';
@@ -73,18 +74,15 @@ export default function QRCheckinPage() {
       
       setMessage(actionMessages[action]);
 
-      const response = await fetch('/api/hr/time-tracking/qr-action', {
+      const data = await apiRequest('/api/hr/time-tracking/qr-action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        credentials: 'include',
         body: JSON.stringify({ token: qrToken, action })
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (data.success) {
         setStatus('success');
         
         const successMessages = {
@@ -101,9 +99,9 @@ export default function QRCheckinPage() {
         setTimeout(() => {
           navigate('my-portal');
         }, 3000);
-      } else {
-        // Check error type
-        const errorMsg = data.error || 'Errore durante la timbratura';
+      } else if (data.error) {
+        // Handle error in successful response
+        const errorMsg = data.error;
         
         // If clock-in failed because already clocked in, show action choices
         if (action === 'clock-in' && errorMsg.includes('already have an active clock-in')) {
@@ -112,17 +110,25 @@ export default function QRCheckinPage() {
         } else if (errorMsg.includes('expired') || errorMsg.includes('scaduto')) {
           setStatus('expired');
           setMessage('QR code scaduto. Richiedi un nuovo codice.');
-        } else if (response.status === 401) {
-          setStatus('auth_required');
-          setMessage('Accesso richiesto. Effettua il login per completare la timbratura.');
         } else {
           setStatus('error');
           setMessage(errorMsg);
         }
       }
     } catch (error: any) {
-      setStatus('error');
-      setMessage(error.message || 'Errore durante la timbratura');
+      const errorMsg = error.message || 'Errore durante la timbratura';
+      
+      // Check for auth errors
+      if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
+        setStatus('auth_required');
+        setMessage('Accesso richiesto. Effettua il login per completare la timbratura.');
+      } else if (errorMsg.includes('expired') || errorMsg.includes('scaduto')) {
+        setStatus('expired');
+        setMessage('QR code scaduto. Richiedi un nuovo codice.');
+      } else {
+        setStatus('error');
+        setMessage(errorMsg);
+      }
     }
   };
 
@@ -141,39 +147,40 @@ export default function QRCheckinPage() {
   const getIcon = () => {
     switch (status) {
       case 'loading':
-        return <Loader2 className="h-16 w-16 animate-spin text-blue-500" />;
+        return <Loader2 className="h-16 w-16 animate-spin text-[#FF6900]" />;
       case 'success':
         return <CheckCircle className="h-16 w-16 text-green-500" />;
       case 'expired':
-        return <Clock className="h-16 w-16 text-orange-500" />;
+        return <Clock className="h-16 w-16 text-[#FF6900]" />;
       case 'auth_required':
-        return <XCircle className="h-16 w-16 text-yellow-500" />;
+        return <XCircle className="h-16 w-16 text-[#7B2CBF]" />;
       case 'choose_action':
-        return <Clock className="h-16 w-16 text-blue-500" />;
+        return <Clock className="h-16 w-16 text-[#FF6900]" />;
       case 'error':
         return <XCircle className="h-16 w-16 text-red-500" />;
     }
   };
 
   const getStatusColor = () => {
+    // WindTre glassmorphism design
     switch (status) {
       case 'success':
-        return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800';
+        return 'bg-white/80 backdrop-blur-xl border-green-200 shadow-xl';
       case 'expired':
-        return 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800';
+        return 'bg-white/80 backdrop-blur-xl border-[#FF6900]/30 shadow-xl';
       case 'auth_required':
-        return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800';
+        return 'bg-white/80 backdrop-blur-xl border-[#7B2CBF]/30 shadow-xl';
       case 'choose_action':
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
+        return 'bg-white/80 backdrop-blur-xl border-[#FF6900]/30 shadow-xl';
       case 'error':
-        return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
+        return 'bg-white/80 backdrop-blur-xl border-red-200 shadow-xl';
       default:
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
+        return 'bg-white/80 backdrop-blur-xl border-[#FF6900]/30 shadow-xl';
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-purple-50 to-orange-100">
       <Card className={`w-full max-w-md ${getStatusColor()} border-2`}>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -256,9 +263,10 @@ export default function QRCheckinPage() {
             <div className="flex gap-2">
               <Button
                 onClick={handleLogin}
-                className="w-full"
+                className="w-full bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] hover:from-[#FF6900]/90 hover:to-[#7B2CBF]/90 text-white"
                 data-testid="button-login"
               >
+                <LogIn className="h-4 w-4 mr-2" />
                 Effettua Login
               </Button>
             </div>
