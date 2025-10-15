@@ -58,7 +58,7 @@ export function CampaignFiltersDialog({
   });
 
   const { data: drivers = [] } = useQuery({
-    queryKey: ['/api/public/drivers'],
+    queryKey: ['/api/drivers'],
     enabled: open,
   });
 

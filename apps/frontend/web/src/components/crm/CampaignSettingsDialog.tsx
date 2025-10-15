@@ -135,7 +135,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
   });
 
   const { data: drivers = [] } = useQuery({
-    queryKey: ['/api/public/drivers'],
+    queryKey: ['/api/drivers'],
     enabled: open,
   });
 
@@ -636,7 +636,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">Nessuno</SelectItem>
+                                <SelectItem value="none">Nessuno</SelectItem>
                                 {users.map((user: any) => (
                                   <SelectItem key={user.id} value={user.id}>
                                     {user.displayName || user.email}
@@ -662,7 +662,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">Nessuno</SelectItem>
+                                <SelectItem value="none">Nessuno</SelectItem>
                                 {teams.map((team: any) => (
                                   <SelectItem key={team.id} value={team.id}>
                                     {team.name}
@@ -720,7 +720,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Nessuno</SelectItem>
+                            <SelectItem value="none">Nessuno</SelectItem>
                             {workflows.map((workflow: any) => (
                               <SelectItem key={workflow.id} value={workflow.id}>
                                 {workflow.name}
@@ -749,7 +749,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Nessuna</SelectItem>
+                            <SelectItem value="none">Nessuna</SelectItem>
                             {pipelines.map((pipeline: any) => (
                               <SelectItem key={pipeline.id} value={pipeline.id}>
                                 {pipeline.name}
@@ -778,7 +778,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Nessuna</SelectItem>
+                            <SelectItem value="none">Nessuna</SelectItem>
                             {pipelines.map((pipeline: any) => (
                               <SelectItem key={pipeline.id} value={pipeline.id}>
                                 {pipeline.name}
