@@ -1356,8 +1356,39 @@ export default function MyPortal() {
                               console.error('❌ No user ID available for avatar update');
                               return;
                             }
+
+                            if (!avatarData.blob) {
+                              console.error('❌ No file blob provided');
+                              return;
+                            }
                             
-                            // Update avatar using existing API endpoint
+                            // Step 1: Upload file to Object Storage
+                            const uploadFormData = new FormData();
+                            uploadFormData.append('file', avatarData.blob);
+                            uploadFormData.append('fileName', 'avatar.jpg');
+                            uploadFormData.append('contentType', avatarData.blob.type);
+                            uploadFormData.append('visibility', 'public');
+                            uploadFormData.append('category', 'avatars');
+
+                            const uploadResponse = await fetch('/api/objects/upload', {
+                              method: 'POST',
+                              headers: {
+                                'X-Tenant-ID': localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001',
+                                'X-Auth-Session': 'authenticated',
+                                'X-Demo-User': 'admin-user'
+                              },
+                              body: uploadFormData
+                            });
+
+                            if (!uploadResponse.ok) {
+                              const uploadError = await uploadResponse.json();
+                              throw new Error(uploadError.message || 'Errore durante l\'upload del file');
+                            }
+
+                            const uploadResult = await uploadResponse.json();
+                            console.log('✅ File uploaded to storage:', uploadResult);
+
+                            // Step 2: Update user avatar with objectPath
                             const response = await fetch(`/api/users/${displayUser.matricola}/avatar`, {
                               method: 'PUT',
                               headers: {
@@ -1367,7 +1398,8 @@ export default function MyPortal() {
                                 'X-Demo-User': 'admin-user'
                               },
                               body: JSON.stringify({
-                                avatarUrl: avatarData.url || null
+                                objectPath: uploadResult.data.objectPath,
+                                avatarUrl: uploadResult.data.publicUrl
                               })
                             });
 
