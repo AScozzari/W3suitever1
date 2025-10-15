@@ -1529,7 +1529,8 @@ ${taskReminder.routing?.mode === 'manual' ? `\nPer MANUAL routing, seleziona gli
 
   } catch (error) {
     logger.error('❌ [AI Generate] Error generating workflow', { 
-      error, 
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
       prompt: req.body?.prompt,
       tenantId: req.user?.tenantId,
       userId: req.user?.id
