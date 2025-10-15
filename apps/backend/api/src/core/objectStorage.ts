@@ -310,14 +310,14 @@ class ReplitObjectStorageService implements ObjectStorageService {
       }
 
       // SECURITY: Proper ACL-based authorization (not path-based)
-      if (acl.permission === 'public') {
+      if (acl.visibility === 'public') {
         // Public objects accessible to all users in the same tenant
         return true;
       }
 
-      if (acl.permission === 'read' || acl.permission === 'write') {
+      if (acl.visibility === 'private') {
         // Private objects - check if user is owner or has explicit permission
-        const hasPermission = acl.userId === userId;
+        const hasPermission = acl.ownerId === userId;
         
         if (!hasPermission) {
           structuredLogger.warn('ACL permission denied for private object', {
@@ -325,8 +325,8 @@ class ReplitObjectStorageService implements ObjectStorageService {
             metadata: { 
               objectPath, 
               requestedUserId: userId, 
-              objectOwnerId: acl.userId,
-              permission: acl.permission
+              objectOwnerId: acl.ownerId,
+              visibility: acl.visibility
             }
           });
         }
@@ -334,10 +334,10 @@ class ReplitObjectStorageService implements ObjectStorageService {
         return hasPermission;
       }
 
-      // Default deny for any unrecognized permission
-      structuredLogger.warn('Unknown permission type - access denied', {
+      // Default deny for any unrecognized visibility
+      structuredLogger.warn('Unknown visibility type - access denied', {
         component: 'object-storage-security',
-        metadata: { objectPath, userId, tenantId, permission: acl.permission }
+        metadata: { objectPath, userId, tenantId, visibility: acl.visibility }
       });
       return false;
       
