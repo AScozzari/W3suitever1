@@ -1362,7 +1362,9 @@ export default function MyPortal() {
                               method: 'PUT',
                               headers: {
                                 'Content-Type': 'application/json',
-                                'X-Tenant-ID': localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001'
+                                'X-Tenant-ID': localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001',
+                                'X-Auth-Session': 'authenticated',
+                                'X-Demo-User': 'admin-user'
                               },
                               body: JSON.stringify({
                                 avatarUrl: avatarData.url || null
