@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,6 +60,17 @@ interface CreateLeadDialogProps {
 
 export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) {
   const { toast } = useToast();
+  
+  // State for UTM parameters inherited from selected campaign
+  const [inheritedUTM, setInheritedUTM] = useState<{
+    utmSourceId: string | null;
+    utmMediumId: string | null;
+    utmCampaign: string | null;
+  }>({
+    utmSourceId: null,
+    utmMediumId: null,
+    utmCampaign: null,
+  });
 
   const form = useForm<LeadFormData>({
     resolver: zodResolver(leadFormSchema),
@@ -80,10 +91,36 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
   });
 
   // Fetch campaigns for selection
-  const { data: campaigns } = useQuery<any[]>({
+  const { data: campaignsResponse } = useQuery<any>({
     queryKey: ['/api/crm/campaigns'],
     enabled: open,
   });
+  
+  const campaigns = campaignsResponse?.data || [];
+  
+  // Watch for campaign selection changes to inherit UTM parameters
+  const selectedCampaignId = form.watch('campaignId');
+  
+  useEffect(() => {
+    if (selectedCampaignId && campaigns.length > 0) {
+      const selectedCampaign = campaigns.find((c: any) => c.id === selectedCampaignId);
+      if (selectedCampaign) {
+        // Inherit UTM parameters from campaign
+        setInheritedUTM({
+          utmSourceId: selectedCampaign.utmSourceId || null,
+          utmMediumId: selectedCampaign.utmMediumId || null,
+          utmCampaign: selectedCampaign.utmCampaign || null,
+        });
+      }
+    } else {
+      // Clear inherited UTM when no campaign selected
+      setInheritedUTM({
+        utmSourceId: null,
+        utmMediumId: null,
+        utmCampaign: null,
+      });
+    }
+  }, [selectedCampaignId, campaigns]);
 
   // Create lead mutation
   const createLeadMutation = useMutation({
@@ -96,6 +133,10 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
           leadScore: 50,
           consentTimestamp: new Date().toISOString(),
           consentSource: 'crm_manual_entry',
+          // Inherit UTM parameters from selected campaign
+          utmSourceId: inheritedUTM.utmSourceId,
+          utmMediumId: inheritedUTM.utmMediumId,
+          utmCampaign: inheritedUTM.utmCampaign,
         }),
       });
     },
