@@ -60,6 +60,7 @@ const campaignFormSchema = z.object({
   
   // Channels & Landing Page
   channels: z.array(z.string()).optional().default([]),
+  marketingChannelIds: z.array(z.string().uuid()).optional().default([]),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   
   // UTM Parameters
@@ -174,6 +175,11 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
+  const { data: marketingChannels = [] } = useQuery({
+    queryKey: ['/api/crm/marketing-channels'],
+    enabled: open,
+  });
+
   // Initialize form
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -192,6 +198,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       primaryPipelineId: null,
       secondaryPipelineId: null,
       channels: [],
+      marketingChannelIds: [],
       landingPageUrl: '',
       utmSourceId: null,
       utmMediumId: null,
@@ -228,6 +235,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         primaryPipelineId: campaign.primaryPipelineId || null,
         secondaryPipelineId: campaign.secondaryPipelineId || null,
         channels: campaign.channels || [],
+        marketingChannelIds: campaign.marketingChannelIds || [],
         landingPageUrl: campaign.landingPageUrl || '',
         utmSourceId: campaign.utmSourceId || null,
         utmMediumId: campaign.utmMediumId || null,
@@ -534,7 +542,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     name="channels"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Canali di Acquisizione</FormLabel>
+                        <FormLabel>Canali di Acquisizione (Legacy)</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="Es: phone, whatsapp, form, social, email, qr (separati da virgola)"
@@ -548,6 +556,44 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                         </FormControl>
                         <FormDescription>
                           Canali attraverso cui i lead possono entrare in questa campagna
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="marketingChannelIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Canali Marketing</FormLabel>
+                        <div className="grid grid-cols-2 gap-3 mt-2">
+                          {marketingChannels.map((channel: any) => (
+                            <div key={channel.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={field.value?.includes(channel.id)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, channel.id]);
+                                  } else {
+                                    field.onChange(current.filter((id: string) => id !== channel.id));
+                                  }
+                                }}
+                                data-testid={`checkbox-marketing-channel-${channel.code}`}
+                              />
+                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {channel.name}
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  ({channel.category})
+                                </span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <FormDescription>
+                          Seleziona i canali marketing utilizzati per questa campagna
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

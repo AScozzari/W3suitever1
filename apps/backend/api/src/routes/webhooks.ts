@@ -397,4 +397,216 @@ function getGitHubPriority(eventType: string): 'low' | 'medium' | 'high' | 'crit
   return 'low';
 }
 
+/**
+ * 🚀 POWERFUL API - Lead Intake Webhook
+ * POST /api/webhooks/powerful/leads
+ * 
+ * Receives leads from Powerful API with automatic campaign management and deduplication.
+ * 
+ * Features:
+ * - Auto-creates campaign if externalCampaignId not found
+ * - Multi-field deduplication (email OR phone OR fiscalCode)
+ * - Smart expiry handling (creates new lead with same personId if expired)
+ * - Batch processing support
+ */
+router.post('/powerful/leads', async (req: Request, res: Response) => {
+  try {
+    const { tenantId, externalCampaignId, leads } = req.body;
+
+    if (!tenantId || !externalCampaignId || !Array.isArray(leads)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: tenantId, externalCampaignId, leads (array)'
+      });
+    }
+
+    logger.info('🚀 Powerful API lead intake started', {
+      tenantId,
+      externalCampaignId,
+      leadsCount: leads.length
+    });
+
+    // Import dependencies (dynamic to avoid circular deps)
+    const { db } = await import('../core/db.js');
+    const { eq, and, or } = await import('drizzle-orm');
+    const { crmCampaigns, crmLeads, crmPersonIdentities } = await import('../db/schema/w3suite.js');
+
+    // Step 1: Find or create campaign
+    let [campaign] = await db.select()
+      .from(crmCampaigns)
+      .where(and(
+        eq(crmCampaigns.tenantId, tenantId),
+        eq(crmCampaigns.externalCampaignId, externalCampaignId)
+      ))
+      .limit(1);
+
+    if (!campaign) {
+      // Auto-create campaign with Powerful API defaults
+      [campaign] = await db.insert(crmCampaigns).values({
+        tenantId,
+        name: `Powerful Campaign ${externalCampaignId}`,
+        externalCampaignId,
+        defaultLeadSource: 'powerful_api',
+        status: 'active',
+        targetDriverIds: [],
+        channels: []
+      }).returning();
+
+      logger.info('🆕 Auto-created campaign for Powerful API', {
+        campaignId: campaign.id,
+        externalCampaignId
+      });
+    }
+
+    const results = {
+      created: [] as string[],
+      updated: [] as string[],
+      skipped: [] as string[],
+      errors: [] as any[]
+    };
+
+    // Step 2: Process each lead with deduplication
+    for (const leadData of leads) {
+      try {
+        const { email, phone, fiscalCode, externalLeadId, validUntil, ...otherFields } = leadData;
+
+        // Build deduplication conditions (email OR phone OR fiscalCode)
+        const dedupeConditions = [];
+        if (email) dedupeConditions.push(eq(crmLeads.email, email));
+        if (phone) dedupeConditions.push(eq(crmLeads.phone, phone));
+        if (fiscalCode) dedupeConditions.push(eq(crmLeads.fiscalCode, fiscalCode));
+
+        if (dedupeConditions.length === 0) {
+          results.errors.push({
+            externalLeadId,
+            error: 'No identifiers provided (email, phone, or fiscalCode required)'
+          });
+          continue;
+        }
+
+        // Check for existing lead
+        const [existingLead] = await db.select()
+          .from(crmLeads)
+          .where(and(
+            eq(crmLeads.tenantId, tenantId),
+            or(...dedupeConditions)
+          ))
+          .limit(1);
+
+        const now = new Date();
+        const isExpired = validUntil && new Date(validUntil) < now;
+
+        if (existingLead) {
+          if (existingLead.validUntil && new Date(existingLead.validUntil) < now) {
+            // Expired lead - create NEW lead with SAME personId
+            const [newLead] = await db.insert(crmLeads).values({
+              tenantId,
+              campaignId: campaign.id,
+              personId: existingLead.personId, // Keep person identity
+              email,
+              phone,
+              fiscalCode,
+              externalLeadId,
+              leadSource: 'powerful_api',
+              validUntil: validUntil ? new Date(validUntil) : null,
+              ...otherFields
+            }).returning();
+
+            results.created.push(newLead.id);
+            logger.info('🆕 Created new lead (expired duplicate)', {
+              newLeadId: newLead.id,
+              oldLeadId: existingLead.id,
+              personId: existingLead.personId
+            });
+          } else {
+            // Active duplicate - skip
+            results.skipped.push(existingLead.id);
+            logger.info('⏭️  Skipped duplicate lead', {
+              leadId: existingLead.id,
+              externalLeadId
+            });
+          }
+        } else {
+          // New lead - create with person identity
+          const personId = crypto.randomUUID();
+          
+          // Create person identities
+          if (email) {
+            await db.insert(crmPersonIdentities).values({
+              tenantId,
+              personId,
+              identifierType: 'email',
+              identifierValue: email
+            }).onConflictDoNothing();
+          }
+          if (phone) {
+            await db.insert(crmPersonIdentities).values({
+              tenantId,
+              personId,
+              identifierType: 'phone',
+              identifierValue: phone
+            }).onConflictDoNothing();
+          }
+
+          const [newLead] = await db.insert(crmLeads).values({
+            tenantId,
+            campaignId: campaign.id,
+            personId,
+            email,
+            phone,
+            fiscalCode,
+            externalLeadId,
+            leadSource: 'powerful_api',
+            validUntil: validUntil ? new Date(validUntil) : null,
+            ...otherFields
+          }).returning();
+
+          results.created.push(newLead.id);
+          logger.info('✅ Created new lead', {
+            leadId: newLead.id,
+            personId,
+            externalLeadId
+          });
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        results.errors.push({
+          externalLeadId: leadData.externalLeadId,
+          error: errorMessage
+        });
+        logger.error('❌ Error processing lead', {
+          externalLeadId: leadData.externalLeadId,
+          error: errorMessage
+        });
+      }
+    }
+
+    logger.info('🏁 Powerful API lead intake completed', {
+      tenantId,
+      campaignId: campaign.id,
+      results
+    });
+
+    return res.status(200).json({
+      success: true,
+      campaignId: campaign.id,
+      results,
+      message: `Processed ${leads.length} leads: ${results.created.length} created, ${results.updated.length} updated, ${results.skipped.length} skipped, ${results.errors.length} errors`
+    });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('💥 Powerful API webhook error', {
+      error: errorMessage,
+      body: req.body
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: errorMessage
+    });
+  }
+});
+
 export default router;

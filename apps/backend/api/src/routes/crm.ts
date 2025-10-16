@@ -31,6 +31,8 @@ import {
   workflowTemplates,
   leadRoutingHistory,
   leadAiInsights,
+  leadStatuses,
+  leadStatusHistory,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmPipelineSchema,
@@ -38,9 +40,11 @@ import {
   insertCrmPipelineWorkflowSchema,
   insertCrmPipelineStageSchema,
   insertCrmDealSchema,
-  insertCrmCustomerSchema
+  insertCrmCustomerSchema,
+  insertLeadStatusSchema,
+  insertLeadStatusHistorySchema
 } from '../db/schema/w3suite';
-import { drivers } from '../db/schema/public';
+import { drivers, marketingChannels } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 
 const router = express.Router();
@@ -3909,6 +3913,404 @@ router.get('/ai/insights/:leadId', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve AI insights',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== MARKETING CHANNELS ====================
+
+/**
+ * GET /api/crm/marketing-channels
+ * Get all active marketing channels (public reference data)
+ */
+router.get('/marketing-channels', async (req, res) => {
+  try {
+    const channels = await db.select()
+      .from(marketingChannels)
+      .where(eq(marketingChannels.active, true))
+      .orderBy(marketingChannels.sortOrder);
+
+    res.status(200).json({
+      success: true,
+      data: channels,
+      message: 'Marketing channels retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving marketing channels', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve marketing channels',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== LEAD STATUSES ====================
+
+/**
+ * GET /api/crm/lead-statuses
+ * Get all lead statuses for the current tenant (fixed + custom)
+ */
+router.get('/lead-statuses', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const statuses = await db.select()
+      .from(leadStatuses)
+      .where(and(
+        eq(leadStatuses.tenantId, tenantId),
+        eq(leadStatuses.isActive, true)
+      ))
+      .orderBy(leadStatuses.sortOrder);
+
+    res.status(200).json({
+      success: true,
+      data: statuses,
+      message: 'Lead statuses retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving lead statuses', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve lead statuses',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/lead-statuses
+ * Create a custom lead status for the tenant
+ */
+router.post('/lead-statuses', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const validatedData = insertLeadStatusSchema.parse({
+      ...req.body,
+      tenantId,
+      createdBy: req.user?.id
+    });
+
+    const [newStatus] = await db.insert(leadStatuses)
+      .values(validatedData)
+      .returning();
+
+    logger.info('Lead status created successfully', {
+      statusId: newStatus.id,
+      tenantId,
+      createdBy: req.user?.id
+    });
+
+    res.status(201).json({
+      success: true,
+      data: newStatus,
+      message: 'Lead status created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating lead status', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      requestBody: req.body
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create lead status',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/lead-statuses/:id
+ * Update a custom lead status
+ */
+router.patch('/lead-statuses/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date()
+    };
+
+    const [updatedStatus] = await db.update(leadStatuses)
+      .set(updateData)
+      .where(and(
+        eq(leadStatuses.id, req.params.id),
+        eq(leadStatuses.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updatedStatus) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Lead status not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Lead status updated successfully', {
+      statusId: updatedStatus.id,
+      tenantId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedStatus,
+      message: 'Lead status updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating lead status', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      statusId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update lead status',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/leads/:id/status
+ * Change lead status with automatic history tracking
+ */
+router.patch('/leads/:id/status', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { newStatusId, notes } = req.body;
+
+    if (!newStatusId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad request',
+        message: 'newStatusId is required',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get current lead with status info
+    const [currentLead] = await db.select({
+      id: crmLeads.id,
+      currentStatusId: crmLeads.statusId,
+      currentStatusName: leadStatuses.name
+    })
+      .from(crmLeads)
+      .leftJoin(leadStatuses, eq(crmLeads.statusId, leadStatuses.id))
+      .where(and(
+        eq(crmLeads.id, req.params.id),
+        eq(crmLeads.tenantId, tenantId)
+      ));
+
+    if (!currentLead) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Lead not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get new status info
+    const [newStatus] = await db.select()
+      .from(leadStatuses)
+      .where(and(
+        eq(leadStatuses.id, newStatusId),
+        eq(leadStatuses.tenantId, tenantId)
+      ));
+
+    if (!newStatus) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'New status not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Update lead and create history in transaction
+    await db.transaction(async (tx) => {
+      // Update lead status
+      await tx.update(crmLeads)
+        .set({
+          statusId: newStatusId,
+          updatedAt: new Date()
+        })
+        .where(eq(crmLeads.id, req.params.id));
+
+      // Create history entry
+      await tx.insert(leadStatusHistory).values({
+        tenantId,
+        leadId: req.params.id,
+        oldStatusId: currentLead.currentStatusId,
+        newStatusId,
+        oldStatusName: currentLead.currentStatusName,
+        newStatusName: newStatus.name,
+        notes,
+        changedBy: req.user?.id
+      });
+    });
+
+    logger.info('Lead status changed successfully', {
+      leadId: req.params.id,
+      oldStatusId: currentLead.currentStatusId,
+      newStatusId,
+      tenantId,
+      changedBy: req.user?.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        leadId: req.params.id,
+        oldStatus: {
+          id: currentLead.currentStatusId,
+          name: currentLead.currentStatusName
+        },
+        newStatus: {
+          id: newStatusId,
+          name: newStatus.name
+        }
+      },
+      message: 'Lead status changed successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error changing lead status', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      leadId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to change lead status',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/leads/:id/status-history
+ * Get status change history for a lead
+ */
+router.get('/leads/:id/status-history', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const history = await db.select({
+      id: leadStatusHistory.id,
+      oldStatusName: leadStatusHistory.oldStatusName,
+      newStatusName: leadStatusHistory.newStatusName,
+      notes: leadStatusHistory.notes,
+      changedAt: leadStatusHistory.changedAt,
+      changedByName: users.fullName
+    })
+      .from(leadStatusHistory)
+      .leftJoin(users, eq(leadStatusHistory.changedBy, users.id))
+      .where(and(
+        eq(leadStatusHistory.leadId, req.params.id),
+        eq(leadStatusHistory.tenantId, tenantId)
+      ))
+      .orderBy(desc(leadStatusHistory.changedAt));
+
+    res.status(200).json({
+      success: true,
+      data: history,
+      message: 'Status history retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving status history', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      leadId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve status history',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

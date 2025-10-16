@@ -50,6 +50,24 @@ export const insertChannelSchema = createInsertSchema(channels).omit({
 export type InsertChannel = z.infer<typeof insertChannelSchema>;
 export type Channel = typeof channels.$inferSelect;
 
+// ==================== MARKETING CHANNELS ====================
+export const marketingChannels = pgTable("marketing_channels", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 20 }).notNull(), // digital, traditional, direct
+  active: boolean("active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMarketingChannelSchema = createInsertSchema(marketingChannels).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertMarketingChannel = z.infer<typeof insertMarketingChannelSchema>;
+export type MarketingChannel = typeof marketingChannels.$inferSelect;
+
 // ==================== COMMERCIAL AREAS ====================
 export const commercialAreas = pgTable("commercial_areas", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

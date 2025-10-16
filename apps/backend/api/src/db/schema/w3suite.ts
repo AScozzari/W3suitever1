@@ -168,6 +168,8 @@ export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media',
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
 export const crmCampaignRoutingModeEnum = pgEnum('crm_campaign_routing_mode', ['automatic', 'manual', 'hybrid']);
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
+export const leadStatusCategoryEnum = pgEnum('lead_status_category', ['new', 'working', 'qualified', 'converted', 'disqualified', 'on_hold']);
+export const leadSourceEnum = pgEnum('lead_source', ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import']);
 export const crmPipelineDomainEnum = pgEnum('crm_pipeline_domain', ['sales', 'service', 'retention']);
 export const crmPipelineStageCategoryEnum = pgEnum('crm_pipeline_stage_category', [
   'starter',    // Fase iniziale contatto
@@ -4565,6 +4567,9 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   requiredConsents: jsonb("required_consents"), // { privacy_policy: true, marketing: false, profiling: true, third_party: false }
   landingPageUrl: text("landing_page_url"),
   channels: text("channels").array(), // Array canali: phone, whatsapp, form, social, email, qr
+  marketingChannelIds: uuid("marketing_channel_ids").array(), // Marketing channels (FK to marketing_channels)
+  externalCampaignId: varchar("external_campaign_id", { length: 255 }), // Powerful API campaign ID
+  defaultLeadSource: leadSourceEnum("default_lead_source"), // Default source for leads
   routingMode: crmCampaignRoutingModeEnum("routing_mode").default('manual'),
   workflowId: uuid("workflow_id"), // Workflow intake associato
   manualReviewTimeoutHours: integer("manual_review_timeout_hours").default(24),
@@ -4633,8 +4638,13 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   
   // ==================== SLA & DATE RANGE MANAGEMENT ====================
   campaignValidUntil: timestamp("campaign_valid_until"), // Eredita end_date dalla campagna (offerta scade con campagna)
+  validUntil: timestamp("valid_until"), // Scadenza PERSONALE lead (diverso da campaignValidUntil)
   slaDeadline: timestamp("sla_deadline"), // Deadline gestione interna (es: created_at + 7 giorni)
   slaConfig: jsonb("sla_config"), // Configurazione SLA { default_days: 7, urgent_days: 2, high_value_days: 3 }
+  
+  // ==================== POWERFUL API INTEGRATION ====================
+  externalLeadId: varchar("external_lead_id", { length: 255 }), // Powerful API lead ID
+  leadSource: leadSourceEnum("lead_source"), // Source: manual, web_form, powerful_api, landing_page, csv_import
   
   // ==================== FASE 1: GTM TRACKING ====================
   gtmClientId: varchar("gtm_client_id", { length: 255 }), // GA Client ID univoco
@@ -4760,6 +4770,42 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   tenantOriginStoreIdx: index("crm_leads_tenant_origin_store_idx").on(table.tenantId, table.originStoreId),
   tenantCampaignIdx: index("crm_leads_tenant_campaign_idx").on(table.tenantId, table.campaignId),
   tenantLifecycleIdx: index("crm_leads_tenant_lifecycle_idx").on(table.tenantId, table.lifecycleStage),
+}));
+
+// ==================== LEAD STATUSES - Custom stati lead per tenant (pattern pipeline stages) ====================
+export const leadStatuses = w3suiteSchema.table("lead_statuses", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 100 }).notNull(),
+  category: leadStatusCategoryEnum("category").notNull(), // new, working, qualified, converted, disqualified, on_hold
+  color: varchar("color", { length: 7 }).notNull(), // Hex color
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("lead_statuses_tenant_id_idx").on(table.tenantId),
+  tenantCategoryIdx: index("lead_statuses_tenant_category_idx").on(table.tenantId, table.category),
+  tenantNameUniq: uniqueIndex("lead_statuses_tenant_name_uniq").on(table.tenantId, table.name),
+}));
+
+// ==================== LEAD STATUS HISTORY - Audit trail cambio stato ====================
+export const leadStatusHistory = w3suiteSchema.table("lead_status_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  leadId: uuid("lead_id").notNull().references(() => crmLeads.id, { onDelete: 'cascade' }),
+  oldStatusId: uuid("old_status_id").references(() => leadStatuses.id),
+  newStatusId: uuid("new_status_id").notNull().references(() => leadStatuses.id),
+  oldStatusName: varchar("old_status_name", { length: 100 }), // Snapshot for history
+  newStatusName: varchar("new_status_name", { length: 100 }).notNull(),
+  notes: text("notes"),
+  changedBy: varchar("changed_by").notNull().references(() => users.id),
+  changedAt: timestamp("changed_at").defaultNow(),
+}, (table) => ({
+  leadIdIdx: index("lead_status_history_lead_id_idx").on(table.leadId),
+  tenantIdIdx: index("lead_status_history_tenant_id_idx").on(table.tenantId),
+  changedAtIdx: index("lead_status_history_changed_at_idx").on(table.changedAt),
 }));
 
 // CRM Pipelines - Sales processes
@@ -5134,6 +5180,21 @@ export const insertCrmLeadSchema = createInsertSchema(crmLeads).omit({
 });
 export type InsertCrmLead = z.infer<typeof insertCrmLeadSchema>;
 export type CrmLead = typeof crmLeads.$inferSelect;
+
+export const insertLeadStatusSchema = createInsertSchema(leadStatuses).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertLeadStatus = z.infer<typeof insertLeadStatusSchema>;
+export type LeadStatus = typeof leadStatuses.$inferSelect;
+
+export const insertLeadStatusHistorySchema = createInsertSchema(leadStatusHistory).omit({ 
+  id: true, 
+  changedAt: true
+});
+export type InsertLeadStatusHistory = z.infer<typeof insertLeadStatusHistorySchema>;
+export type LeadStatusHistory = typeof leadStatusHistory.$inferSelect;
 
 export const insertCrmPipelineSchema = createInsertSchema(crmPipelines).omit({ 
   id: true, 
