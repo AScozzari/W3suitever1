@@ -34,6 +34,8 @@ import {
   leadAiInsights,
   leadStatuses,
   leadStatusHistory,
+  campaignSocialAccounts,
+  mcpConnectedAccounts,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmPipelineSchema,
@@ -935,6 +937,164 @@ router.get('/campaigns/:id/stats', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve campaign statistics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/campaigns/:id/social-accounts
+ * Get all social accounts linked to a campaign
+ */
+router.get('/campaigns/:id/social-accounts', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const accounts = await db
+      .select({
+        id: campaignSocialAccounts.id,
+        campaignId: campaignSocialAccounts.campaignId,
+        mcpAccountId: campaignSocialAccounts.mcpAccountId,
+        platform: campaignSocialAccounts.platform,
+        externalCampaignId: campaignSocialAccounts.externalCampaignId,
+        isActive: campaignSocialAccounts.isActive,
+        createdAt: campaignSocialAccounts.createdAt,
+        accountName: mcpConnectedAccounts.accountName,
+        accountType: mcpConnectedAccounts.accountType
+      })
+      .from(campaignSocialAccounts)
+      .leftJoin(mcpConnectedAccounts, eq(campaignSocialAccounts.mcpAccountId, mcpConnectedAccounts.id))
+      .where(and(
+        eq(campaignSocialAccounts.campaignId, id),
+        eq(campaignSocialAccounts.tenantId, tenantId)
+      ));
+
+    res.status(200).json({
+      success: true,
+      data: accounts,
+      message: 'Campaign social accounts retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaign social accounts', { 
+      errorMessage: error?.message,
+      campaignId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve social accounts',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/campaigns/:id/social-accounts
+ * Link a social account to a campaign
+ */
+router.post('/campaigns/:id/social-accounts', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: campaignId } = req.params;
+    const { mcpAccountId, platform, externalCampaignId } = req.body;
+
+    await setTenantContext(tenantId);
+
+    const [account] = await db
+      .insert(campaignSocialAccounts)
+      .values({
+        tenantId,
+        campaignId,
+        mcpAccountId,
+        platform,
+        externalCampaignId,
+        isActive: true
+      })
+      .returning();
+
+    res.status(201).json({
+      success: true,
+      data: account,
+      message: 'Social account linked to campaign successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error linking social account to campaign', { 
+      errorMessage: error?.message,
+      campaignId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to link social account',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/campaigns/:id/social-accounts/:accountId
+ * Unlink a social account from a campaign
+ */
+router.delete('/campaigns/:id/social-accounts/:accountId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: campaignId, accountId } = req.params;
+    await setTenantContext(tenantId);
+
+    await db
+      .delete(campaignSocialAccounts)
+      .where(and(
+        eq(campaignSocialAccounts.id, accountId),
+        eq(campaignSocialAccounts.campaignId, campaignId),
+        eq(campaignSocialAccounts.tenantId, tenantId)
+      ));
+
+    res.status(200).json({
+      success: true,
+      message: 'Social account unlinked from campaign successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error unlinking social account from campaign', { 
+      errorMessage: error?.message,
+      campaignId: req.params.id,
+      accountId: req.params.accountId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to unlink social account',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
