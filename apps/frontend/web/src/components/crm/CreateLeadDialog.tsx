@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -96,7 +96,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
     enabled: open,
   });
   
-  const campaigns = campaignsResponse?.data || [];
+  const campaigns = useMemo(() => campaignsResponse?.data || [], [campaignsResponse?.data]);
   
   // Watch for campaign selection changes to inherit UTM parameters
   const selectedCampaignId = form.watch('campaignId');

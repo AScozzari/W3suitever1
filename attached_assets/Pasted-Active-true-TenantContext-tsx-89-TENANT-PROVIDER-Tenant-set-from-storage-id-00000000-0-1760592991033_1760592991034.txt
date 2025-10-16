@@ -1,0 +1,83 @@
+Active: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: 
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: 
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+11
+CreateLeadDialog.tsx:117 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at CreateLeadDialog (CreateLeadDialog.tsx:61:36)
+    at CRMCommandPalette (CRMCommandPalette.tsx:26:27)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:142:34)
+    at CampaignsPage (CampaignsPage.tsx:90:45)
+    at AuthenticatedRoute (TenantShell.tsx:480:72)
+    at TenantRoutes (TenantShell.tsx:223:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:78:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:40:3)
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+76
+CreateLeadDialog.tsx:117 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at CreateLeadDialog (CreateLeadDialog.tsx:61:36)
+    at CRMCommandPalette (CRMCommandPalette.tsx:26:27)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:142:34)
+    at CampaignsPage (CampaignsPage.tsx:90:45)
+    at AuthenticatedRoute (TenantShell.tsx:480:72)
+    at TenantRoutes (TenantShell.tsx:223:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:78:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:40:3)
+Layout.tsx:463 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+164
+CreateLeadDialog.tsx:117 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at CreateLeadDialog (CreateLeadDialog.tsx:61:36)
+    at CRMCommandPalette (CRMCommandPalette.tsx:26:27)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:142:34)
+    at CampaignsPage (CampaignsPage.tsx:90:45)
+    at AuthenticatedRoute (TenantShell.tsx:480:72)
+    at TenantRoutes (TenantShell.tsx:223:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:78:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:40:3)
