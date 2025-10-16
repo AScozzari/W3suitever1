@@ -410,7 +410,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     <Workflow className="h-4 w-4 mr-1" />
                     Workflow
                   </TabsTrigger>
-                  <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses">
+                  <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses" disabled={mode === 'create'}>
                     <ListTodo className="h-4 w-4 mr-1" />
                     Stati Lead
                   </TabsTrigger>
@@ -1237,7 +1237,9 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       <div className="flex-1">
                         <h4 className="font-semibold text-lg">Gestione Stati Lead</h4>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Personalizza gli stati del ciclo di vita dei lead per questa campagna. Gli stati sono organizzati in categorie fisse (Nuovo, In Lavorazione, Qualificato, Convertito, Non Qualificato, In Attesa), ma puoi creare stati custom con nomi personalizzati.
+                          {mode === 'create' 
+                            ? 'La gestione stati sarà disponibile dopo aver creato la campagna. Ogni campagna ha stati personalizzabili organizzati in categorie fisse.'
+                            : 'Personalizza gli stati del ciclo di vita dei lead per questa campagna. Gli stati sono organizzati in categorie fisse (Nuovo, In Lavorazione, Qualificato, Convertito, Non Qualificato, In Attesa), ma puoi creare stati custom con nomi personalizzati.'}
                         </p>
                       </div>
                     </div>
@@ -1246,17 +1248,20 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       type="button"
                       onClick={() => setStatusDialogOpen(true)}
                       className="w-full"
+                      disabled={mode === 'create'}
                       data-testid="button-open-lead-statuses"
                     >
                       <Settings2 className="h-4 w-4 mr-2" />
-                      Apri Gestione Stati Lead
+                      {mode === 'create' ? 'Disponibile dopo creazione campagna' : 'Apri Gestione Stati Lead'}
                     </Button>
 
-                    <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Nota:</strong> Gli stati default (uno per categoria) sono protetti e non possono essere eliminati. Puoi creare stati aggiuntivi custom per ogni categoria e personalizzare colori e nomi visualizzati.
-                      </p>
-                    </div>
+                    {mode === 'edit' && (
+                      <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Nota:</strong> Gli stati default (uno per categoria) sono protetti e non possono essere eliminati. Puoi creare stati aggiuntivi custom per ogni categoria e personalizzare colori e nomi visualizzati.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1285,11 +1290,13 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         )}
 
         {/* Lead Status Settings Dialog */}
-        <LeadStatusSettingsDialog 
-          open={statusDialogOpen} 
-          onClose={() => setStatusDialogOpen(false)} 
-          tenantId={tenantId} 
-        />
+        {campaignId && (
+          <LeadStatusSettingsDialog 
+            open={statusDialogOpen} 
+            onClose={() => setStatusDialogOpen(false)} 
+            campaignId={campaignId} 
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
