@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useUTMTracking } from '@/hooks/useUTMTracking';
+import { pushLeadEvent } from '@/lib/gtm';
 import {
   Dialog,
   DialogContent,
@@ -73,6 +75,7 @@ interface CreateLeadDialogProps {
 
 export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) {
   const { toast } = useToast();
+  const { getStoredUTM } = useUTMTracking();
   
   // State for UTM parameters inherited from selected campaign
   const [inheritedUTM, setInheritedUTM] = useState<{
@@ -139,6 +142,9 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
   // Create lead mutation
   const createLeadMutation = useMutation({
     mutationFn: async (data: LeadFormData) => {
+      // Get UTM data from localStorage
+      const storedUTM = getStoredUTM();
+      
       return await apiRequest('/api/crm/leads', {
         method: 'POST',
         body: JSON.stringify({
@@ -147,16 +153,34 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
           leadScore: 50,
           consentTimestamp: new Date().toISOString(),
           consentSource: 'crm_manual_entry',
-          // Inherit UTM parameters from selected campaign
-          utmSourceId: inheritedUTM.utmSourceId,
-          utmMediumId: inheritedUTM.utmMediumId,
-          utmCampaign: inheritedUTM.utmCampaign,
+          // Send UTM parameters (prioritize stored UTM from URL over campaign UTM)
+          utmSource: storedUTM?.utm_source || undefined,
+          utmMedium: storedUTM?.utm_medium || undefined,
+          utmCampaign: storedUTM?.utm_campaign || inheritedUTM.utmCampaign || undefined,
+          utmContent: storedUTM?.utm_content || undefined,
+          utmTerm: storedUTM?.utm_term || undefined,
+          // Fallback to campaign inherited IDs if no stored UTM
+          utmSourceId: storedUTM?.utm_source ? undefined : inheritedUTM.utmSourceId,
+          utmMediumId: storedUTM?.utm_medium ? undefined : inheritedUTM.utmMediumId,
         }),
       });
     },
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/leads'] });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/dashboard/stats'] });
+      
+      // Push generate_lead event to GTM Data Layer
+      const storedUTM = getStoredUTM();
+      pushLeadEvent({
+        email: variables.email || '',
+        phone: variables.phone || '',
+        utm_source: storedUTM?.utm_source,
+        utm_medium: storedUTM?.utm_medium,
+        utm_campaign: storedUTM?.utm_campaign,
+        utm_content: storedUTM?.utm_content,
+        utm_term: storedUTM?.utm_term,
+      });
+      
       toast({
         title: 'Lead creato',
         description: 'Il lead è stato creato con successo.',
