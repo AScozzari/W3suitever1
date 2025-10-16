@@ -9,6 +9,7 @@ import hrRoutes from "../routes/hr";
 import webhookRoutes from "../routes/webhooks";
 import mcpWebhookRoutes from "../routes/mcp-webhooks";
 import metaWebhookRoutes from "../routes/meta-webhook";
+import linkedinWebhookRoutes from "../routes/linkedin-webhook";
 import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
 import mcpRoutes from "../routes/mcp";
@@ -1241,6 +1242,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Social media lead gen webhooks (Facebook/Instagram)
   app.use('/api/webhooks/meta', metaWebhookRoutes);
+  
+  // LinkedIn Lead Gen Forms webhook
+  app.use('/api/webhooks/linkedin', linkedinWebhookRoutes);
 
   // ==================== WORKFLOW MANAGEMENT ROUTES ====================
   // Register workflow management API routes with authentication and tenant middleware
