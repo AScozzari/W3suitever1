@@ -201,7 +201,7 @@ export default function AIToolsDashboardPage() {
           {aiTools.map((tool) => (
             <Card
               key={tool.id}
-              className={`group relative overflow-hidden transition-all duration-500 max-w-[calc(100%-76px)] mx-auto h-full flex flex-col ${
+              className={`group relative overflow-hidden transition-all duration-500 h-full flex flex-col ${
                 tool.status === "available"
                   ? "cursor-pointer hover:shadow-2xl hover:scale-[1.02]"
                   : "opacity-75 cursor-not-allowed"
