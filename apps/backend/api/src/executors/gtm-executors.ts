@@ -1,5 +1,6 @@
 import { GoogleOAuthService } from '../services/google-oauth-service.js';
 import { logger } from '../core/logger.js';
+import crypto from 'crypto';
 
 /**
  * Google Tag Manager (GTM) MCP Executors
@@ -7,9 +8,57 @@ import { logger } from '../core/logger.js';
  * 6 action executors for GTM/Analytics integration:
  * - Track Event, Track Page View, Track Conversion
  * - Setup Tag, Update Tag, Delete Tag
+ * 
+ * Enhanced Conversions support for better attribution
  */
 
 const GTM_API_BASE = 'https://tagmanager.googleapis.com/tagmanager/v2';
+
+// Enhanced Conversions Helper - SHA256 hashing for user data
+function hashUserData(value: string | undefined | null): string | undefined {
+  if (!value) return undefined;
+  
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return undefined;
+  
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
+
+interface EnhancedConversionUserData {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  street?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country?: string;
+}
+
+function buildEnhancedUserData(userData?: EnhancedConversionUserData) {
+  if (!userData) return undefined;
+  
+  const enhanced: Record<string, any> = {};
+  
+  if (userData.email) enhanced.sha256_email_address = hashUserData(userData.email);
+  if (userData.phone) enhanced.sha256_phone_number = hashUserData(userData.phone);
+  if (userData.firstName) enhanced.sha256_first_name = hashUserData(userData.firstName);
+  if (userData.lastName) enhanced.sha256_last_name = hashUserData(userData.lastName);
+  
+  const address: Record<string, any> = {};
+  if (userData.street) address.sha256_street = hashUserData(userData.street);
+  if (userData.city) address.city = userData.city;
+  if (userData.region) address.region = userData.region;
+  if (userData.postalCode) address.postal_code = userData.postalCode;
+  if (userData.country) address.country = userData.country;
+  
+  if (Object.keys(address).length > 0) {
+    enhanced.address = address;
+  }
+  
+  return Object.keys(enhanced).length > 0 ? enhanced : undefined;
+}
 
 // ==================== GTM TRACKING EXECUTORS ====================
 
@@ -163,6 +212,7 @@ export async function executeGTMTrackConversion(params: {
     conversionValue?: number;
     currency?: string;
     transactionId?: string;
+    userData?: EnhancedConversionUserData;
     parameters?: Record<string, any>;
   };
 }): Promise<{ success: boolean; conversionId: string }> {
@@ -177,6 +227,26 @@ export async function executeGTMTrackConversion(params: {
     const measurementId = config.parameters?.measurementId || 'G-XXXXXXXXXX';
     const apiSecret = config.parameters?.apiSecret || '';
 
+    const enhancedUserData = buildEnhancedUserData(config.userData);
+
+    const requestBody: any = {
+      client_id: config.parameters?.clientId || 'default_client',
+      events: [{
+        name: 'conversion',
+        params: {
+          conversion_label: config.conversionLabel,
+          value: config.conversionValue,
+          currency: config.currency || 'EUR',
+          transaction_id: config.transactionId,
+          ...config.parameters
+        }
+      }]
+    };
+
+    if (enhancedUserData) {
+      requestBody.user_data = enhancedUserData;
+    }
+
     const response = await fetch(
       `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`,
       {
@@ -184,19 +254,7 @@ export async function executeGTMTrackConversion(params: {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          client_id: config.parameters?.clientId || 'default_client',
-          events: [{
-            name: 'conversion',
-            params: {
-              conversion_label: config.conversionLabel,
-              value: config.conversionValue,
-              currency: config.currency || 'EUR',
-              transaction_id: config.transactionId,
-              ...config.parameters
-            }
-          }]
-        })
+        body: JSON.stringify(requestBody)
       }
     );
 
@@ -209,7 +267,8 @@ export async function executeGTMTrackConversion(params: {
 
     logger.info('✅ [GTM Track Conversion] Conversion tracked successfully', {
       conversionLabel: config.conversionLabel,
-      conversionId
+      conversionId,
+      enhancedConversions: !!enhancedUserData
     });
 
     return {
