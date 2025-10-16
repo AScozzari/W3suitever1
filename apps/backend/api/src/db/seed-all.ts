@@ -2,6 +2,7 @@ import { seedPaymentMethods } from './seed-payment-methods';
 import { seedPaymentConditions } from './seed-payment-conditions';
 import { seedMCPServers } from './seed-mcp-servers';
 import { seedProductHierarchy } from './seed-product-hierarchy';
+import { seedCRMDemo } from './seed-crm-demo';
 
 /**
  * Seed All Public Reference Data
@@ -23,12 +24,17 @@ async function seedAll() {
     // Seed MCP servers (tenant-specific)
     await seedMCPServers();
     
+    // Seed CRM demo data (campaigns & leads)
+    await seedCRMDemo();
+    
     console.log("🎉 All reference data seeded successfully!");
     console.log("🔍 You can now check the data:");
     console.log("   - Product hierarchy: SELECT * FROM public.driver_categories;");
     console.log("   - Payment methods: SELECT * FROM public.payment_methods;");
     console.log("   - Payment conditions: SELECT * FROM public.payment_methods_conditions;");
     console.log("   - MCP servers: SELECT * FROM w3suite.mcp_servers;");
+    console.log("   - CRM campaigns: SELECT * FROM w3suite.crm_campaigns;");
+    console.log("   - CRM leads: SELECT * FROM w3suite.crm_leads;");
     
   } catch (error) {
     console.error("❌ Error during seeding process:", error);
