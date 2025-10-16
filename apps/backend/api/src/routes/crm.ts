@@ -302,6 +302,20 @@ router.post('/leads', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // Resolve UTM parameters to IDs if provided
+    let utmSourceId = validation.data.utmSourceId;
+    let utmMediumId = validation.data.utmMediumId;
+    
+    if ((validation.data.utmSource || validation.data.utmMedium) && (!utmSourceId || !utmMediumId)) {
+      const { resolveUTMIds } = await import('../utils/utm-resolver');
+      const utmResolution = await resolveUTMIds(
+        validation.data.utmSource,
+        validation.data.utmMedium
+      );
+      utmSourceId = utmResolution.utmSourceId;
+      utmMediumId = utmResolution.utmMediumId;
+    }
+
     // Get or create personId with intelligent matching
     const personId = await getOrCreatePersonId(
       tenantId,
@@ -315,7 +329,9 @@ router.post('/leads', async (req, res) => {
       .values({
         ...validation.data,
         tenantId,
-        personId
+        personId,
+        utmSourceId,
+        utmMediumId
       })
       .returning();
 
