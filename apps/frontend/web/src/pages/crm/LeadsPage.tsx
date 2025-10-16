@@ -280,6 +280,15 @@ export default function LeadsPage() {
                   {leads.length} lead totali • Tracking GTM • Multi-PDV Attribution
                 </p>
               </div>
+              <Button
+                onClick={() => setIsStatusSettingsOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+                data-testid="button-lead-status-settings"
+              >
+                <Settings className="h-4 w-4" />
+                Gestione Stati
+              </Button>
             </div>
             
             {/* Navigation Tabs */}
