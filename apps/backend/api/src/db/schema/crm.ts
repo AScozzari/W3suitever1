@@ -4,6 +4,7 @@ import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { tenants, users } from './w3suite';
 import { stores } from './w3suite';
+import { utmSources, utmMediums } from './public';
 
 // ==================== CUSTOMERS ====================
 export const customers = pgTable('customers', {
@@ -65,6 +66,12 @@ export const leads = pgTable('leads', {
   convertedAt: timestamp('converted_at'),
   lastContactAt: timestamp('last_contact_at'),
   nextActionAt: timestamp('next_action_at'),
+  // UTM Marketing Attribution Parameters (inherited from campaign or captured from URL)
+  utmSourceId: uuid('utm_source_id').references(() => utmSources.id),
+  utmMediumId: uuid('utm_medium_id').references(() => utmMediums.id),
+  utmCampaign: varchar('utm_campaign', { length: 255 }),
+  utmContent: varchar('utm_content', { length: 255 }), // For A/B testing (e.g., 'cta-blue', 'banner-top')
+  utmTerm: varchar('utm_term', { length: 255 }), // For paid search keywords
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
