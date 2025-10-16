@@ -111,11 +111,13 @@ router.post('/', express.json({ verify: (req: any, res, buf) => {
             };
             
             const externalLeadsUrl = `${req.protocol}://${req.get('host')}/api/crm/external-leads`;
+            const apiKey = process.env.EXTERNAL_LEADS_API_KEY || 'default-dev-key-change-in-production';
             
             const response = await fetch(externalLeadsUrl, {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey
               },
               body: JSON.stringify(leadPayload)
             });
