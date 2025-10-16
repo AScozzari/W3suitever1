@@ -14,9 +14,10 @@ import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
-import { eq, and, sql, desc, or, ilike, getTableColumns } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, getTableColumns, inArray } from 'drizzle-orm';
 import {
   users,
+  stores,
   crmLeads,
   crmCampaigns,
   crmPipelines,
@@ -548,69 +549,69 @@ router.get('/campaigns', async (req, res) => {
       conditions.push(eq(crmCampaigns.type, type as string));
     }
 
-    const campaigns = await db
-      .select({
-        ...getTableColumns(crmCampaigns),
-        totalLeads: sql<number>`(
-          SELECT COUNT(*)::int 
-          FROM w3suite.crm_leads 
-          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
-          AND crm_leads.tenant_id = ${tenantId}
-        )`,
-        workedLeads: sql<number>`(
-          SELECT COUNT(*)::int 
-          FROM w3suite.crm_leads 
-          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
-          AND crm_leads.tenant_id = ${tenantId}
-          AND crm_leads.status != 'new'
-        )`,
-        notWorkedLeads: sql<number>`(
-          SELECT COUNT(*)::int 
-          FROM w3suite.crm_leads 
-          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
-          AND crm_leads.tenant_id = ${tenantId}
-          AND crm_leads.status = 'new'
-        )`,
-        conversionRate: sql<number>`(
-          SELECT CASE 
-            WHEN COUNT(*) > 0 THEN 
-              ROUND((COUNT(CASE WHEN status = 'converted' THEN 1 END)::numeric / COUNT(*)::numeric * 100), 2)
-            ELSE 0 
-          END
-          FROM w3suite.crm_leads 
-          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
-          AND crm_leads.tenant_id = ${tenantId}
-        )`,
-        storeName: sql<string>`(
-          SELECT nome 
-          FROM w3suite.stores 
-          WHERE stores.id = ${crmCampaigns.storeId}
-        )`,
-        utmSourceName: sql<string>`(
-          SELECT display_name 
-          FROM public.utm_sources 
-          WHERE utm_sources.id = ${crmCampaigns.utmSourceId}
-        )`,
-        utmMediumName: sql<string>`(
-          SELECT display_name 
-          FROM public.utm_mediums 
-          WHERE utm_mediums.id = ${crmCampaigns.utmMediumId}
-        )`,
-        marketingChannelNames: sql<string>`(
-          SELECT STRING_AGG(mc.name, ', ' ORDER BY mc.name) 
-          FROM public.marketing_channels mc
-          WHERE mc.id = ANY(${crmCampaigns.marketingChannelIds})
-        )`
-      })
+    // Get campaigns first
+    const campaignsResult = await db
+      .select()
       .from(crmCampaigns)
       .where(and(...conditions))
       .orderBy(desc(crmCampaigns.createdAt))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
+    
+    const campaigns = Array.isArray(campaignsResult) ? campaignsResult : (campaignsResult as any).rows || [];
+
+    // Enrich each campaign with computed fields
+    const enrichedCampaigns = await Promise.all(campaigns.map(async (campaign) => {
+      // Get lead counts
+      const statsResult = await db.execute<any>(sql`
+        SELECT 
+          COUNT(*)::int as total_leads,
+          COUNT(CASE WHEN status != 'new' THEN 1 END)::int as worked_leads,
+          COUNT(CASE WHEN status = 'new' THEN 1 END)::int as not_worked_leads,
+          CASE 
+            WHEN COUNT(*) > 0 THEN 
+              ROUND((COUNT(CASE WHEN status = 'converted' THEN 1 END)::numeric / COUNT(*)::numeric * 100), 2)
+            ELSE 0 
+          END as conversion_rate
+        FROM w3suite.crm_leads
+        WHERE campaign_id = ${campaign.id} AND tenant_id = ${tenantId}
+      `);
+      const stats = statsResult.rows?.[0] || { total_leads: 0, worked_leads: 0, not_worked_leads: 0, conversion_rate: 0 };
+
+      // Get store name
+      const storeResult = await db
+        .select({ nome: stores.nome })
+        .from(stores)
+        .where(eq(stores.id, campaign.storeId || ''))
+        .limit(1);
+      const storeName = storeResult[0]?.nome || null;
+
+      // Get marketing channel names
+      let marketingChannelNames = null;
+      if (campaign.marketingChannelIds && campaign.marketingChannelIds.length > 0) {
+        const channels = await db
+          .select({ name: marketingChannels.name })
+          .from(marketingChannels)
+          .where(inArray(marketingChannels.id, campaign.marketingChannelIds));
+        marketingChannelNames = channels.map(c => c.name).sort().join(', ') || null;
+      }
+
+      return {
+        ...campaign,
+        totalLeads: stats.total_leads,
+        workedLeads: stats.worked_leads,
+        notWorkedLeads: stats.not_worked_leads,
+        conversionRate: stats.conversion_rate,
+        storeName,
+        marketingChannelNames,
+        utmSourceName: null,
+        utmMediumName: null
+      };
+    }));
 
     res.status(200).json({
       success: true,
-      data: campaigns,
+      data: enrichedCampaigns,
       message: 'Campaigns retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
