@@ -4594,6 +4594,33 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   storeIdIdx: index("crm_campaigns_store_id_idx").on(table.storeId),
 }));
 
+// Campaign Social Accounts - Link campagne a account social MCP (Facebook Pages, Instagram, LinkedIn)
+export const campaignSocialAccounts = w3suiteSchema.table("campaign_social_accounts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  campaignId: uuid("campaign_id").notNull().references(() => crmCampaigns.id, { onDelete: 'cascade' }),
+  mcpAccountId: uuid("mcp_account_id").notNull().references(() => mcpConnectedAccounts.id, { onDelete: 'cascade' }),
+  platform: varchar("platform", { length: 50 }).notNull(), // 'facebook', 'instagram', 'linkedin', 'google', etc.
+  externalCampaignId: varchar("external_campaign_id", { length: 255 }), // Campaign ID on the platform (FB Campaign ID, LinkedIn Campaign URN)
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIdIdx: index("campaign_social_accounts_tenant_id_idx").on(table.tenantId),
+  campaignIdIdx: index("campaign_social_accounts_campaign_id_idx").on(table.campaignId),
+  mcpAccountIdIdx: index("campaign_social_accounts_mcp_account_id_idx").on(table.mcpAccountId),
+  externalCampaignIdIdx: index("campaign_social_accounts_external_campaign_id_idx").on(table.externalCampaignId),
+  uniqueCampaignMcpAccount: uniqueIndex("campaign_social_accounts_campaign_mcp_unique").on(table.campaignId, table.mcpAccountId),
+}));
+
+export const insertCampaignSocialAccountSchema = createInsertSchema(campaignSocialAccounts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCampaignSocialAccount = z.infer<typeof insertCampaignSocialAccountSchema>;
+export type CampaignSocialAccount = typeof campaignSocialAccounts.$inferSelect;
+
 // CRM Leads - Lead con person_id auto-generated (match su email/phone/social)
 export const crmLeads = w3suiteSchema.table("crm_leads", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
