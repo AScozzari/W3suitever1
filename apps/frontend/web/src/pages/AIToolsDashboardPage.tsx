@@ -201,7 +201,7 @@ export default function AIToolsDashboardPage() {
           {aiTools.map((tool) => (
             <Card
               key={tool.id}
-              className={`group relative overflow-hidden transition-all duration-500 max-w-[calc(100%-76px)] mx-auto ${
+              className={`group relative overflow-hidden transition-all duration-500 max-w-[calc(100%-76px)] mx-auto h-full flex flex-col ${
                 tool.status === "available"
                   ? "cursor-pointer hover:shadow-2xl hover:scale-[1.02]"
                   : "opacity-75 cursor-not-allowed"
@@ -289,9 +289,9 @@ export default function AIToolsDashboardPage() {
                 {/* CTA per tool disponibili */}
                 {tool.status === "available" && (
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className={`flex items-center justify-between text-sm font-semibold bg-gradient-to-r ${tool.gradient} bg-clip-text text-transparent group-hover:translate-x-2 transition-transform duration-300`}>
+                    <div className={`flex items-center justify-between text-sm font-semibold bg-gradient-to-r ${tool.gradient} bg-clip-text text-transparent`}>
                       <span>Inizia Subito →</span>
-                      <ArrowRight className={`h-4 w-4 ${tool.iconColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                      <ArrowRight className={`h-4 w-4 ${tool.iconColor}`} />
                     </div>
                   </div>
                 )}
