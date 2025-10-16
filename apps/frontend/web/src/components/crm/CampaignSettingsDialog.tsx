@@ -193,6 +193,27 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
+  const { data: utmMappings = [] } = useQuery({
+    queryKey: ['/api/crm/marketing-channels/utm-mappings'],
+    enabled: open,
+  });
+
+  // Calculate suggested UTM values based on selected marketing channels
+  const suggestedUtmValues = form.watch('marketingChannelIds')?.length > 0
+    ? (() => {
+        const selectedChannelIds = form.watch('marketingChannelIds') || [];
+        const firstSelectedId = selectedChannelIds[0];
+        const mapping = utmMappings.find((m: any) => m.marketing_channel_utm_mappings?.marketingChannelId === firstSelectedId);
+        if (mapping) {
+          return {
+            source: mapping.marketing_channel_utm_mappings?.suggestedUtmSource,
+            medium: mapping.marketing_channel_utm_mappings?.suggestedUtmMedium,
+          };
+        }
+        return null;
+      })()
+    : null;
+
   // Initialize form
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -669,7 +690,13 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                               </SelectContent>
                             </Select>
                             <FormDescription className="text-xs">
-                              Es: Facebook, Instagram, Google
+                              {suggestedUtmValues?.source ? (
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                  💡 Suggerito: {suggestedUtmValues.source}
+                                </span>
+                              ) : (
+                                "Es: Facebook, Instagram, Google"
+                              )}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -697,7 +724,13 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                               </SelectContent>
                             </Select>
                             <FormDescription className="text-xs">
-                              Es: Story Ad, Feed Post, CPC
+                              {suggestedUtmValues?.medium ? (
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                  💡 Suggerito: {suggestedUtmValues.medium}
+                                </span>
+                              ) : (
+                                "Es: Story Ad, Feed Post, CPC"
+                              )}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
