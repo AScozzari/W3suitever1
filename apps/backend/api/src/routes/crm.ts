@@ -4166,6 +4166,86 @@ router.patch('/lead-statuses/:id', async (req, res) => {
 });
 
 /**
+ * DELETE /api/crm/lead-statuses/:id
+ * Delete a custom lead status (cannot delete default statuses)
+ */
+router.delete('/lead-statuses/:id', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Check if status exists and is not default
+    const [status] = await db.select()
+      .from(leadStatuses)
+      .where(and(
+        eq(leadStatuses.id, req.params.id),
+        eq(leadStatuses.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!status) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not found',
+        message: 'Lead status not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (status.isDefault) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad request',
+        message: 'Cannot delete default lead status',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Delete the status
+    await db.delete(leadStatuses)
+      .where(and(
+        eq(leadStatuses.id, req.params.id),
+        eq(leadStatuses.tenantId, tenantId)
+      ));
+
+    logger.info('Lead status deleted successfully', {
+      statusId: req.params.id,
+      tenantId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { id: req.params.id },
+      message: 'Lead status deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting lead status', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      statusId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete lead status',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * PATCH /api/crm/leads/:id/status
  * Change lead status with automatic history tracking
  */
