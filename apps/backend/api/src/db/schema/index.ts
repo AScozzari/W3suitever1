@@ -194,6 +194,28 @@ export type { InsertEntityLog, EntityLog } from './w3suite';
 // ==================== BRAND INTERFACE MOVED TO SEPARATE SCHEMA ====================
 // Brand Interface tables are now in brand-interface.ts with dedicated 'brand_interface' schema
 
+// ==================== CRM MODULE RE-EXPORTED FROM CRM SCHEMA ====================
+// Import and re-export CRM tables (customers, leads) with UTM tracking
+import {
+  customers,
+  leads,
+  insertCustomerSchema,
+  insertLeadSchema,
+  type Customer,
+  type InsertCustomer,
+  type InsertLead
+} from './crm';
+
+export {
+  customers,
+  leads,
+  insertCustomerSchema,
+  insertLeadSchema,
+  type Customer,
+  type InsertCustomer,
+  type InsertLead
+};
+
 // ==================== AI PDC ANALYZER SYSTEM (BRAND INTERFACE) ====================
 import {
   aiPdcAnalysisSessions,
