@@ -38,6 +38,10 @@ interface CampaignSettingsDialogProps {
 const routingModes = ['automatic', 'manual', 'hybrid'] as const;
 type RoutingMode = typeof routingModes[number];
 
+// Lead source enum (matches backend)
+const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
+type LeadSource = typeof leadSources[number];
+
 // Form schema with validation
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Nome campagna obbligatorio").max(255),
@@ -58,8 +62,8 @@ const campaignFormSchema = z.object({
   primaryPipelineId: z.string().uuid().optional().nullable(),
   secondaryPipelineId: z.string().uuid().optional().nullable(),
   
-  // Channels & Landing Page
-  channels: z.array(z.string()).optional().default([]),
+  // Lead Source & Marketing Channels
+  defaultLeadSource: z.enum(leadSources).optional().nullable(),
   marketingChannelIds: z.array(z.string().uuid()).optional().default([]),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   
@@ -109,6 +113,15 @@ const campaignFormSchema = z.object({
 }, {
   message: "Modalità ibrida richiede timeout per revisione manuale",
   path: ['manualReviewTimeoutHours']
+}).refine(data => {
+  // If lead source is landing_page, URL is required
+  if (data.defaultLeadSource === 'landing_page' && !data.landingPageUrl) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Landing Page URL obbligatorio quando Lead Source è 'Landing Page'",
+  path: ['landingPageUrl']
 });
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
@@ -197,7 +210,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       workflowId: null,
       primaryPipelineId: null,
       secondaryPipelineId: null,
-      channels: [],
+      defaultLeadSource: null,
       marketingChannelIds: [],
       landingPageUrl: '',
       utmSourceId: null,
@@ -234,7 +247,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         workflowId: campaign.workflowId || null,
         primaryPipelineId: campaign.primaryPipelineId || null,
         secondaryPipelineId: campaign.secondaryPipelineId || null,
-        channels: campaign.channels || [],
+        defaultLeadSource: campaign.defaultLeadSource || null,
         marketingChannelIds: campaign.marketingChannelIds || [],
         landingPageUrl: campaign.landingPageUrl || '',
         utmSourceId: campaign.utmSourceId || null,
@@ -539,23 +552,29 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                 <TabsContent value="targeting" className="space-y-4 mt-4">
                   <FormField
                     control={form.control}
-                    name="channels"
+                    name="defaultLeadSource"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Canali di Acquisizione (Legacy)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Es: phone, whatsapp, form, social, email, qr (separati da virgola)"
-                            value={field.value?.join(', ') || ''}
-                            onChange={(e) => {
-                              const channels = e.target.value.split(',').map(c => c.trim()).filter(Boolean);
-                              field.onChange(channels);
-                            }}
-                            data-testid="input-channels"
-                          />
-                        </FormControl>
+                        <FormLabel>Lead Source (Origine Lead Predefinita)</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || undefined}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-default-lead-source">
+                              <SelectValue placeholder="Seleziona l'origine dei lead" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="manual">Manuale</SelectItem>
+                            <SelectItem value="web_form">Form Web</SelectItem>
+                            <SelectItem value="landing_page">Landing Page</SelectItem>
+                            <SelectItem value="powerful_api">Powerful API</SelectItem>
+                            <SelectItem value="csv_import">Import CSV</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormDescription>
-                          Canali attraverso cui i lead possono entrare in questa campagna
+                          Origine predefinita dei lead acquisiti da questa campagna
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
