@@ -595,6 +595,11 @@ router.get('/campaigns', async (req, res) => {
           SELECT display_name 
           FROM public.utm_mediums 
           WHERE utm_mediums.id = ${crmCampaigns.utmMediumId}
+        )`,
+        marketingChannelNames: sql<string>`(
+          SELECT STRING_AGG(mc.name, ', ' ORDER BY mc.name) 
+          FROM public.marketing_channels mc
+          WHERE mc.id = ANY(${crmCampaigns.marketingChannelIds})
         )`
       })
       .from(crmCampaigns)

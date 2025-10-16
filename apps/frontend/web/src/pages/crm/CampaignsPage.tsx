@@ -526,47 +526,58 @@ export default function CampaignsPage() {
                   </div>
                 </div>
 
-                {/* Target Info Section */}
-                {((campaign as any).storeName || (campaign as any).utmSourceName || (campaign as any).landingPageUrl) && (
-                  <div 
-                    className="px-6 py-3 space-y-2"
-                    style={{ 
-                      background: 'var(--glass-bg-light)',
-                      borderTop: '1px solid var(--glass-card-border)'
-                    }}
-                  >
-                    {(campaign as any).storeName && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span style={{ color: 'var(--text-tertiary)' }}>📍 Store:</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {(campaign as any).storeName}
-                        </span>
-                      </div>
-                    )}
-                    {((campaign as any).utmSourceName || (campaign as any).utmMediumName) && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span style={{ color: 'var(--text-tertiary)' }}>🔗 UTM:</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {(campaign as any).utmSourceName} / {(campaign as any).utmMediumName}
-                        </span>
-                      </div>
-                    )}
-                    {(campaign as any).landingPageUrl && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span style={{ color: 'var(--text-tertiary)' }}>🌐 URL:</span>
-                        <a 
-                          href={(campaign as any).landingPageUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="font-medium hover:underline truncate max-w-[200px]"
-                          style={{ color: 'hsl(var(--brand-orange))' }}
-                        >
-                          {(campaign as any).landingPageUrl}
-                        </a>
-                      </div>
+                {/* Campaign Info Section - Always Visible */}
+                <div 
+                  className="px-6 py-3 space-y-2"
+                  style={{ 
+                    background: 'var(--glass-bg-light)',
+                    borderTop: '1px solid var(--glass-card-border)'
+                  }}
+                >
+                  {/* Store */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>📍 Store:</span>
+                    <span className="font-medium" style={{ color: (campaign as any).storeName ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                      {(campaign as any).storeName || 'Non specificato'}
+                    </span>
+                  </div>
+
+                  {/* Landing Page URL */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>🌐 URL:</span>
+                    {(campaign as any).landingPageUrl ? (
+                      <a 
+                        href={(campaign as any).landingPageUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="font-medium hover:underline truncate max-w-[200px]"
+                        style={{ color: 'hsl(var(--brand-orange))' }}
+                      >
+                        {(campaign as any).landingPageUrl}
+                      </a>
+                    ) : (
+                      <span className="font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                        Non specificato
+                      </span>
                     )}
                   </div>
-                )}
+
+                  {/* Lead Source */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>📥 Lead Source:</span>
+                    <span className="font-medium" style={{ color: (campaign as any).defaultLeadSource ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                      {(campaign as any).defaultLeadSource || 'Non specificato'}
+                    </span>
+                  </div>
+
+                  {/* Marketing Channel */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>📢 Channel Marketing:</span>
+                    <span className="font-medium" style={{ color: (campaign as any).marketingChannelNames ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                      {(campaign as any).marketingChannelNames || 'Non specificato'}
+                    </span>
+                  </div>
+                </div>
               </Card>
             </motion.div>
           ))}
@@ -936,47 +947,58 @@ export function CampaignsContent() {
                   </div>
                 </div>
 
-                {/* Target Info Section */}
-                {((campaign as any).storeName || (campaign as any).utmSourceName || (campaign as any).landingPageUrl) && (
-                  <div 
-                    className="px-6 py-3 space-y-2"
-                    style={{ 
-                      background: 'var(--glass-bg-light)',
-                      borderTop: '1px solid var(--glass-card-border)'
-                    }}
-                  >
-                    {(campaign as any).storeName && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span style={{ color: 'var(--text-tertiary)' }}>📍 Store:</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {(campaign as any).storeName}
-                        </span>
-                      </div>
-                    )}
-                    {((campaign as any).utmSourceName || (campaign as any).utmMediumName) && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span style={{ color: 'var(--text-tertiary)' }}>🔗 UTM:</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {(campaign as any).utmSourceName} / {(campaign as any).utmMediumName}
-                        </span>
-                      </div>
-                    )}
-                    {(campaign as any).landingPageUrl && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span style={{ color: 'var(--text-tertiary)' }}>🌐 URL:</span>
-                        <a 
-                          href={(campaign as any).landingPageUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="font-medium hover:underline truncate max-w-[200px]"
-                          style={{ color: 'hsl(var(--brand-orange))' }}
-                        >
-                          {(campaign as any).landingPageUrl}
-                        </a>
-                      </div>
+                {/* Campaign Info Section - Always Visible */}
+                <div 
+                  className="px-6 py-3 space-y-2"
+                  style={{ 
+                    background: 'var(--glass-bg-light)',
+                    borderTop: '1px solid var(--glass-card-border)'
+                  }}
+                >
+                  {/* Store */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>📍 Store:</span>
+                    <span className="font-medium" style={{ color: (campaign as any).storeName ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                      {(campaign as any).storeName || 'Non specificato'}
+                    </span>
+                  </div>
+
+                  {/* Landing Page URL */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>🌐 URL:</span>
+                    {(campaign as any).landingPageUrl ? (
+                      <a 
+                        href={(campaign as any).landingPageUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="font-medium hover:underline truncate max-w-[200px]"
+                        style={{ color: 'hsl(var(--brand-orange))' }}
+                      >
+                        {(campaign as any).landingPageUrl}
+                      </a>
+                    ) : (
+                      <span className="font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                        Non specificato
+                      </span>
                     )}
                   </div>
-                )}
+
+                  {/* Lead Source */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>📥 Lead Source:</span>
+                    <span className="font-medium" style={{ color: (campaign as any).defaultLeadSource ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                      {(campaign as any).defaultLeadSource || 'Non specificato'}
+                    </span>
+                  </div>
+
+                  {/* Marketing Channel */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span style={{ color: 'var(--text-tertiary)' }}>📢 Channel Marketing:</span>
+                    <span className="font-medium" style={{ color: (campaign as any).marketingChannelNames ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                      {(campaign as any).marketingChannelNames || 'Non specificato'}
+                    </span>
+                  </div>
+                </div>
               </Card>
             </motion.div>
           ))}
