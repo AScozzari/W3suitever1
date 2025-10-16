@@ -68,6 +68,24 @@ export const insertMarketingChannelSchema = createInsertSchema(marketingChannels
 export type InsertMarketingChannel = z.infer<typeof insertMarketingChannelSchema>;
 export type MarketingChannel = typeof marketingChannels.$inferSelect;
 
+// ==================== MARKETING CHANNEL UTM MAPPINGS ====================
+export const marketingChannelUtmMappings = pgTable("marketing_channel_utm_mappings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  marketingChannelId: uuid("marketing_channel_id").notNull().references(() => marketingChannels.id, { onDelete: 'cascade' }),
+  suggestedUtmSource: varchar("suggested_utm_source", { length: 100 }).notNull(),
+  suggestedUtmMedium: varchar("suggested_utm_medium", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_marketing_channel_utm_mappings_channel").on(table.marketingChannelId),
+]);
+
+export const insertMarketingChannelUtmMappingSchema = createInsertSchema(marketingChannelUtmMappings).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertMarketingChannelUtmMapping = z.infer<typeof insertMarketingChannelUtmMappingSchema>;
+export type MarketingChannelUtmMapping = typeof marketingChannelUtmMappings.$inferSelect;
+
 // ==================== COMMERCIAL AREAS ====================
 export const commercialAreas = pgTable("commercial_areas", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

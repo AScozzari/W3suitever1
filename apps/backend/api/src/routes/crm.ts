@@ -44,7 +44,7 @@ import {
   insertLeadStatusSchema,
   insertLeadStatusHistorySchema
 } from '../db/schema/w3suite';
-import { drivers, marketingChannels } from '../db/schema/public';
+import { drivers, marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 
 const router = express.Router();
@@ -3947,6 +3947,38 @@ router.get('/marketing-channels', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve marketing channels',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/marketing-channels/utm-mappings
+ * Get UTM parameter suggestions for all marketing channels (public reference data)
+ */
+router.get('/marketing-channels/utm-mappings', async (req, res) => {
+  try {
+    const mappings = await db.select()
+      .from(marketingChannelUtmMappings)
+      .innerJoin(marketingChannels, eq(marketingChannelUtmMappings.marketingChannelId, marketingChannels.id))
+      .where(eq(marketingChannels.active, true));
+
+    res.status(200).json({
+      success: true,
+      data: mappings,
+      message: 'Marketing channel UTM mappings retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving marketing channel UTM mappings', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve UTM mappings',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
