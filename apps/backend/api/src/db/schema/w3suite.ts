@@ -4776,11 +4776,13 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
 export const leadStatuses = w3suiteSchema.table("lead_statuses", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  name: varchar("name", { length: 100 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(), // Internal unique key
+  displayName: varchar("display_name", { length: 100 }).notNull(), // User-facing label
   category: leadStatusCategoryEnum("category").notNull(), // new, working, qualified, converted, disqualified, on_hold
-  color: varchar("color", { length: 7 }).notNull(), // Hex color
+  color: varchar("color", { length: 60 }).notNull(), // HSL format: hsl(210, 100%, 60%)
   sortOrder: smallint("sort_order").default(0),
   isActive: boolean("is_active").default(true),
+  isDefault: boolean("is_default").default(false), // System default statuses cannot be deleted
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
