@@ -25,7 +25,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import public schema tables for FK references
-import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods, paymentMethodsConditions } from './public';
+import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods, paymentMethodsConditions, utmSources, utmMediums } from './public';
 
 // ==================== CUSTOM TYPES FOR PGVECTOR ====================
 // Define custom type for pgvector columns
@@ -4613,6 +4613,11 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   utmSource: varchar("utm_source", { length: 255 }),
   utmMedium: varchar("utm_medium", { length: 255 }),
   utmCampaign: varchar("utm_campaign", { length: 255 }),
+  // UTM Normalized Foreign Keys (for analytics and reporting)
+  utmSourceId: uuid("utm_source_id").references(() => utmSources.id),
+  utmMediumId: uuid("utm_medium_id").references(() => utmMediums.id),
+  utmContent: varchar("utm_content", { length: 255 }),
+  utmTerm: varchar("utm_term", { length: 255 }),
   landingPageUrl: text("landing_page_url"),
   referrerUrl: text("referrer_url"),
   eventName: varchar("event_name", { length: 255 }),
