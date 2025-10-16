@@ -160,9 +160,15 @@ router.get('/stores', async (req, res) => {
       orderBy: [desc(stores.createdAt)]
     });
 
+    // Map 'nome' to 'name' for frontend compatibility
+    const mappedStores = storesList.map(store => ({
+      ...store,
+      name: store.nome
+    }));
+
     res.status(200).json({
       success: true,
-      data: storesList,
+      data: mappedStores,
       message: 'Stores retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);

@@ -366,8 +366,7 @@ export default function CampaignsPage() {
               data-testid={`campaign-card-${campaign.id}`}
             >
               <Card 
-                  onClick={() => navigate(`crm/leads?campaign=${campaign.id}`)}
-                  className="glass-card border-0 overflow-hidden cursor-pointer"
+                  className="glass-card border-0 overflow-hidden"
                   style={{ 
                     background: 'var(--glass-card-bg)',
                     backdropFilter: 'blur(12px) saturate(180%)',
@@ -526,6 +525,48 @@ export default function CampaignsPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Target Info Section */}
+                {((campaign as any).storeName || (campaign as any).utmSourceName || (campaign as any).landingPageUrl) && (
+                  <div 
+                    className="px-6 py-3 space-y-2"
+                    style={{ 
+                      background: 'var(--glass-bg-light)',
+                      borderTop: '1px solid var(--glass-card-border)'
+                    }}
+                  >
+                    {(campaign as any).storeName && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: 'var(--text-tertiary)' }}>📍 Store:</span>
+                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {(campaign as any).storeName}
+                        </span>
+                      </div>
+                    )}
+                    {((campaign as any).utmSourceName || (campaign as any).utmMediumName) && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: 'var(--text-tertiary)' }}>🔗 UTM:</span>
+                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {(campaign as any).utmSourceName} / {(campaign as any).utmMediumName}
+                        </span>
+                      </div>
+                    )}
+                    {(campaign as any).landingPageUrl && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: 'var(--text-tertiary)' }}>🌐 URL:</span>
+                        <a 
+                          href={(campaign as any).landingPageUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="font-medium hover:underline truncate max-w-[200px]"
+                          style={{ color: 'hsl(var(--brand-orange))' }}
+                        >
+                          {(campaign as any).landingPageUrl}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             </motion.div>
           ))}
@@ -735,8 +776,7 @@ export function CampaignsContent() {
               data-testid={`campaign-card-${campaign.id}`}
             >
               <Card 
-                  onClick={() => navigate(`crm/leads?campaign=${campaign.id}`)}
-                  className="glass-card border-0 overflow-hidden cursor-pointer"
+                  className="glass-card border-0 overflow-hidden"
                   style={{ 
                     background: 'var(--glass-card-bg)',
                     backdropFilter: 'blur(12px) saturate(180%)',
@@ -895,6 +935,48 @@ export function CampaignsContent() {
                     </span>
                   </div>
                 </div>
+
+                {/* Target Info Section */}
+                {((campaign as any).storeName || (campaign as any).utmSourceName || (campaign as any).landingPageUrl) && (
+                  <div 
+                    className="px-6 py-3 space-y-2"
+                    style={{ 
+                      background: 'var(--glass-bg-light)',
+                      borderTop: '1px solid var(--glass-card-border)'
+                    }}
+                  >
+                    {(campaign as any).storeName && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: 'var(--text-tertiary)' }}>📍 Store:</span>
+                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {(campaign as any).storeName}
+                        </span>
+                      </div>
+                    )}
+                    {((campaign as any).utmSourceName || (campaign as any).utmMediumName) && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: 'var(--text-tertiary)' }}>🔗 UTM:</span>
+                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {(campaign as any).utmSourceName} / {(campaign as any).utmMediumName}
+                        </span>
+                      </div>
+                    )}
+                    {(campaign as any).landingPageUrl && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: 'var(--text-tertiary)' }}>🌐 URL:</span>
+                        <a 
+                          href={(campaign as any).landingPageUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="font-medium hover:underline truncate max-w-[200px]"
+                          style={{ color: 'hsl(var(--brand-orange))' }}
+                        >
+                          {(campaign as any).landingPageUrl}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             </motion.div>
           ))}

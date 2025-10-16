@@ -832,11 +832,13 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">Nessuno</SelectItem>
-                            {workflows.map((workflow: any) => (
-                              <SelectItem key={workflow.id} value={workflow.id}>
-                                {workflow.name}
-                              </SelectItem>
-                            ))}
+                            {workflows
+                              .filter((w: any) => w.forDepartment === 'crm')
+                              .map((workflow: any) => (
+                                <SelectItem key={workflow.id} value={workflow.id}>
+                                  {workflow.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                         <FormDescription>

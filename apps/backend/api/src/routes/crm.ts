@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
-import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, getTableColumns } from 'drizzle-orm';
 import {
   users,
   crmLeads,
@@ -545,7 +545,54 @@ router.get('/campaigns', async (req, res) => {
     }
 
     const campaigns = await db
-      .select()
+      .select({
+        ...getTableColumns(crmCampaigns),
+        totalLeads: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM w3suite.crm_leads 
+          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
+          AND crm_leads.tenant_id = ${tenantId}
+        )`,
+        workedLeads: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM w3suite.crm_leads 
+          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
+          AND crm_leads.tenant_id = ${tenantId}
+          AND crm_leads.status != 'new'
+        )`,
+        notWorkedLeads: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM w3suite.crm_leads 
+          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
+          AND crm_leads.tenant_id = ${tenantId}
+          AND crm_leads.status = 'new'
+        )`,
+        conversionRate: sql<number>`(
+          SELECT CASE 
+            WHEN COUNT(*) > 0 THEN 
+              ROUND((COUNT(CASE WHEN status = 'converted' THEN 1 END)::numeric / COUNT(*)::numeric * 100), 2)
+            ELSE 0 
+          END
+          FROM w3suite.crm_leads 
+          WHERE crm_leads.campaign_id = ${crmCampaigns.id} 
+          AND crm_leads.tenant_id = ${tenantId}
+        )`,
+        storeName: sql<string>`(
+          SELECT nome 
+          FROM w3suite.stores 
+          WHERE stores.id = ${crmCampaigns.storeId}
+        )`,
+        utmSourceName: sql<string>`(
+          SELECT display_name 
+          FROM public.utm_sources 
+          WHERE utm_sources.id = ${crmCampaigns.utmSourceId}
+        )`,
+        utmMediumName: sql<string>`(
+          SELECT display_name 
+          FROM public.utm_mediums 
+          WHERE utm_mediums.id = ${crmCampaigns.utmMediumId}
+        )`
+      })
       .from(crmCampaigns)
       .where(and(...conditions))
       .orderBy(desc(crmCampaigns.createdAt))
@@ -676,7 +723,7 @@ router.get('/campaigns/:id/stats', async (req, res) => {
         totalLeads: sql<number>`COUNT(*)::int`,
         workedLeads: sql<number>`COUNT(CASE WHEN status != 'new' THEN 1 END)::int`,
         notWorkedLeads: sql<number>`COUNT(CASE WHEN status = 'new' THEN 1 END)::int`,
-        wonLeads: sql<number>`COUNT(CASE WHEN status = 'won' THEN 1 END)::int`,
+        wonLeads: sql<number>`COUNT(CASE WHEN status = 'converted' THEN 1 END)::int`,
       })
       .from(crmLeads)
       .where(and(
