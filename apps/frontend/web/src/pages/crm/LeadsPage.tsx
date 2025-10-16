@@ -6,7 +6,6 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Input } from '@/components/ui/input';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
-import { LeadStatusSettingsDialog } from '@/components/crm/LeadStatusSettingsDialog';
 import { useTenantNavigation, useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,8 +35,7 @@ import {
   Brain,
   Search,
   Filter,
-  X,
-  Settings
+  X
 } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -111,7 +109,6 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isStatusSettingsOpen, setIsStatusSettingsOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
   const [location] = useLocation();
@@ -270,25 +267,14 @@ export default function LeadsPage() {
         {/* WindTre Glassmorphism Header */}
         <div className="windtre-glass-panel border-b border-white/20">
           <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <UserPlus className="h-6 w-6 text-windtre-orange" />
-                  CRM - Lead Management
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  {leads.length} lead totali • Tracking GTM • Multi-PDV Attribution
-                </p>
-              </div>
-              <Button
-                onClick={() => setIsStatusSettingsOpen(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-                data-testid="button-lead-status-settings"
-              >
-                <Settings className="h-4 w-4" />
-                Gestione Stati
-              </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <UserPlus className="h-6 w-6 text-windtre-orange" />
+                CRM - Lead Management
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {leads.length} lead totali • Tracking GTM • Multi-PDV Attribution
+              </p>
             </div>
             
             {/* Navigation Tabs */}
@@ -622,13 +608,6 @@ export default function LeadsPage() {
         lead={selectedLead} 
         open={isDetailOpen} 
         onOpenChange={setIsDetailOpen} 
-      />
-
-      {/* Lead Status Settings Dialog */}
-      <LeadStatusSettingsDialog 
-        open={isStatusSettingsOpen} 
-        onClose={() => setIsStatusSettingsOpen(false)} 
-        tenantId={tenantId} 
       />
     </Layout>
   );
