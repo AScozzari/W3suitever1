@@ -4772,10 +4772,11 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   tenantLifecycleIdx: index("crm_leads_tenant_lifecycle_idx").on(table.tenantId, table.lifecycleStage),
 }));
 
-// ==================== LEAD STATUSES - Custom stati lead per tenant (pattern pipeline stages) ====================
+// ==================== LEAD STATUSES - Custom stati lead per campagna (categorie fisse, nomi personalizzabili) ====================
 export const leadStatuses = w3suiteSchema.table("lead_statuses", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  campaignId: uuid("campaign_id").notNull().references(() => crmCampaigns.id, { onDelete: 'cascade' }),
   name: varchar("name", { length: 100 }).notNull(), // Internal unique key
   displayName: varchar("display_name", { length: 100 }).notNull(), // User-facing label
   category: leadStatusCategoryEnum("category").notNull(), // new, working, qualified, converted, disqualified, on_hold
@@ -4788,8 +4789,9 @@ export const leadStatuses = w3suiteSchema.table("lead_statuses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   tenantIdIdx: index("lead_statuses_tenant_id_idx").on(table.tenantId),
-  tenantCategoryIdx: index("lead_statuses_tenant_category_idx").on(table.tenantId, table.category),
-  tenantNameUniq: uniqueIndex("lead_statuses_tenant_name_uniq").on(table.tenantId, table.name),
+  campaignIdIdx: index("lead_statuses_campaign_id_idx").on(table.campaignId),
+  campaignCategoryIdx: index("lead_statuses_campaign_category_idx").on(table.campaignId, table.category),
+  campaignNameUniq: uniqueIndex("lead_statuses_campaign_name_uniq").on(table.campaignId, table.name),
 }));
 
 // ==================== LEAD STATUS HISTORY - Audit trail cambio stato ====================
