@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
+import { useRequiredTenantId } from '@/hooks/useTenantSafety';
+import { LeadStatusSettingsDialog } from './LeadStatusSettingsDialog';
 import { 
   Settings2, 
   Target, 
@@ -24,7 +26,8 @@ import {
   Wrench,
   Save,
   AlertCircle,
-  Shield
+  Shield,
+  ListTodo
 } from 'lucide-react';
 
 interface CampaignSettingsDialogProps {
@@ -140,6 +143,15 @@ const DRIVER_COLORS: Record<string, string> = {
 
 export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: CampaignSettingsDialogProps) {
   const { toast } = useToast();
+  const tenantId = useRequiredTenantId();
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+
+  // Reset nested dialog when parent closes
+  useEffect(() => {
+    if (!open) {
+      setStatusDialogOpen(false);
+    }
+  }, [open]);
 
   // Fetch campaign data (edit mode only)
   const { data: campaign, isLoading: campaignLoading } = useQuery({
@@ -381,7 +393,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid grid-cols-7 w-full">
+                <TabsList className="grid grid-cols-8 w-full">
                   <TabsTrigger value="general" data-testid="tab-general">
                     <Settings2 className="h-4 w-4 mr-1" />
                     Generale
@@ -397,6 +409,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   <TabsTrigger value="workflow" data-testid="tab-workflow">
                     <Workflow className="h-4 w-4 mr-1" />
                     Workflow
+                  </TabsTrigger>
+                  <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses">
+                    <ListTodo className="h-4 w-4 mr-1" />
+                    Stati Lead
                   </TabsTrigger>
                   <TabsTrigger value="privacy" data-testid="tab-privacy">
                     <Shield className="h-4 w-4 mr-1" />
@@ -1212,6 +1228,37 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     </div>
                   )}
                 </TabsContent>
+
+                {/* TAB 7: STATI LEAD */}
+                <TabsContent value="lead-statuses" className="space-y-4 mt-4">
+                  <div className="rounded-lg border p-6">
+                    <div className="flex items-start gap-3 mb-4">
+                      <ListTodo className="h-5 w-5 text-windtre-orange mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-lg">Gestione Stati Lead</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Personalizza gli stati del ciclo di vita dei lead per questa campagna. Gli stati sono organizzati in categorie fisse (Nuovo, In Lavorazione, Qualificato, Convertito, Non Qualificato, In Attesa), ma puoi creare stati custom con nomi personalizzati.
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() => setStatusDialogOpen(true)}
+                      className="w-full"
+                      data-testid="button-open-lead-statuses"
+                    >
+                      <Settings2 className="h-4 w-4 mr-2" />
+                      Apri Gestione Stati Lead
+                    </Button>
+
+                    <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Nota:</strong> Gli stati default (uno per categoria) sono protetti e non possono essere eliminati. Puoi creare stati aggiuntivi custom per ogni categoria e personalizzare colori e nomi visualizzati.
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
               </Tabs>
 
               <div className="flex justify-end gap-2 pt-4 border-t">
@@ -1236,6 +1283,13 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
             </form>
           </Form>
         )}
+
+        {/* Lead Status Settings Dialog */}
+        <LeadStatusSettingsDialog 
+          open={statusDialogOpen} 
+          onClose={() => setStatusDialogOpen(false)} 
+          tenantId={tenantId} 
+        />
       </DialogContent>
     </Dialog>
   );
