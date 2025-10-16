@@ -198,22 +198,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
-  // Calculate suggested UTM values based on selected marketing channels
-  const suggestedUtmValues = form.watch('marketingChannelIds')?.length > 0
-    ? (() => {
-        const selectedChannelIds = form.watch('marketingChannelIds') || [];
-        const firstSelectedId = selectedChannelIds[0];
-        const mapping = utmMappings.find((m: any) => m.marketing_channel_utm_mappings?.marketingChannelId === firstSelectedId);
-        if (mapping) {
-          return {
-            source: mapping.marketing_channel_utm_mappings?.suggestedUtmSource,
-            medium: mapping.marketing_channel_utm_mappings?.suggestedUtmMedium,
-          };
-        }
-        return null;
-      })()
-    : null;
-
   // Initialize form
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -250,6 +234,22 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       },
     },
   });
+
+  // Calculate suggested UTM values based on selected marketing channels
+  const selectedChannelIds = form.watch('marketingChannelIds') || [];
+  const suggestedUtmValues = selectedChannelIds.length > 0
+    ? (() => {
+        const firstSelectedId = selectedChannelIds[0];
+        const mapping = utmMappings.find((m: any) => m.marketing_channel_utm_mappings?.marketingChannelId === firstSelectedId);
+        if (mapping) {
+          return {
+            source: mapping.marketing_channel_utm_mappings?.suggestedUtmSource,
+            medium: mapping.marketing_channel_utm_mappings?.suggestedUtmMedium,
+          };
+        }
+        return null;
+      })()
+    : null;
 
   // Update form when campaign data loads (edit mode)
   useEffect(() => {
