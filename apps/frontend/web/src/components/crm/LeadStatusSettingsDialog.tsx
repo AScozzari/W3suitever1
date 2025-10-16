@@ -65,6 +65,7 @@ export function LeadStatusSettingsDialog({ open, onClose, campaignId }: LeadStat
   // Fetch lead statuses for this campaign
   const { data: statusesResponse, isLoading } = useQuery({
     queryKey: ['/api/crm/lead-statuses', campaignId],
+    queryFn: () => apiRequest(`/api/crm/lead-statuses?campaignId=${campaignId}`),
     enabled: open && !!campaignId,
   });
 

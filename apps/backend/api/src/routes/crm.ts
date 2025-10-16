@@ -3994,7 +3994,7 @@ router.get('/marketing-channels/utm-mappings', async (req, res) => {
 
 /**
  * GET /api/crm/lead-statuses
- * Get all lead statuses for the current tenant (fixed + custom)
+ * Get all lead statuses for a specific campaign
  */
 router.get('/lead-statuses', async (req, res) => {
   try {
@@ -4008,12 +4008,22 @@ router.get('/lead-statuses', async (req, res) => {
       } as ApiErrorResponse);
     }
 
+    const campaignId = req.query.campaignId as string;
+    if (!campaignId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad request',
+        message: 'campaignId query parameter is required',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     await setTenantContext(tenantId);
 
     const statuses = await db.select()
       .from(leadStatuses)
       .where(and(
-        eq(leadStatuses.tenantId, tenantId),
+        eq(leadStatuses.campaignId, campaignId),
         eq(leadStatuses.isActive, true)
       ))
       .orderBy(leadStatuses.sortOrder);
@@ -4029,7 +4039,8 @@ router.get('/lead-statuses', async (req, res) => {
     logger.error('Error retrieving lead statuses', {
       errorMessage: error?.message || 'Unknown error',
       errorStack: error?.stack,
-      tenantId: req.user?.tenantId
+      tenantId: req.user?.tenantId,
+      campaignId: req.query.campaignId
     });
     res.status(500).json({
       success: false,
@@ -4042,7 +4053,7 @@ router.get('/lead-statuses', async (req, res) => {
 
 /**
  * POST /api/crm/lead-statuses
- * Create a custom lead status for the tenant
+ * Create a custom lead status for a campaign
  */
 router.post('/lead-statuses', async (req, res) => {
   try {
@@ -4060,7 +4071,6 @@ router.post('/lead-statuses', async (req, res) => {
 
     const validatedData = insertLeadStatusSchema.parse({
       ...req.body,
-      tenantId,
       createdBy: req.user?.id
     });
 
@@ -4070,6 +4080,7 @@ router.post('/lead-statuses', async (req, res) => {
 
     logger.info('Lead status created successfully', {
       statusId: newStatus.id,
+      campaignId: validatedData.campaignId,
       tenantId,
       createdBy: req.user?.id
     });
@@ -4122,10 +4133,7 @@ router.patch('/lead-statuses/:id', async (req, res) => {
 
     const [updatedStatus] = await db.update(leadStatuses)
       .set(updateData)
-      .where(and(
-        eq(leadStatuses.id, req.params.id),
-        eq(leadStatuses.tenantId, tenantId)
-      ))
+      .where(eq(leadStatuses.id, req.params.id))
       .returning();
 
     if (!updatedStatus) {
@@ -4139,6 +4147,7 @@ router.patch('/lead-statuses/:id', async (req, res) => {
 
     logger.info('Lead status updated successfully', {
       statusId: updatedStatus.id,
+      campaignId: updatedStatus.campaignId,
       tenantId
     });
 
@@ -4186,10 +4195,7 @@ router.delete('/lead-statuses/:id', async (req, res) => {
     // Check if status exists and is not default
     const [status] = await db.select()
       .from(leadStatuses)
-      .where(and(
-        eq(leadStatuses.id, req.params.id),
-        eq(leadStatuses.tenantId, tenantId)
-      ))
+      .where(eq(leadStatuses.id, req.params.id))
       .limit(1);
 
     if (!status) {
@@ -4212,13 +4218,11 @@ router.delete('/lead-statuses/:id', async (req, res) => {
 
     // Delete the status
     await db.delete(leadStatuses)
-      .where(and(
-        eq(leadStatuses.id, req.params.id),
-        eq(leadStatuses.tenantId, tenantId)
-      ));
+      .where(eq(leadStatuses.id, req.params.id));
 
     logger.info('Lead status deleted successfully', {
       statusId: req.params.id,
+      campaignId: status.campaignId,
       tenantId
     });
 
