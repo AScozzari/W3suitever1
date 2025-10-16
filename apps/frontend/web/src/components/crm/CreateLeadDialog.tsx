@@ -34,6 +34,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
+// Lead source enum (matches backend)
+const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
+
 const leadFormSchema = z.object({
   firstName: z.string().min(2, 'Nome richiesto (min 2 caratteri)'),
   lastName: z.string().min(2, 'Cognome richiesto (min 2 caratteri)'),
@@ -42,13 +45,23 @@ const leadFormSchema = z.object({
   companyName: z.string().optional(),
   productInterest: z.string().optional(),
   campaignId: z.string().optional(),
-  sourceChannel: z.string().optional(),
+  leadSource: z.enum(leadSources).optional(),
+  landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   notes: z.string().optional(),
   privacyPolicyAccepted: z.boolean().refine((val) => val === true, {
     message: 'Devi accettare la privacy policy',
   }),
   marketingConsent: z.boolean().default(false),
   profilingConsent: z.boolean().default(false),
+}).refine(data => {
+  // If lead source is landing_page, URL is required
+  if (data.leadSource === 'landing_page' && !data.landingPageUrl) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Landing Page URL obbligatorio quando Lead Source è 'Landing Page'",
+  path: ['landingPageUrl']
 });
 
 type LeadFormData = z.infer<typeof leadFormSchema>;
@@ -82,7 +95,8 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
       companyName: '',
       productInterest: '',
       campaignId: '',
-      sourceChannel: 'manual',
+      leadSource: 'manual',
+      landingPageUrl: '',
       notes: '',
       privacyPolicyAccepted: false,
       marketingConsent: false,
@@ -298,23 +312,22 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
 
               <FormField
                 control={form.control}
-                name="sourceChannel"
+                name="leadSource"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Canale di Acquisizione</FormLabel>
+                    <FormLabel>Lead Source (Origine Lead)</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger data-testid="select-source-channel">
-                          <SelectValue placeholder="Seleziona canale" />
+                        <SelectTrigger data-testid="select-lead-source">
+                          <SelectValue placeholder="Seleziona origine" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="manual">Inserimento Manuale</SelectItem>
+                        <SelectItem value="manual">Manuale</SelectItem>
                         <SelectItem value="web_form">Form Web</SelectItem>
-                        <SelectItem value="phone">Telefono</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="social">Social Media</SelectItem>
-                        <SelectItem value="referral">Referral</SelectItem>
+                        <SelectItem value="landing_page">Landing Page</SelectItem>
+                        <SelectItem value="powerful_api">Powerful API</SelectItem>
+                        <SelectItem value="csv_import">Import CSV</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -322,6 +335,28 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
                 )}
               />
             </div>
+
+            {/* Landing Page URL (conditional - shown only if leadSource is landing_page) */}
+            {form.watch('leadSource') === 'landing_page' && (
+              <FormField
+                control={form.control}
+                name="landingPageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Landing Page URL *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        value={field.value || ''} 
+                        placeholder="https://esempio.com/landing" 
+                        data-testid="input-landing-page-url" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Notes */}
             <FormField
