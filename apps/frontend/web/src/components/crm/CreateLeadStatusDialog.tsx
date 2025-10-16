@@ -48,7 +48,7 @@ type LeadStatusFormData = z.infer<typeof leadStatusSchema>;
 interface CreateLeadStatusDialogProps {
   open: boolean;
   onClose: () => void;
-  tenantId: string;
+  campaignId: string;
   editingStatus?: any | null;
 }
 
@@ -73,7 +73,7 @@ const predefinedColors = [
   { name: 'Grigio', value: 'hsl(210, 15%, 50%)' },
 ];
 
-export function CreateLeadStatusDialog({ open, onClose, tenantId, editingStatus }: CreateLeadStatusDialogProps) {
+export function CreateLeadStatusDialog({ open, onClose, campaignId, editingStatus }: CreateLeadStatusDialogProps) {
   const { toast } = useToast();
   const isEditMode = !!editingStatus;
 
@@ -116,7 +116,7 @@ export function CreateLeadStatusDialog({ open, onClose, tenantId, editingStatus 
         method: 'POST',
         body: {
           ...data,
-          tenantId,
+          campaignId,
           isDefault: false,
         },
       });
@@ -126,7 +126,7 @@ export function CreateLeadStatusDialog({ open, onClose, tenantId, editingStatus 
         title: 'Stato creato',
         description: 'Lo stato è stato creato con successo',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses', campaignId] });
       onClose();
       form.reset();
     },
@@ -152,7 +152,7 @@ export function CreateLeadStatusDialog({ open, onClose, tenantId, editingStatus 
         title: 'Stato aggiornato',
         description: 'Lo stato è stato aggiornato con successo',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses', campaignId] });
       onClose();
     },
     onError: (error: any) => {

@@ -19,7 +19,7 @@ import { CreateLeadStatusDialog } from './CreateLeadStatusDialog';
 interface LeadStatusSettingsDialogProps {
   open: boolean;
   onClose: () => void;
-  tenantId: string;
+  campaignId: string;
 }
 
 type LeadStatusCategory = 'new' | 'working' | 'qualified' | 'converted' | 'disqualified' | 'on_hold';
@@ -57,15 +57,15 @@ const statusCategoryConfig: Record<LeadStatusCategory, { label: string; color: s
   }
 };
 
-export function LeadStatusSettingsDialog({ open, onClose, tenantId }: LeadStatusSettingsDialogProps) {
+export function LeadStatusSettingsDialog({ open, onClose, campaignId }: LeadStatusSettingsDialogProps) {
   const { toast } = useToast();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingStatus, setEditingStatus] = useState<any>(null);
 
-  // Fetch lead statuses
+  // Fetch lead statuses for this campaign
   const { data: statusesResponse, isLoading } = useQuery({
-    queryKey: ['/api/crm/lead-statuses'],
-    enabled: open,
+    queryKey: ['/api/crm/lead-statuses', campaignId],
+    enabled: open && !!campaignId,
   });
 
   const statuses = statusesResponse?.data || [];
@@ -92,7 +92,7 @@ export function LeadStatusSettingsDialog({ open, onClose, tenantId }: LeadStatus
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses', campaignId] });
       toast({
         title: 'Stato eliminato',
         description: 'Lo stato è stato eliminato con successo',
@@ -116,7 +116,7 @@ export function LeadStatusSettingsDialog({ open, onClose, tenantId }: LeadStatus
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/lead-statuses', campaignId] });
       toast({
         title: 'Stato aggiornato',
         description: 'Lo stato è stato aggiornato con successo',
@@ -302,7 +302,7 @@ export function LeadStatusSettingsDialog({ open, onClose, tenantId }: LeadStatus
           setCreateDialogOpen(false);
           setEditingStatus(null);
         }}
-        tenantId={tenantId}
+        campaignId={campaignId}
         editingStatus={editingStatus}
       />
     </>
