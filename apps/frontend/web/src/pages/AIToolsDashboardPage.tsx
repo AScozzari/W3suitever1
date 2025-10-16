@@ -197,7 +197,7 @@ export default function AIToolsDashboardPage() {
         </div>
 
         {/* Tools Grid - 2 Colonne per card più grandi */}
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2 items-stretch">
           {aiTools.map((tool) => (
             <Card
               key={tool.id}
@@ -233,7 +233,7 @@ export default function AIToolsDashboardPage() {
 
               <CardHeader className="space-y-3 !pb-2 !pt-3 !px-4">
                 {/* Icon con gradiente */}
-                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${tool.gradient} shadow-xl transition-transform duration-500 group-hover:scale-110`}>
+                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${tool.gradient} shadow-xl`}>
                   <div className="text-white">
                     {tool.icon}
                   </div>
@@ -249,7 +249,7 @@ export default function AIToolsDashboardPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-3 !pt-0 !px-4 !pb-3">
+              <CardContent className="space-y-3 !pt-0 !px-4 !pb-3 flex-grow">
                 {/* Descrizione principale */}
                 <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
                   {tool.description}
