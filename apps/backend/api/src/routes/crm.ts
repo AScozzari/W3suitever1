@@ -519,6 +519,153 @@ router.post('/leads/:id/convert', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/crm/external-leads
+ * Unified endpoint for lead intake from external sources (forms, GTM, social webhooks)
+ * Resolves UTM parameters, social accounts, and creates lead with proper attribution
+ * 
+ * SECURITY: Requires X-API-Key header for authentication
+ */
+router.post('/external-leads', async (req, res) => {
+  try {
+    // SECURITY: Validate API key before processing
+    const apiKey = req.headers['x-api-key'] as string;
+    const validApiKey = process.env.EXTERNAL_LEADS_API_KEY || 'default-dev-key-change-in-production';
+    
+    if (!apiKey || apiKey !== validApiKey) {
+      logger.warn('External leads API key validation failed', { 
+        hasApiKey: !!apiKey,
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Invalid or missing API key',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+    
+    const { resolveUTMIds } = await import('../utils/utm-resolver');
+    const { resolveSocialToStore } = await import('../utils/social-store-resolver');
+    
+    const leadData = req.body;
+    
+    let tenantId = leadData.tenantId;
+    let storeId = leadData.storeId;
+    let mcpAccountId = leadData.sourceSocialAccountId;
+    
+    if (!tenantId && leadData.socialPlatform && leadData.platformAccountId) {
+      const socialResolution = await resolveSocialToStore(
+        leadData.socialPlatform,
+        leadData.platformAccountId,
+        true
+      );
+      
+      if (socialResolution) {
+        tenantId = socialResolution.tenantId;
+        storeId = socialResolution.storeId;
+        mcpAccountId = socialResolution.mcpAccountId;
+      }
+    }
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot resolve tenant',
+        message: 'Missing tenantId and unable to resolve from social account',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+    
+    if (!storeId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot resolve store',
+        message: 'Missing storeId and unable to resolve from social account',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+    
+    const utmResolution = await resolveUTMIds(
+      leadData.utm_source || leadData.utmSource,
+      leadData.utm_medium || leadData.utmMedium
+    );
+    
+    await setTenantContext(tenantId);
+    
+    const personId = await getOrCreatePersonId(
+      tenantId,
+      leadData.email,
+      leadData.phone,
+      mcpAccountId
+    );
+    
+    const [lead] = await db
+      .insert(crmLeads)
+      .values({
+        tenantId,
+        storeId,
+        personId,
+        campaignId: leadData.campaignId,
+        sourceSocialAccountId: mcpAccountId,
+        sourceChannel: leadData.sourceChannel || 'web_form',
+        leadSource: leadData.leadSource || 'web_form',
+        firstName: leadData.firstName,
+        lastName: leadData.lastName,
+        email: leadData.email,
+        phone: leadData.phone,
+        companyName: leadData.companyName,
+        productInterest: leadData.productInterest,
+        notes: leadData.notes,
+        utmSource: leadData.utm_source || leadData.utmSource,
+        utmMedium: leadData.utm_medium || leadData.utmMedium,
+        utmCampaign: leadData.utm_campaign || leadData.utmCampaign,
+        utmSourceId: utmResolution.utmSourceId,
+        utmMediumId: utmResolution.utmMediumId,
+        utmContent: leadData.utm_content || leadData.utmContent,
+        utmTerm: leadData.utm_term || leadData.utmTerm,
+        landingPageUrl: leadData.landingPageUrl || leadData.page_url,
+        referrerUrl: leadData.referrerUrl || leadData.referrer,
+        gtmClientId: leadData.gtmClientId || leadData.clientId,
+        gtmSessionId: leadData.gtmSessionId,
+        gtmEvents: leadData.gtmEvents,
+        privacyPolicyAccepted: leadData.privacyPolicyAccepted,
+        marketingConsent: leadData.marketingConsent,
+        profilingConsent: leadData.profilingConsent,
+        consentTimestamp: leadData.consentTimestamp ? new Date(leadData.consentTimestamp) : null,
+        rawEventPayload: leadData.rawPayload
+      })
+      .returning();
+    
+    logger.info('External lead created', { 
+      leadId: lead.id, 
+      tenantId, 
+      source: leadData.leadSource,
+      hasUTM: !!utmResolution.utmSourceId 
+    });
+    
+    res.status(201).json({
+      success: true,
+      data: lead,
+      message: 'Lead created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error creating external lead', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create external lead',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== CAMPAIGNS ====================
 
 /**

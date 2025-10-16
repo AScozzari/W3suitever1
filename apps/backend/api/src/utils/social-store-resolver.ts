@@ -1,6 +1,6 @@
 import { db } from '../db';
-import { mcpConnectedAccounts } from '../db/schema/w3suite';
-import { eq, and } from 'drizzle-orm';
+import { mcpConnectedAccounts, stores } from '../db/schema/w3suite';
+import { eq, and, asc } from 'drizzle-orm';
 
 export interface SocialAccountResolution {
   mcpAccountId: string;
@@ -44,10 +44,12 @@ export async function resolveAccountFromSocial(
 }
 
 export async function getDefaultStoreForTenant(tenantId: string): Promise<string | null> {
-  const store = await db.query.stores.findFirst({
-    where: eq(db.query.stores.tenantId, tenantId),
-    orderBy: (stores, { asc }) => [asc(stores.createdAt)]
-  });
+  const [store] = await db
+    .select()
+    .from(stores)
+    .where(eq(stores.tenantId, tenantId))
+    .orderBy(asc(stores.createdAt))
+    .limit(1);
 
   return store?.id || null;
 }

@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules. It features a unique WindTre glassmorphism design and robust OAuth2/OIDC security with MFA. The platform utilizes PostgreSQL with Row Level Security (RLS) for stringent tenant isolation and includes a Brand Interface HQ system for centralized control and cross-tenant management. The project aims to deliver a scalable, secure, and complete solution for diverse business needs with significant market potential by consolidating various business functionalities into a single, cohesive platform.
+W3 Suite is a multi-tenant enterprise platform designed for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules. It features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. A Brand Interface HQ system provides centralized control. The project aims to deliver a scalable, secure, and complete solution for diverse business needs, consolidating essential business functionalities for significant market potential.
 
 # User Preferences
 
@@ -151,11 +151,11 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
 - **SafePageShell**: Error boundary wrapper for all pages
 
 ### Development Workflow:
-1. **ALWAYS START WITH A TEMPLATE** - Never create pages from scratch
-2. **Copy the appropriate template** from packages/frontend-kit/templates/
-3. **Customize with your data** - Change endpoints, columns, fields
-4. **Use existing blocks** - DataTable, StatsCard, PageHeader, etc.
-5. **Apply design tokens** - Use CSS variables from frontend-kit
+11. **ALWAYS START WITH A TEMPLATE** - Never create pages from scratch
+12. **Copy the appropriate template** from packages/frontend-kit/templates/
+13. **Customize with your data** - Change endpoints, columns, fields
+14. **Use existing blocks** - DataTable, StatsCard, PageHeader, etc.
+15. **Apply design tokens** - Use CSS variables from frontend-kit
 
 ### Import Pattern:
 ```typescript
@@ -205,57 +205,58 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 # System Architecture
 
 ## UI/UX Design
-Adheres to a **Glassmorphism WindTre Design System** with WindTre branding and colors. It follows a **Component-First Approach**, utilizing `shadcn/ui` for consistency and accessibility, enhanced with CSS variables and Tailwind CSS. The frontend package (`@w3suite/frontend-kit`) centralizes the design system, page templates, reusable components, UI patterns, and custom React hooks.
+The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui` for consistency and accessibility, enhanced with CSS variables and Tailwind CSS. The `@w3suite/frontend-kit` package centralizes the design system, page templates, reusable components, UI patterns, and custom React hooks.
 
 ## Technical Implementations
--   **Monorepo Structure**: `apps/` for services, `packages/` for shared libraries, `db/` for database migrations.
--   **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
--   **Security**: OAuth2/OIDC with MFA, JWTs, RBAC with a 3-level security hierarchy.
--   **Multitenancy**: Achieved via RLS, a `TenantProvider`, and global unique constraints.
--   **Universal Workflow System**: Supports approval hierarchies, RBAC-integrated supervision, event-driven state machines, visual builder, and audit trails.
--   **Unified Notification System**: Real-time notifications using Redis + WebSockets with PostgreSQL fallback.
--   **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, deduplication, and audit trail.
--   **Task Management System**: Flexible task system with optional workflow integration and RBAC-protected API.
--   **MCP Multi-Provider OAuth System**: Manages unified credentials across third-party services with per-user OAuth isolation.
--   **AI Enforcement Middleware System**: Provides hierarchical API-level blocking of AI features.
--   **AI Workflow Builder with JSON Mode**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode and ReactFlow DSL output.
--   **Intelligent Workflow Routing System**: Dual-mode routing (auto/manual) for team and user assignments.
--   **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
--   **CRM Module Backend**: Comprehensive CRM backend with 20 tables in `w3suite` schema, person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows. Provides 25 RESTful endpoints with Zod validation, RLS, and structured logging.
--   **CRM Pipeline Visualization System**: 3-view pipeline management (Table, Kanban, Gantt) with TanStack Table for advanced data grids, @dnd-kit for drag & drop stage transitions, workflow validation (stage locking, forbidden transitions), multi-column sorting, advanced filters (stage, owner, value, date, source), localStorage view persistence, category/channel distribution analytics, acquisition source tracking, and WindTre glassmorphism design.
+- **Monorepo Structure**: Organizes services (`apps/`), shared libraries (`packages/`), and database migrations (`db/`).
+- **Database Architecture**: Employs a 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
+- **Security**: Implements OAuth2/OIDC with MFA, JWTs, and RBAC with a 3-level security hierarchy.
+- **Multitenancy**: Achieved through RLS, a `TenantProvider`, and global unique constraints.
+- **Universal Workflow System**: Supports approval hierarchies, RBAC-integrated supervision, event-driven state machines, a visual builder, and audit trails.
+- **Unified Notification System**: Provides real-time notifications using Redis + WebSockets with PostgreSQL fallback.
+- **Centralized Webhook System**: Enterprise-grade system with multi-provider support, queueing, deduplication, and audit trails.
+- **Task Management System**: Flexible task system with optional workflow integration and RBAC-protected API.
+- **MCP Multi-Provider OAuth System**: Manages unified credentials across third-party services with per-user OAuth isolation.
+- **AI Enforcement Middleware System**: Provides hierarchical API-level blocking of AI features.
+- **AI Workflow Builder with JSON Mode**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode and ReactFlow DSL output.
+- **Intelligent Workflow Routing System**: Offers dual-mode routing (auto/manual) for team and user assignments.
+- **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
+- **CRM Module Backend**: Comprehensive CRM backend with 20 tables in `w3suite` schema, featuring person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows. Provides RESTful endpoints with Zod validation, RLS, and structured logging.
+- **CRM Pipeline Visualization System**: Manages pipeline with 3 views (Table, Kanban, Gantt) using TanStack Table, `@dnd-kit`, workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **Integrated Marketing Attribution System**: Full UTM tracking, GTM integration, social media webhooks (Facebook/Instagram implemented), AI-powered lead scoring (in development), and Enhanced Conversions for Google Ads/GA4.
 
 # External Dependencies
 
 ## Database Services
--   **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
--   **Redis**: For BullMQ and the Unified Notification System.
+- **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
+- **Redis**: Used for BullMQ and the Unified Notification System.
 
 ## Authentication Services
--   **OAuth2/OIDC Enterprise**: For secure user authentication.
+- **OAuth2/OIDC Enterprise**: For secure user authentication.
 
 ## UI Component Ecosystem
--   **SHADCN/UI**: Primary UI component library.
--   **Radix UI**: Provides headless component primitives.
+- **SHADCN/UI**: The primary UI component library.
+- **Radix UI**: Provides headless component primitives.
 
 ## Icon & Utility Libraries
--   **Lucide React**: Icon library.
--   **TanStack React Query**: For server state management.
--   **React Hook Form**: Facilitates form handling.
+- **Lucide React**: Icon library.
+- **TanStack React Query**: For server state management.
+- **React Hook Form**: Facilitates form handling.
 
 ## Development Tools
--   **Vite**: Frontend build tool.
--   **Drizzle Kit**: For database schema management.
--   **PostCSS**: CSS pre-processing.
--   **ESBuild**: Server code bundling.
--   **Nginx**: Reverse proxy.
+- **Vite**: Frontend build tool.
+- **Drizzle Kit**: For database schema management.
+- **PostCSS**: CSS pre-processing.
+- **ESBuild**: Server code bundling.
+- **Nginx**: Reverse proxy.
 
 ## AI Services
--   **OpenAI**: Used for AI Workflow Builder and PDC Analyzer (`gpt-4o`).
+- **OpenAI**: Utilized for the AI Workflow Builder and PDC Analyzer (`gpt-4o`).
 
 ## Third-Party Integrations (OAuth Providers)
--   **Google Workspace**
--   **AWS**
--   **Meta/Instagram**
--   **Microsoft 365**
--   **Stripe**
--   **GTM/Analytics**
+- **Google Workspace**
+- **AWS**
+- **Meta/Instagram**
+- **Microsoft 365**
+- **Stripe**
+- **GTM/Analytics**
