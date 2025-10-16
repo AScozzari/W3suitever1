@@ -6,6 +6,7 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Input } from '@/components/ui/input';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
+import { LeadStatusSettingsDialog } from '@/components/crm/LeadStatusSettingsDialog';
 import { useTenantNavigation, useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +36,8 @@ import {
   Brain,
   Search,
   Filter,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -109,6 +111,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isStatusSettingsOpen, setIsStatusSettingsOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
   const [location] = useLocation();
@@ -368,6 +371,14 @@ export default function LeadsPage() {
                 <Calendar className="h-4 w-4 mr-2" />
                 Periodo
               </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsStatusSettingsOpen(true)}
+                data-testid="button-status-settings"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Gestione Stati
+              </Button>
               <Button
                 onClick={() => setIsCreateOpen(true)}
                 style={{ background: 'hsl(var(--brand-orange))' }}
@@ -602,6 +613,13 @@ export default function LeadsPage() {
         lead={selectedLead} 
         open={isDetailOpen} 
         onOpenChange={setIsDetailOpen} 
+      />
+
+      {/* Lead Status Settings Dialog */}
+      <LeadStatusSettingsDialog 
+        open={isStatusSettingsOpen} 
+        onClose={() => setIsStatusSettingsOpen(false)} 
+        tenantId={tenantId} 
       />
     </Layout>
   );
