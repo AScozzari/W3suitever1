@@ -18,6 +18,7 @@ import {
   StandardPaeseField
 } from '../components/Leave/forms/StandardFields';
 import AISettingsPage from '../components/AI/AISettingsPage';
+import { StoreConfigurationDialog } from '../components/settings/StoreConfigurationDialog';
 import { z } from 'zod';
 import { 
   supplierValidationSchema, 
@@ -523,6 +524,7 @@ export default function SettingsPage() {
   const [userModal, setUserModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [supplierModal, setSupplierModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [logDetailsModal, setLogDetailsModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
 
   // Avatar change handler
   const handleAvatarChange = (avatarData: { url?: string; blob?: Blob; type: 'upload' | 'generated' }) => {
@@ -2493,6 +2495,30 @@ export default function SettingsPage() {
                   </td>
                   <td style={{ padding: '16px' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => setSelectedStoreId(item.id)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fef3f0';
+                          e.currentTarget.style.borderColor = '#ff6900';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}
+                        title="Configura Store (GPS, Social, Marketing, WhatsApp)">
+                        <Settings size={14} style={{ color: '#ff6900' }} />
+                      </button>
                       <button
                         onClick={() => setStoreModal({ open: true, data: item })}
                         style={{
@@ -11286,6 +11312,15 @@ export default function SettingsPage() {
           {renderContent()}
         </div>
       </Layout>
+
+      {/* Store Configuration Dialog */}
+      {selectedStoreId && (
+        <StoreConfigurationDialog
+          storeId={selectedStoreId}
+          open={!!selectedStoreId}
+          onOpenChange={() => setSelectedStoreId(null)}
+        />
+      )}
     </>
   );
 }
