@@ -36,6 +36,7 @@ import {
   leadStatusHistory,
   campaignSocialAccounts,
   mcpConnectedAccounts,
+  storeTrackingConfig,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmPipelineSchema,
@@ -45,7 +46,8 @@ import {
   insertCrmDealSchema,
   insertCrmCustomerSchema,
   insertLeadStatusSchema,
-  insertLeadStatusHistorySchema
+  insertLeadStatusHistorySchema,
+  insertStoreTrackingConfigSchema
 } from '../db/schema/w3suite';
 import { drivers, marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
@@ -4756,6 +4758,179 @@ router.get('/leads/:id/status-history', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve status history',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== STORE TRACKING CONFIGURATION (GTM AUTO-CONFIG) ====================
+
+/**
+ * POST /api/stores/:id/tracking-config
+ * Configure GTM tracking for a store (GA4, Google Ads, Facebook Pixel)
+ * Auto-creates GTM triggers and tags via Google Tag Manager API
+ */
+router.post('/stores/:id/tracking-config', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant or user context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    // Validate request body
+    const configSchema = insertStoreTrackingConfigSchema.extend({
+      ga4MeasurementId: z.string().regex(/^G-[A-Z0-9]+$/).optional(),
+      googleAdsConversionId: z.string().regex(/^AW-[0-9]+$/).optional(),
+      facebookPixelId: z.string().regex(/^[0-9]+$/).optional(),
+      tiktokPixelId: z.string().optional()
+    });
+
+    const validated = configSchema.parse(req.body);
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Configure GTM tracking via API
+    const { GTMAutoConfigService } = await import('../services/gtm-auto-config');
+    
+    const result = await GTMAutoConfigService.configureStoreTracking({
+      storeId,
+      tenantId,
+      userId,
+      ga4MeasurementId: validated.ga4MeasurementId,
+      googleAdsConversionId: validated.googleAdsConversionId,
+      facebookPixelId: validated.facebookPixelId,
+      tiktokPixelId: validated.tiktokPixelId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        storeId,
+        gtmTriggerId: result.gtmTriggerId,
+        gtmConfigured: true,
+        tagsCreated: result.tagsCreated.length,
+        message: 'GTM tracking configured successfully. Tags will be active after container publish.'
+      },
+      message: 'Store tracking configured successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error configuring store tracking', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to configure store tracking',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/stores/:id/tracking-config
+ * Get GTM tracking configuration for a store
+ */
+router.get('/stores/:id/tracking-config', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get tracking config
+    const [config] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    res.status(200).json({
+      success: true,
+      data: config || {
+        storeId,
+        gtmConfigured: false,
+        message: 'No tracking configuration found for this store'
+      },
+      message: 'Store tracking config retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving store tracking config', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve store tracking config',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
