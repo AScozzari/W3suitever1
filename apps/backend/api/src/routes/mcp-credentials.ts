@@ -962,8 +962,13 @@ router.post('/gtm', async (req: Request, res: Response) => {
       serverId = server[0].id;
     }
 
-    // Validate request body
+    // Validate request body - GTM Container configuration with REQUIRED fields
     const schema = z.object({
+      containerId: z.string().min(1, 'Container ID is required'),
+      accountId: z.string().min(1, 'Account ID is required'),
+      workspaceId: z.string().min(1, 'Workspace ID is required'),
+      serviceAccountJson: z.string().optional(),
+      // Legacy support for serviceAccountKey object
       serviceAccountKey: z.object({
         type: z.literal('service_account'),
         project_id: z.string(),
@@ -975,7 +980,7 @@ router.post('/gtm', async (req: Request, res: Response) => {
         token_uri: z.string().url(),
         auth_provider_x509_cert_url: z.string().url(),
         client_x509_cert_url: z.string().url()
-      })
+      }).optional()
     });
 
     const validation = schema.safeParse(req.body);
@@ -983,16 +988,57 @@ router.post('/gtm', async (req: Request, res: Response) => {
     if (!validation.success) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid GTM service account key format',
+        error: 'Invalid GTM configuration format',
         details: validation.error.errors
       });
     }
 
-    const { serviceAccountKey } = validation.data;
+    const { containerId, accountId, workspaceId, serviceAccountJson, serviceAccountKey } = validation.data;
+
+    // Parse and validate serviceAccountJson if provided as string
+    let parsedServiceAccountKey = serviceAccountKey;
+    if (serviceAccountJson && !serviceAccountKey) {
+      try {
+        const parsed = JSON.parse(serviceAccountJson);
+        
+        // Validate parsed JSON against service account schema
+        const serviceAccountSchema = z.object({
+          type: z.literal('service_account'),
+          project_id: z.string(),
+          private_key_id: z.string(),
+          private_key: z.string(),
+          client_email: z.string().email(),
+          client_id: z.string(),
+          auth_uri: z.string().url(),
+          token_uri: z.string().url(),
+          auth_provider_x509_cert_url: z.string().url(),
+          client_x509_cert_url: z.string().url()
+        });
+        
+        const parsedValidation = serviceAccountSchema.safeParse(parsed);
+        if (!parsedValidation.success) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid service account JSON structure',
+            details: parsedValidation.error.errors
+          });
+        }
+        
+        parsedServiceAccountKey = parsedValidation.data;
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid JSON format for serviceAccountJson'
+        });
+      }
+    }
 
     // Store credentials using encryption service
     const credentials = {
-      serviceAccountKey,
+      containerId,
+      accountId,
+      workspaceId,
+      serviceAccountKey: parsedServiceAccountKey,
       credentialType: 'gtm-service-account'
     };
 

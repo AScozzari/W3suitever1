@@ -148,7 +148,12 @@ export default function MCPSettingsTab() {
   const [metaForm, setMetaForm] = useState({ appId: '', appSecret: '' });
   const [awsForm, setAwsForm] = useState({ accessKeyId: '', secretAccessKey: '', region: 'eu-west-1' });
   const [stripeForm, setStripeForm] = useState({ apiKey: '' });
-  const [gtmForm, setGtmForm] = useState({ serviceAccountJson: '' });
+  const [gtmForm, setGtmForm] = useState({ 
+    containerId: '', 
+    accountId: '', 
+    workspaceId: '', 
+    serviceAccountJson: '' 
+  });
 
   // 🔄 Fetch MCP Servers
   const { data: servers, isLoading: serversLoading } = useQuery<MCPServer[]>({
@@ -314,19 +319,24 @@ export default function MCPSettingsTab() {
     }
   });
 
-  // 🔄 Save GTM Service Account Mutation
+  // 🔄 Save GTM Configuration Mutation
   const saveGTMMutation = useMutation({
-    mutationFn: async (data: { serviceAccountJson: string }) => {
-      // Validate JSON before sending
-      try {
-        JSON.parse(data.serviceAccountJson);
-      } catch {
-        throw new Error('JSON Service Account non valido');
+    mutationFn: async (data: { containerId: string; accountId: string; workspaceId: string; serviceAccountJson: string }) => {
+      // Validate JSON before sending (if provided)
+      if (data.serviceAccountJson) {
+        try {
+          JSON.parse(data.serviceAccountJson);
+        } catch {
+          throw new Error('JSON Service Account non valido');
+        }
       }
       
       return apiRequest('/api/mcp/credentials/gtm', {
         method: 'POST',
         body: JSON.stringify({
+          containerId: data.containerId,
+          accountId: data.accountId,
+          workspaceId: data.workspaceId,
           serviceAccountJson: data.serviceAccountJson,
           metadata: { provider: 'gtm' }
         }),
@@ -335,16 +345,16 @@ export default function MCPSettingsTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp/credentials'] });
-      setGtmForm({ serviceAccountJson: '' }); // Clear form
+      setGtmForm({ containerId: '', accountId: '', workspaceId: '', serviceAccountJson: '' }); // Clear form
       toast({
-        title: 'GTM Service Account Salvato',
-        description: 'Service Account GTM salvato con successo',
+        title: 'GTM Configurazione Salvata',
+        description: 'Configurazione GTM salvata con successo',
       });
     },
     onError: (error) => {
       toast({
         title: 'Errore GTM',
-        description: error instanceof Error ? error.message : 'Impossibile salvare Service Account GTM',
+        description: error instanceof Error ? error.message : 'Impossibile salvare configurazione GTM',
         variant: 'destructive'
       });
     }
@@ -1107,50 +1117,107 @@ export default function MCPSettingsTab() {
         <TabsContent value="gtm">
           <Card className="windtre-glass-panel border-white/20">
             <CardHeader>
-              <CardTitle>GTM/Analytics Service Account</CardTitle>
+              <CardTitle>Google Tag Manager Configuration</CardTitle>
               <CardDescription>
-                Invia eventi a Google Tag Manager e Google Analytics
+                Configura GTM Container per auto-creazione tag e trigger nel sistema
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {renderCredentialStatus('gtm')}
               
-              <form className="space-y-3" onSubmit={(e) => {
+              {/* Info Tooltip */}
+              <TooltipProvider>
+                <div className="flex items-start gap-2 bg-green-50 p-4 rounded-lg border border-green-200">
+                  <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm font-semibold text-green-900">🟢 Come trovare i dati GTM:</p>
+                    <ol className="text-xs text-green-800 space-y-1 list-decimal list-inside">
+                      <li>Accedi a <strong>Google Tag Manager Console</strong></li>
+                      <li><strong>Container ID</strong>: Visibile in alto (es. GTM-XXXXXX)</li>
+                      <li><strong>Account ID</strong>: Vai su Admin → Account Settings (numero a 10 cifre)</li>
+                      <li><strong>Workspace ID</strong>: Workspace attuale (numero a 10 cifre)</li>
+                      <li><strong>Service Account JSON</strong>: (Opzionale) Scarica da Google Cloud Console per API access</li>
+                    </ol>
+                  </div>
+                </div>
+              </TooltipProvider>
+              
+              <form className="space-y-4" onSubmit={(e) => {
                 e.preventDefault();
-                if (!gtmForm.serviceAccountJson) {
+                if (!gtmForm.containerId || !gtmForm.accountId || !gtmForm.workspaceId) {
                   toast({
-                    title: 'Campo Obbligatorio',
-                    description: 'Inserisci il Service Account JSON',
+                    title: 'Campi Obbligatori',
+                    description: 'Container ID, Account ID e Workspace ID sono obbligatori',
                     variant: 'destructive'
                   });
                   return;
                 }
                 saveGTMMutation.mutate(gtmForm);
               }}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="gtm-container-id">Container ID *</Label>
+                    <Input 
+                      id="gtm-container-id" 
+                      type="text" 
+                      placeholder="GTM-XXXXXX"
+                      value={gtmForm.containerId}
+                      onChange={(e) => setGtmForm({ ...gtmForm, containerId: e.target.value })}
+                      data-testid="input-gtm-container-id"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="gtm-account-id">Account ID *</Label>
+                    <Input 
+                      id="gtm-account-id" 
+                      type="text" 
+                      placeholder="1234567890"
+                      value={gtmForm.accountId}
+                      onChange={(e) => setGtmForm({ ...gtmForm, accountId: e.target.value })}
+                      data-testid="input-gtm-account-id"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="gtm-service-account">Service Account JSON *</Label>
-                  <textarea
-                    id="gtm-service-account"
-                    className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder='{"type":"service_account","project_id":"...","private_key":"..."}'
-                    value={gtmForm.serviceAccountJson}
-                    onChange={(e) => setGtmForm({ serviceAccountJson: e.target.value })}
-                    data-testid="input-gtm-service-account"
+                  <Label htmlFor="gtm-workspace-id">Workspace ID *</Label>
+                  <Input 
+                    id="gtm-workspace-id" 
+                    type="text" 
+                    placeholder="1234567890"
+                    value={gtmForm.workspaceId}
+                    onChange={(e) => setGtmForm({ ...gtmForm, workspaceId: e.target.value })}
+                    data-testid="input-gtm-workspace-id"
                     required
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="gtm-service-account">Service Account JSON (Opzionale)</Label>
+                  <textarea
+                    id="gtm-service-account"
+                    className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder='{"type":"service_account","project_id":"...","private_key":"..."}'
+                    value={gtmForm.serviceAccountJson}
+                    onChange={(e) => setGtmForm({ ...gtmForm, serviceAccountJson: e.target.value })}
+                    data-testid="input-gtm-service-account"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Solo per accesso API programmatico (opzionale per auto-config)
+                  </p>
+                </div>
+
                 <Button 
                   type="submit" 
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white w-full"
                   disabled={saveGTMMutation.isPending}
                   data-testid="button-save-gtm"
                 >
                   <Key className="h-4 w-4 mr-2" />
-                  {saveGTMMutation.isPending ? 'Salvando...' : 'Salva Service Account'}
+                  {saveGTMMutation.isPending ? 'Salvando...' : 'Salva Configurazione GTM'}
                 </Button>
-                <p className="text-xs text-gray-500">
-                  💡 Scarica il JSON dalla Console Google Cloud
-                </p>
               </form>
             </CardContent>
           </Card>
