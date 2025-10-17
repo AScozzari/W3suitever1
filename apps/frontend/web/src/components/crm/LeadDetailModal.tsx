@@ -20,7 +20,8 @@ import {
   Target,
   Globe,
   FileText,
-  Activity
+  Activity,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -146,6 +147,15 @@ interface LeadDetailModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Helper: Get lead score color and category
+const getLeadScoreConfig = (score?: number | null): { color: string; category: string; label: string } => {
+  if (score === null || score === undefined) return { color: '#6b7280', category: 'unknown', label: 'N/A' }; // gray for null/undefined only
+  if (score >= 80) return { color: '#10b981', category: 'very_hot', label: '🔥 Very Hot' }; // green
+  if (score >= 61) return { color: '#eab308', category: 'hot', label: '⭐ Hot' }; // yellow
+  if (score >= 31) return { color: '#f97316', category: 'warm', label: '☀️ Warm' }; // orange
+  return { color: '#ef4444', category: 'cold', label: '❄️ Cold' }; // red (includes 0-30)
+};
+
 export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalProps) {
   if (!lead) return null;
 
@@ -192,10 +202,21 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
           <div className="flex-1">
             <div className="text-sm text-gray-600 mb-1">Lead Score</div>
             <div className="flex items-center gap-3">
-              <div className="text-3xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+              <div className="text-3xl font-bold" style={{ color: getLeadScoreConfig(lead.leadScore).color }}>
                 {lead.leadScore}
               </div>
-              <Progress value={lead.leadScore} className="flex-1 h-2" />
+              <Badge 
+                variant="outline"
+                className="text-sm font-semibold px-4 py-2"
+                style={{ 
+                  background: `${getLeadScoreConfig(lead.leadScore).color}15`,
+                  borderColor: getLeadScoreConfig(lead.leadScore).color,
+                  color: getLeadScoreConfig(lead.leadScore).color
+                }}
+                data-testid="badge-lead-score-detail"
+              >
+                {getLeadScoreConfig(lead.leadScore).label}
+              </Badge>
             </div>
           </div>
           <Separator orientation="vertical" className="h-12" />

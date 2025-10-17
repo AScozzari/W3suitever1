@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import {
   useReactTable,
   getCoreRowModel,
@@ -57,6 +58,7 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
+  RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -119,13 +121,13 @@ const getStatusConfig = (status: string) => {
   }
 };
 
-// Helper: Get lead score color
-const getLeadScoreColor = (score?: number | null): string => {
-  if (!score) return 'hsl(var(--muted))';
-  if (score >= 80) return '#10b981'; // green - hot
-  if (score >= 60) return '#3b82f6'; // blue - warm
-  if (score >= 40) return '#f59e0b'; // amber - lukewarm
-  return '#6b7280'; // gray - cold
+// Helper: Get lead score color and category
+const getLeadScoreConfig = (score?: number | null): { color: string; category: string; label: string } => {
+  if (score === null || score === undefined) return { color: '#6b7280', category: 'unknown', label: 'N/A' }; // gray for null/undefined only
+  if (score >= 80) return { color: '#10b981', category: 'very_hot', label: '🔥 Very Hot' }; // green
+  if (score >= 61) return { color: '#eab308', category: 'hot', label: '⭐ Hot' }; // yellow
+  if (score >= 31) return { color: '#f97316', category: 'warm', label: '☀️ Warm' }; // orange
+  return { color: '#ef4444', category: 'cold', label: '❄️ Cold' }; // red (includes 0-30)
 };
 
 export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
@@ -140,6 +142,18 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
   });
 
   const leads = leadsData || [];
+
+  // Re-score mutation
+  const rescoreMutation = useMutation({
+    mutationFn: async (leadId: string) => {
+      return await apiRequest(`/api/crm/leads/${leadId}/rescore`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/leads?campaign=${campaignId}`] });
+    }
+  });
 
   // Define columns
   const columns = useMemo<ColumnDef<Lead>[]>(
@@ -265,17 +279,22 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
         ),
         cell: ({ row }) => {
           const score = row.original.leadScore || 0;
+          const { color, label } = getLeadScoreConfig(score);
           return (
             <div className="flex items-center gap-2">
-              <div 
-                className="px-2 py-1 rounded-md text-xs font-semibold"
+              <Badge 
+                variant="outline"
+                className="text-xs font-semibold"
                 style={{ 
-                  background: `${getLeadScoreColor(score)}20`,
-                  color: getLeadScoreColor(score)
+                  background: `${color}15`,
+                  borderColor: color,
+                  color: color
                 }}
+                data-testid={`badge-lead-score-${row.original.id}`}
               >
-                {score}
-              </div>
+                <span className="mr-1">{score}</span>
+                <span className="opacity-80">{label}</span>
+              </Badge>
             </div>
           );
         },
@@ -353,6 +372,15 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
                 Modifica
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => rescoreMutation.mutate(row.original.id)}
+                disabled={rescoreMutation.isPending}
+                data-testid={`action-rescore-lead-${row.original.id}`}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${rescoreMutation.isPending ? 'animate-spin' : ''}`} />
+                {rescoreMutation.isPending ? 'Ricalcolo...' : 'Ricalcola Score AI'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" data-testid="action-delete-lead">
                 <Trash className="h-4 w-4 mr-2" />
                 Elimina
@@ -362,7 +390,7 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
         ),
       },
     ],
-    []
+    [rescoreMutation]
   );
 
   const table = useReactTable({

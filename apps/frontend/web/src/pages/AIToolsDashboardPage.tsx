@@ -2,7 +2,8 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles, Brain, MessageSquare, Zap, TrendingUp, CheckCircle2, ArrowRight } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { FileText, BarChart3, Calculator, FileSpreadsheet, Sparkles, Brain, MessageSquare, Zap, TrendingUp, CheckCircle2, ArrowRight, Info } from "lucide-react";
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface AITool {
@@ -166,6 +167,7 @@ export default function AIToolsDashboardPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <TooltipProvider>
       <div className="space-y-8">
         {/* Hero Header con gradiente WindTre */}
         <div
@@ -215,8 +217,35 @@ export default function AIToolsDashboardPage() {
               onClick={() => handleToolClick(tool)}
               data-testid={`card-ai-tool-${tool.id}`}
             >
-              {/* Status Badge */}
-              <div className="absolute top-6 right-6 z-10">
+              {/* Info Icon + Status Badge */}
+              <div className="absolute top-6 right-6 z-10 flex items-start gap-2">
+                {/* Info Tooltip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      className="p-1.5 rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors backdrop-blur-sm"
+                      data-testid={`button-info-${tool.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Info className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="max-w-sm p-4"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)'
+                    }}
+                  >
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {tool.description}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Status Badge */}
                 {tool.status === "coming_soon" ? (
                   <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold px-4 py-1.5 text-sm">
                     Coming Soon
@@ -305,6 +334,7 @@ export default function AIToolsDashboardPage() {
           ))}
         </div>
       </div>
+      </TooltipProvider>
     </Layout>
   );
 }
