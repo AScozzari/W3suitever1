@@ -79,7 +79,14 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   const { data: trackingConfig, isLoading: isLoadingTracking } = useQuery({
     queryKey: ['/api/stores', storeId, 'tracking-config'],
     queryFn: async () => {
-      const response = await fetch(`/api/stores/${storeId}/tracking-config`);
+      const response = await fetch(`/api/stores/${storeId}/tracking-config`, {
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': 'admin-user',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error('Failed to fetch tracking config');
