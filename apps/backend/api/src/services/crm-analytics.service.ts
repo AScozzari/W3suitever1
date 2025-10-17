@@ -173,8 +173,8 @@ class CRMAnalyticsService {
     // Get deal metrics
     const dealMetrics = await db
       .select({
-        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue}), 0)`,
-        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue}), 0)`,
+        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue}::numeric), 0)`,
+        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue}::numeric), 0)`,
         wonDeals: sql<number>`count(case when ${crmDeals.status} = 'won' then 1 end)`,
       })
       .from(crmDeals)
