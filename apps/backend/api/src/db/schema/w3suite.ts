@@ -5218,6 +5218,113 @@ export const crmSavedViews = w3suiteSchema.table("crm_saved_views", {
   tenantUserIdx: index("crm_saved_views_tenant_user_idx").on(table.tenantId, table.userId),
 }));
 
+// ==================== UTM TRACKING & ANALYTICS TABLES ====================
+
+// CRM Campaign UTM Links - Generated UTM links for campaign channels
+export const crmCampaignUtmLinks = w3suiteSchema.table("crm_campaign_utm_links", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  campaignId: uuid("campaign_id").notNull().references(() => crmCampaigns.id, { onDelete: 'cascade' }),
+  channelId: varchar("channel_id", { length: 100 }).notNull(), // 'facebook_ads', 'instagram', 'google_ads', etc.
+  channelName: varchar("channel_name", { length: 200 }).notNull(), // Human-readable name
+  generatedUrl: text("generated_url").notNull(), // Full UTM link
+  utmSource: varchar("utm_source", { length: 255 }).notNull(),
+  utmMedium: varchar("utm_medium", { length: 255 }).notNull(),
+  utmCampaign: varchar("utm_campaign", { length: 255 }).notNull(),
+  
+  // Analytics tracking
+  clicks: integer("clicks").default(0),
+  uniqueClicks: integer("unique_clicks").default(0),
+  conversions: integer("conversions").default(0),
+  revenue: real("revenue").default(0),
+  lastClickedAt: timestamp("last_clicked_at"),
+  lastConversionAt: timestamp("last_conversion_at"),
+  
+  // Metadata
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIdIdx: index("crm_campaign_utm_links_tenant_id_idx").on(table.tenantId),
+  campaignIdIdx: index("crm_campaign_utm_links_campaign_id_idx").on(table.campaignId),
+  channelIdIdx: index("crm_campaign_utm_links_channel_id_idx").on(table.channelId),
+  campaignChannelUniq: uniqueIndex("crm_campaign_utm_links_campaign_channel_uniq").on(table.campaignId, table.channelId),
+}));
+
+// CRM Lead Notifications - Real-time notifications for high-priority leads
+export const crmLeadNotifications = w3suiteSchema.table("crm_lead_notifications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  leadId: uuid("lead_id").notNull().references(() => crmLeads.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // Recipient
+  
+  // Notification content
+  notificationType: varchar("notification_type", { length: 100 }).notNull(), // 'hot_lead', 'high_score', 'ai_insight', 'conversion_ready'
+  priority: notificationPriorityEnum("priority").default('medium').notNull(), // low, medium, high, critical
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  metadata: jsonb("metadata").default({}), // Additional data (leadScore, aiInsights, etc.)
+  
+  // Actions
+  actionUrl: varchar("action_url", { length: 500 }), // Deep link to lead detail
+  actionLabel: varchar("action_label", { length: 100 }), // "View Lead", "Contact Now"
+  
+  // Status
+  isRead: boolean("is_read").default(false).notNull(),
+  readAt: timestamp("read_at"),
+  dismissedAt: timestamp("dismissed_at"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIdIdx: index("crm_lead_notifications_tenant_id_idx").on(table.tenantId),
+  leadIdIdx: index("crm_lead_notifications_lead_id_idx").on(table.leadId),
+  userIdIdx: index("crm_lead_notifications_user_id_idx").on(table.userId),
+  userUnreadIdx: index("crm_lead_notifications_user_unread_idx").on(table.userId, table.isRead),
+  createdAtIdx: index("crm_lead_notifications_created_at_idx").on(table.createdAt.desc()),
+}));
+
+// GTM Event Log - Audit trail for GTM events sent
+export const gtmEventLog = w3suiteSchema.table("gtm_event_log", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  leadId: uuid("lead_id").references(() => crmLeads.id, { onDelete: 'cascade' }), // Optional: linked to lead
+  storeId: uuid("store_id").references(() => stores.id), // Store context for tracking IDs
+  
+  // Event details
+  eventType: varchar("event_type", { length: 100 }).notNull(), // 'lead_created', 'lead_converted', 'deal_won', 'form_submit'
+  eventName: varchar("event_name", { length: 255 }).notNull(), // GTM event name
+  eventData: jsonb("event_data").notNull(), // Full event payload
+  
+  // Tracking IDs
+  ga4MeasurementId: varchar("ga4_measurement_id", { length: 50 }), // GA4 Measurement ID
+  googleAdsConversionId: varchar("google_ads_conversion_id", { length: 50 }), // Google Ads Conversion ID
+  googleAdsConversionLabel: varchar("google_ads_conversion_label", { length: 100 }), // Google Ads Conversion Label
+  facebookPixelId: varchar("facebook_pixel_id", { length: 50 }), // Facebook Pixel ID
+  
+  // Enhanced Conversions
+  enhancedConversionData: jsonb("enhanced_conversion_data"), // Hashed email/phone/address for Enhanced Conversions
+  userAgent: text("user_agent"), // Client user agent
+  clientIpAddress: varchar("client_ip_address", { length: 45 }), // Client IP for geo-targeting
+  
+  // Response tracking
+  success: boolean("success").default(false).notNull(),
+  httpStatusCode: smallint("http_status_code"), // HTTP response code
+  responseBody: jsonb("response_body"), // API response
+  errorMessage: text("error_message"), // Error details if failed
+  
+  // Timing
+  responseTimeMs: integer("response_time_ms"), // Response time in milliseconds
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIdIdx: index("gtm_event_log_tenant_id_idx").on(table.tenantId),
+  leadIdIdx: index("gtm_event_log_lead_id_idx").on(table.leadId),
+  storeIdIdx: index("gtm_event_log_store_id_idx").on(table.storeId),
+  eventTypeIdx: index("gtm_event_log_event_type_idx").on(table.eventType),
+  successIdx: index("gtm_event_log_success_idx").on(table.success),
+  createdAtIdx: index("gtm_event_log_created_at_idx").on(table.createdAt.desc()),
+}));
+
 // ==================== CRM INSERT SCHEMAS ====================
 
 export const insertCrmPersonIdentitySchema = createInsertSchema(crmPersonIdentities).omit({ 
@@ -5402,3 +5509,41 @@ export const insertCrmSavedViewSchema = createInsertSchema(crmSavedViews).omit({
 });
 export type InsertCrmSavedView = z.infer<typeof insertCrmSavedViewSchema>;
 export type CrmSavedView = typeof crmSavedViews.$inferSelect;
+
+// ==================== UTM TRACKING & ANALYTICS INSERT SCHEMAS ====================
+
+export const insertCrmCampaignUtmLinkSchema = createInsertSchema(crmCampaignUtmLinks).omit({
+  id: true,
+  clicks: true,
+  uniqueClicks: true,
+  conversions: true,
+  revenue: true,
+  lastClickedAt: true,
+  lastConversionAt: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmCampaignUtmLink = z.infer<typeof insertCrmCampaignUtmLinkSchema>;
+export type CrmCampaignUtmLink = typeof crmCampaignUtmLinks.$inferSelect;
+
+export const insertCrmLeadNotificationSchema = createInsertSchema(crmLeadNotifications).omit({
+  id: true,
+  isRead: true,
+  readAt: true,
+  dismissedAt: true,
+  createdAt: true
+});
+export type InsertCrmLeadNotification = z.infer<typeof insertCrmLeadNotificationSchema>;
+export type CrmLeadNotification = typeof crmLeadNotifications.$inferSelect;
+
+export const insertGtmEventLogSchema = createInsertSchema(gtmEventLog).omit({
+  id: true,
+  success: true,
+  httpStatusCode: true,
+  responseBody: true,
+  errorMessage: true,
+  responseTimeMs: true,
+  createdAt: true
+});
+export type InsertGtmEventLog = z.infer<typeof insertGtmEventLogSchema>;
+export type GtmEventLog = typeof gtmEventLog.$inferSelect;

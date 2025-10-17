@@ -20,6 +20,7 @@ import entitiesRoutes from "../routes/entities";
 import productsRoutes from "../routes/products";
 import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
 import crmRoutes from "../routes/crm";
+import gtmRoutes from "../routes/gtm";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1289,6 +1290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== CRM MODULE ROUTES ====================
   // CRM API routes for managing persons, leads, deals, campaigns, pipelines
   app.use('/api/crm', crmRoutes);
+  
+  // ==================== GTM TRACKING ROUTES ====================
+  // GTM/GA4/Google Ads server-side tracking with Enhanced Conversions
+  app.use('/api/gtm', gtmRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)

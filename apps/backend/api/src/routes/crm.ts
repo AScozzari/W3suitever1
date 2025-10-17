@@ -52,6 +52,8 @@ import {
 import { drivers, marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { leadScoringService } from '../services/lead-scoring-ai.service';
+import { utmLinksService } from '../services/utm-links.service';
+import { gtmEventsService } from '../services/gtm-events.service';
 
 const router = express.Router();
 
@@ -341,6 +343,62 @@ router.post('/leads', async (req, res) => {
       .returning();
 
     logger.info('Lead created', { leadId: lead.id, tenantId });
+
+    // 📊 GTM Event Tracking: Send lead_created event to GA4/Google Ads (non-blocking)
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
+      try {
+        logger.info('📊 [BACKGROUND] Tracking lead_created event to GTM', { leadId: lead.id, tenantId });
+        
+        // 🔒 CRITICAL: Set tenant context for RLS in async execution
+        await setTenantContext(tenantId);
+        
+        // Extract client info from request
+        const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || 
+                         req.socket.remoteAddress || 
+                         undefined;
+        const userAgent = req.headers['user-agent'] || undefined;
+        
+        // Track lead created event with Enhanced Conversions
+        await gtmEventsService.trackLeadCreated(
+          tenantId,
+          lead.id,
+          lead.storeId,
+          {
+            email: lead.email,
+            phone: lead.phone,
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+          },
+          {
+            source: lead.source,
+            leadScore: lead.leadScore || 0,
+            utmSource: validation.data.utmSource,
+            utmMedium: validation.data.utmMedium,
+            utmCampaign: validation.data.utmCampaign,
+          },
+          clientIp,
+          userAgent
+        );
+        
+        logger.info('GTM lead_created event tracked successfully (background)', {
+          leadId: lead.id,
+          tenantId
+        });
+      } catch (gtmError) {
+        logger.error('GTM lead_created tracking failed (background)', {
+          leadId: lead.id,
+          error: gtmError instanceof Error ? gtmError.message : 'Unknown error',
+          stack: gtmError instanceof Error ? gtmError.stack : undefined
+        });
+      }
+    })().catch(err => {
+      logger.error('[UNHANDLED] GTM tracking promise rejected', {
+        leadId: lead.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      });
+    });
 
     // 🤖 AI Lead Scoring: Calculate score in background (non-blocking)
     // Fire-and-forget Promise (no await) to avoid blocking response
@@ -751,6 +809,65 @@ router.post('/leads/:id/convert', async (req, res) => {
       ));
 
     logger.info('Lead converted to deal', { leadId: id, dealId: deal.id, tenantId });
+
+    // 📊 GTM Event Tracking: Send lead_converted/purchase event to GA4/Google Ads (non-blocking)
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
+      try {
+        logger.info('📊 [BACKGROUND] Tracking lead_converted event to GTM', { leadId: id, dealId: deal.id, tenantId });
+        
+        // 🔒 CRITICAL: Set tenant context for RLS in async execution
+        await setTenantContext(tenantId);
+        
+        // Extract client info from request
+        const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || 
+                         req.socket.remoteAddress || 
+                         undefined;
+        const userAgent = req.headers['user-agent'] || undefined;
+        
+        // Get conversion value from request body (optional)
+        const conversionValue = req.body.conversionValue || undefined;
+        const currency = req.body.currency || 'EUR';
+        
+        // Track lead conversion event with Enhanced Conversions
+        await gtmEventsService.trackLeadConverted(
+          tenantId,
+          lead.id,
+          lead.storeId,
+          {
+            email: lead.email,
+            phone: lead.phone,
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+          },
+          conversionValue,
+          currency,
+          clientIp,
+          userAgent
+        );
+        
+        logger.info('GTM lead_converted event tracked successfully (background)', {
+          leadId: id,
+          dealId: deal.id,
+          tenantId,
+          conversionValue
+        });
+      } catch (gtmError) {
+        logger.error('GTM lead_converted tracking failed (background)', {
+          leadId: id,
+          dealId: deal.id,
+          error: gtmError instanceof Error ? gtmError.message : 'Unknown error',
+          stack: gtmError instanceof Error ? gtmError.stack : undefined
+        });
+      }
+    })().catch(err => {
+      logger.error('[UNHANDLED] GTM conversion tracking promise rejected', {
+        leadId: id,
+        dealId: deal.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      });
+    });
 
     res.status(201).json({
       success: true,
@@ -1396,6 +1513,247 @@ router.delete('/campaigns/:id/social-accounts/:accountId', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to unlink social account',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/campaigns/:id/utm-links
+ * Generate or retrieve UTM tracking links for a campaign
+ * 
+ * Auto-generates links from campaign's marketingChannels array
+ */
+router.get('/campaigns/:id/utm-links', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const campaignId = req.params.id;
+    await setTenantContext(tenantId);
+
+    // Get campaign to access marketingChannels array
+    const [campaign] = await db
+      .select()
+      .from(crmCampaigns)
+      .where(and(
+        eq(crmCampaigns.id, campaignId),
+        eq(crmCampaigns.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Campaign not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if we need to generate new links
+    const shouldRegenerate = req.query.regenerate === 'true';
+    
+    if (shouldRegenerate || !campaign.marketingChannels || campaign.marketingChannels.length === 0) {
+      // Just return existing links if no channels configured
+      if (!campaign.marketingChannels || campaign.marketingChannels.length === 0) {
+        const existingLinks = await utmLinksService.getLinksForCampaign(tenantId, campaignId);
+        return res.status(200).json({
+          success: true,
+          data: {
+            links: existingLinks,
+            campaignName: campaign.name,
+            landingPageUrl: campaign.landingPageUrl || '',
+            utmCampaign: campaign.utmCampaign || campaign.name
+          },
+          message: 'No marketing channels configured for this campaign',
+          timestamp: new Date().toISOString()
+        } as ApiSuccessResponse);
+      }
+
+      // Generate/update UTM links from marketingChannels array
+      const links = await utmLinksService.generateLinksForCampaign({
+        tenantId,
+        campaignId,
+        landingPageUrl: campaign.landingPageUrl || '',
+        utmCampaign: campaign.utmCampaign || campaign.name,
+        marketingChannels: campaign.marketingChannels as string[]
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          links,
+          campaignName: campaign.name,
+          landingPageUrl: campaign.landingPageUrl || '',
+          utmCampaign: campaign.utmCampaign || campaign.name
+        },
+        message: 'UTM links generated successfully',
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse);
+    }
+
+    // Return existing links
+    const links = await utmLinksService.getLinksForCampaign(tenantId, campaignId);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        links,
+        campaignName: campaign.name,
+        landingPageUrl: campaign.landingPageUrl || '',
+        utmCampaign: campaign.utmCampaign || campaign.name
+      },
+      message: 'UTM links retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaign UTM links', { 
+      errorMessage: error?.message,
+      campaignId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve UTM links',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/campaigns/:id/utm-links/:linkId/track
+ * Track UTM link events (click, conversion)
+ * 
+ * Request body:
+ * - eventType: 'click' | 'conversion'
+ * - uniqueIdentifier?: string (for unique click tracking)
+ * - revenue?: number (for conversion tracking)
+ */
+router.post('/campaigns/:id/utm-links/:linkId/track', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: campaignId, linkId } = req.params;
+    const { eventType, uniqueIdentifier, revenue } = req.body;
+
+    // Validate request
+    if (!eventType || !['click', 'conversion'].includes(eventType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid event type',
+        message: 'eventType must be either "click" or "conversion"',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Track the event
+    await utmLinksService.trackLinkEvent({
+      tenantId,
+      linkId,
+      eventType,
+      uniqueIdentifier,
+      revenue
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `UTM link ${eventType} tracked successfully`,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error tracking UTM link event', { 
+      errorMessage: error?.message,
+      campaignId: req.params.id,
+      linkId: req.params.linkId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to track UTM link event',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/campaigns/:id/utm-analytics
+ * Get UTM tracking analytics for a campaign
+ * 
+ * Returns:
+ * - Summary stats (total clicks, conversions, revenue, conversion rate)
+ * - Stats by channel
+ * - Lead attribution by UTM source/medium
+ */
+router.get('/campaigns/:id/utm-analytics', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const campaignId = req.params.id;
+    await setTenantContext(tenantId);
+
+    // Verify campaign exists
+    const [campaign] = await db
+      .select()
+      .from(crmCampaigns)
+      .where(and(
+        eq(crmCampaigns.id, campaignId),
+        eq(crmCampaigns.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Campaign not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get analytics
+    const analytics = await utmLinksService.getCampaignUTMAnalytics(tenantId, campaignId);
+
+    res.status(200).json({
+      success: true,
+      data: analytics,
+      message: 'Campaign UTM analytics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaign UTM analytics', { 
+      errorMessage: error?.message,
+      campaignId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve UTM analytics',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
