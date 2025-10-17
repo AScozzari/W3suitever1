@@ -5,7 +5,9 @@ import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeadsDataTable from '@/components/crm/LeadsDataTable';
+import { UTMLinksTab } from '@/components/crm/UTMLinksTab';
 import { 
   Megaphone,
   Plus, 
@@ -13,7 +15,8 @@ import {
   ArrowLeft,
   TrendingUp,
   Users,
-  CheckCircle2
+  CheckCircle2,
+  Link as LinkIcon
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
@@ -30,6 +33,9 @@ interface Campaign {
   budget: number;
   startDate: string;
   endDate: string;
+  landingPageUrl?: string | null;
+  utmCampaign?: string | null;
+  marketingChannels?: string[] | null;
 }
 
 export default function CampaignDetailPage() {
@@ -243,8 +249,27 @@ export default function CampaignDetailPage() {
             </div>
           </div>
 
-          {/* Leads DataTable */}
-          <LeadsDataTable campaignId={id} />
+          {/* Tabs Navigation */}
+          <Tabs defaultValue="leads" className="w-full">
+            <TabsList className="grid w-full md:w-[400px] grid-cols-2 bg-white/50 dark:bg-gray-800/50">
+              <TabsTrigger value="leads" className="flex items-center gap-2" data-testid="tab-leads">
+                <Users className="h-4 w-4" />
+                Lead
+              </TabsTrigger>
+              <TabsTrigger value="utm-links" className="flex items-center gap-2" data-testid="tab-utm-links">
+                <LinkIcon className="h-4 w-4" />
+                Link UTM
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="leads" className="mt-6">
+              <LeadsDataTable campaignId={id} />
+            </TabsContent>
+
+            <TabsContent value="utm-links" className="mt-6">
+              {campaign && <UTMLinksTab campaign={campaign} />}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </Layout>
