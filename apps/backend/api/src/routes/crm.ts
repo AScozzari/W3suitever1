@@ -504,6 +504,115 @@ router.patch('/leads/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/crm/leads/:id/rescore
+ * Manually re-calculate lead score using AI
+ */
+router.post('/leads/:id/rescore', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id: leadId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Verify lead exists
+    const [lead] = await db.select()
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.id, leadId),
+        eq(crmLeads.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lead not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Calculate lead score using AI
+    const scoringResult = await leadScoringService.calculateLeadScore({
+      leadId,
+      tenantId
+    });
+
+    // Update lead score in database
+    await db
+      .update(crmLeads)
+      .set({ leadScore: scoringResult.score })
+      .where(and(
+        eq(crmLeads.id, leadId),
+        eq(crmLeads.tenantId, tenantId)
+      ));
+
+    // Save insight in leadAiInsights table
+    await db.insert(leadAiInsights).values({
+      tenantId,
+      leadId,
+      insightType: 'scoring',
+      insights: {
+        factors: scoringResult.factors,
+        recommended_actions: scoringResult.recommended_actions,
+        conversion_probability: scoringResult.conversion_probability,
+        estimated_value: scoringResult.estimated_value
+      },
+      nextAction: scoringResult.recommended_actions[0] || null,
+      riskFactors: null,
+      score: scoringResult.score,
+      confidence: scoringResult.confidence / 100, // Convert to 0.0-1.0
+      generatedBy: 'lead-scoring-assistant',
+      aiModel: 'gpt-4o'
+    });
+
+    logger.info('AI Lead Re-scoring completed (manual)', {
+      leadId,
+      previousScore: lead.leadScore,
+      newScore: scoringResult.score,
+      category: scoringResult.category
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        leadId,
+        previousScore: lead.leadScore,
+        newScore: scoringResult.score,
+        category: scoringResult.category,
+        reasoning: scoringResult.reasoning,
+        factors: scoringResult.factors,
+        recommended_actions: scoringResult.recommended_actions,
+        conversion_probability: scoringResult.conversion_probability,
+        estimated_value: scoringResult.estimated_value
+      },
+      message: 'Lead score re-calculated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error re-scoring lead', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      leadId: req.params.id,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to re-score lead',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/crm/leads/:id/convert
  * Convert a lead to a deal
  */

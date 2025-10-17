@@ -13,7 +13,7 @@ import OpenAI from 'openai';
 import { logger } from '../core/logger';
 import { db, setTenantContext } from '../core/db';
 import { crmLeads } from '../db/schema/w3suite';
-import { aiAgentsRegistry } from '../db/schema/brand-interface';
+import { aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
 import { eq, and } from 'drizzle-orm';
 
 const openai = new OpenAI({
