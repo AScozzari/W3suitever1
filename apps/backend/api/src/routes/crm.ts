@@ -51,6 +51,7 @@ import {
 } from '../db/schema/w3suite';
 import { drivers, marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
+import { leadScoringService } from '../services/lead-scoring-ai.service';
 
 const router = express.Router();
 
@@ -341,6 +342,38 @@ router.post('/leads', async (req, res) => {
 
     logger.info('Lead created', { leadId: lead.id, tenantId });
 
+    // 🤖 AI Lead Scoring: Calculate score in background (non-blocking)
+    // This runs async after response is sent to avoid blocking lead creation
+    setImmediate(async () => {
+      try {
+        const scoringResult = await leadScoringService.calculateLeadScore({
+          leadId: lead.id,
+          tenantId
+        });
+
+        // Update lead score in database
+        await db
+          .update(crmLeads)
+          .set({ leadScore: scoringResult.score })
+          .where(and(
+            eq(crmLeads.id, lead.id),
+            eq(crmLeads.tenantId, tenantId)
+          ));
+
+        logger.info('AI Lead Scoring completed (background)', {
+          leadId: lead.id,
+          score: scoringResult.score,
+          category: scoringResult.category,
+          responseTimeMs: scoringResult.responseTimeMs
+        });
+      } catch (scoringError) {
+        logger.error('AI Lead Scoring failed (background)', {
+          leadId: lead.id,
+          error: scoringError instanceof Error ? scoringError.message : 'Unknown error'
+        });
+      }
+    });
+
     res.status(201).json({
       success: true,
       data: lead,
@@ -414,6 +447,38 @@ router.patch('/leads/:id', async (req, res) => {
     }
 
     logger.info('Lead updated', { leadId: id, tenantId });
+
+    // 🤖 AI Lead Scoring: Re-calculate score in background (non-blocking)
+    // This runs async after response is sent to avoid blocking lead update
+    setImmediate(async () => {
+      try {
+        const scoringResult = await leadScoringService.calculateLeadScore({
+          leadId: id,
+          tenantId
+        });
+
+        // Update lead score in database
+        await db
+          .update(crmLeads)
+          .set({ leadScore: scoringResult.score })
+          .where(and(
+            eq(crmLeads.id, id),
+            eq(crmLeads.tenantId, tenantId)
+          ));
+
+        logger.info('AI Lead Scoring completed (background - update)', {
+          leadId: id,
+          score: scoringResult.score,
+          category: scoringResult.category,
+          responseTimeMs: scoringResult.responseTimeMs
+        });
+      } catch (scoringError) {
+        logger.error('AI Lead Scoring failed (background - update)', {
+          leadId: id,
+          error: scoringError instanceof Error ? scoringError.message : 'Unknown error'
+        });
+      }
+    });
 
     res.status(200).json({
       success: true,
