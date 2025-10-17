@@ -111,9 +111,9 @@ async function testVerifyLeadScore(leadId: string) {
   console.log('\n📝 Test 2: Verifying lead score calculation...');
   
   try {
-    // Wait 3 seconds for async scoring to complete
-    console.log('⏳ Waiting 3 seconds for background scoring...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait 10 seconds for async scoring to complete
+    console.log('⏳ Waiting 10 seconds for background scoring...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
 
     const [lead] = await db
       .select()

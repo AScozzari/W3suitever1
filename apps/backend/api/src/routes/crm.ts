@@ -343,9 +343,14 @@ router.post('/leads', async (req, res) => {
     logger.info('Lead created', { leadId: lead.id, tenantId });
 
     // 🤖 AI Lead Scoring: Calculate score in background (non-blocking)
-    // This runs async after response is sent to avoid blocking lead creation
-    setImmediate(async () => {
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
       try {
+        logger.info('🤖 [BACKGROUND] Starting AI scoring', { leadId: lead.id, tenantId });
+        
+        // 🔒 CRITICAL: Set tenant context for RLS in async execution
+        await setTenantContext(tenantId);
+        
         const scoringResult = await leadScoringService.calculateLeadScore({
           leadId: lead.id,
           tenantId
@@ -360,6 +365,25 @@ router.post('/leads', async (req, res) => {
             eq(crmLeads.tenantId, tenantId)
           ));
 
+        // Save AI insight
+        await db.insert(leadAiInsights).values({
+          tenantId,
+          leadId: lead.id,
+          insightType: 'scoring',
+          insights: {
+            factors: scoringResult.factors,
+            recommended_actions: scoringResult.recommended_actions,
+            conversion_probability: scoringResult.conversion_probability,
+            estimated_value: scoringResult.estimated_value
+          },
+          nextAction: scoringResult.recommended_actions[0] || null,
+          riskFactors: null,
+          score: scoringResult.score,
+          confidence: scoringResult.confidence / 100,
+          generatedBy: 'lead-scoring-assistant',
+          aiModel: 'gpt-4o'
+        });
+
         logger.info('AI Lead Scoring completed (background)', {
           leadId: lead.id,
           score: scoringResult.score,
@@ -369,9 +393,16 @@ router.post('/leads', async (req, res) => {
       } catch (scoringError) {
         logger.error('AI Lead Scoring failed (background)', {
           leadId: lead.id,
-          error: scoringError instanceof Error ? scoringError.message : 'Unknown error'
+          error: scoringError instanceof Error ? scoringError.message : 'Unknown error',
+          stack: scoringError instanceof Error ? scoringError.stack : undefined
         });
       }
+    })().catch(err => {
+      logger.error('[UNHANDLED] AI scoring promise rejected', {
+        leadId: lead.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      });
     });
 
     res.status(201).json({
@@ -449,9 +480,14 @@ router.patch('/leads/:id', async (req, res) => {
     logger.info('Lead updated', { leadId: id, tenantId });
 
     // 🤖 AI Lead Scoring: Re-calculate score in background (non-blocking)
-    // This runs async after response is sent to avoid blocking lead update
-    setImmediate(async () => {
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
       try {
+        logger.info('🤖 [BACKGROUND] Starting AI scoring (update)', { leadId: id, tenantId });
+        
+        // 🔒 CRITICAL: Set tenant context for RLS in async execution
+        await setTenantContext(tenantId);
+        
         const scoringResult = await leadScoringService.calculateLeadScore({
           leadId: id,
           tenantId
@@ -466,6 +502,25 @@ router.patch('/leads/:id', async (req, res) => {
             eq(crmLeads.tenantId, tenantId)
           ));
 
+        // Save AI insight
+        await db.insert(leadAiInsights).values({
+          tenantId,
+          leadId: id,
+          insightType: 'scoring',
+          insights: {
+            factors: scoringResult.factors,
+            recommended_actions: scoringResult.recommended_actions,
+            conversion_probability: scoringResult.conversion_probability,
+            estimated_value: scoringResult.estimated_value
+          },
+          nextAction: scoringResult.recommended_actions[0] || null,
+          riskFactors: null,
+          score: scoringResult.score,
+          confidence: scoringResult.confidence / 100,
+          generatedBy: 'lead-scoring-assistant',
+          aiModel: 'gpt-4o'
+        });
+
         logger.info('AI Lead Scoring completed (background - update)', {
           leadId: id,
           score: scoringResult.score,
@@ -475,9 +530,16 @@ router.patch('/leads/:id', async (req, res) => {
       } catch (scoringError) {
         logger.error('AI Lead Scoring failed (background - update)', {
           leadId: id,
-          error: scoringError instanceof Error ? scoringError.message : 'Unknown error'
+          error: scoringError instanceof Error ? scoringError.message : 'Unknown error',
+          stack: scoringError instanceof Error ? scoringError.stack : undefined
         });
       }
+    })().catch(err => {
+      logger.error('[UNHANDLED] AI scoring promise rejected (update)', {
+        leadId: id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      });
     });
 
     res.status(200).json({
@@ -837,6 +899,69 @@ router.post('/external-leads', async (req, res) => {
       tenantId, 
       source: leadData.leadSource,
       hasUTM: !!utmResolution.utmSourceId 
+    });
+    
+    // 🤖 AI Lead Scoring: Calculate score in background (non-blocking)
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
+      try {
+        logger.info('🤖 [BACKGROUND] Starting AI scoring', { leadId: lead.id, tenantId });
+        
+        // 🔒 CRITICAL: Set tenant context for RLS in async execution
+        await setTenantContext(tenantId);
+        
+        const scoringResult = await leadScoringService.calculateLeadScore({
+          leadId: lead.id,
+          tenantId
+        });
+
+        // Update lead score in database
+        await db
+          .update(crmLeads)
+          .set({ leadScore: scoringResult.score })
+          .where(and(
+            eq(crmLeads.id, lead.id),
+            eq(crmLeads.tenantId, tenantId)
+          ));
+
+        // Save AI insight
+        await db.insert(leadAiInsights).values({
+          tenantId,
+          leadId: lead.id,
+          insightType: 'scoring',
+          insights: {
+            factors: scoringResult.factors,
+            recommended_actions: scoringResult.recommended_actions,
+            conversion_probability: scoringResult.conversion_probability,
+            estimated_value: scoringResult.estimated_value
+          },
+          nextAction: scoringResult.recommended_actions[0] || null,
+          riskFactors: null,
+          score: scoringResult.score,
+          confidence: scoringResult.confidence / 100,
+          generatedBy: 'lead-scoring-assistant',
+          aiModel: 'gpt-4o'
+        });
+
+        logger.info('AI Lead Scoring completed (background - external)', {
+          leadId: lead.id,
+          score: scoringResult.score,
+          category: scoringResult.category,
+          responseTimeMs: scoringResult.responseTimeMs
+        });
+      } catch (scoringError) {
+        logger.error('AI Lead Scoring failed (background - external)', {
+          leadId: lead.id,
+          error: scoringError instanceof Error ? scoringError.message : 'Unknown error',
+          stack: scoringError instanceof Error ? scoringError.stack : undefined
+        });
+      }
+    })().catch(err => {
+      logger.error('[UNHANDLED] AI scoring promise rejected', {
+        leadId: lead.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      });
     });
     
     res.status(201).json({

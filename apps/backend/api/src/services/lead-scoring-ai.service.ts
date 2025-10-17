@@ -13,7 +13,8 @@ import OpenAI from 'openai';
 import { logger } from '../core/logger';
 import { db, setTenantContext } from '../core/db';
 import { crmLeads, users, roles, userAssignments } from '../db/schema/w3suite';
-import { aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
+import { brandDb } from '../../../brand-api/src/db';
+import { aiAgentsRegistry } from '../../../brand-api/src/db/schema';
 import { eq, and, inArray, or } from 'drizzle-orm';
 import { notificationService } from '../core/notification-service';
 
@@ -79,7 +80,7 @@ export class LeadScoringAIService {
       const lead = leadData[0];
       
       // 2. Get AI agent configuration from Brand Interface
-      const agentConfig = await db.select()
+      const agentConfig = await brandDb.select()
         .from(aiAgentsRegistry)
         .where(and(
           eq(aiAgentsRegistry.agentId, 'lead-scoring-assistant'),
