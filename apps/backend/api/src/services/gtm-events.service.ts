@@ -383,7 +383,9 @@ class GTMEventsService {
         stack: error.stack,
         tenantId: params.tenantId
       });
-      throw error;
+      // 🔒 CRITICAL FIX: Don't throw error to prevent blocking HTTP responses
+      // GTM tracking is fire-and-forget - log error but don't crash the request
+      // The error is already logged to gtmEventLog table via logEvent()
     }
   }
 

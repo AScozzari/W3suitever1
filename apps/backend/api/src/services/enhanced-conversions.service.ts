@@ -256,21 +256,33 @@ class EnhancedConversionsService {
       currency?: string; // Currency code (ISO 4217)
       orderId?: string; // Transaction ID
     }
-  ) {
-    const hashedData = this.hashUserData(userData);
+  ): any | null {
+    try {
+      const hashedData = this.hashUserData(userData);
 
-    if (!this.validateEnhancedConversionData(hashedData)) {
-      throw new Error('Enhanced Conversions data does not meet minimum requirements (email or phone required)');
+      if (!this.validateEnhancedConversionData(hashedData)) {
+        logger.error('Enhanced Conversions data does not meet minimum requirements', {
+          hasEmail: !!hashedData.sha256_email_address,
+          hasPhone: !!hashedData.sha256_phone_number
+        });
+        return null;
+      }
+
+      return {
+        ...hashedData,
+        conversion_action: conversionData.conversionAction,
+        conversion_label: conversionData.conversionLabel,
+        value: conversionData.conversionValue,
+        currency: conversionData.currency || 'EUR',
+        order_id: conversionData.orderId,
+      };
+    } catch (error: any) {
+      logger.error('Error creating Enhanced Conversions payload', {
+        error: error.message,
+        stack: error.stack
+      });
+      return null;
     }
-
-    return {
-      ...hashedData,
-      conversion_action: conversionData.conversionAction,
-      conversion_label: conversionData.conversionLabel,
-      value: conversionData.conversionValue,
-      currency: conversionData.currency || 'EUR',
-      order_id: conversionData.orderId,
-    };
   }
 }
 

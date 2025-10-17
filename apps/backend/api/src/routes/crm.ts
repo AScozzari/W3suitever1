@@ -1683,18 +1683,26 @@ router.post('/campaigns/:id/utm-links/:linkId/track', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const { id: campaignId, linkId } = req.params;
-    const { eventType, uniqueIdentifier, revenue } = req.body;
+    // 🔒 Zod validation for request body
+    const trackEventSchema = z.object({
+      eventType: z.enum(['click', 'conversion'], {
+        errorMap: () => ({ message: 'eventType must be either "click" or "conversion"' })
+      }),
+      uniqueIdentifier: z.string().optional(),
+      revenue: z.number().min(0).optional()
+    });
 
-    // Validate request
-    if (!eventType || !['click', 'conversion'].includes(eventType)) {
+    const validation = trackEventSchema.safeParse(req.body);
+    if (!validation.success) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid event type',
-        message: 'eventType must be either "click" or "conversion"',
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
+
+    const { id: campaignId, linkId } = req.params;
 
     await setTenantContext(tenantId);
 
@@ -1702,14 +1710,14 @@ router.post('/campaigns/:id/utm-links/:linkId/track', async (req, res) => {
     await utmLinksService.trackLinkEvent({
       tenantId,
       linkId,
-      eventType,
-      uniqueIdentifier,
-      revenue
+      eventType: validation.data.eventType,
+      uniqueIdentifier: validation.data.uniqueIdentifier,
+      revenue: validation.data.revenue
     });
 
     res.status(200).json({
       success: true,
-      message: `UTM link ${eventType} tracked successfully`,
+      message: `UTM link ${validation.data.eventType} tracked successfully`,
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
 
