@@ -1,37 +1,87 @@
-import { motion } from 'framer-motion';
+/**
+ * CRM Analytics Dashboard
+ * 
+ * Enterprise-level analytics with comprehensive visualizations
+ * Features store-level filtering, real-time updates, and advanced charts
+ */
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { subDays } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { FilterBar, AnalyticsFilters } from '@/components/CRM/Analytics/FilterBar';
+import { KPICards } from '@/components/CRM/Analytics/KPICards';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart3,
   TrendingUp,
   Users,
   Target,
-  Wifi,
-  Smartphone,
-  ShoppingBag,
-  ArrowUpRight,
-  ArrowDownRight,
-  LayoutDashboard,
+  Brain,
   Megaphone,
+  ShoppingBag,
+  Activity,
+  Layers,
+  Globe,
+  Zap,
+  LayoutDashboard,
   UserPlus,
   CheckSquare
 } from 'lucide-react';
-import { useState } from 'react';
-import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
-import { useLocation, Link } from 'wouter';
+import { Link } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { cn } from '@/lib/utils';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Funnel,
+  FunnelChart,
+  LabelList
+} from 'recharts';
 
-interface DriverPerformance {
-  driver: string;
-  totalRevenue: number;
-  dealsWon: number;
-  conversionRate: number;
-  avgDealSize: number;
-  trend: 'up' | 'down';
-  trendValue: number;
-}
+// WindTre brand colors
+const COLORS = {
+  orange: 'hsl(var(--brand-orange))',
+  purple: 'hsl(var(--brand-purple))',
+  blue: '#3B82F6',
+  green: '#10B981',
+  yellow: '#F59E0B',
+  pink: '#EC4899',
+  indigo: '#6366F1',
+  gray: '#6B7280'
+};
+
+const CHART_COLORS = [
+  COLORS.orange,
+  COLORS.purple,
+  COLORS.blue,
+  COLORS.green,
+  COLORS.yellow,
+  COLORS.pink,
+  COLORS.indigo
+];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -59,9 +109,102 @@ const cardVariants = {
 
 export default function AnalyticsPage() {
   const [currentModule, setCurrentModule] = useState('crm');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [location] = useLocation();
   const { buildUrl } = useTenantNavigation();
+  
+  // Filter state
+  const [filters, setFilters] = useState<AnalyticsFilters>({
+    storeIds: [],
+    dateRange: {
+      from: subDays(new Date(), 30),
+      to: new Date()
+    },
+    preset: '30days'
+  });
+
+  // Build query params
+  const queryParams = new URLSearchParams();
+  if (filters.storeIds.length > 0) {
+    filters.storeIds.forEach(id => queryParams.append('storeIds', id));
+  }
+  if (filters.dateRange?.from) {
+    queryParams.set('dateFrom', filters.dateRange.from.toISOString());
+  }
+  if (filters.dateRange?.to) {
+    queryParams.set('dateTo', filters.dateRange.to.toISOString());
+  }
+
+  // Fetch data with React Query
+  const { data: executiveSummary, isLoading: isLoadingSummary, refetch: refetchSummary } = useQuery({
+    queryKey: ['/api/crm/analytics/executive-summary', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/executive-summary?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const { data: campaignPerformance, isLoading: isLoadingCampaigns } = useQuery({
+    queryKey: ['/api/crm/analytics/campaign-performance', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/campaign-performance?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const { data: channelAttribution, isLoading: isLoadingChannels } = useQuery({
+    queryKey: ['/api/crm/analytics/channel-attribution', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/channel-attribution?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const { data: aiScoreDistribution, isLoading: isLoadingAI } = useQuery({
+    queryKey: ['/api/crm/analytics/ai-score-distribution', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/ai-score-distribution?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const { data: gtmEvents, isLoading: isLoadingGTM } = useQuery({
+    queryKey: ['/api/crm/analytics/gtm-events', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/gtm-events?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const { data: storeComparison, isLoading: isLoadingStores } = useQuery({
+    queryKey: ['/api/crm/analytics/store-comparison', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/store-comparison?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const { data: conversionFunnel, isLoading: isLoadingFunnel } = useQuery({
+    queryKey: ['/api/crm/analytics/conversion-funnel', queryParams.toString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/crm/analytics/conversion-funnel?${queryParams}`);
+      const result = await response.json();
+      return result.data;
+    }
+  });
+
+  const handleRefresh = () => {
+    refetchSummary();
+  };
+
+  const handleExport = () => {
+    // TODO: Implement CSV export
+    console.log('Export data');
+  };
 
   // CRM Navigation Tabs
   const crmTabs = [
@@ -74,55 +217,6 @@ export default function AnalyticsPage() {
     { value: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
   ];
 
-  const getActiveTab = () => {
-    if (location.includes('/crm/campaigns')) return 'campaigns';
-    if (location.includes('/crm/leads')) return 'leads';
-    if (location.includes('/crm/pipeline')) return 'pipeline';
-    if (location.includes('/crm/customers')) return 'customers';
-    if (location.includes('/crm/activities')) return 'activities';
-    if (location.includes('/crm/analytics')) return 'analytics';
-    return 'dashboard';
-  };
-
-  const activeTab = getActiveTab();
-
-  // TODO: Implementare endpoint backend /api/crm/analytics/driver-performance
-  const analytics: DriverPerformance[] = [];
-
-  const getDriverIcon = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return Wifi;
-      case 'MOBILE': return Smartphone;
-      case 'DEVICE': return Smartphone;
-      case 'ACCESSORI': return ShoppingBag;
-      default: return Target;
-    }
-  };
-
-  const getDriverColor = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return 'hsl(var(--brand-orange))';
-      case 'MOBILE': return 'hsl(var(--brand-purple))';
-      case 'DEVICE': return 'hsl(var(--brand-orange))';
-      case 'ACCESSORI': return 'hsl(var(--brand-purple))';
-      default: return 'var(--text-primary)';
-    }
-  };
-
-  const getDriverGradient = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return 'var(--brand-glass-orange)';
-      case 'MOBILE': return 'var(--brand-glass-purple)';
-      case 'DEVICE': return 'var(--brand-glass-gradient)';
-      case 'ACCESSORI': return 'var(--brand-glass-orange)';
-      default: return 'var(--glass-card-bg)';
-    }
-  };
-
-  const totalRevenue = 0;
-  const totalDeals = 0;
-  const avgConversion = 0;
-
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <CRMCommandPalette />
@@ -134,9 +228,9 @@ export default function AnalyticsPage() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                   <BarChart3 className="h-6 w-6 text-windtre-orange" />
-                  CRM - Analytics e Report
+                  CRM Analytics Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1">Performance driver e insights clienti</p>
+                <p className="text-gray-600 mt-1">Insights avanzati e performance multi-store</p>
               </div>
             </div>
             
@@ -144,16 +238,17 @@ export default function AnalyticsPage() {
             <div className="flex gap-1 mt-4">
               {crmTabs.map((tab) => {
                 const Icon = tab.icon;
-                const isActive = activeTab === tab.value;
+                const isActive = tab.value === 'analytics';
                 return (
                   <Link
                     key={tab.value}
                     href={tab.path}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
                       isActive 
                         ? 'bg-windtre-orange text-white' 
                         : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    )}
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
@@ -163,555 +258,359 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
-        
-        <CRMSearchBar 
-          onSearch={setSearchQuery}
-          placeholder="Cerca report..."
-        />
-        <div className="flex-1 p-6 overflow-auto space-y-6">
-        {/* Summary Cards */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={cardVariants}>
-            <Card 
-              className="glass-card p-6 border-0"
-              style={{ 
-                background: 'var(--brand-glass-orange)',
-                backdropFilter: 'blur(12px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                boxShadow: 'var(--shadow-glass)'
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div 
-                  className="p-2 rounded-lg"
-                  style={{ background: 'var(--glass-bg-heavy)' }}
-                >
-                  <TrendingUp className="h-5 w-5" style={{ color: 'hsl(var(--success))' }} />
-                </div>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  Fatturato Totale
-                </span>
-              </div>
-              <div className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                €{(totalRevenue / 1000000).toFixed(2)}M
-              </div>
-            </Card>
-          </motion.div>
 
-          <motion.div variants={cardVariants}>
-            <Card 
-              className="glass-card p-6 border-0"
-              style={{ 
-                background: 'var(--brand-glass-purple)',
-                backdropFilter: 'blur(12px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                boxShadow: 'var(--shadow-glass)'
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div 
-                  className="p-2 rounded-lg"
-                  style={{ background: 'var(--glass-bg-heavy)' }}
-                >
-                  <Target className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
-                </div>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  Deal Vinti
-                </span>
-              </div>
-              <div className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                {totalDeals}
-              </div>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={cardVariants}>
-            <Card 
-              className="glass-card p-6 border-0"
-              style={{ 
-                background: 'var(--brand-glass-gradient)',
-                backdropFilter: 'blur(12px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                boxShadow: 'var(--shadow-glass)'
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div 
-                  className="p-2 rounded-lg"
-                  style={{ background: 'var(--glass-bg-heavy)' }}
-                >
-                  <Users className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
-                </div>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  Conversion Media
-                </span>
-              </div>
-              <div className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                {avgConversion.toFixed(1)}%
-              </div>
-            </Card>
-          </motion.div>
-        </motion.div>
-
-        {/* Driver Performance Cards */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-            Performance per Driver
-          </h2>
-          <motion.div 
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {analytics?.map((driver) => {
-              const DriverIcon = getDriverIcon(driver.driver);
-              const TrendIcon = driver.trend === 'up' ? ArrowUpRight : ArrowDownRight;
-              
-              return (
-                <motion.div
-                  key={driver.driver}
-                  variants={cardVariants}
-                  whileHover={{ y: -4 }}
-                  data-testid={`analytics-driver-${driver.driver.toLowerCase()}`}
-                >
-                  <Card 
-                    className="glass-card border-0"
-                    style={{ 
-                      background: getDriverGradient(driver.driver),
-                      backdropFilter: 'blur(12px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                      boxShadow: 'var(--shadow-glass)',
-                      transition: 'var(--glass-transition)'
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="p-6 pb-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="p-3 rounded-lg"
-                            style={{ 
-                              background: 'var(--glass-bg-heavy)',
-                              backdropFilter: 'blur(8px)'
-                            }}
-                          >
-                            <DriverIcon className="h-5 w-5" style={{ color: getDriverColor(driver.driver) }} />
-                          </div>
-                          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>
-                            {driver.driver}
-                          </h3>
-                        </div>
-                        <div 
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg"
-                          style={{ 
-                            background: driver.trend === 'up' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: driver.trend === 'up' ? 'hsl(var(--success))' : 'hsl(var(--error))'
-                          }}
-                        >
-                          <TrendIcon className="h-4 w-4" />
-                          <span className="text-sm font-semibold">
-                            {driver.trendValue}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Metrics */}
-                    <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-                      <div 
-                        className="p-3 rounded-lg"
-                        style={{ 
-                          background: 'var(--glass-bg-heavy)',
-                          backdropFilter: 'blur(8px)'
-                        }}
-                      >
-                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                          Fatturato
-                        </div>
-                        <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                          €{(driver.totalRevenue / 1000).toFixed(0)}k
-                        </div>
-                      </div>
-
-                      <div 
-                        className="p-3 rounded-lg"
-                        style={{ 
-                          background: 'var(--glass-bg-heavy)',
-                          backdropFilter: 'blur(8px)'
-                        }}
-                      >
-                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                          Deal Vinti
-                        </div>
-                        <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                          {driver.dealsWon}
-                        </div>
-                      </div>
-
-                      <div 
-                        className="p-3 rounded-lg"
-                        style={{ 
-                          background: 'var(--glass-bg-heavy)',
-                          backdropFilter: 'blur(8px)'
-                        }}
-                      >
-                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                          Win Rate
-                        </div>
-                        <div className="text-xl font-bold" style={{ color: 'hsl(var(--success))' }}>
-                          {driver.conversionRate}%
-                        </div>
-                      </div>
-
-                      <div 
-                        className="p-3 rounded-lg"
-                        style={{ 
-                          background: 'var(--glass-bg-heavy)',
-                          backdropFilter: 'blur(8px)'
-                        }}
-                      >
-                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                          Ticket Medio
-                        </div>
-                        <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                          €{(driver.avgDealSize / 1000).toFixed(0)}k
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+        {/* Filter Bar */}
+        <div className="px-6 mb-6">
+          <FilterBar
+            filters={filters}
+            onFiltersChange={setFilters}
+            onRefresh={handleRefresh}
+            onExport={handleExport}
+            isLoading={isLoadingSummary}
+          />
         </div>
 
-        {/* Coming Soon Section */}
-        <motion.div
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Card 
-            className="glass-card p-12 border-0 text-center"
-            style={{ 
-              background: 'var(--glass-card-bg)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid var(--glass-card-border)',
-              boxShadow: 'var(--shadow-glass)'
-            }}
-          >
-            <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" style={{ color: 'hsl(var(--brand-orange))' }} />
-            <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Advanced Analytics in arrivo
-            </h3>
-            <p className="text-sm max-w-2xl mx-auto" style={{ color: 'var(--text-tertiary)' }}>
-              Conversion funnels, customer lifetime value, product attach rates (Netflix con Fibra), 
-              churn prediction AI e cross-sell opportunities
-            </p>
-          </Card>
-        </motion.div>
+        {/* Main Content */}
+        <div className="flex-1 px-6 pb-6 overflow-auto space-y-6">
+          {/* KPI Cards */}
+          <KPICards 
+            data={executiveSummary} 
+            isLoading={isLoadingSummary} 
+          />
+
+          {/* Analytics Tabs */}
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="marketing" className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4" />
+                Marketing
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                AI Insights
+              </TabsTrigger>
+              <TabsTrigger value="gtm" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                GTM & Social
+              </TabsTrigger>
+              <TabsTrigger value="stores" className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4" />
+                Store Analysis
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid gap-6 md:grid-cols-2"
+              >
+                {/* Conversion Funnel */}
+                <motion.div variants={cardVariants}>
+                  <Card className="glass-card h-[400px]">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-[var(--brand-orange)]" />
+                        Conversion Funnel
+                      </CardTitle>
+                      <CardDescription>Dal visitatore al cliente</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <FunnelChart>
+                          <Tooltip />
+                          <Funnel
+                            dataKey="value"
+                            data={conversionFunnel || []}
+                            isAnimationActive
+                          >
+                            <LabelList position="center" fill="#fff" />
+                          </Funnel>
+                        </FunnelChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* Campaign Performance */}
+                <motion.div variants={cardVariants}>
+                  <Card className="glass-card h-[400px]">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5 text-[var(--brand-purple)]" />
+                        Campaign Performance
+                      </CardTitle>
+                      <CardDescription>ROI per campagna attiva</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={campaignPerformance?.slice(0, 5) || []}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis 
+                            dataKey="campaignName" 
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                            fontSize={12}
+                          />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="roi" fill={COLORS.orange} radius={[8, 8, 0, 0]} />
+                          <Bar dataKey="conversionRate" fill={COLORS.purple} radius={[8, 8, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </motion.div>
+
+              {/* Store Comparison Table */}
+              <motion.div variants={cardVariants}>
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShoppingBag className="h-5 w-5 text-[var(--brand-orange)]" />
+                      Top Performing Stores
+                    </CardTitle>
+                    <CardDescription>Ranking store per performance</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-left border-b">
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Rank</th>
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Store</th>
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Città</th>
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Revenue</th>
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Leads</th>
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Conv. Rate</th>
+                            <th className="pb-2 font-medium text-sm text-muted-foreground">Score</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {storeComparison?.slice(0, 5).map((store: any) => (
+                            <tr key={store.storeId} className="border-b">
+                              <td className="py-3">
+                                <span className={cn(
+                                  "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
+                                  store.rank === 1 && "bg-yellow-100 text-yellow-800",
+                                  store.rank === 2 && "bg-gray-100 text-gray-800",
+                                  store.rank === 3 && "bg-orange-100 text-orange-800",
+                                  store.rank > 3 && "bg-gray-50 text-gray-600"
+                                )}>
+                                  {store.rank}
+                                </span>
+                              </td>
+                              <td className="py-3 font-medium">{store.storeName}</td>
+                              <td className="py-3 text-muted-foreground">{store.city}</td>
+                              <td className="py-3">€{(store.metrics.revenue / 1000).toFixed(0)}k</td>
+                              <td className="py-3">{store.metrics.leads}</td>
+                              <td className="py-3">
+                                <span className="text-green-600 font-medium">
+                                  {store.metrics.conversionRate}%
+                                </span>
+                              </td>
+                              <td className="py-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold">{store.metrics.performanceScore}</span>
+                                  <Activity className="h-4 w-4 text-[var(--brand-orange)]" />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* Marketing Tab */}
+            <TabsContent value="marketing" className="space-y-6">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid gap-6 md:grid-cols-2"
+              >
+                {/* Channel Attribution */}
+                <motion.div variants={cardVariants}>
+                  <Card className="glass-card h-[400px]">
+                    <CardHeader>
+                      <CardTitle>Channel Attribution</CardTitle>
+                      <CardDescription>Performance per canale marketing</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie
+                            data={channelAttribution || []}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ channel, conversionRate }) => `${channel}: ${conversionRate.toFixed(1)}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="revenue"
+                          >
+                            {(channelAttribution || []).map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* UTM Performance */}
+                <motion.div variants={cardVariants}>
+                  <Card className="glass-card h-[400px]">
+                    <CardHeader>
+                      <CardTitle>UTM Campaign Tracking</CardTitle>
+                      <CardDescription>Click e conversioni per source/medium</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <RadarChart data={channelAttribution || []}>
+                          <PolarGrid strokeDasharray="3 3" />
+                          <PolarAngleAxis dataKey="source" />
+                          <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                          <Radar name="Leads" dataKey="leads" stroke={COLORS.orange} fill={COLORS.orange} fillOpacity={0.6} />
+                          <Radar name="Customers" dataKey="customers" stroke={COLORS.purple} fill={COLORS.purple} fillOpacity={0.6} />
+                          <Legend />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </motion.div>
+            </TabsContent>
+
+            {/* AI Insights Tab */}
+            <TabsContent value="ai" className="space-y-6">
+              <motion.div variants={cardVariants}>
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-[var(--brand-purple)]" />
+                      AI Score Distribution
+                    </CardTitle>
+                    <CardDescription>Accuratezza predittiva del modello AI</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={aiScoreDistribution || []}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                        <XAxis dataKey="scoreRange" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="count" fill={COLORS.purple} name="Lead Totali" />
+                        <Bar dataKey="converted" fill={COLORS.green} name="Convertiti" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* GTM & Social Tab */}
+            <TabsContent value="gtm" className="space-y-6">
+              <motion.div variants={cardVariants}>
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="h-5 w-5 text-[var(--brand-orange)]" />
+                      GTM Events Timeline
+                    </CardTitle>
+                    <CardDescription>Eventi tracciati per ora del giorno</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={gtmEvents?.byHour || []}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                        <XAxis dataKey="hour" />
+                        <YAxis />
+                        <Tooltip />
+                        <Area 
+                          type="monotone" 
+                          dataKey="events" 
+                          stroke={COLORS.orange}
+                          fill={COLORS.orange}
+                          fillOpacity={0.3}
+                          name="Eventi"
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="conversions" 
+                          stroke={COLORS.green}
+                          fill={COLORS.green}
+                          fillOpacity={0.3}
+                          name="Conversioni"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* Stores Analysis Tab */}
+            <TabsContent value="stores" className="space-y-6">
+              <motion.div variants={cardVariants}>
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Store Performance Comparison</CardTitle>
+                    <CardDescription>Metriche comparative tra punti vendita</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={storeComparison || []}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                        <XAxis dataKey="storeName" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="metrics.revenue" 
+                          stroke={COLORS.orange}
+                          strokeWidth={2}
+                          name="Revenue (€)"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="metrics.conversionRate" 
+                          stroke={COLORS.purple}
+                          strokeWidth={2}
+                          name="Conv. Rate (%)"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="metrics.leads" 
+                          stroke={COLORS.blue}
+                          strokeWidth={2}
+                          name="Leads"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </Layout>
-  );
-}
-
-// 🎯 EXPORT CONTENT-ONLY per CRMPage unificato (senza Layout/tabs)
-export function AnalyticsContent() {
-  // TODO: Implementare endpoint backend /api/crm/analytics/driver-performance
-  const analytics: DriverPerformance[] = [];
-
-  const getDriverIcon = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return Wifi;
-      case 'MOBILE': return Smartphone;
-      case 'DEVICE': return Smartphone;
-      case 'ACCESSORI': return ShoppingBag;
-      default: return Target;
-    }
-  };
-
-  const getDriverColor = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return 'hsl(var(--brand-orange))';
-      case 'MOBILE': return 'hsl(var(--brand-purple))';
-      case 'DEVICE': return 'hsl(var(--brand-orange))';
-      case 'ACCESSORI': return 'hsl(var(--brand-purple))';
-      default: return 'var(--text-primary)';
-    }
-  };
-
-  const getDriverGradient = (driver: string) => {
-    switch (driver) {
-      case 'FISSO': return 'var(--brand-glass-orange)';
-      case 'MOBILE': return 'var(--brand-glass-purple)';
-      case 'DEVICE': return 'var(--brand-glass-gradient)';
-      case 'ACCESSORI': return 'var(--brand-glass-orange)';
-      default: return 'var(--glass-card-bg)';
-    }
-  };
-
-  const totalRevenue = 0;
-  const totalDeals = 0;
-  const avgConversion = 0;
-
-  return (
-    <div className="flex-1 p-6 overflow-auto space-y-6">
-      {/* Summary Cards */}
-      <motion.div 
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div variants={cardVariants}>
-          <Card 
-            className="glass-card p-6 border-0"
-            style={{ 
-              background: 'var(--brand-glass-orange)',
-              backdropFilter: 'blur(12px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-              boxShadow: 'var(--shadow-glass)'
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div 
-                className="p-2 rounded-lg"
-                style={{ background: 'var(--glass-bg-heavy)' }}
-              >
-                <TrendingUp className="h-5 w-5" style={{ color: 'hsl(var(--success))' }} />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Fatturato Totale
-              </span>
-            </div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              €{(totalRevenue / 1000000).toFixed(2)}M
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div variants={cardVariants}>
-          <Card 
-            className="glass-card p-6 border-0"
-            style={{ 
-              background: 'var(--brand-glass-purple)',
-              backdropFilter: 'blur(12px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-              boxShadow: 'var(--shadow-glass)'
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div 
-                className="p-2 rounded-lg"
-                style={{ background: 'var(--glass-bg-heavy)' }}
-              >
-                <Target className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Deal Vinti
-              </span>
-            </div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              {totalDeals}
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div variants={cardVariants}>
-          <Card 
-            className="glass-card p-6 border-0"
-            style={{ 
-              background: 'var(--brand-glass-gradient)',
-              backdropFilter: 'blur(12px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-              boxShadow: 'var(--shadow-glass)'
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div 
-                className="p-2 rounded-lg"
-                style={{ background: 'var(--glass-bg-heavy)' }}
-              >
-                <Users className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
-              </div>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Conversion Media
-              </span>
-            </div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              {avgConversion.toFixed(1)}%
-            </div>
-          </Card>
-        </motion.div>
-      </motion.div>
-
-      {/* Driver Performance Cards */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-          Performance per Driver
-        </h2>
-        <motion.div 
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {analytics?.map((driver) => {
-            const DriverIcon = getDriverIcon(driver.driver);
-            const TrendIcon = driver.trend === 'up' ? ArrowUpRight : ArrowDownRight;
-            
-            return (
-              <motion.div
-                key={driver.driver}
-                variants={cardVariants}
-                whileHover={{ y: -4 }}
-                data-testid={`analytics-driver-${driver.driver.toLowerCase()}`}
-              >
-                <Card 
-                  className="glass-card border-0"
-                  style={{ 
-                    background: getDriverGradient(driver.driver),
-                    backdropFilter: 'blur(12px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                    boxShadow: 'var(--shadow-glass)',
-                    transition: 'var(--glass-transition)'
-                  }}
-                >
-                  {/* Header */}
-                  <div className="p-6 pb-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="p-3 rounded-lg"
-                          style={{ 
-                            background: 'var(--glass-bg-heavy)',
-                            backdropFilter: 'blur(8px)'
-                          }}
-                        >
-                          <DriverIcon className="h-5 w-5" style={{ color: getDriverColor(driver.driver) }} />
-                        </div>
-                        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>
-                          {driver.driver}
-                        </h3>
-                      </div>
-                      <div 
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg"
-                        style={{ 
-                          background: driver.trend === 'up' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          color: driver.trend === 'up' ? 'hsl(var(--success))' : 'hsl(var(--error))'
-                        }}
-                      >
-                        <TrendIcon className="h-4 w-4" />
-                        <span className="text-sm font-semibold">
-                          {driver.trendValue}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Metrics */}
-                  <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-                    <div 
-                      className="p-3 rounded-lg"
-                      style={{ 
-                        background: 'var(--glass-bg-heavy)',
-                        backdropFilter: 'blur(8px)'
-                      }}
-                    >
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                        Fatturato
-                      </div>
-                      <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                        €{(driver.totalRevenue / 1000).toFixed(0)}k
-                      </div>
-                    </div>
-
-                    <div 
-                      className="p-3 rounded-lg"
-                      style={{ 
-                        background: 'var(--glass-bg-heavy)',
-                        backdropFilter: 'blur(8px)'
-                      }}
-                    >
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                        Deal Vinti
-                      </div>
-                      <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                        {driver.dealsWon}
-                      </div>
-                    </div>
-
-                    <div 
-                      className="p-3 rounded-lg"
-                      style={{ 
-                        background: 'var(--glass-bg-heavy)',
-                        backdropFilter: 'blur(8px)'
-                      }}
-                    >
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                        Win Rate
-                      </div>
-                      <div className="text-xl font-bold" style={{ color: 'hsl(var(--success))' }}>
-                        {driver.conversionRate}%
-                      </div>
-                    </div>
-
-                    <div 
-                      className="p-3 rounded-lg"
-                      style={{ 
-                        background: 'var(--glass-bg-heavy)',
-                        backdropFilter: 'blur(8px)'
-                      }}
-                    >
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                        Ticket Medio
-                      </div>
-                      <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                        €{(driver.avgDealSize / 1000).toFixed(0)}k
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </div>
-
-      {/* Coming Soon Section */}
-      <motion.div
-        variants={cardVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <Card 
-          className="glass-card p-12 border-0 text-center"
-          style={{ 
-            background: 'var(--glass-card-bg)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid var(--glass-card-border)',
-            boxShadow: 'var(--shadow-glass)'
-          }}
-        >
-          <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" style={{ color: 'hsl(var(--brand-orange))' }} />
-          <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-            Advanced Analytics in arrivo
-          </h3>
-          <p className="text-sm max-w-2xl mx-auto" style={{ color: 'var(--text-tertiary)' }}>
-            Conversion funnels, customer lifetime value, product attach rates (Netflix con Fibra), 
-            churn prediction AI e cross-sell opportunities
-          </p>
-        </Card>
-      </motion.div>
-    </div>
   );
 }
