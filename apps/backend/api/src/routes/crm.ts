@@ -34,6 +34,7 @@ import {
   leadAiInsights,
   leadStatuses,
   leadStatusHistory,
+  crmLeadNotifications,
   campaignSocialAccounts,
   mcpConnectedAccounts,
   storeTrackingConfig,
@@ -448,6 +449,40 @@ router.post('/leads', async (req, res) => {
           category: scoringResult.category,
           responseTimeMs: scoringResult.responseTimeMs
         });
+
+        // 🔔 Hot Lead Notification: Notify team for high-value leads (score >80)
+        if (scoringResult.score > 80) {
+          try {
+            // Insert notification in database
+            await db.insert(crmLeadNotifications).values({
+              tenantId,
+              leadId: lead.id,
+              notificationType: 'hot_lead',
+              priority: 'high',
+              message: `🔥 Hot Lead Alert: ${lead.firstName || 'New lead'} scored ${scoringResult.score}/100`,
+              metadata: {
+                leadScore: scoringResult.score,
+                category: scoringResult.category,
+                conversionProbability: scoringResult.conversion_probability,
+                estimatedValue: scoringResult.estimated_value,
+                recommendedActions: scoringResult.recommended_actions
+              },
+              deliveryStatus: 'pending',
+              deliveryChannels: ['in_app', 'email']
+            });
+
+            logger.info('🔔 Hot lead notification created', {
+              leadId: lead.id,
+              score: scoringResult.score,
+              notificationType: 'hot_lead'
+            });
+          } catch (notifError) {
+            logger.error('Failed to create hot lead notification', {
+              leadId: lead.id,
+              error: notifError instanceof Error ? notifError.message : 'Unknown error'
+            });
+          }
+        }
       } catch (scoringError) {
         logger.error('AI Lead Scoring failed (background)', {
           leadId: lead.id,
@@ -1786,10 +1821,44 @@ router.post('/campaigns', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // 🔄 Auto-inherit tracking config from store (if not explicitly provided)
+    let campaignData = { ...validation.data };
+    
+    if (campaignData.storeId) {
+      // Check if tracking IDs are not already provided
+      const needsInheritance = !campaignData.ga4MeasurementId && !campaignData.googleAdsConversionId && !campaignData.facebookPixelId;
+      
+      if (needsInheritance) {
+        // Fetch store tracking config
+        const [storeTracking] = await db
+          .select()
+          .from(storeTrackingConfig)
+          .where(and(
+            eq(storeTrackingConfig.storeId, campaignData.storeId),
+            eq(storeTrackingConfig.tenantId, tenantId)
+          ))
+          .limit(1);
+        
+        if (storeTracking && storeTracking.gtmConfigured) {
+          // Inherit tracking IDs from store
+          campaignData.ga4MeasurementId = storeTracking.ga4MeasurementId;
+          campaignData.googleAdsConversionId = storeTracking.googleAdsConversionId;
+          campaignData.facebookPixelId = storeTracking.facebookPixelId;
+          
+          logger.info('Auto-inherited tracking config from store', {
+            storeId: campaignData.storeId,
+            ga4: !!storeTracking.ga4MeasurementId,
+            googleAds: !!storeTracking.googleAdsConversionId,
+            fbPixel: !!storeTracking.facebookPixelId
+          });
+        }
+      }
+    }
+
     const [campaign] = await db
       .insert(crmCampaigns)
       .values({
-        ...validation.data,
+        ...campaignData,
         tenantId
       })
       .returning();
@@ -1847,6 +1916,58 @@ router.patch('/campaigns/:id', async (req, res) => {
     }
 
     await setTenantContext(tenantId);
+
+    // 🔒 Campaign Activation Validation: Block activation without tracking config
+    if (validation.data.status === 'active') {
+      // Get current campaign to check storeId
+      const [currentCampaign] = await db
+        .select()
+        .from(crmCampaigns)
+        .where(and(
+          eq(crmCampaigns.id, id),
+          eq(crmCampaigns.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (!currentCampaign) {
+        return res.status(404).json({
+          success: false,
+          error: 'Campaign not found',
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+      
+      // Check if campaign has a store assigned
+      if (currentCampaign.storeId) {
+        // Verify store has tracking config
+        const [storeTracking] = await db
+          .select()
+          .from(storeTrackingConfig)
+          .where(and(
+            eq(storeTrackingConfig.storeId, currentCampaign.storeId),
+            eq(storeTrackingConfig.tenantId, tenantId)
+          ))
+          .limit(1);
+        
+        // Block activation if no tracking config or not configured
+        if (!storeTracking || !storeTracking.gtmConfigured) {
+          return res.status(400).json({
+            success: false,
+            error: 'Missing tracking configuration',
+            message: 'Cannot activate campaign: Store must have GTM tracking configured (GA4, Google Ads, or Facebook Pixel). Please configure tracking in Store Settings → Tracking Config.',
+            timestamp: new Date().toISOString()
+          } as ApiErrorResponse);
+        }
+        
+        logger.info('Campaign activation validation passed', {
+          campaignId: id,
+          storeId: currentCampaign.storeId,
+          hasGA4: !!storeTracking.ga4MeasurementId,
+          hasGoogleAds: !!storeTracking.googleAdsConversionId,
+          hasFBPixel: !!storeTracking.facebookPixelId
+        });
+      }
+    }
 
     const [updated] = await db
       .update(crmCampaigns)
@@ -5588,6 +5709,166 @@ router.get('/stores/:id/tracking-config', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve store tracking config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== ANALYTICS ====================
+
+/**
+ * GET /api/crm/analytics/ai-predictions
+ * Compare AI lead scores vs actual conversions for accuracy validation
+ */
+router.get('/analytics/ai-predictions', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Query all leads with AI score
+    const leadsWithScore = await db
+      .select({
+        id: crmLeads.id,
+        leadScore: crmLeads.leadScore,
+        status: crmLeads.status,
+        createdAt: crmLeads.createdAt,
+        convertedAt: crmLeads.updatedAt
+      })
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.tenantId, tenantId),
+        sql`${crmLeads.leadScore} IS NOT NULL`
+      ));
+
+    // Calculate metrics
+    const totalLeads = leadsWithScore.length;
+    const converted = leadsWithScore.filter(l => l.status === 'converted');
+    const notConverted = leadsWithScore.filter(l => l.status !== 'converted');
+
+    // Score ranges
+    const scoreRanges = {
+      hot: { min: 80, max: 100 },
+      warm: { min: 50, max: 79 },
+      cold: { min: 0, max: 49 }
+    };
+
+    const analyzeRange = (rangeName: string, min: number, max: number) => {
+      const inRange = leadsWithScore.filter(l => l.leadScore! >= min && l.leadScore! <= max);
+      const convertedInRange = inRange.filter(l => l.status === 'converted');
+      
+      return {
+        rangeName,
+        scoreRange: `${min}-${max}`,
+        totalLeads: inRange.length,
+        convertedLeads: convertedInRange.length,
+        conversionRate: inRange.length > 0 ? (convertedInRange.length / inRange.length) * 100 : 0,
+        averageScore: inRange.length > 0 
+          ? inRange.reduce((sum, l) => sum + (l.leadScore || 0), 0) / inRange.length 
+          : 0
+      };
+    };
+
+    const rangeAnalysis = [
+      analyzeRange('hot', scoreRanges.hot.min, scoreRanges.hot.max),
+      analyzeRange('warm', scoreRanges.warm.min, scoreRanges.warm.max),
+      analyzeRange('cold', scoreRanges.cold.min, scoreRanges.cold.max)
+    ];
+
+    // Calculate overall metrics
+    const avgScoreConverted = converted.length > 0
+      ? converted.reduce((sum, l) => sum + (l.leadScore || 0), 0) / converted.length
+      : 0;
+    
+    const avgScoreNotConverted = notConverted.length > 0
+      ? notConverted.reduce((sum, l) => sum + (l.leadScore || 0), 0) / notConverted.length
+      : 0;
+
+    // Precision: Of leads predicted as hot (>80), how many converted?
+    const predictedHot = leadsWithScore.filter(l => l.leadScore! > 80);
+    const truePositivesHot = predictedHot.filter(l => l.status === 'converted');
+    const precision = predictedHot.length > 0 
+      ? (truePositivesHot.length / predictedHot.length) * 100 
+      : 0;
+
+    // Recall: Of converted leads, how many were predicted as hot?
+    const recall = converted.length > 0 
+      ? (truePositivesHot.length / converted.length) * 100 
+      : 0;
+
+    // F1 Score
+    const f1Score = (precision + recall) > 0 
+      ? (2 * precision * recall) / (precision + recall) 
+      : 0;
+
+    // Overall accuracy: Leads with score >80 should convert at higher rate than <50
+    const hotConversionRate = rangeAnalysis.find(r => r.rangeName === 'hot')?.conversionRate || 0;
+    const coldConversionRate = rangeAnalysis.find(r => r.rangeName === 'cold')?.conversionRate || 0;
+    const modelAccuracy = hotConversionRate > coldConversionRate;
+
+    const analytics = {
+      summary: {
+        totalLeadsScored: totalLeads,
+        totalConverted: converted.length,
+        overallConversionRate: totalLeads > 0 ? (converted.length / totalLeads) * 100 : 0,
+        avgScoreConverted: Math.round(avgScoreConverted * 100) / 100,
+        avgScoreNotConverted: Math.round(avgScoreNotConverted * 100) / 100,
+        scoreDifferential: Math.round((avgScoreConverted - avgScoreNotConverted) * 100) / 100
+      },
+      scoreRangeAnalysis: rangeAnalysis,
+      aiAccuracyMetrics: {
+        precision: Math.round(precision * 100) / 100,
+        recall: Math.round(recall * 100) / 100,
+        f1Score: Math.round(f1Score * 100) / 100,
+        modelAccurate: modelAccuracy,
+        interpretation: {
+          precision: `${Math.round(precision)}% of leads predicted as hot (>80) actually converted`,
+          recall: `${Math.round(recall)}% of converted leads were correctly predicted as hot`,
+          accuracy: modelAccuracy 
+            ? 'Model is accurate: Hot leads convert at higher rate than cold leads'
+            : 'Model needs improvement: Hot leads not converting at expected rate'
+        }
+      },
+      recommendations: [
+        hotConversionRate < 50 ? 'Hot lead conversion rate is low - review sales follow-up process' : null,
+        avgScoreConverted < 60 ? 'Converted leads have low average score - model may need retraining' : null,
+        f1Score < 50 ? 'Low F1 score - consider adjusting score thresholds or adding more training data' : null
+      ].filter(Boolean)
+    };
+
+    logger.info('AI predictions analytics generated', {
+      tenantId,
+      totalLeads,
+      convertedLeads: converted.length,
+      precision,
+      recall,
+      f1Score
+    });
+
+    res.status(200).json({
+      success: true,
+      data: analytics,
+      message: 'AI predictions analytics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error generating AI predictions analytics', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to generate analytics',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

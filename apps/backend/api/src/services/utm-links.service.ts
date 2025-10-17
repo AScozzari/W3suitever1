@@ -7,7 +7,7 @@
 
 import { db } from '../core/db';
 import { crmCampaigns, crmCampaignUtmLinks, crmLeads } from '../db/schema/w3suite';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, not, inArray } from 'drizzle-orm';
 import { logger } from '../core/logger';
 
 // Marketing channels configuration with UTM mappings
@@ -133,17 +133,33 @@ class UTMLinksService {
     }
 
     // Deactivate links for channels that were removed
+    // 🔒 SECURITY: Use parameterized query to prevent SQL injection
     const activeChannelIds = marketingChannels;
-    await db
-      .update(crmCampaignUtmLinks)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(
-        and(
-          eq(crmCampaignUtmLinks.campaignId, campaignId),
-          eq(crmCampaignUtmLinks.tenantId, tenantId),
-          sql`${crmCampaignUtmLinks.channelId} NOT IN (${sql.join(activeChannelIds.map(id => sql.raw(`'${id}'`)), sql.raw(', '))})`
-        )
-      );
+    
+    if (activeChannelIds.length > 0) {
+      // Deactivate links NOT in the active channel list (parameterized)
+      await db
+        .update(crmCampaignUtmLinks)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(
+          and(
+            eq(crmCampaignUtmLinks.campaignId, campaignId),
+            eq(crmCampaignUtmLinks.tenantId, tenantId),
+            not(inArray(crmCampaignUtmLinks.channelId, activeChannelIds))
+          )
+        );
+    } else {
+      // No active channels - deactivate all links for this campaign
+      await db
+        .update(crmCampaignUtmLinks)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(
+          and(
+            eq(crmCampaignUtmLinks.campaignId, campaignId),
+            eq(crmCampaignUtmLinks.tenantId, tenantId)
+          )
+        );
+    }
 
     logger.info('UTM links generation completed', {
       campaignId,
