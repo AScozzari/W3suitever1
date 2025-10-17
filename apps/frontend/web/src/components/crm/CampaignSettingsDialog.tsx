@@ -71,9 +71,8 @@ const campaignFormSchema = z.object({
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   
   // UTM Parameters
-  utmSourceId: z.string().uuid().optional().nullable(),
-  utmMediumId: z.string().uuid().optional().nullable(),
   utmCampaign: z.string().optional().nullable(),
+  marketingChannels: z.array(z.string()).optional().default([]),
   
   // Budget & Tracking
   budget: z.number().optional().nullable(),
@@ -190,15 +189,16 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
-  const { data: utmSources = [] } = useQuery({
-    queryKey: ['/api/utm-sources'],
-    enabled: open,
-  });
-
-  const { data: utmMediums = [] } = useQuery({
-    queryKey: ['/api/utm-mediums'],
-    enabled: open,
-  });
+  // Marketing channels configuration with predefined UTM mappings
+  const MARKETING_CHANNELS = [
+    { id: 'facebook_ads', name: 'Facebook Ads', utmSource: 'facebook', utmMedium: 'cpc', icon: '📘', color: 'blue' },
+    { id: 'instagram', name: 'Instagram Stories', utmSource: 'instagram', utmMedium: 'social', icon: '📷', color: 'pink' },
+    { id: 'google_ads', name: 'Google Ads', utmSource: 'google', utmMedium: 'cpc', icon: '🔍', color: 'green' },
+    { id: 'email', name: 'Email Newsletter', utmSource: 'newsletter', utmMedium: 'email', icon: '📧', color: 'orange' },
+    { id: 'whatsapp', name: 'WhatsApp Business', utmSource: 'whatsapp', utmMedium: 'messaging', icon: '💬', color: 'emerald' },
+    { id: 'linkedin', name: 'LinkedIn Ads', utmSource: 'linkedin', utmMedium: 'cpc', icon: '💼', color: 'blue' },
+    { id: 'tiktok', name: 'TikTok Ads', utmSource: 'tiktok', utmMedium: 'cpc', icon: '🎵', color: 'purple' },
+  ];
 
   const { data: marketingChannels = [] } = useQuery({
     queryKey: ['/api/crm/marketing-channels'],
@@ -230,9 +230,8 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       defaultLeadSource: null,
       marketingChannelIds: [],
       landingPageUrl: '',
-      utmSourceId: null,
-      utmMediumId: null,
       utmCampaign: null,
+      marketingChannels: [],
       budget: null,
       actualSpent: null,
       startDate: null,
@@ -283,9 +282,8 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         defaultLeadSource: campaign.defaultLeadSource || null,
         marketingChannelIds: campaign.marketingChannelIds || [],
         landingPageUrl: campaign.landingPageUrl || '',
-        utmSourceId: campaign.utmSourceId || null,
-        utmMediumId: campaign.utmMediumId || null,
         utmCampaign: campaign.utmCampaign || null,
+        marketingChannels: campaign.marketingChannels || [],
         budget: campaign.budget || null,
         actualSpent: campaign.actualSpent || null,
         startDate: campaign.startDate ? campaign.startDate.split('T')[0] : null,
@@ -678,103 +676,89 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800">
                     <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
                       <Target className="h-4 w-4" />
-                      Parametri UTM (Marketing Attribution)
+                      Canali Marketing & UTM Tracking
                     </h4>
                     <p className="text-xs text-orange-700 dark:text-orange-300 mb-4">
-                      Traccia la performance di questa campagna per source, medium e nome specifico
+                      Seleziona i canali marketing da attivare. Il sistema genererà automaticamente link UTM per ogni canale.
                     </p>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="utmSourceId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>UTM Source *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-utm-source">
-                                  <SelectValue placeholder="Seleziona source" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {utmSources.map((source: any) => (
-                                  <SelectItem key={source.id} value={source.id}>
-                                    {source.displayName} ({source.code})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription className="text-xs">
-                              {suggestedUtmValues?.source ? (
-                                <span className="text-orange-600 dark:text-orange-400 font-medium">
-                                  💡 Suggerito: {suggestedUtmValues.source}
-                                </span>
-                              ) : (
-                                "Es: Facebook, Instagram, Google"
-                              )}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <FormField
+                      control={form.control}
+                      name="marketingChannels"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Canali Marketing Attivi *</FormLabel>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {MARKETING_CHANNELS.map((channel) => (
+                              <div key={channel.id}>
+                                <label
+                                  htmlFor={`channel-${channel.id}`}
+                                  className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                    field.value?.includes(channel.id)
+                                      ? `border-${channel.color}-500 bg-${channel.color}-50 dark:bg-${channel.color}-950`
+                                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <Checkbox
+                                    id={`channel-${channel.id}`}
+                                    checked={field.value?.includes(channel.id)}
+                                    onCheckedChange={(checked) => {
+                                      const current = field.value || [];
+                                      const updated = checked
+                                        ? [...current, channel.id]
+                                        : current.filter((id) => id !== channel.id);
+                                      field.onChange(updated);
+                                    }}
+                                    data-testid={`checkbox-channel-${channel.id}`}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">{channel.icon}</span>
+                                      <span className="font-medium text-sm">{channel.name}</span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                      {channel.utmSource} / {channel.utmMedium}
+                                    </div>
+                                  </div>
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                          <FormDescription className="text-xs mt-2">
+                            {field.value && field.value.length > 0 ? (
+                              <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                ✅ {field.value.length} canale{field.value.length > 1 ? 'i' : ''} selezionato{field.value.length > 1 ? 'i' : ''} - Link UTM saranno generati dopo il salvataggio
+                              </span>
+                            ) : (
+                              "Seleziona almeno un canale per generare link UTM"
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      <FormField
-                        control={form.control}
-                        name="utmMediumId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>UTM Medium *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-utm-medium">
-                                  <SelectValue placeholder="Seleziona medium" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {utmMediums.map((medium: any) => (
-                                  <SelectItem key={medium.id} value={medium.id}>
-                                    {medium.displayName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription className="text-xs">
-                              {suggestedUtmValues?.medium ? (
-                                <span className="text-orange-600 dark:text-orange-400 font-medium">
-                                  💡 Suggerito: {suggestedUtmValues.medium}
-                                </span>
-                              ) : (
-                                "Es: Story Ad, Feed Post, CPC"
-                              )}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="utmCampaign"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>UTM Campaign</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                value={field.value || ''} 
-                                placeholder="promo_black_friday_2025" 
-                                data-testid="input-utm-campaign" 
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs">
-                              Nome specifico campagna
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="utmCampaign"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel>Nome Campagna UTM *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              value={field.value || ''} 
+                              placeholder="promo_black_friday_2025" 
+                              data-testid="input-utm-campaign" 
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Nome univoco per identificare questa campagna (usato in tutti i canali)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

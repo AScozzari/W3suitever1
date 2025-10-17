@@ -4612,9 +4612,10 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   budget: real("budget"),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
-  utmSourceId: uuid("utm_source_id"),
-  utmMediumId: uuid("utm_medium_id"),
+  utmSourceId: uuid("utm_source_id"), // DEPRECATED: Use marketingChannels array instead
+  utmMediumId: uuid("utm_medium_id"), // DEPRECATED: Use marketingChannels array instead
   utmCampaign: varchar("utm_campaign", { length: 255 }),
+  marketingChannels: text("marketing_channels").array(), // Active channels: ['facebook_ads', 'instagram', 'google_ads', 'email', 'whatsapp']
   totalLeads: integer("total_leads").default(0),
   totalDeals: integer("total_deals").default(0),
   totalRevenue: real("total_revenue").default(0),
