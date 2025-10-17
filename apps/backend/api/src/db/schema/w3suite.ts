@@ -577,6 +577,39 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Store = typeof stores.$inferSelect;
 
+// ==================== STORE TRACKING CONFIGURATION ====================
+// GTM Auto-Configuration System for Multi-Tenant Marketing Attribution
+export const storeTrackingConfig = w3suiteSchema.table("store_tracking_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Marketing Tracking IDs
+  ga4MeasurementId: varchar("ga4_measurement_id", { length: 50 }), // Format: G-XXXXXXXXX
+  googleAdsConversionId: varchar("google_ads_conversion_id", { length: 50 }), // Format: AW-XXXXXXXX
+  facebookPixelId: varchar("facebook_pixel_id", { length: 50 }), // Numeric
+  tiktokPixelId: varchar("tiktok_pixel_id", { length: 50 }), // Alphanumeric
+  
+  // GTM Auto-Configuration Status
+  gtmConfigured: boolean("gtm_configured").default(false).notNull(),
+  gtmTriggerId: varchar("gtm_trigger_id", { length: 100 }), // GTM API trigger ID
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("store_tracking_config_store_unique").on(table.storeId),
+  index("store_tracking_config_tenant_idx").on(table.tenantId),
+]);
+
+export const insertStoreTrackingConfigSchema = createInsertSchema(storeTrackingConfig).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertStoreTrackingConfig = z.infer<typeof insertStoreTrackingConfigSchema>;
+export type StoreTrackingConfig = typeof storeTrackingConfig.$inferSelect;
+
 // ==================== RBAC SYSTEM ====================
 export const roles = w3suiteSchema.table("roles", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
