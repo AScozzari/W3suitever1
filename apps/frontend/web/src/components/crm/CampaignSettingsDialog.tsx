@@ -288,8 +288,8 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         utmCampaign: campaign.utmCampaign || null,
         budget: campaign.budget || null,
         actualSpent: campaign.actualSpent || null,
-        startDate: campaign.startDate || null,
-        endDate: campaign.endDate || null,
+        startDate: campaign.startDate ? campaign.startDate.split('T')[0] : null,
+        endDate: campaign.endDate ? campaign.endDate.split('T')[0] : null,
         isActive: campaign.isActive ?? true,
         requiredConsents: campaign.requiredConsents || {
           privacy_policy: false,
