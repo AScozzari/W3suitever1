@@ -121,81 +121,46 @@ export function AnalyticsContent() {
     preset: '30days'
   });
 
-  // Build query params
-  const queryParams = new URLSearchParams();
+  // Build query params object for TanStack Query
+  const queryParams: Record<string, any> = {};
   if (filters.storeIds.length > 0) {
-    filters.storeIds.forEach(id => queryParams.append('storeIds', id));
+    queryParams.storeIds = filters.storeIds.join(',');
   }
   if (filters.dateRange?.from) {
-    queryParams.set('dateFrom', filters.dateRange.from.toISOString());
+    queryParams.dateFrom = filters.dateRange.from.toISOString();
   }
   if (filters.dateRange?.to) {
-    queryParams.set('dateTo', filters.dateRange.to.toISOString());
+    queryParams.dateTo = filters.dateRange.to.toISOString();
   }
 
-  // Fetch data with React Query
-  const { data: executiveSummary, isLoading: isLoadingSummary, refetch: refetchSummary } = useQuery({
-    queryKey: ['/api/crm/analytics/executive-summary', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/executive-summary?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  // Fetch data with React Query - using default queryFn with auth headers
+  const { data: executiveSummary = {}, isLoading: isLoadingSummary, refetch: refetchSummary } = useQuery({
+    queryKey: ['/api/crm/analytics/executive-summary', queryParams]
+  }) as { data: any; isLoading: boolean; refetch: any };
 
-  const { data: campaignPerformance, isLoading: isLoadingCampaigns } = useQuery({
-    queryKey: ['/api/crm/analytics/campaign-performance', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/campaign-performance?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  const { data: campaignPerformance = [], isLoading: isLoadingCampaigns } = useQuery({
+    queryKey: ['/api/crm/analytics/campaign-performance', queryParams]
+  }) as { data: any[]; isLoading: boolean };
 
-  const { data: channelAttribution, isLoading: isLoadingChannels } = useQuery({
-    queryKey: ['/api/crm/analytics/channel-attribution', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/channel-attribution?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  const { data: channelAttribution = [], isLoading: isLoadingChannels } = useQuery({
+    queryKey: ['/api/crm/analytics/channel-attribution', queryParams]
+  }) as { data: any[]; isLoading: boolean };
 
-  const { data: aiScoreDistribution, isLoading: isLoadingAI } = useQuery({
-    queryKey: ['/api/crm/analytics/ai-score-distribution', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/ai-score-distribution?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  const { data: aiScoreDistribution = [], isLoading: isLoadingAI } = useQuery({
+    queryKey: ['/api/crm/analytics/ai-score-distribution', queryParams]
+  }) as { data: any[]; isLoading: boolean };
 
-  const { data: gtmEvents, isLoading: isLoadingGTM } = useQuery({
-    queryKey: ['/api/crm/analytics/gtm-events', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/gtm-events?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  const { data: gtmEvents = { byHour: [] }, isLoading: isLoadingGTM } = useQuery({
+    queryKey: ['/api/crm/analytics/gtm-events', queryParams]
+  }) as { data: any; isLoading: boolean };
 
-  const { data: storeComparison, isLoading: isLoadingStores } = useQuery({
-    queryKey: ['/api/crm/analytics/store-comparison', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/store-comparison?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  const { data: storeComparison = [], isLoading: isLoadingStores } = useQuery({
+    queryKey: ['/api/crm/analytics/store-comparison', queryParams]
+  }) as { data: any[]; isLoading: boolean };
 
-  const { data: conversionFunnel, isLoading: isLoadingFunnel } = useQuery({
-    queryKey: ['/api/crm/analytics/conversion-funnel', queryParams.toString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/crm/analytics/conversion-funnel?${queryParams}`);
-      const result = await response.json();
-      return result.data;
-    }
-  });
+  const { data: conversionFunnel = [], isLoading: isLoadingFunnel } = useQuery({
+    queryKey: ['/api/crm/analytics/conversion-funnel', queryParams]
+  }) as { data: any[]; isLoading: boolean };
 
   const handleRefresh = () => {
     refetchSummary();

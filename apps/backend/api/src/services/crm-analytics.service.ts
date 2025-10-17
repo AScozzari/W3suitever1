@@ -173,8 +173,8 @@ class CRMAnalyticsService {
     // Get deal metrics
     const dealMetrics = await db
       .select({
-        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue}::numeric), 0)`,
-        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue}::numeric), 0)`,
+        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue}), 0)`,
+        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue}), 0)`,
         wonDeals: sql<number>`count(case when ${crmDeals.status} = 'won' then 1 end)`,
       })
       .from(crmDeals)
@@ -273,6 +273,11 @@ class CRMAnalyticsService {
         crmCampaigns.endDate,
         crmCampaigns.ga4MeasurementId
       );
+
+    // Return empty array if no campaigns
+    if (!campaigns || campaigns.length === 0) {
+      return [];
+    }
 
     // Calculate additional metrics
     return campaigns.map(campaign => {
@@ -528,6 +533,11 @@ class CRMAnalyticsService {
         storeFilter
       ))
       .groupBy(stores.id, stores.name, stores.city);
+
+    // Return empty array if no stores
+    if (!storeMetrics || storeMetrics.length === 0) {
+      return [];
+    }
 
     // Calculate metrics and rank stores
     const storesWithMetrics = storeMetrics.map(store => {
