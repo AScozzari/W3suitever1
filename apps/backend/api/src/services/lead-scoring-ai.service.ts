@@ -12,9 +12,10 @@
 import OpenAI from 'openai';
 import { logger } from '../core/logger';
 import { db, setTenantContext } from '../core/db';
-import { crmLeads } from '../db/schema/w3suite';
+import { crmLeads, users, roles, userAssignments } from '../db/schema/w3suite';
 import { aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray, or } from 'drizzle-orm';
+import { notificationService } from '../core/notification-service';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -183,7 +184,73 @@ Rispondi con JSON valido seguendo esattamente il formato richiesto.`;
         tokenUsage
       });
       
-      // 6. Return structured output
+      // 6. Auto-notify team if hot lead detected (score >= 80)
+      if (aiResponse.score >= 80) {
+        try {
+          // Find sales managers and team leaders
+          const salesRoles = await db
+            .select({ id: roles.id, name: roles.name })
+            .from(roles)
+            .where(
+              and(
+                eq(roles.tenantId, input.tenantId),
+                or(
+                  eq(roles.name, 'sales_manager'),
+                  eq(roles.name, 'team_leader')
+                )
+              )
+            );
+
+          if (salesRoles.length > 0) {
+            const roleIds = salesRoles.map(r => r.id);
+            
+            // Get users with these roles
+            const salesUsers = await db
+              .select({ 
+                userId: userAssignments.userId,
+                firstName: users.firstName,
+                lastName: users.lastName
+              })
+              .from(userAssignments)
+              .innerJoin(users, eq(users.id, userAssignments.userId))
+              .where(
+                and(
+                  inArray(userAssignments.roleId, roleIds),
+                  eq(users.tenantId, input.tenantId)
+                )
+              );
+
+            // Send notification to each sales user
+            for (const salesUser of salesUsers) {
+              await notificationService.sendDirectNotification(
+                input.tenantId,
+                salesUser.userId,
+                '🔥 Hot Lead Detected',
+                `Lead "${lead.firstName} ${lead.lastName}" scored ${aiResponse.score}/100. ${aiResponse.reasoning}`,
+                {
+                  priority: 'high',
+                  url: `/crm/leads/${input.leadId}`
+                }
+              );
+            }
+
+            logger.info('Hot lead notifications sent', {
+              leadId: input.leadId,
+              score: aiResponse.score,
+              recipientCount: salesUsers.length
+            });
+          }
+        } catch (notifyError) {
+          logger.error('Failed to send hot lead notifications', {
+            error: notifyError,
+            leadId: input.leadId,
+            score: aiResponse.score
+          });
+          // Don't throw - notification failure shouldn't break scoring
+        }
+      }
+      
+      // 7. Return structured output
       return {
         score: aiResponse.score || 0,
         confidence: aiResponse.confidence || 0,
