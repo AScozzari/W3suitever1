@@ -1,5 +1,5 @@
-import { db } from '../db';
-import { utmSources, utmMediums } from '../db/schema/public';
+import { db } from '../core/db.js';
+import { utmSources, utmMediums } from '../db/schema/public.js';
 import { eq } from 'drizzle-orm';
 
 export interface ResolvedUTMIds {

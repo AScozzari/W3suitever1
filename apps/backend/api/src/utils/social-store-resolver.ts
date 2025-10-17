@@ -1,5 +1,5 @@
-import { db } from '../db';
-import { mcpConnectedAccounts, stores } from '../db/schema/w3suite';
+import { db } from '../core/db.js';
+import { mcpConnectedAccounts, stores } from '../db/schema/w3suite.js';
 import { eq, and, asc } from 'drizzle-orm';
 
 export interface SocialAccountResolution {
