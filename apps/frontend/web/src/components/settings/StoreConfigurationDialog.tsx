@@ -20,7 +20,9 @@ import {
   Save,
   Loader2,
   Navigation,
-  CheckCircle2
+  CheckCircle2,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -58,10 +60,24 @@ const whatsappFormSchema = z.object({
   whatsapp2: z.string().regex(/^\+39\s?\d{9,10}$/, 'Formato non valido (+39 seguito da 9-10 cifre)').optional().or(z.literal('')),
 });
 
+// Contatti Tab Schema
+const contattiFormSchema = z.object({
+  email: z.string().email('Email non valida').optional().or(z.literal('')),
+  googleMapsUrl: z.string().url('URL Google Maps non valido').optional().or(z.literal('')),
+  telegram: z.string().optional().or(z.literal('')),
+});
+
+// Telefono Tab Schema
+const telefonoFormSchema = z.object({
+  phone: z.string().regex(/^\+39\s?\d{9,11}$/, 'Formato non valido (+39 seguito da 9-11 cifre)').optional().or(z.literal('')),
+});
+
 type GPSFormData = z.infer<typeof gpsFormSchema>;
 type SocialFormData = z.infer<typeof socialFormSchema>;
 type MarketingFormData = z.infer<typeof marketingFormSchema>;
 type WhatsAppFormData = z.infer<typeof whatsappFormSchema>;
+type ContattiFormData = z.infer<typeof contattiFormSchema>;
+type TelefonoFormData = z.infer<typeof telefonoFormSchema>;
 
 export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreConfigurationDialogProps) {
   const { toast } = useToast();
@@ -137,7 +153,25 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     },
   });
 
-  // Update store mutation (for GPS, Social, WhatsApp)
+  // Contatti Form
+  const contattiForm = useForm<ContattiFormData>({
+    resolver: zodResolver(contattiFormSchema),
+    values: {
+      email: store?.email || '',
+      googleMapsUrl: store?.googleMapsUrl || '',
+      telegram: store?.telegram || '',
+    },
+  });
+
+  // Telefono Form
+  const telefonoForm = useForm<TelefonoFormData>({
+    resolver: zodResolver(telefonoFormSchema),
+    values: {
+      phone: store?.phone || '',
+    },
+  });
+
+  // Update store mutation (for GPS, Social, WhatsApp, Contatti, Telefono)
   const updateStoreMutation = useMutation({
     mutationFn: async (data: Partial<any>) => {
       return apiRequest(`/api/stores/${storeId}`, {
@@ -244,6 +278,16 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     updateStoreMutation.mutate(data);
   };
 
+  // Handle Contatti save
+  const handleContattiSave = (data: ContattiFormData) => {
+    updateStoreMutation.mutate(data);
+  };
+
+  // Handle Telefono save
+  const handleTelefonoSave = (data: TelefonoFormData) => {
+    updateStoreMutation.mutate(data);
+  };
+
   if (isLoadingStore || isLoadingTracking) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -262,12 +306,12 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
             <span>Configurazione Store: {store?.nome}</span>
           </DialogTitle>
           <DialogDescription>
-            Configura GPS, Social, Marketing e WhatsApp per questo punto vendita
+            Configura GPS, Social, Marketing, WhatsApp, Contatti e Telefono per questo punto vendita
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="gps" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               GPS
@@ -288,6 +332,14 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="contatti" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Contatti
+            </TabsTrigger>
+            <TabsTrigger value="telefono" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Telefono
             </TabsTrigger>
           </TabsList>
 
@@ -577,6 +629,114 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
                     <Save className="h-4 w-4 mr-2" />
                   )}
                   Salva WhatsApp
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+
+          {/* CONTATTI TAB */}
+          <TabsContent value="contatti" className="mt-6">
+            <Form {...contattiForm}>
+              <form onSubmit={contattiForm.handleSubmit(handleContattiSave)} className="space-y-6">
+                <FormField
+                  control={contattiForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Punto Vendita</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" placeholder="punto.vendita@windtre.it" data-testid="input-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={contattiForm.control}
+                  name="googleMapsUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Google Maps URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://maps.google.com/..." data-testid="input-google-maps" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={contattiForm.control}
+                  name="telegram"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telegram (Username o Link)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="@windtre_store o https://t.me/..." data-testid="input-telegram" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  disabled={updateStoreMutation.isPending || !contattiForm.formState.isValid}
+                  data-testid="button-save-contatti"
+                >
+                  {updateStoreMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Salva Contatti
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+
+          {/* TELEFONO TAB */}
+          <TabsContent value="telefono" className="mt-6">
+            <Form {...telefonoForm}>
+              <form onSubmit={telefonoForm.handleSubmit(handleTelefonoSave)} className="space-y-6">
+                <FormField
+                  control={telefonoForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numero Telefono</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="+39 02 1234567" data-testid="input-phone" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-4 border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    💡 <strong>Future Configurazioni:</strong> In futuro sarà possibile configurare impostazioni avanzate del telefono come:
+                  </p>
+                  <ul className="mt-2 ml-4 text-sm text-blue-600 dark:text-blue-400 list-disc">
+                    <li>Orari di disponibilità</li>
+                    <li>Inoltro chiamate automatico</li>
+                    <li>Messaggi di risposta automatica</li>
+                    <li>Integrazione con sistemi telefonici</li>
+                  </ul>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={updateStoreMutation.isPending || !telefonoForm.formState.isValid}
+                  data-testid="button-save-telefono"
+                >
+                  {updateStoreMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Salva Telefono
                 </Button>
               </form>
             </Form>
