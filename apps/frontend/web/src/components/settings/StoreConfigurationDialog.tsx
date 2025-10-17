@@ -292,6 +292,10 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Configurazione Store</DialogTitle>
+            <DialogDescription>Caricamento dati in corso...</DialogDescription>
+          </DialogHeader>
           <LoadingState message="Caricamento configurazione..." />
         </DialogContent>
       </Dialog>
