@@ -5882,4 +5882,335 @@ router.get('/analytics/ai-predictions', async (req, res) => {
   }
 });
 
+// ==================== ADVANCED ANALYTICS DASHBOARD ====================
+
+/**
+ * GET /api/crm/analytics/executive-summary
+ * Get executive KPIs with trends for the analytics dashboard
+ */
+router.get('/analytics/executive-summary', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    // Parse query parameters
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+    const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+    
+    const summary = await crmAnalyticsService.getExecutiveSummary({
+      tenantId,
+      storeIds: storeIds as string[] | undefined,
+      dateRange: dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: summary,
+      message: 'Executive summary retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving executive summary', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve executive summary',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/analytics/campaign-performance
+ * Get campaign performance metrics by store
+ */
+router.get('/analytics/campaign-performance', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    
+    const campaigns = await crmAnalyticsService.getCampaignPerformance({
+      tenantId,
+      storeIds: storeIds as string[] | undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: campaigns,
+      message: 'Campaign performance retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving campaign performance', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve campaign performance',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/analytics/channel-attribution
+ * Get marketing channel attribution metrics
+ */
+router.get('/analytics/channel-attribution', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    
+    const attribution = await crmAnalyticsService.getChannelAttribution({
+      tenantId,
+      storeIds: storeIds as string[] | undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: attribution,
+      message: 'Channel attribution retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving channel attribution', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve channel attribution',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/analytics/ai-score-distribution
+ * Get AI score distribution and accuracy metrics
+ */
+router.get('/analytics/ai-score-distribution', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    
+    const distribution = await crmAnalyticsService.getAIScoreDistribution({
+      tenantId,
+      storeIds: storeIds as string[] | undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: distribution,
+      message: 'AI score distribution retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving AI score distribution', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve AI score distribution',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/analytics/gtm-events
+ * Get GTM events summary and metrics
+ */
+router.get('/analytics/gtm-events', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
+    const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
+    
+    const events = await crmAnalyticsService.getGTMEventsSummary({
+      tenantId,
+      storeIds: storeIds as string[] | undefined,
+      dateRange: dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: events,
+      message: 'GTM events summary retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving GTM events summary', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve GTM events summary',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/analytics/store-comparison
+ * Get store comparison metrics and rankings
+ */
+router.get('/analytics/store-comparison', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    
+    const comparison = await crmAnalyticsService.getStoreComparison({
+      tenantId,
+      storeIds: storeIds as string[] | undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: comparison,
+      message: 'Store comparison retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving store comparison', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve store comparison',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/analytics/conversion-funnel
+ * Get conversion funnel metrics
+ */
+router.get('/analytics/conversion-funnel', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    
+    const funnel = await crmAnalyticsService.getConversionFunnel({
+      tenantId,
+      storeIds: storeIds as string[] | undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: funnel,
+      message: 'Conversion funnel retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving conversion funnel', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve conversion funnel',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export default router;
