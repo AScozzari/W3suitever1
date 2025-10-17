@@ -107,8 +107,8 @@ const cardVariants = {
   }
 };
 
-export default function AnalyticsPage() {
-  const [currentModule, setCurrentModule] = useState('crm');
+// Main content component (used by both standalone page and CRMPage tabs)
+export function AnalyticsContent() {
   const { buildUrl } = useTenantNavigation();
   
   // Filter state
@@ -206,20 +206,7 @@ export default function AnalyticsPage() {
     console.log('Export data');
   };
 
-  // CRM Navigation Tabs
-  const crmTabs = [
-    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
-    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
-    { value: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
-    { value: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
-    { value: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
-    { value: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { value: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
-  ];
-
   return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <CRMCommandPalette />
       <div className="flex flex-col h-full">
         {/* WindTre Glassmorphism Header */}
         <div className="windtre-glass-panel border-b border-white/20 mb-6">
@@ -232,29 +219,6 @@ export default function AnalyticsPage() {
                 </h1>
                 <p className="text-gray-600 mt-1">Insights avanzati e performance multi-store</p>
               </div>
-            </div>
-            
-            {/* Navigation Tabs */}
-            <div className="flex gap-1 mt-4">
-              {crmTabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = tab.value === 'analytics';
-                return (
-                  <Link
-                    key={tab.value}
-                    href={tab.path}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg transition-colors",
-                      isActive 
-                        ? 'bg-windtre-orange text-white' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                  </Link>
-                );
-              })}
             </div>
           </div>
         </div>
@@ -611,6 +575,17 @@ export default function AnalyticsPage() {
           </Tabs>
         </div>
       </div>
+  );
+}
+
+// Standalone page wrapper with Layout (for direct route access)
+export default function AnalyticsPage() {
+  const [currentModule, setCurrentModule] = useState('crm');
+  
+  return (
+    <Layout currentModule={currentModule} setCurrentModule={() => {}}>
+      <CRMCommandPalette />
+      <AnalyticsContent />
     </Layout>
   );
 }
