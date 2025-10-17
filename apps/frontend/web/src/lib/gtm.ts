@@ -6,6 +6,44 @@ declare global {
   }
 }
 
+let gtmInitialized = false;
+
+export function initializeGTM(): void {
+  if (typeof window === 'undefined') return;
+  
+  if (gtmInitialized) {
+    console.log('[GTM] Already initialized, skipping reinit');
+    return;
+  }
+
+  const containerId = import.meta.env.VITE_GTM_CONTAINER_ID || 'GTM-XXXXXXX';
+  
+  console.log('[GTM] Initializing with container ID:', containerId);
+
+  window.dataLayer = window.dataLayer || [];
+  gtmInitialized = true;
+  window.dataLayer.push({
+    'gtm.start': new Date().getTime(),
+    event: 'gtm.js',
+    platform: 'w3suite',
+    environment: import.meta.env.MODE || 'production',
+    app_version: '1.0.0'
+  });
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${containerId}&l=dataLayer`;
+  
+  const firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode?.insertBefore(script, firstScript);
+
+  const noscript = document.createElement('noscript');
+  noscript.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
+  document.body.insertBefore(noscript, document.body.firstChild);
+
+  console.log('[GTM] Initialized successfully');
+}
+
 export interface GTMLeadEventData {
   email?: string;
   phone?: string;
