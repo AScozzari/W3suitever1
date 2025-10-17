@@ -251,6 +251,15 @@ async function testCreateHotLead() {
       companyName: 'Fortune 500 Corporation Italia',
       productInterest: 'Enterprise CRM + Analytics Suite - Full Package',
       notes: 'CTO of 500+ employee company, immediate need, budget approved €100k+',
+      // Company/role details for AI scoring
+      jobTitle: 'Chief Technology Officer',
+      companyRole: 'CTO',
+      companySize: '500-1000',
+      companySector: 'Technology',
+      annualRevenue: '€50M-€100M',
+      employeeCount: '750',
+      budgetRange: '€100k-€250k',
+      purchaseTimeframe: 'Immediate (within 1 month)',
       // UTM tracking (direct campaign)
       utm_source: 'google',
       utm_medium: 'cpc',

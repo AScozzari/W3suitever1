@@ -13,9 +13,8 @@ import OpenAI from 'openai';
 import { logger } from '../core/logger';
 import { db, setTenantContext } from '../core/db';
 import { crmLeads, users, roles, userAssignments } from '../db/schema/w3suite';
-import { brandDb } from '../../../brand-api/src/db';
-import { aiAgentsRegistry } from '../../../brand-api/src/db/schema';
-import { eq, and, inArray, or } from 'drizzle-orm';
+import { db as brandDb, aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
+import { eq, and, inArray, or, isNull } from 'drizzle-orm';
 import { notificationService } from '../core/notification-service';
 
 const openai = new OpenAI({
@@ -64,8 +63,13 @@ export class LeadScoringAIService {
       // 🔒 CRITICAL: Set tenant context for RLS before any w3suite table access
       await setTenantContext(input.tenantId);
       
+      logger.info('🔍 Step 1: Fetching lead data', {
+        leadId: input.leadId,
+        tenantId: input.tenantId
+      });
+      
       // 1. Fetch lead data from database
-      const leadData = await db.select()
+      const leadQuery = db.select()
         .from(crmLeads)
         .where(and(
           eq(crmLeads.id, input.leadId),
@@ -73,21 +77,50 @@ export class LeadScoringAIService {
         ))
         .limit(1);
       
+      // DEBUG: Log the lead query SQL
+      try {
+        const leadSql = leadQuery.toSQL();
+        logger.info('🔍 Lead Query SQL Debug', {
+          sql: leadSql.sql,
+          params: leadSql.params
+        });
+      } catch (sqlError: any) {
+        logger.error('Failed to generate lead SQL', { error: sqlError.message });
+      }
+      
+      const leadData = await leadQuery;
+      
       if (!leadData || leadData.length === 0) {
         throw new Error(`Lead ${input.leadId} not found for tenant ${input.tenantId}`);
       }
       
       const lead = leadData[0];
       
+      logger.info('🔍 Step 2: Lead data fetched successfully', {
+        leadId: lead.id,
+        email: lead.email
+      });
+      
       // 2. Get AI agent configuration from Brand Interface
-      const agentConfig = await brandDb.select()
+      // Note: targetTenants IS NULL means agent is deployed to all tenants
+      const agentQuery = brandDb.select()
         .from(aiAgentsRegistry)
         .where(and(
           eq(aiAgentsRegistry.agentId, 'lead-scoring-assistant'),
           eq(aiAgentsRegistry.status, 'active'),
-          eq(aiAgentsRegistry.deployToAllTenants, true)
+          isNull(aiAgentsRegistry.targetTenants)
         ))
         .limit(1);
+      
+      // DEBUG: Log the generated SQL
+      const sqlDebug = agentQuery.toSQL();
+      logger.info('🔍 AI Agent Query SQL Debug', {
+        sql: sqlDebug.sql,
+        params: sqlDebug.params,
+        leadId: input.leadId
+      });
+      
+      const agentConfig = await agentQuery;
       
       const agent = agentConfig[0];
       const baseConfig = agent?.baseConfiguration as any || {};
@@ -113,27 +146,40 @@ export class LeadScoringAIService {
           lastName: lead.lastName || '',
           email: lead.email || '',
           phone: lead.phone || '',
-          company: lead.company || '',
+          company: lead.companyName || '',
           role: lead.jobTitle || 'Unknown',
-          sector: lead.industry || 'Unknown',
-          source: lead.source || 'Unknown',
+          companyRole: lead.companyRole || null,
+          sector: lead.companySector || 'Unknown',
+          source: lead.leadSource || 'Unknown',
           utmSource: lead.utmSource || null,
           utmMedium: lead.utmMedium || null,
           utmCampaign: lead.utmCampaign || null,
           notes: lead.notes || ''
         },
+        companyDetails: {
+          companySize: lead.companySize || null,
+          employeeCount: lead.employeeCount || null,
+          annualRevenue: lead.annualRevenue || null,
+          companySector: lead.companySector || null
+        },
+        purchaseIntent: {
+          budgetRange: lead.budgetRange || null,
+          purchaseTimeframe: lead.purchaseTimeframe || null,
+          productInterest: lead.productInterest || null,
+          painPoints: lead.painPoints || null
+        },
         engagementMetrics: {
           // Using existing engagementScore as proxy for overall engagement
           engagementScore: lead.engagementScore || 0,
-          // Derived metrics (TODO: Add detailed tracking fields to schema)
-          estimatedSiteVisits: lead.engagementScore ? Math.floor(lead.engagementScore / 10) : 1,
-          estimatedTimeOnSite: lead.engagementScore ? lead.engagementScore * 30 : 0, // seconds
-          estimatedPagesViewed: lead.engagementScore ? Math.ceil(lead.engagementScore / 20) : 1,
-          // Placeholder - will be populated when tracking is implemented
-          emailOpens: 0,
-          emailClicks: 0,
-          formsSubmitted: lead.source === 'web_form' ? 1 : 0,
-          resourcesDownloaded: 0
+          // GTM events tracking
+          pageViewsCount: lead.pageViewsCount || 0,
+          documentsDownloaded: lead.documentsDownloaded || 0,
+          videosWatched: lead.videosWatched || 0,
+          sessionDuration: lead.sessionDuration || 0,
+          emailOpensCount: lead.emailsOpenedCount || 0,
+          emailClicksCount: lead.emailsClickedCount || 0,
+          formsSubmitted: lead.formsSubmitted || (lead.leadSource === 'web_form' ? 1 : 0),
+          gtmEvents: lead.gtmEvents ? (typeof lead.gtmEvents === 'string' ? JSON.parse(lead.gtmEvents) : lead.gtmEvents) : []
         },
         socialMetrics: {
           // TODO: Add social metrics tracking fields to schema
