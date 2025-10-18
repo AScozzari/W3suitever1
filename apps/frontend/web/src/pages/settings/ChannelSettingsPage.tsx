@@ -38,7 +38,7 @@ const channels: ChannelCard[] = [
     description: 'Enterprise telephony with WebRTC softphone, multi-store trunks, and call recording',
     icon: Phone,
     color: '#10b981', // green
-    gradient: 'from-green-500/20 to-emerald-600/20',
+    gradient: 'from-green-500/40 to-emerald-600/50',
     enabled: true,
     configured: false,
     features: ['WebRTC Softphone', 'Multi-trunk SIP', 'Call Recording', 'CDR Analytics']
@@ -49,7 +49,7 @@ const channels: ChannelCard[] = [
     description: 'Send and receive WhatsApp messages with automated responses',
     icon: FaWhatsapp,
     color: '#25d366', // WhatsApp green
-    gradient: 'from-green-400/20 to-green-500/20',
+    gradient: 'from-green-400/40 to-green-500/50',
     enabled: false,
     configured: false,
     features: ['Business API', 'Templates', 'Automation', 'Analytics']
@@ -59,8 +59,8 @@ const channels: ChannelCard[] = [
     name: 'Email',
     description: 'Professional email campaigns with templates and tracking',
     icon: Mail,
-    color: '#3b82f6', // blue
-    gradient: 'from-blue-500/20 to-indigo-600/20',
+    color: '#6366f1', // indigo (più saturo)
+    gradient: 'from-indigo-500/40 to-purple-600/50',
     enabled: false,
     configured: false,
     features: ['SMTP Config', 'Templates', 'Tracking', 'Analytics']
@@ -71,7 +71,7 @@ const channels: ChannelCard[] = [
     description: 'Automated Telegram bot for customer support and notifications',
     icon: FaTelegram,
     color: '#0088cc', // Telegram blue
-    gradient: 'from-cyan-500/20 to-blue-600/20',
+    gradient: 'from-cyan-500/40 to-blue-600/50',
     enabled: false,
     configured: false,
     features: ['Bot API', 'Commands', 'Automation', 'Inline Buttons']
@@ -82,7 +82,7 @@ const channels: ChannelCard[] = [
     description: 'Send SMS messages for notifications and 2FA',
     icon: MessageSquare,
     color: '#ef4444', // red
-    gradient: 'from-red-500/20 to-rose-600/20',
+    gradient: 'from-red-500/40 to-pink-600/50',
     enabled: false,
     configured: false,
     features: ['Twilio Integration', '2FA', 'Notifications', 'Templates']
@@ -148,10 +148,11 @@ export default function ChannelSettingsPage() {
               <Card 
                 className={`
                   p-6 h-full
-                  bg-gradient-to-br ${channel.gradient} backdrop-blur-md
-                  border border-white/10 hover:border-white/20
+                  bg-gradient-to-br ${channel.gradient} backdrop-blur-sm
+                  border-2 border-white/20 hover:border-white/40
+                  shadow-lg hover:shadow-xl
                   transition-all duration-300
-                  ${channel.enabled ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}
+                  ${channel.enabled ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}
                 `}
                 onClick={() => channel.enabled && handleChannelClick(channel.id)}
                 data-testid={`card-channel-${channel.id}`}
@@ -159,13 +160,13 @@ export default function ChannelSettingsPage() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div 
-                    className="p-3 rounded-xl"
+                    className="p-3 rounded-xl shadow-md"
                     style={{ 
-                      background: `linear-gradient(135deg, ${channel.color}20, ${channel.color}40)`,
-                      border: `1px solid ${channel.color}30`
+                      background: `linear-gradient(135deg, ${channel.color}50, ${channel.color}70)`,
+                      border: `2px solid ${channel.color}80`
                     }}
                   >
-                    <Icon className="w-8 h-8" style={{ color: channel.color }} />
+                    <Icon className="w-8 h-8" style={{ color: '#ffffff' }} />
                   </div>
                   
                   <div className="flex flex-col gap-2">
@@ -191,18 +192,18 @@ export default function ChannelSettingsPage() {
 
                 {/* Content */}
                 <div className="mb-4">
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <h3 className="text-xl font-bold text-white mb-2 drop-shadow-sm">
                     {channel.name}
                   </h3>
-                  <p className="text-sm text-gray-300 mb-4">
+                  <p className="text-sm text-gray-200 mb-4 font-medium">
                     {channel.description}
                   </p>
 
                   {/* Features List */}
                   <div className="space-y-2">
                     {channel.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
-                        <CheckCircle2 className="w-3 h-3 text-green-400" />
+                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-200 font-medium">
+                        <CheckCircle2 className="w-3 h-3 text-green-300" />
                         <span>{feature}</span>
                       </div>
                     ))}
