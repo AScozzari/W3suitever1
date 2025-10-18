@@ -167,6 +167,7 @@ export const outboundChannelEnum = pgEnum('outbound_channel', ['email', 'phone',
 export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media', 'outbound_crm', 'retention']);
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
 export const crmCampaignRoutingModeEnum = pgEnum('crm_campaign_routing_mode', ['automatic', 'manual', 'hybrid']);
+export const workflowExecutionModeEnum = pgEnum('workflow_execution_mode', ['automatic', 'manual']);
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
 export const leadStatusCategoryEnum = pgEnum('lead_status_category', ['new', 'working', 'qualified', 'converted', 'disqualified', 'on_hold']);
 export const leadSourceEnum = pgEnum('lead_source', ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import']);
@@ -4929,6 +4930,7 @@ export const crmPipelineWorkflows = w3suiteSchema.table("crm_pipeline_workflows"
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   pipelineId: uuid("pipeline_id").notNull().references(() => crmPipelines.id, { onDelete: 'cascade' }),
   workflowTemplateId: uuid("workflow_template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  executionMode: workflowExecutionModeEnum("execution_mode").default('manual').notNull(),
   isActive: boolean("is_active").default(true),
   assignedBy: varchar("assigned_by").notNull().references(() => users.id),
   assignedAt: timestamp("assigned_at").defaultNow(),
