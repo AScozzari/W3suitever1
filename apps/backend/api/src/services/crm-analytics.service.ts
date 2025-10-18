@@ -173,8 +173,8 @@ class CRMAnalyticsService {
     // Get deal metrics
     const dealMetrics = await db
       .select({
-        totalRevenue: sql<number>`coalesce(cast(sum(${crmDeals.dealValue}) as decimal), 0)`,
-        avgDealSize: sql<number>`coalesce(cast(avg(${crmDeals.dealValue}) as decimal), 0)`,
+        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue})::numeric, 0)`,
+        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue})::numeric, 0)`,
         wonDeals: sql<number>`count(case when ${crmDeals.status} = 'won' then 1 end)`,
       })
       .from(crmDeals)
@@ -244,16 +244,16 @@ class CRMAnalyticsService {
         campaignId: crmCampaigns.id,
         campaignName: crmCampaigns.name,
         storeId: crmCampaigns.storeId,
-        storeName: sql<string | null>`coalesce(${stores.name}, NULL)`,
+        storeName: stores.name,
         status: crmCampaigns.status,
-        budget: sql<number>`coalesce(cast(${crmCampaigns.budget} as decimal), 0)`,
+        budget: crmCampaigns.budget,
         startDate: crmCampaigns.startDate,
         endDate: crmCampaigns.endDate,
         ga4MeasurementId: crmCampaigns.ga4MeasurementId,
         totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
         qualifiedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' then ${crmLeads.id} end)`,
         convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
-        avgLeadScore: sql<number>`coalesce(cast(avg(${crmLeads.leadScore}) as decimal), 0)`,
+        avgLeadScore: sql<number>`coalesce(avg(${crmLeads.leadScore})::numeric, 0)`,
       })
       .from(crmCampaigns)
       .leftJoin(stores, eq(crmCampaigns.storeId, stores.id))
@@ -522,10 +522,10 @@ class CRMAnalyticsService {
     const storeMetrics = await db
       .select({
         storeId: stores.id,
-        storeName: sql<string>`coalesce(${stores.name}, 'Unnamed Store')`,
-        city: sql<string | null>`coalesce(${stores.city}, NULL)`,
-        totalLeads: sql<number>`coalesce(count(distinct ${crmLeads.id}), 0)`,
-        convertedLeads: sql<number>`coalesce(count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end), 0)`,
+        storeName: stores.name,
+        city: stores.city,
+        totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
+        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
       })
       .from(stores)
       .leftJoin(crmLeads, eq(crmLeads.storeId, stores.id))
