@@ -20,6 +20,8 @@ import {
   uniqueIndex,
   customType,
   real,
+  decimal,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
