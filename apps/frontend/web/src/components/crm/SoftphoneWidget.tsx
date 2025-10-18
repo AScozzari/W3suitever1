@@ -197,7 +197,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Enter phone number"
-                className="text-lg text-center bg-gray-800 border-gray-700"
+                className="text-lg text-center bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                 data-testid="input-phone-number"
               />
 
