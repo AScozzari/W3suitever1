@@ -5680,6 +5680,36 @@ export type InsertVoipExtension = z.infer<typeof insertVoipExtensionSchema>;
 export type UpdateVoipExtension = z.infer<typeof updateVoipExtensionSchema>;
 export type VoipExtension = typeof voipExtensions.$inferSelect;
 
+// 3.1) voip_extension_store_access - Junction table: which extensions can call from which stores
+export const voipExtensionStoreAccess = w3suiteSchema.table("voip_extension_store_access", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  extensionId: uuid("extension_id").notNull().references(() => voipExtensions.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  canCallOutbound: boolean("can_call_outbound").default(true).notNull(), // Can make outbound calls from this store
+  canReceiveInbound: boolean("can_receive_inbound").default(true).notNull(), // Can receive inbound calls to this store's DIDs
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_ext_store_access_tenant_idx").on(table.tenantId),
+  index("voip_ext_store_access_extension_idx").on(table.extensionId),
+  index("voip_ext_store_access_store_idx").on(table.storeId),
+  uniqueIndex("voip_ext_store_access_unique").on(table.extensionId, table.storeId), // Prevent duplicates
+]);
+
+export const insertVoipExtensionStoreAccessSchema = createInsertSchema(voipExtensionStoreAccess).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+}).extend({
+  extensionId: z.string().uuid("Invalid extension ID"),
+  storeId: z.string().uuid("Invalid store ID"),
+});
+export const updateVoipExtensionStoreAccessSchema = insertVoipExtensionStoreAccessSchema.omit({ tenantId: true, extensionId: true, storeId: true }).partial();
+export type InsertVoipExtensionStoreAccess = z.infer<typeof insertVoipExtensionStoreAccessSchema>;
+export type UpdateVoipExtensionStoreAccess = z.infer<typeof updateVoipExtensionStoreAccessSchema>;
+export type VoipExtensionStoreAccess = typeof voipExtensionStoreAccess.$inferSelect;
+
 // 7) voip_cdr - Mirror CDR per report KPI
 export const voipCdrs = w3suiteSchema.table("voip_cdrs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
