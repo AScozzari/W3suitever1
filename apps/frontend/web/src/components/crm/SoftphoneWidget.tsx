@@ -17,7 +17,9 @@ import {
   Maximize2,
   X,
   Clock,
-  User
+  User,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface SoftphoneWidgetProps {
@@ -36,6 +38,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Call duration timer
   useEffect(() => {
@@ -184,7 +187,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
       className="fixed bottom-6 left-6 z-50"
       data-testid="softphone-widget"
     >
-      <Card className="w-80 bg-gray-900 border-gray-700 shadow-2xl overflow-hidden">
+      <Card className={`w-80 ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-300'} shadow-2xl overflow-hidden`}>
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-700 p-4">
           <div className="flex items-center justify-between mb-2">
@@ -193,6 +196,16 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
               <span className="font-semibold text-white">Softphone</span>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                data-testid="button-theme-toggle"
+                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
@@ -239,7 +252,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Enter phone number"
-                className="text-lg text-center bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
+                className={`text-lg text-center ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-400' : 'bg-gray-100 border-gray-300 text-black placeholder:text-gray-500'}`}
                 data-testid="input-phone-number"
               />
 
@@ -249,7 +262,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   <Button
                     key={digit}
                     variant="outline"
-                    className="h-12 bg-gray-800 border-gray-700 hover:bg-gray-700 text-white"
+                    className={`h-12 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-black'}`}
                     onClick={() => addDigit(digit)}
                     data-testid={`button-dial-${digit}`}
                   >
@@ -260,7 +273,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
 
               {/* Call Button */}
               <Button
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-orange-500 hover:bg-orange-600"
                 size="lg"
                 onClick={handleCall}
                 disabled={!phoneNumber || !isRegistered}
@@ -275,8 +288,8 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
           {callState === 'ringing' && (
             <div className="text-center py-8">
               <PhoneIncoming className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
-              <p className="text-white font-semibold mb-2">Incoming Call</p>
-              <p className="text-gray-400 mb-6">{currentCall?.number}</p>
+              <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-2`}>Incoming Call</p>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>{currentCall?.number}</p>
               <div className="flex gap-4 justify-center">
                 <Button
                   className="bg-green-600 hover:bg-green-700"
@@ -303,8 +316,8 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
           {callState === 'connecting' && (
             <div className="text-center py-8">
               <PhoneOutgoing className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
-              <p className="text-white font-semibold mb-2">Connecting...</p>
-              <p className="text-gray-400">{phoneNumber}</p>
+              <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-2`}>Connecting...</p>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{phoneNumber}</p>
             </div>
           )}
 
@@ -314,7 +327,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mx-auto mb-4 flex items-center justify-center">
                   <User className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-white font-semibold mb-1">{currentCall?.number}</p>
+                <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-1`}>{currentCall?.number}</p>
                 <div className="flex items-center justify-center gap-2 text-green-400">
                   <Clock className="w-4 h-4" />
                   <span className="text-lg font-mono">{formatDuration(callDuration)}</span>
@@ -326,21 +339,21 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                 <Button
                   variant="outline"
                   size="icon"
-                  className={`rounded-full ${isMuted ? 'bg-red-600/20 border-red-600' : 'bg-gray-800 border-gray-700'}`}
+                  className={`rounded-full ${isMuted ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
                   onClick={() => setIsMuted(!isMuted)}
                   data-testid="button-mute"
                 >
-                  {isMuted ? <MicOff className="w-5 h-5 text-red-400" /> : <Mic className="w-5 h-5" />}
+                  {isMuted ? <MicOff className="w-5 h-5 text-red-400" /> : <Mic className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} />}
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="icon"
-                  className={`rounded-full ${!isSpeakerOn ? 'bg-red-600/20 border-red-600' : 'bg-gray-800 border-gray-700'}`}
+                  className={`rounded-full ${!isSpeakerOn ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
                   onClick={() => setIsSpeakerOn(!isSpeakerOn)}
                   data-testid="button-speaker"
                 >
-                  {isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-red-400" />}
+                  {isSpeakerOn ? <Volume2 className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} /> : <VolumeX className="w-5 h-5 text-red-400" />}
                 </Button>
               </div>
 
