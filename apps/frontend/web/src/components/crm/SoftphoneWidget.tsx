@@ -298,14 +298,22 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
 
               {/* Call Button */}
               <button
-                className="w-full text-white font-medium rounded-lg transition-opacity flex items-center justify-center gap-2"
                 style={{ 
-                  backgroundColor: '#FF6900 !important',
+                  width: '100%',
+                  backgroundColor: '#FF6900',
+                  color: 'white',
+                  fontWeight: '500',
+                  borderRadius: '8px',
                   padding: '12px 16px',
                   fontSize: '16px',
                   border: 'none',
                   cursor: phoneNumber && isRegistered ? 'pointer' : 'not-allowed',
-                  opacity: phoneNumber && isRegistered ? 1 : 0.5
+                  opacity: phoneNumber && isRegistered ? 1 : 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'opacity 0.2s'
                 }}
                 onClick={handleCall}
                 disabled={!phoneNumber || !isRegistered}
@@ -321,7 +329,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   }
                 }}
               >
-                <Phone className="w-5 h-5" />
+                <Phone style={{ width: '20px', height: '20px' }} />
                 Call
               </button>
             </>
