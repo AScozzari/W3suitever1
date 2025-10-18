@@ -57,7 +57,7 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
     },
     {
       value: 'analytics',
-      label: 'Report',
+      label: 'Analytics',
       icon: BarChart3,
       path: buildUrl('crm/analytics')
     }
