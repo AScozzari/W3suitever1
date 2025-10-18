@@ -34,7 +34,7 @@ interface SoftphoneWidgetProps {
 type CallState = 'idle' | 'ringing' | 'connecting' | 'active' | 'ended';
 
 export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) {
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true); // Start collapsed
   const [callState, setCallState] = useState<CallState>('idle');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [callDuration, setCallDuration] = useState(0);
@@ -45,6 +45,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [showDialpad, setShowDialpad] = useState(false);
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
 
   // Call duration timer
   useEffect(() => {
@@ -121,8 +122,28 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
     }, 1500);
   }, []);
 
+  // Auto-collapse after 30 seconds of inactivity (when idle)
+  useEffect(() => {
+    if (callState === 'idle' && !isMinimized) {
+      const timeout = setTimeout(() => {
+        const now = Date.now();
+        if (now - lastActivityTime > 30000) { // 30 seconds
+          setIsMinimized(true);
+        }
+      }, 30000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [callState, isMinimized, lastActivityTime]);
+
+  // Update activity time on any interaction
+  const updateActivity = () => {
+    setLastActivityTime(Date.now());
+  };
+
   const handleCall = () => {
     if (!phoneNumber) return;
+    updateActivity();
     setCallState('connecting');
     
     // Mock call connection (TODO: Replace with real SIP.js call)
@@ -158,6 +179,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   };
 
   const addDigit = (digit: string) => {
+    updateActivity();
     playDTMFTone(digit);
     setPhoneNumber((prev) => prev + digit);
   };
