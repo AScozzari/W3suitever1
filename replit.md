@@ -223,6 +223,7 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui
 - **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
 - **CRM Module Backend**: Comprehensive CRM backend with 20 tables in `w3suite` schema, featuring person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows. Provides RESTful endpoints with Zod validation, RLS, and structured logging.
 - **CRM Pipeline Visualization System**: Manages pipeline with 3 views (Table, Kanban, Gantt) using TanStack Table, `@dnd-kit`, workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **CRM Workflow Auto-Trigger System**: Dual-mode workflow execution (automatic/manual) for pipeline workflows. When a lead converts to deal, automatically instantiates and executes assigned workflows if `executionMode='automatic'`. Powered by `CrmWorkflowTriggerService`, supporting workflow detection, batch operations, and non-blocking background execution with comprehensive logging.
 - **Integrated Marketing Attribution System**: Full UTM tracking, GTM integration, social media webhooks (Facebook/Instagram implemented), AI-powered lead scoring (in development), and Enhanced Conversions for Google Ads/GA4.
 
 # External Dependencies
