@@ -21,6 +21,7 @@ import productsRoutes from "../routes/products";
 import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
 import crmRoutes from "../routes/crm";
 import gtmRoutes from "../routes/gtm";
+import voipRoutes from "../routes/voip";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1294,6 +1295,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== GTM TRACKING ROUTES ====================
   // GTM/GA4/Google Ads server-side tracking with Enhanced Conversions
   app.use('/api/gtm', gtmRoutes);
+  
+  // ==================== VOIP SYSTEM ROUTES ====================
+  // VoIP telephony management API routes (domains, trunks, extensions, devices, CDRs)
+  app.use('/api/voip', voipRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
