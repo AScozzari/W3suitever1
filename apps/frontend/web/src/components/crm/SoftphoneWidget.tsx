@@ -300,13 +300,10 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
 
               {/* Call Button */}
               <Button
-                className="w-full text-white"
+                className="w-full text-white hover:opacity-90 transition-opacity"
                 style={{ 
-                  backgroundColor: 'hsl(var(--brand-orange))',
-                  transition: 'all 0.2s ease'
+                  backgroundColor: '#FF6900'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--brand-orange) / 0.9)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--brand-orange))'}
                 size="lg"
                 onClick={handleCall}
                 disabled={!phoneNumber || !isRegistered}
