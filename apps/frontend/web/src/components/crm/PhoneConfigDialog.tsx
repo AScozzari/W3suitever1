@@ -101,6 +101,13 @@ export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
     enabled: open,
   });
 
+  // Fetch connection status for dashboard
+  const { data: connectionStatus, isLoading: connectionLoading } = useQuery<any>({
+    queryKey: ['/api/voip/connection-status'],
+    enabled: open && activeTab === 'dashboard',
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
   // Trunk form
   const trunkForm = useForm<TrunkFormValues>({
     resolver: zodResolver(trunkFormSchema),
@@ -264,32 +271,119 @@ export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
 
           {/* DASHBOARD TAB */}
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-purple-600/30 border-white/20 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-300">Trunks Attivi</p>
-                    <p className="text-3xl font-bold text-white mt-2">0 / {trunks.length}</p>
-                  </div>
-                  <Server className="w-12 h-12 text-orange-500/50" />
-                </div>
-              </Card>
+            {connectionLoading ? (
+              <LoadingState />
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-purple-600/30 border-white/20 backdrop-blur-sm" data-testid="card-trunks-stats">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-300">Trunks Attivi</p>
+                        <p className="text-3xl font-bold text-white mt-2">
+                          {connectionStatus?.stats?.trunksActive || 0} / {connectionStatus?.stats?.trunksTotal || 0}
+                        </p>
+                      </div>
+                      <Server className="w-12 h-12 text-orange-500/50" />
+                    </div>
+                  </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-purple-600/20 to-orange-500/30 border-white/20 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-300">Extensions Registrate</p>
-                    <p className="text-3xl font-bold text-white mt-2">0 / {extensions.length}</p>
-                  </div>
-                  <User className="w-12 h-12 text-purple-500/50" />
+                  <Card className="p-6 bg-gradient-to-br from-purple-600/20 to-orange-500/30 border-white/20 backdrop-blur-sm" data-testid="card-extensions-stats">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-300">Extensions Registrate</p>
+                        <p className="text-3xl font-bold text-white mt-2">
+                          {connectionStatus?.stats?.extensionsRegistered || 0} / {connectionStatus?.stats?.extensionsTotal || 0}
+                        </p>
+                      </div>
+                      <User className="w-12 h-12 text-purple-500/50" />
+                    </div>
+                  </Card>
                 </div>
-              </Card>
-            </div>
 
-            <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold text-white mb-4">Connection Status</h3>
-              <p className="text-gray-400 text-sm">Real-time connection monitoring coming soon...</p>
-            </Card>
+                {/* SIP Trunks Connection Status */}
+                <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Server className="w-5 h-5 text-orange-500" />
+                    SIP Trunks
+                  </h3>
+                  {connectionStatus?.trunks?.length > 0 ? (
+                    <div className="space-y-2">
+                      {connectionStatus.trunks.map((trunk: any) => (
+                        <div key={trunk.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10" data-testid={`trunk-status-${trunk.id}`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h4 className="font-medium text-white">{trunk.storeName}</h4>
+                              <Badge variant={trunk.status === 'active' ? 'default' : 'secondary'} className={
+                                trunk.status === 'active' 
+                                  ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                                  : 'bg-red-500/20 text-red-400 border-red-500/30'
+                              }>
+                                {trunk.status === 'active' ? (
+                                  <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
+                                ) : (
+                                  <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
+                                )}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-400 mt-1">
+                              {trunk.provider} • {trunk.host} • {trunk.channels}
+                            </div>
+                          </div>
+                          {trunk.lastPing && (
+                            <div className="text-xs text-gray-500">
+                              Last ping: {new Date(trunk.lastPing).toLocaleTimeString()}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-sm">Nessun trunk configurato</p>
+                  )}
+                </Card>
+
+                {/* Extensions Registration Status */}
+                <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-purple-500" />
+                    Extensions
+                  </h3>
+                  {connectionStatus?.extensions?.length > 0 ? (
+                    <div className="space-y-2">
+                      {connectionStatus.extensions.map((ext: any) => (
+                        <div key={ext.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10" data-testid={`extension-status-${ext.id}`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h4 className="font-medium text-white">Interno {ext.extension}</h4>
+                              <Badge variant={ext.sipStatus === 'registered' ? 'default' : 'secondary'} className={
+                                ext.sipStatus === 'registered' 
+                                  ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                                  : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                              }>
+                                {ext.sipStatus === 'registered' ? (
+                                  <><CheckCircle2 className="w-3 h-3 mr-1" /> Registered</>
+                                ) : (
+                                  <><XCircle className="w-3 h-3 mr-1" /> Unregistered</>
+                                )}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-400 mt-1">{ext.displayName}</div>
+                          </div>
+                          {ext.lastRegistered && (
+                            <div className="text-xs text-gray-500">
+                              Last registered: {new Date(ext.lastRegistered).toLocaleTimeString()}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-sm">Nessuna extension configurata</p>
+                  )}
+                </Card>
+              </>
+            )}
           </TabsContent>
 
           {/* DIDs TAB */}
