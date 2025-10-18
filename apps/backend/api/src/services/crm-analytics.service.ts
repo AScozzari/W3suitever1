@@ -142,57 +142,61 @@ export interface StoreComparison {
 class CRMAnalyticsService {
   /**
    * Get executive summary KPIs with trends
+   * RAW SQL implementation to bypass Drizzle ORM lowercase bug
    */
   async getExecutiveSummary(filters: AnalyticsFilters): Promise<ExecutiveSummary> {
     await setTenantContext(filters.tenantId);
     
-    const dateFilter = filters.dateRange ? 
-      and(
-        gte(crmLeads.createdAt, filters.dateRange.from),
-        lte(crmLeads.createdAt, filters.dateRange.to)
-      ) : sql`true`;
+    // Build date filter
+    const dateFilterSQL = filters.dateRange 
+      ? sql`AND l.created_at >= ${filters.dateRange.from} AND l.created_at <= ${filters.dateRange.to}`
+      : sql``;
     
-    const storeFilter = filters.storeIds?.length ? 
-      inArray(crmLeads.storeId, filters.storeIds) : sql`true`;
+    const dealDateFilterSQL = filters.dateRange 
+      ? sql`AND d.created_at >= ${filters.dateRange.from} AND d.created_at <= ${filters.dateRange.to}`
+      : sql``;
     
-    // Get current period metrics
-    const currentMetrics = await db
-      .select({
-        totalLeads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
-        qualifiedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'qualified' THEN ${crmLeads.id} END)`,
-        convertedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'converted' THEN ${crmLeads.id} END)`,
-        avgLeadScore: sql<number>`COALESCE(AVG(${crmLeads.leadScore}), 0)`,
-      })
-      .from(crmLeads)
-      .where(and(
-        eq(crmLeads.tenantId, filters.tenantId),
-        dateFilter,
-        storeFilter
-      ));
+    // Build store filter
+    const storeFilterSQL = filters.storeIds?.length 
+      ? sql`AND l.store_id = ANY(${filters.storeIds})` 
+      : sql``;
+    
+    const dealStoreFilterSQL = filters.storeIds?.length 
+      ? sql`AND d.store_id = ANY(${filters.storeIds})` 
+      : sql``;
 
-    // Get deal metrics - use UPPERCASE SQL functions per PostgreSQL standard
-    const dealMetrics = await db
-      .select({
-        totalRevenue: sql<number>`COALESCE(SUM(${crmDeals.dealValue}), 0)`,
-        avgDealSize: sql<number>`COALESCE(AVG(${crmDeals.dealValue}), 0)`,
-        wonDeals: sql<number>`COUNT(CASE WHEN ${crmDeals.status} = 'won' THEN 1 END)`,
-      })
-      .from(crmDeals)
-      .where(and(
-        eq(crmDeals.tenantId, filters.tenantId),
-        filters.storeIds?.length ? inArray(crmDeals.storeId, filters.storeIds) : sql`true`
-      ));
+    // Get current period metrics - RAW SQL with guaranteed UPPERCASE functions
+    const metricsResult = await db.execute(sql`
+      SELECT 
+        COUNT(DISTINCT l.id)::int AS total_leads,
+        COUNT(DISTINCT CASE WHEN l.status = 'qualified' THEN l.id END)::int AS qualified_leads,
+        COUNT(DISTINCT CASE WHEN l.status = 'converted' THEN l.id END)::int AS converted_leads,
+        COALESCE(AVG(l.lead_score), 0)::numeric AS avg_lead_score
+      FROM crm_leads l
+      WHERE l.tenant_id = ${filters.tenantId}
+        ${dateFilterSQL}
+        ${storeFilterSQL}
+    `);
 
-    // Get customer count
-    const customerCount = await db
-      .select({
-        activeCustomers: sql<number>`COUNT(DISTINCT ${crmCustomers.id})`,
-      })
-      .from(crmCustomers)
-      .where(and(
-        eq(crmCustomers.tenantId, filters.tenantId),
-        eq(crmCustomers.status, 'active')
-      ));
+    // Get deal metrics - RAW SQL
+    const dealResult = await db.execute(sql`
+      SELECT 
+        COALESCE(SUM(d.estimated_value), 0)::numeric AS total_revenue,
+        COALESCE(AVG(d.estimated_value), 0)::numeric AS avg_deal_size,
+        COUNT(CASE WHEN d.status = 'won' THEN 1 END)::int AS won_deals
+      FROM crm_deals d
+      WHERE d.tenant_id = ${filters.tenantId}
+        ${dealDateFilterSQL}
+        ${dealStoreFilterSQL}
+    `);
+
+    // Get customer count - RAW SQL
+    const customerResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT c.id)::int AS active_customers
+      FROM crm_customers c
+      WHERE c.tenant_id = ${filters.tenantId}
+        AND c.status = 'active'
+    `);
 
     // Calculate AI accuracy
     const aiAccuracy = await this.calculateAIAccuracy(filters);
@@ -207,108 +211,102 @@ class CRMAnalyticsService {
       customersTrend: 15.8
     };
 
-    const metrics = currentMetrics[0];
-    const deals = dealMetrics[0];
-    const customers = customerCount[0];
+    const metrics = metricsResult.rows[0];
+    const deals = dealResult.rows[0];
+    const customers = customerResult.rows[0];
     
-    const conversionRate = metrics.totalLeads > 0 ? 
-      (metrics.convertedLeads / metrics.totalLeads) * 100 : 0;
+    const conversionRate = metrics.total_leads > 0 ? 
+      (metrics.converted_leads / metrics.total_leads) * 100 : 0;
 
     return {
-      totalRevenue: Number(deals.totalRevenue) || 0,
+      totalRevenue: Number(deals.total_revenue) || 0,
       revenueTrend: trends.revenueTrend,
-      totalLeads: metrics.totalLeads,
+      totalLeads: Number(metrics.total_leads) || 0,
       leadsTrend: trends.leadsTrend,
       conversionRate: Math.round(conversionRate * 10) / 10,
       conversionTrend: trends.conversionTrend,
-      avgDealSize: Number(deals.avgDealSize) || 0,
+      avgDealSize: Number(deals.avg_deal_size) || 0,
       dealSizeTrend: trends.dealSizeTrend,
       aiScoreAccuracy: aiAccuracy,
       accuracyTrend: trends.accuracyTrend,
-      activeCustomers: customers.activeCustomers,
+      activeCustomers: Number(customers.active_customers) || 0,
       customersTrend: trends.customersTrend
     };
   }
 
   /**
    * Get campaign performance metrics by store
+   * RAW SQL implementation to bypass Drizzle ORM lowercase bug
    */
   async getCampaignPerformance(filters: AnalyticsFilters): Promise<CampaignPerformance[]> {
     await setTenantContext(filters.tenantId);
     
-    const storeFilter = filters.storeIds?.length ? 
-      inArray(crmCampaigns.storeId, filters.storeIds) : sql`true`;
+    const dateFilterSQL = filters.dateRange 
+      ? sql`AND l.created_at >= ${filters.dateRange.from} AND l.created_at <= ${filters.dateRange.to}`
+      : sql``;
     
-    const campaigns = await db
-      .select({
-        campaignId: crmCampaigns.id,
-        campaignName: crmCampaigns.name,
-        storeId: crmCampaigns.storeId,
-        storeName: stores.name,
-        status: crmCampaigns.status,
-        budget: crmCampaigns.budget,
-        startDate: crmCampaigns.startDate,
-        endDate: crmCampaigns.endDate,
-        ga4MeasurementId: crmCampaigns.ga4MeasurementId,
-        totalLeads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
-        qualifiedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'qualified' THEN ${crmLeads.id} END)`,
-        convertedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'converted' THEN ${crmLeads.id} END)`,
-        avgLeadScore: sql<number>`COALESCE(AVG(${crmLeads.leadScore}), 0)`,
-      })
-      .from(crmCampaigns)
-      .leftJoin(stores, eq(crmCampaigns.storeId, stores.id))
-      .leftJoin(crmLeads, eq(crmLeads.campaignId, crmCampaigns.id))
-      .where(and(
-        eq(crmCampaigns.tenantId, filters.tenantId),
-        storeFilter
-      ))
-      .groupBy(
-        crmCampaigns.id,
-        crmCampaigns.name,
-        crmCampaigns.storeId,
-        stores.name,
-        crmCampaigns.status,
-        crmCampaigns.budget,
-        crmCampaigns.startDate,
-        crmCampaigns.endDate,
-        crmCampaigns.ga4MeasurementId
-      );
+    const storeFilterSQL = filters.storeIds?.length 
+      ? sql`AND c.store_id = ANY(${filters.storeIds})` 
+      : sql``;
+
+    const campaignsResult = await db.execute(sql`
+      SELECT 
+        c.id AS campaign_id,
+        c.name AS campaign_name,
+        c.store_id,
+        s.nome AS store_name,
+        c.status,
+        c.budget,
+        c.start_date,
+        c.end_date,
+        c.marketing_channels,
+        COUNT(DISTINCT l.id)::int AS total_leads,
+        COUNT(DISTINCT CASE WHEN l.status = 'qualified' THEN l.id END)::int AS qualified_leads,
+        COUNT(DISTINCT CASE WHEN l.status = 'converted' THEN l.id END)::int AS converted_leads,
+        COALESCE(AVG(l.lead_score), 0)::numeric AS avg_lead_score
+      FROM crm_campaigns c
+      LEFT JOIN stores s ON c.store_id = s.id
+      LEFT JOIN crm_leads l ON l.campaign_id = c.id ${dateFilterSQL}
+      WHERE c.tenant_id = ${filters.tenantId}
+        ${storeFilterSQL}
+      GROUP BY c.id, c.name, c.store_id, s.nome, c.status, c.budget, c.start_date, c.end_date, c.marketing_channels
+    `);
 
     // Return empty array if no campaigns
-    if (!campaigns || campaigns.length === 0) {
+    if (!campaignsResult.rows || campaignsResult.rows.length === 0) {
       return [];
     }
 
     // Calculate additional metrics
-    return campaigns.map(campaign => {
-      const conversionRate = campaign.totalLeads > 0 ? 
-        (campaign.convertedLeads / campaign.totalLeads) * 100 : 0;
+    return campaignsResult.rows.map((campaign: any) => {
+      const totalLeads = Number(campaign.total_leads) || 0;
+      const convertedLeads = Number(campaign.converted_leads) || 0;
+      const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
       
       const budgetValue = Number(campaign.budget) || 0;
-      const costPerLead = budgetValue > 0 && campaign.totalLeads > 0 ? 
-        budgetValue / campaign.totalLeads : 0;
+      const costPerLead = budgetValue > 0 && totalLeads > 0 ? budgetValue / totalLeads : 0;
       
       // Mock revenue calculation (would need to join with deals)
-      const revenue = campaign.convertedLeads * 2500;
+      const revenue = convertedLeads * 2500;
       const roi = budgetValue > 0 ? (revenue - budgetValue) / budgetValue * 100 : 0;
       
       return {
-        campaignId: campaign.campaignId,
-        campaignName: campaign.campaignName,
-        storeId: campaign.storeId,
-        storeName: campaign.storeName,
+        campaignId: campaign.campaign_id,
+        campaignName: campaign.campaign_name,
+        storeId: campaign.store_id,
+        storeName: campaign.store_name,
         status: campaign.status,
-        totalLeads: campaign.totalLeads,
-        qualifiedLeads: campaign.qualifiedLeads,
-        convertedLeads: campaign.convertedLeads,
+        totalLeads: totalLeads,
+        qualifiedLeads: Number(campaign.qualified_leads) || 0,
+        convertedLeads: convertedLeads,
         conversionRate: Math.round(conversionRate * 10) / 10,
         totalRevenue: revenue,
         roi: Math.round(roi),
         costPerLead: Math.round(costPerLead),
-        avgLeadScore: Math.round(Number(campaign.avgLeadScore) || 0),
-        topChannel: campaign.ga4MeasurementId ? 'Google Ads' : 'Organic',
-        startDate: campaign.startDate,
-        endDate: campaign.endDate
+        avgLeadScore: Math.round(Number(campaign.avg_lead_score) || 0),
+        topChannel: campaign.marketing_channels?.[0] || 'Organic',
+        startDate: campaign.start_date,
+        endDate: campaign.end_date
       };
     });
   }
@@ -512,50 +510,55 @@ class CRMAnalyticsService {
 
   /**
    * Get store comparison metrics
+   * RAW SQL implementation to bypass Drizzle ORM lowercase bug
    */
   async getStoreComparison(filters: AnalyticsFilters): Promise<StoreComparison[]> {
     await setTenantContext(filters.tenantId);
     
-    const storeFilter = filters.storeIds?.length ? 
-      inArray(stores.id, filters.storeIds) : sql`true`;
+    const dateFilterSQL = filters.dateRange 
+      ? sql`AND l.created_at >= ${filters.dateRange.from} AND l.created_at <= ${filters.dateRange.to}`
+      : sql``;
     
-    const storeMetrics = await db
-      .select({
-        storeId: stores.id,
-        storeName: stores.name,
-        city: stores.city,
-        totalLeads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
-        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' THEN ${crmLeads.id}END)`,
-      })
-      .from(stores)
-      .leftJoin(crmLeads, eq(crmLeads.storeId, stores.id))
-      .where(and(
-        eq(stores.tenantId, filters.tenantId),
-        storeFilter
-      ))
-      .groupBy(stores.id, stores.name, stores.city);
+    const storeFilterSQL = filters.storeIds?.length 
+      ? sql`AND s.id = ANY(${filters.storeIds})` 
+      : sql``;
+
+    const storeMetricsResult = await db.execute(sql`
+      SELECT 
+        s.id AS store_id,
+        s.nome AS store_name,
+        s.citta AS city,
+        COUNT(DISTINCT l.id)::int AS total_leads,
+        COUNT(DISTINCT CASE WHEN l.status = 'converted' THEN l.id END)::int AS converted_leads
+      FROM stores s
+      LEFT JOIN crm_leads l ON l.store_id = s.id ${dateFilterSQL}
+      WHERE s.tenant_id = ${filters.tenantId}
+        ${storeFilterSQL}
+      GROUP BY s.id, s.nome, s.citta
+    `);
 
     // Return empty array if no stores
-    if (!storeMetrics || storeMetrics.length === 0) {
+    if (!storeMetricsResult.rows || storeMetricsResult.rows.length === 0) {
       return [];
     }
 
     // Calculate metrics and rank stores with null-safety
-    const storesWithMetrics = storeMetrics.map(store => {
-      const conversionRate = store.totalLeads > 0 ? 
-        (store.convertedLeads / store.totalLeads) * 100 : 0;
+    const storesWithMetrics = storeMetricsResult.rows.map((store: any) => {
+      const totalLeads = Number(store.total_leads) || 0;
+      const convertedLeads = Number(store.converted_leads) || 0;
+      const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
       
-      const revenue = store.convertedLeads * 2500; // Mock revenue
-      const avgDealSize = store.convertedLeads > 0 ? revenue / store.convertedLeads : 0;
+      const revenue = convertedLeads * 2500; // Mock revenue
+      const avgDealSize = convertedLeads > 0 ? revenue / convertedLeads : 0;
       const performanceScore = conversionRate * 0.5 + (revenue / 10000) * 0.5; // Weighted score
       
       return {
-        storeId: store.storeId,
-        storeName: store.storeName,
+        storeId: store.store_id,
+        storeName: store.store_name,
         city: store.city,
         metrics: {
           revenue,
-          leads: store.totalLeads,
+          leads: totalLeads,
           conversionRate: Math.round(conversionRate * 10) / 10,
           avgDealSize: Math.round(avgDealSize),
           topChannel: 'Google Ads', // Would need real channel data
