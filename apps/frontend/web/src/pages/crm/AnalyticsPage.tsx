@@ -162,6 +162,10 @@ export function AnalyticsContent() {
     queryKey: ['/api/crm/analytics/conversion-funnel', queryParams]
   }) as { data: any[]; isLoading: boolean };
 
+  const { data: leadSourceDistribution = [], isLoading: isLoadingLeadSource } = useQuery({
+    queryKey: ['/api/crm/analytics/lead-source-distribution', queryParams]
+  }) as { data: any[]; isLoading: boolean };
+
   const handleRefresh = () => {
     refetchSummary();
   };
@@ -440,6 +444,39 @@ export function AnalyticsContent() {
                     </CardContent>
                   </Card>
                 </motion.div>
+              </motion.div>
+
+              {/* Lead Source Distribution */}
+              <motion.div variants={cardVariants}>
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-[var(--brand-orange)]" />
+                      Lead Source Distribution
+                    </CardTitle>
+                    <CardDescription>Distribuzione lead per origine acquisizione</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {leadSourceDistribution && leadSourceDistribution.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={leadSourceDistribution}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis dataKey="source" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="count" fill={COLORS.blue} name="Lead Totali" />
+                          <Bar dataKey="qualified" fill={COLORS.orange} name="Qualificati" />
+                          <Bar dataKey="converted" fill={COLORS.green} name="Convertiti" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                        Nessun dato disponibile
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </motion.div>
             </TabsContent>
 
