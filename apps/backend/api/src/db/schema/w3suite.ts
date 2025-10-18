@@ -5599,7 +5599,9 @@ export const insertVoipTrunkSchema = createInsertSchema(voipTrunks).omit({
   authUsername: z.string().min(1, "Auth username is required"),
   sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
 });
+export const updateVoipTrunkSchema = insertVoipTrunkSchema.omit({ tenantId: true, storeId: true }).partial();
 export type InsertVoipTrunk = z.infer<typeof insertVoipTrunkSchema>;
+export type UpdateVoipTrunk = z.infer<typeof updateVoipTrunkSchema>;
 export type VoipTrunk = typeof voipTrunks.$inferSelect;
 
 // 2) voip_dids - Numerazioni in ingresso
@@ -5633,7 +5635,9 @@ export const insertVoipDidSchema = createInsertSchema(voipDids).omit({
   routeTargetType: z.enum(['ext', 'ivr', 'queue', 'ai']),
   routeTargetRef: z.string().min(1, "Route target reference is required"),
 });
+export const updateVoipDidSchema = insertVoipDidSchema.omit({ tenantId: true, storeId: true, e164: true }).partial();
 export type InsertVoipDid = z.infer<typeof insertVoipDidSchema>;
+export type UpdateVoipDid = z.infer<typeof updateVoipDidSchema>;
 export type VoipDid = typeof voipDids.$inferSelect;
 
 // 3) voip_extensions - Interni del tenant
@@ -5667,7 +5671,9 @@ export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit
   sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
   classOfService: z.enum(['agent', 'supervisor', 'admin']),
 });
+export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ tenantId: true, sipDomain: true, extNumber: true }).partial();
 export type InsertVoipExtension = z.infer<typeof insertVoipExtensionSchema>;
+export type UpdateVoipExtension = z.infer<typeof updateVoipExtensionSchema>;
 export type VoipExtension = typeof voipExtensions.$inferSelect;
 
 // 7) voip_cdr - Mirror CDR per report KPI
@@ -5739,7 +5745,9 @@ export const insertVoipRouteSchema = createInsertSchema(voipRoutes).omit({
   pattern: z.string().min(1, "Pattern is required"),
   priority: z.number().min(0).max(1000),
 });
+export const updateVoipRouteSchema = insertVoipRouteSchema.omit({ tenantId: true }).partial();
 export type InsertVoipRoute = z.infer<typeof insertVoipRouteSchema>;
+export type UpdateVoipRoute = z.infer<typeof updateVoipRouteSchema>;
 export type VoipRoute = typeof voipRoutes.$inferSelect;
 
 // 5) contact_policies - Policy minime di contatto in JSON
@@ -5768,7 +5776,9 @@ export const insertContactPolicySchema = createInsertSchema(contactPolicies).omi
   scopeRef: z.string().min(1, "Scope reference is required"),
   rulesJson: z.object({}).passthrough(), // Accept any JSON object
 });
+export const updateContactPolicySchema = insertContactPolicySchema.omit({ tenantId: true, scopeType: true, scopeRef: true }).partial();
 export type InsertContactPolicy = z.infer<typeof insertContactPolicySchema>;
+export type UpdateContactPolicy = z.infer<typeof updateContactPolicySchema>;
 export type ContactPolicy = typeof contactPolicies.$inferSelect;
 
 // 6) voip_activity_log - Audit e provisioning/log applicativo

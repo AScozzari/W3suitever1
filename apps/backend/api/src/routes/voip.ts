@@ -28,10 +28,15 @@ import {
   voipActivityLog,
   voipCdrs,
   insertVoipTrunkSchema,
+  updateVoipTrunkSchema,
   insertVoipDidSchema,
+  updateVoipDidSchema,
   insertVoipExtensionSchema,
+  updateVoipExtensionSchema,
   insertVoipRouteSchema,
+  updateVoipRouteSchema,
   insertContactPolicySchema,
+  updateContactPolicySchema,
   insertVoipActivityLogSchema,
   insertVoipCdrSchema
 } from '../db/schema/w3suite';
@@ -160,7 +165,7 @@ router.patch('/trunks/:id', rbacMiddleware, requirePermission('manage_telephony'
     await setTenantContext(db, tenantId);
     const { id } = req.params;
 
-    const updateData = insertVoipTrunkSchema.partial().parse(req.body);
+    const updateData = updateVoipTrunkSchema.parse(req.body);
 
     const [updated] = await db.update(voipTrunks)
       .set({ ...updateData, updatedAt: new Date() })
@@ -335,7 +340,7 @@ router.patch('/dids/:id', rbacMiddleware, requirePermission('manage_telephony'),
     await setTenantContext(db, tenantId);
     const { id } = req.params;
 
-    const updateData = insertVoipDidSchema.partial().parse(req.body);
+    const updateData = updateVoipDidSchema.parse(req.body);
 
     const [updated] = await db.update(voipDids)
       .set({ ...updateData, updatedAt: new Date() })
@@ -510,7 +515,7 @@ router.patch('/extensions/:id', rbacMiddleware, requirePermission('manage_teleph
     await setTenantContext(db, tenantId);
     const { id } = req.params;
 
-    const updateData = insertVoipExtensionSchema.partial().parse(req.body);
+    const updateData = updateVoipExtensionSchema.parse(req.body);
 
     const [updated] = await db.update(voipExtensions)
       .set({ ...updateData, updatedAt: new Date() })
@@ -682,7 +687,7 @@ router.patch('/routes/:id', rbacMiddleware, requirePermission('manage_telephony'
     await setTenantContext(db, tenantId);
     const { id } = req.params;
 
-    const updateData = insertVoipRouteSchema.partial().parse(req.body);
+    const updateData = updateVoipRouteSchema.parse(req.body);
 
     const [updated] = await db.update(voipRoutes)
       .set({ ...updateData, updatedAt: new Date() })
@@ -860,7 +865,7 @@ router.patch('/policies/:id', rbacMiddleware, requirePermission('manage_telephon
     await setTenantContext(db, tenantId);
     const { id } = req.params;
 
-    const updateData = insertContactPolicySchema.partial().parse(req.body);
+    const updateData = updateContactPolicySchema.parse(req.body);
 
     const [updated] = await db.update(contactPolicies)
       .set({ ...updateData, updatedAt: new Date() })
