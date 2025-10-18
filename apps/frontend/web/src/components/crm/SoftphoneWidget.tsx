@@ -19,7 +19,11 @@ import {
   Clock,
   User,
   Sun,
-  Moon
+  Moon,
+  Delete,
+  PhoneForwarded,
+  Hash,
+  Grid3x3
 } from 'lucide-react';
 
 interface SoftphoneWidgetProps {
@@ -39,6 +43,8 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   const [isRegistered, setIsRegistered] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [showDialpad, setShowDialpad] = useState(false);
 
   // Call duration timer
   useEffect(() => {
@@ -67,12 +73,19 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
     '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
   };
 
+  // Initialize AudioContext on first user interaction
+  useEffect(() => {
+    if (!audioContext) {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      setAudioContext(ctx);
+    }
+  }, []);
+
   // Play DTMF tone
   const playDTMFTone = (digit: string) => {
     const frequencies = dtmfFrequencies[digit];
-    if (!frequencies) return;
+    if (!frequencies || !audioContext) return;
 
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const [freq1, freq2] = frequencies;
 
     // Create two oscillators for dual-tone
@@ -82,22 +95,22 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
 
     osc1.frequency.value = freq1;
     osc2.frequency.value = freq2;
+    osc1.type = 'sine';
+    osc2.type = 'sine';
     
-    gainNode.gain.value = 0.1; // Volume control
+    gainNode.gain.value = 0.3; // Volume control (increased for better audibility)
 
     osc1.connect(gainNode);
     osc2.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    osc1.start();
-    osc2.start();
+    const now = audioContext.currentTime;
+    osc1.start(now);
+    osc2.start(now);
 
-    // Stop after 100ms (classic DTMF duration)
-    setTimeout(() => {
-      osc1.stop();
-      osc2.stop();
-      audioContext.close();
-    }, 100);
+    // Stop after 150ms (classic DTMF duration)
+    osc1.stop(now + 0.15);
+    osc2.stop(now + 0.15);
   };
 
   // Mock SIP registration (TODO: Replace with real SIP.js)
@@ -257,18 +270,32 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
               />
 
               {/* Dialpad */}
-              <div className="grid grid-cols-3 gap-2">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
-                  <Button
-                    key={digit}
-                    variant="outline"
-                    className={`h-12 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-black'}`}
-                    onClick={() => addDigit(digit)}
-                    data-testid={`button-dial-${digit}`}
-                  >
-                    {digit}
-                  </Button>
-                ))}
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
+                    <Button
+                      key={digit}
+                      variant="outline"
+                      className={`h-12 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-black'}`}
+                      onClick={() => addDigit(digit)}
+                      data-testid={`button-dial-${digit}`}
+                    >
+                      {digit}
+                    </Button>
+                  ))}
+                </div>
+                
+                {/* Backspace Button */}
+                <Button
+                  variant="outline"
+                  className={`w-full h-10 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-gray-600'}`}
+                  onClick={handleBackspace}
+                  disabled={!phoneNumber}
+                  data-testid="button-backspace"
+                >
+                  <Delete className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
               </div>
 
               {/* Call Button */}
@@ -335,13 +362,14 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
               </div>
 
               {/* Call Controls */}
-              <div className="flex gap-2 justify-center mb-4">
+              <div className="grid grid-cols-4 gap-2 mb-4">
                 <Button
                   variant="outline"
                   size="icon"
                   className={`rounded-full ${isMuted ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
                   onClick={() => setIsMuted(!isMuted)}
                   data-testid="button-mute"
+                  title={isMuted ? 'Unmute' : 'Mute'}
                 >
                   {isMuted ? <MicOff className="w-5 h-5 text-red-400" /> : <Mic className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} />}
                 </Button>
@@ -352,10 +380,53 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   className={`rounded-full ${!isSpeakerOn ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
                   onClick={() => setIsSpeakerOn(!isSpeakerOn)}
                   data-testid="button-speaker"
+                  title={isSpeakerOn ? 'Turn Off Speaker' : 'Turn On Speaker'}
                 >
                   {isSpeakerOn ? <Volume2 className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} /> : <VolumeX className="w-5 h-5 text-red-400" />}
                 </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full ${showDialpad ? 'bg-blue-600/20 border-blue-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
+                  onClick={() => setShowDialpad(!showDialpad)}
+                  data-testid="button-toggle-dialpad"
+                  title="Toggle Dialpad"
+                >
+                  <Grid3x3 className={`w-5 h-5 ${showDialpad ? 'text-blue-400' : isDarkMode ? 'text-white' : 'text-black'}`} />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
+                  onClick={() => {/* TODO: Implement transfer */}}
+                  data-testid="button-transfer"
+                  title="Transfer Call"
+                >
+                  <PhoneForwarded className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} />
+                </Button>
               </div>
+
+              {/* In-call Dialpad */}
+              {showDialpad && (
+                <div className="mb-4 space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
+                      <Button
+                        key={digit}
+                        variant="outline"
+                        size="sm"
+                        className={`h-10 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-black'}`}
+                        onClick={() => playDTMFTone(digit)}
+                        data-testid={`button-dtmf-${digit}`}
+                      >
+                        {digit}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Hangup Button */}
               <Button
