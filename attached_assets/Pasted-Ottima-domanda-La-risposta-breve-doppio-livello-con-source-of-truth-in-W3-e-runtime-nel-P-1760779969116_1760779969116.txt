@@ -1,0 +1,82 @@
+Ottima domanda. La risposta breve è: **doppio livello, con “source-of-truth” in W3 e “runtime” nel PBX**.
+
+# Dove vivono le configurazioni VoIP
+
+1. **W3 Suite = Source of Truth (business & desired state)**
+   Nel DB di W3 tieni *tutta l’anagrafica* e lo *stato desiderato* (chi/che cosa deve esistere). Qui governi multi-tenant, permessi, store, mapping DID↔store, policy, ecc.
+   👉 Sì: crea uno **schema dedicato (es. `voip_*`)** nel DB W3.
+   Esempi minimi (tutte con `tenant_id` e RLS attiva):
+
+* `voip_domains` (uno per tenant; mappa il domain FreeSWITCH/OpenSIPS, es. `tenantA.pbx.w3suite.it`)
+* `voip_stores` (store di quel tenant; opzionale se già esiste `stores`, allora fai una `voip_store_settings`)
+* `voip_trunks` (anagrafica trunk/DID provider, credenziali, SIP URI, codec policy)
+* `voip_dids` (lista numeri, porting, assegnazione a store/IVR/queue)
+* `voip_extensions` (interni, display name, class of service, limiti, regole di inoltro)
+* `voip_devices` (UA associati a extension: webRTC, deskphone, mobile app)
+* `voip_policies` (dialplan logico: blocchi, black/whitelist, orari, registrazione, retention)
+* `voip_credentials` (se proprio servono: **mai in chiaro**, vedi sotto “segreti”)
+* `voip_routes` (regole outbound/inbound “desiderate”)
+* `voip_recordings_meta` (metadati di registrazioni, non i file)
+* `voip_cdr_mirror` (specchio CDR/eventi dal PBX per analytics; opzionale se usi DWH)
+
+2. **PBX (FreeSWITCH/FusionPBX/OpenSIPS) = Runtime State**
+   Il PBX mantiene la **configurazione operativa** (dialplan XML/DB, registrazioni, dialog state). Non “progetta” il modello: **applica** ciò che W3 decide.
+
+# Come si tengono allineati (pattern “Desired vs Actual”)
+
+Introduce un **Provisioning Service** (microservizio W3) che:
+
+* Legge/valida le tabelle `voip_*` (desired state).
+* Traduce in **operazioni idempotenti** sul PBX (crea/aggiorna/elimina domain, trunk, internal, route).
+* Mantiene un registro `voip_apply_log` con esiti, versioni e drift (differenze).
+* Espone API tipo:
+
+  * `POST /voip/tenants/:id/extensions` (crea interno 1001)
+  * `PATCH /voip/extensions/:id` (reset password, forward, CLIR)
+  * `POST /voip/sync/:tenantId` (forza riconciliazione desired→runtime)
+
+Flusso tipico:
+
+1. Operatore in W3 crea **store & interni** → scrive su `voip_*`.
+2. Provisioning Service calcola il **diff** → chiama API/DB del PBX (FusionPBX) o ESL per applicare.
+3. PBX invia **CDR & eventi** → W3 (`/api/voip/cdr`, `/api/voip/events`) per dashboard/report.
+4. Eventuali drift (config manuale fatta sul PBX) vengono **sovrascritti** o segnalati come “out-of-band”.
+
+# Sicurezza & segreti
+
+* **Password/SIP secrets**:
+
+  * Ideale: non salvarle in chiaro in `voip_credentials`.
+  * Usa **KMS/Secrets Manager** (HashiCorp Vault, AWS KMS, o almeno AES-GCM con chiave fuori dal DB).
+  * Nel DB W3 conserva solo **ciphertext + key id** + metadata (version, created_at).
+  * Rotazione: campo `expires_at` e routine di **credential rotation** (es. 90 giorni).
+
+* **RLS**: tutte le `voip_*` con `tenant_id` e policy RLS come già fai in W3 Suite.
+
+* **Audit**: tabelle `voip_audit` con chi ha fatto cosa e quando; *soft-delete* con `deleted_at`.
+
+# Minimale “MVP” di tabelle (consiglio pratico)
+
+Se vuoi partire snello (e crescere poi):
+
+* `voip_domains(id, tenant_id, fqdn, webrtc_enabled, srtp_policy, stun_turn_profile_id, …)`
+* `voip_trunks(id, tenant_id, provider, sip_uri, auth_mode, codec_set, recording_policy, …)`
+* `voip_dids(id, tenant_id, e164, trunk_id, route_target_type [store|ivr|ext|queue], route_target_id, …)`
+* `voip_extensions(id, tenant_id, domain_id, ext_number, display_name, cos, voicemail, forward_rules, …)`
+* `voip_devices(id, tenant_id, extension_id, type [webrtc|deskphone], user_agent_hint, …)`
+* `voip_policies(id, tenant_id, name, rules_json)`
+* `voip_apply_log(id, tenant_id, target_type, target_id, op, status, diff_json, ts)`
+
+# Dove NON far vivere la verità
+
+* **Non** usare il DB del PBX come master: è comodo da leggere, ma introduce coupling e lock-in.
+* **Non** permettere configurazioni manuali stabili “solo PBX”: rompono l’idempotenza. Se devi farle, codificale in W3 e riesegui apply.
+
+# In pratica (risposta alla tua domanda)
+
+* **Sì**, tieni le configurazioni nel **DB di W3 Suite** (schema `voip_*`) come **source of truth**.
+* Il **PBX** (FreeSWITCH/FusionPBX) rimane il **runtime** che riceve provisioning automatico dal tuo **Provisioning Service**.
+* CDR/eventi tornano in W3 per analytics e UI.
+* Segreti cifrati, RLS per tenant, audit e rotazione credenziali.
+
+Se vuoi, nel prossimo passo ti butto giù gli **DDL SQL** per lo schema minimo `voip_*` (con `tenant_id` e RLS) + uno **schemino JSON** di esempio per `voip_policies.rules_json` e l’endpoint `/voip/sync/:tenantId`.

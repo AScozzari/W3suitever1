@@ -1,0 +1,88 @@
+Sì: FreeSWITCH supporta WebRTC nativamente.
+
+Hai due strade, entrambe valide:
+
+SIP-over-WebSocket (WSS) — consigliata
+
+Server: mod_sofia con wss-binding (es. :7443), DTLS-SRTP, ICE, codec Opus/PCMU.
+
+Client (browser): SIP.js o JsSIP.
+
+Pro: è SIP “standard”, facile mettere poi OpenSIPS davanti come registrar/LB senza lock-in FreeSWITCH.
+
+Verto (WebRTC nativo FreeSWITCH)
+
+Server: mod_verto (WebSocket + JSON-RPC).
+
+Client: verto.js / Verto Communicator.
+
+Pro: integrazione strettissima con FreeSWITCH; Contro: è protocollo specifico FreeSWITCH (meno portabile lato proxy/interop).
+
+Checklist rapida per SIP-over-WSS con FreeSWITCH
+
+TLS/Cert validi (LetsEncrypt): per wss://pbx.tuodominio.
+
+autoload_configs/sofia.conf.xml
+
+Abilita il profilo interno con:
+
+wss-binding=":7443"
+
+tls=true (e path cert), rtp-autoflush-during-bridge=true
+
+Codecs: opus, PCMU, PCMA (Opus in cima).
+
+SRTP/DTLS: media_encryption=dtls-srtp, rtcp-mux=true.
+
+NAT/ICE: ext-rtp-ip=auto-nat, ext-sip-ip=auto-nat.
+
+STUN/TURN: attiva un coturn tuo (es. turn.w3suite.it) e passa le credenziali al client WebRTC.
+
+ACL: consenti l’IP del proxy/WAF; limita REGISTER per dominio (multi-tenant).
+
+CORS WS: non serve per WS puri, ma verifica reverse proxy (Nginx) per pass-through su 7443.
+
+In FusionPBX trovi già i toggle “WebRTC”/“TLS” nel profilo, e un web phone pronto. Se però vuoi un softphone custom nella W3 Suite, vai di SIP.js/JsSIP.
+
+Esempio mini client (SIP.js)
+import { UA } from "sip.js";
+
+// Config base
+const ua = new UA({
+  uri: "1001@tenantA.pbx.w3suite.it",
+  transportOptions: {
+    server: "wss://pbx.w3suite.it:7443",
+  },
+  authorizationUsername: "1001",
+  authorizationPassword: "********",
+  sessionDescriptionHandlerFactoryOptions: {
+    constraints: { audio: true, video: false },
+    peerConnectionConfiguration: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "turn:turn.w3suite.it:3478", username: "u", credential: "p" }
+      ]
+    }
+  }
+});
+
+// Chiamata out
+const target = "0039XXXXXXXXX";
+const session = ua.invite(`sip:${target}@tenantA.pbx.w3suite.it`);
+
+
+Multi-tenant: il domain (tenantA.pbx.w3suite.it) separa registrazioni, dialplan e interni. Le tue API W3 generano le credenziali per l’interno nel dominio corretto.
+
+Quando scegliere Verto
+
+Vuoi usare subito il Verto Communicator e feature come screen-share/chat integrate senza scriverle.
+
+Accetti il lock-in protocollare (non un problema se resti su FreeSWITCH puro).
+
+Conclusione
+
+Sì, FreeSWITCH parla WebRTC su WSS nativamente: lato server non serve alcun “adapter”.
+
+SIP.js/JsSIP sono gli adapter lato browser più pratici per un softphone custom in W3 Suite.
+
+Se in futuro metti OpenSIPS davanti, restando su SIP-over-WSS l’integrazione è lineare (registrar, topology hiding, failover).
