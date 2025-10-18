@@ -57,10 +57,9 @@ type TrunkFormValues = z.infer<typeof trunkFormSchema>;
 // Extension Form Schema
 const extensionFormSchema = z.object({
   userId: z.string().min(1, "Seleziona un utente"),
-  domainId: z.string().uuid("Seleziona un dominio valido"),
   extension: z.string().min(1, "Numero interno obbligatorio").max(20),
   sipUsername: z.string().min(1, "Username SIP obbligatorio").max(100),
-  sipPassword: z.string().min(8, "Password deve essere almeno 8 caratteri"),
+  sipPassword: z.string().min(12, "Password deve essere almeno 12 caratteri"),
   displayName: z.string().optional(),
   email: z.string().email().optional(),
   voicemailEnabled: z.boolean().default(true),
@@ -75,7 +74,7 @@ type ExtensionFormValues = z.infer<typeof extensionFormSchema>;
 export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
   const { toast } = useToast();
   const tenantId = useRequiredTenantId();
-  const [activeTab, setActiveTab] = useState<'trunks' | 'extensions'>('trunks');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'trunks' | 'dids' | 'extensions'>('dashboard');
   const [editingTrunk, setEditingTrunk] = useState<string | null>(null);
   const [editingExtension, setEditingExtension] = useState<string | null>(null);
   const [showTrunkForm, setShowTrunkForm] = useState(false);
@@ -94,11 +93,6 @@ export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
 
   const { data: stores = [] } = useQuery<any[]>({
     queryKey: ['/api/stores'],
-    enabled: open,
-  });
-
-  const { data: domains = [] } = useQuery<any[]>({
-    queryKey: ['/api/voip/domains'],
     enabled: open,
   });
 
@@ -237,28 +231,90 @@ export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Phone className="w-6 h-6" />
+      <DialogContent className="max-w-[95vw] w-full h-[95vh] overflow-auto bg-gradient-to-br from-slate-900/95 via-purple-900/20 to-slate-900/95 backdrop-blur-xl border border-white/10 shadow-2xl">
+        <DialogHeader className="border-b border-white/10 pb-4">
+          <DialogTitle className="flex items-center gap-3 text-2xl bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+            <Phone className="w-7 h-7 text-orange-500" />
             Configurazione VoIP
           </DialogTitle>
-          <DialogDescription>
-            Gestisci trunks SIP e extensions per il sistema telefonico
+          <DialogDescription className="text-gray-300">
+            Gestisci trunks SIP, DIDs e extensions per il sistema telefonico enterprise
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="trunks" data-testid="tab-trunks">
-              <Server className="w-4 h-4 mr-2" />
-              Trunks SIP
+          <TabsList className="grid w-full grid-cols-4 bg-white/5 backdrop-blur-sm border border-white/10">
+            <TabsTrigger value="dashboard" data-testid="tab-dashboard" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500/40 data-[state=active]:to-purple-600/50">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Dashboard
             </TabsTrigger>
-            <TabsTrigger value="extensions" data-testid="tab-extensions">
+            <TabsTrigger value="trunks" data-testid="tab-trunks" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500/40 data-[state=active]:to-purple-600/50">
+              <Server className="w-4 h-4 mr-2" />
+              Trunks
+            </TabsTrigger>
+            <TabsTrigger value="dids" data-testid="tab-dids" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500/40 data-[state=active]:to-purple-600/50">
+              <Phone className="w-4 h-4 mr-2" />
+              DIDs
+            </TabsTrigger>
+            <TabsTrigger value="extensions" data-testid="tab-extensions" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500/40 data-[state=active]:to-purple-600/50">
               <User className="w-4 h-4 mr-2" />
               Extensions
             </TabsTrigger>
           </TabsList>
+
+          {/* DASHBOARD TAB */}
+          <TabsContent value="dashboard" className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-purple-600/30 border-white/20 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-300">Trunks Attivi</p>
+                    <p className="text-3xl font-bold text-white mt-2">0 / {trunks.length}</p>
+                  </div>
+                  <Server className="w-12 h-12 text-orange-500/50" />
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-gradient-to-br from-purple-600/20 to-orange-500/30 border-white/20 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-300">Extensions Registrate</p>
+                    <p className="text-3xl font-bold text-white mt-2">0 / {extensions.length}</p>
+                  </div>
+                  <User className="w-12 h-12 text-purple-500/50" />
+                </div>
+              </Card>
+            </div>
+
+            <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Connection Status</h3>
+              <p className="text-gray-400 text-sm">Real-time connection monitoring coming soon...</p>
+            </Card>
+          </TabsContent>
+
+          {/* DIDs TAB */}
+          <TabsContent value="dids" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-400">
+                Gestisci i numeri DID (Direct Inward Dialing)
+              </p>
+              <Button 
+                onClick={() => toast({ title: "Coming soon", description: "DID management sarà disponibile a breve" })}
+                data-testid="button-add-did"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi DID
+              </Button>
+            </div>
+
+            <Card className="p-8 text-center bg-white/5 border-white/10 backdrop-blur-sm">
+              <Phone className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+              <p className="text-gray-400">DID management coming soon</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Configura numeri telefonici in entrata per i tuoi store
+              </p>
+            </Card>
+          </TabsContent>
 
           {/* TRUNKS TAB */}
           <TabsContent value="trunks" className="space-y-4">
@@ -567,27 +623,12 @@ export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
                   setEditingExtension(null);
                   extensionForm.reset();
                 }}
-                disabled={domains.length === 0}
                 data-testid="button-add-extension"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Aggiungi Extension
               </Button>
             </div>
-
-            {domains.length === 0 && (
-              <Card className="p-4 bg-yellow-900/20 border-yellow-700/30">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="text-yellow-300 font-medium mb-1">Nessun dominio VoIP configurato</p>
-                    <p className="text-yellow-400/80">
-                      Prima di creare extensions, devi configurare almeno un dominio VoIP.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            )}
 
             {extensionsLoading ? (
               <LoadingState />
