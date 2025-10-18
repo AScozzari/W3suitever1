@@ -207,7 +207,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   <Button
                     key={digit}
                     variant="outline"
-                    className="h-12 bg-gray-800 border-gray-700 hover:bg-gray-700"
+                    className="h-12 bg-gray-800 border-gray-700 hover:bg-gray-700 text-white"
                     onClick={() => addDigit(digit)}
                     data-testid={`button-dial-${digit}`}
                   >
