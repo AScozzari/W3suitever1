@@ -93,30 +93,40 @@ router.get('/templates', rbacMiddleware, requirePermission('workflow.read_templa
     const offset = (pageNum - 1) * limitNum;
 
     // 🔐 DEPARTMENTAL RBAC: Get user's team assignments to filter by department
+    // ✅ EXCEPTION: CRM workflows are accessible to all users (consistent with CRM endpoints)
     const userId = req.user?.id;
-    const userTeamAssignments = await db
-      .select({ templateId: teamWorkflowAssignments.templateId })
-      .from(teamWorkflowAssignments)
-      .innerJoin(teams, eq(teams.id, teamWorkflowAssignments.teamId))
-      .where(and(
-        eq(teams.tenantId, tenantId),
-        eq(teams.isActive, true),
-        // In production, add: inArray(teams.members, [userId])
-        // For now, allowing all active teams in tenant
-      ));
+    const isCrmCategory = category === 'crm';
+    
+    let accessibleTemplateIds: string[] = [];
+    
+    if (!isCrmCategory) {
+      const userTeamAssignments = await db
+        .select({ templateId: teamWorkflowAssignments.templateId })
+        .from(teamWorkflowAssignments)
+        .innerJoin(teams, eq(teams.id, teamWorkflowAssignments.teamId))
+        .where(and(
+          eq(teams.tenantId, tenantId),
+          eq(teams.isActive, true),
+          // In production, add: inArray(teams.members, [userId])
+          // For now, allowing all active teams in tenant
+        ));
 
-    // Extract template IDs that user has access to via team assignments
-    const accessibleTemplateIds = userTeamAssignments.map(ta => ta.templateId);
+      // Extract template IDs that user has access to via team assignments
+      accessibleTemplateIds = userTeamAssignments.map(ta => ta.templateId);
+    }
 
     // Build where conditions  
     let whereConditions = [eq(workflowTemplates.tenantId, tenantId)];
     
     // 🎯 DEPARTMENTAL FILTER: Only show templates assigned to user's teams
-    if (accessibleTemplateIds.length > 0) {
-      whereConditions.push(inArray(workflowTemplates.id, accessibleTemplateIds));
-    } else {
-      // If user has no team assignments, show no templates (secure by default)
-      whereConditions.push(eq(workflowTemplates.id, 'no-access'));
+    // ✅ Skip team filter for CRM workflows (open access within tenant)
+    if (!isCrmCategory) {
+      if (accessibleTemplateIds.length > 0) {
+        whereConditions.push(inArray(workflowTemplates.id, accessibleTemplateIds));
+      } else {
+        // If user has no team assignments, show no templates (secure by default)
+        whereConditions.push(eq(workflowTemplates.id, 'no-access'));
+      }
     }
     
     if (isActive !== 'all') {
