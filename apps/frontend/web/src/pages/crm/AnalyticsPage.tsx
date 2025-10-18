@@ -251,18 +251,24 @@ export function AnalyticsContent() {
                       <CardDescription>Dal visitatore al cliente</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <FunnelChart>
-                          <Tooltip />
-                          <Funnel
-                            dataKey="value"
-                            data={conversionFunnel || []}
-                            isAnimationActive
-                          >
-                            <LabelList position="center" fill="#fff" />
-                          </Funnel>
-                        </FunnelChart>
-                      </ResponsiveContainer>
+                      {conversionFunnel && conversionFunnel.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={280}>
+                          <FunnelChart>
+                            <Tooltip />
+                            <Funnel
+                              dataKey="value"
+                              data={conversionFunnel}
+                              isAnimationActive
+                            >
+                              <LabelList position="center" fill="#fff" />
+                            </Funnel>
+                          </FunnelChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+                          Nessun dato disponibile
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -278,22 +284,28 @@ export function AnalyticsContent() {
                       <CardDescription>ROI per campagna attiva</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={campaignPerformance?.slice(0, 5) || []}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                          <XAxis 
-                            dataKey="campaignName" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            fontSize={12}
-                          />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="roi" fill={COLORS.orange} radius={[8, 8, 0, 0]} />
-                          <Bar dataKey="conversionRate" fill={COLORS.purple} radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                      {campaignPerformance && campaignPerformance.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={campaignPerformance.slice(0, 5)}>
+                            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                            <XAxis 
+                              dataKey="campaignName" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={80}
+                              fontSize={12}
+                            />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="roi" fill={COLORS.orange} radius={[8, 8, 0, 0]} />
+                            <Bar dataKey="conversionRate" fill={COLORS.purple} radius={[8, 8, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+                          Nessun dato disponibile
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -409,16 +421,22 @@ export function AnalyticsContent() {
                       <CardDescription>Click e conversioni per source/medium</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <RadarChart data={channelAttribution || []}>
-                          <PolarGrid strokeDasharray="3 3" />
-                          <PolarAngleAxis dataKey="source" />
-                          <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                          <Radar name="Leads" dataKey="leads" stroke={COLORS.orange} fill={COLORS.orange} fillOpacity={0.6} />
-                          <Radar name="Customers" dataKey="customers" stroke={COLORS.purple} fill={COLORS.purple} fillOpacity={0.6} />
-                          <Legend />
-                        </RadarChart>
-                      </ResponsiveContainer>
+                      {channelAttribution && channelAttribution.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={280}>
+                          <RadarChart data={channelAttribution}>
+                            <PolarGrid strokeDasharray="3 3" />
+                            <PolarAngleAxis dataKey="source" />
+                            <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                            <Radar name="Leads" dataKey="leads" stroke={COLORS.orange} fill={COLORS.orange} fillOpacity={0.6} />
+                            <Radar name="Customers" dataKey="customers" stroke={COLORS.purple} fill={COLORS.purple} fillOpacity={0.6} />
+                            <Legend />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+                          Nessun dato disponibile
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -437,17 +455,23 @@ export function AnalyticsContent() {
                     <CardDescription>Accuratezza predittiva del modello AI</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={aiScoreDistribution || []}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="scoreRange" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="count" fill={COLORS.purple} name="Lead Totali" />
-                        <Bar dataKey="converted" fill={COLORS.green} name="Convertiti" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    {aiScoreDistribution && aiScoreDistribution.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={aiScoreDistribution}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis dataKey="scoreRange" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="count" fill={COLORS.purple} name="Lead Totali" />
+                          <Bar dataKey="converted" fill={COLORS.green} name="Convertiti" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                        Nessun dato disponibile
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -465,30 +489,36 @@ export function AnalyticsContent() {
                     <CardDescription>Eventi tracciati per ora del giorno</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={gtmEvents?.byHour || []}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="hour" />
-                        <YAxis />
-                        <Tooltip />
-                        <Area 
-                          type="monotone" 
-                          dataKey="events" 
-                          stroke={COLORS.orange}
-                          fill={COLORS.orange}
-                          fillOpacity={0.3}
-                          name="Eventi"
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="conversions" 
-                          stroke={COLORS.green}
-                          fill={COLORS.green}
-                          fillOpacity={0.3}
-                          name="Conversioni"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    {gtmEvents?.byHour && gtmEvents.byHour.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={gtmEvents.byHour}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis dataKey="hour" />
+                          <YAxis />
+                          <Tooltip />
+                          <Area 
+                            type="monotone" 
+                            dataKey="events" 
+                            stroke={COLORS.orange}
+                            fill={COLORS.orange}
+                            fillOpacity={0.3}
+                            name="Eventi"
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="conversions" 
+                            stroke={COLORS.green}
+                            fill={COLORS.green}
+                            fillOpacity={0.3}
+                            name="Conversioni"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                        Nessun dato disponibile
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -503,36 +533,42 @@ export function AnalyticsContent() {
                     <CardDescription>Metriche comparative tra punti vendita</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <LineChart data={storeComparison || []}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="storeName" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="metrics.revenue" 
-                          stroke={COLORS.orange}
-                          strokeWidth={2}
-                          name="Revenue (€)"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="metrics.conversionRate" 
-                          stroke={COLORS.purple}
-                          strokeWidth={2}
-                          name="Conv. Rate (%)"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="metrics.leads" 
-                          stroke={COLORS.blue}
-                          strokeWidth={2}
-                          name="Leads"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {storeComparison && storeComparison.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={400}>
+                        <LineChart data={storeComparison}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis dataKey="storeName" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="metrics.revenue" 
+                            stroke={COLORS.orange}
+                            strokeWidth={2}
+                            name="Revenue (€)"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="metrics.conversionRate" 
+                            stroke={COLORS.purple}
+                            strokeWidth={2}
+                            name="Conv. Rate (%)"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="metrics.leads" 
+                            stroke={COLORS.blue}
+                            strokeWidth={2}
+                            name="Leads"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+                        Nessun dato disponibile
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
