@@ -123,7 +123,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
           className="rounded-full w-16 h-16 bg-green-600 hover:bg-green-700 shadow-lg"
           data-testid="button-maximize-softphone"
         >
-          <Phone className="w-6 h-6" />
+          <Phone className="w-6 h-6 text-green-100" />
         </Button>
         {callState === 'active' && (
           <Badge className="absolute -top-1 -right-1 bg-red-600 text-white animate-pulse">
