@@ -158,10 +158,10 @@ class CRMAnalyticsService {
     // Get current period metrics
     const currentMetrics = await db
       .select({
-        totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
-        qualifiedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' then ${crmLeads.id} end)`,
-        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
-        avgLeadScore: sql<number>`avg(${crmLeads.leadScore})`,
+        totalLeads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
+        qualifiedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'qualified' THEN ${crmLeads.id} END)`,
+        convertedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'converted' THEN ${crmLeads.id} END)`,
+        avgLeadScore: sql<number>`COALESCE(AVG(${crmLeads.leadScore}), 0)`,
       })
       .from(crmLeads)
       .where(and(
@@ -170,12 +170,12 @@ class CRMAnalyticsService {
         storeFilter
       ));
 
-    // Get deal metrics (simplified - no complex SQL wrappers)
+    // Get deal metrics - use UPPERCASE SQL functions per PostgreSQL standard
     const dealMetrics = await db
       .select({
-        totalRevenue: sql<number>`sum(${crmDeals.dealValue})`,
-        avgDealSize: sql<number>`avg(${crmDeals.dealValue})`,
-        wonDeals: sql<number>`count(case when ${crmDeals.status} = 'won' then 1 end)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${crmDeals.dealValue}), 0)`,
+        avgDealSize: sql<number>`COALESCE(AVG(${crmDeals.dealValue}), 0)`,
+        wonDeals: sql<number>`COUNT(CASE WHEN ${crmDeals.status} = 'won' THEN 1 END)`,
       })
       .from(crmDeals)
       .where(and(
@@ -186,7 +186,7 @@ class CRMAnalyticsService {
     // Get customer count
     const customerCount = await db
       .select({
-        activeCustomers: sql<number>`count(distinct ${crmCustomers.id})`,
+        activeCustomers: sql<number>`COUNT(DISTINCT ${crmCustomers.id})`,
       })
       .from(crmCustomers)
       .where(and(
@@ -250,10 +250,10 @@ class CRMAnalyticsService {
         startDate: crmCampaigns.startDate,
         endDate: crmCampaigns.endDate,
         ga4MeasurementId: crmCampaigns.ga4MeasurementId,
-        totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
-        qualifiedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' then ${crmLeads.id} end)`,
-        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
-        avgLeadScore: sql<number>`avg(${crmLeads.leadScore})`,
+        totalLeads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
+        qualifiedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'qualified' THEN ${crmLeads.id} END)`,
+        convertedLeads: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'converted' THEN ${crmLeads.id} END)`,
+        avgLeadScore: sql<number>`COALESCE(AVG(${crmLeads.leadScore}), 0)`,
       })
       .from(crmCampaigns)
       .leftJoin(stores, eq(crmCampaigns.storeId, stores.id))
@@ -326,10 +326,10 @@ class CRMAnalyticsService {
         channelName: crmCampaignUtmLinks.channelName,
         utmSource: crmCampaignUtmLinks.utmSource,
         utmMedium: crmCampaignUtmLinks.utmMedium,
-        clicks: sql<number>`sum(${crmCampaignUtmLinks.clicks})`,
-        uniqueClicks: sql<number>`sum(${crmCampaignUtmLinks.uniqueClicks})`,
-        conversions: sql<number>`sum(${crmCampaignUtmLinks.conversions})`,
-        revenue: sql<number>`sum(${crmCampaignUtmLinks.revenue})`,
+        clicks: sql<number>`SUM(${crmCampaignUtmLinks.clicks})`,
+        uniqueClicks: sql<number>`SUM(${crmCampaignUtmLinks.uniqueClicks})`,
+        conversions: sql<number>`SUM(${crmCampaignUtmLinks.conversions})`,
+        revenue: sql<number>`SUM(${crmCampaignUtmLinks.revenue})`,
       })
       .from(crmCampaignUtmLinks)
       .where(and(
@@ -373,15 +373,15 @@ class CRMAnalyticsService {
       .select({
         scoreRange: sql<string>`
           case 
-            when ${crmLeads.leadScore} >= 80 then '80-100 (Hot)'
-            when ${crmLeads.leadScore} >= 60 then '60-79 (Warm)'
-            when ${crmLeads.leadScore} >= 40 then '40-59 (Cool)'
-            when ${crmLeads.leadScore} >= 20 then '20-39 (Cold)'
+            when ${crmLeads.leadScore} >= 80 THEN '80-100 (Hot)'
+            when ${crmLeads.leadScore} >= 60 THEN '60-79 (Warm)'
+            when ${crmLeads.leadScore} >= 40 THEN '40-59 (Cool)'
+            when ${crmLeads.leadScore} >= 20 THEN '20-39 (Cold)'
             else '0-19 (Ice)'
           end
         `,
-        count: sql<number>`count(*)`,
-        converted: sql<number>`count(case when ${crmLeads.status} = 'converted' then 1 end)`,
+        count: sql<number>`COUNT()`,
+        converted: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'converted' THEN 1END)`,
       })
       .from(crmLeads)
       .where(and(
@@ -391,10 +391,10 @@ class CRMAnalyticsService {
       ))
       .groupBy(sql`
         case 
-          when ${crmLeads.leadScore} >= 80 then '80-100 (Hot)'
-          when ${crmLeads.leadScore} >= 60 then '60-79 (Warm)'
-          when ${crmLeads.leadScore} >= 40 then '40-59 (Cool)'
-          when ${crmLeads.leadScore} >= 20 then '20-39 (Cold)'
+          when ${crmLeads.leadScore} >= 80 THEN '80-100 (Hot)'
+          when ${crmLeads.leadScore} >= 60 THEN '60-79 (Warm)'
+          when ${crmLeads.leadScore} >= 40 THEN '40-59 (Cool)'
+          when ${crmLeads.leadScore} >= 20 THEN '20-39 (Cold)'
           else '0-19 (Ice)'
         end
       `);
@@ -442,9 +442,9 @@ class CRMAnalyticsService {
     // Get overall metrics
     const summary = await db
       .select({
-        totalEvents: sql<number>`count(*)`,
-        successfulEvents: sql<number>`count(case when ${gtmEventLog.success} = true then 1 end)`,
-        enhancedEvents: sql<number>`count(case when ${gtmEventLog.enhancedConversionData} is not null then 1 end)`,
+        totalEvents: sql<number>`COUNT()`,
+        successfulEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1END)`,
+        enhancedEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.enhancedConversionData} is not null THEN 1END)`,
       })
       .from(gtmEventLog)
       .where(and(
@@ -457,8 +457,8 @@ class CRMAnalyticsService {
     const topEvents = await db
       .select({
         eventName: gtmEventLog.eventName,
-        count: sql<number>`count(*)`,
-        successCount: sql<number>`count(case when ${gtmEventLog.success} = true then 1 end)`,
+        count: sql<number>`COUNT()`,
+        successCount: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1END)`,
       })
       .from(gtmEventLog)
       .where(and(
@@ -473,9 +473,9 @@ class CRMAnalyticsService {
     // Get hourly distribution
     const hourlyData = await db
       .select({
-        hour: sql<number>`extract(hour from ${gtmEventLog.createdAt})`,
-        events: sql<number>`count(*)`,
-        conversions: sql<number>`count(case when ${gtmEventLog.eventType} = 'lead_converted' then 1 end)`,
+        hour: sql<number>`EXTRACT(HOUR FROM ${gtmEventLog.createdAt})`,
+        events: sql<number>`COUNT()`,
+        conversions: sql<number>`COUNT(CASE WHEN ${gtmEventLog.eventType} = 'lead_converted' THEN 1END)`,
       })
       .from(gtmEventLog)
       .where(and(
@@ -483,8 +483,8 @@ class CRMAnalyticsService {
         dateFilter,
         storeFilter
       ))
-      .groupBy(sql`extract(hour from ${gtmEventLog.createdAt})`)
-      .orderBy(asc(sql`extract(hour from ${gtmEventLog.createdAt})`));
+      .groupBy(sql`EXTRACT(HOUR FROM ${gtmEventLog.createdAt})`)
+      .orderBy(asc(sql`EXTRACT(HOUR FROM ${gtmEventLog.createdAt})`));
 
     const metrics = summary[0];
     const successRate = metrics.totalEvents > 0 ? 
@@ -524,8 +524,8 @@ class CRMAnalyticsService {
         storeId: stores.id,
         storeName: stores.name,
         city: stores.city,
-        totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
-        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
+        totalLeads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
+        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' THEN ${crmLeads.id}END)`,
       })
       .from(stores)
       .leftJoin(crmLeads, eq(crmLeads.storeId, stores.id))
@@ -586,12 +586,12 @@ class CRMAnalyticsService {
     
     const accuracy = await db
       .select({
-        totalPredictions: sql<number>`count(*)`,
+        totalPredictions: sql<number>`COUNT()`,
         correctPredictions: sql<number>`
           count(case 
-            when ${crmLeads.leadScore} >= 70 and ${crmLeads.status} = 'converted' then 1
-            when ${crmLeads.leadScore} < 70 and ${crmLeads.status} != 'converted' then 1
-          end)
+            when ${crmLeads.leadScore} >= 70 and ${crmLeads.status} = 'converted' THEN 1
+            when ${crmLeads.leadScore} < 70 and ${crmLeads.status} != 'converted' THEN 1
+         END)
         `,
       })
       .from(crmLeads)
@@ -621,9 +621,9 @@ class CRMAnalyticsService {
       .select({
         visitors: sql<number>`1000`, // Mock visitor data
         leads: sql<number>`count(distinct ${crmLeads.id})`,
-        qualified: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' then ${crmLeads.id} end)`,
-        opportunities: sql<number>`count(distinct case when ${crmLeads.status} in ('qualified', 'converted') then ${crmLeads.id} end)`,
-        customers: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
+        qualified: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' THEN ${crmLeads.id}END)`,
+        opportunities: sql<number>`count(distinct case when ${crmLeads.status} in ('qualified', 'converted') THEN ${crmLeads.id}END)`,
+        customers: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' THEN ${crmLeads.id}END)`,
       })
       .from(crmLeads)
       .where(and(
