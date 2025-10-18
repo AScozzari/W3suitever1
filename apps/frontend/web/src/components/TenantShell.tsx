@@ -29,6 +29,7 @@ const CampaignsPage = lazy(() => import('../pages/crm/CampaignsPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
 const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
+const ChannelSettingsPage = lazy(() => import('../pages/crm/ChannelSettingsPage'));
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 
 // Loading fallback component
@@ -411,6 +412,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm/leads`}>
         <AuthenticatedRoute>
           <LeadsPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🎯 CRM CHANNELS - Channel communication settings (VoIP, WhatsApp, Email, etc.) */}
+      <Route path={`/${tenantSlug}/crm/channels`}>
+        <AuthenticatedRoute>
+          <ChannelSettingsPage />
         </AuthenticatedRoute>
       </Route>
       
