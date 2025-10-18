@@ -845,6 +845,55 @@ router.post('/leads/:id/convert', async (req, res) => {
 
     logger.info('Lead converted to deal', { leadId: id, dealId: deal.id, tenantId });
 
+    // 🔄 CRM Workflow Auto-Trigger: Trigger automatic workflows for pipeline (non-blocking)
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
+      try {
+        logger.info('🔄 [BACKGROUND] Checking for automatic workflow trigger', { dealId: deal.id, pipelineId: deal.pipelineId, tenantId });
+        
+        // 🔒 CRITICAL: Set tenant context for RLS in async execution
+        await setTenantContext(tenantId);
+        
+        // Import and trigger workflow service
+        const { CrmWorkflowTriggerService } = await import('../services/crm-workflow-trigger-service.js');
+        const workflowResult = await CrmWorkflowTriggerService.triggerWorkflowForDeal(
+          deal,
+          tenantId,
+          userId
+        );
+        
+        if (workflowResult.success && workflowResult.workflowInstanceId) {
+          logger.info('✅ CRM workflow automatically triggered (background)', {
+            dealId: deal.id,
+            pipelineId: deal.pipelineId,
+            workflowInstanceId: workflowResult.workflowInstanceId,
+            workflowName: workflowResult.workflowName,
+            tenantId
+          });
+        } else {
+          logger.info('ℹ️ CRM workflow trigger skipped (background)', {
+            dealId: deal.id,
+            pipelineId: deal.pipelineId,
+            message: workflowResult.message,
+            tenantId
+          });
+        }
+      } catch (workflowError) {
+        logger.error('CRM workflow trigger failed (background)', {
+          dealId: deal.id,
+          pipelineId: deal.pipelineId,
+          error: workflowError instanceof Error ? workflowError.message : 'Unknown error',
+          stack: workflowError instanceof Error ? workflowError.stack : undefined
+        });
+      }
+    })().catch(err => {
+      logger.error('[UNHANDLED] CRM workflow trigger promise rejected', {
+        dealId: deal.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      });
+    });
+
     // 📊 GTM Event Tracking: Send lead_converted/purchase event to GA4/Google Ads (non-blocking)
     // Fire-and-forget Promise (no await) to avoid blocking response
     (async () => {
