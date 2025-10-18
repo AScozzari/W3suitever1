@@ -774,6 +774,7 @@ router.post('/leads/:id/rescore', async (req, res) => {
 router.post('/leads/:id/convert', async (req, res) => {
   try {
     const tenantId = getTenantId(req);
+    const userId = req.user?.id; // Extract userId for workflow trigger
     if (!tenantId) {
       return res.status(400).json({
         success: false,

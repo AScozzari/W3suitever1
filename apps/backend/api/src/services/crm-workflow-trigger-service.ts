@@ -184,7 +184,7 @@ export class CrmWorkflowTriggerService {
       instanceType: 'crm',
       instanceName: `${templateName} - Deal ${dealId.slice(0, 8)}`,
       category: 'crm',
-      currentStepId: '0',
+      currentStepId: null, // NULL for newly created instance (not started yet)
       variables: {
         dealId,
         pipelineId,

@@ -1,10 +1,10 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed for comprehensive business management, integrating CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules. It features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and PostgreSQL with Row Level Security (RLS) for tenant isolation. A Brand Interface HQ system provides centralized control. The project aims to deliver a scalable, secure, and complete solution for diverse business needs, consolidating essential business functionalities for significant market potential.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and streamline business operations. It offers modules for CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding. Key features include a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and PostgreSQL with Row Level Security (RLS) for strong tenant isolation. A Brand Interface HQ system centralizes multi-brand management. The project aims to provide a scalable, secure, and comprehensive business solution.
 
 # User Preferences
 
-### 1. DATABASE SCHEMA LOCATION (OBBLIGATORIO)
+### DATABASE SCHEMA LOCATION (OBBLIGATORIO)
 **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
 **❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
 
@@ -54,7 +54,7 @@ import { brands, channels } from './db/schema'; // Re-exported from public
 - **NEVER** define new tables in `index.ts` (only re-exports allowed)
 - **NEVER** import from removed files: `core.ts`, `rbac.ts`, `organization.ts`
 
-### 2. ROUTING & NAVIGATION (CRITICAL - OBBLIGATORIO)
+### ROUTING & NAVIGATION (CRITICAL - OBBLIGATORIO)
 **🚨 CRITICAL BUG PREVENTION: Double Tenant Slug in URLs**
 
 #### ✅ ALWAYS use `useTenantNavigation` hook:
@@ -98,7 +98,7 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
 
 **Solution**: `buildUrl()` intelligently handles tenant context, preventing double slugs.
 
-### 3. FRONTEND CONSISTENCY (OBBLIGATORIO)
+### FRONTEND CONSISTENCY (OBBLIGATORIO)
 - Preferred communication style: Simple, everyday language
 - **UI/UX CONSISTENCY RULE**: Tutte le pagine devono mantenere la struttura dell'app con header e sidebar
 - **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
@@ -161,7 +161,7 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
 ```typescript
 // CORRECT - Import from frontend-kit
 import { ListPageTemplate } from '@w3suite/frontend-kit/templates';
-import { DataTable } from '@w3suite/frontend-kit/components/blocks';
+import { DataTable } => '@w3suite/frontend-kit/components/blocks';
 import { glassmorphism } from '@w3suite/frontend-kit/design-system';
 ```
 
@@ -204,16 +204,16 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-## UI/UX Design
-The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui` for consistency and accessibility, enhanced with CSS variables and Tailwind CSS. The `@w3suite/frontend-kit` package centralizes the design system, page templates, reusable components, UI patterns, and custom React hooks.
+## UI/UX Decisions
+The UI/UX follows a Glassmorphism WindTre Design System, built on `shadcn/ui` for consistency and accessibility. This is enhanced with CSS variables and Tailwind CSS, managed by the `@w3suite/frontend-kit` package, which provides design tokens, page templates, reusable components, UI patterns, and custom React hooks.
 
 ## Technical Implementations
-- **Monorepo Structure**: Organizes services (`apps/`), shared libraries (`packages/`), and database migrations (`db/`).
+- **Monorepo Structure**: Organizes services, shared libraries, and database migrations.
 - **Database Architecture**: Employs a 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
-- **Security**: Implements OAuth2/OIDC with MFA, JWTs, and RBAC with a 3-level security hierarchy.
-- **Multitenancy**: Achieved through RLS, a `TenantProvider`, and global unique constraints.
-- **Universal Workflow System**: Supports approval hierarchies, RBAC-integrated supervision, event-driven state machines, a visual builder, and audit trails.
-- **Unified Notification System**: Provides real-time notifications using Redis + WebSockets with PostgreSQL fallback.
+- **Security**: OAuth2/OIDC with MFA, JWTs, and a 3-level RBAC hierarchy.
+- **Multitenancy**: Achieved through RLS, `TenantProvider`, and global unique constraints.
+- **Universal Workflow System**: Features approval hierarchies, RBAC-integrated supervision, event-driven state machines, a visual builder, and audit trails.
+- **Unified Notification System**: Real-time notifications via Redis and WebSockets with PostgreSQL fallback.
 - **Centralized Webhook System**: Enterprise-grade system with multi-provider support, queueing, deduplication, and audit trails.
 - **Task Management System**: Flexible task system with optional workflow integration and RBAC-protected API.
 - **MCP Multi-Provider OAuth System**: Manages unified credentials across third-party services with per-user OAuth isolation.
@@ -223,26 +223,26 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui
 - **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
 - **CRM Module Backend**: Comprehensive CRM backend with 20 tables in `w3suite` schema, featuring person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows. Provides RESTful endpoints with Zod validation, RLS, and structured logging.
 - **CRM Pipeline Visualization System**: Manages pipeline with 3 views (Table, Kanban, Gantt) using TanStack Table, `@dnd-kit`, workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
-- **CRM Workflow Auto-Trigger System**: Dual-mode workflow execution (automatic/manual) for pipeline workflows. When a lead converts to deal, automatically instantiates and executes assigned workflows if `executionMode='automatic'`. Powered by `CrmWorkflowTriggerService`, supporting workflow detection, batch operations, and non-blocking background execution with comprehensive logging.
-- **Integrated Marketing Attribution System**: Full UTM tracking, GTM integration, social media webhooks (Facebook/Instagram implemented), AI-powered lead scoring (in development), and Enhanced Conversions for Google Ads/GA4.
+- **CRM Workflow Auto-Trigger System**: Dual-mode workflow execution (automatic/manual) for pipeline workflows, powered by `CrmWorkflowTriggerService`.
+- **Integrated Marketing Attribution System**: Full UTM tracking, GTM integration, social media webhooks, AI-powered lead scoring, and Enhanced Conversions for Google Ads/GA4.
 
 # External Dependencies
 
 ## Database Services
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
-- **Redis**: Used for BullMQ and the Unified Notification System.
+- **Redis**: For BullMQ and the Unified Notification System.
 
 ## Authentication Services
 - **OAuth2/OIDC Enterprise**: For secure user authentication.
 
 ## UI Component Ecosystem
-- **SHADCN/UI**: The primary UI component library.
-- **Radix UI**: Provides headless component primitives.
+- **SHADCN/UI**: Primary UI component library.
+- **Radix UI**: Headless component primitives.
 
 ## Icon & Utility Libraries
 - **Lucide React**: Icon library.
 - **TanStack React Query**: For server state management.
-- **React Hook Form**: Facilitates form handling.
+- **React Hook Form**: For form handling.
 
 ## Development Tools
 - **Vite**: Frontend build tool.
@@ -252,7 +252,7 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui
 - **Nginx**: Reverse proxy.
 
 ## AI Services
-- **OpenAI**: Utilized for the AI Workflow Builder and PDC Analyzer (`gpt-4o`).
+- **OpenAI**: Utilized for AI Workflow Builder and PDC Analyzer (`gpt-4o`).
 
 ## Third-Party Integrations (OAuth Providers)
 - **Google Workspace**
