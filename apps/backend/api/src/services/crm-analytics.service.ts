@@ -380,7 +380,7 @@ class CRMAnalyticsService {
             else '0-19 (Ice)'
           end
         `,
-        count: sql<number>`COUNT()`,
+        count: sql<number>`COUNT(*)`,
         converted: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'converted' THEN 1 END)`,
       })
       .from(crmLeads)
@@ -442,7 +442,7 @@ class CRMAnalyticsService {
     // Get overall metrics
     const summary = await db
       .select({
-        totalEvents: sql<number>`COUNT()`,
+        totalEvents: sql<number>`COUNT(*)`,
         successfulEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1 END)`,
         enhancedEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.enhancedConversionData} is not null THEN 1 END)`,
       })
@@ -457,7 +457,7 @@ class CRMAnalyticsService {
     const topEvents = await db
       .select({
         eventName: gtmEventLog.eventName,
-        count: sql<number>`COUNT()`,
+        count: sql<number>`COUNT(*)`,
         successCount: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1 END)`,
       })
       .from(gtmEventLog)
@@ -474,7 +474,7 @@ class CRMAnalyticsService {
     const hourlyData = await db
       .select({
         hour: sql<number>`EXTRACT(HOUR FROM ${gtmEventLog.createdAt})`,
-        events: sql<number>`COUNT()`,
+        events: sql<number>`COUNT(*)`,
         conversions: sql<number>`COUNT(CASE WHEN ${gtmEventLog.eventType} = 'lead_converted' THEN 1 END)`,
       })
       .from(gtmEventLog)
@@ -586,11 +586,11 @@ class CRMAnalyticsService {
     
     const accuracy = await db
       .select({
-        totalPredictions: sql<number>`COUNT()`,
+        totalPredictions: sql<number>`COUNT(*)`,
         correctPredictions: sql<number>`
-          count(case 
-            when ${crmLeads.leadScore} >= 70 and ${crmLeads.status} = 'converted' THEN 1
-            when ${crmLeads.leadScore} < 70 and ${crmLeads.status} != 'converted' THEN 1
+          COUNT(CASE 
+            WHEN ${crmLeads.leadScore} >= 70 AND ${crmLeads.status} = 'converted' THEN 1
+            WHEN ${crmLeads.leadScore} < 70 AND ${crmLeads.status} != 'converted' THEN 1
          END)
         `,
       })
@@ -620,10 +620,10 @@ class CRMAnalyticsService {
     const funnel = await db
       .select({
         visitors: sql<number>`1000`, // Mock visitor data
-        leads: sql<number>`count(distinct ${crmLeads.id})`,
-        qualified: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' THEN ${crmLeads.id}END)`,
-        opportunities: sql<number>`count(distinct case when ${crmLeads.status} in ('qualified', 'converted') THEN ${crmLeads.id}END)`,
-        customers: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' THEN ${crmLeads.id}END)`,
+        leads: sql<number>`COUNT(DISTINCT ${crmLeads.id})`,
+        qualified: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'qualified' THEN ${crmLeads.id} END)`,
+        opportunities: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} IN ('qualified', 'converted') THEN ${crmLeads.id} END)`,
+        customers: sql<number>`COUNT(DISTINCT CASE WHEN ${crmLeads.status} = 'converted' THEN ${crmLeads.id} END)`,
       })
       .from(crmLeads)
       .where(and(
@@ -642,5 +642,5 @@ class CRMAnalyticsService {
   }
 }
 
-// Force tsx recompilation - SQL uppercase fix applied
+// Force tsx recompilation - SQL uppercase + COUNT(*) fix applied v2
 export const crmAnalyticsService = new CRMAnalyticsService();
