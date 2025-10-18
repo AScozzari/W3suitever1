@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
+import { PhoneConfigDialog } from '@/components/crm/PhoneConfigDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -302,24 +303,11 @@ export default function ChannelSettingsPage() {
         </Card>
       </motion.div>
 
-      {/* Phone Config Dialog (Task 4) */}
-      {isPhoneConfigOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <Card className="w-full max-w-4xl mx-4 p-6 bg-gray-900 border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Phone (VoIP) Configuration</h2>
-              <Button 
-                variant="ghost" 
-                onClick={() => setIsPhoneConfigOpen(false)}
-                data-testid="button-close-phone-config"
-              >
-                Close
-              </Button>
-            </div>
-            <p className="text-gray-400">VoIP configuration dialog will be implemented in Task 4</p>
-          </Card>
-        </div>
-      )}
+      {/* Phone Config Dialog */}
+      <PhoneConfigDialog 
+        open={isPhoneConfigOpen} 
+        onClose={() => setIsPhoneConfigOpen(false)} 
+      />
     </Layout>
   );
 }

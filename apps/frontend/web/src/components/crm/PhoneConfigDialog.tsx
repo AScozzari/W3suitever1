@@ -1,0 +1,671 @@
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
+import { useRequiredTenantId } from '@/hooks/useTenantSafety';
+import { 
+  Phone, 
+  Plus,
+  Pencil,
+  Trash2,
+  Server,
+  User,
+  CheckCircle2,
+  XCircle,
+  AlertCircle
+} from 'lucide-react';
+
+interface PhoneConfigDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+// Trunk Form Schema
+const trunkFormSchema = z.object({
+  name: z.string().min(1, "Nome trunk obbligatorio").max(255),
+  storeId: z.string().uuid("Seleziona un negozio valido"),
+  provider: z.string().optional(),
+  host: z.string().min(1, "Host SIP obbligatorio"),
+  port: z.number().int().min(1).max(65535).default(5060),
+  protocol: z.enum(['udp', 'tcp', 'tls', 'wss']).default('udp'),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  authUsername: z.string().optional(),
+  fromUser: z.string().optional(),
+  fromDomain: z.string().optional(),
+  codec: z.string().default('PCMU,PCMA,opus'),
+  maxChannels: z.number().int().min(1).max(100).default(10),
+  status: z.enum(['active', 'inactive', 'error']).default('active'),
+  recordingEnabled: z.boolean().default(false),
+});
+
+type TrunkFormValues = z.infer<typeof trunkFormSchema>;
+
+// Extension Form Schema
+const extensionFormSchema = z.object({
+  userId: z.string().min(1, "Seleziona un utente"),
+  domainId: z.string().uuid("Seleziona un dominio valido"),
+  extension: z.string().min(1, "Numero interno obbligatorio").max(20),
+  sipUsername: z.string().min(1, "Username SIP obbligatorio").max(100),
+  sipPassword: z.string().min(8, "Password deve essere almeno 8 caratteri"),
+  displayName: z.string().optional(),
+  email: z.string().email().optional(),
+  voicemailEnabled: z.boolean().default(true),
+  voicemailEmail: z.string().email().optional(),
+  recordingEnabled: z.boolean().default(false),
+  dndEnabled: z.boolean().default(false),
+  status: z.enum(['active', 'inactive', 'suspended']).default('active'),
+});
+
+type ExtensionFormValues = z.infer<typeof extensionFormSchema>;
+
+export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
+  const { toast } = useToast();
+  const tenantId = useRequiredTenantId();
+  const [activeTab, setActiveTab] = useState<'trunks' | 'extensions'>('trunks');
+  const [editingTrunk, setEditingTrunk] = useState<string | null>(null);
+  const [editingExtension, setEditingExtension] = useState<string | null>(null);
+  const [showTrunkForm, setShowTrunkForm] = useState(false);
+  const [showExtensionForm, setShowExtensionForm] = useState(false);
+
+  // Fetch data
+  const { data: trunks = [], isLoading: trunksLoading } = useQuery<any[]>({
+    queryKey: ['/api/voip/trunks'],
+    enabled: open,
+  });
+
+  const { data: extensions = [], isLoading: extensionsLoading } = useQuery<any[]>({
+    queryKey: ['/api/voip/extensions'],
+    enabled: open,
+  });
+
+  const { data: stores = [] } = useQuery<any[]>({
+    queryKey: ['/api/stores'],
+    enabled: open,
+  });
+
+  const { data: domains = [] } = useQuery<any[]>({
+    queryKey: ['/api/voip/domains'],
+    enabled: open,
+  });
+
+  const { data: users = [] } = useQuery<any[]>({
+    queryKey: ['/api/users'],
+    enabled: open,
+  });
+
+  // Trunk form
+  const trunkForm = useForm<TrunkFormValues>({
+    resolver: zodResolver(trunkFormSchema),
+    defaultValues: {
+      port: 5060,
+      protocol: 'udp',
+      codec: 'PCMU,PCMA,opus',
+      maxChannels: 10,
+      status: 'active',
+      recordingEnabled: false,
+    },
+  });
+
+  // Extension form
+  const extensionForm = useForm<ExtensionFormValues>({
+    resolver: zodResolver(extensionFormSchema),
+    defaultValues: {
+      voicemailEnabled: true,
+      recordingEnabled: false,
+      dndEnabled: false,
+      status: 'active',
+    },
+  });
+
+  // Create/Update Trunk
+  const trunkMutation = useMutation({
+    mutationFn: async (data: TrunkFormValues) => {
+      if (editingTrunk) {
+        return apiRequest('PATCH', `/api/voip/trunks/${editingTrunk}`, data);
+      }
+      return apiRequest('POST', '/api/voip/trunks', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: editingTrunk ? "Trunk aggiornato" : "Trunk creato",
+        description: "Configurazione salvata con successo",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/trunks'] });
+      setShowTrunkForm(false);
+      setEditingTrunk(null);
+      trunkForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile salvare trunk",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create/Update Extension
+  const extensionMutation = useMutation({
+    mutationFn: async (data: ExtensionFormValues) => {
+      if (editingExtension) {
+        return apiRequest('PATCH', `/api/voip/extensions/${editingExtension}`, data);
+      }
+      return apiRequest('POST', '/api/voip/extensions', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: editingExtension ? "Extension aggiornata" : "Extension creata",
+        description: "Configurazione salvata con successo",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/extensions'] });
+      setShowExtensionForm(false);
+      setEditingExtension(null);
+      extensionForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile salvare extension",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete Trunk
+  const deleteTrunkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest('DELETE', `/api/voip/trunks/${id}`, null);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Trunk eliminato",
+        description: "Trunk rimosso con successo",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/trunks'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare trunk",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete Extension
+  const deleteExtensionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest('DELETE', `/api/voip/extensions/${id}`, null);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Extension eliminata",
+        description: "Extension rimossa con successo",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/extensions'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare extension",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmitTrunk = (data: TrunkFormValues) => {
+    trunkMutation.mutate(data);
+  };
+
+  const handleSubmitExtension = (data: ExtensionFormValues) => {
+    extensionMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Phone className="w-6 h-6" />
+            Configurazione VoIP
+          </DialogTitle>
+          <DialogDescription>
+            Gestisci trunks SIP e extensions per il sistema telefonico
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="trunks" data-testid="tab-trunks">
+              <Server className="w-4 h-4 mr-2" />
+              Trunks SIP
+            </TabsTrigger>
+            <TabsTrigger value="extensions" data-testid="tab-extensions">
+              <User className="w-4 h-4 mr-2" />
+              Extensions
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TRUNKS TAB */}
+          <TabsContent value="trunks" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-400">
+                {trunks.length} trunk{trunks.length !== 1 ? 's' : ''} configurati
+              </p>
+              <Button 
+                onClick={() => {
+                  setShowTrunkForm(true);
+                  setEditingTrunk(null);
+                  trunkForm.reset();
+                }}
+                data-testid="button-add-trunk"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Trunk
+              </Button>
+            </div>
+
+            {trunksLoading ? (
+              <LoadingState />
+            ) : showTrunkForm ? (
+              <Card className="p-6 bg-gray-800/50 border-gray-700">
+                <Form {...trunkForm}>
+                  <form onSubmit={trunkForm.handleSubmit(handleSubmitTrunk)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={trunkForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome Trunk *</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="es: WindTre Main" data-testid="input-trunk-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="storeId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Negozio *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-trunk-store">
+                                  <SelectValue placeholder="Seleziona negozio" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {stores.map((store: any) => (
+                                  <SelectItem key={store.id} value={store.id}>
+                                    {store.businessName || store.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="provider"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Provider SIP</FormLabel>
+                            <FormControl>
+                              <Input {...field} value={field.value || ''} placeholder="es: WindTre VoIP" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="host"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Host *</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="sip.provider.com" data-testid="input-trunk-host" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="port"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Porta</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                {...field} 
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                value={field.value}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="protocol"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Protocollo</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="udp">UDP</SelectItem>
+                                <SelectItem value="tcp">TCP</SelectItem>
+                                <SelectItem value="tls">TLS</SelectItem>
+                                <SelectItem value="wss">WSS (WebRTC)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="maxChannels"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Canali</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                {...field} 
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                value={field.value}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="recordingEnabled"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-700 p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel>Registrazione chiamate</FormLabel>
+                              <FormDescription className="text-xs">
+                                Abilita registrazione automatica
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        type="submit" 
+                        disabled={trunkMutation.isPending}
+                        data-testid="button-save-trunk"
+                      >
+                        {trunkMutation.isPending ? 'Salvataggio...' : 'Salva Trunk'}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowTrunkForm(false);
+                          setEditingTrunk(null);
+                          trunkForm.reset();
+                        }}
+                        data-testid="button-cancel-trunk"
+                      >
+                        Annulla
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {trunks.length === 0 ? (
+                  <Card className="p-8 text-center bg-gray-800/30 border-gray-700">
+                    <Server className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+                    <p className="text-gray-400">Nessun trunk configurato</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Aggiungi il tuo primo trunk SIP per iniziare
+                    </p>
+                  </Card>
+                ) : (
+                  trunks.map((trunk: any) => (
+                    <Card key={trunk.trunk.id} className="p-4 bg-gray-800/50 border-gray-700" data-testid={`card-trunk-${trunk.trunk.id}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-semibold text-white">{trunk.trunk.name}</h4>
+                            <Badge variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'}>
+                              {trunk.trunk.status === 'active' ? (
+                                <><CheckCircle2 className="w-3 h-3 mr-1" /> Attivo</>
+                              ) : (
+                                <><XCircle className="w-3 h-3 mr-1" /> Inattivo</>
+                              )}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-400 space-y-1">
+                            <p>Store: {trunk.storeName}</p>
+                            <p>Host: {trunk.trunk.host}:{trunk.trunk.port} ({trunk.trunk.protocol.toUpperCase()})</p>
+                            <p>Provider: {trunk.trunk.provider || 'N/A'}</p>
+                            <p>Canali: {trunk.trunk.currentChannels}/{trunk.trunk.maxChannels}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingTrunk(trunk.trunk.id);
+                              setShowTrunkForm(true);
+                              trunkForm.reset(trunk.trunk);
+                            }}
+                            data-testid={`button-edit-trunk-${trunk.trunk.id}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm('Sei sicuro di voler eliminare questo trunk?')) {
+                                deleteTrunkMutation.mutate(trunk.trunk.id);
+                              }
+                            }}
+                            data-testid={`button-delete-trunk-${trunk.trunk.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* EXTENSIONS TAB */}
+          <TabsContent value="extensions" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-400">
+                {extensions.length} extension{extensions.length !== 1 ? 's' : ''} configurate
+              </p>
+              <Button 
+                onClick={() => {
+                  setShowExtensionForm(true);
+                  setEditingExtension(null);
+                  extensionForm.reset();
+                }}
+                disabled={domains.length === 0}
+                data-testid="button-add-extension"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Extension
+              </Button>
+            </div>
+
+            {domains.length === 0 && (
+              <Card className="p-4 bg-yellow-900/20 border-yellow-700/30">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="text-yellow-300 font-medium mb-1">Nessun dominio VoIP configurato</p>
+                    <p className="text-yellow-400/80">
+                      Prima di creare extensions, devi configurare almeno un dominio VoIP.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {extensionsLoading ? (
+              <LoadingState />
+            ) : showExtensionForm ? (
+              <Card className="p-6 bg-gray-800/50 border-gray-700">
+                <p className="text-sm text-gray-400 mb-4">Extension form coming soon...</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowExtensionForm(false);
+                    setEditingExtension(null);
+                  }}
+                >
+                  Chiudi
+                </Button>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {extensions.length === 0 ? (
+                  <Card className="p-8 text-center bg-gray-800/30 border-gray-700">
+                    <User className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+                    <p className="text-gray-400">Nessuna extension configurata</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Aggiungi la tua prima extension per gli utenti
+                    </p>
+                  </Card>
+                ) : (
+                  extensions.map((ext: any) => (
+                    <Card key={ext.extension.id} className="p-4 bg-gray-800/50 border-gray-700" data-testid={`card-extension-${ext.extension.id}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-semibold text-white">{ext.extension.extension}</h4>
+                            <Badge variant={ext.extension.status === 'active' ? 'default' : 'secondary'}>
+                              {ext.extension.status}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-400 space-y-1">
+                            <p>User: {ext.userName} ({ext.userEmail})</p>
+                            <p>SIP: {ext.extension.sipUsername}@{ext.domainFqdn}</p>
+                            <p>Display Name: {ext.extension.displayName || 'N/A'}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              toast({
+                                title: "Extension edit coming soon",
+                                description: "Feature in development",
+                              });
+                            }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm('Sei sicuro di voler eliminare questa extension?')) {
+                                deleteExtensionMutation.mutate(ext.extension.id);
+                              }
+                            }}
+                            data-testid={`button-delete-extension-${ext.extension.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
