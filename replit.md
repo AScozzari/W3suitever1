@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules including CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding. It features a distinct WindTre glassmorphism design, robust OAuth2/OIDC security with Multi-Factor Authentication (MFA), and leverages PostgreSQL with Row Level Security (RLS) to ensure strong tenant isolation. The platform also incorporates a Brand Interface HQ system for centralized multi-brand management, aiming to provide a scalable, secure, and comprehensive business solution with significant market potential.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules, including CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding. It features a distinct WindTre glassmorphism design, robust OAuth2/OIDC security with Multi-Factor Authentication (MFA), and leverages PostgreSQL with Row Level Security (RLS) to ensure strong tenant isolation. The platform also incorporates a Brand Interface HQ system for centralized multi-brand management, aiming to provide a scalable, secure, and comprehensive business solution with significant market potential.
 
 # User Preferences
 
