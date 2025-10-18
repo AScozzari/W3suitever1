@@ -115,7 +115,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-6 left-6 z-50"
         data-testid="softphone-widget-minimized"
       >
         <Button
@@ -139,7 +139,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-6 left-6 z-50"
       data-testid="softphone-widget"
     >
       <Card className="w-80 bg-gray-900 border-gray-700 shadow-2xl overflow-hidden">
