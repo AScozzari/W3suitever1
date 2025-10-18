@@ -5648,6 +5648,7 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }), // Optional store association
   sipDomain: varchar("sip_domain", { length: 255 }).notNull(), // tenantA.pbx.w3suite.it
   extNumber: varchar("ext_number", { length: 20 }).notNull(), // 1001, 1002, etc. (unique in domain)
+  sipPassword: text("sip_password").notNull(), // SIP authentication password (TODO: encrypt in production)
   displayName: varchar("display_name", { length: 255 }).notNull(),
   enabled: boolean("enabled").default(true).notNull(), // Registrable and callable
   voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(),
@@ -5672,6 +5673,7 @@ export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit
 }).extend({
   userId: z.string().uuid().optional(), // 1:1 relationship con users (optional per legacy extensions)
   extNumber: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
+  sipPassword: z.string().min(12, "SIP password must be at least 12 characters"),
   sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
   classOfService: z.enum(['agent', 'supervisor', 'admin']),
 });

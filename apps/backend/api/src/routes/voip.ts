@@ -23,6 +23,7 @@ import {
   voipTrunks,
   voipDids,
   voipExtensions,
+  voipExtensionStoreAccess,
   voipRoutes,
   contactPolicies,
   voipActivityLog,
@@ -33,6 +34,8 @@ import {
   updateVoipDidSchema,
   insertVoipExtensionSchema,
   updateVoipExtensionSchema,
+  insertVoipExtensionStoreAccessSchema,
+  updateVoipExtensionStoreAccessSchema,
   insertVoipRouteSchema,
   updateVoipRouteSchema,
   insertContactPolicySchema,
@@ -124,6 +127,21 @@ router.post('/trunks', rbacMiddleware, requirePermission('manage_telephony'), as
       ...req.body,
       tenantId
     });
+
+    // CONSTRAINT: Max 2 trunks per store
+    const existingTrunks = await db.select({ count: sql<number>`count(*)::int` })
+      .from(voipTrunks)
+      .where(and(
+        eq(voipTrunks.tenantId, tenantId),
+        eq(voipTrunks.storeId, validated.storeId)
+      ));
+
+    const trunkCount = existingTrunks[0]?.count || 0;
+    if (trunkCount >= 2) {
+      return res.status(400).json({ 
+        error: 'Maximum 2 SIP trunks per store allowed. Please delete an existing trunk first.' 
+      } as ApiErrorResponse);
+    }
 
     const [newTrunk] = await db.insert(voipTrunks)
       .values(validated)
@@ -595,6 +613,186 @@ router.delete('/extensions/:id', rbacMiddleware, requirePermission('manage_telep
   } catch (error) {
     logger.error('Error deleting VoIP extension', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to delete VoIP extension' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/my-extension - Get extension for current logged-in user (Softphone SSO Auto-Login)
+router.get('/my-extension', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: 'Authentication required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Find extension for current user (1:1 relationship)
+    const [extension] = await db.select()
+      .from(voipExtensions)
+      .where(and(
+        eq(voipExtensions.tenantId, tenantId),
+        eq(voipExtensions.userId, userId)
+      ))
+      .limit(1);
+
+    if (!extension) {
+      return res.status(404).json({ 
+        error: 'No extension assigned to your account. Contact your administrator.' 
+      } as ApiErrorResponse);
+    }
+
+    // Return real SIP credentials for softphone auto-login
+    const sipCredentials = {
+      sipUsername: extension.extNumber, // Use extension number as SIP username
+      sipPassword: extension.sipPassword, // Real SIP password from database
+      sipDomain: extension.sipDomain,
+      displayName: extension.displayName,
+      extension: extension.extNumber,
+      storeId: extension.storeId,
+      classOfService: extension.classOfService,
+      enabled: extension.enabled
+    };
+
+    logger.info('Softphone SSO credentials retrieved', { 
+      userId, 
+      extensionId: extension.id, 
+      extNumber: extension.extNumber, 
+      tenantId 
+    });
+
+    return res.json({ 
+      success: true, 
+      data: sipCredentials 
+    } as ApiSuccessResponse<typeof sipCredentials>);
+  } catch (error) {
+    logger.error('Error retrieving user extension for SSO', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to retrieve extension credentials' } as ApiErrorResponse);
+  }
+});
+
+// ==================== EXTENSION-STORE ACCESS ====================
+
+// GET /api/voip/extensions/:id/store-access - List enabled stores for an extension
+router.get('/extensions/:id/store-access', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id: extensionId } = req.params;
+
+    const storeAccessList = await db.select()
+      .from(voipExtensionStoreAccess)
+      .where(and(
+        eq(voipExtensionStoreAccess.tenantId, tenantId),
+        eq(voipExtensionStoreAccess.extensionId, extensionId)
+      ))
+      .orderBy(desc(voipExtensionStoreAccess.createdAt));
+
+    return res.json({ 
+      success: true, 
+      data: storeAccessList 
+    } as ApiSuccessResponse<typeof storeAccessList>);
+  } catch (error) {
+    logger.error('Error fetching extension store access', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch store access' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/extension-store-access - Grant store access to extension
+router.post('/extension-store-access', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const validated = insertVoipExtensionStoreAccessSchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    // Check if access already exists (unique constraint)
+    const existing = await db.select()
+      .from(voipExtensionStoreAccess)
+      .where(and(
+        eq(voipExtensionStoreAccess.extensionId, validated.extensionId),
+        eq(voipExtensionStoreAccess.storeId, validated.storeId)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return res.status(409).json({ 
+        error: 'Extension already has access to this store' 
+      } as ApiErrorResponse);
+    }
+
+    const [newAccess] = await db.insert(voipExtensionStoreAccess)
+      .values(validated)
+      .returning();
+
+    logger.info('Extension store access granted', { 
+      accessId: newAccess.id, 
+      extensionId: validated.extensionId,
+      storeId: validated.storeId,
+      tenantId 
+    });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: newAccess 
+    } as ApiSuccessResponse<typeof newAccess>);
+  } catch (error) {
+    logger.error('Error granting extension store access', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to grant store access' } as ApiErrorResponse);
+  }
+});
+
+// DELETE /api/voip/extension-store-access/:id - Revoke store access from extension
+router.delete('/extension-store-access/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    const [deleted] = await db.delete(voipExtensionStoreAccess)
+      .where(and(
+        eq(voipExtensionStoreAccess.id, id),
+        eq(voipExtensionStoreAccess.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Store access not found' } as ApiErrorResponse);
+    }
+
+    logger.info('Extension store access revoked', { 
+      accessId: id, 
+      extensionId: deleted.extensionId,
+      storeId: deleted.storeId,
+      tenantId 
+    });
+
+    return res.json({ 
+      success: true, 
+      data: { id } 
+    } as ApiSuccessResponse<{ id: string }>);
+  } catch (error) {
+    logger.error('Error revoking extension store access', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to revoke store access' } as ApiErrorResponse);
   }
 });
 
