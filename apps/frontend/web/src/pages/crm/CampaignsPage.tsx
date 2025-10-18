@@ -195,7 +195,7 @@ export default function CampaignsPage() {
     { id: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
     { id: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
     { id: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { id: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: buildUrl('crm/analytics') }
   ];
 
   const getActiveTab = () => {

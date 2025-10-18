@@ -126,7 +126,7 @@ export default function LeadsPage() {
     { value: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
     { value: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
     { value: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { value: 'analytics', label: 'Report', icon: BarChart3, path: buildUrl('crm/analytics') }
+    { value: 'analytics', label: 'Analytics', icon: BarChart3, path: buildUrl('crm/analytics') }
   ];
 
   const getActiveTab = () => {
