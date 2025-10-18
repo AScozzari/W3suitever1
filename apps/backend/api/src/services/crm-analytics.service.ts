@@ -381,7 +381,7 @@ class CRMAnalyticsService {
           end
         `,
         count: sql<number>`COUNT()`,
-        converted: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'converted' THEN 1END)`,
+        converted: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'converted' THEN 1 END)`,
       })
       .from(crmLeads)
       .where(and(
@@ -443,8 +443,8 @@ class CRMAnalyticsService {
     const summary = await db
       .select({
         totalEvents: sql<number>`COUNT()`,
-        successfulEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1END)`,
-        enhancedEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.enhancedConversionData} is not null THEN 1END)`,
+        successfulEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1 END)`,
+        enhancedEvents: sql<number>`COUNT(CASE WHEN ${gtmEventLog.enhancedConversionData} is not null THEN 1 END)`,
       })
       .from(gtmEventLog)
       .where(and(
@@ -458,7 +458,7 @@ class CRMAnalyticsService {
       .select({
         eventName: gtmEventLog.eventName,
         count: sql<number>`COUNT()`,
-        successCount: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1END)`,
+        successCount: sql<number>`COUNT(CASE WHEN ${gtmEventLog.success} = true THEN 1 END)`,
       })
       .from(gtmEventLog)
       .where(and(
@@ -475,7 +475,7 @@ class CRMAnalyticsService {
       .select({
         hour: sql<number>`EXTRACT(HOUR FROM ${gtmEventLog.createdAt})`,
         events: sql<number>`COUNT()`,
-        conversions: sql<number>`COUNT(CASE WHEN ${gtmEventLog.eventType} = 'lead_converted' THEN 1END)`,
+        conversions: sql<number>`COUNT(CASE WHEN ${gtmEventLog.eventType} = 'lead_converted' THEN 1 END)`,
       })
       .from(gtmEventLog)
       .where(and(
@@ -642,4 +642,5 @@ class CRMAnalyticsService {
   }
 }
 
+// Force tsx recompilation - SQL uppercase fix applied
 export const crmAnalyticsService = new CRMAnalyticsService();
