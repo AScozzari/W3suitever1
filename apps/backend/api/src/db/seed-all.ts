@@ -3,6 +3,7 @@ import { seedPaymentConditions } from './seed-payment-conditions';
 import { seedMCPServers } from './seed-mcp-servers';
 import { seedProductHierarchy } from './seed-product-hierarchy';
 import { seedCRMDemo } from './seed-crm-demo';
+import { seedMarketingChannels } from './seed-marketing-channels';
 
 /**
  * Seed All Public Reference Data
@@ -14,6 +15,9 @@ async function seedAll() {
   try {
     // Seed product hierarchy (drivers, categories, typologies)
     await seedProductHierarchy();
+    
+    // Seed marketing channels (20 channels: digital + traditional + direct)
+    await seedMarketingChannels();
     
     // Seed payment methods
     await seedPaymentMethods();
@@ -29,6 +33,7 @@ async function seedAll() {
     
     console.log("🎉 All reference data seeded successfully!");
     console.log("🔍 You can now check the data:");
+    console.log("   - Marketing channels: SELECT * FROM public.marketing_channels;");
     console.log("   - Product hierarchy: SELECT * FROM public.driver_categories;");
     console.log("   - Payment methods: SELECT * FROM public.payment_methods;");
     console.log("   - Payment conditions: SELECT * FROM public.payment_methods_conditions;");

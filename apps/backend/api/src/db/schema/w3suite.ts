@@ -4600,7 +4600,6 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   requiredConsents: jsonb("required_consents"), // { privacy_policy: true, marketing: false, profiling: true, third_party: false }
   landingPageUrl: text("landing_page_url"),
   channels: text("channels").array(), // Array canali: phone, whatsapp, form, social, email, qr
-  marketingChannelIds: uuid("marketing_channel_ids").array(), // Marketing channels (FK to marketing_channels)
   externalCampaignId: varchar("external_campaign_id", { length: 255 }), // Powerful API campaign ID
   defaultLeadSource: leadSourceEnum("default_lead_source"), // Default source for leads
   routingMode: crmCampaignRoutingModeEnum("routing_mode").default('manual'),

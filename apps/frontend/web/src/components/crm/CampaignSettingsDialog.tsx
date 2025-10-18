@@ -67,12 +67,11 @@ const campaignFormSchema = z.object({
   
   // Lead Source & Marketing Channels
   defaultLeadSource: z.enum(leadSources).optional().nullable(),
-  marketingChannelIds: z.array(z.string().uuid()).optional().default([]),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
+  marketingChannels: z.array(z.string()).optional().default([]),
   
   // UTM Parameters
   utmCampaign: z.string().optional().nullable(),
-  marketingChannels: z.array(z.string()).optional().default([]),
   
   // Budget & Tracking
   budget: z.number().optional().nullable(),
@@ -189,17 +188,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
-  // Marketing channels configuration with predefined UTM mappings
-  const MARKETING_CHANNELS = [
-    { id: 'facebook_ads', name: 'Facebook Ads', utmSource: 'facebook', utmMedium: 'cpc', icon: '📘', color: 'blue' },
-    { id: 'instagram', name: 'Instagram Stories', utmSource: 'instagram', utmMedium: 'social', icon: '📷', color: 'pink' },
-    { id: 'google_ads', name: 'Google Ads', utmSource: 'google', utmMedium: 'cpc', icon: '🔍', color: 'green' },
-    { id: 'email', name: 'Email Newsletter', utmSource: 'newsletter', utmMedium: 'email', icon: '📧', color: 'orange' },
-    { id: 'whatsapp', name: 'WhatsApp Business', utmSource: 'whatsapp', utmMedium: 'messaging', icon: '💬', color: 'emerald' },
-    { id: 'linkedin', name: 'LinkedIn Ads', utmSource: 'linkedin', utmMedium: 'cpc', icon: '💼', color: 'blue' },
-    { id: 'tiktok', name: 'TikTok Ads', utmSource: 'tiktok', utmMedium: 'cpc', icon: '🎵', color: 'purple' },
-  ];
-
+  // Load marketing channels from DB
   const { data: marketingChannels = [] } = useQuery({
     queryKey: ['/api/crm/marketing-channels'],
     enabled: open,
@@ -228,7 +217,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       primaryPipelineId: null,
       secondaryPipelineId: null,
       defaultLeadSource: null,
-      marketingChannelIds: [],
       landingPageUrl: '',
       utmCampaign: null,
       marketingChannels: [],
@@ -247,16 +235,20 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
   });
 
   // Calculate suggested UTM values based on selected marketing channels
-  const selectedChannelIds = form.watch('marketingChannelIds') || [];
-  const suggestedUtmValues = selectedChannelIds.length > 0
+  const selectedChannelCodes = form.watch('marketingChannels') || [];
+  const suggestedUtmValues = selectedChannelCodes.length > 0
     ? (() => {
-        const firstSelectedId = selectedChannelIds[0];
-        const mapping = utmMappings.find((m: any) => m.marketing_channel_utm_mappings?.marketingChannelId === firstSelectedId);
-        if (mapping) {
-          return {
-            source: mapping.marketing_channel_utm_mappings?.suggestedUtmSource,
-            medium: mapping.marketing_channel_utm_mappings?.suggestedUtmMedium,
-          };
+        // Find first channel with UTM generation enabled
+        const firstCode = selectedChannelCodes[0];
+        const channel = (marketingChannels as any[]).find((ch: any) => ch.code === firstCode && ch.generatesUtm);
+        if (channel) {
+          const mapping = (utmMappings as any[]).find((m: any) => m.marketingChannelId === channel.id);
+          if (mapping) {
+            return {
+              source: mapping.suggestedUtmSource,
+              medium: mapping.suggestedUtmMedium,
+            };
+          }
         }
         return null;
       })()
@@ -280,7 +272,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         primaryPipelineId: campaign.primaryPipelineId || null,
         secondaryPipelineId: campaign.secondaryPipelineId || null,
         defaultLeadSource: campaign.defaultLeadSource || null,
-        marketingChannelIds: campaign.marketingChannelIds || [],
         landingPageUrl: campaign.landingPageUrl || '',
         utmCampaign: campaign.utmCampaign || null,
         marketingChannels: campaign.marketingChannels || [],
@@ -618,44 +609,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                   <FormField
                     control={form.control}
-                    name="marketingChannelIds"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Canali Marketing</FormLabel>
-                        <div className="grid grid-cols-2 gap-3 mt-2">
-                          {marketingChannels.map((channel: any) => (
-                            <div key={channel.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                checked={field.value?.includes(channel.id)}
-                                onCheckedChange={(checked) => {
-                                  const current = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...current, channel.id]);
-                                  } else {
-                                    field.onChange(current.filter((id: string) => id !== channel.id));
-                                  }
-                                }}
-                                data-testid={`checkbox-marketing-channel-${channel.code}`}
-                              />
-                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                {channel.name}
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  ({channel.category})
-                                </span>
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                        <FormDescription>
-                          Seleziona i canali marketing utilizzati per questa campagna
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="landingPageUrl"
                     render={({ field }) => (
                       <FormItem>
@@ -685,57 +638,115 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     <FormField
                       control={form.control}
                       name="marketingChannels"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Canali Marketing Attivi *</FormLabel>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {MARKETING_CHANNELS.map((channel) => (
-                              <div key={channel.id}>
-                                <label
-                                  htmlFor={`channel-${channel.id}`}
-                                  className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                                    field.value?.includes(channel.id)
-                                      ? `border-${channel.color}-500 bg-${channel.color}-50 dark:bg-${channel.color}-950`
-                                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                                  }`}
-                                >
-                                  <Checkbox
-                                    id={`channel-${channel.id}`}
-                                    checked={field.value?.includes(channel.id)}
-                                    onCheckedChange={(checked) => {
-                                      const current = field.value || [];
-                                      const updated = checked
-                                        ? [...current, channel.id]
-                                        : current.filter((id) => id !== channel.id);
-                                      field.onChange(updated);
-                                    }}
-                                    data-testid={`checkbox-channel-${channel.id}`}
-                                  />
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-lg">{channel.icon}</span>
-                                      <span className="font-medium text-sm">{channel.name}</span>
+                      render={({ field }) => {
+                        const digitalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'digital' && ch.active);
+                        const traditionalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'traditional' && ch.active);
+                        const directChannels = (marketingChannels as any[]).filter(ch => ch.category === 'direct' && ch.active);
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>Canali Marketing Attivi *</FormLabel>
+                            
+                            {/* Digital Channels (con generazione UTM) */}
+                            {digitalChannels.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2 flex items-center gap-2">
+                                  🌐 Canali Digitali (con UTM)
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  {digitalChannels.map((channel: any) => (
+                                    <div key={channel.code} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(channel.code)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, channel.code]
+                                            : current.filter((code: string) => code !== channel.code);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`checkbox-channel-${channel.code}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {channel.name}
+                                      </label>
                                     </div>
-                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                      {channel.utmSource} / {channel.utmMedium}
-                                    </div>
-                                  </div>
-                                </label>
+                                  ))}
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                          <FormDescription className="text-xs mt-2">
-                            {field.value && field.value.length > 0 ? (
-                              <span className="text-orange-600 dark:text-orange-400 font-medium">
-                                ✅ {field.value.length} canale{field.value.length > 1 ? 'i' : ''} selezionato{field.value.length > 1 ? 'i' : ''} - Link UTM saranno generati dopo il salvataggio
-                              </span>
-                            ) : (
-                              "Seleziona almeno un canale per generare link UTM"
                             )}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                            
+                            {/* Traditional Channels (tracking only) */}
+                            {traditionalChannels.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                  📺 Canali Tradizionali (tracking)
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  {traditionalChannels.map((channel: any) => (
+                                    <div key={channel.code} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(channel.code)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, channel.code]
+                                            : current.filter((code: string) => code !== channel.code);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`checkbox-channel-${channel.code}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {channel.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Direct Channels (tracking only) */}
+                            {directChannels.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                  🤝 Canali Diretti (tracking)
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  {directChannels.map((channel: any) => (
+                                    <div key={channel.code} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(channel.code)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, channel.code]
+                                            : current.filter((code: string) => code !== channel.code);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`checkbox-channel-${channel.code}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {channel.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <FormDescription className="text-xs mt-2">
+                              {field.value && field.value.length > 0 ? (
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                  ✅ {field.value.length} canale{field.value.length > 1 ? 'i' : ''} selezionato{field.value.length > 1 ? 'i' : ''} - Link UTM saranno generati dopo il salvataggio per i canali digitali
+                                </span>
+                              ) : (
+                                "Seleziona almeno un canale marketing per questa campagna"
+                              )}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     <FormField

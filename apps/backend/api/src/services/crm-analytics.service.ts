@@ -83,6 +83,15 @@ export interface ChannelAttribution {
   touchpoints: number;
 }
 
+export interface LeadSourceDistribution {
+  source: string;
+  count: number;
+  percentage: number;
+  qualified: number;
+  converted: number;
+  conversionRate: number;
+}
+
 export interface PipelineVelocity {
   pipelineId: string;
   pipelineName: string;
@@ -355,6 +364,43 @@ class CRMAnalyticsService {
         (metric.conversions / metric.uniqueClicks) * 100 : 0,
       avgTimeToConvert: 7.5, // Mock data - would calculate from timestamps
       touchpoints: metric.clicks
+    }));
+  }
+
+  /**
+   * Get lead source distribution metrics
+   */
+  async getLeadSourceDistribution(filters: AnalyticsFilters): Promise<LeadSourceDistribution[]> {
+    await setTenantContext(filters.tenantId);
+    
+    const storeFilter = filters.storeIds?.length ? 
+      inArray(crmLeads.storeId, filters.storeIds) : sql`true`;
+    
+    // Count leads by source
+    const sourceMetrics = await db
+      .select({
+        source: crmLeads.leadSource,
+        count: sql<number>`COUNT(*)`,
+        qualified: sql<number>`COUNT(CASE WHEN ${crmLeads.qualification} = 'qualified' THEN 1 END)`,
+        converted: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'converted' THEN 1 END)`,
+      })
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.tenantId, filters.tenantId),
+        storeFilter
+      ))
+      .groupBy(crmLeads.leadSource);
+    
+    const totalLeads = sourceMetrics.reduce((sum, metric) => sum + metric.count, 0);
+    
+    return sourceMetrics.map(metric => ({
+      source: metric.source || 'Unknown',
+      count: metric.count,
+      percentage: totalLeads > 0 ? Math.round((metric.count / totalLeads) * 100 * 10) / 10 : 0,
+      qualified: metric.qualified,
+      converted: metric.converted,
+      conversionRate: metric.count > 0 ? 
+        Math.round((metric.converted / metric.count) * 100 * 10) / 10 : 0,
     }));
   }
 

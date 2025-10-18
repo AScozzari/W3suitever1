@@ -6027,6 +6027,52 @@ router.get('/analytics/channel-attribution', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/analytics/lead-source-distribution
+ * Get lead source distribution metrics
+ */
+router.get('/analytics/lead-source-distribution', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { crmAnalyticsService } = await import('../services/crm-analytics.service');
+    
+    const storeIds = req.query.storeIds ? 
+      (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    
+    const distribution = await crmAnalyticsService.getLeadSourceDistribution({
+      tenantId,
+      storeIds: storeIds as string[] | undefined
+    });
+
+    res.status(200).json({
+      success: true,
+      data: distribution,
+      message: 'Lead source distribution retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving lead source distribution', { 
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve lead source distribution',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * GET /api/crm/analytics/ai-score-distribution
  * Get AI score distribution and accuracy metrics
  */

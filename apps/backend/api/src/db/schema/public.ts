@@ -56,6 +56,7 @@ export const marketingChannels = pgTable("marketing_channels", {
   code: varchar("code", { length: 50 }).unique().notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   category: varchar("category", { length: 20 }).notNull(), // digital, traditional, direct
+  generatesUtm: boolean("generates_utm").default(false).notNull(), // true for digital channels with UTM, false for tracking-only
   active: boolean("active").default(true),
   sortOrder: smallint("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
