@@ -1340,4 +1340,100 @@ router.post('/provision/sync', rbacMiddleware, requirePermission('manage_telepho
   }
 });
 
+// ==================== CONNECTION STATUS (DASHBOARD) ====================
+
+// GET /api/voip/connection-status - Real-time connection status for dashboard
+router.get('/connection-status', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    // Set tenant context for RLS
+    await setTenantContext(db, tenantId);
+
+    // Query all trunks with store names (RLS handles tenant isolation)
+    const trunksData = await db
+      .select({
+        id: voipTrunks.id,
+        storeId: voipTrunks.storeId,
+        storeName: stores.businessName,
+        provider: voipTrunks.provider,
+        status: voipTrunks.status,
+        host: voipTrunks.host,
+        port: voipTrunks.port,
+        currentChannels: voipTrunks.currentChannels,
+        maxChannels: voipTrunks.maxChannels,
+      })
+      .from(voipTrunks)
+      .leftJoin(stores, eq(voipTrunks.storeId, stores.id));
+
+    // Query all extensions with user info (RLS handles tenant isolation)
+    const extensionsData = await db
+      .select({
+        id: voipExtensions.id,
+        extNumber: voipExtensions.extNumber,
+        displayName: voipExtensions.displayName,
+        enabled: voipExtensions.enabled,
+        userId: voipExtensions.userId,
+      })
+      .from(voipExtensions);
+
+    // Calculate stats
+    const trunksActive = trunksData.filter(t => t.status === 'active').length;
+    const trunksTotal = trunksData.length;
+
+    // Mock SIP registration status (in production, this would come from PBX API)
+    // For now, assume all enabled extensions are registered
+    const extensionsRegistered = extensionsData.filter(e => e.enabled).length;
+    const extensionsTotal = extensionsData.length;
+
+    // Format trunk data with mock lastPing
+    const trunks = trunksData.map(trunk => ({
+      id: trunk.id,
+      storeId: trunk.storeId,
+      storeName: trunk.storeName || 'N/A',
+      provider: trunk.provider || 'Unknown',
+      status: trunk.status,
+      host: `${trunk.host}:${trunk.port}`,
+      channels: `${trunk.currentChannels}/${trunk.maxChannels}`,
+      lastPing: trunk.status === 'active' ? new Date().toISOString() : null,
+    }));
+
+    // Format extension data with mock sipStatus
+    const extensions = extensionsData.map(ext => ({
+      id: ext.id,
+      extension: ext.extNumber,
+      displayName: ext.displayName,
+      sipStatus: ext.enabled ? 'registered' : 'unregistered',
+      lastRegistered: ext.enabled ? new Date().toISOString() : null,
+    }));
+
+    const response = {
+      trunks,
+      extensions,
+      stats: {
+        trunksActive,
+        trunksTotal,
+        extensionsRegistered,
+        extensionsTotal,
+      },
+    };
+
+    logger.info('VoIP connection status retrieved', { 
+      tenantId, 
+      trunksTotal, 
+      trunksActive, 
+      extensionsTotal, 
+      extensionsRegistered 
+    });
+
+    return res.json({ success: true, data: response } as ApiSuccessResponse<typeof response>);
+  } catch (error) {
+    logger.error('Error fetching connection status', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch connection status' } as ApiErrorResponse);
+  }
+});
+
 export default router;
