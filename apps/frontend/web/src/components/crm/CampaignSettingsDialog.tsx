@@ -174,7 +174,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
   });
 
   const { data: workflows = [] } = useQuery({
-    queryKey: ['/api/workflows/templates'],
+    queryKey: ['/api/workflows/templates?category=crm'],
     enabled: open,
   });
 
@@ -389,7 +389,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   </TabsTrigger>
                   <TabsTrigger value="targeting" data-testid="tab-targeting">
                     <Target className="h-4 w-4 mr-1" />
-                    Target
+                    Tracking
                   </TabsTrigger>
                   <TabsTrigger value="routing" data-testid="tab-routing">
                     <Route className="h-4 w-4 mr-1" />
@@ -409,7 +409,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   </TabsTrigger>
                   <TabsTrigger value="tracking" data-testid="tab-tracking">
                     <TrendingUp className="h-4 w-4 mr-1" />
-                    Tracking
+                    Obiettivi
                   </TabsTrigger>
                   <TabsTrigger value="advanced" data-testid="tab-advanced">
                     <Wrench className="h-4 w-4 mr-1" />
@@ -883,11 +883,13 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="none">Nessuno</SelectItem>
-                                {teams.map((team: any) => (
-                                  <SelectItem key={team.id} value={team.id}>
-                                    {team.name}
-                                  </SelectItem>
-                                ))}
+                                {teams
+                                  .filter((team: any) => team.assignedDepartments?.includes('crm'))
+                                  .map((team: any) => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                      {team.name}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -941,13 +943,11 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">Nessuno</SelectItem>
-                            {workflows
-                              .filter((w: any) => w.forDepartment === 'crm')
-                              .map((workflow: any) => (
-                                <SelectItem key={workflow.id} value={workflow.id}>
-                                  {workflow.name}
-                                </SelectItem>
-                              ))}
+                            {workflows.map((workflow: any) => (
+                              <SelectItem key={workflow.id} value={workflow.id}>
+                                {workflow.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormDescription>
