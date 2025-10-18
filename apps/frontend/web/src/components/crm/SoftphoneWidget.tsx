@@ -42,7 +42,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [showDialpad, setShowDialpad] = useState(false);
 
@@ -300,7 +300,13 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
 
               {/* Call Button */}
               <Button
-                className="w-full bg-orange-500 hover:bg-orange-600"
+                className="w-full text-white"
+                style={{ 
+                  backgroundColor: 'hsl(var(--brand-orange))',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--brand-orange) / 0.9)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--brand-orange))'}
                 size="lg"
                 onClick={handleCall}
                 disabled={!phoneNumber || !isRegistered}
