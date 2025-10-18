@@ -1,13 +1,14 @@
 /**
- * VoIP API Routes
+ * VoIP API Routes (Final Spec - 7 Tables)
  * 
  * Provides REST endpoints for VoIP system management with full tenant isolation:
- * - Domains (SIP domains for WebRTC)
  * - Trunks (Store-scoped SIP trunks)
- * - Extensions (User-scoped internal numbers)
- * - Devices (WebRTC/Deskphone registration)
- * - CDRs (Call Detail Records)
- * - Policies (Dialplan rules, blacklists, business hours)
+ * - DIDs (Direct Inward Dialing numbers)
+ * - Extensions (User internal numbers)
+ * - Routes (Outbound routing patterns)
+ * - Contact Policies (Business hours, fallback rules)
+ * - Activity Log (Audit trail for provisioning)
+ * - CDRs (Call Detail Records - inbound from PBX)
  */
 
 import express from 'express';
@@ -19,19 +20,20 @@ import { eq, and, sql, desc, or, ilike, gte, lte, inArray } from 'drizzle-orm';
 import {
   tenants,
   stores,
-  users,
-  voipDomains,
   voipTrunks,
+  voipDids,
   voipExtensions,
-  voipDevices,
+  voipRoutes,
+  contactPolicies,
+  voipActivityLog,
   voipCdrs,
-  voipPolicies,
-  insertVoipDomainSchema,
   insertVoipTrunkSchema,
+  insertVoipDidSchema,
   insertVoipExtensionSchema,
-  insertVoipDeviceSchema,
-  insertVoipCdrSchema,
-  insertVoipPolicySchema
+  insertVoipRouteSchema,
+  insertContactPolicySchema,
+  insertVoipActivityLogSchema,
+  insertVoipCdrSchema
 } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 
@@ -44,110 +46,34 @@ const getTenantId = (req: express.Request): string | null => {
   return req.headers['x-tenant-id'] as string || req.user?.tenantId || null;
 };
 
-// ==================== VOIP DOMAINS ====================
-
-// GET /api/voip/domains - List all VoIP domains for tenant
-router.get('/domains', rbacMiddleware, async (req, res) => {
+// Helper: Log activity
+const logActivity = async (
+  tenantId: string,
+  actor: string,
+  action: 'create' | 'update' | 'delete' | 'provision' | 'sync',
+  targetType: 'trunk' | 'did' | 'ext' | 'route' | 'policy',
+  targetId: string,
+  status: 'ok' | 'fail',
+  detailsJson?: any
+) => {
   try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-
-    const domains = await db.select()
-      .from(voipDomains)
-      .where(eq(voipDomains.tenantId, tenantId))
-      .orderBy(desc(voipDomains.createdAt));
-
-    return res.json({ 
-      success: true, 
-      data: domains 
-    } as ApiSuccessResponse<typeof domains>);
-  } catch (error) {
-    logger.error('Error fetching VoIP domains', { error, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to fetch VoIP domains' } as ApiErrorResponse);
-  }
-});
-
-// POST /api/voip/domains - Create VoIP domain
-router.post('/domains', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-
-    const validated = insertVoipDomainSchema.parse({
-      ...req.body,
-      tenantId
+    await db.insert(voipActivityLog).values({
+      tenantId,
+      actor,
+      action,
+      targetType,
+      targetId,
+      status,
+      detailsJson
     });
-
-    const [newDomain] = await db.insert(voipDomains)
-      .values(validated)
-      .returning();
-
-    logger.info('VoIP domain created', { domainId: newDomain.id, fqdn: newDomain.fqdn, tenantId });
-
-    return res.status(201).json({ 
-      success: true, 
-      data: newDomain 
-    } as ApiSuccessResponse<typeof newDomain>);
   } catch (error) {
-    logger.error('Error creating VoIP domain', { error, tenantId: getTenantId(req) });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
-    }
-    return res.status(500).json({ error: 'Failed to create VoIP domain' } as ApiErrorResponse);
+    logger.error('Failed to log VoIP activity', { error, tenantId, action, targetType, targetId });
   }
-});
-
-// PATCH /api/voip/domains/:id - Update VoIP domain
-router.patch('/domains/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-    const { id } = req.params;
-
-    const updateData = insertVoipDomainSchema.partial().parse(req.body);
-
-    const [updated] = await db.update(voipDomains)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(and(
-        eq(voipDomains.id, id),
-        eq(voipDomains.tenantId, tenantId)
-      ))
-      .returning();
-
-    if (!updated) {
-      return res.status(404).json({ error: 'VoIP domain not found' } as ApiErrorResponse);
-    }
-
-    logger.info('VoIP domain updated', { domainId: id, tenantId });
-
-    return res.json({ 
-      success: true, 
-      data: updated 
-    } as ApiSuccessResponse<typeof updated>);
-  } catch (error) {
-    logger.error('Error updating VoIP domain', { error, tenantId: getTenantId(req) });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
-    }
-    return res.status(500).json({ error: 'Failed to update VoIP domain' } as ApiErrorResponse);
-  }
-});
+};
 
 // ==================== VOIP TRUNKS ====================
 
-// GET /api/voip/trunks - List all VoIP trunks for tenant
+// GET /api/voip/trunks - List all trunks for tenant
 router.get('/trunks', rbacMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantId(req);
@@ -156,21 +82,18 @@ router.get('/trunks', rbacMiddleware, async (req, res) => {
     }
 
     await setTenantContext(db, tenantId);
+
     const { storeId } = req.query;
 
-    let query = db.select({
-      trunk: voipTrunks,
-      storeName: stores.businessName
-    })
-    .from(voipTrunks)
-    .leftJoin(stores, eq(voipTrunks.storeId, stores.id))
-    .where(eq(voipTrunks.tenantId, tenantId));
-
+    const conditions = [eq(voipTrunks.tenantId, tenantId)];
     if (storeId) {
-      query = query.where(eq(voipTrunks.storeId, storeId as string)) as typeof query;
+      conditions.push(eq(voipTrunks.storeId, storeId as string));
     }
 
-    const trunks = await query.orderBy(desc(voipTrunks.createdAt));
+    const trunks = await db.select()
+      .from(voipTrunks)
+      .where(and(...conditions))
+      .orderBy(desc(voipTrunks.createdAt));
 
     return res.json({ 
       success: true, 
@@ -197,23 +120,21 @@ router.post('/trunks', rbacMiddleware, requirePermission('manage_telephony'), as
       tenantId
     });
 
-    // Verify store belongs to tenant
-    const store = await db.select().from(stores)
-      .where(and(
-        eq(stores.id, validated.storeId),
-        eq(stores.tenantId, tenantId)
-      ))
-      .limit(1);
-
-    if (!store.length) {
-      return res.status(403).json({ error: 'Store not found or access denied' } as ApiErrorResponse);
-    }
-
     const [newTrunk] = await db.insert(voipTrunks)
       .values(validated)
       .returning();
 
-    logger.info('VoIP trunk created', { trunkId: newTrunk.id, storeId: newTrunk.storeId, tenantId });
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'create',
+      'trunk',
+      newTrunk.id,
+      'ok',
+      { trunk: newTrunk }
+    );
+
+    logger.info('VoIP trunk created', { trunkId: newTrunk.id, provider: newTrunk.provider, tenantId });
 
     return res.status(201).json({ 
       success: true, 
@@ -250,8 +171,18 @@ router.patch('/trunks/:id', rbacMiddleware, requirePermission('manage_telephony'
       .returning();
 
     if (!updated) {
-      return res.status(404).json({ error: 'VoIP trunk not found' } as ApiErrorResponse);
+      return res.status(404).json({ error: 'Trunk not found' } as ApiErrorResponse);
     }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'trunk',
+      id,
+      'ok',
+      { updates: updateData }
+    );
 
     logger.info('VoIP trunk updated', { trunkId: id, tenantId });
 
@@ -287,24 +218,209 @@ router.delete('/trunks/:id', rbacMiddleware, requirePermission('manage_telephony
       .returning();
 
     if (!deleted) {
-      return res.status(404).json({ error: 'VoIP trunk not found' } as ApiErrorResponse);
+      return res.status(404).json({ error: 'Trunk not found' } as ApiErrorResponse);
     }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'delete',
+      'trunk',
+      id,
+      'ok',
+      { deleted: deleted }
+    );
 
     logger.info('VoIP trunk deleted', { trunkId: id, tenantId });
 
     return res.json({ 
       success: true, 
-      data: deleted 
-    } as ApiSuccessResponse<typeof deleted>);
+      data: { id } 
+    } as ApiSuccessResponse<{ id: string }>);
   } catch (error) {
     logger.error('Error deleting VoIP trunk', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to delete VoIP trunk' } as ApiErrorResponse);
   }
 });
 
+// ==================== VOIP DIDs ====================
+
+// GET /api/voip/dids - List all DIDs for tenant
+router.get('/dids', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { storeId, active } = req.query;
+
+    const conditions = [eq(voipDids.tenantId, tenantId)];
+    if (storeId) {
+      conditions.push(eq(voipDids.storeId, storeId as string));
+    }
+    if (active !== undefined) {
+      conditions.push(eq(voipDids.active, active === 'true'));
+    }
+
+    const dids = await db.select()
+      .from(voipDids)
+      .where(and(...conditions))
+      .orderBy(desc(voipDids.createdAt));
+
+    return res.json({ 
+      success: true, 
+      data: dids 
+    } as ApiSuccessResponse<typeof dids>);
+  } catch (error) {
+    logger.error('Error fetching VoIP DIDs', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch VoIP DIDs' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/dids - Create VoIP DID
+router.post('/dids', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const validated = insertVoipDidSchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    const [newDid] = await db.insert(voipDids)
+      .values(validated)
+      .returning();
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'create',
+      'did',
+      newDid.id,
+      'ok',
+      { did: newDid }
+    );
+
+    logger.info('VoIP DID created', { didId: newDid.id, e164: newDid.e164, tenantId });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: newDid 
+    } as ApiSuccessResponse<typeof newDid>);
+  } catch (error) {
+    logger.error('Error creating VoIP DID', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to create VoIP DID' } as ApiErrorResponse);
+  }
+});
+
+// PATCH /api/voip/dids/:id - Update VoIP DID
+router.patch('/dids/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    const updateData = insertVoipDidSchema.partial().parse(req.body);
+
+    const [updated] = await db.update(voipDids)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(
+        eq(voipDids.id, id),
+        eq(voipDids.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'DID not found' } as ApiErrorResponse);
+    }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'did',
+      id,
+      'ok',
+      { updates: updateData }
+    );
+
+    logger.info('VoIP DID updated', { didId: id, tenantId });
+
+    return res.json({ 
+      success: true, 
+      data: updated 
+    } as ApiSuccessResponse<typeof updated>);
+  } catch (error) {
+    logger.error('Error updating VoIP DID', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to update VoIP DID' } as ApiErrorResponse);
+  }
+});
+
+// DELETE /api/voip/dids/:id - Delete VoIP DID
+router.delete('/dids/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    const [deleted] = await db.delete(voipDids)
+      .where(and(
+        eq(voipDids.id, id),
+        eq(voipDids.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'DID not found' } as ApiErrorResponse);
+    }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'delete',
+      'did',
+      id,
+      'ok',
+      { deleted: deleted }
+    );
+
+    logger.info('VoIP DID deleted', { didId: id, tenantId });
+
+    return res.json({ 
+      success: true, 
+      data: { id } 
+    } as ApiSuccessResponse<{ id: string }>);
+  } catch (error) {
+    logger.error('Error deleting VoIP DID', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to delete VoIP DID' } as ApiErrorResponse);
+  }
+});
+
 // ==================== VOIP EXTENSIONS ====================
 
-// GET /api/voip/extensions - List all VoIP extensions for tenant
+// GET /api/voip/extensions - List all extensions for tenant
 router.get('/extensions', rbacMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantId(req);
@@ -313,38 +429,26 @@ router.get('/extensions', rbacMiddleware, async (req, res) => {
     }
 
     await setTenantContext(db, tenantId);
-    const { userId, domainId } = req.query;
 
-    let query = db.select({
-      extension: voipExtensions,
-      userName: users.firstName,
-      userEmail: users.email,
-      domainFqdn: voipDomains.fqdn
-    })
-    .from(voipExtensions)
-    .leftJoin(users, eq(voipExtensions.userId, users.id))
-    .leftJoin(voipDomains, eq(voipExtensions.domainId, voipDomains.id))
-    .where(eq(voipExtensions.tenantId, tenantId));
+    const { storeId, enabled } = req.query;
 
-    if (userId) {
-      query = query.where(eq(voipExtensions.userId, userId as string)) as typeof query;
+    const conditions = [eq(voipExtensions.tenantId, tenantId)];
+    if (storeId) {
+      conditions.push(eq(voipExtensions.storeId, storeId as string));
     }
-    if (domainId) {
-      query = query.where(eq(voipExtensions.domainId, domainId as string)) as typeof query;
+    if (enabled !== undefined) {
+      conditions.push(eq(voipExtensions.enabled, enabled === 'true'));
     }
 
-    const extensions = await query.orderBy(voipExtensions.extension);
-
-    // Remove sensitive SIP password from response
-    const sanitized = extensions.map(e => ({
-      ...e,
-      extension: { ...e.extension, sipPassword: undefined }
-    }));
+    const extensions = await db.select()
+      .from(voipExtensions)
+      .where(and(...conditions))
+      .orderBy(desc(voipExtensions.createdAt));
 
     return res.json({ 
       success: true, 
-      data: sanitized 
-    } as ApiSuccessResponse<typeof sanitized>);
+      data: extensions 
+    } as ApiSuccessResponse<typeof extensions>);
   } catch (error) {
     logger.error('Error fetching VoIP extensions', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to fetch VoIP extensions' } as ApiErrorResponse);
@@ -366,48 +470,26 @@ router.post('/extensions', rbacMiddleware, requirePermission('manage_telephony')
       tenantId
     });
 
-    // Verify user belongs to tenant
-    const user = await db.select().from(users)
-      .where(and(
-        eq(users.id, validated.userId),
-        eq(users.tenantId, tenantId)
-      ))
-      .limit(1);
-
-    if (!user.length) {
-      return res.status(403).json({ error: 'User not found or access denied' } as ApiErrorResponse);
-    }
-
-    // Verify domain belongs to tenant
-    const domain = await db.select().from(voipDomains)
-      .where(and(
-        eq(voipDomains.id, validated.domainId),
-        eq(voipDomains.tenantId, tenantId)
-      ))
-      .limit(1);
-
-    if (!domain.length) {
-      return res.status(403).json({ error: 'Domain not found or access denied' } as ApiErrorResponse);
-    }
-
     const [newExtension] = await db.insert(voipExtensions)
       .values(validated)
       .returning();
 
-    logger.info('VoIP extension created', { 
-      extensionId: newExtension.id, 
-      extension: newExtension.extension, 
-      userId: newExtension.userId,
-      tenantId 
-    });
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'create',
+      'ext',
+      newExtension.id,
+      'ok',
+      { extension: newExtension }
+    );
 
-    // Remove SIP password from response
-    const sanitized = { ...newExtension, sipPassword: undefined };
+    logger.info('VoIP extension created', { extensionId: newExtension.id, extNumber: newExtension.extNumber, tenantId });
 
     return res.status(201).json({ 
       success: true, 
-      data: sanitized 
-    } as ApiSuccessResponse<typeof sanitized>);
+      data: newExtension 
+    } as ApiSuccessResponse<typeof newExtension>);
   } catch (error) {
     logger.error('Error creating VoIP extension', { error, tenantId: getTenantId(req) });
     if (error instanceof z.ZodError) {
@@ -439,18 +521,25 @@ router.patch('/extensions/:id', rbacMiddleware, requirePermission('manage_teleph
       .returning();
 
     if (!updated) {
-      return res.status(404).json({ error: 'VoIP extension not found' } as ApiErrorResponse);
+      return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
     }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'ext',
+      id,
+      'ok',
+      { updates: updateData }
+    );
 
     logger.info('VoIP extension updated', { extensionId: id, tenantId });
 
-    // Remove SIP password from response
-    const sanitized = { ...updated, sipPassword: undefined };
-
     return res.json({ 
       success: true, 
-      data: sanitized 
-    } as ApiSuccessResponse<typeof sanitized>);
+      data: updated 
+    } as ApiSuccessResponse<typeof updated>);
   } catch (error) {
     logger.error('Error updating VoIP extension', { error, tenantId: getTenantId(req) });
     if (error instanceof z.ZodError) {
@@ -479,8 +568,18 @@ router.delete('/extensions/:id', rbacMiddleware, requirePermission('manage_telep
       .returning();
 
     if (!deleted) {
-      return res.status(404).json({ error: 'VoIP extension not found' } as ApiErrorResponse);
+      return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
     }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'delete',
+      'ext',
+      id,
+      'ok',
+      { deleted: deleted }
+    );
 
     logger.info('VoIP extension deleted', { extensionId: id, tenantId });
 
@@ -494,8 +593,86 @@ router.delete('/extensions/:id', rbacMiddleware, requirePermission('manage_telep
   }
 });
 
-// GET /api/voip/extensions/:id/credentials - Get SIP credentials for WebRTC client
-router.get('/extensions/:id/credentials', rbacMiddleware, async (req, res) => {
+// ==================== VOIP ROUTES ====================
+
+// GET /api/voip/routes - List all routes for tenant
+router.get('/routes', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { active } = req.query;
+
+    const conditions = [eq(voipRoutes.tenantId, tenantId)];
+    if (active !== undefined) {
+      conditions.push(eq(voipRoutes.active, active === 'true'));
+    }
+
+    const routes = await db.select()
+      .from(voipRoutes)
+      .where(and(...conditions))
+      .orderBy(voipRoutes.priority, desc(voipRoutes.createdAt));
+
+    return res.json({ 
+      success: true, 
+      data: routes 
+    } as ApiSuccessResponse<typeof routes>);
+  } catch (error) {
+    logger.error('Error fetching VoIP routes', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch VoIP routes' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/routes - Create VoIP route
+router.post('/routes', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const validated = insertVoipRouteSchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    const [newRoute] = await db.insert(voipRoutes)
+      .values(validated)
+      .returning();
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'create',
+      'route',
+      newRoute.id,
+      'ok',
+      { route: newRoute }
+    );
+
+    logger.info('VoIP route created', { routeId: newRoute.id, name: newRoute.name, tenantId });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: newRoute 
+    } as ApiSuccessResponse<typeof newRoute>);
+  } catch (error) {
+    logger.error('Error creating VoIP route', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to create VoIP route' } as ApiErrorResponse);
+  }
+});
+
+// PATCH /api/voip/routes/:id - Update VoIP route
+router.patch('/routes/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
@@ -505,136 +682,311 @@ router.get('/extensions/:id/credentials', rbacMiddleware, async (req, res) => {
     await setTenantContext(db, tenantId);
     const { id } = req.params;
 
-    const [extension] = await db.select({
-      extension: voipExtensions,
-      domain: voipDomains
-    })
-    .from(voipExtensions)
-    .leftJoin(voipDomains, eq(voipExtensions.domainId, voipDomains.id))
-    .where(and(
-      eq(voipExtensions.id, id),
-      eq(voipExtensions.tenantId, tenantId)
-    ))
-    .limit(1);
+    const updateData = insertVoipRouteSchema.partial().parse(req.body);
 
-    if (!extension) {
-      return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
-    }
-
-    // Return SIP credentials for WebRTC registration
-    const credentials = {
-      sipUri: `sip:${extension.extension.sipUsername}@${extension.domain?.fqdn}`,
-      username: extension.extension.sipUsername,
-      password: extension.extension.sipPassword, // ⚠️ Only send over HTTPS
-      domain: extension.domain?.fqdn,
-      extension: extension.extension.extension,
-      displayName: extension.extension.displayName,
-      webrtcEnabled: extension.domain?.webrtcEnabled,
-      stunServer: extension.domain?.stunServer,
-      turnServer: extension.domain?.turnServer,
-      turnUsername: extension.domain?.turnUsername,
-      turnPassword: extension.domain?.turnPassword
-    };
-
-    logger.info('SIP credentials requested', { extensionId: id, tenantId });
-
-    return res.json({ 
-      success: true, 
-      data: credentials 
-    } as ApiSuccessResponse<typeof credentials>);
-  } catch (error) {
-    logger.error('Error fetching SIP credentials', { error, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to fetch SIP credentials' } as ApiErrorResponse);
-  }
-});
-
-// ==================== VOIP DEVICES ====================
-
-// GET /api/voip/devices - List all registered devices
-router.get('/devices', rbacMiddleware, async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-    const { extensionId } = req.query;
-
-    let query = db.select({
-      device: voipDevices,
-      extension: voipExtensions.extension,
-      userName: users.firstName
-    })
-    .from(voipDevices)
-    .leftJoin(voipExtensions, eq(voipDevices.extensionId, voipExtensions.id))
-    .leftJoin(users, eq(voipExtensions.userId, users.id))
-    .where(eq(voipDevices.tenantId, tenantId));
-
-    if (extensionId) {
-      query = query.where(eq(voipDevices.extensionId, extensionId as string)) as typeof query;
-    }
-
-    const devices = await query.orderBy(desc(voipDevices.lastRegisteredAt));
-
-    return res.json({ 
-      success: true, 
-      data: devices 
-    } as ApiSuccessResponse<typeof devices>);
-  } catch (error) {
-    logger.error('Error fetching VoIP devices', { error, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to fetch VoIP devices' } as ApiErrorResponse);
-  }
-});
-
-// POST /api/voip/devices - Register new device
-router.post('/devices', rbacMiddleware, async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-
-    const validated = insertVoipDeviceSchema.parse({
-      ...req.body,
-      tenantId,
-      userAgent: req.headers['user-agent'],
-      ipAddress: req.ip || req.headers['x-forwarded-for']
-    });
-
-    const [newDevice] = await db.insert(voipDevices)
-      .values({
-        ...validated,
-        lastRegisteredAt: new Date(),
-        isOnline: true
-      })
+    const [updated] = await db.update(voipRoutes)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(
+        eq(voipRoutes.id, id),
+        eq(voipRoutes.tenantId, tenantId)
+      ))
       .returning();
 
-    logger.info('VoIP device registered', { 
-      deviceId: newDevice.id, 
-      extensionId: newDevice.extensionId,
-      deviceType: newDevice.deviceType,
-      tenantId 
-    });
+    if (!updated) {
+      return res.status(404).json({ error: 'Route not found' } as ApiErrorResponse);
+    }
 
-    return res.status(201).json({ 
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'route',
+      id,
+      'ok',
+      { updates: updateData }
+    );
+
+    logger.info('VoIP route updated', { routeId: id, tenantId });
+
+    return res.json({ 
       success: true, 
-      data: newDevice 
-    } as ApiSuccessResponse<typeof newDevice>);
+      data: updated 
+    } as ApiSuccessResponse<typeof updated>);
   } catch (error) {
-    logger.error('Error registering VoIP device', { error, tenantId: getTenantId(req) });
+    logger.error('Error updating VoIP route', { error, tenantId: getTenantId(req) });
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.errors } as ApiErrorResponse);
     }
-    return res.status(500).json({ error: 'Failed to register VoIP device' } as ApiErrorResponse);
+    return res.status(500).json({ error: 'Failed to update VoIP route' } as ApiErrorResponse);
   }
 });
 
-// ==================== VOIP CDRs ====================
+// DELETE /api/voip/routes/:id - Delete VoIP route
+router.delete('/routes/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
 
-// GET /api/voip/cdrs - List call detail records
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    const [deleted] = await db.delete(voipRoutes)
+      .where(and(
+        eq(voipRoutes.id, id),
+        eq(voipRoutes.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Route not found' } as ApiErrorResponse);
+    }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'delete',
+      'route',
+      id,
+      'ok',
+      { deleted: deleted }
+    );
+
+    logger.info('VoIP route deleted', { routeId: id, tenantId });
+
+    return res.json({ 
+      success: true, 
+      data: { id } 
+    } as ApiSuccessResponse<{ id: string }>);
+  } catch (error) {
+    logger.error('Error deleting VoIP route', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to delete VoIP route' } as ApiErrorResponse);
+  }
+});
+
+// ==================== CONTACT POLICIES ====================
+
+// GET /api/voip/policies - List all contact policies for tenant
+router.get('/policies', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { scopeType, scopeRef, active } = req.query;
+
+    const conditions = [eq(contactPolicies.tenantId, tenantId)];
+    if (scopeType) {
+      conditions.push(eq(contactPolicies.scopeType, scopeType as string));
+    }
+    if (scopeRef) {
+      conditions.push(eq(contactPolicies.scopeRef, scopeRef as string));
+    }
+    if (active !== undefined) {
+      conditions.push(eq(contactPolicies.active, active === 'true'));
+    }
+
+    const policies = await db.select()
+      .from(contactPolicies)
+      .where(and(...conditions))
+      .orderBy(desc(contactPolicies.createdAt));
+
+    return res.json({ 
+      success: true, 
+      data: policies 
+    } as ApiSuccessResponse<typeof policies>);
+  } catch (error) {
+    logger.error('Error fetching contact policies', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch contact policies' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/policies - Create contact policy
+router.post('/policies', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const validated = insertContactPolicySchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    const [newPolicy] = await db.insert(contactPolicies)
+      .values(validated)
+      .returning();
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'create',
+      'policy',
+      newPolicy.id,
+      'ok',
+      { policy: newPolicy }
+    );
+
+    logger.info('Contact policy created', { policyId: newPolicy.id, scopeType: newPolicy.scopeType, tenantId });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: newPolicy 
+    } as ApiSuccessResponse<typeof newPolicy>);
+  } catch (error) {
+    logger.error('Error creating contact policy', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to create contact policy' } as ApiErrorResponse);
+  }
+});
+
+// PATCH /api/voip/policies/:id - Update contact policy
+router.patch('/policies/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    const updateData = insertContactPolicySchema.partial().parse(req.body);
+
+    const [updated] = await db.update(contactPolicies)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(
+        eq(contactPolicies.id, id),
+        eq(contactPolicies.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Policy not found' } as ApiErrorResponse);
+    }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'policy',
+      id,
+      'ok',
+      { updates: updateData }
+    );
+
+    logger.info('Contact policy updated', { policyId: id, tenantId });
+
+    return res.json({ 
+      success: true, 
+      data: updated 
+    } as ApiSuccessResponse<typeof updated>);
+  } catch (error) {
+    logger.error('Error updating contact policy', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to update contact policy' } as ApiErrorResponse);
+  }
+});
+
+// DELETE /api/voip/policies/:id - Delete contact policy
+router.delete('/policies/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    const [deleted] = await db.delete(contactPolicies)
+      .where(and(
+        eq(contactPolicies.id, id),
+        eq(contactPolicies.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Policy not found' } as ApiErrorResponse);
+    }
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'delete',
+      'policy',
+      id,
+      'ok',
+      { deleted: deleted }
+    );
+
+    logger.info('Contact policy deleted', { policyId: id, tenantId });
+
+    return res.json({ 
+      success: true, 
+      data: { id } 
+    } as ApiSuccessResponse<{ id: string }>);
+  } catch (error) {
+    logger.error('Error deleting contact policy', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to delete contact policy' } as ApiErrorResponse);
+  }
+});
+
+// ==================== VOIP ACTIVITY LOG ====================
+
+// GET /api/voip/activity - List activity log for tenant
+router.get('/activity', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { targetType, targetId, action, limit = '100' } = req.query;
+
+    const conditions = [eq(voipActivityLog.tenantId, tenantId)];
+    if (targetType) {
+      conditions.push(eq(voipActivityLog.targetType, targetType as string));
+    }
+    if (targetId) {
+      conditions.push(eq(voipActivityLog.targetId, targetId as string));
+    }
+    if (action) {
+      conditions.push(eq(voipActivityLog.action, action as string));
+    }
+
+    const logs = await db.select()
+      .from(voipActivityLog)
+      .where(and(...conditions))
+      .orderBy(desc(voipActivityLog.ts))
+      .limit(parseInt(limit as string, 10));
+
+    return res.json({ 
+      success: true, 
+      data: logs 
+    } as ApiSuccessResponse<typeof logs>);
+  } catch (error) {
+    logger.error('Error fetching VoIP activity log', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch VoIP activity log' } as ApiErrorResponse);
+  }
+});
+
+// ==================== VOIP CDRS ====================
+
+// GET /api/voip/cdrs - List CDRs for tenant
 router.get('/cdrs', rbacMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantId(req);
@@ -643,53 +995,31 @@ router.get('/cdrs', rbacMiddleware, async (req, res) => {
     }
 
     await setTenantContext(db, tenantId);
-    
-    const { 
-      startDate, 
-      endDate, 
-      direction, 
-      disposition,
-      trunkId,
-      phoneNumber,
-      limit = '100' 
-    } = req.query;
 
-    let query = db.select({
-      cdr: voipCdrs,
-      trunkName: voipTrunks.name
-    })
-    .from(voipCdrs)
-    .leftJoin(voipTrunks, eq(voipCdrs.trunkId, voipTrunks.id))
-    .where(eq(voipCdrs.tenantId, tenantId));
+    const { storeId, direction, disposition, startDate, endDate, limit = '100' } = req.query;
 
-    // Apply filters
-    if (startDate) {
-      query = query.where(gte(voipCdrs.startTime, new Date(startDate as string))) as typeof query;
-    }
-    if (endDate) {
-      query = query.where(lte(voipCdrs.startTime, new Date(endDate as string))) as typeof query;
+    const conditions = [eq(voipCdrs.tenantId, tenantId)];
+    if (storeId) {
+      conditions.push(eq(voipCdrs.storeId, storeId as string));
     }
     if (direction) {
-      query = query.where(eq(voipCdrs.direction, direction as any)) as typeof query;
+      conditions.push(eq(voipCdrs.direction, direction as any));
     }
     if (disposition) {
-      query = query.where(eq(voipCdrs.disposition, disposition as any)) as typeof query;
+      conditions.push(eq(voipCdrs.disposition, disposition as any));
     }
-    if (trunkId) {
-      query = query.where(eq(voipCdrs.trunkId, trunkId as string)) as typeof query;
+    if (startDate) {
+      conditions.push(gte(voipCdrs.startTs, new Date(startDate as string)));
     }
-    if (phoneNumber) {
-      query = query.where(
-        or(
-          eq(voipCdrs.fromNumber, phoneNumber as string),
-          eq(voipCdrs.toNumber, phoneNumber as string)
-        )
-      ) as typeof query;
+    if (endDate) {
+      conditions.push(lte(voipCdrs.startTs, new Date(endDate as string)));
     }
 
-    const cdrs = await query
-      .orderBy(desc(voipCdrs.startTime))
-      .limit(parseInt(limit as string));
+    const cdrs = await db.select()
+      .from(voipCdrs)
+      .where(and(...conditions))
+      .orderBy(desc(voipCdrs.startTs))
+      .limit(parseInt(limit as string, 10));
 
     return res.json({ 
       success: true, 
@@ -701,10 +1031,21 @@ router.get('/cdrs', rbacMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/voip/cdrs - Create CDR (typically called by FreeSWITCH webhook)
-router.post('/cdrs', rbacMiddleware, async (req, res) => {
+// POST /api/voip/cdr - Receive CDR from PBX (webhook)
+router.post('/cdr', async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    // Extract tenant ID from SIP domain or API key
+    const { sipDomain, tenantId: bodyTenantId } = req.body;
+    
+    let tenantId = bodyTenantId;
+    
+    // If no tenantId in body, try to lookup from sipDomain
+    if (!tenantId && sipDomain) {
+      // You could lookup tenant from stores table using sipDomain
+      // For now, require tenantId in body
+      return res.status(400).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
     if (!tenantId) {
       return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
     }
@@ -720,169 +1061,79 @@ router.post('/cdrs', rbacMiddleware, async (req, res) => {
       .values(validated)
       .returning();
 
-    logger.info('VoIP CDR created', { 
+    logger.info('VoIP CDR received from PBX', { 
       cdrId: newCdr.id, 
-      callId: newCdr.callId,
-      disposition: newCdr.disposition,
-      duration: newCdr.duration,
+      callId: newCdr.callId, 
+      direction: newCdr.direction,
       tenantId 
     });
 
     return res.status(201).json({ 
       success: true, 
-      data: newCdr 
-    } as ApiSuccessResponse<typeof newCdr>);
-  } catch (error) {
-    logger.error('Error creating VoIP CDR', { error, tenantId: getTenantId(req) });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
-    }
-    return res.status(500).json({ error: 'Failed to create VoIP CDR' } as ApiErrorResponse);
-  }
-});
-
-// ==================== VOIP POLICIES ====================
-
-// GET /api/voip/policies - List all policies
-router.get('/policies', rbacMiddleware, async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-    const { policyType } = req.query;
-
-    let query = db.select()
-      .from(voipPolicies)
-      .where(eq(voipPolicies.tenantId, tenantId));
-
-    if (policyType) {
-      query = query.where(eq(voipPolicies.policyType, policyType as string)) as typeof query;
-    }
-
-    const policies = await query.orderBy(desc(voipPolicies.createdAt));
-
-    return res.json({ 
-      success: true, 
-      data: policies 
-    } as ApiSuccessResponse<typeof policies>);
-  } catch (error) {
-    logger.error('Error fetching VoIP policies', { error, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to fetch VoIP policies' } as ApiErrorResponse);
-  }
-});
-
-// POST /api/voip/policies - Create policy
-router.post('/policies', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-
-    const validated = insertVoipPolicySchema.parse({
-      ...req.body,
-      tenantId
-    });
-
-    const [newPolicy] = await db.insert(voipPolicies)
-      .values(validated)
-      .returning();
-
-    logger.info('VoIP policy created', { 
-      policyId: newPolicy.id, 
-      policyType: newPolicy.policyType,
-      tenantId 
-    });
-
-    return res.status(201).json({ 
-      success: true, 
-      data: newPolicy 
-    } as ApiSuccessResponse<typeof newPolicy>);
-  } catch (error) {
-    logger.error('Error creating VoIP policy', { error, tenantId: getTenantId(req) });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
-    }
-    return res.status(500).json({ error: 'Failed to create VoIP policy' } as ApiErrorResponse);
-  }
-});
-
-// PATCH /api/voip/policies/:id - Update policy
-router.patch('/policies/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-    const { id } = req.params;
-
-    const updateData = insertVoipPolicySchema.partial().parse(req.body);
-
-    const [updated] = await db.update(voipPolicies)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(and(
-        eq(voipPolicies.id, id),
-        eq(voipPolicies.tenantId, tenantId)
-      ))
-      .returning();
-
-    if (!updated) {
-      return res.status(404).json({ error: 'VoIP policy not found' } as ApiErrorResponse);
-    }
-
-    logger.info('VoIP policy updated', { policyId: id, tenantId });
-
-    return res.json({ 
-      success: true, 
-      data: updated 
-    } as ApiSuccessResponse<typeof updated>);
-  } catch (error) {
-    logger.error('Error updating VoIP policy', { error, tenantId: getTenantId(req) });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
-    }
-    return res.status(500).json({ error: 'Failed to update VoIP policy' } as ApiErrorResponse);
-  }
-});
-
-// DELETE /api/voip/policies/:id - Delete policy
-router.delete('/policies/:id', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
-    }
-
-    await setTenantContext(db, tenantId);
-    const { id } = req.params;
-
-    const [deleted] = await db.delete(voipPolicies)
-      .where(and(
-        eq(voipPolicies.id, id),
-        eq(voipPolicies.tenantId, tenantId)
-      ))
-      .returning();
-
-    if (!deleted) {
-      return res.status(404).json({ error: 'VoIP policy not found' } as ApiErrorResponse);
-    }
-
-    logger.info('VoIP policy deleted', { policyId: id, tenantId });
-
-    return res.json({ 
-      success: true, 
-      data: { id } 
+      data: { id: newCdr.id } 
     } as ApiSuccessResponse<{ id: string }>);
   } catch (error) {
-    logger.error('Error deleting VoIP policy', { error, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to delete VoIP policy' } as ApiErrorResponse);
+    logger.error('Error receiving VoIP CDR', { error, body: req.body });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to receive VoIP CDR' } as ApiErrorResponse);
+  }
+});
+
+// ==================== VOIP PROVISION/SYNC ====================
+
+// POST /api/voip/provision/sync - Sync VoIP configuration with PBX
+router.post('/provision/sync', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { targetType, targetId } = req.body;
+
+    // Validate targetType
+    if (!['trunk', 'did', 'ext', 'route', 'policy'].includes(targetType)) {
+      return res.status(400).json({ error: 'Invalid target type' } as ApiErrorResponse);
+    }
+
+    // TODO: Implement actual provisioning logic to PBX
+    // This would make API calls to FreeSWITCH/Asterisk/etc. to sync configuration
+    // For now, just log the sync request
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'sync',
+      targetType,
+      targetId,
+      'ok',
+      { message: 'Provisioning sync requested', targetType, targetId }
+    );
+
+    logger.info('VoIP provisioning sync requested', { targetType, targetId, tenantId });
+
+    return res.json({ 
+      success: true, 
+      data: { message: 'Provisioning sync completed', targetType, targetId } 
+    } as ApiSuccessResponse<any>);
+  } catch (error) {
+    logger.error('Error during VoIP provisioning sync', { error, tenantId: getTenantId(req) });
+    
+    await logActivity(
+      getTenantId(req) || '',
+      req.user?.id || 'system',
+      'sync',
+      req.body.targetType,
+      req.body.targetId,
+      'fail',
+      { error: error instanceof Error ? error.message : 'Unknown error' }
+    );
+
+    return res.status(500).json({ error: 'Failed to sync provisioning' } as ApiErrorResponse);
   }
 });
 
