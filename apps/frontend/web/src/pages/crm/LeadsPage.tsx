@@ -6,6 +6,7 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Input } from '@/components/ui/input';
 import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { LeadDetailModal } from '@/components/crm/LeadDetailModal';
+import { SoftphoneWidget } from '@/components/crm/SoftphoneWidget';
 import { useTenantNavigation, useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

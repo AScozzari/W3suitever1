@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed to centralize and streamline business operations. It offers modules for CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding. Key features include a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and PostgreSQL with Row Level Security (RLS) for strong tenant isolation. A Brand Interface HQ system centralizes multi-brand management. The project aims to provide a scalable, secure, and comprehensive business solution.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules. It features a WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and PostgreSQL with Row Level Security (RLS) for strong tenant isolation. The platform includes a Brand Interface HQ system for centralized multi-brand management, aiming to deliver a scalable, secure, and comprehensive business solution with broad market potential.
 
 # User Preferences
 
@@ -205,26 +205,28 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 # System Architecture
 
 ## UI/UX Decisions
-The UI/UX follows a Glassmorphism WindTre Design System, built on `shadcn/ui` for consistency and accessibility. This is enhanced with CSS variables and Tailwind CSS, managed by the `@w3suite/frontend-kit` package, which provides design tokens, page templates, reusable components, UI patterns, and custom React hooks.
+The UI/UX follows a Glassmorphism WindTre Design System, built on `shadcn/ui` for consistency and accessibility, enhanced with CSS variables and Tailwind CSS. The `@w3suite/frontend-kit` package provides design tokens, page templates, reusable components, UI patterns, and custom React hooks for a unified user experience.
 
 ## Technical Implementations
-- **Monorepo Structure**: Organizes services, shared libraries, and database migrations.
-- **Database Architecture**: Employs a 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
+- **Monorepo Structure**: Centralized code organization.
+- **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
 - **Security**: OAuth2/OIDC with MFA, JWTs, and a 3-level RBAC hierarchy.
-- **Multitenancy**: Achieved through RLS, `TenantProvider`, and global unique constraints.
-- **Universal Workflow System**: Features approval hierarchies, RBAC-integrated supervision, event-driven state machines, a visual builder, and audit trails.
-- **Unified Notification System**: Real-time notifications via Redis and WebSockets with PostgreSQL fallback.
-- **Centralized Webhook System**: Enterprise-grade system with multi-provider support, queueing, deduplication, and audit trails.
+- **Multitenancy**: Achieved via RLS, `TenantProvider`, and global unique constraints.
+- **Universal Workflow System**: Features approval hierarchies, RBAC-integrated supervision, event-driven state machines, and audit trails.
+- **Unified Notification System**: Real-time notifications via Redis and WebSockets.
+- **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
 - **Task Management System**: Flexible task system with optional workflow integration and RBAC-protected API.
 - **MCP Multi-Provider OAuth System**: Manages unified credentials across third-party services with per-user OAuth isolation.
 - **AI Enforcement Middleware System**: Provides hierarchical API-level blocking of AI features.
 - **AI Workflow Builder with JSON Mode**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode and ReactFlow DSL output.
 - **Intelligent Workflow Routing System**: Offers dual-mode routing (auto/manual) for team and user assignments.
 - **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
-- **CRM Module Backend**: Comprehensive CRM backend with 20 tables in `w3suite` schema, featuring person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows. Provides RESTful endpoints with Zod validation, RLS, and structured logging.
-- **CRM Pipeline Visualization System**: Manages pipeline with 3 views (Table, Kanban, Gantt) using TanStack Table, `@dnd-kit`, workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
-- **CRM Workflow Auto-Trigger System**: Dual-mode workflow execution (automatic/manual) for pipeline workflows, powered by `CrmWorkflowTriggerService`.
+- **CRM Module Backend**: Comprehensive CRM backend with person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows, providing RESTful endpoints with Zod validation, RLS, and structured logging.
+- **CRM Pipeline Visualization System**: Manages pipeline with 3 views (Table, Kanban, Gantt) using TanStack Table and `@dnd-kit`, incorporating workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **CRM Workflow Auto-Trigger System**: Dual-mode workflow execution (automatic/manual) for pipeline workflows.
 - **Integrated Marketing Attribution System**: Full UTM tracking, GTM integration, social media webhooks, AI-powered lead scoring, and Enhanced Conversions for Google Ads/GA4.
+- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunk management with tenant-scoped SIP configuration, user-specific WebRTC extensions, floating softphone widget, call actions integrated across CRM entities (leads/customers/deals), CDR analytics, and policy-based routing.
+    **🚨 CRITICAL SECURITY ISSUE**: SIP credentials (`password`, `sipPassword`, `turnPassword`) are stored in **PLAINTEXT** in database. **MUST IMPLEMENT BEFORE PRODUCTION**: (1) Field-level AES-256 encryption service using Node.js `crypto` module with tenant-specific keys; (2) Encrypt before INSERT/UPDATE in voip.ts routes; (3) Decrypt on SELECT for authorized users only; (4) Add automated tests validating encrypted storage. This is a **HIGH-SEVERITY** vulnerability that exposes tenant credentials to database breaches.
 
 # External Dependencies
 
