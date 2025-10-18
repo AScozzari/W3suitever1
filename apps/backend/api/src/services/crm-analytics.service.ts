@@ -173,8 +173,8 @@ class CRMAnalyticsService {
     // Get deal metrics
     const dealMetrics = await db
       .select({
-        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue}), 0)`,
-        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue}), 0)`,
+        totalRevenue: sql<number>`coalesce(cast(sum(${crmDeals.dealValue}) as decimal), 0)`,
+        avgDealSize: sql<number>`coalesce(cast(avg(${crmDeals.dealValue}) as decimal), 0)`,
         wonDeals: sql<number>`count(case when ${crmDeals.status} = 'won' then 1 end)`,
       })
       .from(crmDeals)
@@ -244,16 +244,16 @@ class CRMAnalyticsService {
         campaignId: crmCampaigns.id,
         campaignName: crmCampaigns.name,
         storeId: crmCampaigns.storeId,
-        storeName: stores.name,
+        storeName: sql<string | null>`coalesce(${stores.name}, NULL)`,
         status: crmCampaigns.status,
-        budget: crmCampaigns.budget,
+        budget: sql<number>`coalesce(cast(${crmCampaigns.budget} as decimal), 0)`,
         startDate: crmCampaigns.startDate,
         endDate: crmCampaigns.endDate,
         ga4MeasurementId: crmCampaigns.ga4MeasurementId,
         totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
         qualifiedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' then ${crmLeads.id} end)`,
         convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
-        avgLeadScore: sql<number>`coalesce(avg(${crmLeads.leadScore}), 0)`,
+        avgLeadScore: sql<number>`coalesce(cast(avg(${crmLeads.leadScore}) as decimal), 0)`,
       })
       .from(crmCampaigns)
       .leftJoin(stores, eq(crmCampaigns.storeId, stores.id))
@@ -284,12 +284,13 @@ class CRMAnalyticsService {
       const conversionRate = campaign.totalLeads > 0 ? 
         (campaign.convertedLeads / campaign.totalLeads) * 100 : 0;
       
-      const costPerLead = campaign.budget && campaign.totalLeads > 0 ? 
-        Number(campaign.budget) / campaign.totalLeads : 0;
+      const budgetValue = Number(campaign.budget) || 0;
+      const costPerLead = budgetValue > 0 && campaign.totalLeads > 0 ? 
+        budgetValue / campaign.totalLeads : 0;
       
       // Mock revenue calculation (would need to join with deals)
       const revenue = campaign.convertedLeads * 2500;
-      const roi = campaign.budget ? (revenue - Number(campaign.budget)) / Number(campaign.budget) * 100 : 0;
+      const roi = budgetValue > 0 ? (revenue - budgetValue) / budgetValue * 100 : 0;
       
       return {
         campaignId: campaign.campaignId,
@@ -521,10 +522,10 @@ class CRMAnalyticsService {
     const storeMetrics = await db
       .select({
         storeId: stores.id,
-        storeName: stores.name,
-        city: stores.city,
-        totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
-        convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
+        storeName: sql<string>`coalesce(${stores.name}, 'Unnamed Store')`,
+        city: sql<string | null>`coalesce(${stores.city}, NULL)`,
+        totalLeads: sql<number>`coalesce(count(distinct ${crmLeads.id}), 0)`,
+        convertedLeads: sql<number>`coalesce(count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end), 0)`,
       })
       .from(stores)
       .leftJoin(crmLeads, eq(crmLeads.storeId, stores.id))
@@ -539,7 +540,7 @@ class CRMAnalyticsService {
       return [];
     }
 
-    // Calculate metrics and rank stores
+    // Calculate metrics and rank stores with null-safety
     const storesWithMetrics = storeMetrics.map(store => {
       const conversionRate = store.totalLeads > 0 ? 
         (store.convertedLeads / store.totalLeads) * 100 : 0;
