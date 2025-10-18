@@ -381,7 +381,7 @@ class CRMAnalyticsService {
       .select({
         source: crmLeads.leadSource,
         count: sql<number>`COUNT(*)`,
-        qualified: sql<number>`COUNT(CASE WHEN ${crmLeads.qualification} = 'qualified' THEN 1 END)`,
+        qualified: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'qualified' THEN 1 END)`,
         converted: sql<number>`COUNT(CASE WHEN ${crmLeads.status} = 'converted' THEN 1 END)`,
       })
       .from(crmLeads)
