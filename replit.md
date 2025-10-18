@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform centralizing core business operations across modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and employs PostgreSQL with Row Level Security (RLS) for strong tenant isolation. A central Brand Interface HQ system enables multi-brand management. The platform aims to be a scalable, secure, and comprehensive business solution with significant market potential.
+W3 Suite is a multi-tenant enterprise platform designed to centralize core business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and utilizes PostgreSQL with Row Level Security (RLS) for strong tenant isolation. A central Brand Interface HQ system supports multi-brand management. The platform aims to be a scalable, secure, and comprehensive business solution with significant market potential.
 
 # User Preferences
 
@@ -225,7 +225,12 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, leveraging `shadcn/u
 - **CRM Pipeline Visualization**: Manages pipeline with Table, Kanban, Gantt views using TanStack Table and `@dnd-kit`, incorporating workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
 - **CRM Workflow Auto-Trigger**: Dual-mode workflow execution (automatic/manual) for pipeline workflows.
 - **Integrated Marketing Attribution**: Full UTM tracking, GTM integration, social media webhooks, AI-powered lead scoring, and Enhanced Conversions for Google Ads/GA4.
-- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunk management with tenant-scoped SIP configuration, user-specific WebRTC extensions, floating softphone widget, call actions integrated across CRM entities, CDR analytics, and policy-based routing. SIP credentials require AES-256 encryption with tenant-specific keys.
+- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunk management with tenant-scoped SIP configuration, user-specific WebRTC extensions, floating softphone widget, call actions integrated across CRM entities, CDR analytics, and policy-based routing.
+  - **Security**: Centralized credential storage (`voip_credentials`) with AES-256 encryption and tenant-specific key rotation
+  - **Tables (11 total)**: `voip_credentials`, `voip_domains`, `voip_store_settings`, `voip_trunks`, `voip_dids`, `voip_extensions`, `voip_devices`, `voip_routes`, `voip_cdrs`, `voip_policies`, `voip_recordings_meta`
+  - **Compliance**: GDPR-compliant recording retention with automatic deletion policies
+  - **DID Management**: E.164 format numbers with porting status tracking and polymorphic assignment (store/extension/ivr/queue/conference)
+  - **Routing**: Priority-based inbound/outbound routing with time conditions, emergency bypass, and business hours support
 
 # External Dependencies
 
