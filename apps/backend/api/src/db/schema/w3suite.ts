@@ -363,6 +363,10 @@ export const voipCallDispositionEnum = pgEnum('voip_call_disposition', ['answere
 export const voipDeviceTypeEnum = pgEnum('voip_device_type', ['webrtc', 'deskphone', 'mobile_app', 'softphone']);
 export const voipExtensionStatusEnum = pgEnum('voip_extension_status', ['active', 'inactive', 'suspended']);
 export const voipTrunkStatusEnum = pgEnum('voip_trunk_status', ['active', 'inactive', 'error']);
+export const voipCredentialTypeEnum = pgEnum('voip_credential_type', ['sip_trunk', 'sip_extension', 'turn_server', 'api_key']);
+export const voipDidStatusEnum = pgEnum('voip_did_status', ['active', 'porting_in', 'porting_out', 'inactive', 'cancelled']);
+export const voipRouteTypeEnum = pgEnum('voip_route_type', ['inbound', 'outbound', 'emergency']);
+export const voipAssignmentTypeEnum = pgEnum('voip_assignment_type', ['store', 'extension', 'ivr', 'queue', 'conference']);
 
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
@@ -5558,6 +5562,38 @@ export type GtmEventLog = typeof gtmEventLog.$inferSelect;
 
 // ==================== VOIP SYSTEM ====================
 
+// VoIP Credentials (Centralized credential storage with AES-256 encryption)
+export const voipCredentials = w3suiteSchema.table("voip_credentials", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  credentialType: voipCredentialTypeEnum("credential_type").notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // Descriptive name
+  username: varchar("username", { length: 255 }),
+  password: text("password").notNull(), // AES-256 encrypted with tenant-specific key
+  authUsername: varchar("auth_username", { length: 255 }), // SIP auth username if different
+  realm: varchar("realm", { length: 255 }), // SIP realm
+  encryptionKeyVersion: integer("encryption_key_version").default(1).notNull(), // For key rotation
+  isEncrypted: boolean("is_encrypted").default(true).notNull(),
+  metadata: jsonb("metadata"), // Additional credential-specific data
+  expiresAt: timestamp("expires_at"), // For API keys with expiration
+  lastRotatedAt: timestamp("last_rotated_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_credentials_tenant_idx").on(table.tenantId),
+  index("voip_credentials_type_idx").on(table.credentialType),
+  uniqueIndex("voip_credentials_tenant_name_unique").on(table.tenantId, table.name),
+]);
+
+export const insertVoipCredentialSchema = createInsertSchema(voipCredentials).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  lastRotatedAt: true
+});
+export type InsertVoipCredential = z.infer<typeof insertVoipCredentialSchema>;
+export type VoipCredential = typeof voipCredentials.$inferSelect;
+
 // VoIP Domains (Tenant-scoped)
 export const voipDomains = w3suiteSchema.table("voip_domains", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -5567,13 +5603,13 @@ export const voipDomains = w3suiteSchema.table("voip_domains", {
   srtpPolicy: varchar("srtp_policy", { length: 50 }).default('optional'), // mandatory/optional/disabled
   stunServer: varchar("stun_server", { length: 255 }), // es: stun:stun.l.google.com:19302
   turnServer: varchar("turn_server", { length: 255 }), // es: turn:turn.w3suite.it:3478
-  turnUsername: varchar("turn_username", { length: 100 }),
-  turnPassword: text("turn_password"), // encrypted
+  turnCredentialId: uuid("turn_credential_id").references(() => voipCredentials.id, { onDelete: 'set null' }), // FK to voip_credentials
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("voip_domains_fqdn_unique").on(table.fqdn),
   index("voip_domains_tenant_idx").on(table.tenantId),
+  index("voip_domains_turn_cred_idx").on(table.turnCredentialId),
 ]);
 
 export const insertVoipDomainSchema = createInsertSchema(voipDomains).omit({ 
@@ -5584,19 +5620,46 @@ export const insertVoipDomainSchema = createInsertSchema(voipDomains).omit({
 export type InsertVoipDomain = z.infer<typeof insertVoipDomainSchema>;
 export type VoipDomain = typeof voipDomains.$inferSelect;
 
+// VoIP Store Settings (Store-specific VoIP configuration)
+export const voipStoreSettings = w3suiteSchema.table("voip_store_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  maxConcurrentCalls: integer("max_concurrent_calls").default(10).notNull(),
+  recordingPolicy: varchar("recording_policy", { length: 50 }).default('none').notNull(), // none/all/on_demand/compliance
+  businessHoursStart: varchar("business_hours_start", { length: 5 }), // HH:MM format
+  businessHoursEnd: varchar("business_hours_end", { length: 5 }), // HH:MM format
+  businessDays: jsonb("business_days").default([1,2,3,4,5]), // Array of weekdays (0=Sunday, 1=Monday, etc.)
+  holidayCalendar: jsonb("holiday_calendar"), // Array of holiday dates
+  afterHoursDestination: varchar("after_hours_destination", { length: 100 }), // Extension/IVR/Voicemail
+  emergencyBypass: boolean("emergency_bypass").default(true).notNull(), // Allow emergency calls outside business hours
+  retentionDays: integer("retention_days").default(90).notNull(), // CDR/Recording retention
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_store_settings_tenant_idx").on(table.tenantId),
+  uniqueIndex("voip_store_settings_store_unique").on(table.storeId),
+]);
+
+export const insertVoipStoreSettingSchema = createInsertSchema(voipStoreSettings).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertVoipStoreSetting = z.infer<typeof insertVoipStoreSettingSchema>;
+export type VoipStoreSetting = typeof voipStoreSettings.$inferSelect;
+
 // VoIP Trunks (Store-scoped SIP trunks)
 export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  credentialId: uuid("credential_id").notNull().references(() => voipCredentials.id, { onDelete: 'restrict' }), // FK to voip_credentials
   name: varchar("name", { length: 255 }).notNull(),
   provider: varchar("provider", { length: 100 }), // Nome provider SIP
   host: varchar("host", { length: 255 }).notNull(), // sip.provider.com
   port: integer("port").default(5060).notNull(),
   protocol: voipProtocolEnum("protocol").default('udp').notNull(),
-  username: varchar("username", { length: 100 }),
-  password: text("password"), // encrypted
-  authUsername: varchar("auth_username", { length: 100 }),
   fromUser: varchar("from_user", { length: 100 }),
   fromDomain: varchar("from_domain", { length: 255 }),
   codec: varchar("codec", { length: 255 }).default('PCMU,PCMA,opus'), // Codec preference list
@@ -5609,6 +5672,7 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
 }, (table) => [
   index("voip_trunks_tenant_idx").on(table.tenantId),
   index("voip_trunks_store_idx").on(table.storeId),
+  index("voip_trunks_credential_idx").on(table.credentialId),
   uniqueIndex("voip_trunks_tenant_store_name_unique").on(table.tenantId, table.storeId, table.name),
 ]);
 
@@ -5621,15 +5685,48 @@ export const insertVoipTrunkSchema = createInsertSchema(voipTrunks).omit({
 export type InsertVoipTrunk = z.infer<typeof insertVoipTrunkSchema>;
 export type VoipTrunk = typeof voipTrunks.$inferSelect;
 
+// VoIP DIDs (Direct Inward Dialing Numbers)
+export const voipDids = w3suiteSchema.table("voip_dids", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  trunkId: uuid("trunk_id").references(() => voipTrunks.id, { onDelete: 'set null' }), // FK to trunk providing this DID
+  phoneNumber: varchar("phone_number", { length: 50 }).notNull(), // E.164 format: +393391234567
+  countryCode: varchar("country_code", { length: 5 }).notNull(), // +39
+  localNumber: varchar("local_number", { length: 50 }).notNull(), // 3391234567
+  displayName: varchar("display_name", { length: 255 }),
+  status: voipDidStatusEnum("status").default('active').notNull(),
+  portingDate: timestamp("porting_date"), // Date when number was/will be ported
+  assignmentType: voipAssignmentTypeEnum("assignment_type"), // Polymorphic assignment
+  assignmentId: uuid("assignment_id"), // ID of assigned entity (store/extension/ivr/queue)
+  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }),
+  setupFee: decimal("setup_fee", { precision: 10, scale: 2 }),
+  provider: varchar("provider", { length: 100 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_dids_tenant_idx").on(table.tenantId),
+  index("voip_dids_trunk_idx").on(table.trunkId),
+  index("voip_dids_assignment_idx").on(table.assignmentType, table.assignmentId),
+  uniqueIndex("voip_dids_phone_number_unique").on(table.phoneNumber),
+]);
+
+export const insertVoipDidSchema = createInsertSchema(voipDids).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertVoipDid = z.infer<typeof insertVoipDidSchema>;
+export type VoipDid = typeof voipDids.$inferSelect;
+
 // VoIP Extensions (User-scoped internal numbers)
 export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   domainId: uuid("domain_id").notNull().references(() => voipDomains.id, { onDelete: 'cascade' }),
+  credentialId: uuid("credential_id").notNull().references(() => voipCredentials.id, { onDelete: 'restrict' }), // FK to voip_credentials
   extension: varchar("extension", { length: 20 }).notNull(), // es: 1001
-  sipUsername: varchar("sip_username", { length: 100 }).notNull(),
-  sipPassword: text("sip_password").notNull(), // encrypted
   displayName: varchar("display_name", { length: 255 }),
   email: varchar("email", { length: 255 }),
   voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(),
@@ -5639,6 +5736,7 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   forwardOnBusy: varchar("forward_on_busy", { length: 100 }),
   forwardOnNoAnswer: varchar("forward_on_no_answer", { length: 100 }),
   forwardUnconditional: varchar("forward_unconditional", { length: 100 }),
+  classOfService: varchar("class_of_service", { length: 50 }).default('standard'), // standard/premium/restricted
   status: voipExtensionStatusEnum("status").default('active').notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -5646,8 +5744,8 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   index("voip_extensions_tenant_idx").on(table.tenantId),
   index("voip_extensions_user_idx").on(table.userId),
   index("voip_extensions_domain_idx").on(table.domainId),
+  index("voip_extensions_credential_idx").on(table.credentialId),
   uniqueIndex("voip_extensions_domain_extension_unique").on(table.domainId, table.extension),
-  uniqueIndex("voip_extensions_domain_sip_username_unique").on(table.domainId, table.sipUsername),
 ]);
 
 export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit({ 
@@ -5745,3 +5843,101 @@ export const insertVoipPolicySchema = createInsertSchema(voipPolicies).omit({
 });
 export type InsertVoipPolicy = z.infer<typeof insertVoipPolicySchema>;
 export type VoipPolicy = typeof voipPolicies.$inferSelect;
+
+// VoIP Routes (Inbound/Outbound routing rules)
+export const voipRoutes = w3suiteSchema.table("voip_routes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  routeType: voipRouteTypeEnum("route_type").notNull(),
+  priority: integer("priority").default(100).notNull(), // Lower = higher priority
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Match conditions
+  didPattern: varchar("did_pattern", { length: 100 }), // Regex or exact match for DID
+  callerIdPattern: varchar("caller_id_pattern", { length: 100 }), // Regex for caller ID
+  timeConditions: jsonb("time_conditions"), // Business hours, holidays, etc.
+  
+  // Routing destinations
+  trunkId: uuid("trunk_id").references(() => voipTrunks.id, { onDelete: 'set null' }), // For outbound
+  destinationType: varchar("destination_type", { length: 50 }), // extension/ivr/queue/voicemail/external
+  destinationId: uuid("destination_id"), // Polymorphic destination
+  
+  // Emergency routing
+  isEmergency: boolean("is_emergency").default(false).notNull(), // 112/113/118 etc.
+  emergencyBypass: boolean("emergency_bypass").default(true).notNull(), // Bypass business hours
+  
+  // Analytics
+  callCount: integer("call_count").default(0).notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_routes_tenant_idx").on(table.tenantId),
+  index("voip_routes_type_idx").on(table.routeType),
+  index("voip_routes_priority_idx").on(table.priority),
+  index("voip_routes_trunk_idx").on(table.trunkId),
+]);
+
+export const insertVoipRouteSchema = createInsertSchema(voipRoutes).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  callCount: true,
+  lastUsedAt: true
+});
+export type InsertVoipRoute = z.infer<typeof insertVoipRouteSchema>;
+export type VoipRoute = typeof voipRoutes.$inferSelect;
+
+// VoIP Recordings Metadata (File metadata, not the actual files)
+export const voipRecordingsMeta = w3suiteSchema.table("voip_recordings_meta", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  cdrId: uuid("cdr_id").references(() => voipCdrs.id, { onDelete: 'set null' }),
+  callId: varchar("call_id", { length: 255 }).notNull(), // FreeSWITCH UUID
+  
+  // Object Storage reference
+  objectStorageKey: varchar("object_storage_key", { length: 500 }).notNull(), // Key in object storage
+  bucketName: varchar("bucket_name", { length: 255 }),
+  fileSize: bigint("file_size", { mode: 'number' }), // bytes
+  duration: integer("duration"), // seconds
+  format: varchar("format", { length: 20 }).default('wav'), // wav/mp3/opus
+  codec: varchar("codec", { length: 50 }),
+  sampleRate: integer("sample_rate"), // Hz
+  
+  // Recording metadata
+  recordingStartTime: timestamp("recording_start_time").notNull(),
+  recordingEndTime: timestamp("recording_end_time"),
+  isEncrypted: boolean("is_encrypted").default(false).notNull(),
+  encryptionKeyVersion: integer("encryption_key_version"),
+  
+  // Compliance & retention
+  retentionUntil: timestamp("retention_until"), // Auto-delete after this date
+  isCompliance: boolean("is_compliance").default(false).notNull(), // GDPR/compliance recording
+  downloadCount: integer("download_count").default(0).notNull(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  
+  // Participants
+  participants: jsonb("participants"), // Array of {number, extension, duration}
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_recordings_meta_tenant_idx").on(table.tenantId),
+  index("voip_recordings_meta_cdr_idx").on(table.cdrId),
+  index("voip_recordings_meta_call_id_idx").on(table.callId),
+  index("voip_recordings_meta_retention_idx").on(table.retentionUntil),
+  uniqueIndex("voip_recordings_meta_storage_key_unique").on(table.objectStorageKey),
+]);
+
+export const insertVoipRecordingMetaSchema = createInsertSchema(voipRecordingsMeta).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  downloadCount: true,
+  lastAccessedAt: true
+});
+export type InsertVoipRecordingMeta = z.infer<typeof insertVoipRecordingMetaSchema>;
+export type VoipRecordingMeta = typeof voipRecordingsMeta.$inferSelect;
