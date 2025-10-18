@@ -170,11 +170,11 @@ class CRMAnalyticsService {
         storeFilter
       ));
 
-    // Get deal metrics
+    // Get deal metrics (simplified - no complex SQL wrappers)
     const dealMetrics = await db
       .select({
-        totalRevenue: sql<number>`coalesce(sum(${crmDeals.dealValue})::numeric, 0)`,
-        avgDealSize: sql<number>`coalesce(avg(${crmDeals.dealValue})::numeric, 0)`,
+        totalRevenue: sql<number>`sum(${crmDeals.dealValue})`,
+        avgDealSize: sql<number>`avg(${crmDeals.dealValue})`,
         wonDeals: sql<number>`count(case when ${crmDeals.status} = 'won' then 1 end)`,
       })
       .from(crmDeals)
@@ -215,13 +215,13 @@ class CRMAnalyticsService {
       (metrics.convertedLeads / metrics.totalLeads) * 100 : 0;
 
     return {
-      totalRevenue: Number(deals.totalRevenue),
+      totalRevenue: Number(deals.totalRevenue) || 0,
       revenueTrend: trends.revenueTrend,
       totalLeads: metrics.totalLeads,
       leadsTrend: trends.leadsTrend,
       conversionRate: Math.round(conversionRate * 10) / 10,
       conversionTrend: trends.conversionTrend,
-      avgDealSize: Number(deals.avgDealSize),
+      avgDealSize: Number(deals.avgDealSize) || 0,
       dealSizeTrend: trends.dealSizeTrend,
       aiScoreAccuracy: aiAccuracy,
       accuracyTrend: trends.accuracyTrend,
@@ -253,7 +253,7 @@ class CRMAnalyticsService {
         totalLeads: sql<number>`count(distinct ${crmLeads.id})`,
         qualifiedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'qualified' then ${crmLeads.id} end)`,
         convertedLeads: sql<number>`count(distinct case when ${crmLeads.status} = 'converted' then ${crmLeads.id} end)`,
-        avgLeadScore: sql<number>`coalesce(avg(${crmLeads.leadScore})::numeric, 0)`,
+        avgLeadScore: sql<number>`avg(${crmLeads.leadScore})`,
       })
       .from(crmCampaigns)
       .leftJoin(stores, eq(crmCampaigns.storeId, stores.id))
@@ -305,7 +305,7 @@ class CRMAnalyticsService {
         totalRevenue: revenue,
         roi: Math.round(roi),
         costPerLead: Math.round(costPerLead),
-        avgLeadScore: Math.round(Number(campaign.avgLeadScore)),
+        avgLeadScore: Math.round(Number(campaign.avgLeadScore) || 0),
         topChannel: campaign.ga4MeasurementId ? 'Google Ads' : 'Organic',
         startDate: campaign.startDate,
         endDate: campaign.endDate
