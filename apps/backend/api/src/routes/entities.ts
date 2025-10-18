@@ -11,7 +11,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms } from '../db/schema/w3suite';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema } from '../db/schema/w3suite';
 import { channels, commercialAreas, drivers } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -346,7 +346,15 @@ router.post('/users', async (req, res) => {
       // ✅ Scope piramidale dal frontend - UUID strings
       selectAllLegalEntities: z.boolean().default(false),
       selectedLegalEntities: z.array(z.string()).default([]), // UUID strings
-      selectedStores: z.array(z.string()).default([]) // UUID strings
+      selectedStores: z.array(z.string()).default([]), // UUID strings
+      // ✅ Extension VoIP (optional - 1:1 relationship con user)
+      extension: z.object({
+        extNumber: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
+        sipDomain: z.string().min(1, "SIP domain required"),
+        classOfService: z.enum(['agent', 'supervisor', 'admin']).default('agent'),
+        voicemailEnabled: z.boolean().default(true),
+        storeId: z.string().uuid().optional(), // Optional store association
+      }).optional()
     });
 
     const validation = createSchema.safeParse(req.body);
@@ -384,22 +392,62 @@ router.post('/users', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    // 2️⃣ Crea l'utente
+    // 2️⃣ Crea l'utente + extension in transaction atomica
     const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    const [user] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        firstName: data.nome,
-        lastName: data.cognome,
-        email: data.email,
-        phoneNumber: data.telefono || null,
-        tenantId,
-        isActive: data.stato === 'attivo',
-        oauthProvider: 'manual'
-      })
-      .returning();
+    // ✅ ATOMIC TRANSACTION: User + Extension creation (rollback on any failure)
+    const { user, extension } = await db.transaction(async (tx) => {
+      // Insert user
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          id: userId,
+          firstName: data.nome,
+          lastName: data.cognome,
+          email: data.email,
+          phoneNumber: data.telefono || null,
+          tenantId,
+          isActive: data.stato === 'attivo',
+          oauthProvider: 'manual'
+        })
+        .returning();
+
+      // Auto-provision VoIP Extension (if data provided) - atomic with user creation
+      let createdExtension = null;
+      if (data.extension) {
+        // ✅ Validate extension data using insertVoipExtensionSchema
+        const extensionValidation = insertVoipExtensionSchema.safeParse({
+          tenantId,
+          userId: createdUser.id,
+          storeId: data.extension.storeId || null,
+          sipDomain: data.extension.sipDomain,
+          extNumber: data.extension.extNumber,
+          displayName: `${data.nome} ${data.cognome}`,
+          enabled: true,
+          voicemailEnabled: data.extension.voicemailEnabled,
+          classOfService: data.extension.classOfService,
+        });
+
+        if (!extensionValidation.success) {
+          throw new Error(`Extension validation failed: ${extensionValidation.error.issues.map(i => i.message).join(', ')}`);
+        }
+
+        const [ext] = await tx
+          .insert(voipExtensions)
+          .values(extensionValidation.data)
+          .returning();
+        
+        createdExtension = ext;
+        logger.info('VoIP extension auto-provisioned for user', { 
+          userId: createdUser.id, 
+          extNumber: ext.extNumber, 
+          sipDomain: ext.sipDomain,
+          tenantId 
+        });
+      }
+
+      return { user: createdUser, extension: createdExtension };
+    });
 
     // 3️⃣ Crea userAssignments con logica scope piramidale
     const rbacStorage = new RBACStorage();

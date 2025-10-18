@@ -5640,10 +5640,11 @@ export type InsertVoipDid = z.infer<typeof insertVoipDidSchema>;
 export type UpdateVoipDid = z.infer<typeof updateVoipDidSchema>;
 export type VoipDid = typeof voipDids.$inferSelect;
 
-// 3) voip_extensions - Interni del tenant
+// 3) voip_extensions - Interni del tenant (1:1 con users)
 export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }), // 1:1 relationship - ogni user ha max 1 extension
   storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }), // Optional store association
   sipDomain: varchar("sip_domain", { length: 255 }).notNull(), // tenantA.pbx.w3suite.it
   extNumber: varchar("ext_number", { length: 20 }).notNull(), // 1001, 1002, etc. (unique in domain)
@@ -5657,9 +5658,11 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("voip_extensions_tenant_idx").on(table.tenantId),
+  index("voip_extensions_user_idx").on(table.userId),
   index("voip_extensions_store_idx").on(table.storeId),
   index("voip_extensions_sip_domain_idx").on(table.sipDomain),
   uniqueIndex("voip_extensions_domain_ext_unique").on(table.sipDomain, table.extNumber),
+  uniqueIndex("voip_extensions_user_unique").on(table.userId), // 1:1 constraint - ogni user max 1 extension
 ]);
 
 export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit({ 
@@ -5667,11 +5670,12 @@ export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit
   createdAt: true, 
   updatedAt: true 
 }).extend({
+  userId: z.string().uuid().optional(), // 1:1 relationship con users (optional per legacy extensions)
   extNumber: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
   sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
   classOfService: z.enum(['agent', 'supervisor', 'admin']),
 });
-export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ tenantId: true, sipDomain: true, extNumber: true }).partial();
+export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ tenantId: true, userId: true, sipDomain: true, extNumber: true }).partial();
 export type InsertVoipExtension = z.infer<typeof insertVoipExtensionSchema>;
 export type UpdateVoipExtension = z.infer<typeof updateVoipExtensionSchema>;
 export type VoipExtension = typeof voipExtensions.$inferSelect;

@@ -5452,6 +5452,16 @@ export default function SettingsPage() {
     lingua: 'it',
     fuso: 'Europe/Rome',
     
+    // ✅ Configurazione VoIP Extension (1:1 relationship)
+    extension: {
+      enabled: false,         // Toggle per abilitare provisioning extension
+      extNumber: '',          // Numero interno (3-6 cifre)
+      sipDomain: '',          // SIP domain (es: tenant1.pbx.w3suite.it)
+      classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
+      voicemailEnabled: true,
+      storeId: null as string | null
+    },
+    
     // Informazioni contrattuali
     tipoContratto: 'Indeterminato',
     dataAssunzione: '',
@@ -8691,6 +8701,217 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* SEZIONE CONFIGURAZIONE TELEFONIA */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Phone size={16} style={{ color: '#FF6900' }} />
+                  Configurazione Telefonia
+                </h3>
+
+                {/* Toggle Abilita Extension */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px',
+                    background: newUser.extension.enabled ? '#ecfdf5' : '#f9fafb',
+                    border: `2px solid ${newUser.extension.enabled ? '#10b981' : '#e5e7eb'}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={newUser.extension.enabled}
+                      onChange={(e) => setNewUser({
+                        ...newUser,
+                        extension: { ...newUser.extension, enabled: e.target.checked }
+                      })}
+                      style={{ transform: 'scale(1.2)', accentColor: '#10b981' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                      Assegna numero interno (extension) all'utente
+                    </span>
+                  </label>
+                </div>
+
+                {/* Campi Extension (visibili solo se enabled) */}
+                {newUser.extension.enabled && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Numero Interno <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="100"
+                        value={newUser.extension.extNumber}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          extension: { ...newUser.extension, extNumber: e.target.value }
+                        })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          background: '#fafafa',
+                          transition: 'all 0.2s ease',
+                          outline: 'none'
+                        }}
+                        data-testid="input-ext-number"
+                      />
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        3-6 cifre (es: 100, 1001)
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        SIP Domain <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="tenant1.pbx.w3suite.it"
+                        value={newUser.extension.sipDomain}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          extension: { ...newUser.extension, sipDomain: e.target.value }
+                        })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          background: '#fafafa',
+                          transition: 'all 0.2s ease',
+                          outline: 'none'
+                        }}
+                        data-testid="input-sip-domain"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Class of Service
+                      </label>
+                      <select
+                        value={newUser.extension.classOfService}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          extension: { ...newUser.extension, classOfService: e.target.value as any }
+                        })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                        data-testid="select-class-of-service"
+                      >
+                        <option value="agent">Agent</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Negozio (opzionale)
+                      </label>
+                      <select
+                        value={newUser.extension.storeId || ''}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          extension: { ...newUser.extension, storeId: e.target.value || null }
+                        })}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                        data-testid="select-extension-store"
+                      >
+                        <option value="">Nessuno</option>
+                        {puntiVenditaList.map((store: any) => (
+                          <option key={store.id} value={store.id}>
+                            {store.nome || store.businessName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={newUser.extension.voicemailEnabled}
+                          onChange={(e) => setNewUser({
+                            ...newUser,
+                            extension: { ...newUser.extension, voicemailEnabled: e.target.checked }
+                          })}
+                          style={{ transform: 'scale(1.1)', accentColor: '#FF6900' }}
+                        />
+                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                          Abilita casella vocale (voicemail)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* ✅ NUOVO SISTEMA SCOPE PIRAMIDALE - ALLA FINE */}
               <div style={{ marginBottom: '28px' }}>
                 <h3 style={{
@@ -9142,6 +9363,18 @@ export default function SettingsPage() {
                       return;
                     }
 
+                    // ✅ Validate VoIP Extension fields (if enabled)
+                    if (newUser.extension.enabled) {
+                      if (!newUser.extension.extNumber || !/^\d{3,6}$/.test(newUser.extension.extNumber)) {
+                        alert('Extension: Numero Interno deve essere 3-6 cifre (es: 100, 1001)');
+                        return;
+                      }
+                      if (!newUser.extension.sipDomain || newUser.extension.sipDomain.trim() === '') {
+                        alert('Extension: SIP Domain è obbligatorio (es: tenant1.pbx.w3suite.it)');
+                        return;
+                      }
+                    }
+
                     // Validazione scope
                     if (newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0) {
                       alert('Seleziona almeno una ragione sociale');
@@ -9167,7 +9400,17 @@ export default function SettingsPage() {
                           // ✅ SCOPE DATA - Invia dati scope piramidale al backend
                           selectAllLegalEntities: newUser.selectAllLegalEntities,
                           selectedLegalEntities: newUser.selectedLegalEntities,
-                          selectedStores: newUser.selectedStores
+                          selectedStores: newUser.selectedStores,
+                          // ✅ VOIP EXTENSION DATA (optional, only if enabled)
+                          ...(newUser.extension.enabled ? {
+                            extension: {
+                              extNumber: newUser.extension.extNumber,
+                              sipDomain: newUser.extension.sipDomain,
+                              classOfService: newUser.extension.classOfService,
+                              voicemailEnabled: newUser.extension.voicemailEnabled,
+                              storeId: newUser.extension.storeId
+                            }
+                          } : {})
                         };
 
                         console.log('📤 Sending user data to API:', userData);
@@ -9207,7 +9450,15 @@ export default function SettingsPage() {
                           selectAllLegalEntities: true,
                           selectedLegalEntities: [],
                           selectedStores: [],
-                          avatar: null
+                          avatar: null,
+                          extension: {
+                            enabled: false,
+                            extNumber: '',
+                            sipDomain: '',
+                            classOfService: 'agent' as const,
+                            voicemailEnabled: true,
+                            storeId: null
+                          }
                         });
 
                       } catch (error) {
