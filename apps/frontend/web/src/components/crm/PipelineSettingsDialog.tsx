@@ -135,6 +135,9 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   const [notifyOnDealWon, setNotifyOnDealWon] = useState(true);
   const [notifyOnDealLost, setNotifyOnDealLost] = useState(true);
 
+  // Workflow execution mode state (per template)
+  const [workflowExecutionModes, setWorkflowExecutionModes] = useState<Record<string, 'automatic' | 'manual'>>({});
+
   // Update pipeline general settings
   const updatePipelineMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -164,11 +167,12 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
 
   // Workflow assignment mutation
   const assignWorkflowMutation = useMutation({
-    mutationFn: async (workflowTemplateId: string) => {
+    mutationFn: async ({ templateId, executionMode }: { templateId: string; executionMode: 'automatic' | 'manual' }) => {
       return apiRequest(`/api/crm/pipelines/${pipelineId}/workflows`, {
         method: 'POST',
         body: JSON.stringify({
-          workflowTemplateId,
+          workflowTemplateId: templateId,
+          executionMode,
           isActive: true,
         }),
       });
@@ -313,7 +317,8 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   };
 
   const handleAssignWorkflow = (templateId: string) => {
-    assignWorkflowMutation.mutate(templateId);
+    const executionMode = workflowExecutionModes[templateId] || 'manual';
+    assignWorkflowMutation.mutate({ templateId, executionMode });
   };
 
   const handleRemoveWorkflow = (workflowId: string) => {
@@ -700,10 +705,31 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                             <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}>
                               <Workflow className="h-5 w-5" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <div className="font-semibold text-gray-900">{workflow.workflowName}</div>
-                              <div className="text-sm text-gray-500">
-                                {workflow.workflowCategory} • {workflow.workflowType}
+                              <div className="text-sm text-gray-500 flex items-center gap-2">
+                                <span>{workflow.workflowCategory} • {workflow.workflowType}</span>
+                                {workflow.executionMode && (
+                                  <>
+                                    <span>•</span>
+                                    <Badge 
+                                      variant={workflow.executionMode === 'automatic' ? 'default' : 'secondary'}
+                                      className="flex items-center gap-1"
+                                    >
+                                      {workflow.executionMode === 'automatic' ? (
+                                        <>
+                                          <Zap className="h-3 w-3" />
+                                          <span>Automatico</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Clock className="h-3 w-3" />
+                                          <span>Manuale</span>
+                                        </>
+                                      )}
+                                    </Badge>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -745,16 +771,46 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                               </div>
                             </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAssignWorkflow(template.id)}
-                            disabled={assignWorkflowMutation.isPending}
-                            data-testid={`button-assign-workflow-${template.id}`}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Assegna
-                          </Button>
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Modalità Esecuzione</Label>
+                              <Select
+                                value={workflowExecutionModes[template.id] || 'manual'}
+                                onValueChange={(value: 'automatic' | 'manual') => {
+                                  setWorkflowExecutionModes(prev => ({ ...prev, [template.id]: value }));
+                                }}
+                                data-testid={`select-execution-mode-${template.id}`}
+                              >
+                                <SelectTrigger className="w-40 h-9">
+                                  <SelectValue placeholder="Seleziona modalità" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="manual">
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="h-4 w-4" />
+                                      <span>Manuale</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="automatic">
+                                    <div className="flex items-center gap-2">
+                                      <Zap className="h-4 w-4" />
+                                      <span>Automatico</span>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAssignWorkflow(template.id)}
+                              disabled={assignWorkflowMutation.isPending}
+                              data-testid={`button-assign-workflow-${template.id}`}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Assegna
+                            </Button>
+                          </div>
                         </div>
                       ))}
                   </div>

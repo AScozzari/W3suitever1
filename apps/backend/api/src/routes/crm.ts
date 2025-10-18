@@ -2596,6 +2596,7 @@ router.get('/pipelines/:pipelineId/workflows', async (req, res) => {
         id: crmPipelineWorkflows.id,
         pipelineId: crmPipelineWorkflows.pipelineId,
         workflowTemplateId: crmPipelineWorkflows.workflowTemplateId,
+        executionMode: crmPipelineWorkflows.executionMode,
         isActive: crmPipelineWorkflows.isActive,
         assignedBy: crmPipelineWorkflows.assignedBy,
         assignedAt: crmPipelineWorkflows.assignedAt,
