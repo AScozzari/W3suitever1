@@ -115,13 +115,11 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
 
   // Mock SIP registration (TODO: Replace with real SIP.js)
   useEffect(() => {
-    if (extensionId) {
-      // Simulate SIP registration delay
-      setTimeout(() => {
-        setIsRegistered(true);
-      }, 1500);
-    }
-  }, [extensionId]);
+    // DEMO MODE: Auto-register even without extensionId for testing
+    setTimeout(() => {
+      setIsRegistered(true);
+    }, 1500);
+  }, []);
 
   const handleCall = () => {
     if (!phoneNumber) return;
@@ -299,19 +297,33 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
               </div>
 
               {/* Call Button */}
-              <Button
-                className="w-full text-white hover:opacity-90 transition-opacity"
+              <button
+                className="w-full text-white font-medium rounded-lg transition-opacity flex items-center justify-center gap-2"
                 style={{ 
-                  backgroundColor: '#FF6900'
+                  backgroundColor: '#FF6900 !important',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  border: 'none',
+                  cursor: phoneNumber && isRegistered ? 'pointer' : 'not-allowed',
+                  opacity: phoneNumber && isRegistered ? 1 : 0.5
                 }}
-                size="lg"
                 onClick={handleCall}
                 disabled={!phoneNumber || !isRegistered}
                 data-testid="button-call"
+                onMouseEnter={(e) => {
+                  if (phoneNumber && isRegistered) {
+                    e.currentTarget.style.opacity = '0.9';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (phoneNumber && isRegistered) {
+                    e.currentTarget.style.opacity = '1';
+                  }
+                }}
               >
-                <Phone className="w-5 h-5 mr-2" />
+                <Phone className="w-5 h-5" />
                 Call
-              </Button>
+              </button>
             </>
           )}
 
