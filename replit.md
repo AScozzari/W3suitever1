@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules, including CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding. It features a distinct WindTre glassmorphism design, robust OAuth2/OIDC security with Multi-Factor Authentication (MFA), and leverages PostgreSQL with Row Level Security (RLS) to ensure strong tenant isolation. The platform also incorporates a Brand Interface HQ system for centralized multi-brand management, aiming to provide a scalable, secure, and comprehensive business solution with significant market potential.
+W3 Suite is a multi-tenant enterprise platform centralizing core business operations across modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and employs PostgreSQL with Row Level Security (RLS) for strong tenant isolation. A central Brand Interface HQ system enables multi-brand management. The platform aims to be a scalable, secure, and comprehensive business solution with significant market potential.
 
 # User Preferences
 
@@ -135,7 +135,7 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
   - **`[W3]`** = WindTre Suite (tenant-facing app)
   - **`[BRAND]`** = Brand Interface (HQ system)
   - **`[w3suite]`** = Schema tenant-specific (users, tenants, stores, roles, etc.)
-  - **`[PUBLIC]`** = Schema dati riferimento (commercial_areas, countries, channels, etc.)
+  - **`[PUBLIC]` = Schema dati riferimento (commercial_areas, countries, channels, etc.)
   - **`[brand_interface]`** = Schema Brand Interface (brand_users, brand_tenants, etc.)
 
 ## 🎯 FRONTEND-KIT USAGE (OBBLIGATORIO)
@@ -151,11 +151,11 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
 - **SafePageShell**: Error boundary wrapper for all pages
 
 ### Development Workflow:
-11. **ALWAYS START WITH A TEMPLATE** - Never create pages from scratch
-12. **Copy the appropriate template** from packages/frontend-kit/templates/
-13. **Customize with your data** - Change endpoints, columns, fields
-14. **Use existing blocks** - DataTable, StatsCard, PageHeader, etc.
-15. **Apply design tokens** - Use CSS variables from frontend-kit
+1. **ALWAYS START WITH A TEMPLATE** - Never create pages from scratch
+2. **Copy the appropriate template** from packages/frontend-kit/templates/
+3. **Customize with your data** - Change endpoints, columns, fields
+4. **Use existing blocks** - DataTable, StatsCard, PageHeader, etc.
+5. **Apply design tokens** - Use CSS variables from frontend-kit
 
 ### Import Pattern:
 ```typescript
@@ -205,33 +205,33 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 # System Architecture
 
 ## UI/UX Decisions
-The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui` for consistency and accessibility, enhanced by CSS variables and Tailwind CSS. The `@w3suite/frontend-kit` package centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks for a cohesive user experience.
+The UI/UX adheres to a Glassmorphism WindTre Design System, leveraging `shadcn/ui` for consistency and accessibility. The `@w3suite/frontend-kit` package centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks, all styled with CSS variables and Tailwind CSS.
 
 ## Technical Implementations
 - **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: A 3-schema structure (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
-- **Security**: Implements OAuth2/OIDC with MFA, JWTs, and a 3-level RBAC hierarchy.
-- **Multitenancy**: Achieved through RLS, `TenantProvider`, and global unique constraints.
-- **Universal Workflow System**: Features approval hierarchies, RBAC-integrated supervision, event-driven state machines, and audit trails.
-- **Unified Notification System**: Real-time notifications powered by Redis and WebSockets.
+- **Database Architecture**: 3-schema (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
+- **Security**: OAuth2/OIDC with MFA, JWTs, and 3-level RBAC.
+- **Multitenancy**: RLS, `TenantProvider`, and global unique constraints.
+- **Universal Workflow System**: Approval hierarchies, RBAC, event-driven state machines, audit trails.
+- **Unified Notification System**: Real-time notifications.
 - **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
-- **Task Management System**: Flexible task system with optional workflow integration and an RBAC-protected API.
-- **MCP Multi-Provider OAuth System**: Manages unified credentials across third-party services with per-user OAuth isolation.
-- **AI Enforcement Middleware System**: Provides hierarchical API-level blocking of AI features.
-- **AI Workflow Builder with JSON Mode**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode, outputting a ReactFlow DSL.
-- **Intelligent Workflow Routing System**: Offers dual-mode routing (auto/manual) for team and user assignments.
+- **Task Management System**: Flexible tasks with optional workflow integration and RBAC-protected API.
+- **MCP Multi-Provider OAuth System**: Unified credentials across third-party services with per-user OAuth isolation.
+- **AI Enforcement Middleware**: Hierarchical API-level blocking of AI features.
+- **AI Workflow Builder**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode, outputting ReactFlow DSL.
+- **Intelligent Workflow Routing**: Dual-mode routing (auto/manual) for team/user assignments.
 - **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
-- **CRM Module Backend**: Comprehensive backend with person-centric identity graph, omnichannel engagement, pipeline management, GDPR consent, and lead-to-deal workflows, exposing RESTful endpoints with Zod validation, RLS, and structured logging.
-- **CRM Pipeline Visualization System**: Manages pipeline with 3 views (Table, Kanban, Gantt) using TanStack Table and `@dnd-kit`, incorporating workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
-- **CRM Workflow Auto-Trigger System**: Dual-mode workflow execution (automatic/manual) for pipeline workflows.
-- **Integrated Marketing Attribution System**: Full UTM tracking, GTM integration, social media webhooks, AI-powered lead scoring, and Enhanced Conversions for Google Ads/GA4.
-- **VoIP Telephony System (Enterprise WebRTC)**: Features multi-store trunk management with tenant-scoped SIP configuration, user-specific WebRTC extensions, a floating softphone widget, call actions integrated across CRM entities, CDR analytics, and policy-based routing. **CRITICAL SECURITY ISSUE**: SIP credentials are currently stored in plaintext. This requires immediate implementation of field-level AES-256 encryption with tenant-specific keys, encryption/decryption in `voip.ts` routes, and automated testing before production to address this high-severity vulnerability.
+- **CRM Module Backend**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR, lead-to-deal workflows. Exposes RESTful endpoints with Zod validation, RLS, and structured logging.
+- **CRM Pipeline Visualization**: Manages pipeline with Table, Kanban, Gantt views using TanStack Table and `@dnd-kit`, incorporating workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **CRM Workflow Auto-Trigger**: Dual-mode workflow execution (automatic/manual) for pipeline workflows.
+- **Integrated Marketing Attribution**: Full UTM tracking, GTM integration, social media webhooks, AI-powered lead scoring, and Enhanced Conversions for Google Ads/GA4.
+- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunk management with tenant-scoped SIP configuration, user-specific WebRTC extensions, floating softphone widget, call actions integrated across CRM entities, CDR analytics, and policy-based routing. SIP credentials require AES-256 encryption with tenant-specific keys.
 
 # External Dependencies
 
 ## Database Services
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
-- **Redis**: For BullMQ and the Unified Notification System.
+- **Redis**: Used for BullMQ and Unified Notification System.
 
 ## Authentication Services
 - **OAuth2/OIDC Enterprise**: For secure user authentication.

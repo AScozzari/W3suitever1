@@ -22,6 +22,7 @@ import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
+import { SoftphoneWidget } from './crm/SoftphoneWidget';
 import { TaskDetailDialog } from './tasks/TaskDetailDialog';
 
 // Palette colori W3 Suite - Coerente e Professionale
@@ -2349,6 +2350,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           currentModule={currentModule}
         />
       )}
+
+      {/* Softphone Widget - Enterprise VoIP */}
+      {user && <SoftphoneWidget />}
 
       {/* Task Detail Modal */}
       {selectedTask && (

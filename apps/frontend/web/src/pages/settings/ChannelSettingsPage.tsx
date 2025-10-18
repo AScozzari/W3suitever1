@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import Layout from '@/components/Layout';
-import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { PhoneConfigDialog } from '@/components/crm/PhoneConfigDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,19 +11,10 @@ import {
   MessageSquare,
   Send,
   Settings,
-  LayoutDashboard,
-  Megaphone,
-  UserPlus,
-  TrendingUp,
-  Users,
-  CheckSquare,
-  BarChart3,
   Zap,
   Shield,
   CheckCircle2
 } from 'lucide-react';
-import { useTenantNavigation } from '@/hooks/useTenantSafety';
-import { useLocation } from 'wouter';
 
 // Import WhatsApp icon from react-icons
 import { FaWhatsapp, FaTelegram } from 'react-icons/fa';
@@ -127,23 +116,7 @@ const cardVariants = {
 };
 
 export default function ChannelSettingsPage() {
-  const [currentModule, setCurrentModule] = useState('crm');
-  const [location] = useLocation();
-  const { navigate, buildUrl } = useTenantNavigation();
-
   const [isPhoneConfigOpen, setIsPhoneConfigOpen] = useState(false);
-
-  // Navigation tabs for CRM
-  const tabs = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: buildUrl('crm/dashboard') },
-    { icon: Megaphone, label: 'Campaigns', path: buildUrl('crm/campaigns') },
-    { icon: TrendingUp, label: 'Pipeline', path: buildUrl('crm/pipeline') },
-    { icon: UserPlus, label: 'Leads', path: buildUrl('crm/leads') },
-    { icon: Users, label: 'Customers', path: buildUrl('crm/customers') },
-    { icon: CheckSquare, label: 'Activities', path: buildUrl('crm/activities') },
-    { icon: BarChart3, label: 'Analytics', path: buildUrl('crm/analytics') },
-    { icon: Settings, label: 'Channels', path: buildUrl('crm/channels'), active: true }
-  ];
 
   const handleChannelClick = (channelId: string) => {
     if (channelId === 'phone') {
@@ -155,30 +128,7 @@ export default function ChannelSettingsPage() {
   };
 
   return (
-    <Layout 
-      currentModule={currentModule} 
-      onModuleChange={setCurrentModule}
-      tabs={tabs}
-      showModuleSwitcher={true}
-    >
-      <CRMCommandPalette />
-      
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-orange-500/20 backdrop-blur-sm border border-white/10">
-            <Settings className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-1">
-              Channel Settings
-            </h1>
-            <p className="text-gray-400 text-sm">
-              Configure communication channels for your CRM
-            </p>
-          </div>
-        </div>
-      </div>
+    <div>
 
       {/* Channels Grid */}
       <motion.div 
@@ -308,6 +258,6 @@ export default function ChannelSettingsPage() {
         open={isPhoneConfigOpen} 
         onClose={() => setIsPhoneConfigOpen(false)} 
       />
-    </Layout>
+    </div>
   );
 }
