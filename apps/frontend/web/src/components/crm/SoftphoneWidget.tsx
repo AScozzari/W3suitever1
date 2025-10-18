@@ -56,6 +56,47 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // DTMF tone frequencies (row, column)
+  const dtmfFrequencies: Record<string, [number, number]> = {
+    '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+    '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+    '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+    '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+  };
+
+  // Play DTMF tone
+  const playDTMFTone = (digit: string) => {
+    const frequencies = dtmfFrequencies[digit];
+    if (!frequencies) return;
+
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const [freq1, freq2] = frequencies;
+
+    // Create two oscillators for dual-tone
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    osc1.frequency.value = freq1;
+    osc2.frequency.value = freq2;
+    
+    gainNode.gain.value = 0.1; // Volume control
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    osc1.start();
+    osc2.start();
+
+    // Stop after 100ms (classic DTMF duration)
+    setTimeout(() => {
+      osc1.stop();
+      osc2.stop();
+      audioContext.close();
+    }, 100);
+  };
+
   // Mock SIP registration (TODO: Replace with real SIP.js)
   useEffect(() => {
     if (extensionId) {
@@ -103,6 +144,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   };
 
   const addDigit = (digit: string) => {
+    playDTMFTone(digit);
     setPhoneNumber((prev) => prev + digit);
   };
 
