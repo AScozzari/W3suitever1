@@ -18,11 +18,11 @@ export async function executeGmailSend(params: {
   tenantId: string;
   userId: string; // REQUIRED for multi-user OAuth
   config: {
-    to: string;
+    to: string[]; // Array of email addresses (aligns with frontend node definition)
     subject: string;
     body: string;
-    cc?: string;
-    bcc?: string;
+    cc?: string[];
+    bcc?: string[];
     attachments?: Array<{ filename: string; content: string; mimeType: string }>;
   };
 }): Promise<{ messageId: string; threadId: string }> {
@@ -36,11 +36,11 @@ export async function executeGmailSend(params: {
       userId
     });
 
-    // Build email message
+    // Build email message (join arrays into comma-separated strings)
     const emailLines = [
-      `To: ${config.to}`,
-      config.cc ? `Cc: ${config.cc}` : '',
-      config.bcc ? `Bcc: ${config.bcc}` : '',
+      `To: ${config.to.join(', ')}`,
+      config.cc && config.cc.length > 0 ? `Cc: ${config.cc.join(', ')}` : '',
+      config.bcc && config.bcc.length > 0 ? `Bcc: ${config.bcc.join(', ')}` : '',
       `Subject: ${config.subject}`,
       '',
       config.body
@@ -437,8 +437,9 @@ export async function executeCalendarCreateEvent(params: {
   userId: string; // REQUIRED for multi-user OAuth
   config: {
     summary: string;
-    startTime: string; // ISO 8601
-    endTime: string; // ISO 8601
+    startDateTime: string; // ISO 8601 (aligns with frontend node definition)
+    endDateTime: string; // ISO 8601 (aligns with frontend node definition)
+    calendarId?: string; // Default: 'primary' (zero-config magic value)
     description?: string;
     attendees?: string[]; // Email addresses
     location?: string;
@@ -453,7 +454,9 @@ export async function executeCalendarCreateEvent(params: {
       userId
     });
 
-    const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    const calendarId = config.calendarId || 'primary'; // Zero-config: default to primary calendar
+
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -463,8 +466,8 @@ export async function executeCalendarCreateEvent(params: {
         summary: config.summary,
         description: config.description,
         location: config.location,
-        start: { dateTime: config.startTime },
-        end: { dateTime: config.endTime },
+        start: { dateTime: config.startDateTime },
+        end: { dateTime: config.endDateTime },
         attendees: config.attendees?.map(email => ({ email }))
       })
     });
@@ -493,9 +496,10 @@ export async function executeCalendarUpdateEvent(params: {
   userId: string; // REQUIRED for multi-user OAuth
   config: {
     eventId: string;
+    calendarId?: string; // Default: 'primary' (zero-config magic value)
     summary?: string;
-    startTime?: string;
-    endTime?: string;
+    startDateTime?: string; // ISO 8601 (aligns with frontend node definition)
+    endDateTime?: string; // ISO 8601 (aligns with frontend node definition)
     description?: string;
   };
 }): Promise<{ success: boolean }> {
@@ -508,13 +512,15 @@ export async function executeCalendarUpdateEvent(params: {
       userId
     });
 
+    const calendarId = config.calendarId || 'primary'; // Zero-config: default to primary calendar
+
     const updateData: any = {};
     if (config.summary) updateData.summary = config.summary;
     if (config.description) updateData.description = config.description;
-    if (config.startTime) updateData.start = { dateTime: config.startTime };
-    if (config.endTime) updateData.end = { dateTime: config.endTime };
+    if (config.startDateTime) updateData.start = { dateTime: config.startDateTime };
+    if (config.endDateTime) updateData.end = { dateTime: config.endDateTime };
 
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${config.eventId}`, {
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${config.eventId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

@@ -30,7 +30,8 @@ import {
   AlertCircle,
   ExternalLink,
   Trash2,
-  Info
+  Info,
+  Users
 } from 'lucide-react';
 import {
   Tooltip,
@@ -38,6 +39,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // 🎯 Ecosystem Configurations
 const MCP_ECOSYSTEMS = {
@@ -155,10 +165,53 @@ export default function MCPSettingsTab() {
     serviceAccountJson: '' 
   });
 
+  // 🔧 Google-specific state for email detection & assignment
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googleAccountType, setGoogleAccountType] = useState<'consumer' | 'workspace' | null>(null);
+  const [googleAuthMode, setGoogleAuthMode] = useState<'oauth2' | 'service_account'>('oauth2');
+  const [assignToUserId, setAssignToUserId] = useState<string>(currentUser?.id || '');
+
+  // 🔐 RBAC: Check if current user is admin
+  const isAdmin = currentUser?.roles?.some(role => 
+    role === 'admin' || role === 'super_admin' || role === 'tenant_admin'
+  ) || false;
+
+  // 🔄 Fetch Tenant Users (for admin dropdown)
+  const { data: tenantUsers } = useQuery<{ id: string; email: string; name: string }[]>({
+    queryKey: ['/api/users'],
+    enabled: isAdmin, // Only fetch if admin
+  });
+
   // 🔄 Fetch MCP Servers
   const { data: servers, isLoading: serversLoading } = useQuery<MCPServer[]>({
     queryKey: ['/api/mcp/servers'],
   });
+
+  // 🎯 Google Email Detection Helper
+  const detectGoogleAccountType = (email: string): 'consumer' | 'workspace' | null => {
+    if (!email) return null;
+    const domain = email.split('@')[1];
+    if (!domain) return null;
+    
+    // Consumer Gmail
+    if (domain === 'gmail.com' || domain === 'googlemail.com') {
+      return 'consumer';
+    }
+    
+    // Workspace (custom domain)
+    return 'workspace';
+  };
+
+  // 🎯 Handle Google Email Blur Event
+  const handleGoogleEmailBlur = () => {
+    const detected = detectGoogleAccountType(googleEmail);
+    setGoogleAccountType(detected);
+    
+    // If consumer, force OAuth2 (no Service Account option)
+    if (detected === 'consumer') {
+      setGoogleAuthMode('oauth2');
+    }
+  };
 
   // 🔄 Fetch User's OAuth Credentials
   const { data: credentials, isLoading: credentialsLoading } = useQuery<MCPCredential[]>({
@@ -466,8 +519,16 @@ export default function MCPSettingsTab() {
       if (!tenantId || !userId) {
         throw new Error('Tenant or user context missing. Please refresh the page and try again.');
       }
+
+      // 🎯 RBAC: Admin can assign OAuth account to another user
+      let oauthUrl = `/api/mcp/oauth/${provider}/start/${server.id}?tenantId=${tenantId}&userId=${userId}`;
       
-      window.location.href = `/api/mcp/oauth/${provider}/start/${server.id}?tenantId=${tenantId}&userId=${userId}`;
+      // Only append assignTo if admin is assigning to a different user
+      if (isAdmin && assignToUserId && assignToUserId !== userId) {
+        oauthUrl += `&assignTo=${assignToUserId}`;
+      }
+      
+      window.location.href = oauthUrl;
       
     } catch (error) {
       setConnectingProvider(null);
@@ -606,125 +667,207 @@ export default function MCPSettingsTab() {
           ))}
         </TabsList>
 
-        {/* 🔵 GOOGLE WORKSPACE */}
+        {/* 🔵 GOOGLE WORKSPACE - New Implementation with Email Detection & RBAC */}
         <TabsContent value="google">
           <Card className="windtre-glass-panel border-white/20">
             <CardHeader>
-              <CardTitle>Google Workspace OAuth2</CardTitle>
+              <CardTitle>🔵 Google Workspace</CardTitle>
               <CardDescription>
                 Connetti Gmail, Drive, Calendar, Sheets per automazioni workflow
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {renderCredentialStatus('google')}
-              
-              <div className="pt-4 border-t space-y-4">
-                {/* OAuth Configuration Form */}
-                <div className="space-y-3">
-                  {/* Info Tooltip */}
-                  <TooltipProvider>
-                    <div className="flex items-start gap-2 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <p className="text-sm font-semibold text-blue-900 mb-1">🔵 In Google Cloud Console:</p>
-                          <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                            <li>Vai su <strong>APIs & Services → Credentials</strong></li>
-                            <li>Clicca <strong>Create Credentials → OAuth 2.0 Client ID</strong></li>
-                            <li>Seleziona <strong>Web application</strong></li>
-                            <li>Aggiungi questo URL nelle <strong>Authorized redirect URIs</strong>:</li>
-                          </ol>
-                          <code className="text-xs bg-white px-2 py-1 rounded border border-blue-300 block break-all mt-2">
-                            {window.location.origin}/api/mcp/oauth/google/callback
-                          </code>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-blue-900 mb-1">⚙️ In W3 Suite (qui sotto):</p>
-                          <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                            <li>Copia il <strong>Client ID</strong> e <strong>Client Secret</strong> da Google Console</li>
-                            <li>Incollali nei campi qui sotto e clicca <strong>Salva Configurazione OAuth</strong></li>
-                            <li>Dopo il salvataggio, clicca <strong>Autorizza Accesso Google</strong></li>
-                            <li>Acconsenti alle autorizzazioni richieste da Google</li>
-                          </ol>
-                        </div>
+            <CardContent className="space-y-6">
+              {/* Step 1: Email Input with Auto-Detection */}
+              <div className="space-y-3">
+                <Label htmlFor="google-email">Email Google *</Label>
+                <Input 
+                  id="google-email"
+                  type="email"
+                  placeholder="user@company.com o user@gmail.com"
+                  value={googleEmail}
+                  onChange={(e) => setGoogleEmail(e.target.value)}
+                  onBlur={handleGoogleEmailBlur}
+                  data-testid="input-google-email"
+                  className="text-base"
+                />
+                
+                {/* Detection Result */}
+                {googleAccountType === 'consumer' && (
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-900">Gmail Consumer rilevato</AlertTitle>
+                    <AlertDescription className="text-sm text-blue-800">
+                      Procederemo con OAuth2 standard (setup ~5 minuti)
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {googleAccountType === 'workspace' && (
+                  <Alert className="bg-green-50 border-green-200">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertTitle className="text-green-900">Google Workspace rilevato</AlertTitle>
+                    <AlertDescription className="text-sm text-green-800">
+                      Scegli la modalità di autenticazione qui sotto
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Step 2: Admin Assignment (only visible for admins) */}
+              {isAdmin && googleEmail && googleAccountType && (
+                <div className="space-y-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 text-purple-900 font-medium">
+                    <Users className="h-4 w-4" />
+                    <span>Assegna Account (solo Admin)</span>
+                  </div>
+                  <Label htmlFor="assign-to-user">Configura account per utente:</Label>
+                  <Select value={assignToUserId} onValueChange={setAssignToUserId}>
+                    <SelectTrigger id="assign-to-user" data-testid="select-assign-user">
+                      <SelectValue placeholder="Seleziona utente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={currentUser?.id || ''}>
+                        {currentUser?.name || currentUser?.email} (Tu)
+                      </SelectItem>
+                      {tenantUsers?.filter(u => u.id !== currentUser?.id).map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-purple-700">
+                    💡 L'account Google {googleEmail} sarà assegnato all'utente selezionato
+                  </p>
+                </div>
+              )}
+
+              {/* Step 3: Auth Mode Selection (only for Workspace) */}
+              {googleAccountType === 'workspace' && (
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                  <Label className="text-base font-semibold">Modalità di Autenticazione</Label>
+                  <RadioGroup value={googleAuthMode} onValueChange={(v) => setGoogleAuthMode(v as 'oauth2' | 'service_account')}>
+                    {/* OAuth2 Simple Mode */}
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border-2 border-blue-200 bg-blue-50">
+                      <RadioGroupItem value="oauth2" id="mode-oauth2" />
+                      <div className="flex-1">
+                        <Label htmlFor="mode-oauth2" className="text-sm font-semibold text-blue-900 cursor-pointer">
+                          ● Standard (OAuth2) - Consigliato ⭐
+                        </Label>
+                        <ul className="text-xs text-blue-800 space-y-1 mt-2">
+                          <li>✓ Ogni utente autorizza il proprio account</li>
+                          <li>✓ Setup 5 minuti</li>
+                          <li>✓ Sicuro e affidabile</li>
+                        </ul>
                       </div>
                     </div>
-                  </TooltipProvider>
-                  
-                  <form className="space-y-3" onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!googleForm.clientId || !googleForm.clientSecret) {
-                      toast({
-                        title: 'Campi Obbligatori',
-                        description: 'Inserisci Client ID e Client Secret',
-                        variant: 'destructive'
-                      });
-                      return;
-                    }
-                    saveGoogleCredentialsMutation.mutate(googleForm);
-                  }}>
-                    <div>
-                      <Label htmlFor="google-client-id">Client ID *</Label>
-                      <Input 
-                        id="google-client-id" 
-                        type="text" 
-                        placeholder="xxxxx.apps.googleusercontent.com"
-                        value={googleForm.clientId}
-                        onChange={(e) => setGoogleForm({ ...googleForm, clientId: e.target.value })}
-                        data-testid="input-google-client-id"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="google-client-secret">Client Secret *</Label>
-                      <Input 
-                        id="google-client-secret" 
-                        type="password" 
-                        placeholder="••••••••"
-                        value={googleForm.clientSecret}
-                        onChange={(e) => setGoogleForm({ ...googleForm, clientSecret: e.target.value })}
-                        data-testid="input-google-client-secret"
-                        required
-                      />
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={saveGoogleCredentialsMutation.isPending}
-                      data-testid="button-save-google-oauth"
-                    >
-                      <Key className="h-4 w-4 mr-2" />
-                      {saveGoogleCredentialsMutation.isPending ? 'Salvando...' : 'Salva Configurazione OAuth'}
-                    </Button>
-                  </form>
-                </div>
 
-                {/* OAuth Connect Button - Shows only after credentials are saved */}
-                {credentials?.some(c => c.provider === 'google' && c.serverName === 'google-workspace-oauth-config') && (
-                  <div className="pt-4 border-t">
-                    <Button 
-                      onClick={() => handleOAuthInitiate('google')}
-                      className="bg-green-600 hover:bg-green-700 text-white w-full"
-                      disabled={connectingProvider === 'google' || isLoading}
-                      data-testid="button-oauth-google"
-                    >
-                      {connectingProvider === 'google' ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Connessione in corso...
-                        </>
-                      ) : (
-                        <>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Autorizza Accesso Google
-                        </>
-                      )}
-                    </Button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      💡 Sarai reindirizzato alla pagina di autorizzazione Google
-                    </p>
+                    {/* Service Account Advanced Mode */}
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border-2 border-orange-200 bg-orange-50">
+                      <RadioGroupItem value="service_account" id="mode-service-account" />
+                      <div className="flex-1">
+                        <Label htmlFor="mode-service-account" className="text-sm font-semibold text-orange-900 cursor-pointer flex items-center gap-2">
+                          ○ Avanzata (Service Account)
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="h-4 w-4 text-orange-600" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-sm">
+                                <p className="font-semibold">Solo per casi avanzati</p>
+                                <p className="text-xs mt-1">Richiede Super Admin Workspace e domain-wide delegation. Google sconsiglia per Gmail per comportamento inconsistente.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </Label>
+                        <ul className="text-xs text-orange-800 space-y-1 mt-2">
+                          <li>⚠️ Solo se sei Super Admin Workspace</li>
+                          <li>⚠️ Setup complesso (15-30 min)</li>
+                          <li>⚠️ Google lo sconsiglia per Gmail</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
+              {/* Step 4: OAuth Configuration (shown when consumer or workspace with oauth2 selected) */}
+              {googleEmail && googleAccountType && (googleAccountType === 'consumer' || googleAuthMode === 'oauth2') && (
+                <div className="pt-4 border-t space-y-4">
+                  <div className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-blue-800 space-y-1">
+                      <p><strong>Setup OAuth2:</strong></p>
+                      <ol className="list-decimal list-inside space-y-0.5">
+                        <li>Crea OAuth Client in Google Cloud Console</li>
+                        <li>Aggiungi redirect URI: <code className="bg-white px-1 rounded">{window.location.origin}/api/mcp/oauth/google/callback</code></li>
+                        <li>Incolla Client ID e Secret qui sotto</li>
+                        <li>Clicca "Sign in with Google"</li>
+                      </ol>
+                    </div>
                   </div>
-                )}
+
+                  <Button 
+                    onClick={() => handleOAuthInitiate('google')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                    disabled={connectingProvider === 'google' || isLoading || !googleEmail}
+                    data-testid="button-oauth-google"
+                  >
+                    {connectingProvider === 'google' ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Connessione in corso...
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Sign in with Google
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center">
+                    💡 Sarai reindirizzato alla pagina di autorizzazione Google
+                  </p>
+                </div>
+              )}
+
+              {/* Step 5: Service Account Configuration (shown only when workspace + service_account) */}
+              {googleEmail && googleAccountType === 'workspace' && googleAuthMode === 'service_account' && (
+                <div className="pt-4 border-t space-y-4">
+                  <Alert className="bg-orange-50 border-orange-300">
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                    <AlertTitle className="text-orange-900">Modalità Avanzata</AlertTitle>
+                    <AlertDescription className="text-sm text-orange-800 space-y-2">
+                      <p>Requisiti per Service Account:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Super Admin Google Workspace</li>
+                        <li>Domain-wide delegation configurato</li>
+                        <li>Service Account JSON key</li>
+                      </ul>
+                      <p className="text-xs font-semibold">⚠️ Google sconsiglia Service Account per Gmail (comportamento instabile)</p>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="service-account-json">Service Account JSON *</Label>
+                    <textarea
+                      id="service-account-json"
+                      className="w-full min-h-[120px] p-2 border rounded text-xs font-mono"
+                      placeholder='{"type": "service_account", ...}'
+                      data-testid="textarea-service-account"
+                    />
+                    <Button className="bg-orange-600 hover:bg-orange-700 text-white w-full">
+                      <Key className="h-4 w-4 mr-2" />
+                      Salva Service Account
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Existing Credentials Status */}
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-semibold mb-3">Account Configurati</h4>
+                {renderCredentialStatus('google')}
               </div>
             </CardContent>
           </Card>

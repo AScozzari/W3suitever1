@@ -1,11 +1,15 @@
 /**
  * 🔌 MCP NODE DEFINITIONS - Model Context Protocol
  * 
- * 103 nodes totali:
- * - 54 OUTBOUND actions (Google 12, AWS 11, Meta 9, MS 7, Stripe 6, GTM 6, PostgreSQL 9)
- * - 49 INBOUND triggers (Google 5, AWS 5, Meta 6, MS 4, Stripe 4, GTM 15, PostgreSQL 6)
+ * Zero-Config Philosophy: Nodes contain ONLY business logic (to, subject, body).
+ * Backend executors use magic values for technical IDs:
+ * - Gmail: userId="me" (authenticated user)
+ * - Calendar: calendarId="primary" (user's primary calendar)
+ * - Drive: folderId="root" (user's My Drive root)
  * 
- * Organizzati per ecosistema con badge e color coding
+ * Node counts by ecosystem:
+ * - OUTBOUND actions: Google 5, AWS 11, Meta 9, MS 7, Stripe 6, GTM 6, PostgreSQL 9
+ * - INBOUND triggers: Google 5, AWS 5, Meta 6, MS 4, Stripe 4, GTM 15, PostgreSQL 6
  */
 
 import { BaseNodeDefinition } from '../types/workflow-nodes';
@@ -71,6 +75,7 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
       summary: z.string(),
       startDateTime: z.string(),
       endDateTime: z.string(),
+      calendarId: z.string().optional(), // Default: 'primary' (backend magic value)
       attendees: z.array(z.string().email()).optional()
     }),
     defaultConfig: { summary: '', startDateTime: '', endDateTime: '' }

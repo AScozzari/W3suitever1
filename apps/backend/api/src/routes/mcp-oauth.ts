@@ -23,12 +23,21 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
     // 🔧 FIX: Get tenantId from query parameter (browser redirects can't send custom headers)
     // Note: Treat empty strings as missing values
     const tenantId = (req.query.tenantId as string)?.trim() || (req as any).user?.tenantId;
-    const userId = (req.query.userId as string)?.trim() || (req as any).user?.id;
+    const currentUserId = (req.query.userId as string)?.trim() || (req as any).user?.id;
+    const assignToParam = (req.query.assignTo as string)?.trim();
+
+    // 🎯 RBAC Assignment Logic
+    // - If assignTo is not provided, auto-assign to current user
+    // - If assignTo is provided and different from currentUser, check admin permission
+    const assignedUserId = assignToParam || currentUserId;
+    const isAdminAssignment = assignToParam && assignToParam !== currentUserId;
 
     logger.info('🚀 [OAuth] Start endpoint called', {
       serverId,
       tenantId,
-      userId,
+      currentUserId,
+      assignedUserId,
+      isAdminAssignment,
       hasQueryTenant: !!req.query.tenantId,
       hasUserTenant: !!(req as any).user?.tenantId
     });
@@ -55,7 +64,7 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
       `);
     }
 
-    if (!userId || userId === '') {
+    if (!currentUserId || currentUserId === '') {
       return res.status(401).send(`
         <!DOCTYPE html>
         <html>
@@ -76,19 +85,19 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
       `);
     }
 
-    // 🔒 SECURITY: Validate that userId belongs to tenantId to prevent cross-tenant tampering
+    // 🔒 SECURITY: Validate that currentUserId belongs to tenantId to prevent cross-tenant tampering
     const [userValidation] = await db
       .select({ id: users.id })
       .from(users)
       .where(and(
-        eq(users.id, userId),
+        eq(users.id, currentUserId),
         eq(users.tenantId, tenantId)
       ))
       .limit(1);
 
     if (!userValidation) {
-      logger.error('🚨 [OAuth] Security: userId does not belong to tenantId', {
-        userId,
+      logger.error('🚨 [OAuth] Security: currentUserId does not belong to tenantId', {
+        currentUserId,
         tenantId
       });
       return res.status(403).send(`
@@ -109,6 +118,92 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
         </body>
         </html>
       `);
+    }
+
+    // 🔐 RBAC: Check if admin assignment is allowed
+    if (isAdminAssignment) {
+      // Fetch all roles for current user (avoid limit(1) bug with multiple roles)
+      const { userAssignments, roles } = await import('../db/schema/w3suite');
+      const userRoles = await db
+        .select({ roleName: roles.name })
+        .from(userAssignments)
+        .innerJoin(roles, eq(roles.id, userAssignments.roleId))
+        .where(and(
+          eq(userAssignments.userId, currentUserId),
+          eq(userAssignments.tenantId, tenantId)
+        ));
+
+      const roleNames = userRoles.map(r => r.roleName);
+      const isAdmin = roleNames.some(role => ['admin', 'super_admin', 'tenant_admin'].includes(role));
+      
+      if (!isAdmin) {
+        logger.warn('🚨 [OAuth] Unauthorized admin assignment attempt', {
+          currentUserId,
+          assignedUserId,
+          tenantId
+        });
+        return res.status(403).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Permission Denied</title>
+            <style>
+              body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+              .error { background: #fee; border: 1px solid #c33; padding: 20px; border-radius: 8px; }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h1>❌ Permission Denied</h1>
+              <p>Only administrators can assign OAuth accounts to other users.</p>
+              <p>Please remove the <code>assignTo</code> parameter or contact your administrator.</p>
+            </div>
+          </body>
+          </html>
+        `);
+      }
+
+      // Validate that assignedUserId exists and belongs to same tenant
+      const [assignedUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(
+          eq(users.id, assignedUserId),
+          eq(users.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (!assignedUser) {
+        logger.error('🚨 [OAuth] Invalid assignTo userId', {
+          currentUserId,
+          assignedUserId,
+          tenantId
+        });
+        return res.status(400).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Invalid User</title>
+            <style>
+              body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+              .error { background: #fee; border: 1px solid #c33; padding: 20px; border-radius: 8px; }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h1>❌ Invalid Assignment Target</h1>
+              <p>The specified user does not exist or does not belong to this tenant.</p>
+            </div>
+          </body>
+          </html>
+        `);
+      }
+
+      logger.info('✅ [OAuth] Admin assignment validated', {
+        admin: currentUserId,
+        targetUser: assignedUserId,
+        tenantId
+      });
     }
 
     // Verify server exists and is Google Workspace
@@ -142,9 +237,10 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
     const redirectUri = `${protocol}://${host}${callbackPath}`;
 
     // Generate state parameter for CSRF protection
-    // Format: serverId|tenantId|userId (will be verified in callback)
+    // Format: serverId|tenantId|assignedUserId (will be verified in callback)
+    // Note: assignedUserId is the user who will own the credentials (not necessarily currentUser)
     const state = Buffer.from(
-      JSON.stringify({ serverId, tenantId, userId })
+      JSON.stringify({ serverId, tenantId, userId: assignedUserId })
     ).toString('base64');
 
     // Generate auth URL
@@ -158,7 +254,9 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
     logger.info('🚀 [OAuth] Starting Google OAuth flow', {
       serverId,
       tenantId,
-      userId,
+      currentUserId,
+      assignedUserId,
+      isAdminAssignment,
       redirectUri
     });
 
