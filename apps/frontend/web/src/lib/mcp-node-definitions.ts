@@ -210,6 +210,7 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     color: MCP_ECOSYSTEMS.meta.color,
     version: '1.0.0',
     configSchema: z.object({
+      instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       caption: z.string(),
       imageUrl: z.string().url(),
       coverUrl: z.string().url().optional()
@@ -226,6 +227,7 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     color: MCP_ECOSYSTEMS.meta.color,
     version: '1.0.0',
     configSchema: z.object({
+      instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       mediaUrl: z.string().url(),
       mediaType: z.enum(['IMAGE', 'VIDEO']),
       coverUrl: z.string().url().optional()
@@ -242,6 +244,7 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     color: MCP_ECOSYSTEMS.meta.color,
     version: '1.0.0',
     configSchema: z.object({
+      instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       commentId: z.string(),
       message: z.string()
     }),
@@ -257,6 +260,7 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     color: MCP_ECOSYSTEMS.meta.color,
     version: '1.0.0',
     configSchema: z.object({
+      instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       recipientId: z.string(),
       message: z.string()
     }),

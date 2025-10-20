@@ -1,14 +1,22 @@
 import React, { useState, useCallback } from 'react';
 import { Node } from '@xyflow/react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from './InfoTooltip';
-import { AlertCircle, Sparkles, Globe, Settings, X } from 'lucide-react';
+import { AlertCircle, Sparkles, Globe, Settings, X, RefreshCw } from 'lucide-react';
 import { getMCPNodeById } from '@/lib/mcp-node-definitions';
 import { z } from 'zod';
+
+interface ConnectedAccount {
+  id: string;
+  accountName: string;
+  instagramAccountId: string | null;
+  instagramAccountName: string | null;
+}
 
 interface MCPNodeConfigModalProps {
   node: Node;
@@ -184,10 +192,110 @@ function DynamicFormFields({ schema, formData, setFormData, nodeId, ecosystem, j
 
         return (
           <div key={fieldName}>
-            {renderFieldByType(fieldName, fieldSchema, value, updateField, nodeId, jsonErrors, setJsonErrors)}
+            {renderFieldByType(fieldName, fieldSchema, value, updateField, nodeId, ecosystem, jsonErrors, setJsonErrors)}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * 📷 Instagram Account Dropdown Component
+ * Loads connected Instagram accounts dynamically and shows friendly names
+ */
+function InstagramAccountDropdown({ 
+  value, 
+  updateField, 
+  isRequired 
+}: {
+  value: any;
+  updateField: (name: string, value: any) => void;
+  isRequired: boolean;
+}) {
+  // Fetch Meta server to get connected accounts
+  const { data: servers, isLoading: serversLoading } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['/api/mcp/servers'],
+  });
+  
+  const metaServer = servers?.find(s => s.name === 'meta-instagram');
+  
+  const { data: accountsData, isLoading: accountsLoading } = useQuery<{ success: boolean; accounts: ConnectedAccount[] }>({
+    queryKey: ['/api/mcp/credentials/connected-accounts', metaServer?.id],
+    enabled: !!metaServer,
+  });
+
+  // ✅ CRITICAL: Filter to only valid Instagram Business accounts (ignore Facebook-only pages)
+  const accounts = (accountsData?.accounts || []).filter(acc => acc.instagramAccountId);
+  
+  const isLoading = serversLoading || accountsLoading;
+
+  // Auto-select if only 1 account available
+  React.useEffect(() => {
+    if (accounts.length === 1 && !value && accounts[0].instagramAccountId) {
+      updateField('instagramAccountId', accounts[0].instagramAccountId);
+    }
+  }, [accounts, value, updateField]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+        <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+        <span className="text-sm text-gray-600">Caricamento account Instagram...</span>
+      </div>
+    );
+  }
+
+  if (accounts.length === 0) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-yellow-900">Nessun account Instagram connesso</p>
+            <p className="text-xs text-yellow-700 mt-1">
+              Vai nelle Impostazioni MCP → Meta/Instagram e connetti almeno una pagina Facebook con Instagram.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-900 mb-2">
+        Account Instagram {isRequired && <span className="text-red-500">*</span>}
+      </label>
+      <Select 
+        value={value || ''} 
+        onValueChange={(val) => updateField('instagramAccountId', val)}
+      >
+        <SelectTrigger data-testid="select-instagram-account">
+          <SelectValue placeholder="Seleziona account Instagram..." />
+        </SelectTrigger>
+        <SelectContent>
+          {accounts.map((account) => (
+            <SelectItem 
+              key={account.id} 
+              value={account.instagramAccountId!} // Already filtered for valid instagramAccountId
+            >
+              <div className="flex items-center gap-2">
+                <span>{account.accountName}</span>
+                <Badge variant="outline" className="text-xs bg-pink-100 text-pink-800">
+                  Instagram
+                </Badge>
+                {account.instagramAccountName && (
+                  <span className="text-xs text-gray-500">(@{account.instagramAccountName})</span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-xs text-gray-500 mt-1">
+        {accounts.length === 1 ? '✓ Account selezionato automaticamente' : `${accounts.length} account disponibili`}
+      </p>
     </div>
   );
 }
@@ -201,11 +309,17 @@ function renderFieldByType(
   value: any, 
   updateField: (name: string, value: any) => void,
   nodeId: string,
+  ecosystem: string,
   jsonErrors: Record<string, string>,
   setJsonErrors: (errors: Record<string, string>) => void
 ): React.ReactNode {
   const label = formatFieldLabel(fieldName);
   const isRequired = !fieldSchema.isOptional();
+
+  // 🎯 CUSTOM: Instagram Account Dropdown for Meta nodes
+  if (fieldName === 'instagramAccountId' && ecosystem === 'meta') {
+    return <InstagramAccountDropdown value={value} updateField={updateField} isRequired={isRequired} />;
+  }
 
   // ZodString
   if (fieldSchema instanceof z.ZodString) {
@@ -357,7 +471,7 @@ function renderFieldByType(
 
   // ZodOptional / ZodNullable
   if (fieldSchema instanceof z.ZodOptional || fieldSchema instanceof z.ZodNullable) {
-    return renderFieldByType(fieldName, fieldSchema.unwrap(), value, updateField, nodeId, jsonErrors, setJsonErrors);
+    return renderFieldByType(fieldName, fieldSchema.unwrap(), value, updateField, nodeId, ecosystem, jsonErrors, setJsonErrors);
   }
 
   // Fallback: Text Input

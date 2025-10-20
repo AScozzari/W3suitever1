@@ -169,6 +169,7 @@ export default function MCPSettingsTab() {
   const [googleEmail, setGoogleEmail] = useState('');
   const [googleAccountType, setGoogleAccountType] = useState<'consumer' | 'workspace' | null>(null);
   const [googleAuthMode, setGoogleAuthMode] = useState<'oauth2' | 'service_account'>('oauth2');
+  const [metaAuthMode, setMetaAuthMode] = useState<'simple' | 'advanced'>('simple');
   const [assignToUserId, setAssignToUserId] = useState<string>(currentUser?.id || '');
 
   // 🔐 RBAC: Check if current user is admin
@@ -957,90 +958,135 @@ export default function MCPSettingsTab() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* 🔐 RBAC: Admin Account Assignment */}
+              {isAdmin && tenantUsers && tenantUsers.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="meta-assign-to">Assegna a *</Label>
+                  <Select value={assignToUserId} onValueChange={setAssignToUserId}>
+                    <SelectTrigger id="meta-assign-to" data-testid="select-meta-assign-to">
+                      <SelectValue placeholder="Seleziona utente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tenantUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name || user.email} {user.id === currentUser?.id && '(me)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Come admin, puoi configurare account Instagram per altri utenti
+                  </p>
+                </div>
+              )}
+
               {renderCredentialStatus('meta')}
               
               <div className="pt-4 border-t space-y-4">
-                {/* OAuth Configuration Form */}
+                {/* 🎯 Auth Mode Selection */}
                 <div className="space-y-3">
-                  {/* Info Tooltip */}
-                  <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
-                    <div className="flex items-start gap-2">
-                      <Info className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <p className="text-sm font-semibold text-pink-900 mb-1">🔴 In Meta for Developers:</p>
-                          <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
-                            <li>Vai su <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">developers.facebook.com/apps</a></li>
-                            <li>Clicca <strong>Create App → Business</strong></li>
-                            <li>Abilita <strong>Instagram Graph API</strong> nel Dashboard</li>
-                            <li>In <strong>Settings → Basic</strong>, copia <strong>App ID</strong> e <strong>App Secret</strong></li>
-                            <li>In <strong>Use Cases → Customize → Add products</strong>, aggiungi Instagram</li>
-                            <li>Aggiungi questo URL nelle <strong>Valid OAuth Redirect URIs</strong>:</li>
-                          </ol>
-                          <code className="text-xs bg-white px-2 py-1 rounded border border-pink-300 block break-all mt-2">
-                            {window.location.origin}/api/mcp/oauth/meta/callback
-                          </code>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-pink-900 mb-1">⚙️ In W3 Suite (qui sotto):</p>
-                          <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
-                            <li>Copia <strong>App ID</strong> e <strong>App Secret</strong> da Meta Console</li>
-                            <li>Incollali nei campi qui sotto e clicca <strong>Salva Configurazione OAuth</strong></li>
-                            <li>Dopo il salvataggio, clicca <strong>Connetti Pagine Facebook</strong></li>
-                            <li>Seleziona le pagine Facebook da autorizzare</li>
-                          </ol>
+                  <Label>Modalità Autenticazione</Label>
+                  <RadioGroup value={metaAuthMode} onValueChange={(val) => setMetaAuthMode(val as 'simple' | 'advanced')}>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                      <RadioGroupItem value="simple" id="meta-simple" />
+                      <Label htmlFor="meta-simple" className="flex-1 cursor-pointer">
+                        <div className="font-medium text-sm">Semplice (OAuth2 - Consigliato)</div>
+                        <div className="text-xs text-gray-600">Usa credenziali condivise del tenant. Click → Autorizza → Fatto</div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                      <RadioGroupItem value="advanced" id="meta-advanced" />
+                      <Label htmlFor="meta-advanced" className="flex-1 cursor-pointer">
+                        <div className="font-medium text-sm">Avanzata (Meta App Personalizzata)</div>
+                        <div className="text-xs text-gray-600">Usa la tua Meta App per controllo completo e limiti API maggiori</div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* ⚙️ Advanced Mode: Manual App ID/Secret Configuration */}
+                {metaAuthMode === 'advanced' && (
+                  <div className="space-y-3">
+                    {/* Info Tooltip */}
+                    <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                      <div className="flex items-start gap-2">
+                        <Info className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <p className="text-sm font-semibold text-pink-900 mb-1">🔴 In Meta for Developers:</p>
+                            <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
+                              <li>Vai su <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">developers.facebook.com/apps</a></li>
+                              <li>Clicca <strong>Create App → Business</strong></li>
+                              <li>Abilita <strong>Instagram Graph API</strong> nel Dashboard</li>
+                              <li>In <strong>Settings → Basic</strong>, copia <strong>App ID</strong> e <strong>App Secret</strong></li>
+                              <li>In <strong>Use Cases → Customize → Add products</strong>, aggiungi Instagram</li>
+                              <li>Aggiungi questo URL nelle <strong>Valid OAuth Redirect URIs</strong>:</li>
+                            </ol>
+                            <code className="text-xs bg-white px-2 py-1 rounded border border-pink-300 block break-all mt-2">
+                              {window.location.origin}/api/mcp/oauth/meta/callback
+                            </code>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-pink-900 mb-1">⚙️ In W3 Suite (qui sotto):</p>
+                            <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
+                              <li>Copia <strong>App ID</strong> e <strong>App Secret</strong> da Meta Console</li>
+                              <li>Incollali nei campi qui sotto e clicca <strong>Salva Configurazione OAuth</strong></li>
+                              <li>Dopo il salvataggio, clicca <strong>Connetti Pagine Facebook</strong></li>
+                              <li>Seleziona le pagine Facebook da autorizzare</li>
+                            </ol>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    
+                    <form className="space-y-3" onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!metaForm.appId || !metaForm.appSecret) {
+                        toast({
+                          title: 'Campi Obbligatori',
+                          description: 'Inserisci App ID e App Secret',
+                          variant: 'destructive'
+                        });
+                        return;
+                      }
+                      saveMetaCredentialsMutation.mutate(metaForm);
+                    }}>
+                      <div>
+                        <Label htmlFor="meta-app-id">App ID *</Label>
+                        <Input 
+                          id="meta-app-id" 
+                          type="text" 
+                          placeholder="1234567890123456"
+                          value={metaForm.appId}
+                          onChange={(e) => setMetaForm({ ...metaForm, appId: e.target.value })}
+                          data-testid="input-meta-app-id"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="meta-app-secret">App Secret *</Label>
+                        <Input 
+                          id="meta-app-secret" 
+                          type="password" 
+                          placeholder="••••••••"
+                          value={metaForm.appSecret}
+                          onChange={(e) => setMetaForm({ ...metaForm, appSecret: e.target.value })}
+                          data-testid="input-meta-app-secret"
+                          required
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="bg-pink-600 hover:bg-pink-700 text-white"
+                        disabled={saveMetaCredentialsMutation.isPending}
+                        data-testid="button-save-meta-oauth"
+                      >
+                        <Key className="h-4 w-4 mr-2" />
+                        {saveMetaCredentialsMutation.isPending ? 'Salvando...' : 'Salva Configurazione OAuth'}
+                      </Button>
+                    </form>
                   </div>
-                  
-                  <form className="space-y-3" onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!metaForm.appId || !metaForm.appSecret) {
-                      toast({
-                        title: 'Campi Obbligatori',
-                        description: 'Inserisci App ID e App Secret',
-                        variant: 'destructive'
-                      });
-                      return;
-                    }
-                    saveMetaCredentialsMutation.mutate(metaForm);
-                  }}>
-                    <div>
-                      <Label htmlFor="meta-app-id">App ID *</Label>
-                      <Input 
-                        id="meta-app-id" 
-                        type="text" 
-                        placeholder="1234567890123456"
-                        value={metaForm.appId}
-                        onChange={(e) => setMetaForm({ ...metaForm, appId: e.target.value })}
-                        data-testid="input-meta-app-id"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="meta-app-secret">App Secret *</Label>
-                      <Input 
-                        id="meta-app-secret" 
-                        type="password" 
-                        placeholder="••••••••"
-                        value={metaForm.appSecret}
-                        onChange={(e) => setMetaForm({ ...metaForm, appSecret: e.target.value })}
-                        data-testid="input-meta-app-secret"
-                        required
-                      />
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="bg-pink-600 hover:bg-pink-700 text-white"
-                      disabled={saveMetaCredentialsMutation.isPending}
-                      data-testid="button-save-meta-oauth"
-                    >
-                      <Key className="h-4 w-4 mr-2" />
-                      {saveMetaCredentialsMutation.isPending ? 'Salvando...' : 'Salva Configurazione OAuth'}
-                    </Button>
-                  </form>
-                </div>
+                )}
 
               {/* Connected Pages List */}
               {accountsLoading ? (
@@ -1133,8 +1179,9 @@ export default function MCPSettingsTab() {
                 </div>
               )}
 
-              {/* OAuth Connect Button - Shows only after credentials are saved */}
-              {credentials?.some(c => c.provider === 'meta' && c.serverName === 'meta-instagram-oauth-config') && (
+              {/* OAuth Connect Button */}
+              {/* Simple mode: always show | Advanced mode: show only after credentials saved */}
+              {(metaAuthMode === 'simple' || credentials?.some(c => c.provider === 'meta' && c.serverName === 'meta-instagram-oauth-config')) && (
                 <div className="pt-4 border-t">
                   <Button 
                     onClick={() => handleOAuthInitiate('meta')}
