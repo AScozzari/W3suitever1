@@ -216,7 +216,7 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, leveraging `shadcn/u
 - **Unified Notification System**: Real-time notifications.
 - **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
 - **Task Management System**: Flexible tasks with optional workflow integration and RBAC-protected API.
-- **MCP Multi-Provider OAuth System**: Unified credentials across third-party services with per-user OAuth isolation, supporting User and Admin modes for account assignment. Includes email-based account type detection for Google (consumer/workspace) and zero-config workflow nodes. Authentication is centralized and resolved at runtime.
+- **MCP Multi-Provider OAuth System**: Unified credentials across third-party services with per-user OAuth isolation, supporting User and Admin modes for account assignment. Includes email-based account type detection, zero-config workflow nodes, and centralized authentication.
 - **AI Enforcement Middleware**: Hierarchical API-level blocking of AI features.
 - **AI Workflow Builder**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode, outputting ReactFlow DSL.
 - **Intelligent Workflow Routing**: Dual-mode routing (auto/manual) for team/user assignments.
