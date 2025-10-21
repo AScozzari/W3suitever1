@@ -31,7 +31,8 @@ import {
   ExternalLink,
   Trash2,
   Info,
-  Users
+  Users,
+  LinkOff
 } from 'lucide-react';
 import {
   Tooltip,
@@ -228,7 +229,31 @@ export default function MCPSettingsTab() {
 
   const isLoading = serversLoading || credentialsLoading;
 
-  // 🔄 Delete Credential Mutation (FIXED: Correct query key invalidation)
+  // 🔄 Revoke Credential Mutation (soft delete - disconnect)
+  const revokeCredentialMutation = useMutation({
+    mutationFn: async (params: { provider: string; credentialId: string }) => {
+      return apiRequest(`/api/mcp/credentials/${params.provider}/${params.credentialId}/revoke`, {
+        method: 'PATCH'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/my-credentials'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/servers'] });
+      toast({
+        title: 'Account Revocato',
+        description: 'Account disconnesso con successo. Puoi riconnetterlo in futuro.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile revocare la credenziale',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🗑️ Delete Credential Mutation (hard delete - permanent removal)
   const deleteCredentialMutation = useMutation({
     mutationFn: async (params: { provider: string; credentialId: string }) => {
       return apiRequest(`/api/mcp/credentials/${params.provider}/${params.credentialId}`, {
@@ -236,18 +261,20 @@ export default function MCPSettingsTab() {
       });
     },
     onSuccess: () => {
-      // FIXED: Invalidate correct query keys for multi-user OAuth
       queryClient.invalidateQueries({ queryKey: ['/api/mcp/my-credentials'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp/servers'] }); // Server status may change
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp/servers'] });
       toast({
-        title: 'Credential Rimossa',
-        description: 'Credenziale eliminata con successo',
+        title: 'Account Eliminato',
+        description: 'Credenziale eliminata permanentemente dal database',
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const is409 = error?.response?.status === 409;
       toast({
-        title: 'Errore',
-        description: 'Impossibile eliminare la credenziale',
+        title: is409 ? 'Account in Uso' : 'Errore',
+        description: is409 
+          ? 'Impossibile eliminare: alcuni workflow usano questo account. Revocalo prima o modifica i workflow.'
+          : 'Impossibile eliminare la credenziale',
         variant: 'destructive'
       });
     }
@@ -591,18 +618,59 @@ export default function MCPSettingsTab() {
             <StatusIcon className="h-4 w-4" />
             <span className="font-medium text-sm">{status.label}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => deleteCredentialMutation.mutate({ 
-              provider, 
-              credentialId: credential.id 
-            })}
-            data-testid={`button-delete-${provider}`}
-            className="h-10 w-10 p-0"
-          >
-            <Trash2 className="h-6 w-6 text-red-500" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* Revoke Button (soft delete - disconnect) */}
+            {credential.status !== 'revoked' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => revokeCredentialMutation.mutate({ 
+                        provider, 
+                        credentialId: credential.id 
+                      })}
+                      disabled={revokeCredentialMutation.isPending}
+                      data-testid={`button-revoke-${provider}`}
+                      className="h-10 w-10 p-0 hover:bg-orange-50"
+                    >
+                      <LinkOff className="h-6 w-6 text-orange-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Disconnetti account (revoca)</p>
+                    <p className="text-xs text-gray-400">Puoi riconnetterlo in futuro</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Delete Button (hard delete - permanent removal) */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteCredentialMutation.mutate({ 
+                      provider, 
+                      credentialId: credential.id 
+                    })}
+                    disabled={deleteCredentialMutation.isPending}
+                    data-testid={`button-delete-${provider}`}
+                    className="h-10 w-10 p-0 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs font-semibold">Elimina permanentemente</p>
+                  <p className="text-xs text-gray-400">Rimozione completa dal database</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         
         <div className="text-xs space-y-1 pl-6">
