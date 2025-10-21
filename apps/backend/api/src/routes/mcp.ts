@@ -32,6 +32,30 @@ const router = express.Router();
 router.use(tenantMiddleware);
 router.use(rbacMiddleware);
 
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Normalize server name to base provider for frontend routing
+ * Examples:
+ * - "google-workspace-oauth-config" → "google"
+ * - "meta-instagram" → "meta"
+ * - "microsoft-365-oauth-config" → "microsoft"
+ */
+function normalizeProviderFromServerName(serverName: string | null): string {
+  if (!serverName) return 'unknown';
+  
+  const normalized = serverName.toLowerCase();
+  
+  if (normalized.startsWith('google')) return 'google';
+  if (normalized.startsWith('meta')) return 'meta';
+  if (normalized.startsWith('microsoft')) return 'microsoft';
+  if (normalized.startsWith('aws')) return 'aws';
+  if (normalized.startsWith('stripe')) return 'stripe';
+  if (normalized.startsWith('gtm')) return 'gtm';
+  
+  return 'unknown';
+}
+
 // ==================== VALIDATION SCHEMAS ====================
 
 const createMCPServerSchema = insertMCPServerSchema
@@ -243,7 +267,7 @@ router.get('/my-credentials', requirePermission('mcp.read'), async (req: Request
       id: cred.id,
       serverId: cred.serverId,
       serverName: cred.serverName,
-      provider: cred.oauthProvider || cred.credentialType?.split('-')[0], // Extract provider from oauthProvider or credentialType (e.g., 'google-oauth-config' -> 'google')
+      provider: normalizeProviderFromServerName(cred.serverName), // Normalize provider from serverName
       credentialType: cred.credentialType,
       status: cred.revokedAt 
         ? 'revoked' 
