@@ -321,7 +321,7 @@ router.patch('/google/:credentialId/revoke', async (req: Request, res: Response)
 });
 
 /**
- * Delete Google OAuth credentials (hard delete)
+ * Delete Google OAuth credentials (hard delete - permanent removal)
  * DELETE /api/mcp/credentials/google/:credentialId
  */
 router.delete('/google/:credentialId', async (req: Request, res: Response) => {
@@ -337,15 +337,15 @@ router.delete('/google/:credentialId', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify credential belongs to tenant and user
+    // CRITICAL SECURITY: Verify credential belongs to this tenant and user
+    // Note: We check both revoked and non-revoked to allow deletion of revoked credentials
     const [credential] = await db
       .select()
       .from(mcpServerCredentials)
       .where(and(
         eq(mcpServerCredentials.id, credentialId),
         eq(mcpServerCredentials.tenantId, tenantId),
-        eq(mcpServerCredentials.userId, userId),
-        isNull(mcpServerCredentials.revokedAt)
+        eq(mcpServerCredentials.userId, userId)
       ))
       .limit(1);
 
@@ -353,28 +353,30 @@ router.delete('/google/:credentialId', async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         error: 'CREDENTIAL_NOT_FOUND',
-        message: 'Google credential not found or already revoked'
+        message: 'Google credential not found or does not belong to this user'
       });
     }
 
-    // Mark credential as revoked
+    // TODO: Add workflow dependency check
+    // Check if any active workflow templates use this credential
+    // If yes, return 409 Conflict with list of dependent workflows
+    // For now, we allow deletion (user is responsible for fixing broken workflows)
+
+    // Permanent deletion from database
     await db
-      .update(mcpServerCredentials)
-      .set({
-        revokedAt: new Date(),
-        updatedAt: new Date()
-      })
+      .delete(mcpServerCredentials)
       .where(eq(mcpServerCredentials.id, credentialId));
 
-    logger.info('✅ [API] Google credential revoked', {
+    logger.info('🗑️  [API] Google credential permanently deleted', {
       credentialId,
       userId,
-      tenantId
+      tenantId,
+      wasRevoked: !!credential.revokedAt
     });
 
     res.json({
       success: true,
-      message: 'Google credential revoked successfully'
+      message: 'Google credential permanently deleted'
     });
 
   } catch (error) {
