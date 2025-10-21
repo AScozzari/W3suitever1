@@ -32,7 +32,12 @@ import {
   Trash2,
   Info,
   Users,
-  Unlink
+  Unlink,
+  Circle,
+  Clock,
+  Save,
+  Plus,
+  Settings
 } from 'lucide-react';
 import {
   Tooltip,
@@ -172,9 +177,12 @@ export default function MCPSettingsTab() {
   const [googleAuthMode, setGoogleAuthMode] = useState<'oauth2' | 'service_account'>('oauth2');
   const [googleEmailDetecting, setGoogleEmailDetecting] = useState(false);
   const [googleOAuthConfigSaved, setGoogleOAuthConfigSaved] = useState(false);
-  const [metaAuthMode, setMetaAuthMode] = useState<'simple' | 'advanced'>('simple');
   const [selectedMetaAccount, setSelectedMetaAccount] = useState<string>('');
   const [assignToUserId, setAssignToUserId] = useState<string>(currentUser?.id || '');
+  
+  // 🔄 Meta 3-Phase Flow States
+  const [metaPhase1Complete, setMetaPhase1Complete] = useState(false);
+  const [metaPhase2Complete, setMetaPhase2Complete] = useState(false);
 
   // 🔐 RBAC: Check if current user is admin
   const isAdmin = currentUser?.roles?.some(role => 
@@ -245,6 +253,24 @@ export default function MCPSettingsTab() {
       setGoogleOAuthConfigSaved(hasGoogleConfig);
     }
   }, [credentials]);
+
+  // 🔄 Sync Meta 3-Phase states from credentials and connected accounts
+  useEffect(() => {
+    if (credentials) {
+      // FASE 1: Check if Meta App config exists
+      const hasMetaConfig = credentials.some(
+        c => c.provider === 'meta' && c.serverName === 'meta-instagram-oauth-config' && c.status === 'active'
+      );
+      setMetaPhase1Complete(hasMetaConfig);
+    }
+  }, [credentials]);
+
+  useEffect(() => {
+    if (connectedAccounts?.accounts) {
+      // FASE 2: Check if at least one account is connected
+      setMetaPhase2Complete(connectedAccounts.accounts.length > 0);
+    }
+  }, [connectedAccounts]);
 
   // 🔄 Fetch Connected Accounts for Meta/Instagram
   const metaServer = servers?.find(s => s.name === 'meta-instagram');
@@ -1120,182 +1146,86 @@ export default function MCPSettingsTab() {
           </Card>
         </TabsContent>
 
-        {/* 🔴 META/INSTAGRAM */}
+        {/* 🔴 META/INSTAGRAM - 3 PHASE VERTICAL FLOW */}
         <TabsContent value="meta">
-          <Card className="windtre-glass-panel border-white/20">
-            <CardHeader>
-              <CardTitle>Meta/Instagram OAuth2</CardTitle>
-              <CardDescription>
+          <div className="space-y-6">
+            {/* HEADER */}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Meta/Instagram OAuth2</h2>
+              <p className="text-sm text-gray-600 mt-1">
                 Gestisci Instagram Posts, Stories, Comments, Direct Messages
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 🔐 RBAC: Admin Account Assignment */}
-              {isAdmin && tenantUsers && tenantUsers.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="meta-assign-to">Assegna a *</Label>
-                  <Select value={assignToUserId} onValueChange={setAssignToUserId}>
-                    <SelectTrigger id="meta-assign-to" data-testid="select-meta-assign-to">
-                      <SelectValue placeholder="Seleziona utente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tenantUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name || user.email} {user.id === currentUser?.id && '(me)'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500">
-                    Come admin, puoi configurare account Instagram per altri utenti
-                  </p>
-                </div>
-              )}
+              </p>
+            </div>
 
-              {renderCredentialStatus('meta')}
-              
-              <div className="pt-4 border-t space-y-4">
-                {/* 🎯 Auth Mode Selection */}
-                <div className="space-y-3">
-                  <Label>Modalità Autenticazione</Label>
-                  <RadioGroup value={metaAuthMode} onValueChange={(val) => setMetaAuthMode(val as 'simple' | 'advanced')}>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                      <RadioGroupItem value="simple" id="meta-simple" />
-                      <Label htmlFor="meta-simple" className="flex-1 cursor-pointer">
-                        <div className="font-medium text-sm">Semplice (OAuth2 - Consigliato)</div>
-                        <div className="text-xs text-gray-600">Usa credenziali condivise del tenant. Click → Autorizza → Fatto</div>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
-                      <RadioGroupItem value="advanced" id="meta-advanced" />
-                      <Label htmlFor="meta-advanced" className="flex-1 cursor-pointer">
-                        <div className="font-medium text-sm">Avanzata (Meta App Personalizzata)</div>
-                        <div className="text-xs text-gray-600">Usa la tua Meta App per controllo completo e limiti API maggiori</div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
+            {/* ✅ FASE 1: Configurazione App Meta */}
+            <Card className={`windtre-glass-panel ${metaPhase1Complete ? 'border-green-500' : 'border-pink-300'}`}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    {metaPhase1Complete ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-gray-400" />
+                    )}
+                    FASE 1: Configurazione App Meta
+                  </CardTitle>
+                  {metaPhase1Complete && (
+                    <Badge className="bg-green-100 text-green-800">✓ Completata</Badge>
+                  )}
                 </div>
-
-                {/* 🎯 Simple Mode: Consumer OAuth Configuration */}
-                {metaAuthMode === 'simple' && (
-                  <div className="space-y-3">
-                    {/* Simplified Instructions */}
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <div className="flex items-start gap-2">
-                        <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 space-y-2">
-                          <p className="text-sm font-semibold text-blue-900">Setup Rapido OAuth2:</p>
-                          <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                            <li>Vai su <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Meta for Developers</a></li>
-                            <li>Crea una nuova App (tipo Business)</li>
-                            <li>Copia App ID e App Secret da Settings → Basic</li>
-                            <li>Incollali qui sotto e clicca "Salva Configurazione OAuth"</li>
-                            <li>Aggiungi questo URL nelle Valid OAuth Redirect URIs:</li>
-                          </ol>
-                          <code className="text-xs bg-white px-2 py-1 rounded border border-blue-300 block break-all">
-                            {window.location.origin}/api/mcp/oauth/meta/callback
-                          </code>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* App ID & Secret Form */}
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="meta-simple-app-id">App ID *</Label>
-                        <Input 
-                          id="meta-simple-app-id" 
-                          type="text" 
-                          placeholder="1234567890123456"
-                          value={metaForm.appId}
-                          onChange={(e) => setMetaForm({ ...metaForm, appId: e.target.value })}
-                          data-testid="input-meta-simple-app-id"
-                          className={`${metaForm.appId && metaForm.appId.length > 10 ? 'border-green-500' : ''}`}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="meta-simple-app-secret">App Secret *</Label>
-                        <Input 
-                          id="meta-simple-app-secret" 
-                          type="password" 
-                          placeholder="••••••••"
-                          value={metaForm.appSecret}
-                          onChange={(e) => setMetaForm({ ...metaForm, appSecret: e.target.value })}
-                          data-testid="input-meta-simple-app-secret"
-                          className={`${metaForm.appSecret && metaForm.appSecret.length > 20 ? 'border-green-500' : ''}`}
-                        />
-                      </div>
-                      
-                      {/* Save OAuth Config Button */}
-                      <Button
-                        onClick={() => {
-                          if (!metaForm.appId || !metaForm.appSecret) {
-                            toast({
-                              title: 'Campi Obbligatori',
-                              description: 'Inserisci App ID e App Secret',
-                              variant: 'destructive'
-                            });
-                            return;
-                          }
-                          saveMetaCredentialsMutation.mutate(metaForm);
-                        }}
-                        disabled={!metaForm.appId || !metaForm.appSecret || saveMetaCredentialsMutation.isPending}
-                        className="bg-pink-600 hover:bg-pink-700 text-white w-full"
-                        data-testid="button-save-meta-simple-config"
-                      >
-                        {saveMetaCredentialsMutation.isPending ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Salvataggio...
-                          </>
-                        ) : (
-                          <>
-                            <Key className="h-4 w-4 mr-2" />
-                            Salva Configurazione OAuth
-                          </>
-                        )}
-                      </Button>
+                <CardDescription>
+                  Configura App ID e Secret della tua Meta App
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Instructions */}
+                <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-2">
+                      <p className="text-sm font-semibold text-pink-900">Setup Meta Developer App:</p>
+                      <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
+                        <li>Vai su <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">developers.facebook.com/apps</a></li>
+                        <li>Crea App → Business → Abilita Instagram Graph API</li>
+                        <li>In Settings → Basic, copia App ID e App Secret</li>
+                        <li>Aggiungi questo Redirect URI in Valid OAuth Redirect URIs:</li>
+                      </ol>
+                      <code className="text-xs bg-white px-2 py-1 rounded border border-pink-300 block break-all">
+                        {window.location.origin}/api/mcp/oauth/meta/callback
+                      </code>
                     </div>
                   </div>
-                )}
+                </div>
 
-                {/* ⚙️ Advanced Mode: Manual App ID/Secret Configuration */}
-                {metaAuthMode === 'advanced' && (
-                  <div className="space-y-3">
-                    {/* Info Tooltip */}
-                    <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
-                      <div className="flex items-start gap-2">
-                        <Info className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 space-y-3">
-                          <div>
-                            <p className="text-sm font-semibold text-pink-900 mb-1">🔴 In Meta for Developers:</p>
-                            <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
-                              <li>Vai su <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">developers.facebook.com/apps</a></li>
-                              <li>Clicca <strong>Create App → Business</strong></li>
-                              <li>Abilita <strong>Instagram Graph API</strong> nel Dashboard</li>
-                              <li>In <strong>Settings → Basic</strong>, copia <strong>App ID</strong> e <strong>App Secret</strong></li>
-                              <li>In <strong>Use Cases → Customize → Add products</strong>, aggiungi Instagram</li>
-                              <li>Aggiungi questo URL nelle <strong>Valid OAuth Redirect URIs</strong>:</li>
-                            </ol>
-                            <code className="text-xs bg-white px-2 py-1 rounded border border-pink-300 block break-all mt-2">
-                              {window.location.origin}/api/mcp/oauth/meta/callback
-                            </code>
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-pink-900 mb-1">⚙️ In W3 Suite (qui sotto):</p>
-                            <ol className="text-xs text-pink-800 space-y-1 list-decimal list-inside">
-                              <li>Copia <strong>App ID</strong> e <strong>App Secret</strong> da Meta Console</li>
-                              <li>Incollali nei campi qui sotto e clicca <strong>Salva Configurazione OAuth</strong></li>
-                              <li>Dopo il salvataggio, clicca <strong>Connetti Pagine Facebook</strong></li>
-                              <li>Seleziona le pagine Facebook da autorizzare</li>
-                            </ol>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <form className="space-y-3" onSubmit={(e) => {
-                      e.preventDefault();
+                {/* Form */}
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-app-id">App ID *</Label>
+                    <Input 
+                      id="meta-app-id" 
+                      type="text" 
+                      placeholder="1234567890123456"
+                      value={metaForm.appId}
+                      onChange={(e) => setMetaForm({ ...metaForm, appId: e.target.value })}
+                      data-testid="input-meta-app-id"
+                      className={`${metaForm.appId && metaForm.appId.length > 10 ? 'border-green-500' : ''}`}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-app-secret">App Secret *</Label>
+                    <Input 
+                      id="meta-app-secret" 
+                      type="password" 
+                      placeholder="••••••••"
+                      value={metaForm.appSecret}
+                      onChange={(e) => setMetaForm({ ...metaForm, appSecret: e.target.value })}
+                      data-testid="input-meta-app-secret"
+                      className={`${metaForm.appSecret && metaForm.appSecret.length > 20 ? 'border-green-500' : ''}`}
+                    />
+                  </div>
+                  
+                  <Button
+                    onClick={() => {
                       if (!metaForm.appId || !metaForm.appSecret) {
                         toast({
                           title: 'Campi Obbligatori',
@@ -1305,199 +1235,233 @@ export default function MCPSettingsTab() {
                         return;
                       }
                       saveMetaCredentialsMutation.mutate(metaForm);
-                    }}>
-                      <div>
-                        <Label htmlFor="meta-app-id">App ID *</Label>
-                        <Input 
-                          id="meta-app-id" 
-                          type="text" 
-                          placeholder="1234567890123456"
-                          value={metaForm.appId}
-                          onChange={(e) => setMetaForm({ ...metaForm, appId: e.target.value })}
-                          data-testid="input-meta-app-id"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="meta-app-secret">App Secret *</Label>
-                        <Input 
-                          id="meta-app-secret" 
-                          type="password" 
-                          placeholder="••••••••"
-                          value={metaForm.appSecret}
-                          onChange={(e) => setMetaForm({ ...metaForm, appSecret: e.target.value })}
-                          data-testid="input-meta-app-secret"
-                          required
-                        />
-                      </div>
-                      <Button 
-                        type="submit" 
-                        className="bg-pink-600 hover:bg-pink-700 text-white"
-                        disabled={saveMetaCredentialsMutation.isPending}
-                        data-testid="button-save-meta-oauth"
-                      >
-                        <Key className="h-4 w-4 mr-2" />
-                        {saveMetaCredentialsMutation.isPending ? 'Salvando...' : 'Salva Configurazione OAuth'}
-                      </Button>
-                    </form>
-                  </div>
-                )}
-
-              {/* Connected Pages List */}
-              {accountsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-                  <span className="ml-2 text-sm text-gray-500">Caricamento pagine...</span>
-                </div>
-              ) : connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-gray-700">Pagine Connesse ({connectedAccounts.accounts.length})</h4>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {connectedAccounts.accounts.map((account) => (
-                      <div 
-                        key={account.id} 
-                        className="flex items-start justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-pink-300 transition-colors"
-                        data-testid={`connected-account-${account.id}`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-blue-100 text-blue-800 text-xs">
-                              Facebook Page
-                            </Badge>
-                            {account.instagramAccountId && (
-                              <Badge className="bg-pink-100 text-pink-800 text-xs">
-                                + Instagram
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <p className="font-medium text-sm text-gray-900 truncate">
-                            {account.accountName}
-                          </p>
-                          
-                          {account.instagramAccountName && (
-                            <p className="text-xs text-gray-600 mt-1">
-                              📷 Instagram: <span className="font-medium">{account.instagramAccountName}</span>
-                            </p>
-                          )}
-                          
-                          {account.lastSyncedAt && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              🔄 Ultima sincronizzazione: {new Date(account.lastSyncedAt).toLocaleDateString('it-IT', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-2 ml-3">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => syncAccountMutation.mutate(account.id)}
-                            disabled={syncAccountMutation.isPending}
-                            className="text-gray-600 hover:text-pink-600"
-                            data-testid={`button-sync-${account.id}`}
-                          >
-                            <RefreshCw className={`h-4 w-4 ${syncAccountMutation.isPending ? 'animate-spin' : ''}`} />
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              if (confirm(`Rimuovere la pagina "${account.accountName}"?`)) {
-                                removeAccountMutation.mutate(account.id);
-                              }
-                            }}
-                            disabled={removeAccountMutation.isPending}
-                            className="text-gray-600 hover:text-red-600"
-                            data-testid={`button-remove-${account.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6 text-sm text-gray-500">
-                  Nessuna pagina Facebook connessa
-                </div>
-              )}
-
-              {/* Account Selection Dropdown - Only show if accounts exist */}
-              {connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 && (
-                <div className="pt-4 border-t space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="meta-account-select">Seleziona Account per Workflow *</Label>
-                    <Select value={selectedMetaAccount} onValueChange={setSelectedMetaAccount}>
-                      <SelectTrigger id="meta-account-select" data-testid="select-meta-account">
-                        <SelectValue placeholder="Seleziona un account Facebook/Instagram" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {connectedAccounts.accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.accountName}
-                            {account.instagramAccountName && ` • IG: ${account.instagramAccountName}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-pink-700">
-                      💡 Questo account sarà usato nei nodi workflow Meta/Instagram
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* OAuth Connect Button */}
-              {/* Simple mode: always show | Advanced mode: show only after credentials saved */}
-              {(metaAuthMode === 'simple' || credentials?.some(c => c.provider === 'meta' && c.serverName === 'meta-instagram-oauth-config')) && (
-                <div className="pt-4 border-t space-y-3">
-                  {connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 && (
-                    <Alert className="bg-blue-50 border-blue-200">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-xs text-blue-800">
-                        <strong>Hai già {connectedAccounts.accounts.length} pagina/e connessa/e.</strong> Seleziona un account dal menu sopra o connetti altre pagine cliccando il bottone qui sotto.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button 
-                    onClick={() => handleOAuthInitiate('meta')}
-                    className="bg-green-600 hover:bg-green-700 text-white w-full"
-                    disabled={connectingProvider === 'meta' || isLoading}
-                    data-testid="button-oauth-meta"
+                    }}
+                    disabled={!metaForm.appId || !metaForm.appSecret || saveMetaCredentialsMutation.isPending}
+                    className="bg-pink-600 hover:bg-pink-700 text-white w-full"
+                    data-testid="button-save-meta-config"
                   >
-                    {connectingProvider === 'meta' ? (
+                    {saveMetaCredentialsMutation.isPending ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Connessione in corso...
+                        Salvando...
                       </>
                     ) : (
                       <>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Connetti Pagine Facebook
+                        <Save className="h-4 w-4 mr-2" />
+                        Salva Configurazione App
                       </>
                     )}
                   </Button>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    💡 Puoi connettere più pagine Facebook con Instagram Business
-                  </p>
                 </div>
-              )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* ⏳ FASE 2: Account Meta Connessi */}
+            <Card className={`windtre-glass-panel ${!metaPhase1Complete ? 'opacity-50' : metaPhase2Complete ? 'border-green-500' : 'border-orange-300'}`}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    {!metaPhase1Complete ? (
+                      <Circle className="h-5 w-5 text-gray-400" />
+                    ) : metaPhase2Complete ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-orange-500" />
+                    )}
+                    FASE 2: Account Meta Connessi
+                  </CardTitle>
+                  {metaPhase2Complete && (
+                    <Badge className="bg-green-100 text-green-800">✓ {connectedAccounts?.accounts?.length || 0} account</Badge>
+                  )}
+                  {!metaPhase1Complete && (
+                    <Badge className="bg-gray-100 text-gray-600">Bloccata</Badge>
+                  )}
+                </div>
+                <CardDescription>
+                  Connetti uno o più account Facebook/Instagram
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!metaPhase1Complete ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Completa prima la FASE 1 per sbloccare questa sezione
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    {/* Connected Accounts List */}
+                    {accountsLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                        <span className="ml-2 text-sm text-gray-500">Caricamento account...</span>
+                      </div>
+                    ) : connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-gray-700">Account Connessi ({connectedAccounts.accounts.length})</h4>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {connectedAccounts.accounts.map((account) => (
+                            <div 
+                              key={account.id} 
+                              className="flex items-start justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-pink-300 transition-colors"
+                              data-testid={`connected-account-${account.id}`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                    Facebook Page
+                                  </Badge>
+                                  {account.instagramAccountId && (
+                                    <Badge className="bg-pink-100 text-pink-800 text-xs">
+                                      + Instagram
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                <p className="font-medium text-sm text-gray-900 truncate">
+                                  {account.accountName}
+                                </p>
+                                
+                                {account.instagramAccountName && (
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    📷 Instagram: <span className="font-medium">{account.instagramAccountName}</span>
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center gap-2 ml-3">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => syncAccountMutation.mutate(account.id)}
+                                  disabled={syncAccountMutation.isPending}
+                                  className="text-gray-600 hover:text-pink-600"
+                                  data-testid={`button-sync-${account.id}`}
+                                >
+                                  <RefreshCw className={`h-4 w-4 ${syncAccountMutation.isPending ? 'animate-spin' : ''}`} />
+                                </Button>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm(`Rimuovere "${account.accountName}"?`)) {
+                                      removeAccountMutation.mutate(account.id);
+                                    }
+                                  }}
+                                  disabled={removeAccountMutation.isPending}
+                                  className="text-gray-600 hover:text-red-600"
+                                  data-testid={`button-remove-${account.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-sm text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                        Nessun account connesso. Clicca il bottone qui sotto per iniziare.
+                      </div>
+                    )}
+
+                    {/* Connect New Account Button */}
+                    <Button 
+                      onClick={() => handleOAuthInitiate('meta')}
+                      className="bg-green-600 hover:bg-green-700 text-white w-full"
+                      disabled={connectingProvider === 'meta' || isLoading}
+                      data-testid="button-oauth-meta"
+                    >
+                      {connectingProvider === 'meta' ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Connessione in corso...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Connetti Nuovo Account Meta
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 text-center">
+                      💡 Puoi connettere più account Facebook/Instagram
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ⏳ FASE 3: Selezione Pagine per Workflow */}
+            <Card className={`windtre-glass-panel ${!metaPhase2Complete ? 'opacity-50' : 'border-blue-300'}`}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    {!metaPhase2Complete ? (
+                      <Circle className="h-5 w-5 text-gray-400" />
+                    ) : selectedMetaAccount ? (
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                    ) : (
+                      <Settings className="h-5 w-5 text-blue-500" />
+                    )}
+                    FASE 3: Selezione Pagine per Workflow
+                  </CardTitle>
+                  {!metaPhase2Complete && (
+                    <Badge className="bg-gray-100 text-gray-600">Bloccata</Badge>
+                  )}
+                </div>
+                <CardDescription>
+                  Scegli quale account usare nei nodi workflow
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!metaPhase2Complete ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Connetti almeno un account nella FASE 2 per continuare
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="meta-account-select">Seleziona Account *</Label>
+                      <Select value={selectedMetaAccount} onValueChange={setSelectedMetaAccount}>
+                        <SelectTrigger id="meta-account-select" data-testid="select-meta-account">
+                          <SelectValue placeholder="Scegli un account..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {connectedAccounts?.accounts?.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.accountName}
+                              {account.instagramAccountName && ` • IG: ${account.instagramAccountName}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-blue-700">
+                        🎯 I nodi workflow Meta/Instagram useranno questo account
+                      </p>
+                    </div>
+
+                    {selectedMetaAccount && (
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-xs text-green-800">
+                          Account selezionato! Ora puoi usare i nodi Meta/Instagram nei workflow.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* 🟣 MICROSOFT 365 */}
