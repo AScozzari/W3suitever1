@@ -3,7 +3,7 @@ import { AWSCredentialsService } from '../services/aws-credentials-service';
 import { encryptMCPCredentials, decryptMCPCredentials } from '../services/mcp-credential-encryption';
 import { db } from '../core/db';
 import { mcpServers, mcpServerCredentials } from '../db/schema/w3suite';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { logger } from '../core/logger';
 import { z } from 'zod';
 import { GoogleOAuthService } from '../services/google-oauth-service';
@@ -12,11 +12,12 @@ const router = Router();
 
 /**
  * Get all MCP credentials for tenant
- * GET /api/mcp/credentials
+ * GET /api/mcp/credentials?status=active|revoked|all
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
+    const statusFilter = (req.query.status as string) || 'active'; // Default to active only
 
     if (!tenantId) {
       return res.status(400).json({
@@ -27,21 +28,38 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
+    // Validate status filter
+    if (!['active', 'revoked', 'all'].includes(statusFilter)) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_STATUS_FILTER',
+        message: 'Status filter must be one of: active, revoked, all'
+      });
+    }
+
+    // Build where conditions based on status filter
+    const whereConditions = [eq(mcpServerCredentials.tenantId, tenantId)];
+    
+    if (statusFilter === 'active') {
+      whereConditions.push(isNull(mcpServerCredentials.revokedAt));
+    } else if (statusFilter === 'revoked') {
+      whereConditions.push(sql`${mcpServerCredentials.revokedAt} IS NOT NULL`);
+    }
+    // If 'all', don't add any revoked filter
+
     // Get all MCP servers for this tenant with their credentials status
     const credentials = await db
       .select({
         id: mcpServerCredentials.id,
         serverId: mcpServerCredentials.serverId,
         credentialType: mcpServerCredentials.credentialType,
-        status: mcpServerCredentials.revokedAt ? 'expired' as const : 'active' as const,
+        status: mcpServerCredentials.revokedAt ? 'revoked' as const : 'active' as const,
         createdAt: mcpServerCredentials.createdAt,
-        expiresAt: mcpServerCredentials.expiresAt
+        expiresAt: mcpServerCredentials.expiresAt,
+        revokedAt: mcpServerCredentials.revokedAt
       })
       .from(mcpServerCredentials)
-      .where(and(
-        eq(mcpServerCredentials.tenantId, tenantId),
-        isNull(mcpServerCredentials.revokedAt) // Only non-revoked credentials
-      ));
+      .where(and(...whereConditions));
 
     // Transform to match frontend expected format
     const formattedCredentials = credentials.map(cred => ({
@@ -49,7 +67,8 @@ router.get('/', async (req: Request, res: Response) => {
       provider: cred.credentialType?.split('-')[0] || 'unknown',
       status: cred.status,
       createdAt: cred.createdAt.toISOString(),
-      expiresAt: cred.expiresAt?.toISOString()
+      expiresAt: cred.expiresAt?.toISOString(),
+      revokedAt: cred.revokedAt?.toISOString()
     }));
 
     res.json(formattedCredentials);
