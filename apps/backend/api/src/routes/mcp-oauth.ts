@@ -1609,4 +1609,96 @@ router.get('/test-gmail-send', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * 🧪 TEST ENDPOINT: Test Gmail Send Executor
+ * POST /api/mcp/oauth/test-gmail-executor
+ * 
+ * Tests the gmail-send-executor with template variables
+ * Body: { to, subject, body, inputData }
+ */
+router.post('/test-gmail-executor', async (req: Request, res: Response) => {
+  try {
+    logger.info('🧪 [Gmail Executor Test] Starting test...', {
+      body: req.body
+    });
+
+    const { to, subject, body, inputData } = req.body;
+
+    // Import executor registry
+    const { actionExecutorsRegistry } = await import('../services/action-executors-registry');
+
+    // Get gmail-send-executor
+    const executor = actionExecutorsRegistry.getExecutor('gmail-send-executor');
+    
+    if (!executor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Gmail Send Executor not found in registry'
+      });
+    }
+
+    // Prepare step configuration (simulating workflow node)
+    const step = {
+      nodeId: 'test-gmail-node',
+      executorId: 'gmail-send-executor',
+      config: {
+        to: to || '{{lead.email}}',
+        subject: subject || 'Test from W3Suite',
+        body: body || 'Hello {{lead.firstName}}, this is a test!'
+      }
+    };
+
+    // Prepare execution context
+    const context = {
+      tenantId: req.tenantId || '00000000-0000-0000-0000-000000000001',
+      requesterId: (req as any).user?.id || 'admin-user',
+      instanceId: 'test-instance',
+      templateId: 'test-template'
+    };
+
+    // Prepare input data (for template variable resolution)
+    const testInputData = inputData || {
+      lead: {
+        email: 'm.tavaroli@easydigitalgroup.it',
+        firstName: 'Mario',
+        lastName: 'Tavaroli',
+        company: 'Easy Digital Group'
+      }
+    };
+
+    logger.info('📧 [Gmail Executor Test] Executing with:', {
+      step,
+      inputData: testInputData,
+      context
+    });
+
+    // Execute the executor
+    const result = await executor.execute(step, testInputData, context);
+
+    logger.info('✅ [Gmail Executor Test] Execution result:', result);
+
+    res.json({
+      success: true,
+      message: 'Gmail executor test completed',
+      executorResult: result,
+      testConfig: {
+        step,
+        inputData: testInputData,
+        context
+      }
+    });
+
+  } catch (error) {
+    logger.error('❌ [Gmail Executor Test] Failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Gmail executor test failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
