@@ -207,6 +207,76 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
 });
 
 /**
+ * Delete Google OAuth credentials
+ * DELETE /api/mcp/credentials/google/:credentialId
+ */
+router.delete('/google/:credentialId', async (req: Request, res: Response) => {
+  try {
+    const { credentialId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing authentication headers'
+      });
+    }
+
+    // Verify credential belongs to tenant and user
+    const [credential] = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(and(
+        eq(mcpServerCredentials.id, credentialId),
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.userId, userId),
+        isNull(mcpServerCredentials.revokedAt)
+      ))
+      .limit(1);
+
+    if (!credential) {
+      return res.status(404).json({
+        success: false,
+        error: 'CREDENTIAL_NOT_FOUND',
+        message: 'Google credential not found or already revoked'
+      });
+    }
+
+    // Mark credential as revoked
+    await db
+      .update(mcpServerCredentials)
+      .set({
+        revokedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(mcpServerCredentials.id, credentialId));
+
+    logger.info('✅ [API] Google credential revoked', {
+      credentialId,
+      userId,
+      tenantId
+    });
+
+    res.json({
+      success: true,
+      message: 'Google credential revoked successfully'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Delete Google credential failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete credential',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
  * Store Meta OAuth Configuration (App ID and Secret)
  * POST /api/mcp/credentials/meta/oauth-config
  */
