@@ -677,7 +677,9 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   'parallel-fork': 'parallel-fork-executor',
   'join-sync': 'join-sync-executor',
   // Integration nodes
-  'mcp-connector': 'mcp-connector-executor'
+  'mcp-connector': 'mcp-connector-executor',
+  // MCP nodes with dedicated executors
+  'mcp-google-gmail-send': 'gmail-send-executor'
 } as const;
 
 export type NodeId = keyof typeof NODE_TO_EXECUTOR_MAPPING;
