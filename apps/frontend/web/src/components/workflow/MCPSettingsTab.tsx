@@ -673,24 +673,92 @@ export default function MCPSettingsTab() {
       );
     }
 
+    // 🆕 CRITICAL FIX: Check if this is OAuth config (api_key) vs user account (oauth2_user)
+    const isOAuthConfig = credential.credentialType === 'api_key';
+    const isUserAccount = credential.credentialType === 'oauth2_user';
+
+    // 🔑 For OAuth Config (Client ID/Secret saved) - Show "Connect Account" button
+    if (isOAuthConfig) {
+      return (
+        <div className="p-3 rounded-lg border border-blue-200 bg-blue-50 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-sm text-blue-900">OAuth Configurato</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteCredentialMutation.mutate({ 
+                        provider, 
+                        credentialId: credential.id 
+                      })}
+                      disabled={deleteCredentialMutation.isPending}
+                      data-testid={`button-delete-${provider}`}
+                      className="h-10 w-10 p-0 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-6 w-6 text-red-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs font-semibold">Elimina configurazione OAuth</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+          
+          <div className="text-xs space-y-1 text-blue-800">
+            <p>✅ Client ID e Secret salvati</p>
+            <p className="text-blue-600">⚠️ Nessun account Google connesso</p>
+          </div>
+
+          {/* 🚀 CONNECT ACCOUNT BUTTON */}
+          <Button 
+            onClick={() => handleOAuthInitiate(provider as any)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={connectingProvider === provider}
+            data-testid={`button-oauth-connect-${provider}`}
+          >
+            {connectingProvider === provider ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Connessione in corso...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Sign in with {provider.charAt(0).toUpperCase() + provider.slice(1)}
+              </>
+            )}
+          </Button>
+        </div>
+      );
+    }
+
+    // 👤 For User Account (oauth2_user) - Show account details
     const statusConfig = {
       active: {
         color: 'text-green-600 bg-green-50 border-green-200',
         badgeColor: 'bg-green-500',
         icon: CheckCircle,
-        label: 'Attiva'
+        label: 'Account Connesso'
       },
       expired: {
         color: 'text-red-600 bg-red-50 border-red-200',
         badgeColor: 'bg-red-500',
         icon: XCircle,
-        label: 'Scaduta'
+        label: 'Scaduto'
       },
       revoked: {
         color: 'text-gray-600 bg-gray-50 border-gray-300',
         badgeColor: 'bg-gray-500',
         icon: AlertCircle,
-        label: 'Revocata'
+        label: 'Revocato'
       }
     };
 
@@ -761,6 +829,13 @@ export default function MCPSettingsTab() {
         </div>
         
         <div className="text-xs space-y-1 pl-6">
+          {credential.accountEmail && (
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">Email:</span>
+              <span className="font-semibold text-gray-900">{credential.accountEmail}</span>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2">
             <span className="text-gray-600">Connesso:</span>
             <span className="font-mono text-gray-800">
