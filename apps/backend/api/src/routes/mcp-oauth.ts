@@ -359,7 +359,8 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     }
 
     // Build callback URL (same as start flow)
-    const protocol = req.protocol;
+    // 🔒 CRITICAL: Force HTTPS - Replit always serves via HTTPS to users
+    const protocol = 'https';
     const host = req.get('host');
     const callbackPath = '/api/mcp/oauth/google/callback';
     const redirectUri = `${protocol}://${host}${callbackPath}`;
@@ -872,8 +873,8 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
     }
 
     // Build callback URL (same as start flow)
-    // 🔒 CRITICAL: Always use HTTPS for OAuth redirect URIs
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+    // 🔒 CRITICAL: Force HTTPS - Replit always serves via HTTPS to users
+    const protocol = 'https';
     const host = req.get('host');
     const callbackPath = '/api/mcp/oauth/meta/callback';
     const redirectUri = `${protocol}://${host}${callbackPath}`;
@@ -1294,8 +1295,8 @@ router.get('/microsoft/callback', async (req: Request, res: Response) => {
     }
 
     // Build callback URL (same as start flow)
-    // 🔒 CRITICAL: Always use HTTPS for OAuth redirect URIs
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+    // 🔒 CRITICAL: Force HTTPS - Replit always serves via HTTPS to users
+    const protocol = 'https';
     const host = req.get('host');
     const callbackPath = '/api/mcp/oauth/microsoft/callback';
     const redirectUri = `${protocol}://${host}${callbackPath}`;
