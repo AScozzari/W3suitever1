@@ -187,6 +187,17 @@ export class GoogleOAuthService {
         tenantId      // Second: tenant ID for key derivation
       );
 
+      // DEBUG: Log encryption payload structure
+      logger.info('🔍 [Google OAuth] Encryption payload ready', {
+        serverId,
+        hasEncrypted: !!encryptionPayload.encrypted,
+        hasIV: !!encryptionPayload.iv,
+        hasAuthTag: !!encryptionPayload.authTag,
+        hasKeyId: !!encryptionPayload.keyId,
+        payloadKeys: Object.keys(encryptionPayload),
+        payloadType: typeof encryptionPayload
+      });
+
       // Check if credentials already exist for this user/server/provider
       const existingCreds = await db
         .select()
