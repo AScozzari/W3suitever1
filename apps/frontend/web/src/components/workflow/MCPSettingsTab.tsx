@@ -783,7 +783,7 @@ export default function MCPSettingsTab() {
           </div>
           <div className="flex items-center gap-1">
             {/* Revoke Button (soft delete - disconnect) */}
-            {credential.status !== 'revoked' && (
+            {credential.status !== 'revoked' && credential.status !== 'expired' && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -804,6 +804,35 @@ export default function MCPSettingsTab() {
                   <TooltipContent>
                     <p className="text-xs">Disconnetti account (revoca)</p>
                     <p className="text-xs text-gray-400">Puoi riconnetterlo in futuro</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* 🔄 Reconnect Button - For expired/revoked accounts */}
+            {(credential.status === 'expired' || credential.status === 'revoked') && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOAuthInitiate(provider as any)}
+                      disabled={connectingProvider === provider}
+                      data-testid={`button-reconnect-${provider}`}
+                      className="h-10 px-3 hover:bg-blue-50 border border-blue-200"
+                    >
+                      {connectingProvider === provider ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2 text-blue-600" />
+                      )}
+                      <span className="text-blue-600 font-semibold">Riconnetti</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs font-semibold">Riconnetti account OAuth</p>
+                    <p className="text-xs text-gray-400">Avvia nuova autorizzazione</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
