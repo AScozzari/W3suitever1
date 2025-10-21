@@ -48,24 +48,27 @@ router.get('/', async (req: Request, res: Response) => {
     // If 'all', don't add any revoked filter
 
     // Get all MCP servers for this tenant with their credentials status
+    // Join with mcpServers to get the correct provider name
     const credentials = await db
       .select({
         id: mcpServerCredentials.id,
         serverId: mcpServerCredentials.serverId,
+        serverName: mcpServers.name,
         credentialType: mcpServerCredentials.credentialType,
-        status: mcpServerCredentials.revokedAt ? 'revoked' as const : 'active' as const,
         createdAt: mcpServerCredentials.createdAt,
         expiresAt: mcpServerCredentials.expiresAt,
         revokedAt: mcpServerCredentials.revokedAt
       })
       .from(mcpServerCredentials)
+      .innerJoin(mcpServers, eq(mcpServerCredentials.serverId, mcpServers.id))
       .where(and(...whereConditions));
 
     // Transform to match frontend expected format
+    // Derive status AFTER fetch (not in SQL query to avoid truthy evaluation bug)
     const formattedCredentials = credentials.map(cred => ({
       id: cred.id,
-      provider: cred.credentialType?.split('-')[0] || 'unknown',
-      status: cred.status,
+      provider: cred.serverName?.toLowerCase() || 'unknown', // Use server name as provider
+      status: cred.revokedAt ? ('revoked' as const) : ('active' as const), // Derive status here
       createdAt: cred.createdAt.toISOString(),
       expiresAt: cred.expiresAt?.toISOString(),
       revokedAt: cred.revokedAt?.toISOString()
