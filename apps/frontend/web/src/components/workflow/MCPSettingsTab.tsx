@@ -32,7 +32,7 @@ import {
   Trash2,
   Info,
   Users,
-  LinkOff
+  Unlink
 } from 'lucide-react';
 import {
   Tooltip,
@@ -635,7 +635,7 @@ export default function MCPSettingsTab() {
                       data-testid={`button-revoke-${provider}`}
                       className="h-10 w-10 p-0 hover:bg-orange-50"
                     >
-                      <LinkOff className="h-6 w-6 text-orange-600" />
+                      <Unlink className="h-6 w-6 text-orange-600" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
