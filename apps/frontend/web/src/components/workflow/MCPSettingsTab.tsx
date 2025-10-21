@@ -539,7 +539,7 @@ export default function MCPSettingsTab() {
           description: params.description,
           transport: 'stdio', // Default transport
           config: {}, // Server-specific configuration
-          status: 'inactive' // Will be activated after OAuth
+          status: 'configuring' // Will be activated after OAuth
         }
       });
     },
