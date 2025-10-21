@@ -181,8 +181,8 @@ export class GoogleOAuthService {
         scope: tokens.scope || this.SCOPES.join(' ')
       };
 
-      // Encrypt credentials using two-level key derivation (FIXED parameter order)
-      const { encryptedData, keyId } = await encryptMCPCredentials(
+      // Encrypt credentials using two-level key derivation
+      const encryptionPayload = await encryptMCPCredentials(
         credentials,  // First: data to encrypt
         tenantId      // Second: tenant ID for key derivation
       );
@@ -206,8 +206,8 @@ export class GoogleOAuthService {
         await db
           .update(mcpServerCredentials)
           .set({
-            encryptedCredentials: encryptedData,
-            encryptionKeyId: keyId,
+            encryptedCredentials: encryptionPayload, // Full encryption payload (encrypted, iv, authTag, keyId, etc.)
+            encryptionKeyId: encryptionPayload.keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             accountEmail, // Save account email for UI display
@@ -236,8 +236,8 @@ export class GoogleOAuthService {
             userId, // Multi-user OAuth support
             oauthProvider: 'google', // Provider identification
             credentialType: 'oauth2_user', // New credential type
-            encryptedCredentials: encryptedData,
-            encryptionKeyId: keyId,
+            encryptedCredentials: encryptionPayload, // Full encryption payload (encrypted, iv, authTag, keyId, etc.)
+            encryptionKeyId: encryptionPayload.keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
             accountEmail, // Save account email for UI display
