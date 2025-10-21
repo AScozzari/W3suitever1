@@ -1988,6 +1988,195 @@ export class AIMCPExecutor implements ActionExecutor {
   }
 }
 
+/**
+ * 📧 GMAIL SEND EXECUTOR
+ * Sends emails via Gmail API using OAuth2 credentials
+ * Supports template variables like {{lead.email}}
+ */
+export class GmailSendExecutor implements ActionExecutor {
+  executorId = 'gmail-send-executor';
+  description = 'Sends emails via Gmail API with OAuth2 authentication';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📧 [EXECUTOR] Executing Gmail Send', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      
+      // Resolve template variables in parameters
+      const resolvedParams = this.resolveParameters(config, inputData);
+      
+      // Validate required fields
+      if (!resolvedParams.to) {
+        throw new Error('Email recipient (to) is required');
+      }
+      if (!resolvedParams.subject) {
+        throw new Error('Email subject is required');
+      }
+      if (!resolvedParams.body) {
+        throw new Error('Email body is required');
+      }
+
+      // Import required services
+      const { mcpServerCredentials } = await import('../db/schema/w3suite');
+      const { decryptMCPCredentials } = await import('./mcp-credential-encryption');
+      const { google } = await import('googleapis');
+      const GoogleOAuthService = await import('./google-oauth-service');
+
+      // Fetch OAuth credentials for the user
+      const credentials = await db
+        .select()
+        .from(mcpServerCredentials)
+        .where(
+          and(
+            eq(mcpServerCredentials.oauthProvider, 'google'),
+            eq(mcpServerCredentials.tenantId, context.tenantId),
+            eq(mcpServerCredentials.userId, context.requesterId)
+          )
+        )
+        .limit(1);
+
+      if (credentials.length === 0) {
+        throw new Error('No Google OAuth credentials found for this user. Please connect your Gmail account first.');
+      }
+
+      const cred = credentials[0];
+      logger.info('📧 [Gmail Executor] Found credentials', {
+        accountEmail: cred.accountEmail,
+        userId: context.requesterId
+      });
+
+      // Decrypt credentials
+      const decryptedCreds = await decryptMCPCredentials(
+        cred.encryptedCredentials as any,
+        cred.tenantId
+      );
+
+      // Initialize OAuth2 client
+      const redirectUri = 'https://not-needed-for-api-calls.com';
+      const oauth2Client = await GoogleOAuthService.GoogleOAuthService['getOAuth2Client'](
+        redirectUri,
+        cred.tenantId
+      );
+
+      // Set user credentials
+      oauth2Client.setCredentials({
+        access_token: decryptedCreds.access_token,
+        refresh_token: decryptedCreds.refresh_token,
+        token_type: decryptedCreds.token_type,
+        expiry_date: decryptedCreds.expiry_date
+      });
+
+      // Initialize Gmail API
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+      // Compose email message
+      const rawMessage = [
+        `To: ${resolvedParams.to}`,
+        `From: ${cred.accountEmail}`,
+        `Subject: ${resolvedParams.subject}`,
+        '',
+        resolvedParams.body
+      ].join('\n');
+
+      // Encode in base64url format
+      const encodedMessage = Buffer.from(rawMessage)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      logger.info('📧 [Gmail Executor] Sending email', {
+        from: cred.accountEmail,
+        to: resolvedParams.to,
+        subject: resolvedParams.subject
+      });
+
+      // Send email via Gmail API
+      const result = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage
+        }
+      });
+
+      logger.info('✅ [Gmail Executor] Email sent successfully', {
+        messageId: result.data.id,
+        threadId: result.data.threadId
+      });
+
+      return {
+        success: true,
+        message: `Email sent successfully via Gmail to ${resolvedParams.to}`,
+        data: {
+          messageId: result.data.id,
+          threadId: result.data.threadId,
+          from: cred.accountEmail,
+          to: resolvedParams.to,
+          subject: resolvedParams.subject,
+          sentAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Gmail Send failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to send email via Gmail',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Resolve template variables in parameters
+   * Supports {{variable}}, {{lead.email}}, {{customer.name}}, etc.
+   */
+  private resolveParameters(
+    config: Record<string, any>,
+    inputData?: Record<string, any>
+  ): Record<string, string> {
+    const resolved: Record<string, string> = {
+      to: config.to || '',
+      subject: config.subject || '',
+      body: config.body || ''
+    };
+
+    if (!inputData) return resolved;
+
+    // Replace template variables like {{lead.email}} or {{variable}}
+    for (const [key, value] of Object.entries(resolved)) {
+      if (typeof value === 'string' && value.includes('{{')) {
+        resolved[key] = value.replace(/\{\{([^}]+)\}\}/g, (match, varPath) => {
+          // Support nested paths like "lead.email"
+          const parts = varPath.trim().split('.');
+          let current: any = inputData;
+          
+          for (const part of parts) {
+            if (current && typeof current === 'object' && part in current) {
+              current = current[part];
+            } else {
+              // Variable not found, keep original placeholder
+              return match;
+            }
+          }
+          
+          return current !== undefined && current !== null ? String(current) : match;
+        });
+      }
+    }
+
+    return resolved;
+  }
+}
+
 // ==================== CRM ROUTING EXECUTORS ====================
 
 /**
@@ -2613,6 +2802,7 @@ export class ActionExecutorsRegistry {
     // Integration executors
     this.register(new MCPConnectorExecutor());
     this.register(new AIMCPExecutor());
+    this.register(new GmailSendExecutor());
 
     logger.info('🎯 [REGISTRY] Registered default action executors', {
       count: this.executors.size,
