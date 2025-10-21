@@ -530,14 +530,15 @@ export default function MCPSettingsTab() {
 
   // 🔄 Create or Get MCP Server Mutation
   const createServerMutation = useMutation({
-    mutationFn: async (params: { name: string; description: string }) => {
+    mutationFn: async (params: { name: string; displayName: string; description: string }) => {
       return apiRequest('/api/mcp/servers', {
         method: 'POST',
         body: {
           name: params.name,
+          displayName: params.displayName,
           description: params.description,
           transport: 'stdio', // Default transport
-          transportConfig: {},
+          config: {}, // Server-specific configuration
           status: 'inactive' // Will be activated after OAuth
         }
       });
@@ -613,6 +614,12 @@ export default function MCPSettingsTab() {
       
       if (!server) {
         // Create MCP server for this provider
+        const displayNameMap = {
+          google: 'Google Workspace',
+          microsoft: 'Microsoft 365',
+          meta: 'Meta/Instagram'
+        };
+        
         const descriptionMap = {
           google: 'Google Workspace OAuth Integration (Gmail, Drive, Calendar, Sheets)',
           microsoft: 'Microsoft 365 OAuth Integration (Outlook, OneDrive, Teams)',
@@ -621,6 +628,7 @@ export default function MCPSettingsTab() {
         
         server = await createServerMutation.mutateAsync({
           name: serverName,
+          displayName: displayNameMap[provider],
           description: descriptionMap[provider]
         });
       }
