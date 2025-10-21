@@ -10,7 +10,7 @@
  * - GTM/Analytics (Service Account)
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -170,7 +170,10 @@ export default function MCPSettingsTab() {
   const [googleEmail, setGoogleEmail] = useState('');
   const [googleAccountType, setGoogleAccountType] = useState<'consumer' | 'workspace' | null>(null);
   const [googleAuthMode, setGoogleAuthMode] = useState<'oauth2' | 'service_account'>('oauth2');
+  const [googleEmailDetecting, setGoogleEmailDetecting] = useState(false);
+  const [googleOAuthConfigSaved, setGoogleOAuthConfigSaved] = useState(false);
   const [metaAuthMode, setMetaAuthMode] = useState<'simple' | 'advanced'>('simple');
+  const [selectedMetaAccount, setSelectedMetaAccount] = useState<string>('');
   const [assignToUserId, setAssignToUserId] = useState<string>(currentUser?.id || '');
 
   // 🔐 RBAC: Check if current user is admin
@@ -206,19 +209,42 @@ export default function MCPSettingsTab() {
 
   // 🎯 Handle Google Email Blur Event
   const handleGoogleEmailBlur = () => {
-    const detected = detectGoogleAccountType(googleEmail);
-    setGoogleAccountType(detected);
-    
-    // If consumer, force OAuth2 (no Service Account option)
-    if (detected === 'consumer') {
-      setGoogleAuthMode('oauth2');
+    if (!googleEmail || !googleEmail.includes('@')) {
+      setGoogleAccountType(null);
+      return;
     }
+
+    // Show loading feedback
+    setGoogleEmailDetecting(true);
+    
+    // Simulate brief processing for UX feedback (detection is instant)
+    setTimeout(() => {
+      const detected = detectGoogleAccountType(googleEmail);
+      setGoogleAccountType(detected);
+      setGoogleEmailDetecting(false);
+      
+      // If consumer, force OAuth2 (no Service Account option)
+      if (detected === 'consumer') {
+        setGoogleAuthMode('oauth2');
+      }
+    }, 300);
   };
 
   // 🔄 Fetch User's OAuth Credentials
   const { data: credentials, isLoading: credentialsLoading } = useQuery<MCPCredential[]>({
     queryKey: ['/api/mcp/my-credentials'],
   });
+
+  // 🔄 Sync googleOAuthConfigSaved from fetched credentials
+  // This ensures the flag reflects server state after page reloads
+  useEffect(() => {
+    if (credentials) {
+      const hasGoogleConfig = credentials.some(
+        c => c.provider === 'google' && c.status === 'active'
+      );
+      setGoogleOAuthConfigSaved(hasGoogleConfig);
+    }
+  }, [credentials]);
 
   // 🔄 Fetch Connected Accounts for Meta/Instagram
   const metaServer = servers?.find(s => s.name === 'meta-instagram');
@@ -296,6 +322,7 @@ export default function MCPSettingsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp/my-credentials'] });
       setGoogleForm({ clientId: '', clientSecret: '' }); // Clear form
+      setGoogleOAuthConfigSaved(true); // Mark config as saved
       toast({
         title: 'Google OAuth Configurato',
         description: 'Credenziali Google OAuth salvate con successo',
@@ -760,8 +787,19 @@ export default function MCPSettingsTab() {
                   className="text-base"
                 />
                 
+                {/* Detection Loading */}
+                {googleEmailDetecting && (
+                  <Alert className="bg-gray-50 border-gray-200">
+                    <RefreshCw className="h-4 w-4 text-gray-600 animate-spin" />
+                    <AlertTitle className="text-gray-900">Analisi in corso...</AlertTitle>
+                    <AlertDescription className="text-sm text-gray-700">
+                      Rilevamento tipo account Google
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {/* Detection Result */}
-                {googleAccountType === 'consumer' && (
+                {!googleEmailDetecting && googleAccountType === 'consumer' && (
                   <Alert className="bg-blue-50 border-blue-200">
                     <CheckCircle className="h-4 w-4 text-blue-600" />
                     <AlertTitle className="text-blue-900">Gmail Consumer rilevato</AlertTitle>
@@ -771,7 +809,7 @@ export default function MCPSettingsTab() {
                   </Alert>
                 )}
                 
-                {googleAccountType === 'workspace' && (
+                {!googleEmailDetecting && googleAccountType === 'workspace' && (
                   <Alert className="bg-green-50 border-green-200">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertTitle className="text-green-900">Google Workspace rilevato</AlertTitle>
@@ -871,32 +909,98 @@ export default function MCPSettingsTab() {
                         <li>Crea OAuth Client in Google Cloud Console</li>
                         <li>Aggiungi redirect URI: <code className="bg-white px-1 rounded">{window.location.origin}/api/mcp/oauth/google/callback</code></li>
                         <li>Incolla Client ID e Secret qui sotto</li>
-                        <li>Clicca "Sign in with Google"</li>
+                        <li>Clicca "Salva Configurazione OAuth"</li>
+                        <li>Poi potrai cliccare "Sign in with Google"</li>
                       </ol>
                     </div>
                   </div>
 
-                  <Button 
-                    onClick={() => handleOAuthInitiate('google')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white w-full"
-                    disabled={connectingProvider === 'google' || isLoading || !googleEmail}
-                    data-testid="button-oauth-google"
-                  >
-                    {connectingProvider === 'google' ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Connessione in corso...
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Sign in with Google
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center">
-                    💡 Sarai reindirizzato alla pagina di autorizzazione Google
-                  </p>
+                  {/* Client ID & Secret Form */}
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="google-client-id">Client ID *</Label>
+                      <Input
+                        id="google-client-id"
+                        type="text"
+                        placeholder="123456789-abc.apps.googleusercontent.com"
+                        value={googleForm.clientId}
+                        onChange={(e) => setGoogleForm({ ...googleForm, clientId: e.target.value })}
+                        data-testid="input-google-client-id"
+                        className={`${googleForm.clientId && googleForm.clientId.length > 20 ? 'border-green-500' : ''}`}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="google-client-secret">Client Secret *</Label>
+                      <Input
+                        id="google-client-secret"
+                        type="password"
+                        placeholder="GOCSPX-..."
+                        value={googleForm.clientSecret}
+                        onChange={(e) => setGoogleForm({ ...googleForm, clientSecret: e.target.value })}
+                        data-testid="input-google-client-secret"
+                        className={`${googleForm.clientSecret && googleForm.clientSecret.length > 20 ? 'border-green-500' : ''}`}
+                      />
+                    </div>
+
+                    {/* Save OAuth Config Button */}
+                    <Button
+                      onClick={() => saveGoogleCredentialsMutation.mutate({
+                        clientId: googleForm.clientId,
+                        clientSecret: googleForm.clientSecret
+                      })}
+                      disabled={!googleForm.clientId || !googleForm.clientSecret || saveGoogleCredentialsMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 text-white w-full"
+                      data-testid="button-save-google-config"
+                    >
+                      {saveGoogleCredentialsMutation.isPending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Salvataggio...
+                        </>
+                      ) : (
+                        <>
+                          <Key className="h-4 w-4 mr-2" />
+                          Salva Configurazione OAuth
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Sign in with Google - Only visible after config saved */}
+                  {googleOAuthConfigSaved && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertTitle className="text-green-900">Configurazione OAuth Salvata ✓</AlertTitle>
+                        <AlertDescription className="text-sm text-green-800">
+                          Ora puoi autorizzare il tuo account Google cliccando il pulsante qui sotto
+                        </AlertDescription>
+                      </Alert>
+
+                      <Button 
+                        onClick={() => handleOAuthInitiate('google')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                        disabled={connectingProvider === 'google' || isLoading || !googleEmail}
+                        data-testid="button-oauth-google"
+                      >
+                        {connectingProvider === 'google' ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Connessione in corso...
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Sign in with Google
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-gray-500 text-center">
+                        💡 Sarai reindirizzato alla pagina di autorizzazione Google
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1071,6 +1175,89 @@ export default function MCPSettingsTab() {
                     </div>
                   </RadioGroup>
                 </div>
+
+                {/* 🎯 Simple Mode: Consumer OAuth Configuration */}
+                {metaAuthMode === 'simple' && (
+                  <div className="space-y-3">
+                    {/* Simplified Instructions */}
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="flex items-start gap-2">
+                        <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 space-y-2">
+                          <p className="text-sm font-semibold text-blue-900">Setup Rapido OAuth2:</p>
+                          <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                            <li>Vai su <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Meta for Developers</a></li>
+                            <li>Crea una nuova App (tipo Business)</li>
+                            <li>Copia App ID e App Secret da Settings → Basic</li>
+                            <li>Incollali qui sotto e clicca "Salva Configurazione OAuth"</li>
+                            <li>Aggiungi questo URL nelle Valid OAuth Redirect URIs:</li>
+                          </ol>
+                          <code className="text-xs bg-white px-2 py-1 rounded border border-blue-300 block break-all">
+                            {window.location.origin}/api/mcp/oauth/meta/callback
+                          </code>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* App ID & Secret Form */}
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="meta-simple-app-id">App ID *</Label>
+                        <Input 
+                          id="meta-simple-app-id" 
+                          type="text" 
+                          placeholder="1234567890123456"
+                          value={metaForm.appId}
+                          onChange={(e) => setMetaForm({ ...metaForm, appId: e.target.value })}
+                          data-testid="input-meta-simple-app-id"
+                          className={`${metaForm.appId && metaForm.appId.length > 10 ? 'border-green-500' : ''}`}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="meta-simple-app-secret">App Secret *</Label>
+                        <Input 
+                          id="meta-simple-app-secret" 
+                          type="password" 
+                          placeholder="••••••••"
+                          value={metaForm.appSecret}
+                          onChange={(e) => setMetaForm({ ...metaForm, appSecret: e.target.value })}
+                          data-testid="input-meta-simple-app-secret"
+                          className={`${metaForm.appSecret && metaForm.appSecret.length > 20 ? 'border-green-500' : ''}`}
+                        />
+                      </div>
+                      
+                      {/* Save OAuth Config Button */}
+                      <Button
+                        onClick={() => {
+                          if (!metaForm.appId || !metaForm.appSecret) {
+                            toast({
+                              title: 'Campi Obbligatori',
+                              description: 'Inserisci App ID e App Secret',
+                              variant: 'destructive'
+                            });
+                            return;
+                          }
+                          saveMetaCredentialsMutation.mutate(metaForm);
+                        }}
+                        disabled={!metaForm.appId || !metaForm.appSecret || saveMetaCredentialsMutation.isPending}
+                        className="bg-pink-600 hover:bg-pink-700 text-white w-full"
+                        data-testid="button-save-meta-simple-config"
+                      >
+                        {saveMetaCredentialsMutation.isPending ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Salvataggio...
+                          </>
+                        ) : (
+                          <>
+                            <Key className="h-4 w-4 mr-2" />
+                            Salva Configurazione OAuth
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* ⚙️ Advanced Mode: Manual App ID/Secret Configuration */}
                 {metaAuthMode === 'advanced' && (
@@ -1247,10 +1434,44 @@ export default function MCPSettingsTab() {
                 </div>
               )}
 
+              {/* Account Selection Dropdown - Only show if accounts exist */}
+              {connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 && (
+                <div className="pt-4 border-t space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-account-select">Seleziona Account per Workflow *</Label>
+                    <Select value={selectedMetaAccount} onValueChange={setSelectedMetaAccount}>
+                      <SelectTrigger id="meta-account-select" data-testid="select-meta-account">
+                        <SelectValue placeholder="Seleziona un account Facebook/Instagram" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {connectedAccounts.accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.accountName}
+                            {account.instagramAccountName && ` • IG: ${account.instagramAccountName}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-pink-700">
+                      💡 Questo account sarà usato nei nodi workflow Meta/Instagram
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* OAuth Connect Button */}
               {/* Simple mode: always show | Advanced mode: show only after credentials saved */}
               {(metaAuthMode === 'simple' || credentials?.some(c => c.provider === 'meta' && c.serverName === 'meta-instagram-oauth-config')) && (
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t space-y-3">
+                  {connectedAccounts?.accounts && connectedAccounts.accounts.length > 0 && (
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-xs text-blue-800">
+                        <strong>Hai già {connectedAccounts.accounts.length} pagina/e connessa/e.</strong> Seleziona un account dal menu sopra o connetti altre pagine cliccando il bottone qui sotto.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <Button 
                     onClick={() => handleOAuthInitiate('meta')}
                     className="bg-green-600 hover:bg-green-700 text-white w-full"
