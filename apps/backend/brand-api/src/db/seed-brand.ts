@@ -825,7 +825,7 @@ Rispondi SEMPRE con JSON valido. Sii analitico, preciso, predittivo.`,
           decision_style: "weighted_scoring_algorithm",
           language: "italian"
         },
-        moduleContext: "marketing",
+        moduleContext: "sales",
         baseConfiguration: {
           default_model: "gpt-4o",
           temperature: 0.1, // Very low temp for consistent scoring
