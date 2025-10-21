@@ -12,6 +12,8 @@ import { AIRegistryService, RegistryAwareContext } from './ai-registry-service';
 import { mcpClientService } from './mcp-client-service';
 import { db } from '../core/db';
 import { userAssignments, legalEntities, stores } from '../db/schema/w3suite';
+import { aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
+import { db as brandDb } from '../../../brand-api/src/db/index.js';
 import { eq, and } from 'drizzle-orm';
 
 // ==================== INTERFACES ====================
@@ -1750,15 +1752,41 @@ export class AIMCPExecutor implements ActionExecutor {
       const { default: storage } = await import('../core/storage');
       const openaiService = new UnifiedOpenAIService(storage);
 
-      // Build AI settings for OpenAI API (fetch from DB or use defaults)
+      // 🤖 Load AI agent from Brand Interface registry
+      const agentConfig = await brandDb.select()
+        .from(aiAgentsRegistry)
+        .where(and(
+          eq(aiAgentsRegistry.agentId, 'mcp-orchestrator-assistant'),
+          eq(aiAgentsRegistry.status, 'active'),
+          eq(aiAgentsRegistry.deployToAllTenants, true)
+        ))
+        .limit(1);
+      
+      const agent = agentConfig[0];
+      const baseConfig = agent?.baseConfiguration as any || {};
+      
+      // Use agent config if available, otherwise fall back to node config
+      const finalModel = agent ? (baseConfig.default_model || 'gpt-4o') : model;
+      const finalTemperature = agent ? (baseConfig.temperature || 0.7) : temperature;
+      const finalMaxTokens = agent ? (baseConfig.max_tokens || 2000) : maxTokens;
+      const systemPrompt = agent?.systemPrompt || null;
+      
+      logger.info('🤖 [AI-MCP] AI agent loaded', {
+        agentId: agent?.agentId || 'fallback',
+        model: finalModel,
+        temperature: finalTemperature,
+        hasSystemPrompt: !!systemPrompt
+      });
+
+      // Build AI settings for OpenAI API (using agent config or defaults)
       const aiSettings: any = {
         tenantId: context.tenantId,
-        id: 'ai-mcp-executor',
+        id: agent?.agentId || 'ai-mcp-executor',
         createdAt: new Date(),
         updatedAt: new Date(),
-        openaiModel: model as any,
-        responseCreativity: Math.round(temperature * 10), // Map 0-2.0 to 0-20
-        maxTokensPerResponse: maxTokens,
+        openaiModel: finalModel as any,
+        responseCreativity: Math.round(finalTemperature * 10), // Map 0-2.0 to 0-20
+        maxTokensPerResponse: finalMaxTokens,
         featuresEnabled: {},
         privacyMode: 'normal' as const,
         streamingEnabled: false,
@@ -1768,7 +1796,7 @@ export class AIMCPExecutor implements ActionExecutor {
         ragEnabled: false,
         ragSettings: {},
         contextSettings: {},
-        customSystemPrompt: null,
+        customSystemPrompt: systemPrompt, // Use agent's system prompt
         toolsEnabled: false
       };
 
