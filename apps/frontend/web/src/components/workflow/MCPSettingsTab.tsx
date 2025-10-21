@@ -599,9 +599,9 @@ export default function MCPSettingsTab() {
               credentialId: credential.id 
             })}
             data-testid={`button-delete-${provider}`}
-            className="h-8 w-8 p-0"
+            className="h-10 w-10 p-0"
           >
-            <Trash2 className="h-5 w-5 text-red-500" />
+            <Trash2 className="h-6 w-6 text-red-500" />
           </Button>
         </div>
         
