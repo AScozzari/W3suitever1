@@ -145,7 +145,11 @@ router.post('/servers', requirePermission('mcp.write'), async (req: Request, res
     const tenantId = req.tenant!.id;
     const userId = req.user!.id;
     
-    const data = validateRequestBody(createMCPServerSchema, req.body);
+    const data = validateRequestBody(createMCPServerSchema, req.body, res);
+    
+    if (!data) {
+      return; // validateRequestBody already sent error response
+    }
     
     const [newServer] = await db
       .insert(mcpServers)
