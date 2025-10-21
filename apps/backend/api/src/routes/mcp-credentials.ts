@@ -7,6 +7,7 @@ import { eq, and, isNull, sql } from 'drizzle-orm';
 import { logger } from '../core/logger';
 import { z } from 'zod';
 import { GoogleOAuthService } from '../services/google-oauth-service';
+import { MetaOAuthService } from '../services/meta-oauth-service';
 
 const router = Router();
 
@@ -414,6 +415,198 @@ router.delete('/google/:credentialId', async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('❌ [API] Delete Google credential failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete credential',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Revoke Meta OAuth credentials (soft delete)
+ * PATCH /api/mcp/credentials/meta/:credentialId/revoke
+ */
+router.patch('/meta/:credentialId/revoke', async (req: Request, res: Response) => {
+  try {
+    const { credentialId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing authentication headers'
+      });
+    }
+
+    // CRITICAL SECURITY: Verify credential belongs to this tenant and user
+    const [credential] = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(and(
+        eq(mcpServerCredentials.id, credentialId),
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.userId, userId)
+      ))
+      .limit(1);
+
+    if (!credential) {
+      return res.status(404).json({
+        success: false,
+        error: 'CREDENTIAL_NOT_FOUND',
+        message: 'Meta credential not found or does not belong to this user'
+      });
+    }
+
+    // Idempotent: if already revoked, return success
+    if (credential.revokedAt) {
+      logger.info('ℹ️  [API] Meta credential already revoked', {
+        credentialId,
+        userId,
+        tenantId,
+        revokedAt: credential.revokedAt
+      });
+
+      return res.json({
+        success: true,
+        message: 'Meta credential already revoked',
+        revokedAt: credential.revokedAt.toISOString()
+      });
+    }
+
+    // Revoke token at Meta OAuth provider
+    try {
+      if (credential.encryptedCredentials) {
+        const decrypted = await decryptMCPCredentials(
+          credential.encryptedCredentials,
+          credential.encryptionKeyId || 'default'
+        );
+
+        // Extract access token from decrypted credentials
+        const accessToken = decrypted.access_token || decrypted.accessToken;
+        
+        if (accessToken) {
+          await MetaOAuthService.revokeAccess(accessToken);
+          logger.info('🔒 [API] Meta OAuth token revoked at provider', {
+            credentialId,
+            userId,
+            tenantId
+          });
+        }
+      }
+    } catch (error) {
+      // Log error but continue with local revocation
+      logger.warn('⚠️  [API] Failed to revoke at Meta OAuth provider, continuing with local revocation', {
+        credentialId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+
+    // Mark credential as revoked locally
+    await db
+      .update(mcpServerCredentials)
+      .set({
+        revokedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(mcpServerCredentials.id, credentialId));
+
+    logger.info('✅ [API] Meta credential revoked', {
+      credentialId,
+      userId,
+      tenantId
+    });
+
+    res.json({
+      success: true,
+      message: 'Meta credential revoked successfully (disconnected)'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Meta credential revoke failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to revoke Meta credential',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Delete Meta OAuth credentials (hard delete - permanent removal)
+ * DELETE /api/mcp/credentials/meta/:credentialId
+ */
+router.delete('/meta/:credentialId', async (req: Request, res: Response) => {
+  try {
+    const { credentialId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing authentication headers'
+      });
+    }
+
+    // CRITICAL SECURITY: Verify credential belongs to this tenant and user
+    const [credential] = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(and(
+        eq(mcpServerCredentials.id, credentialId),
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.userId, userId)
+      ))
+      .limit(1);
+
+    if (!credential) {
+      return res.status(404).json({
+        success: false,
+        error: 'CREDENTIAL_NOT_FOUND',
+        message: 'Meta credential not found or does not belong to this user'
+      });
+    }
+
+    // 🔒 DEPENDENCY CHECK: Enforce revoke-before-delete pattern
+    if (!credential.revokedAt) {
+      return res.status(409).json({
+        success: false,
+        error: 'CREDENTIAL_IN_USE',
+        message: 'Cannot delete active credential. Please revoke it first.',
+        hint: 'Use PATCH /api/mcp/credentials/meta/:id/revoke to disconnect the credential before deletion'
+      });
+    }
+
+    // TODO: Enhanced workflow dependency check (same as Google)
+    // Future improvement: Parse workflow JSON nodes to find exact workflow dependencies
+
+    // Permanent deletion from database (only allowed for revoked credentials)
+    await db
+      .delete(mcpServerCredentials)
+      .where(eq(mcpServerCredentials.id, credentialId));
+
+    logger.info('🗑️  [API] Meta credential permanently deleted', {
+      credentialId,
+      userId,
+      tenantId,
+      wasRevoked: !!credential.revokedAt
+    });
+
+    res.json({
+      success: true,
+      message: 'Meta credential permanently deleted'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Delete Meta credential failed', {
       error: error instanceof Error ? error.message : String(error)
     });
 
