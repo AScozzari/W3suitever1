@@ -181,6 +181,7 @@ export default function MCPSettingsTab() {
   const [googleEmailDetecting, setGoogleEmailDetecting] = useState(false);
   const [googleOAuthConfigSaved, setGoogleOAuthConfigSaved] = useState(false);
   const [googleAccountConnected, setGoogleAccountConnected] = useState<MCPCredential | null>(null);
+  const [googleConnectedAccounts, setGoogleConnectedAccounts] = useState<MCPCredential[]>([]); // 🆕 Multi-account support
   const [selectedMetaAccount, setSelectedMetaAccount] = useState<string>('');
   const [assignToUserId, setAssignToUserId] = useState<string>(currentUser?.id || '');
   
@@ -271,6 +272,18 @@ export default function MCPSettingsTab() {
             c.credentialType === 'oauth2_user' // ← Only user OAuth accounts
       );
       setGoogleAccountConnected(connectedAccount || null);
+    }
+  }, [credentials]);
+
+  // 🔄 Sync googleConnectedAccounts - ALL oauth2_user credentials for multi-account display
+  useEffect(() => {
+    if (credentials) {
+      const allConnectedAccounts = credentials.filter(
+        c => c.provider === 'google' && 
+            c.status === 'active' && 
+            c.credentialType === 'oauth2_user' // ← Get ALL user OAuth accounts
+      );
+      setGoogleConnectedAccounts(allConnectedAccounts);
     }
   }, [credentials]);
 
@@ -1017,30 +1030,63 @@ export default function MCPSettingsTab() {
                   {/* Sign in with Google - Only visible after config saved */}
                   {googleOAuthConfigSaved && (
                     <div className="space-y-3 pt-4 border-t">
-                      {/* Show different states based on whether account is connected */}
                       {googleAccountConnected ? (
-                        // ✅ Account Connected State
-                        <Alert className="bg-green-50 border-green-200">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <AlertTitle className="text-green-900">Account Google Connesso ✓</AlertTitle>
-                          <AlertDescription className="text-sm text-green-800 space-y-1">
-                            <p>
-                              <strong>Email:</strong> {googleAccountConnected.accountEmail || 'N/A'}
-                            </p>
-                            {googleAccountConnected.scope && (
-                              <p>
-                                <strong>Scopes:</strong> {googleAccountConnected.scope.split(' ').length} permessi
-                              </p>
+                        // ✅ Account Connected - Show details + "Connect Another Account" button
+                        <div className="space-y-3">
+                          <Alert className="bg-green-50 border-green-200">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-900">Account Google Connesso ✓</AlertTitle>
+                            <AlertDescription className="text-sm text-green-800 space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-600">Email</p>
+                                  <p className="font-medium">{googleAccountConnected.accountEmail || 'N/A'}</p>
+                                </div>
+                                {googleAccountConnected.accountName && (
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600">Nome</p>
+                                    <p className="font-medium">{googleAccountConnected.accountName}</p>
+                                  </div>
+                                )}
+                              </div>
+                              {googleAccountConnected.scope && (
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-600">Permessi Concessi</p>
+                                  <p className="text-xs">{googleAccountConnected.scope.split(' ').length} scope: {googleAccountConnected.scope.split(' ').slice(0, 3).join(', ')}{googleAccountConnected.scope.split(' ').length > 3 ? '...' : ''}</p>
+                                </div>
+                              )}
+                              {googleAccountConnected.expiresAt && (
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-600">Scadenza Token</p>
+                                  <p className="text-xs">{new Date(googleAccountConnected.expiresAt).toLocaleString('it-IT')}</p>
+                                </div>
+                              )}
+                            </AlertDescription>
+                          </Alert>
+
+                          {/* Connect Another Account Button */}
+                          <Button 
+                            onClick={() => handleOAuthInitiate('google')}
+                            variant="outline"
+                            className="w-full border-blue-200 hover:bg-blue-50"
+                            disabled={connectingProvider === 'google' || isLoading}
+                            data-testid="button-oauth-google-another"
+                          >
+                            {connectingProvider === 'google' ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Connessione in corso...
+                              </>
+                            ) : (
+                              <>
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Connetti Altro Account Google
+                              </>
                             )}
-                            {googleAccountConnected.expiresAt && (
-                              <p>
-                                <strong>Scadenza:</strong> {new Date(googleAccountConnected.expiresAt).toLocaleDateString('it-IT')}
-                              </p>
-                            )}
-                          </AlertDescription>
-                        </Alert>
+                          </Button>
+                        </div>
                       ) : (
-                        // ⚠️ Config Saved but No Account State
+                        // ⚠️ Config Saved but No Account - First Sign In
                         <>
                           <Alert className="bg-yellow-50 border-yellow-200">
                             <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -1111,7 +1157,86 @@ export default function MCPSettingsTab() {
                 </div>
               )}
 
-              {/* Existing Credentials Status */}
+              {/* 🆕 Connected Accounts Section - Multi-Account Display */}
+              {googleConnectedAccounts.length > 0 && (
+                <div className="pt-4 border-t space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold">Account Connessi ({googleConnectedAccounts.length})</h4>
+                    <Button 
+                      onClick={() => handleOAuthInitiate('google')}
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-200 hover:bg-blue-50"
+                      disabled={connectingProvider === 'google' || isLoading}
+                      data-testid="button-connect-another-google"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Connetti Nuovo Account
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {googleConnectedAccounts.map((account) => (
+                      <Card key={account.id} className="bg-green-50/50 border-green-200">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <span className="font-semibold text-green-900">{account.accountEmail || 'Account Google'}</span>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3 text-xs">
+                                {account.accountName && (
+                                  <div>
+                                    <p className="text-gray-600 font-semibold">Nome</p>
+                                    <p className="text-gray-900">{account.accountName}</p>
+                                  </div>
+                                )}
+                                {account.scope && (
+                                  <div>
+                                    <p className="text-gray-600 font-semibold">Permessi</p>
+                                    <p className="text-gray-900">{account.scope.split(' ').length} scope concessi</p>
+                                  </div>
+                                )}
+                                {account.expiresAt && (
+                                  <div>
+                                    <p className="text-gray-600 font-semibold">Scadenza Token</p>
+                                    <p className="text-gray-900">{new Date(account.expiresAt).toLocaleDateString('it-IT')}</p>
+                                  </div>
+                                )}
+                                {account.userId && (
+                                  <div>
+                                    <p className="text-gray-600 font-semibold">Assegnato a</p>
+                                    <p className="text-gray-900 truncate">{account.userId}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="ml-4 text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => {
+                                if (confirm(`Revocare l'accesso per ${account.accountEmail}?`)) {
+                                  revokeCredentialMutation.mutate(account.id);
+                                }
+                              }}
+                              disabled={revokeCredentialMutation.isPending}
+                              data-testid={`button-revoke-google-${account.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Existing Credentials Status (Legacy - shows config) */}
               <div className="pt-4 border-t">
                 <h4 className="text-sm font-semibold mb-3">Account Configurati</h4>
                 {renderCredentialStatus('google')}
