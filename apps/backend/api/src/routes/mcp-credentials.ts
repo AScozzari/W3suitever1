@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { AWSCredentialsService } from '../services/aws-credentials-service';
-import { encryptMCPCredentials } from '../services/mcp-credential-encryption';
+import { encryptMCPCredentials, decryptMCPCredentials } from '../services/mcp-credential-encryption';
 import { db } from '../core/db';
 import { mcpServers, mcpServerCredentials } from '../db/schema/w3suite';
 import { eq, and, isNull } from 'drizzle-orm';
 import { logger } from '../core/logger';
 import { z } from 'zod';
+import { GoogleOAuthService } from '../services/google-oauth-service';
 
 const router = Router();
 
@@ -207,7 +208,120 @@ router.post('/google/oauth-config', async (req: Request, res: Response) => {
 });
 
 /**
- * Delete Google OAuth credentials
+ * Revoke Google OAuth credentials (soft delete)
+ * PATCH /api/mcp/credentials/google/:credentialId/revoke
+ */
+router.patch('/google/:credentialId/revoke', async (req: Request, res: Response) => {
+  try {
+    const { credentialId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id || req.headers['x-user-id'] as string;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing authentication headers'
+      });
+    }
+
+    // CRITICAL SECURITY: Verify credential belongs to this tenant and user
+    const [credential] = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(and(
+        eq(mcpServerCredentials.id, credentialId),
+        eq(mcpServerCredentials.tenantId, tenantId),
+        eq(mcpServerCredentials.userId, userId)
+      ))
+      .limit(1);
+
+    if (!credential) {
+      return res.status(404).json({
+        success: false,
+        error: 'CREDENTIAL_NOT_FOUND',
+        message: 'Google credential not found or does not belong to this user'
+      });
+    }
+
+    // Idempotent: if already revoked, return success
+    if (credential.revokedAt) {
+      logger.info('ℹ️  [API] Google credential already revoked', {
+        credentialId,
+        userId,
+        tenantId,
+        revokedAt: credential.revokedAt
+      });
+
+      return res.json({
+        success: true,
+        message: 'Google credential already revoked',
+        revokedAt: credential.revokedAt.toISOString()
+      });
+    }
+
+    // Revoke token at Google OAuth provider
+    try {
+      if (credential.encryptedCredentials) {
+        const decrypted = await decryptMCPCredentials(
+          credential.encryptedCredentials,
+          credential.encryptionKeyId || 'default'
+        );
+
+        // Extract access token from decrypted credentials
+        const accessToken = decrypted.access_token || decrypted.accessToken;
+        
+        if (accessToken) {
+          await GoogleOAuthService.revokeAccess(accessToken);
+          logger.info('🔒 [API] Google OAuth token revoked at provider', {
+            credentialId,
+            userId,
+            tenantId
+          });
+        }
+      }
+    } catch (error) {
+      // Log error but continue with local revocation
+      logger.warn('⚠️  [API] Failed to revoke at Google OAuth provider, continuing with local revocation', {
+        credentialId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+
+    // Mark credential as revoked locally
+    await db
+      .update(mcpServerCredentials)
+      .set({
+        revokedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(mcpServerCredentials.id, credentialId));
+
+    logger.info('✅ [API] Google credential revoked', {
+      credentialId,
+      userId,
+      tenantId
+    });
+
+    res.json({
+      success: true,
+      message: 'Google credential revoked successfully (disconnected)'
+    });
+
+  } catch (error) {
+    logger.error('❌ [API] Google credential revoke failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to revoke Google credential',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Delete Google OAuth credentials (hard delete)
  * DELETE /api/mcp/credentials/google/:credentialId
  */
 router.delete('/google/:credentialId', async (req: Request, res: Response) => {
