@@ -29,9 +29,8 @@ async function getStripeApiKey(serverId: string, tenantId: string): Promise<stri
   }
 
   const credentials = await decryptMCPCredentials(
-    tenantId,
     creds.encryptedCredentials,
-    creds.encryptionKeyId
+    tenantId
   );
 
   return credentials.apiKey;

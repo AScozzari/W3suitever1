@@ -38,9 +38,8 @@ async function getPostgreSQLClient(serverId: string, tenantId: string): Promise<
   }
 
   const credentials = await decryptMCPCredentials(
-    tenantId,
     creds.encryptedCredentials,
-    creds.encryptionKeyId
+    tenantId
   ) as PostgreSQLCredentials;
 
   const client = new Client({

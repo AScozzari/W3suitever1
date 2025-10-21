@@ -92,9 +92,8 @@ export class UnifiedCredentialService {
 
       // Decrypt credentials
       const decryptedCredentials = await decryptMCPCredentials(
-        tenantId,
         cred.encryptedCredentials,
-        cred.encryptionKeyId
+        tenantId
       );
 
       // Check expiration status
@@ -188,9 +187,8 @@ export class UnifiedCredentialService {
 
         if (tenantCred) {
           const decryptedCredentials = await decryptMCPCredentials(
-            tenantId,
             tenantCred.encryptedCredentials,
-            tenantCred.encryptionKeyId
+            tenantId
           );
 
           logger.warn('⚠️  [Unified Credentials] Using DEPRECATED tenant-level credentials', {

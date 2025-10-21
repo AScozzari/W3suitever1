@@ -492,9 +492,8 @@ router.get('/google/test/:serverId', async (req: Request, res: Response) => {
 
     // Decrypt credentials
     const credentials = await decryptMCPCredentials(
-      tenantId,
       creds.encryptedCredentials,
-      creds.encryptionKeyId
+      tenantId
     );
 
     // Get valid access token (auto-refresh if needed)
@@ -1005,9 +1004,8 @@ router.get('/meta/test/:serverId', async (req: Request, res: Response) => {
 
     // Decrypt credentials
     const credentials = await decryptMCPCredentials(
-      tenantId,
       creds.encryptedCredentials,
-      creds.encryptionKeyId
+      tenantId
     );
 
     // Get valid access token (auto-refresh if needed)
@@ -1426,9 +1424,8 @@ router.get('/microsoft/test/:serverId', async (req: Request, res: Response) => {
 
     // Decrypt credentials
     const credentials = await decryptMCPCredentials(
-      tenantId,
       creds.encryptedCredentials,
-      creds.encryptionKeyId
+      tenantId
     );
 
     // Get valid access token (auto-refresh if needed)

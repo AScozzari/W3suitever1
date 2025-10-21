@@ -149,9 +149,8 @@ export class TokenRefreshService {
 
     // Decrypt current credentials
     const decryptedCreds = await decryptMCPCredentials(
-      tenantId,
       encryptedCredentials,
-      encryptionKeyId
+      tenantId
     );
 
     // Refresh based on provider

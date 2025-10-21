@@ -57,9 +57,8 @@ export class GoogleOAuthService {
         // Decrypt credentials
         const { decryptMCPCredentials } = await import('./mcp-credential-encryption');
         const decrypted = await decryptMCPCredentials(
-          tenantId,
           creds.encryptedCredentials,
-          creds.encryptionKeyId
+          tenantId
         );
 
         clientId = decrypted.client_id;

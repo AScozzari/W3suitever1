@@ -311,7 +311,7 @@ router.patch('/google/:credentialId/revoke', async (req: Request, res: Response)
       if (credential.encryptedCredentials) {
         const decrypted = await decryptMCPCredentials(
           credential.encryptedCredentials,
-          credential.encryptionKeyId || 'default'
+          tenantId
         );
 
         // Extract access token from decrypted credentials
@@ -507,7 +507,7 @@ router.patch('/meta/:credentialId/revoke', async (req: Request, res: Response) =
       if (credential.encryptedCredentials) {
         const decrypted = await decryptMCPCredentials(
           credential.encryptedCredentials,
-          credential.encryptionKeyId || 'default'
+          tenantId
         );
 
         // Extract access token from decrypted credentials

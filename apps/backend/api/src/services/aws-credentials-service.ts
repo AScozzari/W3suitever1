@@ -242,9 +242,8 @@ export class AWSCredentialsService {
 
       // Decrypt credentials
       const credentials = await decryptMCPCredentials(
-        tenantId,
         creds.encryptedCredentials,
-        creds.encryptionKeyId
+        tenantId
       );
 
       return {
