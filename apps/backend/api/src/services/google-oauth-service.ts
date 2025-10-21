@@ -158,6 +158,20 @@ export class GoogleOAuthService {
         expiresIn: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : 'unknown'
       });
 
+      // Fetch user info to get email and name
+      oauth2Client.setCredentials(tokens);
+      const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+      const userInfo = await oauth2.userinfo.get();
+      
+      const accountEmail = userInfo.data.email || null;
+      const accountName = userInfo.data.name || null;
+
+      logger.info('✅ [Google OAuth] User info retrieved', {
+        email: accountEmail,
+        name: accountName,
+        verified: userInfo.data.verified_email
+      });
+
       // Prepare credentials object
       const credentials = {
         access_token: tokens.access_token,
@@ -196,6 +210,8 @@ export class GoogleOAuthService {
             encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
+            accountEmail, // Save account email for UI display
+            accountName, // Save account name for UI display
             updatedAt: new Date(),
             expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
             revokedAt: null // Clear revoked status on re-auth
@@ -207,7 +223,8 @@ export class GoogleOAuthService {
         logger.info('🔄 [Google OAuth] Updated existing credentials', {
           credentialId,
           serverId,
-          userId
+          userId,
+          accountEmail
         });
       } else {
         // Insert new credentials with multi-user support
@@ -223,6 +240,8 @@ export class GoogleOAuthService {
             encryptionKeyId: keyId,
             tokenType: credentials.token_type,
             scope: credentials.scope,
+            accountEmail, // Save account email for UI display
+            accountName, // Save account name for UI display
             createdBy: userId,
             expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null
           })
@@ -234,7 +253,8 @@ export class GoogleOAuthService {
           credentialId,
           serverId,
           userId,
-          provider: 'google'
+          provider: 'google',
+          accountEmail
         });
       }
 

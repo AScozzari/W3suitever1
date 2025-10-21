@@ -3967,6 +3967,8 @@ export const mcpServerCredentials = w3suiteSchema.table("mcp_server_credentials"
   tokenType: varchar("token_type", { length: 50 }), // 'Bearer', 'Basic', etc.
   scope: text("scope"), // OAuth scopes granted
   expiresAt: timestamp("expires_at"), // Token expiration
+  accountEmail: varchar("account_email", { length: 255 }), // OAuth account email (for display in UI)
+  accountName: varchar("account_name", { length: 255 }), // OAuth account display name
   
   // Audit & Lifecycle
   createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }),

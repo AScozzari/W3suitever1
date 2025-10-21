@@ -249,6 +249,8 @@ router.get('/my-credentials', requirePermission('mcp.read'), async (req: Request
         tokenType: mcpServerCredentials.tokenType,
         scope: mcpServerCredentials.scope,
         expiresAt: mcpServerCredentials.expiresAt,
+        accountEmail: mcpServerCredentials.accountEmail,
+        accountName: mcpServerCredentials.accountName,
         revokedAt: mcpServerCredentials.revokedAt,
         createdAt: mcpServerCredentials.createdAt,
         updatedAt: mcpServerCredentials.updatedAt
@@ -276,6 +278,8 @@ router.get('/my-credentials', requirePermission('mcp.read'), async (req: Request
         : 'active',
       scope: cred.scope,
       expiresAt: cred.expiresAt,
+      accountEmail: cred.accountEmail,
+      accountName: cred.accountName,
       connectedAt: cred.createdAt,
       lastUpdated: cred.updatedAt
     }));

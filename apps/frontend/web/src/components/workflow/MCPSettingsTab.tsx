@@ -124,11 +124,14 @@ interface MCPCredential {
   serverId: string;
   serverName: string;
   provider: 'google' | 'microsoft' | 'meta' | null;
+  credentialType: 'api_key' | 'oauth2_user' | 'service_account' | null;
   status: 'active' | 'expired' | 'revoked';
   scope?: string;
   expiresAt?: string;
   connectedAt: string;
   lastUpdated: string;
+  accountEmail?: string;
+  accountName?: string;
 }
 
 interface ConnectedAccount {
@@ -177,6 +180,7 @@ export default function MCPSettingsTab() {
   const [googleAuthMode, setGoogleAuthMode] = useState<'oauth2' | 'service_account'>('oauth2');
   const [googleEmailDetecting, setGoogleEmailDetecting] = useState(false);
   const [googleOAuthConfigSaved, setGoogleOAuthConfigSaved] = useState(false);
+  const [googleAccountConnected, setGoogleAccountConnected] = useState<MCPCredential | null>(null);
   const [selectedMetaAccount, setSelectedMetaAccount] = useState<string>('');
   const [assignToUserId, setAssignToUserId] = useState<string>(currentUser?.id || '');
   
@@ -245,12 +249,28 @@ export default function MCPSettingsTab() {
 
   // 🔄 Sync googleOAuthConfigSaved from fetched credentials
   // This ensures the flag reflects server state after page reloads
+  // ✅ CRITICAL: Only check for api_key credentials (OAuth config), NOT user accounts
   useEffect(() => {
     if (credentials) {
       const hasGoogleConfig = credentials.some(
-        c => c.provider === 'google' && c.status === 'active'
+        c => c.provider === 'google' && 
+            c.status === 'active' && 
+            c.credentialType === 'api_key' // ← Only OAuth config, not user accounts
       );
       setGoogleOAuthConfigSaved(hasGoogleConfig);
+    }
+  }, [credentials]);
+
+  // 🔄 Sync googleAccountConnected from fetched credentials
+  // ✅ CRITICAL: Only check for oauth2_user credentials (real connected accounts)
+  useEffect(() => {
+    if (credentials) {
+      const connectedAccount = credentials.find(
+        c => c.provider === 'google' && 
+            c.status === 'active' && 
+            c.credentialType === 'oauth2_user' // ← Only user OAuth accounts
+      );
+      setGoogleAccountConnected(connectedAccount || null);
     }
   }, [credentials]);
 
@@ -997,35 +1017,62 @@ export default function MCPSettingsTab() {
                   {/* Sign in with Google - Only visible after config saved */}
                   {googleOAuthConfigSaved && (
                     <div className="space-y-3 pt-4 border-t">
-                      <Alert className="bg-green-50 border-green-200">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <AlertTitle className="text-green-900">Configurazione OAuth Salvata ✓</AlertTitle>
-                        <AlertDescription className="text-sm text-green-800">
-                          Ora puoi autorizzare il tuo account Google cliccando il pulsante qui sotto
-                        </AlertDescription>
-                      </Alert>
+                      {/* Show different states based on whether account is connected */}
+                      {googleAccountConnected ? (
+                        // ✅ Account Connected State
+                        <Alert className="bg-green-50 border-green-200">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <AlertTitle className="text-green-900">Account Google Connesso ✓</AlertTitle>
+                          <AlertDescription className="text-sm text-green-800 space-y-1">
+                            <p>
+                              <strong>Email:</strong> {googleAccountConnected.accountEmail || 'N/A'}
+                            </p>
+                            {googleAccountConnected.scope && (
+                              <p>
+                                <strong>Scopes:</strong> {googleAccountConnected.scope.split(' ').length} permessi
+                              </p>
+                            )}
+                            {googleAccountConnected.expiresAt && (
+                              <p>
+                                <strong>Scadenza:</strong> {new Date(googleAccountConnected.expiresAt).toLocaleDateString('it-IT')}
+                              </p>
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        // ⚠️ Config Saved but No Account State
+                        <>
+                          <Alert className="bg-yellow-50 border-yellow-200">
+                            <AlertCircle className="h-4 w-4 text-yellow-600" />
+                            <AlertTitle className="text-yellow-900">Configurazione OAuth Salvata</AlertTitle>
+                            <AlertDescription className="text-sm text-yellow-800">
+                              Clicca il pulsante qui sotto per autorizzare il tuo account Google
+                            </AlertDescription>
+                          </Alert>
 
-                      <Button 
-                        onClick={() => handleOAuthInitiate('google')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white w-full"
-                        disabled={connectingProvider === 'google' || isLoading || !googleEmail}
-                        data-testid="button-oauth-google"
-                      >
-                        {connectingProvider === 'google' ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Connessione in corso...
-                          </>
-                        ) : (
-                          <>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Sign in with Google
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-xs text-gray-500 text-center">
-                        💡 Sarai reindirizzato alla pagina di autorizzazione Google
-                      </p>
+                          <Button 
+                            onClick={() => handleOAuthInitiate('google')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                            disabled={connectingProvider === 'google' || isLoading || !googleEmail}
+                            data-testid="button-oauth-google"
+                          >
+                            {connectingProvider === 'google' ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Connessione in corso...
+                              </>
+                            ) : (
+                              <>
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Sign in with Google
+                              </>
+                            )}
+                          </Button>
+                          <p className="text-xs text-gray-500 text-center">
+                            💡 Sarai reindirizzato alla pagina di autorizzazione Google
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1672,12 +1719,130 @@ export default function MCPSettingsTab() {
       {import.meta.env.DEV && (
         <Card className="border-dashed border-gray-300">
           <CardHeader>
-            <CardTitle className="text-sm text-gray-600">Debug: Credentials Status</CardTitle>
+            <CardTitle className="text-sm text-gray-600 flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Debug: Credentials Status
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
-              {JSON.stringify(credentials || [], null, 2)}
-            </pre>
+          <CardContent className="space-y-4">
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-xs text-blue-600 font-medium">Configurazioni OAuth</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {credentials?.filter(c => c.credentialType === 'api_key').length || 0}
+                </p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                <p className="text-xs text-green-600 font-medium">Account Connessi</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {credentials?.filter(c => c.credentialType === 'oauth2_user').length || 0}
+                </p>
+              </div>
+              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                <p className="text-xs text-purple-600 font-medium">Totale Credenziali</p>
+                <p className="text-2xl font-bold text-purple-900">
+                  {credentials?.length || 0}
+                </p>
+              </div>
+            </div>
+
+            {/* Detailed Credentials Table */}
+            {credentials && credentials.length > 0 ? (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-700">Credenziali Dettagliate</h4>
+                {credentials.map((cred) => (
+                  <div 
+                    key={cred.id} 
+                    className={`p-3 rounded-lg border-2 ${
+                      cred.credentialType === 'oauth2_user' 
+                        ? 'bg-green-50 border-green-300' 
+                        : 'bg-blue-50 border-blue-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <Badge className={`text-xs ${
+                          cred.credentialType === 'oauth2_user' 
+                            ? 'bg-green-600' 
+                            : 'bg-blue-600'
+                        }`}>
+                          {cred.credentialType || 'unknown'}
+                        </Badge>
+                        <Badge className="ml-2 text-xs bg-gray-600">
+                          {cred.provider || 'N/A'}
+                        </Badge>
+                      </div>
+                      <Badge variant={cred.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                        {cred.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-1 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-gray-600">Server:</span>
+                          <p className="font-mono text-gray-900 truncate">{cred.serverName}</p>
+                        </div>
+                        {cred.accountEmail && (
+                          <div>
+                            <span className="text-gray-600">Email:</span>
+                            <p className="font-mono text-gray-900 truncate">{cred.accountEmail}</p>
+                          </div>
+                        )}
+                        {cred.scope && (
+                          <div>
+                            <span className="text-gray-600">Scopes:</span>
+                            <p className="font-mono text-gray-900">{cred.scope.split(' ').length} permessi</p>
+                          </div>
+                        )}
+                        {cred.expiresAt && (
+                          <div>
+                            <span className="text-gray-600">Scadenza:</span>
+                            <p className="font-mono text-gray-900">
+                              {new Date(cred.expiresAt).toLocaleDateString('it-IT', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-600">Creata:</span>
+                          <p className="font-mono text-gray-900">
+                            {new Date(cred.connectedAt).toLocaleDateString('it-IT', {
+                              day: '2-digit',
+                              month: '2-digit', 
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Nessuna credenziale trovata. Configura le tue prime credenziali OAuth.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Raw JSON (collapsible) */}
+            <details className="text-xs">
+              <summary className="cursor-pointer text-gray-600 hover:text-gray-900 font-medium">
+                Mostra JSON completo
+              </summary>
+              <pre className="mt-2 bg-gray-50 p-3 rounded overflow-auto max-h-64 border">
+                {JSON.stringify(credentials || [], null, 2)}
+              </pre>
+            </details>
           </CardContent>
         </Card>
       )}
