@@ -254,7 +254,7 @@ export default function MCPSettingsTab() {
     }
   }, [credentials]);
 
-  // 🔄 Sync Meta 3-Phase states from credentials and connected accounts
+  // 🔄 Sync Meta Phase 1 state from credentials
   useEffect(() => {
     if (credentials) {
       // FASE 1: Check if Meta App config exists
@@ -265,19 +265,20 @@ export default function MCPSettingsTab() {
     }
   }, [credentials]);
 
-  useEffect(() => {
-    if (connectedAccounts?.accounts) {
-      // FASE 2: Check if at least one account is connected
-      setMetaPhase2Complete(connectedAccounts.accounts.length > 0);
-    }
-  }, [connectedAccounts]);
-
   // 🔄 Fetch Connected Accounts for Meta/Instagram
   const metaServer = servers?.find(s => s.name === 'meta-instagram');
   const { data: connectedAccounts, isLoading: accountsLoading } = useQuery<{ success: boolean; accounts: ConnectedAccount[] }>({
     queryKey: ['/api/mcp/credentials/connected-accounts', metaServer?.id],
     enabled: !!metaServer,
   });
+
+  // 🔄 Sync Meta Phase 2 state from connected accounts
+  useEffect(() => {
+    if (connectedAccounts?.accounts) {
+      // FASE 2: Check if at least one account is connected
+      setMetaPhase2Complete(connectedAccounts.accounts.length > 0);
+    }
+  }, [connectedAccounts]);
 
   const isLoading = serversLoading || credentialsLoading;
 
