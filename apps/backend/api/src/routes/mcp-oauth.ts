@@ -379,12 +379,23 @@ router.get('/google/callback', async (req: Request, res: Response) => {
       credentialId: result.credentialId
     });
 
-    // Return success page
+    // Get tenant slug for redirect
+    const tenant = await db
+      .select({ slug: tenants.slug })
+      .from(tenants)
+      .where(eq(tenants.id, stateData.tenantId))
+      .limit(1);
+    
+    const tenantSlug = tenant[0]?.slug || 'staging';
+    const redirectUrl = `/${tenantSlug}/workflows`;
+
+    // Return success page with auto-redirect
     res.send(`
       <!DOCTYPE html>
       <html>
       <head>
         <title>OAuth Success</title>
+        <meta http-equiv="refresh" content="2;url=${redirectUrl}">
         <style>
           body { 
             font-family: system-ui; 
@@ -401,6 +412,11 @@ router.get('/google/callback', async (req: Request, res: Response) => {
           }
           h1 { color: #2e7d32; }
           .icon { font-size: 64px; margin-bottom: 20px; }
+          .redirect-info { 
+            margin-top: 20px; 
+            color: #666; 
+            font-size: 14px;
+          }
         </style>
       </head>
       <body>
@@ -408,15 +424,15 @@ router.get('/google/callback', async (req: Request, res: Response) => {
           <div class="icon">✅</div>
           <h1>Google Workspace Connected!</h1>
           <p>${result.message}</p>
-          <p style="margin-top: 20px; color: #666;">
-            You can close this window and return to the application.
+          <p class="redirect-info">
+            Redirecting to Workflows in 2 seconds...
           </p>
         </div>
         <script>
-          // Auto-close after 3 seconds
+          // Auto-redirect to workflows page
           setTimeout(() => {
-            window.close();
-          }, 3000);
+            window.location.href = '${redirectUrl}';
+          }, 2000);
         </script>
       </body>
       </html>
