@@ -12,6 +12,29 @@ import { MetaOAuthService } from '../services/meta-oauth-service';
 const router = Router();
 
 /**
+ * Normalize server name to base provider for frontend routing
+ * Examples:
+ * - "google-workspace-oauth-config" → "google"
+ * - "meta-instagram" → "meta"
+ * - "meta-instagram-oauth-config" → "meta"
+ * - "microsoft-365-oauth-config" → "microsoft"
+ */
+function normalizeProviderFromServerName(serverName: string | null): string {
+  if (!serverName) return 'unknown';
+  
+  const normalized = serverName.toLowerCase();
+  
+  if (normalized.startsWith('google')) return 'google';
+  if (normalized.startsWith('meta')) return 'meta';
+  if (normalized.startsWith('microsoft')) return 'microsoft';
+  if (normalized.startsWith('aws')) return 'aws';
+  if (normalized.startsWith('stripe')) return 'stripe';
+  if (normalized.startsWith('gtm')) return 'gtm';
+  
+  return 'unknown';
+}
+
+/**
  * Get all MCP credentials for tenant
  * GET /api/mcp/credentials?status=active|revoked|all
  */
@@ -66,9 +89,10 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Transform to match frontend expected format
     // Derive status AFTER fetch (not in SQL query to avoid truthy evaluation bug)
+    // Normalize provider from serverName for frontend routing
     const formattedCredentials = credentials.map(cred => ({
       id: cred.id,
-      provider: cred.serverName?.toLowerCase() || 'unknown', // Use server name as provider
+      provider: normalizeProviderFromServerName(cred.serverName), // Normalize to base provider
       status: cred.revokedAt ? ('revoked' as const) : ('active' as const), // Derive status here
       createdAt: cred.createdAt.toISOString(),
       expiresAt: cred.expiresAt?.toISOString(),
