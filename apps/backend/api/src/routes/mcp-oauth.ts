@@ -1488,4 +1488,135 @@ router.get('/microsoft/test/:serverId', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * 🧪 TEST ENDPOINT: Send test email via Gmail
+ * GET /api/mcp/oauth/test-gmail-send
+ * 
+ * Temporary endpoint for testing Gmail API integration
+ */
+router.get('/test-gmail-send', async (req: Request, res: Response) => {
+  try {
+    logger.info('🧪 [Gmail Test] Starting test email send...');
+
+    // Import dependencies
+    const { mcpServerCredentials, tenants } = await import('../db/schema/w3suite');
+    const { decryptMCPCredentials } = await import('../services/mcp-credential-encryption');
+    const { google } = await import('googleapis');
+
+    // 1. Fetch OAuth credentials
+    const credentials = await db
+      .select()
+      .from(mcpServerCredentials)
+      .where(eq(mcpServerCredentials.oauthProvider, 'google'))
+      .limit(1);
+
+    if (credentials.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No Google OAuth credentials found'
+      });
+    }
+
+    const cred = credentials[0];
+    logger.info('✅ [Gmail Test] Found credentials for:', cred.accountEmail);
+
+    // 2. Decrypt credentials
+    const decryptedCreds = await decryptMCPCredentials(
+      cred.encryptedCredentials as any,
+      cred.tenantId
+    );
+
+    logger.info('✅ [Gmail Test] Credentials decrypted');
+
+    // 3. Get Google OAuth client config from environment variables
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({
+        success: false,
+        error: 'Google OAuth configuration missing',
+        message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables must be set'
+      });
+    }
+
+    // 4. Initialize OAuth2 client
+    const oauth2Client = new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      'https://not-needed-for-api-calls.com'
+    );
+
+    oauth2Client.setCredentials({
+      access_token: decryptedCreds.access_token,
+      refresh_token: decryptedCreds.refresh_token,
+      token_type: decryptedCreds.token_type,
+      expiry_date: decryptedCreds.expiry_date
+    });
+
+    // 6. Initialize Gmail API
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    // 7. Compose email
+    const to = 'a.scozzari@easydigitalgroup.it';
+    const subject = 'Test Email from W3 Suite';
+    const body = 'Ciao Ti sto scrivendo da w3 suite sono il piu forte di tutti';
+
+    const rawMessage = [
+      `To: ${to}`,
+      `From: ${cred.accountEmail}`,
+      `Subject: ${subject}`,
+      '',
+      body
+    ].join('\n');
+
+    // Encode in base64url
+    const encodedMessage = Buffer.from(rawMessage)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    logger.info('📧 [Gmail Test] Sending email...', {
+      from: cred.accountEmail,
+      to,
+      subject
+    });
+
+    // 8. Send email
+    const result = await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage
+      }
+    });
+
+    logger.info('✅ [Gmail Test] Email sent successfully!', {
+      messageId: result.data.id,
+      threadId: result.data.threadId
+    });
+
+    res.json({
+      success: true,
+      message: 'Email sent successfully via Gmail API',
+      messageId: result.data.id,
+      threadId: result.data.threadId,
+      from: cred.accountEmail,
+      to,
+      subject
+    });
+
+  } catch (error) {
+    logger.error('❌ [Gmail Test] Failed to send email', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send test email',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
