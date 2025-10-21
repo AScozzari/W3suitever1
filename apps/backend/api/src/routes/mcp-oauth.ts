@@ -1547,10 +1547,10 @@ router.get('/test-gmail-send', async (req: Request, res: Response) => {
     // 6. Initialize Gmail API
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // 7. Compose email
-    const to = 'a.scozzari@easydigitalgroup.it';
-    const subject = 'Test Email from W3 Suite';
-    const body = 'Ciao Ti sto scrivendo da w3 suite sono il piu forte di tutti';
+    // 7. Compose email (accept from query params or use defaults)
+    const to = (req.query.to as string) || 'a.scozzari@easydigitalgroup.it';
+    const subject = (req.query.subject as string) || 'Test Email from W3 Suite';
+    const body = (req.query.body as string) || 'Ciao Ti sto scrivendo da w3 suite sono il piu forte di tutti';
 
     const rawMessage = [
       `To: ${to}`,
