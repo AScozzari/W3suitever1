@@ -203,6 +203,14 @@ export class ReactFlowBridgeParser {
         return { type: 'ai', executorId: 'ai-decision-executor' };
       }
       
+      // 🔌 MCP Connectors
+      if (node.type === 'mcp_connector' || node.type === 'mcp-connector') {
+        return { type: 'action', executorId: 'mcp-connector-executor' };
+      }
+      if (node.type === 'ai_mcp' || node.type === 'ai-mcp') {
+        return { type: 'ai', executorId: 'ai-mcp-executor' };
+      }
+      
       // ✅ PRIORITY 2: Generic types (backward compatibility)
       switch (node.type) {
         case 'trigger':
@@ -282,6 +290,15 @@ export class ReactFlowBridgeParser {
     }
     if (node.id.includes('generic-action') || node.type === 'generic-action') {
       return 'generic-action-executor';
+    }
+    
+    // 🔌 MCP CONNECTOR MAPPING
+    if (node.id.includes('mcp') || node.type === 'mcp_connector' || node.type === 'mcp-connector') {
+      // Check if it's AI-driven MCP or standard MCP
+      if (node.data?.mcpServerIds || node.data?.aiInstructions) {
+        return 'ai-mcp-executor';
+      }
+      return 'mcp-connector-executor';
     }
     
     // ✅ LEGACY MAPPING: For backward compatibility with old actionType
