@@ -1,0 +1,41 @@
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+2chunk-L7SIRVDC.js?v=841030c9:903 Uncaught SyntaxError: The requested module '/node_modules/.vite/deps/lucide-react.js?v=841030c9' does not provide an export named 'LinkOff' (at MCPSettingsTab.tsx:35:3)Understand this error
+hook.js:608 The above error occurred in one of your React components:
+
+    at Lazy
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:768:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:244:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:102:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=841030c9:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=841030c9:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=841030c9:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=841030c9:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=841030c9:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=841030c9:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=841030c9:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=841030c9:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=841030c9:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=841030c9:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=841030c9:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=841030c9:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=841030c9:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=841030c9:197
+flushWork @ chunk-ZHRYBLGQ.js?v=841030c9:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=841030c9:384Understand this error
+chunk-ZHRYBLGQ.js?v=841030c9:19413 Uncaught SyntaxError: The requested module '/node_modules/.vite/deps/lucide-react.js?v=841030c9' does not provide an export named 'LinkOff' (at MCPSettingsTab.tsx:35:3)
