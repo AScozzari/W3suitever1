@@ -1,5 +1,8 @@
 import { MetaOAuthService } from '../services/meta-oauth-service';
 import { logger } from '../core/logger';
+import { db } from '../core/db';
+import { mcpConnectedAccounts } from '../db/schema/w3suite';
+import { and, eq, sql } from 'drizzle-orm';
 
 /**
  * Meta/Instagram MCP Executors
@@ -7,13 +10,84 @@ import { logger } from '../core/logger';
  * 9 action executors for Meta/Instagram integration:
  * - Instagram: Post Image, Post Video, Post Story, Reply Comment, Reply DM, Get Insights (6)
  * - Facebook: Post, Comment, Send Message (3)
+ * 
+ * Multi-user OAuth Support:
+ * - All executors require userId for per-user credential isolation
+ * - instagramAccountId optional with 'primary' fallback (first connected account)
  */
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * 🎯 Resolve Instagram Account ID
+ * 
+ * If instagramAccountId provided → validate and use it
+ * If omitted → query DB for first connected Instagram account (primary fallback)
+ * 
+ * @throws Error if no valid Instagram account found
+ */
+async function resolveInstagramAccountId(params: {
+  serverId: string;
+  tenantId: string;
+  userId: string;
+  instagramAccountId?: string;
+}): Promise<string> {
+  const { serverId, tenantId, userId, instagramAccountId } = params;
+
+  // If provided, validate it belongs to user
+  if (instagramAccountId) {
+    const [account] = await db
+      .select({ instagramAccountId: mcpConnectedAccounts.instagramAccountId })
+      .from(mcpConnectedAccounts)
+      .where(and(
+        eq(mcpConnectedAccounts.serverId, serverId),
+        eq(mcpConnectedAccounts.tenantId, tenantId),
+        eq(mcpConnectedAccounts.userId, userId),
+        eq(mcpConnectedAccounts.instagramAccountId, instagramAccountId),
+        sql`connected_at IS NOT NULL`
+      ))
+      .limit(1);
+
+    if (!account || !account.instagramAccountId) {
+      throw new Error(`Instagram account ${instagramAccountId} not found or not authorized for user`);
+    }
+
+    return account.instagramAccountId;
+  }
+
+  // Fallback: Get first connected Instagram account (primary)
+  const [primaryAccount] = await db
+    .select({ instagramAccountId: mcpConnectedAccounts.instagramAccountId })
+    .from(mcpConnectedAccounts)
+    .where(and(
+      eq(mcpConnectedAccounts.serverId, serverId),
+      eq(mcpConnectedAccounts.tenantId, tenantId),
+      eq(mcpConnectedAccounts.userId, userId),
+      sql`instagram_account_id IS NOT NULL`,
+      sql`connected_at IS NOT NULL`
+    ))
+    .orderBy(sql`connected_at ASC`)
+    .limit(1);
+
+  if (!primaryAccount || !primaryAccount.instagramAccountId) {
+    throw new Error('No Instagram Business account connected. Please connect an Instagram account in MCP Settings.');
+  }
+
+  logger.info('🎯 [Instagram] Using primary (first) Instagram account', {
+    instagramAccountId: primaryAccount.instagramAccountId,
+    userId
+  });
+
+  return primaryAccount.instagramAccountId;
+}
 
 // ==================== INSTAGRAM EXECUTORS ====================
 
 export async function executeInstagramPostImage(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
+  instagramAccountId?: string; // Optional - falls back to primary account
   config: {
     imageUrl: string;
     caption: string;
@@ -21,25 +95,37 @@ export async function executeInstagramPostImage(params: {
     userTags?: Array<{ username: string; x: number; y: number }>;
   };
 }): Promise<{ mediaId: string; permalink: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, instagramAccountId, config } = params;
 
   try {
-    const accessToken = await MetaOAuthService.getValidAccessToken({
+    // Resolve Instagram account ID (use provided or fallback to primary)
+    const resolvedAccountId = await resolveInstagramAccountId({
       serverId,
-      tenantId
+      tenantId,
+      userId,
+      instagramAccountId
     });
 
-    // Step 1: Create media container
+    // Get valid access token for user
+    const accessToken = await MetaOAuthService.getValidAccessToken({
+      serverId,
+      tenantId,
+      userId
+    });
+
+    // Step 1: Create media container (using Facebook Graph API for Instagram)
+    const containerParams = new URLSearchParams({
+      image_url: config.imageUrl,
+      caption: config.caption,
+      access_token: accessToken
+    });
+
     const containerResponse = await fetch(
-      `https://graph.instagram.com/v21.0/me/media`,
+      `https://graph.facebook.com/v19.0/${resolvedAccountId}/media`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: config.imageUrl,
-          caption: config.caption,
-          access_token: accessToken
-        })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: containerParams.toString()
       }
     );
 
@@ -51,15 +137,17 @@ export async function executeInstagramPostImage(params: {
     const containerData = await containerResponse.json();
 
     // Step 2: Publish media
+    const publishParams = new URLSearchParams({
+      creation_id: containerData.id,
+      access_token: accessToken
+    });
+
     const publishResponse = await fetch(
-      `https://graph.instagram.com/v21.0/me/media_publish`,
+      `https://graph.facebook.com/v19.0/${resolvedAccountId}/media_publish`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creation_id: containerData.id,
-          access_token: accessToken
-        })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: publishParams.toString()
       }
     );
 
@@ -71,7 +159,9 @@ export async function executeInstagramPostImage(params: {
     const publishData = await publishResponse.json();
 
     logger.info('✅ [Instagram Post Image] Posted successfully', {
-      mediaId: publishData.id
+      mediaId: publishData.id,
+      instagramAccountId: resolvedAccountId,
+      userId
     });
 
     return {
@@ -81,7 +171,9 @@ export async function executeInstagramPostImage(params: {
 
   } catch (error) {
     logger.error('❌ [Instagram Post Image] Failed', {
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      instagramAccountId
     });
     throw error;
   }
@@ -90,6 +182,8 @@ export async function executeInstagramPostImage(params: {
 export async function executeInstagramPostVideo(params: {
   serverId: string;
   tenantId: string;
+  userId: string; // REQUIRED for multi-user OAuth
+  instagramAccountId?: string; // Optional - falls back to primary account
   config: {
     videoUrl: string;
     caption: string;
@@ -97,26 +191,42 @@ export async function executeInstagramPostVideo(params: {
     location?: string;
   };
 }): Promise<{ mediaId: string; permalink: string }> {
-  const { serverId, tenantId, config } = params;
+  const { serverId, tenantId, userId, instagramAccountId, config } = params;
 
   try {
-    const accessToken = await MetaOAuthService.getValidAccessToken({
+    // Resolve Instagram account ID
+    const resolvedAccountId = await resolveInstagramAccountId({
       serverId,
-      tenantId
+      tenantId,
+      userId,
+      instagramAccountId
     });
 
+    // Get valid access token for user
+    const accessToken = await MetaOAuthService.getValidAccessToken({
+      serverId,
+      tenantId,
+      userId
+    });
+
+    // Step 1: Create video container (using Facebook Graph API)
+    const containerParams = new URLSearchParams({
+      media_type: 'VIDEO',
+      video_url: config.videoUrl,
+      caption: config.caption,
+      access_token: accessToken
+    });
+
+    if (config.coverImageUrl) {
+      containerParams.append('cover_url', config.coverImageUrl);
+    }
+
     const containerResponse = await fetch(
-      `https://graph.instagram.com/v21.0/me/media`,
+      `https://graph.facebook.com/v19.0/${resolvedAccountId}/media`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          media_type: 'VIDEO',
-          video_url: config.videoUrl,
-          caption: config.caption,
-          ...(config.coverImageUrl ? { cover_url: config.coverImageUrl } : {}),
-          access_token: accessToken
-        })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: containerParams.toString()
       }
     );
 
@@ -127,15 +237,18 @@ export async function executeInstagramPostVideo(params: {
 
     const containerData = await containerResponse.json();
 
+    // Step 2: Publish media
+    const publishParams = new URLSearchParams({
+      creation_id: containerData.id,
+      access_token: accessToken
+    });
+
     const publishResponse = await fetch(
-      `https://graph.instagram.com/v21.0/me/media_publish`,
+      `https://graph.facebook.com/v19.0/${resolvedAccountId}/media_publish`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creation_id: containerData.id,
-          access_token: accessToken
-        })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: publishParams.toString()
       }
     );
 
@@ -146,6 +259,12 @@ export async function executeInstagramPostVideo(params: {
 
     const publishData = await publishResponse.json();
 
+    logger.info('✅ [Instagram Post Video] Posted successfully', {
+      mediaId: publishData.id,
+      instagramAccountId: resolvedAccountId,
+      userId
+    });
+
     return {
       mediaId: publishData.id,
       permalink: `https://www.instagram.com/p/${publishData.id}/`
@@ -153,7 +272,9 @@ export async function executeInstagramPostVideo(params: {
 
   } catch (error) {
     logger.error('❌ [Instagram Post Video] Failed', {
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      instagramAccountId
     });
     throw error;
   }

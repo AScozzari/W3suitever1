@@ -529,4 +529,70 @@ export class MetaOAuthService {
 
     return accounts;
   }
+
+  /**
+   * 🎯 Get valid access token with multi-user OAuth support
+   * 
+   * REQUIRES userId for per-user credential isolation
+   * Handles token refresh automatically if expired
+   * 
+   * @throws Error if no credentials found or userId missing
+   */
+  static async getValidAccessToken(params: {
+    serverId: string;
+    tenantId: string;
+    userId: string; // REQUIRED for multi-user OAuth
+  }): Promise<string> {
+    const { serverId, tenantId, userId } = params;
+
+    // ENFORCE userId requirement
+    if (!userId) {
+      throw new Error('[Meta OAuth] userId is REQUIRED for multi-user OAuth model');
+    }
+
+    try {
+      // Use unified credential service
+      const { UnifiedCredentialService } = await import('./unified-credential-service');
+      
+      const credentialPayload = await UnifiedCredentialService.getValidCredentials({
+        tenantId,
+        serverId,
+        userId,
+        oauthProvider: 'meta',
+        credentialType: 'oauth2_user'
+      });
+
+      const currentCredentials = credentialPayload.credentials;
+
+      // Meta tokens are long-lived (60 days), check expiry
+      if (credentialPayload.needsRefresh || credentialPayload.isExpired) {
+        logger.info('⏰ [Meta OAuth] Token expired or expiring soon, requesting re-auth...', {
+          expiresAt: credentialPayload.expiresAt?.toISOString() || 'unknown',
+          serverId,
+          userId
+        });
+
+        // Meta doesn't support refresh tokens - user must re-authenticate
+        throw new Error('Meta access token expired. Please re-authenticate in MCP Settings.');
+      }
+
+      // Token is valid
+      logger.info('✅ [Meta OAuth] Access token is valid', {
+        serverId,
+        userId,
+        expiresAt: credentialPayload.expiresAt?.toISOString() || 'unknown'
+      });
+
+      return currentCredentials.access_token;
+
+    } catch (error) {
+      logger.error('❌ [Meta OAuth] Failed to get valid access token', {
+        error: error instanceof Error ? error.message : String(error),
+        serverId,
+        tenantId,
+        userId
+      });
+      throw error;
+    }
+  }
 }
