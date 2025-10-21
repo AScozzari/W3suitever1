@@ -1528,31 +1528,21 @@ router.get('/test-gmail-send', async (req: Request, res: Response) => {
 
     logger.info('✅ [Gmail Test] Credentials decrypted');
 
-    // 3. Get Google OAuth client config from environment variables
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    // 3. Initialize OAuth2 client using GoogleOAuthService (handles database + env fallback)
+    const redirectUri = 'https://not-needed-for-api-calls.com';
+    const oauth2Client = await GoogleOAuthService['getOAuth2Client'](redirectUri, cred.tenantId);
 
-    if (!clientId || !clientSecret) {
-      return res.status(500).json({
-        success: false,
-        error: 'Google OAuth configuration missing',
-        message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables must be set'
-      });
-    }
+    logger.info('✅ [Gmail Test] OAuth2 client initialized');
 
-    // 4. Initialize OAuth2 client
-    const oauth2Client = new google.auth.OAuth2(
-      clientId,
-      clientSecret,
-      'https://not-needed-for-api-calls.com'
-    );
-
+    // 4. Set user credentials on OAuth2 client
     oauth2Client.setCredentials({
       access_token: decryptedCreds.access_token,
       refresh_token: decryptedCreds.refresh_token,
       token_type: decryptedCreds.token_type,
       expiry_date: decryptedCreds.expiry_date
     });
+
+    logger.info('✅ [Gmail Test] User credentials set on OAuth2 client');
 
     // 6. Initialize Gmail API
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
