@@ -36,7 +36,8 @@ import {
   Brain,
   Search,
   Filter,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
