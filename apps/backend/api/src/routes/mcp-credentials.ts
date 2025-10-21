@@ -379,12 +379,23 @@ router.delete('/google/:credentialId', async (req: Request, res: Response) => {
       });
     }
 
-    // TODO: Add workflow dependency check
-    // Check if any active workflow templates use this credential
-    // If yes, return 409 Conflict with list of dependent workflows
-    // For now, we allow deletion (user is responsible for fixing broken workflows)
+    // 🔒 DEPENDENCY CHECK: Enforce revoke-before-delete pattern
+    // This prevents deletion of active credentials that might be referenced by workflows
+    if (!credential.revokedAt) {
+      return res.status(409).json({
+        success: false,
+        error: 'CREDENTIAL_IN_USE',
+        message: 'Cannot delete active credential. Please revoke it first.',
+        hint: 'Use PATCH /api/mcp/credentials/google/:id/revoke to disconnect the credential before deletion'
+      });
+    }
 
-    // Permanent deletion from database
+    // TODO: Enhanced workflow dependency check
+    // Future improvement: Parse workflow JSON nodes to find exact workflow dependencies
+    // Query: SELECT id, name FROM workflows WHERE nodes::text LIKE '%credentialId%'
+    // Return: List of {workflowId, workflowName} for 409 response
+
+    // Permanent deletion from database (only allowed for revoked credentials)
     await db
       .delete(mcpServerCredentials)
       .where(eq(mcpServerCredentials.id, credentialId));
