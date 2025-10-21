@@ -231,9 +231,9 @@ router.get('/google/start/:serverId', async (req: Request, res: Response) => {
     }
 
     // Build callback URL
-    // 🔒 CRITICAL: Always use HTTPS for OAuth redirect URIs
-    // req.protocol returns 'http' behind reverse proxy (nginx), but client uses HTTPS
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+    // 🔒 CRITICAL: Force HTTPS - Replit always serves via HTTPS to users
+    // (internal backend uses HTTP but nginx proxies with HTTPS)
+    const protocol = 'https';
     const host = req.get('host');
     const callbackPath = '/api/mcp/oauth/google/callback';
     const redirectUri = `${protocol}://${host}${callbackPath}`;
@@ -746,8 +746,8 @@ router.get('/meta/start/:serverId', async (req: Request, res: Response) => {
     }
 
     // Build callback URL
-    // 🔒 CRITICAL: Always use HTTPS for OAuth redirect URIs
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+    // 🔒 CRITICAL: Force HTTPS - Replit always serves via HTTPS to users
+    const protocol = 'https';
     const host = req.get('host');
     const callbackPath = '/api/mcp/oauth/meta/callback';
     const redirectUri = `${protocol}://${host}${callbackPath}`;
@@ -1171,8 +1171,8 @@ router.get('/microsoft/start/:serverId', async (req: Request, res: Response) => 
     }
 
     // Build callback URL
-    // 🔒 CRITICAL: Always use HTTPS for OAuth redirect URIs
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+    // 🔒 CRITICAL: Force HTTPS - Replit always serves via HTTPS to users
+    const protocol = 'https';
     const host = req.get('host');
     const callbackPath = '/api/mcp/oauth/microsoft/callback';
     const redirectUri = `${protocol}://${host}${callbackPath}`;
