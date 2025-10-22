@@ -129,12 +129,6 @@ export function CampaignCreationChoice({
             </Card>
           </motion.div>
         </div>
-
-        <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-          <p className="text-sm text-blue-800 dark:text-blue-300 text-center">
-            💡 La tua preferenza verrà salvata per le prossime creazioni
-          </p>
-        </div>
       </DialogContent>
     </Dialog>
   );

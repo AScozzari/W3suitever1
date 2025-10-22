@@ -181,18 +181,9 @@ export default function CampaignsPage() {
   });
 
   const handleCreateCampaign = () => {
-    // Se c'è già una preferenza salvata, vai diretto
-    if (preference) {
-      setEditingCampaignId(undefined);
-      if (preference === 'wizard') {
-        setIsWizardOpen(true);
-      } else {
-        setIsSettingsDialogOpen(true);
-      }
-    } else {
-      // Prima volta: mostra il modal di scelta
-      setIsChoiceDialogOpen(true);
-    }
+    // Sempre mostra il modal di scelta (no preferenza salvata)
+    setEditingCampaignId(undefined);
+    setIsChoiceDialogOpen(true);
   };
 
   const handleEditCampaign = (campaignId: string) => {
@@ -212,13 +203,11 @@ export default function CampaignsPage() {
 
   const handleSelectWizard = () => {
     setIsChoiceDialogOpen(false);
-    setMode('wizard'); // Salva preferenza
     setIsWizardOpen(true);
   };
 
   const handleSelectStandard = () => {
     setIsChoiceDialogOpen(false);
-    setMode('standard'); // Salva preferenza
     setIsSettingsDialogOpen(true);
   };
 
@@ -735,17 +724,9 @@ export function CampaignsContent() {
   });
 
   const handleCreateCampaign = () => {
+    // Sempre mostra il modal di scelta (no preferenza salvata)
     setEditingCampaignId(undefined);
-    
-    // Check user preference for campaign creation mode
-    if (preference === 'wizard') {
-      setIsWizardOpen(true);
-    } else if (preference === 'standard') {
-      setIsSettingsDialogOpen(true);
-    } else {
-      // No preference set - show choice dialog
-      setIsChoiceDialogOpen(true);
-    }
+    setIsChoiceDialogOpen(true);
   };
 
   const handleEditCampaign = (campaignId: string) => {
@@ -760,13 +741,11 @@ export function CampaignsContent() {
   };
 
   const handleSelectWizard = () => {
-    setMode('wizard');
     setIsChoiceDialogOpen(false);
     setIsWizardOpen(true);
   };
 
   const handleSelectStandard = () => {
-    setMode('standard');
     setIsChoiceDialogOpen(false);
     setIsSettingsDialogOpen(true);
   };
