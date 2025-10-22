@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -17,6 +17,7 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { LeadStatusSettingsDialog } from './LeadStatusSettingsDialog';
+import { useCampaignCreationMode } from '@/hooks/useCampaignCreationMode';
 import { 
   Settings2, 
   Target, 
@@ -30,7 +31,14 @@ import {
   ListTodo,
   Copy,
   Link,
-  ExternalLink
+  ExternalLink,
+  Wand2,
+  Zap,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  Edit2,
+  RefreshCw
 } from 'lucide-react';
 
 interface CampaignSettingsDialogProps {
@@ -79,6 +87,11 @@ const campaignFormSchema = z.object({
   // Budget & Tracking
   budget: z.number().optional().nullable(),
   actualSpent: z.number().optional().nullable(),
+  
+  // Tracking Pixels (nullable = inherited from store)
+  ga4MeasurementId: z.string().max(50).optional().nullable(),
+  googleAdsConversionId: z.string().max(50).optional().nullable(),
+  facebookPixelId: z.string().max(50).optional().nullable(),
   
   // Dates
   startDate: z.string().optional().nullable(),
@@ -331,17 +344,926 @@ function UTMLinksTab({ campaignId, mode }: { campaignId?: string | null; mode: '
   );
 }
 
+// Mode Selector Component
+interface ModeSelectorProps {
+  onSelect: (mode: 'wizard' | 'advanced', remember: boolean) => void;
+}
+
+function ModeSelector({ onSelect }: ModeSelectorProps) {
+  const [rememberChoice, setRememberChoice] = useState(false);
+
+  return (
+    <div className="space-y-6 py-4">
+      <div className="text-center space-y-2">
+        <h3 className="text-2xl font-bold">Come vuoi creare la campagna?</h3>
+        <p className="text-muted-foreground">
+          Scegli la modalità più adatta alle tue esigenze
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Wizard Mode Card */}
+        <div
+          onClick={() => onSelect('wizard', rememberChoice)}
+          className="relative overflow-hidden rounded-xl border-2 border-transparent hover:border-windtre-orange bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-6 cursor-pointer transition-all hover:shadow-lg group"
+          data-testid="card-wizard-mode"
+        >
+          <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-green-500 text-white text-xs font-semibold">
+            Consigliato
+          </div>
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="h-16 w-16 rounded-full bg-windtre-orange/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Wand2 className="h-8 w-8 text-windtre-orange" />
+            </div>
+            <div>
+              <h4 className="text-xl font-bold mb-1">Wizard Guidato</h4>
+              <p className="text-sm text-muted-foreground">4 passaggi semplici</p>
+            </div>
+            <ul className="text-sm space-y-2 text-left w-full">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span>Ideale per principianti</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span>Solo campi essenziali</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span>Validazione step-by-step</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span>Preview finale prima di salvare</span>
+              </li>
+            </ul>
+            <Button className="w-full bg-windtre-orange hover:bg-windtre-orange/90" data-testid="button-select-wizard">
+              <Wand2 className="h-4 w-4 mr-2" />
+              Usa Wizard
+            </Button>
+          </div>
+        </div>
+
+        {/* Advanced Mode Card */}
+        <div
+          onClick={() => onSelect('advanced', rememberChoice)}
+          className="relative overflow-hidden rounded-xl border-2 border-transparent hover:border-windtre-purple bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 p-6 cursor-pointer transition-all hover:shadow-lg group"
+          data-testid="card-advanced-mode"
+        >
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="h-16 w-16 rounded-full bg-windtre-purple/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Zap className="h-8 w-8 text-windtre-purple" />
+            </div>
+            <div>
+              <h4 className="text-xl font-bold mb-1">Modalità Avanzata</h4>
+              <p className="text-sm text-muted-foreground">Tutte le opzioni disponibili</p>
+            </div>
+            <ul className="text-sm space-y-2 text-left w-full">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-purple-600" />
+                <span>Per utenti esperti</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-purple-600" />
+                <span>Controllo granulare completo</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-purple-600" />
+                <span>9 tab di configurazione</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-purple-600" />
+                <span>Accesso a tutte le features</span>
+              </li>
+            </ul>
+            <Button variant="outline" className="w-full border-windtre-purple hover:bg-windtre-purple/10" data-testid="button-select-advanced">
+              <Zap className="h-4 w-4 mr-2" />
+              Usa Avanzata
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-2 pt-2">
+        <Checkbox
+          id="remember-choice"
+          checked={rememberChoice}
+          onCheckedChange={(checked) => setRememberChoice(!!checked)}
+          data-testid="checkbox-remember-choice"
+        />
+        <label
+          htmlFor="remember-choice"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+        >
+          Ricorda la mia scelta
+        </label>
+      </div>
+    </div>
+  );
+}
+
+// Wizard Step 1: Basic Info
+interface WizardStep1Props {
+  form: UseFormReturn<CampaignFormValues>;
+  stores: any[];
+}
+
+function WizardStep1({ form, stores }: WizardStep1Props) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 mb-6">
+        <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+          <Settings2 className="h-5 w-5 text-windtre-orange" />
+          Informazioni di Base
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Iniziamo con le informazioni essenziali della tua campagna marketing
+        </p>
+      </div>
+
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nome Campagna *</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="Es: Promo Black Friday 2025" data-testid="wizard-input-name" />
+            </FormControl>
+            <FormDescription>Un nome descrittivo per identificare facilmente la campagna</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Descrizione</FormLabel>
+            <FormControl>
+              <Textarea {...field} rows={3} placeholder="Descrizione della campagna..." data-testid="wizard-textarea-description" />
+            </FormControl>
+            <FormDescription>Aggiungi dettagli su obiettivi e target della campagna</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="objective"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Obiettivo</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="Es: Acquisizione lead qualificati" data-testid="wizard-input-objective" />
+            </FormControl>
+            <FormDescription>L'obiettivo principale che vuoi raggiungere</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="storeId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Negozio *</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger data-testid="wizard-select-store">
+                  <SelectValue placeholder="Seleziona il negozio" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {stores.map((store: any) => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription>Il punto vendita a cui è associata questa campagna</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="isActive"
+        render={({ field }) => (
+          <FormItem className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <FormLabel>Campagna Attiva</FormLabel>
+              <FormDescription>
+                La campagna sarà immediatamente operativa
+              </FormDescription>
+            </div>
+            <FormControl>
+              <Switch
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                data-testid="wizard-switch-active"
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+}
+
+// Wizard Step 2: Routing & Assignment
+interface WizardStep2Props {
+  form: UseFormReturn<CampaignFormValues>;
+  users: any[];
+  teams: any[];
+}
+
+function WizardStep2({ form, users, teams }: WizardStep2Props) {
+  const selectedRoutingMode = form.watch('routingMode');
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 mb-6">
+        <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+          <Route className="h-5 w-5 text-windtre-orange" />
+          Routing e Assegnazione
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Configura come i lead vengono assegnati al tuo team
+        </p>
+      </div>
+
+      <FormField
+        control={form.control}
+        name="routingMode"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Modalità di Gestione Lead *</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger data-testid="wizard-select-routing-mode">
+                  <SelectValue placeholder="Seleziona modalità" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="automatic">🤖 Assegnazione Automatica</SelectItem>
+                <SelectItem value="manual">👤 Revisione Manuale</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              {field.value === 'automatic' 
+                ? 'I lead saranno assegnati automaticamente al team o utente selezionato'
+                : 'I lead andranno in coda per una revisione manuale prima dell\'assegnazione'}
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {selectedRoutingMode === 'automatic' && (
+        <>
+          <FormField
+            control={form.control}
+            name="autoAssignmentUserId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assegna a Utente</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger data-testid="wizard-select-user">
+                      <SelectValue placeholder="Seleziona utente" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nessuno (usa team)</SelectItem>
+                    {users.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.displayName || user.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Assegna tutti i lead direttamente a un utente specifico</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="autoAssignmentTeamId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assegna a Team</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger data-testid="wizard-select-team">
+                      <SelectValue placeholder="Seleziona team" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nessuno (usa utente)</SelectItem>
+                    {teams
+                      .filter((team: any) => team.assignedDepartments?.includes('crm'))
+                      .map((team: any) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Assegna tutti i lead a un team CRM</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-4">
+            <p className="text-sm text-orange-800 dark:text-orange-200 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <strong>Nota:</strong> Devi selezionare almeno un utente o un team per la modalità automatica
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Wizard Step 3: Marketing Channels
+interface WizardStep3Props {
+  form: UseFormReturn<CampaignFormValues>;
+  marketingChannels: any[];
+}
+
+function WizardStep3({ form, marketingChannels }: WizardStep3Props) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 mb-6">
+        <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+          <Target className="h-5 w-5 text-windtre-orange" />
+          Canali Marketing
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Scegli i canali da cui provengono i tuoi lead
+        </p>
+      </div>
+
+      <FormField
+        control={form.control}
+        name="marketingChannels"
+        render={({ field }) => {
+          const digitalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'digital' && ch.active);
+          
+          return (
+            <FormItem>
+              <FormLabel>Canali Marketing Attivi</FormLabel>
+              <FormDescription className="mb-3">
+                Seleziona i canali che utilizzerai per questa campagna
+              </FormDescription>
+              <div className="grid grid-cols-2 gap-2">
+                {digitalChannels.map((channel: any) => {
+                  const isChecked = field.value?.includes(channel.code) || false;
+                  
+                  return (
+                    <div
+                      key={channel.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:border-windtre-orange"
+                      style={{
+                        borderWidth: isChecked ? '2px' : '1px',
+                        borderColor: isChecked ? 'hsl(24, 100%, 52%)' : undefined
+                      }}
+                      onClick={() => {
+                        const currentValue = field.value || [];
+                        const newValue = isChecked
+                          ? currentValue.filter((code: string) => code !== channel.code)
+                          : [...currentValue, channel.code];
+                        field.onChange(newValue);
+                      }}
+                      data-testid={`wizard-channel-${channel.code}`}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          const currentValue = field.value || [];
+                          const newValue = checked
+                            ? [...currentValue, channel.code]
+                            : currentValue.filter((code: string) => code !== channel.code);
+                          field.onChange(newValue);
+                        }}
+                      />
+                      <span className="text-sm font-medium">{channel.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
+      />
+
+      <FormField
+        control={form.control}
+        name="landingPageUrl"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Landing Page URL *</FormLabel>
+            <FormControl>
+              <Input 
+                {...field} 
+                value={field.value || ''} 
+                placeholder="https://esempio.com/promo" 
+                data-testid="wizard-input-landing-url" 
+              />
+            </FormControl>
+            <FormDescription>
+              URL della landing page dove arriveranno i tuoi lead
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="utmCampaign"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>UTM Campaign</FormLabel>
+            <FormControl>
+              <Input 
+                {...field} 
+                value={field.value || ''} 
+                placeholder="black-friday-2025" 
+                data-testid="wizard-input-utm" 
+              />
+            </FormControl>
+            <FormDescription>
+              Nome della campagna per il tracking UTM (opzionale)
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="defaultLeadSource"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Origine Lead Predefinita</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value || ''}>
+              <FormControl>
+                <SelectTrigger data-testid="wizard-select-lead-source">
+                  <SelectValue placeholder="Seleziona origine" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="web_form">Form Web</SelectItem>
+                <SelectItem value="landing_page">Landing Page</SelectItem>
+                <SelectItem value="manual">Inserimento Manuale</SelectItem>
+                <SelectItem value="powerful_api">Powerful API</SelectItem>
+                <SelectItem value="csv_import">Import CSV</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Come verranno acquisiti i lead (opzionale)
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+}
+
+// Wizard Step 4: Review & Submit
+interface WizardStep4Props {
+  form: UseFormReturn<CampaignFormValues>;
+  stores: any[];
+  users: any[];
+  teams: any[];
+  marketingChannels: any[];
+  onEditStep: (step: number) => void;
+}
+
+function WizardStep4({ form, stores, users, teams, marketingChannels, onEditStep }: WizardStep4Props) {
+  const formValues = form.getValues();
+  const selectedStore = stores.find((s: any) => s.id === formValues.storeId);
+  const selectedUser = users.find((u: any) => u.id === formValues.autoAssignmentUserId);
+  const selectedTeam = teams.find((t: any) => t.id === formValues.autoAssignmentTeamId);
+  const selectedChannels = marketingChannels.filter((ch: any) => 
+    formValues.marketingChannels?.includes(ch.code)
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 mb-6">
+        <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+          <Check className="h-5 w-5 text-windtre-orange" />
+          Revisione Finale
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Controlla i dettagli prima di creare la campagna
+        </p>
+      </div>
+
+      {/* Basic Info Summary */}
+      <div className="rounded-lg border p-4 space-y-2" data-testid="wizard-summary-basic">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Informazioni di Base
+          </h4>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onEditStep(1)}
+            data-testid="wizard-edit-step-1"
+          >
+            <Edit2 className="h-3 w-3 mr-1" />
+            Modifica
+          </Button>
+        </div>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Nome:</span>
+            <span className="font-medium">{formValues.name || '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Negozio:</span>
+            <span className="font-medium">{selectedStore?.name || '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Stato:</span>
+            <span className={`font-medium ${formValues.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+              {formValues.isActive ? '✓ Attiva' : '✗ Non attiva'}
+            </span>
+          </div>
+          {formValues.description && (
+            <div className="pt-2 border-t">
+              <p className="text-muted-foreground text-xs">Descrizione:</p>
+              <p className="text-sm">{formValues.description}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Routing Summary */}
+      <div className="rounded-lg border p-4 space-y-2" data-testid="wizard-summary-routing">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold flex items-center gap-2">
+            <Route className="h-4 w-4" />
+            Routing e Assegnazione
+          </h4>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onEditStep(2)}
+            data-testid="wizard-edit-step-2"
+          >
+            <Edit2 className="h-3 w-3 mr-1" />
+            Modifica
+          </Button>
+        </div>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Modalità:</span>
+            <span className="font-medium">
+              {formValues.routingMode === 'automatic' ? '🤖 Automatica' : '👤 Manuale'}
+            </span>
+          </div>
+          {formValues.routingMode === 'automatic' && (
+            <>
+              {selectedUser && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Utente:</span>
+                  <span className="font-medium">{selectedUser.displayName || selectedUser.email}</span>
+                </div>
+              )}
+              {selectedTeam && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Team:</span>
+                  <span className="font-medium">{selectedTeam.name}</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Marketing Summary */}
+      <div className="rounded-lg border p-4 space-y-2" data-testid="wizard-summary-marketing">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Canali Marketing
+          </h4>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onEditStep(3)}
+            data-testid="wizard-edit-step-3"
+          >
+            <Edit2 className="h-3 w-3 mr-1" />
+            Modifica
+          </Button>
+        </div>
+        <div className="space-y-1 text-sm">
+          {selectedChannels.length > 0 ? (
+            <div>
+              <p className="text-muted-foreground mb-2">Canali selezionati:</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedChannels.map((ch: any) => (
+                  <span
+                    key={ch.id}
+                    className="px-2 py-0.5 rounded-full bg-windtre-orange/10 text-windtre-orange text-xs"
+                  >
+                    {ch.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Nessun canale selezionato</p>
+          )}
+          {formValues.landingPageUrl && (
+            <div className="flex justify-between pt-2 border-t">
+              <span className="text-muted-foreground">Landing Page:</span>
+              <span className="font-medium text-xs truncate max-w-[200px]" title={formValues.landingPageUrl}>
+                {formValues.landingPageUrl}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 p-4">
+        <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2">
+          <Check className="h-4 w-4" />
+          <strong>Tutto pronto!</strong> Clicca "Crea Campagna" per completare la configurazione
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Wizard Shell with Stepper
+interface WizardShellProps {
+  form: UseFormReturn<CampaignFormValues>;
+  stores: any[];
+  users: any[];
+  teams: any[];
+  marketingChannels: any[];
+  currentStep: number;
+  onNextStep: () => void;
+  onPrevStep: () => void;
+  onGoToStep: (step: number) => void;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+  onSubmit: () => void;
+  isLoading: boolean;
+}
+
+function WizardShell({
+  form,
+  stores,
+  users,
+  teams,
+  marketingChannels,
+  currentStep,
+  onNextStep,
+  onPrevStep,
+  onGoToStep,
+  isFirstStep,
+  isLastStep,
+  onSubmit,
+  isLoading
+}: WizardShellProps) {
+  const steps = [
+    { number: 1, label: 'Info Base', icon: Settings2 },
+    { number: 2, label: 'Routing', icon: Route },
+    { number: 3, label: 'Marketing', icon: Target },
+    { number: 4, label: 'Revisione', icon: Check }
+  ];
+
+  // Validation per step
+  const validateCurrentStep = async () => {
+    const values = form.getValues();
+    
+    switch (currentStep) {
+      case 1:
+        // Step 1: name and storeId required
+        if (!values.name || !values.storeId) {
+          form.setError('name', { message: 'Nome richiesto' });
+          form.setError('storeId', { message: 'Negozio richiesto' });
+          return false;
+        }
+        return true;
+      
+      case 2:
+        // Step 2: If automatic, require user OR team
+        if (values.routingMode === 'automatic' && !values.autoAssignmentUserId && !values.autoAssignmentTeamId) {
+          form.setError('autoAssignmentUserId', { 
+            message: 'Seleziona almeno un utente o un team per la modalità automatica' 
+          });
+          return false;
+        }
+        return true;
+      
+      case 3:
+        // Step 3: If channels selected, landingPageUrl required
+        if (values.marketingChannels && values.marketingChannels.length > 0 && !values.landingPageUrl) {
+          form.setError('landingPageUrl', { 
+            message: 'Landing Page URL obbligatorio quando sono selezionati canali marketing' 
+          });
+          return false;
+        }
+        return true;
+      
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = async () => {
+    const isValid = await validateCurrentStep();
+    if (isValid) {
+      onNextStep();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Stepper */}
+      <div className="flex items-center justify-between">
+        {steps.map((step, index) => {
+          const StepIcon = step.icon;
+          const isActive = currentStep === step.number;
+          const isCompleted = currentStep > step.number;
+          const isFuture = currentStep < step.number;
+
+          return (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="flex flex-col items-center flex-1">
+                <div
+                  className={`
+                    h-10 w-10 rounded-full flex items-center justify-center transition-all
+                    ${isActive ? 'bg-windtre-orange text-white scale-110' : ''}
+                    ${isCompleted ? 'bg-green-500 text-white' : ''}
+                    ${isFuture ? 'bg-gray-200 dark:bg-gray-700 text-gray-400' : ''}
+                  `}
+                  data-testid={`wizard-step-indicator-${step.number}`}
+                >
+                  {isCompleted ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <StepIcon className="h-5 w-5" />
+                  )}
+                </div>
+                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-windtre-orange' : 'text-muted-foreground'}`}>
+                  {step.label}
+                </span>
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`h-0.5 flex-1 mx-2 ${isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Step Content */}
+      <div className="min-h-[400px]">
+        {currentStep === 1 && <WizardStep1 form={form} stores={stores} />}
+        {currentStep === 2 && <WizardStep2 form={form} users={users} teams={teams} />}
+        {currentStep === 3 && <WizardStep3 form={form} marketingChannels={marketingChannels} />}
+        {currentStep === 4 && (
+          <WizardStep4 
+            form={form} 
+            stores={stores} 
+            users={users} 
+            teams={teams} 
+            marketingChannels={marketingChannels}
+            onEditStep={onGoToStep}
+          />
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex justify-between items-center pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onPrevStep}
+          disabled={isFirstStep || isLoading}
+          data-testid="wizard-button-back"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Indietro
+        </Button>
+
+        <div className="text-sm text-muted-foreground">
+          Passo {currentStep} di 4
+        </div>
+
+        {isLastStep ? (
+          <Button
+            type="button"
+            onClick={onSubmit}
+            disabled={isLoading}
+            className="bg-windtre-orange hover:bg-windtre-orange/90"
+            data-testid="wizard-button-submit"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Creazione...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Crea Campagna
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            onClick={handleNext}
+            disabled={isLoading}
+            data-testid="wizard-button-next"
+          >
+            Avanti
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: CampaignSettingsDialogProps) {
   const { toast } = useToast();
   const tenantId = useRequiredTenantId();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
+
+  // Campaign creation mode hook (wizard vs advanced)
+  const {
+    mode: creationMode,
+    setMode: setCreationMode,
+    currentStep,
+    nextStep,
+    prevStep,
+    goToStep,
+    isFirstStep,
+    isLastStep,
+    preference,
+    savePreference,
+  } = useCampaignCreationMode();
+
+  // Show mode selector on first open if no preference exists (create mode only)
+  useEffect(() => {
+    if (open && mode === 'create' && !preference) {
+      setShowModeSelector(true);
+    } else {
+      setShowModeSelector(false);
+    }
+  }, [open, mode, preference]);
 
   // Reset nested dialog when parent closes
   useEffect(() => {
     if (!open) {
       setStatusDialogOpen(false);
+      setShowModeSelector(false);
     }
   }, [open]);
+
+  // Handle mode selection
+  const handleModeSelect = (selectedMode: 'wizard' | 'advanced', remember: boolean) => {
+    setCreationMode(selectedMode);
+    if (remember) {
+      savePreference(selectedMode);
+    }
+    setShowModeSelector(false);
+  };
+
+  // Toggle between wizard and advanced mode
+  const toggleCreationMode = () => {
+    const newMode = creationMode === 'wizard' ? 'advanced' : 'wizard';
+    setCreationMode(newMode);
+  };
 
   // Fetch campaign data (edit mode only)
   const { data: campaign, isLoading: campaignLoading } = useQuery({
@@ -414,6 +1336,9 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       marketingChannels: [],
       budget: null,
       actualSpent: null,
+      ga4MeasurementId: null,
+      googleAdsConversionId: null,
+      facebookPixelId: null,
       startDate: null,
       endDate: null,
       isActive: true,
@@ -469,6 +1394,9 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         marketingChannels: campaign.marketingChannels || [],
         budget: campaign.budget || null,
         actualSpent: campaign.actualSpent || null,
+        ga4MeasurementId: campaign.ga4MeasurementId || null,
+        googleAdsConversionId: campaign.googleAdsConversionId || null,
+        facebookPixelId: campaign.facebookPixelId || null,
         startDate: campaign.startDate ? campaign.startDate.split('T')[0] : null,
         endDate: campaign.endDate ? campaign.endDate.split('T')[0] : null,
         isActive: campaign.isActive ?? true,
@@ -557,61 +1485,104 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5" />
-            {mode === 'create' ? 'Nuova Campagna' : 'Modifica Campagna'}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'create' 
-              ? 'Configura una nuova campagna marketing con routing automatico e workflow integrati'
-              : 'Modifica le impostazioni della campagna marketing'}
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings2 className="h-5 w-5" />
+                {mode === 'create' ? 'Nuova Campagna' : 'Modifica Campagna'}
+                {mode === 'create' && !showModeSelector && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-windtre-orange/10 text-windtre-orange border border-windtre-orange/20">
+                    {creationMode === 'wizard' ? '🧙 Wizard' : '⚡ Avanzata'}
+                  </span>
+                )}
+              </DialogTitle>
+              <DialogDescription>
+                {mode === 'create' 
+                  ? creationMode === 'wizard'
+                    ? 'Crea la tua campagna in 4 semplici passaggi'
+                    : 'Configura una nuova campagna marketing con routing automatico e workflow integrati'
+                  : 'Modifica le impostazioni della campagna marketing'}
+              </DialogDescription>
+            </div>
+            {mode === 'create' && !showModeSelector && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={toggleCreationMode}
+                className="text-xs"
+                data-testid="button-toggle-mode"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                {creationMode === 'wizard' ? 'Passa ad Avanzata' : 'Passa a Wizard'}
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
-        {campaignLoading && mode === 'edit' ? (
+        {showModeSelector ? (
+          <ModeSelector onSelect={handleModeSelect} />
+        ) : campaignLoading && mode === 'edit' ? (
           <LoadingState message="Caricamento campagna..." />
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid grid-cols-9 w-full">
-                  <TabsTrigger value="general" data-testid="tab-general">
-                    <Settings2 className="h-4 w-4 mr-1" />
-                    Generale
-                  </TabsTrigger>
-                  <TabsTrigger value="targeting" data-testid="tab-targeting">
-                    <Target className="h-4 w-4 mr-1" />
-                    Tracking
-                  </TabsTrigger>
-                  <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    UTM Links
-                  </TabsTrigger>
-                  <TabsTrigger value="routing" data-testid="tab-routing">
-                    <Route className="h-4 w-4 mr-1" />
-                    Routing
-                  </TabsTrigger>
-                  <TabsTrigger value="workflow" data-testid="tab-workflow">
-                    <Workflow className="h-4 w-4 mr-1" />
-                    Workflow
-                  </TabsTrigger>
-                  <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses" disabled={mode === 'create'}>
-                    <ListTodo className="h-4 w-4 mr-1" />
-                    Stati Lead
-                  </TabsTrigger>
-                  <TabsTrigger value="privacy" data-testid="tab-privacy">
-                    <Shield className="h-4 w-4 mr-1" />
-                    Privacy
-                  </TabsTrigger>
-                  <TabsTrigger value="tracking" data-testid="tab-tracking">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    Obiettivi
-                  </TabsTrigger>
-                  <TabsTrigger value="advanced" data-testid="tab-advanced">
-                    <Wrench className="h-4 w-4 mr-1" />
-                    Avanzate
-                  </TabsTrigger>
-                </TabsList>
+              {mode === 'create' && creationMode === 'wizard' ? (
+                <WizardShell
+                  form={form}
+                  stores={stores}
+                  users={users}
+                  teams={teams}
+                  marketingChannels={marketingChannels}
+                  currentStep={currentStep}
+                  onNextStep={nextStep}
+                  onPrevStep={prevStep}
+                  onGoToStep={goToStep}
+                  isFirstStep={isFirstStep}
+                  isLastStep={isLastStep}
+                  onSubmit={() => form.handleSubmit(onSubmit)()}
+                  isLoading={isLoading}
+                />
+              ) : (
+                <Tabs defaultValue="general" className="w-full">
+                  <TabsList className="grid grid-cols-9 w-full">
+                    <TabsTrigger value="general" data-testid="tab-general">
+                      <Settings2 className="h-4 w-4 mr-1" />
+                      Generale
+                    </TabsTrigger>
+                    <TabsTrigger value="targeting" data-testid="tab-targeting">
+                      <Target className="h-4 w-4 mr-1" />
+                      Tracking
+                    </TabsTrigger>
+                    <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      UTM Links
+                    </TabsTrigger>
+                    <TabsTrigger value="routing" data-testid="tab-routing">
+                      <Route className="h-4 w-4 mr-1" />
+                      Routing
+                    </TabsTrigger>
+                    <TabsTrigger value="workflow" data-testid="tab-workflow">
+                      <Workflow className="h-4 w-4 mr-1" />
+                      Workflow
+                    </TabsTrigger>
+                    <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses" disabled={mode === 'create'}>
+                      <ListTodo className="h-4 w-4 mr-1" />
+                      Stati Lead
+                    </TabsTrigger>
+                    <TabsTrigger value="privacy" data-testid="tab-privacy">
+                      <Shield className="h-4 w-4 mr-1" />
+                      Privacy
+                    </TabsTrigger>
+                    <TabsTrigger value="tracking" data-testid="tab-tracking">
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      Obiettivi
+                    </TabsTrigger>
+                    <TabsTrigger value="advanced" data-testid="tab-advanced">
+                      <Wrench className="h-4 w-4 mr-1" />
+                      Avanzate
+                    </TabsTrigger>
+                  </TabsList>
 
                 {/* TAB 1: GENERALE */}
                 <TabsContent value="general" className="space-y-4 mt-4">
@@ -1356,57 +2327,166 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                 {/* TAB 6: TRACKING */}
                 <TabsContent value="tracking" className="space-y-4 mt-4">
-                  <FormField
-                    control={form.control}
-                    name="budget"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Budget (€)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            {...field} 
-                            value={field.value || ''} 
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                            step="0.01"
-                            min={0}
-                            placeholder="0.00"
-                            data-testid="input-budget" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {(() => {
+                    const selectedStoreId = form.watch('storeId');
+                    const selectedStore = stores.find((s: any) => s.id === selectedStoreId);
+                    
+                    const PixelField = ({ name, label, placeholder, storeValue }: any) => {
+                      const currentValue = form.watch(name);
+                      const isInherited = !currentValue;
+                      const displayValue = isInherited ? storeValue : currentValue;
+                      
+                      return (
+                        <FormField
+                          control={form.control}
+                          name={name}
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="flex items-center justify-between">
+                                <FormLabel className="flex items-center gap-2">
+                                  {label}
+                                  {isInherited && storeValue ? (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                      Ereditato da Store
+                                    </span>
+                                  ) : currentValue ? (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                                      Custom
+                                    </span>
+                                  ) : null}
+                                </FormLabel>
+                                {!isInherited && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => field.onChange(null)}
+                                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                                    data-testid={`button-clear-${name}`}
+                                  >
+                                    Ripristina Ereditato
+                                  </Button>
+                                )}
+                              </div>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  value={field.value || ''} 
+                                  onChange={(e) => field.onChange(e.target.value || null)}
+                                  placeholder={placeholder}
+                                  data-testid={`input-${name}`}
+                                  className={isInherited && storeValue ? 'border-blue-300 dark:border-blue-700' : ''}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs">
+                                {isInherited && storeValue ? (
+                                  <span className="text-blue-700 dark:text-blue-300">
+                                    Valore ereditato: <code className="px-1 py-0.5 bg-blue-50 dark:bg-blue-950 rounded">{storeValue}</code>
+                                  </span>
+                                ) : isInherited ? (
+                                  <span className="text-muted-foreground">Nessun valore configurato (né custom né ereditato)</span>
+                                ) : (
+                                  <span className="text-orange-700 dark:text-orange-300">Valore personalizzato per questa campagna</span>
+                                )}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      );
+                    };
 
-                  <FormField
-                    control={form.control}
-                    name="actualSpent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Spesa Effettiva (€)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            {...field} 
-                            value={field.value || ''} 
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                            step="0.01"
-                            min={0}
-                            placeholder="0.00"
-                            data-testid="input-actual-spent" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    return (
+                      <>
+                        <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-4 mb-4">
+                          <h4 className="font-semibold mb-1 flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Tracking Pixels
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            I pixel di tracking vengono ereditati automaticamente dal negozio. Puoi personalizzarli per questa specifica campagna.
+                          </p>
+                        </div>
 
-                  <div className="rounded-lg border p-4 bg-muted/50">
-                    <p className="text-sm text-muted-foreground">
-                      Le metriche lead, deal e revenue vengono calcolate automaticamente dal sistema.
-                    </p>
-                  </div>
+                        <PixelField 
+                          name="ga4MeasurementId"
+                          label="Google Analytics 4 Measurement ID"
+                          placeholder="G-XXXXXXXXXX"
+                          storeValue={selectedStore?.ga4MeasurementId}
+                        />
+
+                        <PixelField 
+                          name="googleAdsConversionId"
+                          label="Google Ads Conversion ID"
+                          placeholder="AW-XXXXXXXXXX"
+                          storeValue={selectedStore?.googleAdsConversionId}
+                        />
+
+                        <PixelField 
+                          name="facebookPixelId"
+                          label="Facebook Pixel ID"
+                          placeholder="123456789012345"
+                          storeValue={selectedStore?.facebookPixelId}
+                        />
+
+                        <div className="border-t pt-4 mt-6">
+                          <h4 className="font-semibold mb-3">Budget & Spesa</h4>
+
+                          <FormField
+                            control={form.control}
+                            name="budget"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Budget (€)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    {...field} 
+                                    value={field.value || ''} 
+                                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                    step="0.01"
+                                    min={0}
+                                    placeholder="0.00"
+                                    data-testid="input-budget" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="actualSpent"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Spesa Effettiva (€)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    {...field} 
+                                    value={field.value || ''} 
+                                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                    step="0.01"
+                                    min={0}
+                                    placeholder="0.00"
+                                    data-testid="input-actual-spent" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="rounded-lg border p-4 bg-muted/50 mt-4">
+                            <p className="text-sm text-muted-foreground">
+                              Le metriche lead, deal e revenue vengono calcolate automaticamente dal sistema.
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </TabsContent>
 
                 {/* TAB 6: AVANZATE */}
@@ -1482,25 +2562,26 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                 </TabsContent>
               </Tabs>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isLoading}
-                  data-testid="button-cancel"
-                >
-                  Annulla
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  data-testid="button-save"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? 'Salvataggio...' : mode === 'create' ? 'Crea Campagna' : 'Salva Modifiche'}
-                </Button>
-              </div>
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    data-testid="button-cancel"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    data-testid="button-save"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {isLoading ? 'Salvataggio...' : mode === 'create' ? 'Crea Campagna' : 'Salva Modifiche'}
+                  </Button>
+                </div>
+              )}
             </form>
           </Form>
         )}

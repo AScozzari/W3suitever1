@@ -20,6 +20,7 @@ import {
   stores,
   crmLeads,
   crmCampaigns,
+  crmCampaignUtmLinks,
   crmPipelines,
   crmPipelineSettings,
   crmPipelineWorkflows,
@@ -55,6 +56,7 @@ import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { leadScoringService } from '../services/lead-scoring-ai.service';
 import { utmLinksService } from '../services/utm-links.service';
 import { gtmEventsService } from '../services/gtm-events.service';
+import { attributionService } from '../services/attribution.service';
 
 const router = express.Router();
 
@@ -216,9 +218,93 @@ router.get('/dashboard/stats', async (req, res) => {
   }
 });
 
+// ==================== UTM ATTRIBUTION TRACKING ====================
 
+/**
+ * POST /api/crm/:tenantSlug/track-utm-click
+ * Track UTM link click and attribute to lead if provided
+ * Body: { utmLinkId, leadId?, sessionId? }
+ */
+router.post('/:tenantSlug/track-utm-click', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
+    // Validate request body
+    const bodySchema = z.object({
+      utmLinkId: z.string().uuid('Invalid UTM link ID'),
+      leadId: z.string().uuid('Invalid lead ID').optional(),
+      sessionId: z.string().optional()
+    });
 
+    const validation = bodySchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { utmLinkId, leadId, sessionId } = validation.data;
+
+    // Track UTM click and attribute if lead provided
+    const result = await attributionService.trackUTMClick({
+      tenantId,
+      utmLinkId,
+      leadId,
+      sessionId
+    });
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        error: 'UTM link not found or inactive',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('UTM click tracked successfully', {
+      tenantId,
+      utmLinkId,
+      leadId: leadId || 'anonymous',
+      attribution: result.attribution
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        attribution: result.attribution,
+        utmLink: result.utmLink
+      },
+      message: 'UTM click tracked successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Failed to track UTM click', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to track UTM click',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
 
 // ==================== LEADS ====================
 
@@ -534,6 +620,102 @@ router.post('/leads', async (req, res) => {
         leadId: lead.id,
         error: err instanceof Error ? err.message : 'Unknown',
         stack: err instanceof Error ? err.stack : undefined
+      });
+    });
+
+    // 🎯 UTM Attribution: Auto-attribute lead to UTM link if UTM params exist (non-blocking)
+    // Fire-and-forget Promise (no await) to avoid blocking response
+    (async () => {
+      try {
+        // Check if lead has UTM parameters and campaign
+        if (validation.data.campaignId && validation.data.utmSource && validation.data.utmMedium && validation.data.utmCampaign) {
+          logger.info('🎯 [BACKGROUND] Attempting UTM attribution for lead', {
+            leadId: lead.id,
+            campaignId: validation.data.campaignId,
+            utmSource: validation.data.utmSource,
+            utmMedium: validation.data.utmMedium,
+            utmCampaign: validation.data.utmCampaign,
+            tenantId
+          });
+
+          // 🔒 CRITICAL: Set tenant context for RLS in async execution
+          await setTenantContext(tenantId);
+
+          // Find matching UTM link for this campaign
+          const [matchingUtmLink] = await db
+            .select()
+            .from(crmCampaignUtmLinks)
+            .where(
+              and(
+                eq(crmCampaignUtmLinks.tenantId, tenantId),
+                eq(crmCampaignUtmLinks.campaignId, validation.data.campaignId),
+                eq(crmCampaignUtmLinks.utmSource, validation.data.utmSource),
+                eq(crmCampaignUtmLinks.utmMedium, validation.data.utmMedium),
+                eq(crmCampaignUtmLinks.utmCampaign, validation.data.utmCampaign),
+                eq(crmCampaignUtmLinks.isActive, true)
+              )
+            )
+            .limit(1);
+
+          if (matchingUtmLink) {
+            // Attribute lead to UTM link
+            const attributionResult = await attributionService.attributeLeadToUTM({
+              tenantId,
+              leadId: lead.id,
+              utmLinkId: matchingUtmLink.id
+            });
+
+            if (attributionResult.success) {
+              logger.info('✅ UTM attribution completed successfully (background)', {
+                leadId: lead.id,
+                utmLinkId: matchingUtmLink.id,
+                channelName: matchingUtmLink.channelName,
+                firstTouch: attributionResult.attribution.firstTouch,
+                lastTouch: attributionResult.attribution.lastTouch,
+                touchpointCount: attributionResult.attribution.touchpointCount,
+                tenantId
+              });
+            } else {
+              logger.warn('⚠️ UTM attribution failed (background)', {
+                leadId: lead.id,
+                utmLinkId: matchingUtmLink.id,
+                tenantId
+              });
+            }
+          } else {
+            logger.info('ℹ️ No matching UTM link found for auto-attribution (background)', {
+              leadId: lead.id,
+              campaignId: validation.data.campaignId,
+              utmSource: validation.data.utmSource,
+              utmMedium: validation.data.utmMedium,
+              utmCampaign: validation.data.utmCampaign,
+              tenantId
+            });
+          }
+        } else {
+          logger.debug('Skipping UTM attribution - missing UTM params or campaign', {
+            leadId: lead.id,
+            hasCampaign: !!validation.data.campaignId,
+            hasUtmSource: !!validation.data.utmSource,
+            hasUtmMedium: !!validation.data.utmMedium,
+            hasUtmCampaign: !!validation.data.utmCampaign,
+            tenantId
+          });
+        }
+      } catch (attributionError) {
+        logger.error('UTM attribution failed (background)', {
+          leadId: lead.id,
+          error: attributionError instanceof Error ? attributionError.message : 'Unknown error',
+          stack: attributionError instanceof Error ? attributionError.stack : undefined,
+          tenantId
+        });
+      }
+    })().catch(err => {
+      logger.error('[UNHANDLED] UTM attribution promise rejected', {
+        leadId: lead.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined,
+        tenantId
       });
     });
 
