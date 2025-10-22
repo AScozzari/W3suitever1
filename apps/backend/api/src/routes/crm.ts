@@ -310,6 +310,45 @@ router.post('/leads', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // ==================== GDPR ENFORCEMENT: Privacy Policy Blocking ====================
+    // If lead belongs to a campaign with required consents, validate BEFORE lead creation
+    if (validation.data.campaignId) {
+      const [campaign] = await db
+        .select()
+        .from(crmCampaigns)
+        .where(and(
+          eq(crmCampaigns.id, validation.data.campaignId),
+          eq(crmCampaigns.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (campaign && campaign.requiredConsents) {
+        const requiredConsents = campaign.requiredConsents as any;
+        
+        // BLOCKING: Privacy Policy consent is MANDATORY if required by campaign
+        if (requiredConsents.privacy_policy === true && !validation.data.privacyPolicyAccepted) {
+          logger.warn('Lead creation blocked: privacy_policy consent required but not provided', {
+            campaignId: validation.data.campaignId,
+            tenantId
+          });
+          return res.status(400).json({
+            success: false,
+            error: 'GDPR Consent Required',
+            message: 'Privacy Policy consent is mandatory for this campaign. Lead creation blocked for GDPR compliance.',
+            timestamp: new Date().toISOString()
+          } as ApiErrorResponse);
+        }
+
+        // Optional warning for marketing consent (non-blocking)
+        if (requiredConsents.marketing === true && !validation.data.marketingConsent) {
+          logger.info('Lead created without marketing consent (campaign recommends it)', {
+            campaignId: validation.data.campaignId,
+            tenantId
+          });
+        }
+      }
+    }
+
     // Resolve UTM parameters to IDs if provided
     let utmSourceId = validation.data.utmSourceId;
     let utmMediumId = validation.data.utmMediumId;
