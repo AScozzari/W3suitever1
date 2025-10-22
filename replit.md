@@ -1,6 +1,5 @@
 # Overview
-
-W3 Suite is a multi-tenant enterprise platform designed to centralize core business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and utilizes PostgreSQL with Row Level Security (RLS) for strong tenant isolation. A central Brand Interface HQ system supports multi-brand management. The platform aims to be a scalable, secure, and comprehensive business solution with significant market potential.
+W3 Suite is a multi-tenant enterprise platform centralizing core business operations like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and employs PostgreSQL with Row Level Security (RLS) for strong tenant isolation. The platform includes a central Brand Interface HQ system for multi-brand management, aiming to be a scalable, secure, and comprehensive business solution that drives efficiency and market potential.
 
 # User Preferences
 
@@ -209,29 +208,32 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, leveraging `shadcn/u
 
 ## Technical Implementations
 - **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: 3-schema (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
-- **Security**: OAuth2/OIDC with MFA, JWTs, and 3-level RBAC.
-- **Multitenancy**: RLS, `TenantProvider`, and global unique constraints.
+- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
+- **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level RBAC.
+- **Multitenancy**: Achieved via RLS, `TenantProvider`, and global unique constraints.
 - **Universal Workflow System**: Approval hierarchies, RBAC, event-driven state machines, audit trails.
 - **Unified Notification System**: Real-time notifications.
-- **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
-- **Task Management System**: Flexible tasks with optional workflow integration and RBAC-protected API.
-- **MCP Multi-Provider OAuth System**: Unified credentials across third-party services with per-user OAuth isolation, supporting User and Admin modes for account assignment. Includes email-based account type detection, zero-config workflow nodes, and centralized authentication.
-- **AI Enforcement Middleware**: Hierarchical API-level blocking of AI features.
-- **AI Workflow Builder**: Generates natural language workflows using OpenAI `gpt-4o` with strict JSON mode, outputting ReactFlow DSL.
-- **Intelligent Workflow Routing**: Dual-mode routing (auto/manual) for team/user assignments.
-- **AI Tools Ecosystem with PDC Analyzer**: Centralized dashboard for AI tools, including automated PDF contract analysis using GPT-4.
-- **CRM Module Backend**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR, lead-to-deal workflows. Exposes RESTful endpoints with Zod validation, RLS, and structured logging.
-- **CRM Pipeline Visualization**: Manages pipeline with Table, Kanban, Gantt views using TanStack Table and `@dnd-kit`, incorporating workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
-- **CRM Workflow Auto-Trigger**: Dual-mode workflow execution (automatic/manual) for pipeline workflows.
-- **Integrated Marketing Attribution**: Full UTM tracking, GTM integration, social media webhooks, AI-powered lead scoring, and Enhanced Conversions for Google Ads/GA4.
-- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunk management with tenant-scoped SIP configuration, user-specific WebRTC extensions, floating softphone widget, call actions integrated across CRM entities, CDR analytics, and policy-based routing.
+- **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, deduplication.
+- **Task Management System**: Flexible task creation with workflow integration and RBAC API.
+- **MCP Multi-Provider OAuth System**: Manages unified credentials for third-party services with per-user OAuth isolation.
+- **AI Enforcement Middleware**: Hierarchical API-level blocking for AI features.
+- **AI Workflow Builder**: Generates natural language workflows using OpenAI `gpt-4o` in strict JSON mode, outputting ReactFlow DSL.
+- **Intelligent Workflow Routing**: Dual-mode (automatic/manual) task assignment.
+- **AI Tools Ecosystem with PDC Analyzer**: Dashboard for AI tools, including automated PDF contract analysis (GPT-4).
+- **CRM Module Backend**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, RESTful endpoints with Zod validation, RLS, structured logging.
+- **CRM Pipeline Visualization**: Table, Kanban, Gantt views using TanStack Table and `@dnd-kit`, with workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **CRM Workflow Auto-Trigger**: Dual-mode (automatic/manual) execution of pipeline workflows.
+- **Integrated Marketing Attribution**: UTM tracking, GTM integration, social media webhooks, AI lead scoring, Enhanced Conversions for Google Ads/GA4.
+- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunks, tenant-scoped SIP, user-specific WebRTC extensions, floating softphone, call actions integrated with CRM entities, CDR analytics, policy-based routing.
+- **Dual-Mode Campaign Creation**: Beginner-friendly wizard and advanced interface, with user preference persistence.
+- **GDPR Consent Enforcement System**: Backend service validating campaign consents against lead status, blocking non-compliant conversions.
+- **Enhanced Error Handling UI**: Toast notifications for mutation failures and structured error responses.
 
 # External Dependencies
 
 ## Database Services
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
-- **Redis**: Used for BullMQ and Unified Notification System.
+- **Redis**: For BullMQ and Unified Notification System.
 
 ## Authentication Services
 - **OAuth2/OIDC Enterprise**: For secure user authentication.
@@ -243,17 +245,17 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, leveraging `shadcn/u
 ## Icon & Utility Libraries
 - **Lucide React**: Icon library.
 - **TanStack React Query**: For server state management.
-- **React Hook Form**: For form handling.
+- **React Hook Form**: For form handling and validation.
 
 ## Development Tools
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: For database schema management.
+- **Drizzle Kit**: For database schema management and migrations.
 - **PostCSS**: CSS pre-processing.
 - **ESBuild**: Server code bundling.
 - **Nginx**: Reverse proxy.
 
 ## AI Services
-- **OpenAI**: Utilized for AI Workflow Builder and PDC Analyzer (`gpt-4o`).
+- **OpenAI**: For AI Workflow Builder and PDC Analyzer (`gpt-4o`).
 
 ## Third-Party Integrations (OAuth Providers)
 - **Google Workspace**
