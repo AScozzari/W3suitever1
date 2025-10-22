@@ -168,7 +168,7 @@ export const outboundChannelEnum = pgEnum('outbound_channel', ['email', 'phone',
 // CRM System Enums
 export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media', 'outbound_crm', 'retention']);
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
-export const crmCampaignRoutingModeEnum = pgEnum('crm_campaign_routing_mode', ['automatic', 'manual', 'hybrid']);
+export const crmCampaignRoutingModeEnum = pgEnum('crm_campaign_routing_mode', ['automatic', 'manual']);
 export const workflowExecutionModeEnum = pgEnum('workflow_execution_mode', ['automatic', 'manual']);
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
 export const leadStatusCategoryEnum = pgEnum('lead_status_category', ['new', 'working', 'qualified', 'converted', 'disqualified', 'on_hold']);

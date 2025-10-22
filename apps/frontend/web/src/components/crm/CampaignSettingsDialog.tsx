@@ -41,7 +41,7 @@ interface CampaignSettingsDialogProps {
 }
 
 // Campaign routing mode enum
-const routingModes = ['automatic', 'manual', 'hybrid'] as const;
+const routingModes = ['automatic', 'manual'] as const;
 type RoutingMode = typeof routingModes[number];
 
 // Lead source enum (matches backend)
@@ -108,15 +108,6 @@ const campaignFormSchema = z.object({
 }, {
   message: "Modalità automatica richiede assegnazione a utente o team",
   path: ['autoAssignmentUserId']
-}).refine(data => {
-  // If routing mode is hybrid, timeout is required
-  if (data.routingMode === 'hybrid' && !data.manualReviewTimeoutHours) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Modalità ibrida richiede timeout per revisione manuale",
-  path: ['manualReviewTimeoutHours']
 }).refine(data => {
   // If lead source is landing_page, URL is required
   if (data.defaultLeadSource === 'landing_page' && !data.landingPageUrl) {
@@ -1030,7 +1021,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     name="routingMode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Modalità Routing *</FormLabel>
+                        <FormLabel>Come vuoi gestire i nuovi lead? *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-routing-mode">
@@ -1038,20 +1029,21 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="automatic">Automatico - Assegnazione immediata</SelectItem>
-                            <SelectItem value="manual">Manuale - Revisione completa</SelectItem>
-                            <SelectItem value="hybrid">Ibrido - Auto con fallback manuale</SelectItem>
+                            <SelectItem value="automatic">Assegnazione Automatica</SelectItem>
+                            <SelectItem value="manual">Revisione Manuale</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Determina come i lead vengono assegnati ai team/utenti
+                          {field.value === 'automatic' 
+                            ? 'I lead vengono assegnati immediatamente al team o utente selezionato'
+                            : 'Tutti i lead vanno in coda per revisione manuale prima dell\'assegnazione'}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  {(selectedRoutingMode === 'automatic' || selectedRoutingMode === 'hybrid') && (
+                  {selectedRoutingMode === 'automatic' && (
                     <>
                       <FormField
                         control={form.control}
@@ -1106,34 +1098,53 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                           </FormItem>
                         )}
                       />
-                    </>
-                  )}
 
-                  {selectedRoutingMode === 'hybrid' && (
-                    <FormField
-                      control={form.control}
-                      name="manualReviewTimeoutHours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Timeout Revisione Manuale (ore) *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              value={field.value || ''} 
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                              min={1}
-                              max={168}
-                              data-testid="input-timeout-hours" 
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Se un lead non viene gestito entro queste ore, viene assegnato automaticamente
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="enable-fallback"
+                            checked={!!form.watch('manualReviewTimeoutHours')}
+                            onCheckedChange={(checked) => {
+                              form.setValue('manualReviewTimeoutHours', checked ? 24 : null);
+                            }}
+                            data-testid="checkbox-enable-fallback"
+                          />
+                          <label
+                            htmlFor="enable-fallback"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            Fallback manuale se non gestito
+                          </label>
+                        </div>
+
+                        {!!form.watch('manualReviewTimeoutHours') && (
+                          <FormField
+                            control={form.control}
+                            name="manualReviewTimeoutHours"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Timeout (ore)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    {...field} 
+                                    value={field.value || 24} 
+                                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 24)}
+                                    min={1}
+                                    max={168}
+                                    data-testid="input-timeout-hours" 
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-xs">
+                                  Se il lead non viene gestito entro questo tempo, passa in coda manuale
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </div>
+                    </>
                   )}
                 </TabsContent>
 
