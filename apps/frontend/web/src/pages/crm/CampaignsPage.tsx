@@ -33,6 +33,7 @@ import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
 import { CampaignWizard } from '@/components/crm/CampaignWizard';
 import { CampaignFiltersDialog, type CampaignFilters } from '@/components/crm/CampaignFiltersDialog';
+import { CampaignCreationChoice } from '@/components/crm/CampaignCreationChoice';
 import { useCampaignCreationMode } from '@/hooks/useCampaignCreationMode';
 
 interface Campaign {
@@ -95,6 +96,8 @@ export default function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isChoiceDialogOpen, setIsChoiceDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<CampaignFilters>({
@@ -178,11 +181,22 @@ export default function CampaignsPage() {
   });
 
   const handleCreateCampaign = () => {
-    setEditingCampaignId(undefined);
-    setIsSettingsDialogOpen(true);
+    // Se c'è già una preferenza salvata, vai diretto
+    if (preference) {
+      setEditingCampaignId(undefined);
+      if (preference === 'wizard') {
+        setIsWizardOpen(true);
+      } else {
+        setIsSettingsDialogOpen(true);
+      }
+    } else {
+      // Prima volta: mostra il modal di scelta
+      setIsChoiceDialogOpen(true);
+    }
   };
 
   const handleEditCampaign = (campaignId: string) => {
+    // Edit sempre con modal standard (non wizard)
     setEditingCampaignId(campaignId);
     setIsSettingsDialogOpen(true);
   };
@@ -190,6 +204,22 @@ export default function CampaignsPage() {
   const handleCloseDialog = () => {
     setIsSettingsDialogOpen(false);
     setEditingCampaignId(undefined);
+  };
+
+  const handleCloseWizard = () => {
+    setIsWizardOpen(false);
+  };
+
+  const handleSelectWizard = () => {
+    setIsChoiceDialogOpen(false);
+    setMode('wizard'); // Salva preferenza
+    setIsWizardOpen(true);
+  };
+
+  const handleSelectStandard = () => {
+    setIsChoiceDialogOpen(false);
+    setMode('standard'); // Salva preferenza
+    setIsSettingsDialogOpen(true);
   };
 
   // CRM Tabs Configuration
@@ -1080,22 +1110,29 @@ export function CampaignsContent() {
         </AnimatePresence>
       </div>
 
-      {/* Campaign Creation Dialog - Wizard or Advanced */}
-      {mode === 'wizard' ? (
-        <CampaignWizard
-          open={isSettingsDialogOpen}
-          onClose={handleCloseDialog}
-          campaignId={editingCampaignId}
-          mode={editingCampaignId ? 'edit' : 'create'}
-        />
-      ) : (
-        <CampaignSettingsDialog
-          open={isSettingsDialogOpen}
-          onClose={handleCloseDialog}
-          campaignId={editingCampaignId}
-          mode={editingCampaignId ? 'edit' : 'create'}
-        />
-      )}
+      {/* Campaign Creation Choice Modal */}
+      <CampaignCreationChoice
+        open={isChoiceDialogOpen}
+        onClose={() => setIsChoiceDialogOpen(false)}
+        onSelectWizard={handleSelectWizard}
+        onSelectStandard={handleSelectStandard}
+      />
+
+      {/* Campaign Wizard (3-step) */}
+      <CampaignWizard
+        open={isWizardOpen}
+        onClose={handleCloseWizard}
+        campaignId={undefined}
+        mode="create"
+      />
+
+      {/* Campaign Settings Dialog (Standard modal) */}
+      <CampaignSettingsDialog
+        open={isSettingsDialogOpen}
+        onClose={handleCloseDialog}
+        campaignId={editingCampaignId}
+        mode={editingCampaignId ? 'edit' : 'create'}
+      />
 
       {/* Note: CampaignsContent is simplified - no filters dialog */}
     </>
