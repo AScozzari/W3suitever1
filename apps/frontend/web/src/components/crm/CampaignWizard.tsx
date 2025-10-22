@@ -55,16 +55,6 @@ const campaignFormSchema = z.object({
   storeId: z.string().uuid("Seleziona un negozio valido"),
   legalEntityId: z.string().uuid().optional(),
   
-  // Routing settings
-  routingMode: z.enum(routingModes),
-  autoAssignmentUserId: z.string().uuid().optional().nullable(),
-  autoAssignmentTeamId: z.string().uuid().optional().nullable(),
-  manualReviewTimeoutHours: z.number().int().min(1).max(168).optional().nullable(),
-  
-  // Workflow & Pipelines
-  workflowId: z.string().uuid().optional().nullable(),
-  primaryPipelineId: z.string().uuid().optional().nullable(),
-  
   // Lead Source & Marketing Channels
   defaultLeadSource: z.enum(leadSources).optional().nullable(),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
@@ -101,14 +91,6 @@ const campaignFormSchema = z.object({
     third_party: false,
   }),
 }).refine(data => {
-  if (data.routingMode === 'automatic' && !data.autoAssignmentUserId && !data.autoAssignmentTeamId) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Modalità automatica richiede assegnazione a utente o team",
-  path: ['autoAssignmentUserId']
-}).refine(data => {
   if (data.defaultLeadSource === 'landing_page' && !data.landingPageUrl) {
     return false;
   }
@@ -132,9 +114,8 @@ function StepIndicator({
 }) {
   const steps = [
     { number: 1, label: 'Info Base', icon: Store },
-    { number: 2, label: 'Routing', icon: Route },
-    { number: 3, label: 'Marketing', icon: TrendingUp },
-    { number: 4, label: 'Revisione', icon: Eye }
+    { number: 2, label: 'Marketing', icon: TrendingUp },
+    { number: 3, label: 'Revisione', icon: Eye }
   ];
 
   return (
@@ -193,7 +174,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
   const { toast } = useToast();
   const tenantId = useRequiredTenantId();
   const { currentStep, nextStep, prevStep, goToStep, isFirstStep, isLastStep, totalSteps } = useCampaignCreationMode();
-  const [hasManualFallback, setHasManualFallback] = useState(false);
 
   // Fetch dependencies
   const { data: storesData, isLoading: isLoadingStores } = useQuery({
@@ -230,12 +210,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
       objective: '',
       storeId: '',
       legalEntityId: '',
-      routingMode: 'automatic',
-      autoAssignmentUserId: null,
-      autoAssignmentTeamId: null,
-      manualReviewTimeoutHours: null,
-      workflowId: null,
-      primaryPipelineId: null,
       defaultLeadSource: 'web_form',
       landingPageUrl: '',
       marketingChannels: [],
@@ -266,12 +240,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
         objective: campaign.objective || '',
         storeId: campaign.storeId || '',
         legalEntityId: campaign.legalEntityId || '',
-        routingMode: campaign.routingMode || 'automatic',
-        autoAssignmentUserId: campaign.autoAssignmentUserId,
-        autoAssignmentTeamId: campaign.autoAssignmentTeamId,
-        manualReviewTimeoutHours: campaign.manualReviewTimeoutHours,
-        workflowId: campaign.workflowId,
-        primaryPipelineId: campaign.primaryPipelineId,
         defaultLeadSource: campaign.defaultLeadSource || 'web_form',
         landingPageUrl: campaign.landingPageUrl || '',
         marketingChannels: campaign.marketingChannels || [],
@@ -290,8 +258,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
           third_party: false,
         },
       });
-      
-      setHasManualFallback(!!campaign.manualReviewTimeoutHours);
     }
   }, [mode, campaignData, form]);
 
@@ -549,173 +515,8 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
               </div>
             )}
 
-            {/* Step 2: Routing */}
+            {/* Step 2: Marketing & Tracking */}
             {currentStep === 2 && (
-              <div className="space-y-6" data-testid="wizard-step-routing">
-                <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800">
-                  <div className="flex items-start gap-3">
-                    <Route className="h-5 w-5 text-windtre-orange flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-sm mb-1">Gestione Lead</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Configura come i nuovi lead verranno assegnati al tuo team
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="routingMode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Come vuoi gestire i nuovi lead? *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-routing-mode">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="automatic">
-                            <div className="flex items-center gap-2">
-                              <Zap className="h-4 w-4 text-green-500" />
-                              <span>Automatico - Assegnazione istantanea</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="manual">
-                            <div className="flex items-center gap-2">
-                              <Eye className="h-4 w-4 text-blue-500" />
-                              <span>Manuale - Revisione prima dell'assegnazione</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {form.watch('routingMode') === 'automatic' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="autoAssignmentUserId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Utente di Default</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value || undefined}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-auto-user">
-                                <SelectValue placeholder="Seleziona utente" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {users.map((user: any) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.fullName || user.email}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            I lead verranno assegnati automaticamente a questo utente
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="manualFallback"
-                        checked={hasManualFallback}
-                        onCheckedChange={(checked) => {
-                          setHasManualFallback(checked as boolean);
-                          if (!checked) {
-                            form.setValue('manualReviewTimeoutHours', null);
-                          } else {
-                            form.setValue('manualReviewTimeoutHours', 24);
-                          }
-                        }}
-                        data-testid="checkbox-manual-fallback"
-                      />
-                      <label
-                        htmlFor="manualFallback"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Abilita fallback manuale se non gestito
-                      </label>
-                    </div>
-
-                    {hasManualFallback && (
-                      <FormField
-                        control={form.control}
-                        name="manualReviewTimeoutHours"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Timeout Fallback (ore)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={168}
-                                {...field}
-                                value={field.value || ''}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                                placeholder="24"
-                                data-testid="input-timeout-hours"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Dopo quante ore passare a revisione manuale
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="primaryPipelineId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pipeline Principale</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value || undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-pipeline">
-                            <SelectValue placeholder="Seleziona pipeline" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {pipelines.map((pipeline: any) => (
-                            <SelectItem key={pipeline.id} value={pipeline.id}>
-                              {pipeline.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        I lead verranno inseriti in questa pipeline
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {/* Step 3: Marketing & Tracking */}
-            {currentStep === 3 && (
               <div className="space-y-6" data-testid="wizard-step-marketing">
                 <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800">
                   <div className="flex items-start gap-3">
@@ -981,8 +782,8 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
               </div>
             )}
 
-            {/* Step 4: Review */}
-            {currentStep === 4 && (
+            {/* Step 3: Review */}
+            {currentStep === 3 && (
               <div className="space-y-6" data-testid="wizard-step-review">
                 <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800">
                   <div className="flex items-start gap-3">

@@ -24,7 +24,7 @@ export interface UseCampaignCreationModeReturn {
  * Handles localStorage persistence and wizard step navigation
  */
 export function useCampaignCreationMode(): UseCampaignCreationModeReturn {
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 3;
 
   // Load preference from localStorage
   const loadPreference = useCallback((): CampaignCreationMode | null => {
