@@ -48,10 +48,6 @@ interface CampaignSettingsDialogProps {
   mode: 'create' | 'edit';
 }
 
-// Campaign routing mode enum
-const routingModes = ['automatic', 'manual'] as const;
-type RoutingMode = typeof routingModes[number];
-
 // Lead source enum (matches backend)
 const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
 type LeadSource = typeof leadSources[number];
@@ -64,12 +60,6 @@ const campaignFormSchema = z.object({
   storeId: z.string().uuid("Seleziona un negozio valido"),
   legalEntityId: z.string().uuid().optional(),
   driverIds: z.array(z.string().uuid()).optional().default([]),
-  
-  // Routing settings
-  routingMode: z.enum(routingModes),
-  autoAssignmentUserId: z.string().uuid().optional().nullable(),
-  autoAssignmentTeamId: z.string().uuid().optional().nullable(),
-  manualReviewTimeoutHours: z.number().int().min(1).max(168).optional().nullable(),
   
   // Workflow & Pipelines
   workflowId: z.string().uuid().optional().nullable(),
@@ -112,15 +102,6 @@ const campaignFormSchema = z.object({
     profiling: false,
     third_party: false,
   }),
-}).refine(data => {
-  // If routing mode is automatic, require either user or team assignment
-  if (data.routingMode === 'automatic' && !data.autoAssignmentUserId && !data.autoAssignmentTeamId) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Modalità automatica richiede assegnazione a utente o team",
-  path: ['autoAssignmentUserId']
 }).refine(data => {
   // If lead source is landing_page, URL is required
   if (data.defaultLeadSource === 'landing_page' && !data.landingPageUrl) {
@@ -1323,10 +1304,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       storeId: '',
       legalEntityId: undefined,
       driverIds: [],
-      routingMode: 'manual',
-      autoAssignmentUserId: null,
-      autoAssignmentTeamId: null,
-      manualReviewTimeoutHours: 24,
       workflowId: null,
       primaryPipelineId: null,
       secondaryPipelineId: null,
@@ -1381,10 +1358,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         storeId: campaign.storeId || '',
         legalEntityId: campaign.legalEntityId || undefined,
         driverIds: campaign.driverIds || [],
-        routingMode: campaign.routingMode || 'manual',
-        autoAssignmentUserId: campaign.autoAssignmentUserId || null,
-        autoAssignmentTeamId: campaign.autoAssignmentTeamId || null,
-        manualReviewTimeoutHours: campaign.manualReviewTimeoutHours || 24,
         workflowId: campaign.workflowId || null,
         primaryPipelineId: campaign.primaryPipelineId || null,
         secondaryPipelineId: campaign.secondaryPipelineId || null,

@@ -40,7 +40,6 @@ export async function seedCRMDemo() {
         status: 'active',
         objective: 500,
         targetDriverIds: [DRIVER_FISSO, DRIVER_MOBILE],
-        routingMode: 'automatic',
         defaultLeadSource: 'landing_page',
         landingPageUrl: 'https://windtre.it/promo/black-friday-2024',
         marketingChannelIds: ['30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002'], // Google Ads, Facebook Ads
@@ -67,7 +66,6 @@ export async function seedCRMDemo() {
         status: 'active',
         objective: 200,
         targetDriverIds: [DRIVER_FISSO],
-        routingMode: 'manual',
         defaultLeadSource: 'web_form',
         landingPageUrl: 'https://windtre.it/business/fibra-dedicated',
         marketingChannelIds: ['30000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000004'], // Email Marketing, LinkedIn Ads
@@ -94,7 +92,6 @@ export async function seedCRMDemo() {
         status: 'active',
         objective: 1000,
         targetDriverIds: [DRIVER_FISSO, DRIVER_MOBILE, DRIVER_DEVICE],
-        routingMode: 'automatic',
         defaultLeadSource: 'powerful_api',
         externalCampaignId: 'PWR-API-2024-001',
         budget: 5000,
@@ -117,7 +114,6 @@ export async function seedCRMDemo() {
         status: 'active',
         objective: 300,
         targetDriverIds: [DRIVER_MOBILE, DRIVER_DEVICE],
-        routingMode: 'manual',
         defaultLeadSource: 'manual',
         budget: 8000,
         startDate: new Date('2024-10-01'),
