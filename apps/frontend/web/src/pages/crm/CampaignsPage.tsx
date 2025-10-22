@@ -108,7 +108,7 @@ export default function CampaignsPage() {
   });
   const [location] = useLocation();
   const { navigate, buildUrl } = useTenantNavigation();
-  const { mode, setMode, preference } = useCampaignCreationMode();
+  const { mode, setMode, preference, savePreference } = useCampaignCreationMode();
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns'],
@@ -181,9 +181,19 @@ export default function CampaignsPage() {
   });
 
   const handleCreateCampaign = () => {
-    // Sempre mostra il modal di scelta (no preferenza salvata)
     setEditingCampaignId(undefined);
-    setIsChoiceDialogOpen(true);
+    
+    // Se c'è una preferenza salvata, apri direttamente il dialog corretto
+    if (preference === 'wizard') {
+      setMode('wizard'); // Sync hook state with preference
+      setIsWizardOpen(true);
+    } else if (preference === 'advanced') {
+      setMode('advanced'); // Sync hook state with preference
+      setIsSettingsDialogOpen(true);
+    } else {
+      // Nessuna preferenza, mostra il modal di scelta
+      setIsChoiceDialogOpen(true);
+    }
   };
 
   const handleEditCampaign = (campaignId: string) => {
@@ -201,12 +211,20 @@ export default function CampaignsPage() {
     setIsWizardOpen(false);
   };
 
-  const handleSelectWizard = () => {
+  const handleSelectWizard = (remember: boolean) => {
+    setMode('wizard'); // Sync hook state
+    if (remember) {
+      savePreference('wizard');
+    }
     setIsChoiceDialogOpen(false);
     setIsWizardOpen(true);
   };
 
-  const handleSelectStandard = () => {
+  const handleSelectStandard = (remember: boolean) => {
+    setMode('advanced'); // Sync hook state
+    if (remember) {
+      savePreference('advanced');
+    }
     setIsChoiceDialogOpen(false);
     setIsSettingsDialogOpen(true);
   };

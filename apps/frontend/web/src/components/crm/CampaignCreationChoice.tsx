@@ -1,14 +1,16 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Wand2, Settings, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface CampaignCreationChoiceProps {
   open: boolean;
   onClose: () => void;
-  onSelectWizard: () => void;
-  onSelectStandard: () => void;
+  onSelectWizard: (remember: boolean) => void;
+  onSelectStandard: (remember: boolean) => void;
 }
 
 export function CampaignCreationChoice({ 
@@ -17,6 +19,8 @@ export function CampaignCreationChoice({
   onSelectWizard, 
   onSelectStandard 
 }: CampaignCreationChoiceProps) {
+  const [rememberChoice, setRememberChoice] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50">
@@ -38,7 +42,7 @@ export function CampaignCreationChoice({
           >
             <Card 
               className="p-6 cursor-pointer border-2 border-transparent hover:border-orange-500/50 transition-all duration-200 bg-gradient-to-br from-orange-50/50 to-purple-50/50 dark:from-orange-950/20 dark:to-purple-950/20"
-              onClick={onSelectWizard}
+              onClick={() => onSelectWizard(rememberChoice)}
               data-testid="card-wizard-mode"
             >
               <div className="flex flex-col items-center text-center space-y-4">
@@ -87,7 +91,7 @@ export function CampaignCreationChoice({
           >
             <Card 
               className="p-6 cursor-pointer border-2 border-transparent hover:border-purple-500/50 transition-all duration-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-950/20 dark:to-blue-950/20"
-              onClick={onSelectStandard}
+              onClick={() => onSelectStandard(rememberChoice)}
               data-testid="card-standard-mode"
             >
               <div className="flex flex-col items-center text-center space-y-4">
@@ -128,6 +132,22 @@ export function CampaignCreationChoice({
               </div>
             </Card>
           </motion.div>
+        </div>
+
+        {/* Remember Choice Checkbox */}
+        <div className="flex items-center space-x-2 mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+          <Checkbox
+            id="remember-choice"
+            checked={rememberChoice}
+            onCheckedChange={(checked) => setRememberChoice(checked === true)}
+            data-testid="checkbox-remember-choice"
+          />
+          <label
+            htmlFor="remember-choice"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            Ricorda la mia scelta (potrai cambiarla in seguito)
+          </label>
         </div>
       </DialogContent>
     </Dialog>

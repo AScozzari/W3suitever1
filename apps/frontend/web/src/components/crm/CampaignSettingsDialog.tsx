@@ -1257,13 +1257,9 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     savePreference,
   } = useCampaignCreationMode();
 
-  // Show mode selector on first open if no preference exists (create mode only)
+  // Mode selector disabled - now handled by CampaignCreationChoice in CampaignsPage
   useEffect(() => {
-    if (open && mode === 'create' && !preference) {
-      setShowModeSelector(true);
-    } else {
-      setShowModeSelector(false);
-    }
+    setShowModeSelector(false); // Never show, choice is made before opening dialog
   }, [open, mode, preference]);
 
   // Reset nested dialog when parent closes
