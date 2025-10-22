@@ -31,8 +31,13 @@ import {
   Shield,
   Zap,
   RefreshCw,
-  Info
+  Info,
+  Workflow,
+  Users,
+  Bell
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface CampaignWizardProps {
   open: boolean;
@@ -54,6 +59,23 @@ const campaignFormSchema = z.object({
   objective: z.string().optional(),
   storeId: z.string().uuid("Seleziona un negozio valido"),
   legalEntityId: z.string().uuid().optional(),
+  
+  // Routing & Workflows Unificato
+  routingMode: z.enum(['automatic', 'manual']).optional().nullable(),
+  
+  // Automatic Mode
+  workflowId: z.string().uuid().optional().nullable(),
+  fallbackTimeoutSeconds: z.number().int().min(30).max(3600).optional().nullable(),
+  fallbackPipelineId1: z.string().uuid().optional().nullable(),
+  fallbackPipelineId2: z.string().uuid().optional().nullable(),
+  
+  // Manual Mode  
+  manualPipelineId1: z.string().uuid().optional().nullable(),
+  manualPipelineId2: z.string().uuid().optional().nullable(),
+  
+  // Notifiche
+  notifyTeamId: z.string().uuid().optional().nullable(),
+  notifyUserIds: z.array(z.string().uuid()).optional().default([]),
   
   // Lead Source & Marketing Channels
   defaultLeadSource: z.enum(leadSources).optional().nullable(),
@@ -98,6 +120,17 @@ const campaignFormSchema = z.object({
 }, {
   message: "Landing Page URL obbligatorio quando Lead Source è 'Landing Page'",
   path: ['landingPageUrl']
+}).refine(data => {
+  if (data.routingMode === 'automatic' && !data.workflowId) {
+    return false;
+  }
+  if (data.routingMode === 'manual' && !data.manualPipelineId1) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Configurazione routing non valida",
+  path: ['routingMode']
 });
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
@@ -114,8 +147,9 @@ function StepIndicator({
 }) {
   const steps = [
     { number: 1, label: 'Info Base', icon: Store },
-    { number: 2, label: 'Marketing', icon: TrendingUp },
-    { number: 3, label: 'Revisione', icon: Eye }
+    { number: 2, label: 'Routing & Workflows', icon: Workflow },
+    { number: 3, label: 'Marketing', icon: TrendingUp },
+    { number: 4, label: 'Revisione', icon: Eye }
   ];
 
   return (
@@ -196,6 +230,21 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
     enabled: open,
   });
 
+  const { data: workflowsData } = useQuery({
+    queryKey: ['/api/workflows/templates?category=crm'],
+    enabled: open,
+  });
+
+  const { data: teamsData } = useQuery({
+    queryKey: ['/api/teams'],
+    enabled: open,
+  });
+
+  const { data: marketingChannelsData } = useQuery({
+    queryKey: ['/api/crm/marketing-channels'],
+    enabled: open,
+  });
+
   // Fetch campaign data if editing
   const { data: campaignData, isLoading: isLoadingCampaign } = useQuery({
     queryKey: [`/api/crm/campaigns/${campaignId}`],
@@ -210,6 +259,15 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
       objective: '',
       storeId: '',
       legalEntityId: '',
+      routingMode: 'automatic',
+      workflowId: null,
+      fallbackTimeoutSeconds: 300,
+      fallbackPipelineId1: null,
+      fallbackPipelineId2: null,
+      manualPipelineId1: null,
+      manualPipelineId2: null,
+      notifyTeamId: null,
+      notifyUserIds: [],
       defaultLeadSource: 'web_form',
       landingPageUrl: '',
       marketingChannels: [],
@@ -302,13 +360,19 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
     
     switch (currentStep) {
       case 1: // Info Base
-        fieldsToValidate = ['name', 'storeId', 'startDate', 'endDate', 'budget'];
+        fieldsToValidate = ['name', 'storeId'];
         break;
-      case 2: // Routing
-        fieldsToValidate = ['routingMode', 'autoAssignmentUserId', 'autoAssignmentTeamId', 'manualReviewTimeoutHours'];
+      case 2: // Routing & Workflows
+        fieldsToValidate = ['routingMode'];
+        const routingMode = form.getValues('routingMode');
+        if (routingMode === 'automatic') {
+          fieldsToValidate.push('workflowId');
+        } else if (routingMode === 'manual') {
+          fieldsToValidate.push('manualPipelineId1');
+        }
         break;
       case 3: // Marketing
-        fieldsToValidate = ['landingPageUrl', 'marketingChannels', 'utmCampaign', 'ga4MeasurementId', 'googleAdsConversionId', 'facebookPixelId', 'requiredConsents'];
+        fieldsToValidate = ['landingPageUrl', 'marketingChannels'];
         break;
     }
 
@@ -333,6 +397,9 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
   const users = usersData?.data || [];
   const legalEntities = legalEntitiesData?.data || [];
   const pipelines = pipelinesData?.data || [];
+  const workflows = workflowsData?.data || [];
+  const teams = teamsData?.data || [];
+  const marketingChannels = marketingChannelsData?.data || [];
 
   // Get selected store for pixel inheritance
   const selectedStoreId = form.watch('storeId');
@@ -515,8 +582,281 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
               </div>
             )}
 
-            {/* Step 2: Marketing & Tracking */}
+            {/* Step 2: Routing & Workflows */}
             {currentStep === 2 && (
+              <div className="space-y-6" data-testid="wizard-step-routing">
+                <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-start gap-3">
+                    <Workflow className="h-5 w-5 text-windtre-orange flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">Routing & Workflows</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Configura come i lead vengono gestiti e instradati
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="routingMode"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Modalità di Routing *</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || 'automatic'}
+                          className="flex flex-col space-y-1"
+                        >
+                          <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:border-windtre-orange">
+                            <RadioGroupItem value="automatic" data-testid="radio-routing-automatic" />
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="cursor-pointer font-medium">
+                                Automatico
+                              </FormLabel>
+                              <FormDescription>
+                                I lead vengono assegnati automaticamente tramite workflow
+                              </FormDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:border-windtre-orange">
+                            <RadioGroupItem value="manual" data-testid="radio-routing-manual" />
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="cursor-pointer font-medium">
+                                Manuale
+                              </FormLabel>
+                              <FormDescription>
+                                I lead vanno in pipeline per gestione manuale
+                              </FormDescription>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Automatic Mode Fields */}
+                {form.watch('routingMode') === 'automatic' && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="workflowId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Workflow *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-workflow">
+                                <SelectValue placeholder="Seleziona workflow" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {workflows.map((wf: any) => (
+                                <SelectItem key={wf.id} value={wf.id}>
+                                  {wf.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Il workflow che gestirà i lead automaticamente
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="fallbackTimeoutSeconds"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Timeout Fallback (secondi)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field}
+                              value={field.value || 300}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 300)}
+                              min={30}
+                              max={3600}
+                              data-testid="input-fallback-timeout"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Tempo di attesa prima di passare alla pipeline fallback (default: 300s)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="fallbackPipelineId1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pipeline Fallback 1</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-fallback-pipeline-1">
+                                <SelectValue placeholder="Seleziona pipeline fallback" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Nessuna</SelectItem>
+                              {pipelines.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Pipeline di backup se il workflow fallisce
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="fallbackPipelineId2"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pipeline Fallback 2 (opzionale)</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-fallback-pipeline-2">
+                                <SelectValue placeholder="Seleziona seconda pipeline fallback" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Nessuna</SelectItem>
+                              {pipelines.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Seconda pipeline di backup (opzionale)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* Manual Mode Fields */}
+                {form.watch('routingMode') === 'manual' && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="manualPipelineId1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pipeline 1 *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-manual-pipeline-1">
+                                <SelectValue placeholder="Seleziona pipeline principale" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {pipelines.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Pipeline principale per i lead in gestione manuale
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="manualPipelineId2"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pipeline 2 (opzionale)</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-manual-pipeline-2">
+                                <SelectValue placeholder="Seleziona seconda pipeline" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Nessuna</SelectItem>
+                              {pipelines.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Seconda pipeline per segregare i lead (opzionale)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* Notifications (both modes) */}
+                <div className="space-y-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-windtre-orange" />
+                    Notifiche
+                  </h4>
+
+                  <FormField
+                    control={form.control}
+                    name="notifyTeamId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Team da Notificare</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-notify-team">
+                              <SelectValue placeholder="Seleziona team" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nessuno</SelectItem>
+                            {teams.map((t: any) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Il team riceverà notifiche per nuovi lead
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Marketing & Tracking */}
+            {currentStep === 3 && (
               <div className="space-y-6" data-testid="wizard-step-marketing">
                 <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800">
                   <div className="flex items-start gap-3">
@@ -524,11 +864,48 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                     <div>
                       <h4 className="font-semibold text-sm mb-1">Marketing & Tracking</h4>
                       <p className="text-xs text-muted-foreground">
-                        Configura landing page, tracking pixels e consensi GDPR
+                        Configura origine lead, canali marketing e tracking pixels
                       </p>
                     </div>
                   </div>
                 </div>
+
+                <TooltipProvider>
+                  <FormField
+                    control={form.control}
+                    name="defaultLeadSource"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Origine Lead
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Categoria del canale da cui provengono i lead</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-lead-source">
+                              <SelectValue placeholder="Seleziona origine lead" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="manual">Manuale</SelectItem>
+                            <SelectItem value="web_form">Form Web</SelectItem>
+                            <SelectItem value="powerful_api">API Powerful</SelectItem>
+                            <SelectItem value="landing_page">Landing Page</SelectItem>
+                            <SelectItem value="csv_import">Importazione CSV</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TooltipProvider>
 
                 <FormField
                   control={form.control}
@@ -551,6 +928,54 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                     </FormItem>
                   )}
                 />
+
+                <TooltipProvider>
+                  <FormField
+                    control={form.control}
+                    name="marketingChannels"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Canali Marketing
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Canali specifici con tracking UTM attivo</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </FormLabel>
+                        <FormControl>
+                          <div className="flex flex-wrap gap-2">
+                            {marketingChannels.map((ch: any) => (
+                              <label key={ch.id} className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:border-windtre-orange">
+                                <input
+                                  type="checkbox"
+                                  checked={(field.value || []).includes(ch.id)}
+                                  onChange={(e) => {
+                                    const current = field.value || [];
+                                    if (e.target.checked) {
+                                      field.onChange([...current, ch.id]);
+                                    } else {
+                                      field.onChange(current.filter((id: string) => id !== ch.id));
+                                    }
+                                  }}
+                                  className="rounded"
+                                />
+                                <span className="text-sm">{ch.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Seleziona i canali marketing da tracciare
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TooltipProvider>
 
                 <FormField
                   control={form.control}
@@ -782,8 +1207,8 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
               </div>
             )}
 
-            {/* Step 3: Review */}
-            {currentStep === 3 && (
+            {/* Step 4: Review */}
+            {currentStep === 4 && (
               <div className="space-y-6" data-testid="wizard-step-review">
                 <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800">
                   <div className="flex items-start gap-3">

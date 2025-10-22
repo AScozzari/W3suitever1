@@ -38,8 +38,14 @@ import {
   ChevronRight,
   ChevronLeft,
   Edit2,
-  RefreshCw
+  RefreshCw,
+  Info,
+  Bell,
+  Users
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
 
 interface CampaignSettingsDialogProps {
   open: boolean;
@@ -61,10 +67,22 @@ const campaignFormSchema = z.object({
   legalEntityId: z.string().uuid().optional(),
   driverIds: z.array(z.string().uuid()).optional().default([]),
   
-  // Workflow & Pipelines
+  // Routing & Workflows Unificato
+  routingMode: z.enum(['automatic', 'manual']).optional().nullable(),
+  
+  // Automatic Mode
   workflowId: z.string().uuid().optional().nullable(),
-  primaryPipelineId: z.string().uuid().optional().nullable(),
-  secondaryPipelineId: z.string().uuid().optional().nullable(),
+  fallbackTimeoutSeconds: z.number().int().min(30).max(3600).optional().nullable(),
+  fallbackPipelineId1: z.string().uuid().optional().nullable(),
+  fallbackPipelineId2: z.string().uuid().optional().nullable(),
+  
+  // Manual Mode  
+  manualPipelineId1: z.string().uuid().optional().nullable(),
+  manualPipelineId2: z.string().uuid().optional().nullable(),
+  
+  // Notifiche
+  notifyTeamId: z.string().uuid().optional().nullable(),
+  notifyUserIds: z.array(z.string().uuid()).optional().default([]),
   
   // Lead Source & Marketing Channels
   defaultLeadSource: z.enum(leadSources).optional().nullable(),
@@ -120,6 +138,17 @@ const campaignFormSchema = z.object({
 }, {
   message: "Landing Page URL obbligatorio quando sono selezionati canali marketing",
   path: ['landingPageUrl']
+}).refine(data => {
+  if (data.routingMode === 'automatic' && !data.workflowId) {
+    return false;
+  }
+  if (data.routingMode === 'manual' && !data.manualPipelineId1) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Configurazione routing non valida",
+  path: ['routingMode']
 });
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
@@ -1518,26 +1547,22 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                 />
               ) : (
                 <Tabs defaultValue="general" className="w-full">
-                  <TabsList className="grid grid-cols-9 w-full">
+                  <TabsList className="grid grid-cols-8 w-full">
                     <TabsTrigger value="general" data-testid="tab-general">
                       <Settings2 className="h-4 w-4 mr-1" />
                       Generale
                     </TabsTrigger>
+                    <TabsTrigger value="routing-workflows" data-testid="tab-routing-workflows">
+                      <Workflow className="h-4 w-4 mr-1" />
+                      Routing
+                    </TabsTrigger>
                     <TabsTrigger value="targeting" data-testid="tab-targeting">
                       <Target className="h-4 w-4 mr-1" />
-                      Tracking
+                      Marketing
                     </TabsTrigger>
                     <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
                       <TrendingUp className="h-4 w-4 mr-1" />
                       UTM Links
-                    </TabsTrigger>
-                    <TabsTrigger value="routing" data-testid="tab-routing">
-                      <Route className="h-4 w-4 mr-1" />
-                      Routing
-                    </TabsTrigger>
-                    <TabsTrigger value="workflow" data-testid="tab-workflow">
-                      <Workflow className="h-4 w-4 mr-1" />
-                      Workflow
                     </TabsTrigger>
                     <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses" disabled={mode === 'create'}>
                       <ListTodo className="h-4 w-4 mr-1" />
@@ -1958,58 +1983,87 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   <UTMLinksTab campaignId={campaignId} mode={mode} />
                 </TabsContent>
 
-                {/* TAB 3: ROUTING */}
-                <TabsContent value="routing" className="space-y-4 mt-4">
+                {/* TAB: ROUTING & WORKFLOWS */}
+                <TabsContent value="routing-workflows" className="space-y-4 mt-4">
+                  <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 border border-orange-200 dark:border-orange-800 mb-4">
+                    <div className="flex items-start gap-3">
+                      <Workflow className="h-5 w-5 text-windtre-orange flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-sm mb-1">Routing & Workflows</h4>
+                        <p className="text-xs text-muted-foreground">
+                          Configura come i lead vengono gestiti e instradati
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="routingMode"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Come vuoi gestire i nuovi lead? *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-routing-mode">
-                              <SelectValue placeholder="Seleziona modalità" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="automatic">Assegnazione Automatica</SelectItem>
-                            <SelectItem value="manual">Revisione Manuale</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          {field.value === 'automatic' 
-                            ? 'I lead vengono assegnati immediatamente al team o utente selezionato'
-                            : 'Tutti i lead vanno in coda per revisione manuale prima dell\'assegnazione'}
-                        </FormDescription>
+                      <FormItem className="space-y-3">
+                        <FormLabel>Modalità di Routing *</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value || 'automatic'}
+                            className="flex flex-col space-y-1"
+                          >
+                            <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:border-windtre-orange">
+                              <RadioGroupItem value="automatic" data-testid="radio-routing-automatic" />
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="cursor-pointer font-medium">
+                                  Automatico
+                                </FormLabel>
+                                <FormDescription>
+                                  I lead vengono assegnati automaticamente tramite workflow
+                                </FormDescription>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:border-windtre-orange">
+                              <RadioGroupItem value="manual" data-testid="radio-routing-manual" />
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="cursor-pointer font-medium">
+                                  Manuale
+                                </FormLabel>
+                                <FormDescription>
+                                  I lead vanno in pipeline per gestione manuale
+                                </FormDescription>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  {selectedRoutingMode === 'automatic' && (
+                  {/* Automatic Mode Fields */}
+                  {form.watch('routingMode') === 'automatic' && (
                     <>
                       <FormField
                         control={form.control}
-                        name="autoAssignmentUserId"
+                        name="workflowId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Assegna a Utente</FormLabel>
+                            <FormLabel>Workflow *</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl>
-                                <SelectTrigger data-testid="select-auto-assign-user">
-                                  <SelectValue placeholder="Seleziona utente" />
+                                <SelectTrigger data-testid="select-workflow">
+                                  <SelectValue placeholder="Seleziona workflow" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="none">Nessuno</SelectItem>
-                                {users.map((user: any) => (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {user.displayName || user.email}
+                                {workflows.map((wf: any) => (
+                                  <SelectItem key={wf.id} value={wf.id}>
+                                    {wf.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormDescription>
+                              Il workflow che gestirà i lead automaticamente
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -2017,169 +2071,187 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                       <FormField
                         control={form.control}
-                        name="autoAssignmentTeamId"
+                        name="fallbackTimeoutSeconds"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Assegna a Team</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-auto-assign-team">
-                                  <SelectValue placeholder="Seleziona team" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="none">Nessuno</SelectItem>
-                                {teams
-                                  .filter((team: any) => team.assignedDepartments?.includes('crm'))
-                                  .map((team: any) => (
-                                    <SelectItem key={team.id} value={team.id}>
-                                      {team.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
+                            <FormLabel>Timeout Fallback (secondi)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                {...field}
+                                value={field.value || 300}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 300)}
+                                min={30}
+                                max={3600}
+                                data-testid="input-fallback-timeout"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Tempo di attesa prima di passare alla pipeline fallback (default: 300s)
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
 
-                      <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="enable-fallback"
-                            checked={!!form.watch('manualReviewTimeoutHours')}
-                            onCheckedChange={(checked) => {
-                              form.setValue('manualReviewTimeoutHours', checked ? 24 : null);
-                            }}
-                            data-testid="checkbox-enable-fallback"
-                          />
-                          <label
-                            htmlFor="enable-fallback"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                          >
-                            Fallback manuale se non gestito
-                          </label>
-                        </div>
-
-                        {!!form.watch('manualReviewTimeoutHours') && (
-                          <FormField
-                            control={form.control}
-                            name="manualReviewTimeoutHours"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Timeout (ore)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    {...field} 
-                                    value={field.value || 24} 
-                                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 24)}
-                                    min={1}
-                                    max={168}
-                                    data-testid="input-timeout-hours" 
-                                  />
-                                </FormControl>
-                                <FormDescription className="text-xs">
-                                  Se il lead non viene gestito entro questo tempo, passa in coda manuale
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                      <FormField
+                        control={form.control}
+                        name="fallbackPipelineId1"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pipeline Fallback 1</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-fallback-pipeline-1">
+                                  <SelectValue placeholder="Seleziona pipeline fallback" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nessuna</SelectItem>
+                                {pipelines.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Pipeline di backup se il workflow fallisce
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </div>
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="fallbackPipelineId2"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pipeline Fallback 2 (opzionale)</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-fallback-pipeline-2">
+                                  <SelectValue placeholder="Seleziona seconda pipeline fallback" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nessuna</SelectItem>
+                                {pipelines.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Seconda pipeline di backup (opzionale)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </>
                   )}
-                </TabsContent>
 
-                {/* TAB 4: WORKFLOW */}
-                <TabsContent value="workflow" className="space-y-4 mt-4">
-                  <FormField
-                    control={form.control}
-                    name="workflowId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Workflow Automazione</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-workflow">
-                              <SelectValue placeholder="Seleziona workflow" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Nessuno</SelectItem>
-                            {workflows.map((workflow: any) => (
-                              <SelectItem key={workflow.id} value={workflow.id}>
-                                {workflow.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Workflow che gestisce automaticamente i lead in ingresso
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Manual Mode Fields */}
+                  {form.watch('routingMode') === 'manual' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="manualPipelineId1"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pipeline 1 *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-manual-pipeline-1">
+                                  <SelectValue placeholder="Seleziona pipeline principale" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {pipelines.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Pipeline principale per i lead in gestione manuale
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="primaryPipelineId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pipeline Primaria</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-primary-pipeline">
-                              <SelectValue placeholder="Seleziona pipeline" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Nessuna</SelectItem>
-                            {pipelines.map((pipeline: any) => (
-                              <SelectItem key={pipeline.id} value={pipeline.id}>
-                                {pipeline.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Pipeline principale per i lead di questa campagna
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="manualPipelineId2"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pipeline 2 (opzionale)</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-manual-pipeline-2">
+                                  <SelectValue placeholder="Seleziona seconda pipeline" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="">Nessuna</SelectItem>
+                                {pipelines.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Seconda pipeline per segregare i lead (opzionale)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
 
-                  <FormField
-                    control={form.control}
-                    name="secondaryPipelineId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pipeline Secondaria</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-secondary-pipeline">
-                              <SelectValue placeholder="Seleziona pipeline" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Nessuna</SelectItem>
-                            {pipelines.map((pipeline: any) => (
-                              <SelectItem key={pipeline.id} value={pipeline.id}>
-                                {pipeline.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Pipeline alternativa per routing avanzato
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Notifications (both modes) */}
+                  <div className="space-y-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-windtre-orange" />
+                      Notifiche
+                    </h4>
+
+                    <FormField
+                      control={form.control}
+                      name="notifyTeamId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Team da Notificare</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-notify-team">
+                                <SelectValue placeholder="Seleziona team" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Nessuno</SelectItem>
+                              {teams.map((t: any) => (
+                                <SelectItem key={t.id} value={t.id}>
+                                  {t.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Il team riceverà notifiche per nuovi lead
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </TabsContent>
 
                 {/* TAB 5: PRIVACY & GDPR */}
