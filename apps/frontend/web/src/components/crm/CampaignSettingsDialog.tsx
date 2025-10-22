@@ -2561,7 +2561,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   </div>
                 </TabsContent>
               </Tabs>
+              )}
 
+              {/* Footer buttons - only for advanced mode (wizard has own buttons) */}
+              {(mode === 'edit' || creationMode === 'advanced') && (
                 <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button
                     type="button"
