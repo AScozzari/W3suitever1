@@ -49,6 +49,13 @@ export async function seedCRMDemo() {
         budget: 25000,
         startDate: new Date('2024-11-15'),
         endDate: new Date('2024-11-30'),
+        // 🎯 ROUTING AUTOMATICO
+        routingMode: 'automatic',
+        workflowId: '70000000-0000-0000-0000-000000000001', // Workflow demo
+        fallbackTimeoutSeconds: 300,
+        fallbackPipelineId1: '40000000-0000-0000-0000-000000000001', // Pipeline Consumer
+        fallbackPipelineId2: '40000000-0000-0000-0000-000000000002', // Pipeline Business
+        notifyUserIds: ['20000000-0000-0000-0000-000000000001'], // Admin user
         requiredConsents: {
           privacy_policy: true,
           marketing: true,
@@ -75,6 +82,11 @@ export async function seedCRMDemo() {
         budget: 15000,
         startDate: new Date('2025-01-01'),
         endDate: new Date('2025-03-31'),
+        // 🎯 ROUTING MANUALE
+        routingMode: 'manual',
+        manualPipelineId1: '40000000-0000-0000-0000-000000000002', // Pipeline Business
+        manualPipelineId2: '40000000-0000-0000-0000-000000000001', // Pipeline Consumer (secondary)
+        notifyUserIds: ['20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002'], // Admin + Sales Manager
         requiredConsents: {
           privacy_policy: true,
           marketing: true,
@@ -97,6 +109,12 @@ export async function seedCRMDemo() {
         budget: 5000,
         startDate: new Date('2024-10-01'),
         endDate: new Date('2025-12-31'),
+        // 🎯 ROUTING AUTOMATICO CON AI
+        routingMode: 'automatic',
+        workflowId: '70000000-0000-0000-0000-000000000002', // Workflow AI routing
+        fallbackTimeoutSeconds: 600,
+        fallbackPipelineId1: '40000000-0000-0000-0000-000000000001',
+        notifyUserIds: ['20000000-0000-0000-0000-000000000001'],
         requiredConsents: {
           privacy_policy: true,
           marketing: false,
@@ -118,6 +136,10 @@ export async function seedCRMDemo() {
         budget: 8000,
         startDate: new Date('2024-10-01'),
         endDate: new Date('2024-12-31'),
+        // 🎯 ROUTING MANUALE STORE
+        routingMode: 'manual',
+        manualPipelineId1: '40000000-0000-0000-0000-000000000001', // Pipeline Consumer
+        notifyUserIds: ['20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000003'], // Admin + Store Manager
         requiredConsents: {
           privacy_policy: true,
           marketing: true,
