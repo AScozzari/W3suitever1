@@ -22,14 +22,18 @@ import {
   BarChart3,
   Search,
   Filter,
-  Calendar
+  Calendar,
+  Sparkles,
+  Wand2
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { CampaignSettingsDialog } from '@/components/crm/CampaignSettingsDialog';
+import { CampaignWizard } from '@/components/crm/CampaignWizard';
 import { CampaignFiltersDialog, type CampaignFilters } from '@/components/crm/CampaignFiltersDialog';
+import { useCampaignCreationMode } from '@/hooks/useCampaignCreationMode';
 
 interface Campaign {
   id: string;
@@ -101,6 +105,7 @@ export default function CampaignsPage() {
   });
   const [location] = useLocation();
   const { navigate, buildUrl } = useTenantNavigation();
+  const { mode, setMode, preference } = useCampaignCreationMode();
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns'],
@@ -335,6 +340,25 @@ export default function CampaignsPage() {
               <Button variant="outline" data-testid="button-date-range">
                 <Calendar className="h-4 w-4 mr-2" />
                 Periodo
+              </Button>
+              <Button
+                variant={mode === 'wizard' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMode(mode === 'wizard' ? 'advanced' : 'wizard')}
+                data-testid="button-toggle-creation-mode"
+                title={mode === 'wizard' ? 'Passa a modalità avanzata' : 'Passa a modalità guidata'}
+              >
+                {mode === 'wizard' ? (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Wizard
+                  </>
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Avanzato
+                  </>
+                )}
               </Button>
               <Button
                 onClick={handleCreateCampaign}
@@ -626,13 +650,22 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      {/* Campaign Settings Dialog */}
-      <CampaignSettingsDialog
-        open={isSettingsDialogOpen}
-        onClose={handleCloseDialog}
-        campaignId={editingCampaignId}
-        mode={editingCampaignId ? 'edit' : 'create'}
-      />
+      {/* Campaign Creation Dialog - Wizard or Advanced */}
+      {mode === 'wizard' ? (
+        <CampaignWizard
+          open={isSettingsDialogOpen}
+          onClose={handleCloseDialog}
+          campaignId={editingCampaignId}
+          mode={editingCampaignId ? 'edit' : 'create'}
+        />
+      ) : (
+        <CampaignSettingsDialog
+          open={isSettingsDialogOpen}
+          onClose={handleCloseDialog}
+          campaignId={editingCampaignId}
+          mode={editingCampaignId ? 'edit' : 'create'}
+        />
+      )}
 
       {/* Campaign Filters Dialog */}
       <CampaignFiltersDialog
@@ -655,6 +688,7 @@ export function CampaignsContent() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
   const { navigate, buildUrl } = useTenantNavigation();
+  const { mode, setMode } = useCampaignCreationMode();
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns'],
@@ -1046,13 +1080,22 @@ export function CampaignsContent() {
         </AnimatePresence>
       </div>
 
-      {/* Campaign Settings Dialog */}
-      <CampaignSettingsDialog
-        open={isSettingsDialogOpen}
-        onClose={handleCloseDialog}
-        campaignId={editingCampaignId}
-        mode={editingCampaignId ? 'edit' : 'create'}
-      />
+      {/* Campaign Creation Dialog - Wizard or Advanced */}
+      {mode === 'wizard' ? (
+        <CampaignWizard
+          open={isSettingsDialogOpen}
+          onClose={handleCloseDialog}
+          campaignId={editingCampaignId}
+          mode={editingCampaignId ? 'edit' : 'create'}
+        />
+      ) : (
+        <CampaignSettingsDialog
+          open={isSettingsDialogOpen}
+          onClose={handleCloseDialog}
+          campaignId={editingCampaignId}
+          mode={editingCampaignId ? 'edit' : 'create'}
+        />
+      )}
 
       {/* Note: CampaignsContent is simplified - no filters dialog */}
     </>

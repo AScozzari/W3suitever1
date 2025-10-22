@@ -4709,6 +4709,7 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   privacyPolicyAccepted: boolean("privacy_policy_accepted").default(false),
   marketingConsent: boolean("marketing_consent").default(false),
   profilingConsent: boolean("profiling_consent").default(false),
+  thirdPartyConsent: boolean("third_party_consent").default(false),
   consentTimestamp: timestamp("consent_timestamp"),
   consentSource: varchar("consent_source", { length: 255 }),
   rawEventPayload: jsonb("raw_event_payload"),

@@ -57,6 +57,7 @@ import { leadScoringService } from '../services/lead-scoring-ai.service';
 import { utmLinksService } from '../services/utm-links.service';
 import { gtmEventsService } from '../services/gtm-events.service';
 import { attributionService } from '../services/attribution.service';
+import { GDPRConsentService } from '../services/gdpr-consent.service';
 
 const router = express.Router();
 
@@ -364,6 +365,59 @@ router.get('/leads', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve leads',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/leads/:id/consent-compliance
+ * Check GDPR consent compliance for a specific lead
+ */
+router.get('/leads/:id/consent-compliance', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const complianceResult = await GDPRConsentService.validateLeadConsentCompliance(id, tenantId);
+
+    res.status(200).json({
+      success: true,
+      data: complianceResult,
+      message: 'Consent compliance checked successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error checking consent compliance', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: getTenantId(req),
+      leadId: req.params.id
+    });
+
+    if (error.message === 'Lead not found') {
+      return res.status(404).json({
+        success: false,
+        error: 'Lead not found',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to check consent compliance',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
@@ -1032,6 +1086,45 @@ router.post('/leads/:id/convert', async (req, res) => {
         error: 'Lead not found',
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
+    }
+
+    // 🛡️ GDPR CONSENT VALIDATION: Block conversion if lead doesn't have required consents
+    try {
+      const complianceResult = await GDPRConsentService.validateLeadConsentCompliance(id, tenantId);
+      
+      if (!complianceResult.compliant) {
+        logger.warn('Lead conversion blocked: GDPR consent not compliant', {
+          leadId: id,
+          tenantId,
+          missingConsents: complianceResult.missing
+        });
+        
+        return res.status(403).json({
+          success: false,
+          error: 'GDPR consent validation failed',
+          message: `Cannot convert lead: missing required consents: ${complianceResult.missing.join(', ')}`,
+          data: {
+            compliant: false,
+            missing: complianceResult.missing,
+            required: complianceResult.required
+          },
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+      
+      logger.info('GDPR consent validation passed for lead conversion', {
+        leadId: id,
+        tenantId,
+        compliant: true
+      });
+    } catch (consentError: any) {
+      logger.error('GDPR consent validation error during lead conversion', {
+        leadId: id,
+        tenantId,
+        error: consentError.message
+      });
+      // Continue with conversion if validation fails (non-blocking for backward compatibility)
+      logger.warn('Proceeding with conversion despite consent validation error');
     }
 
     // Create deal from lead

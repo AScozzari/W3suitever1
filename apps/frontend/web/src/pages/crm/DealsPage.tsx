@@ -138,6 +138,13 @@ export default function DealsPage() {
     onSuccess: () => {
       toast({ title: 'Deal aggiornato!', description: 'Le modifiche sono state salvate' });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/deals'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore aggiornamento',
+        description: error?.message || 'Impossibile aggiornare il deal',
+        variant: 'destructive'
+      });
     }
   });
 
@@ -155,6 +162,13 @@ export default function DealsPage() {
       toast({ title: 'Deals aggiornati!', description: 'Gli stage sono stati cambiati' });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/deals'] });
       setRowSelection({});
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore aggiornamento bulk',
+        description: error?.message || 'Impossibile cambiare gli stage',
+        variant: 'destructive'
+      });
     }
   });
 

@@ -241,6 +241,13 @@ export default function PipelineBoardPage() {
     onSuccess: () => {
       toast({ title: 'Deal spostato!', description: 'Lo stage è stato aggiornato' });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/deals'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore spostamento',
+        description: error?.message || 'Impossibile spostare il deal',
+        variant: 'destructive'
+      });
     }
   });
 

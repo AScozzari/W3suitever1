@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import {
   useReactTable,
   getCoreRowModel,
@@ -59,6 +60,7 @@ import {
   ChevronRight,
   TrendingUp,
   RefreshCw,
+  ShieldCheck,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -80,6 +82,10 @@ interface Lead {
   companyName?: string | null;
   productInterest?: string | null;
   driverId?: string | null;
+  privacyPolicyAccepted?: boolean | null;
+  marketingConsent?: boolean | null;
+  profilingConsent?: boolean | null;
+  thirdPartyConsent?: boolean | null;
   createdAt: string;
   updatedAt: string;
   ownerFirstName?: string | null;
@@ -135,6 +141,7 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const { toast } = useToast();
 
   // Fetch leads with campaign filter
   const { data: leadsData, isLoading } = useQuery<Lead[]>({
@@ -152,6 +159,13 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/crm/leads?campaign=${campaignId}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore re-scoring',
+        description: error?.message || 'Impossibile ricalcolare il lead score',
+        variant: 'destructive'
+      });
     }
   });
 
@@ -348,6 +362,72 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
           return (
             <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {owner}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'gdprCompliance',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-2 font-semibold hover:text-windtre-orange transition-colors"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            data-testid="sort-gdpr"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            GDPR
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+        ),
+        accessorFn: (row) => {
+          const consents = [
+            row.privacyPolicyAccepted,
+            row.marketingConsent,
+            row.profilingConsent,
+            row.thirdPartyConsent
+          ];
+          return consents.filter(Boolean).length;
+        },
+        cell: ({ row }) => {
+          const consents = [
+            row.original.privacyPolicyAccepted,
+            row.original.marketingConsent,
+            row.original.profilingConsent,
+            row.original.thirdPartyConsent
+          ];
+          const grantedCount = consents.filter(Boolean).length;
+          const totalCount = 4;
+          
+          let color = '#10b981'; // green
+          let bgColor = '#10b98115';
+          let label = 'Completo';
+          
+          if (grantedCount === 0) {
+            color = '#ef4444'; // red
+            bgColor = '#ef444415';
+            label = 'Nessuno';
+          } else if (grantedCount < totalCount) {
+            color = '#f59e0b'; // amber/yellow
+            bgColor = '#f59e0b15';
+            label = 'Parziale';
+          }
+          
+          return (
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="outline"
+                className="text-xs font-semibold"
+                style={{ 
+                  background: bgColor,
+                  borderColor: color,
+                  color: color
+                }}
+                data-testid={`badge-gdpr-${row.original.id}`}
+              >
+                <ShieldCheck className="h-3 w-3 mr-1" />
+                <span>{grantedCount}/{totalCount}</span>
+                <span className="ml-1 opacity-80">{label}</span>
+              </Badge>
             </div>
           );
         },
