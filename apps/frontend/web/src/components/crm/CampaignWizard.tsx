@@ -121,15 +121,29 @@ const campaignFormSchema = z.object({
   message: "Landing Page URL obbligatorio quando Lead Source è 'Landing Page'",
   path: ['landingPageUrl']
 }).refine(data => {
-  if (data.routingMode === 'automatic' && !data.workflowId) {
-    return false;
+  // Validazione AUTOMATIC MODE
+  if (data.routingMode === 'automatic') {
+    if (!data.workflowId) {
+      return false;
+    }
+    if (!data.fallbackTimeoutSeconds || data.fallbackTimeoutSeconds < 30) {
+      return false;
+    }
+    if (!data.fallbackPipelineId1) {
+      return false;
+    }
   }
-  if (data.routingMode === 'manual' && !data.manualPipelineId1) {
-    return false;
+  
+  // Validazione MANUAL MODE
+  if (data.routingMode === 'manual') {
+    if (!data.manualPipelineId1) {
+      return false;
+    }
   }
+  
   return true;
 }, {
-  message: "Configurazione routing non valida",
+  message: "Configurazione routing incompleta: verifica tutti i campi obbligatori per la modalità selezionata",
   path: ['routingMode']
 });
 
