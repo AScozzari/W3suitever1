@@ -27,7 +27,10 @@ import {
   Save,
   AlertCircle,
   Shield,
-  ListTodo
+  ListTodo,
+  Copy,
+  Link,
+  ExternalLink
 } from 'lucide-react';
 
 interface CampaignSettingsDialogProps {
@@ -123,6 +126,15 @@ const campaignFormSchema = z.object({
 }, {
   message: "Landing Page URL obbligatorio quando Lead Source è 'Landing Page'",
   path: ['landingPageUrl']
+}).refine(data => {
+  // If marketing channels are selected, landing page URL is required
+  if (data.marketingChannels && data.marketingChannels.length > 0 && !data.landingPageUrl) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Landing Page URL obbligatorio quando sono selezionati canali marketing",
+  path: ['landingPageUrl']
 });
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
@@ -138,6 +150,195 @@ const DRIVER_COLORS: Record<string, string> = {
   'ENERGIA': 'hsl(280, 65%, 60%)',        // Light Purple
   'CUSTOMER_BASE': 'hsl(220, 90%, 56%)',  // Sky Blue
 };
+
+// UTM Links Tab Component
+function UTMLinksTab({ campaignId, mode }: { campaignId?: string | null; mode: 'create' | 'edit' }) {
+  const { toast } = useToast();
+
+  // Fetch UTM links for this campaign
+  const { data: utmLinksData, isLoading } = useQuery({
+    queryKey: [`/api/crm/campaigns/${campaignId}/utm-links`],
+    enabled: mode === 'edit' && !!campaignId,
+  });
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copiato!",
+        description: `${label} copiato negli appunti`,
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile copiare negli appunti",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (mode === 'create') {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+        <Link className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+        <h4 className="font-semibold text-lg mb-2">Link UTM non ancora disponibili</h4>
+        <p className="text-sm text-muted-foreground">
+          I link UTM verranno generati automaticamente dopo aver creato la campagna e selezionato i canali marketing.
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <LoadingState message="Caricamento link UTM..." />;
+  }
+
+  const links = utmLinksData?.data?.links || [];
+  const campaignName = utmLinksData?.data?.campaignName || '';
+  const landingPageUrl = utmLinksData?.data?.landingPageUrl || '';
+
+  if (links.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+        <Link className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+        <h4 className="font-semibold text-lg mb-2">Nessun link UTM generato</h4>
+        <p className="text-sm text-muted-foreground mb-4">
+          I link UTM vengono generati automaticamente dai canali marketing selezionati nel tab "Tracking".
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Seleziona almeno un canale marketing e salva la campagna per generare i link.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingUp className="h-5 w-5 text-windtre-orange" />
+          <h4 className="font-semibold">Link UTM Generati</h4>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Usa questi link nei tuoi canali marketing per tracciare l'origine dei lead. Ogni link include parametri UTM automatici.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {links.map((link: any) => (
+          <div
+            key={link.id}
+            className="rounded-lg border bg-white dark:bg-gray-900 p-4 space-y-3"
+            data-testid={`utm-link-${link.channelId}`}
+          >
+            {/* Channel Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-windtre-orange" />
+                <h5 className="font-semibold">{link.channelName}</h5>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  {link.utmSource} / {link.utmMedium}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{link.clicks || 0} click</span>
+                <span>·</span>
+                <span>{link.conversions || 0} conversioni</span>
+              </div>
+            </div>
+
+            {/* Full URL */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Full URL con parametri UTM:</label>
+              <div className="flex gap-2">
+                <Input
+                  value={link.generatedUrl || ''}
+                  readOnly
+                  className="font-mono text-xs"
+                  data-testid={`input-full-url-${link.channelId}`}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(link.generatedUrl || '', 'Link UTM completo')}
+                  data-testid={`button-copy-full-url-${link.channelId}`}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(link.generatedUrl || '', '_blank')}
+                  data-testid={`button-open-full-url-${link.channelId}`}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Short URL (Placeholder) */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Short URL (disponibile prossimamente):</label>
+              <div className="flex gap-2">
+                <Input
+                  value="Configurazione dominio richiesta"
+                  readOnly
+                  disabled
+                  className="font-mono text-xs"
+                  data-testid={`input-short-url-${link.channelId}`}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  title="Short URL disponibile dopo configurazione dominio personalizzato"
+                  data-testid={`button-copy-short-url-${link.channelId}`}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground italic">
+                Gli short URL saranno disponibili dopo la configurazione di un dominio personalizzato (es. w3s.io).
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Stats Summary */}
+      <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-orange-50 dark:from-purple-950 dark:to-orange-950 p-4">
+        <h5 className="font-semibold mb-3">Riepilogo Prestazioni</h5>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Click Totali</p>
+            <p className="text-2xl font-bold text-windtre-orange">
+              {links.reduce((sum: number, l: any) => sum + (l.clicks || 0), 0)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Conversioni Totali</p>
+            <p className="text-2xl font-bold text-windtre-purple">
+              {links.reduce((sum: number, l: any) => sum + (l.conversions || 0), 0)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Tasso Conversione</p>
+            <p className="text-2xl font-bold text-green-600">
+              {(() => {
+                const totalClicks = links.reduce((sum: number, l: any) => sum + (l.clicks || 0), 0);
+                const totalConversions = links.reduce((sum: number, l: any) => sum + (l.conversions || 0), 0);
+                return totalClicks > 0 ? ((totalConversions / totalClicks) * 100).toFixed(1) : '0.0';
+              })()}%
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: CampaignSettingsDialogProps) {
   const { toast } = useToast();
@@ -382,7 +583,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid grid-cols-8 w-full">
+                <TabsList className="grid grid-cols-9 w-full">
                   <TabsTrigger value="general" data-testid="tab-general">
                     <Settings2 className="h-4 w-4 mr-1" />
                     Generale
@@ -390,6 +591,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   <TabsTrigger value="targeting" data-testid="tab-targeting">
                     <Target className="h-4 w-4 mr-1" />
                     Tracking
+                  </TabsTrigger>
+                  <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    UTM Links
                   </TabsTrigger>
                   <TabsTrigger value="routing" data-testid="tab-routing">
                     <Route className="h-4 w-4 mr-1" />
@@ -811,6 +1016,11 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       )}
                     />
                   </div>
+                </TabsContent>
+
+                {/* TAB: UTM LINKS */}
+                <TabsContent value="utm-links" className="space-y-4 mt-4">
+                  <UTMLinksTab campaignId={campaignId} mode={mode} />
                 </TabsContent>
 
                 {/* TAB 3: ROUTING */}

@@ -4631,6 +4631,7 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   utmMediumId: uuid("utm_medium_id"), // DEPRECATED: Use marketingChannels array instead
   utmCampaign: varchar("utm_campaign", { length: 255 }),
   marketingChannels: text("marketing_channels").array(), // Active channels: ['facebook_ads', 'instagram', 'google_ads', 'email', 'whatsapp']
+  attributionWindowDays: integer("attribution_window_days").default(30), // Attribution window (default 30 days)
   totalLeads: integer("total_leads").default(0),
   totalDeals: integer("total_deals").default(0),
   totalRevenue: real("total_revenue").default(0),
@@ -4766,6 +4767,13 @@ export const crmLeads = w3suiteSchema.table("crm_leads", {
   contactCount: integer("contact_count").default(0),
   nextActionDate: date("next_action_date"),
   nextActionType: varchar("next_action_type", { length: 100 }),
+  
+  // ==================== UTM MULTI-TOUCH ATTRIBUTION ====================
+  firstTouchUtmLinkId: uuid("first_touch_utm_link_id"), // First UTM click
+  lastTouchUtmLinkId: uuid("last_touch_utm_link_id"), // Last UTM click (for revenue attribution)
+  allTouchUtmLinkIds: uuid("all_touch_utm_link_ids").array(), // Complete touchpoint history
+  firstTouchAt: timestamp("first_touch_at"), // First touchpoint timestamp
+  lastTouchAt: timestamp("last_touch_at"), // Last touchpoint timestamp
   
   // ==================== FASE 2: BUSINESS PROFILING ====================
   customerType: customerTypeEnum("customer_type"), // B2B/B2C (usa enum esistente)
@@ -5847,3 +5855,112 @@ export const insertVoipActivityLogSchema = createInsertSchema(voipActivityLog).o
 });
 export type InsertVoipActivityLog = z.infer<typeof insertVoipActivityLogSchema>;
 export type VoipActivityLog = typeof voipActivityLog.$inferSelect;
+
+// ==================== UTM TRACKING SYSTEM ====================
+
+// UTM Links - Auto-generated UTM tracking links for campaigns
+export const utmLinks = w3suiteSchema.table("utm_links", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  campaignId: uuid("campaign_id").notNull().references(() => crmCampaigns.id, { onDelete: 'cascade' }),
+  channel: varchar("channel", { length: 100 }).notNull(), // facebook_ads, instagram, google_ads, email, whatsapp
+  fullUrl: text("full_url").notNull(), // Complete URL with UTM parameters
+  utmSource: varchar("utm_source", { length: 255 }).notNull(),
+  utmMedium: varchar("utm_medium", { length: 255 }).notNull(),
+  utmCampaign: varchar("utm_campaign", { length: 255 }).notNull(),
+  utmContent: varchar("utm_content", { length: 255 }),
+  utmTerm: varchar("utm_term", { length: 255 }),
+  clicksCount: integer("clicks_count").default(0).notNull(),
+  uniqueClicksCount: integer("unique_clicks_count").default(0).notNull(),
+  conversionsCount: integer("conversions_count").default(0).notNull(),
+  conversionValue: real("conversion_value").default(0),
+  lastClickedAt: timestamp("last_clicked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("utm_links_tenant_idx").on(table.tenantId),
+  index("utm_links_campaign_idx").on(table.campaignId),
+  index("utm_links_channel_idx").on(table.channel),
+  uniqueIndex("utm_links_campaign_channel_unique").on(table.campaignId, table.channel),
+]);
+
+export const insertUtmLinkSchema = createInsertSchema(utmLinks).omit({ 
+  id: true, 
+  clicksCount: true,
+  uniqueClicksCount: true,
+  conversionsCount: true,
+  conversionValue: true,
+  lastClickedAt: true,
+  createdAt: true, 
+  updatedAt: true
+});
+export type InsertUtmLink = z.infer<typeof insertUtmLinkSchema>;
+export type UtmLink = typeof utmLinks.$inferSelect;
+
+// UTM Short URLs - Short URL system for UTM links
+export const utmShortUrls = w3suiteSchema.table("utm_short_urls", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  utmLinkId: uuid("utm_link_id").notNull().references(() => utmLinks.id, { onDelete: 'cascade' }),
+  shortCode: varchar("short_code", { length: 20 }).notNull().unique(), // abc123
+  fullShortUrl: varchar("full_short_url", { length: 255 }).notNull(), // w3s.io/abc123 (placeholder domain)
+  targetUrl: text("target_url").notNull(), // Full UTM URL to redirect to
+  clicksCount: integer("clicks_count").default(0).notNull(),
+  uniqueClicksCount: integer("unique_clicks_count").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  expiresAt: timestamp("expires_at"),
+  lastClickedAt: timestamp("last_clicked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("utm_short_urls_tenant_idx").on(table.tenantId),
+  index("utm_short_urls_utm_link_idx").on(table.utmLinkId),
+  index("utm_short_urls_short_code_idx").on(table.shortCode),
+  uniqueIndex("utm_short_urls_short_code_unique").on(table.shortCode),
+]);
+
+export const insertUtmShortUrlSchema = createInsertSchema(utmShortUrls).omit({ 
+  id: true, 
+  clicksCount: true,
+  uniqueClicksCount: true,
+  lastClickedAt: true,
+  createdAt: true
+});
+export type InsertUtmShortUrl = z.infer<typeof insertUtmShortUrlSchema>;
+export type UtmShortUrl = typeof utmShortUrls.$inferSelect;
+
+// Lead Touchpoints - Detailed touchpoint events for multi-touch attribution
+export const leadTouchpoints = w3suiteSchema.table("lead_touchpoints", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  leadId: uuid("lead_id").notNull().references(() => crmLeads.id, { onDelete: 'cascade' }),
+  utmLinkId: uuid("utm_link_id").references(() => utmLinks.id, { onDelete: 'set null' }),
+  touchpointType: varchar("touchpoint_type", { length: 50 }).notNull(), // utm_click, form_view, email_open, page_view
+  touchedAt: timestamp("touched_at").notNull().defaultNow(),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  deviceType: varchar("device_type", { length: 50 }), // mobile, desktop, tablet
+  os: varchar("os", { length: 100 }), // iOS, Android, Windows, macOS
+  browser: varchar("browser", { length: 100 }),
+  referrer: text("referrer"),
+  country: varchar("country", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  sessionId: varchar("session_id", { length: 255 }),
+  convertedToLead: boolean("converted_to_lead").default(false),
+  metadata: jsonb("metadata"), // Additional touchpoint data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("lead_touchpoints_tenant_idx").on(table.tenantId),
+  index("lead_touchpoints_lead_idx").on(table.leadId),
+  index("lead_touchpoints_utm_link_idx").on(table.utmLinkId),
+  index("lead_touchpoints_touched_at_idx").on(table.touchedAt),
+  index("lead_touchpoints_session_idx").on(table.sessionId),
+]);
+
+export const insertLeadTouchpointSchema = createInsertSchema(leadTouchpoints).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertLeadTouchpoint = z.infer<typeof insertLeadTouchpointSchema>;
+export type LeadTouchpoint = typeof leadTouchpoints.$inferSelect;
