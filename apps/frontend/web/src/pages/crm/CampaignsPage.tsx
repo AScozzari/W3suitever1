@@ -716,9 +716,11 @@ export function CampaignsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isChoiceDialogOpen, setIsChoiceDialogOpen] = useState(false);
   const [editingCampaignId, setEditingCampaignId] = useState<string | undefined>(undefined);
   const { navigate, buildUrl } = useTenantNavigation();
-  const { mode, setMode } = useCampaignCreationMode();
+  const { mode, setMode, preference } = useCampaignCreationMode();
 
   const { data: campaignsResponse, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ['/api/crm/campaigns'],
@@ -734,10 +736,20 @@ export function CampaignsContent() {
 
   const handleCreateCampaign = () => {
     setEditingCampaignId(undefined);
-    setIsSettingsDialogOpen(true);
+    
+    // Check user preference for campaign creation mode
+    if (preference === 'wizard') {
+      setIsWizardOpen(true);
+    } else if (preference === 'standard') {
+      setIsSettingsDialogOpen(true);
+    } else {
+      // No preference set - show choice dialog
+      setIsChoiceDialogOpen(true);
+    }
   };
 
   const handleEditCampaign = (campaignId: string) => {
+    // Editing always opens standard modal (not wizard)
     setEditingCampaignId(campaignId);
     setIsSettingsDialogOpen(true);
   };
@@ -745,6 +757,22 @@ export function CampaignsContent() {
   const handleCloseDialog = () => {
     setIsSettingsDialogOpen(false);
     setEditingCampaignId(undefined);
+  };
+
+  const handleSelectWizard = () => {
+    setMode('wizard');
+    setIsChoiceDialogOpen(false);
+    setIsWizardOpen(true);
+  };
+
+  const handleSelectStandard = () => {
+    setMode('standard');
+    setIsChoiceDialogOpen(false);
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleCloseWizard = () => {
+    setIsWizardOpen(false);
   };
 
   const getStatusColor = (status: string) => {
