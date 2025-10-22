@@ -1,0 +1,180 @@
+rm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/deals" → Output: "/staging/crm/deals"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+hook.js:608 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog Error Component Stack
+    at TitleWarning (chunk-KBANI4K7.js?v=20cc9b00:319:23)
+    at chunk-KBANI4K7.js?v=20cc9b00:239:13
+    at chunk-KBANI4K7.js?v=20cc9b00:162:58
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at chunk-KBANI4K7.js?v=20cc9b00:153:64
+    at chunk-TCRT5IO7.js?v=20cc9b00:43:13
+    at chunk-TCRT5IO7.js?v=20cc9b00:20:13
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-R54IPKTL.js?v=20cc9b00:244:22
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at DialogPortal (chunk-KBANI4K7.js?v=20cc9b00:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at Dialog (chunk-KBANI4K7.js?v=20cc9b00:56:5)
+    at LeadStatusSettingsDialog (LeadStatusSettingsDialog.tsx:60:44)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-R54IPKTL.js?v=20cc9b00:47:7
+    at chunk-TCRT5IO7.js?v=20cc9b00:43:13
+    at chunk-TCRT5IO7.js?v=20cc9b00:20:13
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-ALPY2UPK.js?v=20cc9b00:29:5
+    at chunk-KBANI4K7.js?v=20cc9b00:239:13
+    at chunk-KBANI4K7.js?v=20cc9b00:162:58
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at chunk-KBANI4K7.js?v=20cc9b00:153:64
+    at chunk-TCRT5IO7.js?v=20cc9b00:43:13
+    at chunk-TCRT5IO7.js?v=20cc9b00:20:13
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-R54IPKTL.js?v=20cc9b00:244:22
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at DialogPortal (chunk-KBANI4K7.js?v=20cc9b00:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at Dialog (chunk-KBANI4K7.js?v=20cc9b00:56:5)
+    at CampaignSettingsDialog (CampaignSettingsDialog.tsx:1240:42)
+    at CampaignsContent (CampaignsPage.tsx:705:41)
+    at div (<anonymous>)
+    at MotionComponent (framer-motion.js?v=20cc9b00:945:40)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at CRMPage (CRMPage.tsx:72:27)
+    at AuthenticatedRoute (TenantShell.tsx:482:72)
+    at Route (wouter.js?v=20cc9b00:206:16)
+    at Switch (wouter.js?v=20cc9b00:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:224:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:79:59)
+    at Route (wouter.js?v=20cc9b00:206:16)
+    at Switch (wouter.js?v=20cc9b00:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=20cc9b00:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KBANI4K7.js?v=20cc9b00:329
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=20cc9b00:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=20cc9b00:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=20cc9b00:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=20cc9b00:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=20cc9b00:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:18627Understand this error
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-KBANI4K7.js?v=20cc9b00:335:29)
+    at chunk-KBANI4K7.js?v=20cc9b00:239:13
+    at chunk-KBANI4K7.js?v=20cc9b00:162:58
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at chunk-KBANI4K7.js?v=20cc9b00:153:64
+    at chunk-TCRT5IO7.js?v=20cc9b00:43:13
+    at chunk-TCRT5IO7.js?v=20cc9b00:20:13
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-R54IPKTL.js?v=20cc9b00:244:22
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at DialogPortal (chunk-KBANI4K7.js?v=20cc9b00:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at Dialog (chunk-KBANI4K7.js?v=20cc9b00:56:5)
+    at LeadStatusSettingsDialog (LeadStatusSettingsDialog.tsx:60:44)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-R54IPKTL.js?v=20cc9b00:47:7
+    at chunk-TCRT5IO7.js?v=20cc9b00:43:13
+    at chunk-TCRT5IO7.js?v=20cc9b00:20:13
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-ALPY2UPK.js?v=20cc9b00:29:5
+    at chunk-KBANI4K7.js?v=20cc9b00:239:13
+    at chunk-KBANI4K7.js?v=20cc9b00:162:58
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at chunk-KBANI4K7.js?v=20cc9b00:153:64
+    at chunk-TCRT5IO7.js?v=20cc9b00:43:13
+    at chunk-TCRT5IO7.js?v=20cc9b00:20:13
+    at chunk-7JN5FQRM.js?v=20cc9b00:42:13
+    at chunk-R54IPKTL.js?v=20cc9b00:244:22
+    at Presence (chunk-3RPIZZKC.js?v=20cc9b00:24:11)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at DialogPortal (chunk-KBANI4K7.js?v=20cc9b00:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=20cc9b00:38:15)
+    at Dialog (chunk-KBANI4K7.js?v=20cc9b00:56:5)
+    at CampaignSettingsDialog (CampaignSettingsDialog.tsx:1240:42)
+    at CampaignsContent (CampaignsPage.tsx:705:41)
+    at div (<anonymous>)
+    at MotionComponent (framer-motion.js?v=20cc9b00:945:40)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at CRMPage (CRMPage.tsx:72:27)
+    at AuthenticatedRoute (TenantShell.tsx:482:72)
+    at Route (wouter.js?v=20cc9b00:206:16)
+    at Switch (wouter.js?v=20cc9b00:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:224:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:79:59)
+    at Route (wouter.js?v=20cc9b00:206:16)
+    at Switch (wouter.js?v=20cc9b00:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=20cc9b00:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KBANI4K7.js?v=20cc9b00:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=20cc9b00:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=20cc9b00:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=20cc9b00:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=20cc9b00:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=20cc9b00:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:18627Understand this warning
+hook.js:608 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KBANI4K7.js?v=20cc9b00:329
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=20cc9b00:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=20cc9b00:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=20cc9b00:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=20cc9b00:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:18627Understand this error
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
