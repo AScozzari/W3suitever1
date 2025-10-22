@@ -302,6 +302,9 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
     },
   });
 
+  // Watch routing mode for conditional rendering
+  const routingMode = form.watch('routingMode');
+
   // Load campaign data into form when editing
   useEffect(() => {
     if (mode === 'edit' && campaignData?.data) {
@@ -653,7 +656,7 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                 />
 
                 {/* Automatic Mode Fields */}
-                {form.watch('routingMode') === 'automatic' && (
+                {(routingMode === 'automatic' || !routingMode) && (
                   <>
                     <FormField
                       control={form.control}
@@ -767,7 +770,7 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                 )}
 
                 {/* Manual Mode Fields */}
-                {form.watch('routingMode') === 'manual' && (
+                {routingMode === 'manual' && (
                   <>
                     <FormField
                       control={form.control}
@@ -1274,10 +1277,10 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                       <div>
                         <dt className="text-muted-foreground">Modalità</dt>
                         <dd className="font-medium">
-                          {form.watch('routingMode') === 'automatic' ? 'Automatico' : 'Manuale'}
+                          {routingMode === 'automatic' ? 'Automatico' : 'Manuale'}
                         </dd>
                       </div>
-                      {form.watch('routingMode') === 'automatic' && form.watch('autoAssignmentUserId') && (
+                      {routingMode === 'automatic' && form.watch('autoAssignmentUserId') && (
                         <div>
                           <dt className="text-muted-foreground">Assegnato a</dt>
                           <dd className="font-medium">

@@ -2053,7 +2053,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   />
 
                   {/* Automatic Mode Fields */}
-                  {form.watch('routingMode') === 'automatic' && (
+                  {(selectedRoutingMode === 'automatic' || !selectedRoutingMode) && (
                     <>
                       <FormField
                         control={form.control}
@@ -2167,7 +2167,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   )}
 
                   {/* Manual Mode Fields */}
-                  {form.watch('routingMode') === 'manual' && (
+                  {selectedRoutingMode === 'manual' && (
                     <>
                       <FormField
                         control={form.control}
