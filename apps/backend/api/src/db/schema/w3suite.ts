@@ -4617,8 +4617,24 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   channels: text("channels").array(), // Array canali: phone, whatsapp, form, social, email, qr
   externalCampaignId: varchar("external_campaign_id", { length: 255 }), // Powerful API campaign ID
   defaultLeadSource: leadSourceEnum("default_lead_source"), // Default source for leads
-  workflowId: uuid("workflow_id"), // Workflow intake associato
-  primaryPipelineId: uuid("primary_pipeline_id"), // Suggested pipeline (AI routing uses this as hint)
+  
+  // 🎯 ROUTING & WORKFLOWS UNIFICATO
+  routingMode: varchar("routing_mode", { length: 20 }), // 'automatic' | 'manual'
+  
+  // AUTOMATIC MODE - Workflow + Fallback
+  workflowId: uuid("workflow_id"), // Workflow che esegue la logica (può includere nodo routing pipeline)
+  fallbackTimeoutSeconds: integer("fallback_timeout_seconds"), // Timeout in secondi prima del fallback
+  fallbackPipelineId1: uuid("fallback_pipeline_id1"), // Pipeline 1 per fallback automatico
+  fallbackPipelineId2: uuid("fallback_pipeline_id2"), // Pipeline 2 per fallback automatico
+  
+  // MANUAL MODE - Pipeline preselezionate
+  manualPipelineId1: uuid("manual_pipeline_id1"), // Pipeline 1 per assegnazione manuale
+  manualPipelineId2: uuid("manual_pipeline_id2"), // Pipeline 2 per assegnazione manuale
+  
+  // NOTIFICHE (entrambe le modalità)
+  notifyTeamId: uuid("notify_team_id"), // Team da notificare
+  notifyUserIds: uuid("notify_user_ids").array(), // Array di user ID da notificare
+  
   budget: real("budget"),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
