@@ -721,7 +721,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Nessuna</SelectItem>
                               {pipelines.map((p: any) => (
                                 <SelectItem key={p.id} value={p.id}>
                                   {p.name}
@@ -750,7 +749,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Nessuna</SelectItem>
                               {pipelines.map((p: any) => (
                                 <SelectItem key={p.id} value={p.id}>
                                   {p.name}
@@ -812,7 +810,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Nessuna</SelectItem>
                               {pipelines.map((p: any) => (
                                 <SelectItem key={p.id} value={p.id}>
                                   {p.name}
@@ -850,7 +847,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Nessuno</SelectItem>
                             {teams.map((t: any) => (
                               <SelectItem key={t.id} value={t.id}>
                                 {t.name}
