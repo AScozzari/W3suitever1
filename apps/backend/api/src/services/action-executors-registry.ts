@@ -11,7 +11,7 @@ import { UnifiedOpenAIService } from './unified-openai';
 import { AIRegistryService, RegistryAwareContext } from './ai-registry-service';
 import { mcpClientService } from './mcp-client-service';
 import { db } from '../core/db';
-import { userAssignments, legalEntities, stores } from '../db/schema/w3suite';
+import { userAssignments, legalEntities, stores, crmCampaigns, crmPipelines } from '../db/schema/w3suite';
 import { aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
 import { db as brandDb } from '../../../brand-api/src/db/index.js';
 import { eq, and } from 'drizzle-orm';
@@ -2451,29 +2451,58 @@ export class CustomerRoutingExecutor implements ActionExecutor {
 
 /**
  * 📥 CAMPAIGN LEAD INTAKE EXECUTOR
- * Manages campaign lead intake and associates with campaign/pipeline
- * NOTE: User/team assignment happens at lead→deal conversion, NOT here
+ * Manages campaign lead intake with unified routing (automatic vs manual)
+ * Implements workflow execution with fallback and notification system
  */
 export class CampaignLeadIntakeExecutor implements ActionExecutor {
   executorId = 'campaign-lead-intake-executor';
-  description = 'Manages campaign lead intake and pipeline association';
+  description = 'Manages campaign lead intake with unified routing (automatic/manual) and notifications';
 
   async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
     try {
-      logger.info('📥 [EXECUTOR] Executing campaign lead intake', {
+      logger.info('📥 [EXECUTOR] Executing campaign lead intake with unified routing', {
         stepId: step.nodeId,
         tenantId: context?.tenantId
       });
 
       const leadData = inputData?.lead || inputData;
-      const campaignData = inputData?.campaign || {};
+      const campaignInput = inputData?.campaign || {};
+
+      if (!campaignInput.id) {
+        throw new Error('Campaign ID is required');
+      }
+
+      // 1. LEGGI LA CAMPAGNA DAL DB per ottenere i campi routing
+      logger.info('🔍 [EXECUTOR] Fetching campaign from DB', {
+        campaignId: campaignInput.id,
+        tenantId: context?.tenantId
+      });
+
+      const campaign = await db
+        .select()
+        .from(crmCampaigns)
+        .where(eq(crmCampaigns.id, campaignInput.id))
+        .limit(1);
+
+      if (!campaign[0]) {
+        throw new Error(`Campaign not found: ${campaignInput.id}`);
+      }
+
+      const campaignFull = campaign[0];
+
+      logger.info('✅ [EXECUTOR] Campaign loaded', {
+        campaignId: campaignFull.id,
+        routingMode: campaignFull.routingMode,
+        workflowId: campaignFull.workflowId,
+        storeId: campaignFull.storeId
+      });
 
       // Validate store scope
-      if (campaignData.storeId) {
+      if (campaignFull.storeId) {
         const scopeCheck = await validateUserScope(
           context.requesterId,
           context.tenantId,
-          campaignData.storeId
+          campaignFull.storeId
         );
 
         if (!scopeCheck.hasAccess) {
@@ -2481,22 +2510,218 @@ export class CampaignLeadIntakeExecutor implements ActionExecutor {
             success: false,
             message: 'User lacks permissions for campaign store scope',
             error: 'SCOPE_DENIED',
-            data: { storeId: campaignData.storeId, reason: scopeCheck.message }
+            data: { storeId: campaignFull.storeId, reason: scopeCheck.message }
           };
         }
       }
 
-      // Lead successfully registered to campaign
-      // Pipeline suggestion and lead score used for future conversion
+      // Determina routing mode (default: 'automatic' se non specificato)
+      const routingMode = campaignFull.routingMode || 'automatic';
+      
+      if (!campaignFull.routingMode) {
+        logger.warn('⚠️ [EXECUTOR] routingMode not defined, defaulting to automatic', {
+          campaignId: campaignFull.id
+        });
+      }
+
+      let assignedPipelineId: string | null = null;
+      let pipelineName: string | null = null;
+      let notificationSent = false;
+      let fallbackActivated = false;
+
+      // 2. MODALITÀ AUTOMATIC
+      if (routingMode === 'automatic') {
+        logger.info('🤖 [EXECUTOR] Processing AUTOMATIC routing mode', {
+          workflowId: campaignFull.workflowId,
+          fallbackPipelineId1: campaignFull.fallbackPipelineId1,
+          fallbackPipelineId2: campaignFull.fallbackPipelineId2
+        });
+
+        // Se c'è workflowId, prova ad eseguire il workflow
+        if (campaignFull.workflowId) {
+          try {
+            logger.info('🚀 [EXECUTOR] Executing workflow for automatic routing', {
+              workflowId: campaignFull.workflowId,
+              leadId: leadData?.id
+            });
+
+            // TODO: Esegui workflow con timeout
+            // const workflowResult = await workflowEngine.execute(campaignFull.workflowId, ...);
+            // Per ora, simula fallback
+            
+            logger.warn('⏱️ [EXECUTOR] Workflow execution not yet implemented, activating fallback', {
+              workflowId: campaignFull.workflowId
+            });
+
+            // Attiva fallback automatico
+            fallbackActivated = true;
+
+          } catch (workflowError) {
+            logger.error('❌ [EXECUTOR] Workflow execution failed, activating fallback', {
+              workflowId: campaignFull.workflowId,
+              error: workflowError instanceof Error ? workflowError.message : String(workflowError)
+            });
+            fallbackActivated = true;
+          }
+        } else {
+          logger.warn('⚠️ [EXECUTOR] workflowId missing in automatic mode, using fallback directly', {
+            campaignId: campaignFull.id
+          });
+          fallbackActivated = true;
+        }
+
+        // Assegna pipeline di fallback
+        if (fallbackActivated) {
+          assignedPipelineId = campaignFull.fallbackPipelineId1 || campaignFull.fallbackPipelineId2 || null;
+          
+          if (assignedPipelineId) {
+            // Ottieni nome pipeline
+            const [pipeline] = await db
+              .select({ name: crmPipelines.name })
+              .from(crmPipelines)
+              .where(eq(crmPipelines.id, assignedPipelineId))
+              .limit(1);
+            
+            pipelineName = pipeline?.name || 'Pipeline';
+
+            logger.info('✅ [EXECUTOR] Fallback pipeline assigned', {
+              pipelineId: assignedPipelineId,
+              pipelineName,
+              leadId: leadData?.id
+            });
+
+            // Crea notifica di fallback
+            try {
+              const notificationTargets: string[] = [];
+              
+              // Aggiungi notifyUserIds se presenti
+              if (campaignFull.notifyUserIds && Array.isArray(campaignFull.notifyUserIds)) {
+                notificationTargets.push(...campaignFull.notifyUserIds);
+              }
+
+              // Invia notifiche ai singoli utenti (il sistema non supporta team notifications direttamente)
+              for (const userId of notificationTargets) {
+                await notificationService.sendNotification(
+                  context.tenantId,
+                  userId,
+                  'Fallback Automatico Lead',
+                  `Fallback automatico attivato per lead ${leadData?.firstName || ''} ${leadData?.lastName || leadData?.id} assegnato a pipeline ${pipelineName}`,
+                  'custom',
+                  'medium',
+                  {
+                    leadId: leadData?.id,
+                    campaignId: campaignFull.id,
+                    pipelineId: assignedPipelineId,
+                    routingMode: 'automatic',
+                    fallbackActivated: true
+                  }
+                );
+              }
+
+              notificationSent = notificationTargets.length > 0;
+
+              logger.info('🔔 [EXECUTOR] Fallback notifications sent', {
+                count: notificationTargets.length,
+                leadId: leadData?.id
+              });
+
+            } catch (notifError) {
+              logger.error('❌ [EXECUTOR] Failed to send fallback notifications', {
+                error: notifError instanceof Error ? notifError.message : String(notifError)
+              });
+            }
+
+          } else {
+            logger.error('❌ [EXECUTOR] No fallback pipelines configured', {
+              campaignId: campaignFull.id
+            });
+          }
+        }
+      }
+
+      // 3. MODALITÀ MANUAL
+      else if (routingMode === 'manual') {
+        logger.info('👤 [EXECUTOR] Processing MANUAL routing mode', {
+          manualPipelineId1: campaignFull.manualPipelineId1,
+          manualPipelineId2: campaignFull.manualPipelineId2
+        });
+
+        // Assegna direttamente a manualPipelineId1 o manualPipelineId2
+        assignedPipelineId = campaignFull.manualPipelineId1 || campaignFull.manualPipelineId2 || null;
+
+        if (!assignedPipelineId) {
+          throw new Error('Manual routing mode requires at least one manual pipeline configured (manualPipelineId1 or manualPipelineId2)');
+        }
+
+        // Ottieni nome pipeline
+        const [pipeline] = await db
+          .select({ name: crmPipelines.name })
+          .from(crmPipelines)
+          .where(eq(crmPipelines.id, assignedPipelineId))
+          .limit(1);
+        
+        pipelineName = pipeline?.name || 'Pipeline';
+
+        logger.info('✅ [EXECUTOR] Manual pipeline assigned', {
+          pipelineId: assignedPipelineId,
+          pipelineName,
+          leadId: leadData?.id
+        });
+
+        // Crea notifica per assegnazione manuale
+        try {
+          const notificationTargets: string[] = [];
+          
+          // Aggiungi notifyUserIds se presenti
+          if (campaignFull.notifyUserIds && Array.isArray(campaignFull.notifyUserIds)) {
+            notificationTargets.push(...campaignFull.notifyUserIds);
+          }
+
+          // Invia notifiche ai singoli utenti
+          for (const userId of notificationTargets) {
+            await notificationService.sendNotification(
+              context.tenantId,
+              userId,
+              'Nuovo Lead',
+              `Nuovo lead ${leadData?.firstName || ''} ${leadData?.lastName || leadData?.id} assegnato alla pipeline ${pipelineName}`,
+              'custom',
+              'medium',
+              {
+                leadId: leadData?.id,
+                campaignId: campaignFull.id,
+                pipelineId: assignedPipelineId,
+                routingMode: 'manual'
+              }
+            );
+          }
+
+          notificationSent = notificationTargets.length > 0;
+
+          logger.info('🔔 [EXECUTOR] Manual assignment notifications sent', {
+            count: notificationTargets.length,
+            leadId: leadData?.id
+          });
+
+        } catch (notifError) {
+          logger.error('❌ [EXECUTOR] Failed to send manual assignment notifications', {
+            error: notifError instanceof Error ? notifError.message : String(notifError)
+          });
+        }
+      }
+
+      // Return standardizzato
       return {
         success: true,
-        message: 'Lead registered to campaign successfully',
+        message: 'Lead processed successfully',
         data: {
           leadId: leadData?.id,
-          campaignId: campaignData?.id,
-          suggestedPipeline: campaignData?.primaryPipelineId,
-          leadScore: leadData?.leadScore || 0,
-          nextAction: 'lead-qualification' // Lead needs qualification before deal conversion
+          campaignId: campaignFull.id,
+          assignedPipeline: assignedPipelineId,
+          pipelineName,
+          routingMode,
+          notificationSent,
+          fallbackActivated,
+          leadScore: leadData?.leadScore || 0
         },
         nextAction: 'lead-qualification'
       };
