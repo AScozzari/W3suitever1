@@ -168,7 +168,6 @@ export const outboundChannelEnum = pgEnum('outbound_channel', ['email', 'phone',
 // CRM System Enums
 export const crmCampaignTypeEnum = pgEnum('crm_campaign_type', ['inbound_media', 'outbound_crm', 'retention']);
 export const crmCampaignStatusEnum = pgEnum('crm_campaign_status', ['draft', 'scheduled', 'active', 'paused', 'completed']);
-export const crmCampaignRoutingModeEnum = pgEnum('crm_campaign_routing_mode', ['automatic', 'manual']);
 export const workflowExecutionModeEnum = pgEnum('workflow_execution_mode', ['automatic', 'manual']);
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
 export const leadStatusCategoryEnum = pgEnum('lead_status_category', ['new', 'working', 'qualified', 'converted', 'disqualified', 'on_hold']);
@@ -4618,12 +4617,8 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   channels: text("channels").array(), // Array canali: phone, whatsapp, form, social, email, qr
   externalCampaignId: varchar("external_campaign_id", { length: 255 }), // Powerful API campaign ID
   defaultLeadSource: leadSourceEnum("default_lead_source"), // Default source for leads
-  routingMode: crmCampaignRoutingModeEnum("routing_mode").default('manual'),
   workflowId: uuid("workflow_id"), // Workflow intake associato
-  manualReviewTimeoutHours: integer("manual_review_timeout_hours").default(24),
-  autoAssignmentUserId: uuid("auto_assignment_user_id"),
-  autoAssignmentTeamId: uuid("auto_assignment_team_id"),
-  primaryPipelineId: uuid("primary_pipeline_id"),
+  primaryPipelineId: uuid("primary_pipeline_id"), // Suggested pipeline (AI routing uses this as hint)
   budget: real("budget"),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),

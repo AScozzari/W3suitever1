@@ -2451,11 +2451,12 @@ export class CustomerRoutingExecutor implements ActionExecutor {
 
 /**
  * 📥 CAMPAIGN LEAD INTAKE EXECUTOR
- * Manages campaign lead intake with hybrid routing (auto/manual/timeout)
+ * Manages campaign lead intake and associates with campaign/pipeline
+ * NOTE: User/team assignment happens at lead→deal conversion, NOT here
  */
 export class CampaignLeadIntakeExecutor implements ActionExecutor {
   executorId = 'campaign-lead-intake-executor';
-  description = 'Manages campaign lead intake with hybrid auto/manual routing and timeout logic';
+  description = 'Manages campaign lead intake and pipeline association';
 
   async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
     try {
@@ -2464,15 +2465,8 @@ export class CampaignLeadIntakeExecutor implements ActionExecutor {
         tenantId: context?.tenantId
       });
 
-      const config = step.config || {};
       const leadData = inputData?.lead || inputData;
       const campaignData = inputData?.campaign || {};
-
-      // Get campaign routing configuration
-      const routingMode = campaignData.routingMode || config.routingMode || 'manual';
-      const timeoutHours = campaignData.manualReviewTimeoutHours || config.timeoutHours || 24;
-      const autoAssignUserId = campaignData.autoAssignmentUserId || config.autoAssignUserId;
-      const autoAssignTeamId = campaignData.autoAssignmentTeamId || config.autoAssignTeamId;
 
       // Validate store scope
       if (campaignData.storeId) {
@@ -2492,79 +2486,20 @@ export class CampaignLeadIntakeExecutor implements ActionExecutor {
         }
       }
 
-      // Handle routing based on mode
-      switch (routingMode) {
-        case 'automatic':
-          // Auto-route immediately
-          return {
-            success: true,
-            message: 'Lead automatically routed based on campaign settings',
-            data: {
-              leadId: leadData?.id,
-              routingMode: 'automatic',
-              assignedTo: autoAssignUserId || autoAssignTeamId,
-              nextAction: 'pipeline-assignment'
-            },
-            nextAction: 'pipeline-assignment'
-          };
-
-        case 'manual':
-          // Queue for manual review
-          return {
-            success: true,
-            message: 'Lead queued for manual review',
-            data: {
-              leadId: leadData?.id,
-              routingMode: 'manual',
-              queuedAt: new Date().toISOString(),
-              nextAction: 'manual-review'
-            },
-            nextAction: 'manual-review'
-          };
-
-        case 'hybrid':
-          // Check lead score/quality for auto-routing decision
-          const leadScore = leadData?.leadScore || 0;
-          const autoRouteThreshold = config.autoRouteThreshold || 60;
-
-          if (leadScore >= autoRouteThreshold) {
-            // High-quality lead - auto route
-            return {
-              success: true,
-              message: `Lead auto-routed (score ${leadScore} >= threshold ${autoRouteThreshold})`,
-              data: {
-                leadId: leadData?.id,
-                routingMode: 'hybrid-auto',
-                leadScore,
-                assignedTo: autoAssignUserId || autoAssignTeamId,
-                nextAction: 'pipeline-assignment'
-              },
-              nextAction: 'pipeline-assignment'
-            };
-          } else {
-            // Low-quality lead - manual review with timeout
-            const timeoutAt = new Date();
-            timeoutAt.setHours(timeoutAt.getHours() + timeoutHours);
-
-            return {
-              success: true,
-              message: `Lead queued for manual review with ${timeoutHours}h timeout`,
-              data: {
-                leadId: leadData?.id,
-                routingMode: 'hybrid-manual',
-                leadScore,
-                queuedAt: new Date().toISOString(),
-                timeoutAt: timeoutAt.toISOString(),
-                timeoutHours,
-                nextAction: 'manual-review-with-timeout'
-              },
-              nextAction: 'manual-review-with-timeout'
-            };
-          }
-
-        default:
-          throw new Error(`Invalid routing mode: ${routingMode}`);
-      }
+      // Lead successfully registered to campaign
+      // Pipeline suggestion and lead score used for future conversion
+      return {
+        success: true,
+        message: 'Lead registered to campaign successfully',
+        data: {
+          leadId: leadData?.id,
+          campaignId: campaignData?.id,
+          suggestedPipeline: campaignData?.primaryPipelineId,
+          leadScore: leadData?.leadScore || 0,
+          nextAction: 'lead-qualification' // Lead needs qualification before deal conversion
+        },
+        nextAction: 'lead-qualification'
+      };
 
     } catch (error) {
       logger.error('❌ [EXECUTOR] Campaign lead intake failed', {
