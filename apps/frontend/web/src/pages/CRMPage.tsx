@@ -4,13 +4,13 @@ import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 
 // Import diretti dei content exports (CRMPage è già lazy-loaded nel routing)
-import { DashboardContent } from './crm/CRMDashboardPage';
-import { CampaignsContent } from './crm/CampaignsPage';
-import { PipelineContent } from './crm/PipelinePage';
-import { LeadsContent } from './crm/LeadsPage';
-import { CustomersContent } from './crm/CustomersPage';
-import { ActivitiesContent } from './crm/ActivitiesPage';
-import { AnalyticsContent } from './crm/AnalyticsPage';
+import { DashboardContent } from '@/pages/crm/CRMDashboardPage';
+import { CampaignsContent } from '@/pages/crm/CampaignsPage';
+import { PipelineContent } from '@/pages/crm/PipelinePage';
+import { LeadsContent } from '@/pages/crm/LeadsPage';
+import { CustomersContent } from '@/pages/crm/CustomersPage';
+import { ActivitiesContent } from '@/pages/crm/ActivitiesPage';
+import { AnalyticsContent } from '@/pages/crm/AnalyticsPage';
 
 // UI Components
 import { Button } from '@/components/ui/button';
