@@ -41,13 +41,7 @@ const gpsFormSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 
-// Social Tab Schema (LinkedIn, TikTok - altri social non usati per tracking)
-const socialFormSchema = z.object({
-  linkedin: z.string().url('URL LinkedIn non valido').optional().or(z.literal('')),
-  tiktok: z.string().optional().or(z.literal('')),
-});
-
-// Marketing Tab Schema (includes Enhanced Conversions data)
+// Marketing Tab Schema (includes Tracking IDs, Enhanced Conversions, Social Media)
 const marketingFormSchema = z.object({
   // Tracking IDs
   ga4MeasurementId: z.string().regex(/^G-[A-Z0-9]+$/, 'Formato GA4 non valido (es. G-XXXXXXXXX)').optional().or(z.literal('')),
@@ -57,6 +51,9 @@ const marketingFormSchema = z.object({
   // Enhanced Conversions Data
   facebook: z.string().url('URL Facebook non valido').optional().or(z.literal('')),
   instagram: z.string().optional().or(z.literal('')),
+  // Social Media (altri canali)
+  linkedin: z.string().url('URL LinkedIn non valido').optional().or(z.literal('')),
+  tiktok: z.string().optional().or(z.literal('')),
 });
 
 // WhatsApp Tab Schema
@@ -78,7 +75,6 @@ const telefonoFormSchema = z.object({
 });
 
 type GPSFormData = z.infer<typeof gpsFormSchema>;
-type SocialFormData = z.infer<typeof socialFormSchema>;
 type MarketingFormData = z.infer<typeof marketingFormSchema>;
 type WhatsAppFormData = z.infer<typeof whatsappFormSchema>;
 type ContattiFormData = z.infer<typeof contattiFormSchema>;
@@ -148,15 +144,6 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     },
   });
 
-  // Social Form
-  const socialForm = useForm<SocialFormData>({
-    resolver: zodResolver(socialFormSchema),
-    values: {
-      linkedin: store?.linkedin || '',
-      tiktok: store?.tiktok || '',
-    },
-  });
-
   // Marketing Form
   const marketingForm = useForm<MarketingFormData>({
     resolver: zodResolver(marketingFormSchema),
@@ -167,6 +154,8 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
       tiktokPixelId: trackingConfig?.tiktokPixelId || '',
       facebook: store?.facebook || '',
       instagram: store?.instagram || '',
+      linkedin: store?.linkedin || '',
+      tiktok: store?.tiktok || '',
     },
   });
 
@@ -289,19 +278,16 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     });
   };
 
-  // Handle Social save
-  const handleSocialSave = (data: SocialFormData) => {
-    updateStoreMutation.mutate(data);
-  };
-
   // Handle Marketing save & GTM config
   const handleMarketingConfigure = async (data: MarketingFormData) => {
     setIsConfiguringGTM(true);
     
-    // Save social data (facebook, instagram) to store first
+    // Save social data (facebook, instagram, linkedin, tiktok) to store first
     const socialData = {
       facebook: data.facebook,
       instagram: data.instagram,
+      linkedin: data.linkedin,
+      tiktok: data.tiktok,
     };
     
     try {
@@ -394,10 +380,6 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
             <TabsTrigger value="gps" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               GPS
-            </TabsTrigger>
-            <TabsTrigger value="social" className="flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-              Social
             </TabsTrigger>
             <TabsTrigger value="marketing" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -496,58 +478,6 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
                     Salva GPS
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </TabsContent>
-
-          {/* SOCIAL TAB */}
-          <TabsContent value="social" className="mt-6">
-            <Form {...socialForm}>
-              <form onSubmit={socialForm.handleSubmit(handleSocialSave)} className="space-y-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  Facebook e Instagram sono configurabili nel tab Marketing (usati per Enhanced Conversions)
-                </p>
-
-                <FormField
-                  control={socialForm.control}
-                  name="linkedin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://linkedin.com/company/..." data-testid="input-linkedin" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={socialForm.control}
-                  name="tiktok"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>TikTok Username</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="@username" data-testid="input-tiktok" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button 
-                  type="submit" 
-                  disabled={updateStoreMutation.isPending || !socialForm.formState.isValid}
-                  data-testid="button-save-social"
-                >
-                  {updateStoreMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Salva Social
-                </Button>
               </form>
             </Form>
           </TabsContent>
@@ -667,6 +597,34 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
                         <FormLabel>Instagram Username</FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="@username" data-testid="input-instagram-handle" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={marketingForm.control}
+                    name="linkedin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>LinkedIn URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://linkedin.com/company/..." data-testid="input-linkedin" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={marketingForm.control}
+                    name="tiktok"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>TikTok Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="@username" data-testid="input-tiktok" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
