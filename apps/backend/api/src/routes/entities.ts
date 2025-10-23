@@ -11,7 +11,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema } from '../db/schema/w3suite';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema } from '../db/schema/w3suite';
 import { channels, commercialAreas, drivers } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -853,6 +853,210 @@ router.get('/drivers', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve drivers',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== STORE TRACKING CONFIG ====================
+
+/**
+ * GET /api/stores/:id/tracking-config
+ * Get GTM tracking configuration for a store
+ */
+router.get('/stores/:id/tracking-config', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get tracking config
+    const [config] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    res.status(200).json({
+      success: true,
+      data: config || {
+        storeId,
+        tenantId,
+        gtmConfigured: false,
+        ga4MeasurementId: null,
+        googleAdsConversionId: null,
+        facebookPixelId: null,
+        tiktokPixelId: null
+      },
+      message: 'Store tracking config retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving store tracking config', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve store tracking config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/stores/:id/tracking-config
+ * Update GTM tracking configuration for a store
+ */
+router.put('/stores/:id/tracking-config', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    const updateSchema = z.object({
+      ga4MeasurementId: z.string().optional().nullable(),
+      googleAdsConversionId: z.string().optional().nullable(),
+      facebookPixelId: z.string().optional().nullable(),
+      tiktokPixelId: z.string().optional().nullable()
+    });
+
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if config exists
+    const [existingConfig] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    let config;
+
+    if (existingConfig) {
+      // Update existing config
+      [config] = await db
+        .update(storeTrackingConfig)
+        .set({
+          ...validation.data,
+          updatedAt: new Date()
+        })
+        .where(eq(storeTrackingConfig.id, existingConfig.id))
+        .returning();
+    } else {
+      // Create new config
+      [config] = await db
+        .insert(storeTrackingConfig)
+        .values({
+          storeId,
+          tenantId,
+          ...validation.data
+        })
+        .returning();
+    }
+
+    logger.info('Store tracking config updated', { 
+      storeId,
+      tenantId,
+      hasGA4: !!validation.data.ga4MeasurementId,
+      hasGoogleAds: !!validation.data.googleAdsConversionId,
+      hasFacebook: !!validation.data.facebookPixelId,
+      hasTikTok: !!validation.data.tiktokPixelId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: config,
+      message: 'Store tracking config updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating store tracking config', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update store tracking config',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
