@@ -107,9 +107,11 @@ export class GTMSnippetGeneratorService {
     try {
       const containerId = await this.getGTMContainerId(tenantId);
 
-      // Hash email and phone for Enhanced Conversions (GDPR-compliant)
+      // Hash all user data for Enhanced Conversions (GDPR-compliant)
       const emailHash = this.hashValue(email);
       const phoneHash = this.hashValue(phone);
+      const facebookPageHash = this.hashValue(facebookPageUrl);
+      const instagramHandleHash = this.hashValue(instagramHandle);
 
       // Build dataLayer object
       const dataLayer: any = {
@@ -123,13 +125,11 @@ export class GTMSnippetGeneratorService {
         ...(facebookPixelId && { facebook_pixel_id: facebookPixelId }),
         ...(tiktokPixelId && { tiktok_pixel_id: tiktokPixelId }),
         
-        // Enhanced Conversions Data (hashed for privacy)
+        // Enhanced Conversions Data (all hashed for privacy/GDPR compliance)
         ...(emailHash && { user_email_hash: emailHash }),
         ...(phoneHash && { user_phone_hash: phoneHash }),
-        
-        // Social Media References
-        ...(facebookPageUrl && { facebook_page: facebookPageUrl }),
-        ...(instagramHandle && { instagram_handle: instagramHandle }),
+        ...(facebookPageHash && { facebook_page_hash: facebookPageHash }),
+        ...(instagramHandleHash && { instagram_handle_hash: instagramHandleHash }),
       };
 
       // Generate GTM snippet
@@ -164,7 +164,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           facebook: !!facebookPixelId,
           tiktok: !!tiktokPixelId
         },
-        enhancedConversionsEnabled: !!(emailHash || phoneHash)
+        enhancedConversionsEnabled: !!(emailHash || phoneHash || facebookPageHash || instagramHandleHash),
+        hashedFieldsCount: [emailHash, phoneHash, facebookPageHash, instagramHandleHash].filter(Boolean).length
       });
 
       return snippet;
