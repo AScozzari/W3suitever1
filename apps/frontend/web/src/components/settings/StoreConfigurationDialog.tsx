@@ -38,20 +38,22 @@ const gpsFormSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 
-// Social Tab Schema
+// Social Tab Schema (LinkedIn, TikTok - altri social non usati per tracking)
 const socialFormSchema = z.object({
-  facebook: z.string().url('URL Facebook non valido').optional().or(z.literal('')),
-  instagram: z.string().optional().or(z.literal('')),
   linkedin: z.string().url('URL LinkedIn non valido').optional().or(z.literal('')),
   tiktok: z.string().optional().or(z.literal('')),
 });
 
-// Marketing Tab Schema
+// Marketing Tab Schema (includes Enhanced Conversions data)
 const marketingFormSchema = z.object({
+  // Tracking IDs
   ga4MeasurementId: z.string().regex(/^G-[A-Z0-9]+$/, 'Formato GA4 non valido (es. G-XXXXXXXXX)').optional().or(z.literal('')),
   googleAdsConversionId: z.string().regex(/^AW-[0-9]+$/, 'Formato Google Ads non valido (es. AW-XXXXXXXX)').optional().or(z.literal('')),
   facebookPixelId: z.string().regex(/^[0-9]+$/, 'Facebook Pixel deve essere numerico').optional().or(z.literal('')),
   tiktokPixelId: z.string().optional().or(z.literal('')),
+  // Enhanced Conversions Data
+  facebook: z.string().url('URL Facebook non valido').optional().or(z.literal('')),
+  instagram: z.string().optional().or(z.literal('')),
 });
 
 // WhatsApp Tab Schema
@@ -126,8 +128,6 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   const socialForm = useForm<SocialFormData>({
     resolver: zodResolver(socialFormSchema),
     values: {
-      facebook: store?.facebook || '',
-      instagram: store?.instagram || '',
       linkedin: store?.linkedin || '',
       tiktok: store?.tiktok || '',
     },
@@ -141,6 +141,8 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
       googleAdsConversionId: trackingConfig?.googleAdsConversionId || '',
       facebookPixelId: trackingConfig?.facebookPixelId || '',
       tiktokPixelId: trackingConfig?.tiktokPixelId || '',
+      facebook: store?.facebook || '',
+      instagram: store?.instagram || '',
     },
   });
 
@@ -268,9 +270,38 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   };
 
   // Handle Marketing save & GTM config
-  const handleMarketingConfigure = (data: MarketingFormData) => {
+  const handleMarketingConfigure = async (data: MarketingFormData) => {
     setIsConfiguringGTM(true);
-    configureGTMMutation.mutate(data);
+    
+    // Save social data (facebook, instagram) to store first
+    const socialData = {
+      facebook: data.facebook,
+      instagram: data.instagram,
+    };
+    
+    try {
+      await apiRequest(`/api/stores/${storeId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(socialData),
+      });
+      
+      // Then configure GTM with tracking IDs
+      const trackingData = {
+        ga4MeasurementId: data.ga4MeasurementId,
+        googleAdsConversionId: data.googleAdsConversionId,
+        facebookPixelId: data.facebookPixelId,
+        tiktokPixelId: data.tiktokPixelId,
+      };
+      
+      configureGTMMutation.mutate(trackingData);
+    } catch (error: any) {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile salvare i dati social',
+        variant: 'destructive',
+      });
+      setIsConfiguringGTM(false);
+    }
   };
 
   // Handle WhatsApp save
@@ -429,33 +460,9 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
           <TabsContent value="social" className="mt-6">
             <Form {...socialForm}>
               <form onSubmit={socialForm.handleSubmit(handleSocialSave)} className="space-y-6">
-                <FormField
-                  control={socialForm.control}
-                  name="facebook"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Facebook Page URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://facebook.com/nomepagina" data-testid="input-facebook" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={socialForm.control}
-                  name="instagram"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Instagram Username</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="@username" data-testid="input-instagram" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <p className="text-sm text-gray-600 mb-4">
+                  Facebook e Instagram sono configurabili nel tab Marketing (usati per Enhanced Conversions)
+                </p>
 
                 <FormField
                   control={socialForm.control}
@@ -504,9 +511,9 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
           {/* MARKETING TAB */}
           <TabsContent value="marketing" className="mt-6">
             <Form {...marketingForm}>
-              <form onSubmit={marketingForm.handleSubmit(handleMarketingConfigure)} className="space-y-6">
+              <form onSubmit={marketingForm.handleSubmit(handleMarketingConfigure)} className="space-y-8">
                 {trackingConfig?.gtmConfigured && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-green-700">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="font-medium">GTM Configurato con successo!</span>
@@ -517,61 +524,129 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
                   </div>
                 )}
 
-                <FormField
-                  control={marketingForm.control}
-                  name="ga4MeasurementId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GA4 Measurement ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="G-XXXXXXXXX" data-testid="input-ga4" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* SEZIONE 1: Tracking IDs */}
+                <div className="border rounded-lg p-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="h-5 w-5 text-orange-600" />
+                    <h3 className="text-lg font-semibold">Tracking IDs</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Inserisci gli ID di tracking per Google Analytics, Google Ads, Facebook e TikTok
+                  </p>
 
-                <FormField
-                  control={marketingForm.control}
-                  name="googleAdsConversionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Google Ads Conversion ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="AW-XXXXXXXX" data-testid="input-google-ads" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={marketingForm.control}
+                    name="ga4MeasurementId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>GA4 Measurement ID</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="G-XXXXXXXXX" data-testid="input-ga4" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={marketingForm.control}
-                  name="facebookPixelId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Facebook Pixel ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="123456789" data-testid="input-facebook-pixel" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={marketingForm.control}
+                    name="googleAdsConversionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Google Ads Conversion ID</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="AW-XXXXXXXX" data-testid="input-google-ads" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={marketingForm.control}
-                  name="tiktokPixelId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>TikTok Pixel ID (opzionale)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="C9XXXXXXXXXXXXXXXX" data-testid="input-tiktok-pixel" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={marketingForm.control}
+                    name="facebookPixelId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Facebook Pixel ID</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="123456789" data-testid="input-facebook-pixel" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={marketingForm.control}
+                    name="tiktokPixelId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>TikTok Pixel ID (opzionale)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="C9XXXXXXXXXXXXXXXX" data-testid="input-tiktok-pixel" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* SEZIONE 2: Enhanced Conversions Data */}
+                <div className="border rounded-lg p-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Share2 className="h-5 w-5 text-orange-600" />
+                    <h3 className="text-lg font-semibold">Enhanced Conversions Data</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Dati per il matching cross-device di Google Ads e Facebook (Enhanced Conversions)
+                  </p>
+
+                  <FormField
+                    control={marketingForm.control}
+                    name="facebook"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Facebook Page URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://facebook.com/nomepagina" data-testid="input-facebook-page" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={marketingForm.control}
+                    name="instagram"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instagram Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="@username" data-testid="input-instagram-handle" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Display email/phone from store (read-only) */}
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Dati store utilizzati per Enhanced Conversions:</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Mail className="h-4 w-4" />
+                      <span>Email: {store?.email || 'Non configurata'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="h-4 w-4" />
+                      <span>Telefono: {store?.phone || 'Non configurato'}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Questi dati vengono inviati come hash SHA-256 a Google/Facebook per il matching utenti
+                    </p>
+                  </div>
+                </div>
+
+                {/* TODO: SEZIONE 3: GTM Snippet (implementata nel prossimo task) */}
 
                 <Button 
                   type="submit" 
@@ -584,7 +659,7 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
                   ) : (
                     <TrendingUp className="h-4 w-4 mr-2" />
                   )}
-                  Configura GTM Automaticamente
+                  Configura GTM e Genera Snippet
                 </Button>
               </form>
             </Form>
