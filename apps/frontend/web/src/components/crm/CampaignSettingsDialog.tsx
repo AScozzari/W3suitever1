@@ -1829,6 +1829,41 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       )}
                     />
                   </div>
+
+                  <div className="border-t pt-4 mt-6">
+                    <div className="rounded-lg border p-4">
+                      <h4 className="font-medium mb-2">Regole RBAC</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Le campagne sono sempre store-scoped. Solo gli utenti con accesso al negozio selezionato possono gestire questa campagna.
+                      </p>
+                      
+                      <h4 className="font-medium mb-2">Workflow Executors</h4>
+                      <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                        <li><code>campaign-lead-intake-executor</code>: Gestisce intake lead con routing ibrido</li>
+                        <li><code>pipeline-assignment-executor</code>: Assegna lead a pipeline basato su regole</li>
+                      </ul>
+                    </div>
+
+                    {mode === 'edit' && campaign && (
+                      <div className="rounded-lg border p-4 bg-muted/50 mt-4">
+                        <h4 className="font-medium mb-2">Statistiche Campagna</h4>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Lead Totali</p>
+                            <p className="text-lg font-semibold">{campaign.totalLeads || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Deal Totali</p>
+                            <p className="text-lg font-semibold">{campaign.totalDeals || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Revenue Totale</p>
+                            <p className="text-lg font-semibold">€{campaign.totalRevenue?.toFixed(2) || '0.00'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </TabsContent>
 
                 {/* TAB: UTM LINKS */}
