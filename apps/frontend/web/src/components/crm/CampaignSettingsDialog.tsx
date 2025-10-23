@@ -727,10 +727,10 @@ function WizardStep3({ form, marketingChannels }: WizardStep3Props) {
       <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 mb-6">
         <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
           <Target className="h-5 w-5 text-windtre-orange" />
-          Canali Marketing
+          Marketing & Obiettivi
         </h3>
         <p className="text-sm text-muted-foreground">
-          Scegli i canali da cui provengono i tuoi lead
+          Configura canali marketing, landing page, lead source e budget
         </p>
       </div>
 
