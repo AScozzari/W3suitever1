@@ -96,11 +96,6 @@ const campaignFormSchema = z.object({
   budget: z.number().optional().nullable(),
   actualSpent: z.number().optional().nullable(),
   
-  // Tracking Pixels (nullable = inherited from store)
-  ga4MeasurementId: z.string().max(50).optional().nullable(),
-  googleAdsConversionId: z.string().max(50).optional().nullable(),
-  facebookPixelId: z.string().max(50).optional().nullable(),
-  
   // Dates
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
@@ -1352,9 +1347,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       marketingChannels: [],
       budget: null,
       actualSpent: null,
-      ga4MeasurementId: null,
-      googleAdsConversionId: null,
-      facebookPixelId: null,
       startDate: null,
       endDate: null,
       isActive: true,
@@ -1406,9 +1398,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         marketingChannels: campaign.marketingChannels || [],
         budget: campaign.budget || null,
         actualSpent: campaign.actualSpent || null,
-        ga4MeasurementId: campaign.ga4MeasurementId || null,
-        googleAdsConversionId: campaign.googleAdsConversionId || null,
-        facebookPixelId: campaign.facebookPixelId || null,
         startDate: campaign.startDate ? campaign.startDate.split('T')[0] : null,
         endDate: campaign.endDate ? campaign.endDate.split('T')[0] : null,
         isActive: campaign.isActive ?? true,
@@ -2378,109 +2367,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                 {/* TAB 6: TRACKING */}
                 <TabsContent value="tracking" className="space-y-4 mt-4">
-                  {(() => {
-                    const selectedStoreId = form.watch('storeId');
-                    const selectedStore = stores.find((s: any) => s.id === selectedStoreId);
-                    
-                    const PixelField = ({ name, label, placeholder, storeValue }: any) => {
-                      const currentValue = form.watch(name);
-                      const isInherited = !currentValue;
-                      const displayValue = isInherited ? storeValue : currentValue;
-                      
-                      return (
-                        <FormField
-                          control={form.control}
-                          name={name}
-                          render={({ field }) => (
-                            <FormItem>
-                              <div className="flex items-center justify-between">
-                                <FormLabel className="flex items-center gap-2">
-                                  {label}
-                                  {isInherited && storeValue ? (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                      Ereditato da Store
-                                    </span>
-                                  ) : currentValue ? (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-                                      Custom
-                                    </span>
-                                  ) : null}
-                                </FormLabel>
-                                {!isInherited && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => field.onChange(null)}
-                                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                                    data-testid={`button-clear-${name}`}
-                                  >
-                                    Ripristina Ereditato
-                                  </Button>
-                                )}
-                              </div>
-                              <FormControl>
-                                <Input 
-                                  {...field} 
-                                  value={field.value || ''} 
-                                  onChange={(e) => field.onChange(e.target.value || null)}
-                                  placeholder={placeholder}
-                                  data-testid={`input-${name}`}
-                                  className={isInherited && storeValue ? 'border-blue-300 dark:border-blue-700' : ''}
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                {isInherited && storeValue ? (
-                                  <span className="text-blue-700 dark:text-blue-300">
-                                    Valore ereditato: <code className="px-1 py-0.5 bg-blue-50 dark:bg-blue-950 rounded">{storeValue}</code>
-                                  </span>
-                                ) : isInherited ? (
-                                  <span className="text-muted-foreground">Nessun valore configurato (né custom né ereditato)</span>
-                                ) : (
-                                  <span className="text-orange-700 dark:text-orange-300">Valore personalizzato per questa campagna</span>
-                                )}
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      );
-                    };
-
-                    return (
-                      <>
-                        <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-4 mb-4">
-                          <h4 className="font-semibold mb-1 flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Tracking Pixels
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            I pixel di tracking vengono ereditati automaticamente dal negozio. Puoi personalizzarli per questa specifica campagna.
-                          </p>
-                        </div>
-
-                        <PixelField 
-                          name="ga4MeasurementId"
-                          label="Google Analytics 4 Measurement ID"
-                          placeholder="G-XXXXXXXXXX"
-                          storeValue={selectedStore?.ga4MeasurementId}
-                        />
-
-                        <PixelField 
-                          name="googleAdsConversionId"
-                          label="Google Ads Conversion ID"
-                          placeholder="AW-XXXXXXXXXX"
-                          storeValue={selectedStore?.googleAdsConversionId}
-                        />
-
-                        <PixelField 
-                          name="facebookPixelId"
-                          label="Facebook Pixel ID"
-                          placeholder="123456789012345"
-                          storeValue={selectedStore?.facebookPixelId}
-                        />
-
-                        <div className="border-t pt-4 mt-6">
+                  <div className="space-y-4">
                           <h4 className="font-semibold mb-3">Budget & Spesa</h4>
 
                           <FormField
@@ -2534,10 +2421,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                               Le metriche lead, deal e revenue vengono calcolate automaticamente dal sistema.
                             </p>
                           </div>
-                        </div>
-                      </>
-                    );
-                  })()}
+                  </div>
                 </TabsContent>
 
                 {/* TAB 6: AVANZATE */}
