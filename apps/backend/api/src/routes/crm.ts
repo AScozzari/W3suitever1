@@ -58,6 +58,7 @@ import { utmLinksService } from '../services/utm-links.service';
 import { gtmEventsService } from '../services/gtm-events.service';
 import { attributionService } from '../services/attribution.service';
 import { GDPRConsentService } from '../services/gdpr-consent.service';
+import { GTMSnippetGeneratorService } from '../services/gtm-snippet-generator.service';
 
 const router = express.Router();
 
@@ -6082,6 +6083,98 @@ router.get('/stores/:id/tracking-config', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve store tracking config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/stores/:id/gtm-snippet
+ * Generate GTM snippet with precompiled dataLayer for a store
+ */
+router.get('/stores/:id/gtm-snippet', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant and get store data
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get tracking config
+    const [config] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    // Generate snippet using GTMSnippetGeneratorService
+    const snippet = await GTMSnippetGeneratorService.generateSnippet({
+      tenantId,
+      storeId,
+      ga4MeasurementId: config?.ga4MeasurementId || null,
+      googleAdsConversionId: config?.googleAdsConversionId || null,
+      facebookPixelId: config?.facebookPixelId || null,
+      tiktokPixelId: config?.tiktokPixelId || null,
+      email: store.email || null,
+      phone: store.phone || null,
+      facebookPageUrl: store.facebook || null,
+      instagramHandle: store.instagram || null,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        snippet,
+        storeId,
+        storeName: store.nome,
+        gtmConfigured: config?.gtmConfigured || false,
+      },
+      message: 'GTM snippet generated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error generating GTM snippet', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to generate GTM snippet',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
