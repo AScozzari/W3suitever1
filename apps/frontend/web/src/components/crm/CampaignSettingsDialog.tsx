@@ -1050,6 +1050,12 @@ function WizardStep4({ form, stores, users, teams, marketingChannels, onEditStep
               </span>
             </div>
           )}
+          {formValues.budget && (
+            <div className="flex justify-between pt-2 border-t">
+              <span className="text-muted-foreground">Budget:</span>
+              <span className="font-medium">€{formValues.budget.toFixed(2)}</span>
+            </div>
+          )}
         </div>
       </div>
 
