@@ -859,6 +859,32 @@ function WizardStep3({ form, marketingChannels }: WizardStep3Props) {
           </FormItem>
         )}
       />
+
+      <FormField
+        control={form.control}
+        name="budget"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Budget Campagna (€)</FormLabel>
+            <FormControl>
+              <Input 
+                type="number"
+                {...field} 
+                value={field.value || ''} 
+                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                step="0.01"
+                min={0}
+                placeholder="0.00"
+                data-testid="wizard-input-budget" 
+              />
+            </FormControl>
+            <FormDescription>
+              Budget previsto per questa campagna (opzionale)
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 }
