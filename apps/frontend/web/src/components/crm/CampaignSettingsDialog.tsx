@@ -719,9 +719,13 @@ function WizardStep2({ form, users, teams }: WizardStep2Props) {
 interface WizardStep3Props {
   form: UseFormReturn<CampaignFormValues>;
   marketingChannels: any[];
+  stores: any[];
+  storeTrackingConfig: any;
 }
 
-function WizardStep3({ form, marketingChannels }: WizardStep3Props) {
+function WizardStep3({ form, marketingChannels, stores, storeTrackingConfig }: WizardStep3Props) {
+  const selectedStoreId = form.watch('storeId');
+  
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-gradient-to-br from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-4 mb-6">
@@ -733,6 +737,54 @@ function WizardStep3({ form, marketingChannels }: WizardStep3Props) {
           Configura canali marketing, landing page, lead source e budget
         </p>
       </div>
+
+      {/* Badge Tracking Ereditato dallo Store */}
+      {selectedStoreId && storeTrackingConfig && (
+        <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-blue-300 dark:border-blue-700">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                🏪 Tracking Pixels Ereditati dallo Store
+              </h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                Questa campagna erediterà automaticamente i pixel di tracking configurati nello store{' '}
+                <strong>{stores.find((s: any) => s.id === selectedStoreId)?.name}</strong>
+              </p>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {storeTrackingConfig.ga4MeasurementId && (
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                    ✓ GA4: {storeTrackingConfig.ga4MeasurementId}
+                  </Badge>
+                )}
+                {storeTrackingConfig.googleAdsConversionId && (
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                    ✓ Google Ads: {storeTrackingConfig.googleAdsConversionId}
+                  </Badge>
+                )}
+                {storeTrackingConfig.facebookPixelId && (
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                    ✓ Facebook: {storeTrackingConfig.facebookPixelId}
+                  </Badge>
+                )}
+                {storeTrackingConfig.tiktokPixelId && (
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                    ✓ TikTok: {storeTrackingConfig.tiktokPixelId}
+                  </Badge>
+                )}
+                {!storeTrackingConfig.ga4MeasurementId && !storeTrackingConfig.googleAdsConversionId && !storeTrackingConfig.facebookPixelId && !storeTrackingConfig.tiktokPixelId && (
+                  <p className="col-span-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                    ⚠️ Nessun pixel configurato nello store. Vai in Impostazioni → Negozi → Marketing per configurarli.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <FormField
         control={form.control}
@@ -1076,6 +1128,7 @@ interface WizardShellProps {
   users: any[];
   teams: any[];
   marketingChannels: any[];
+  storeTrackingConfig: any;
   currentStep: number;
   onNextStep: () => void;
   onPrevStep: () => void;
@@ -1092,6 +1145,7 @@ function WizardShell({
   users,
   teams,
   marketingChannels,
+  storeTrackingConfig,
   currentStep,
   onNextStep,
   onPrevStep,
@@ -1198,7 +1252,7 @@ function WizardShell({
       <div className="min-h-[400px]">
         {currentStep === 1 && <WizardStep1 form={form} stores={stores} />}
         {currentStep === 2 && <WizardStep2 form={form} users={users} teams={teams} />}
-        {currentStep === 3 && <WizardStep3 form={form} marketingChannels={marketingChannels} />}
+        {currentStep === 3 && <WizardStep3 form={form} marketingChannels={marketingChannels} stores={stores} storeTrackingConfig={storeTrackingConfig} />}
         {currentStep === 4 && (
           <WizardStep4 
             form={form} 
@@ -1358,6 +1412,15 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
   const { data: utmMappings = [] } = useQuery({
     queryKey: ['/api/crm/marketing-channels/utm-mappings'],
     enabled: open,
+  });
+
+  // Watch storeId to fetch tracking config
+  const selectedStoreId = form.watch('storeId');
+  
+  // Fetch store tracking config when store is selected
+  const { data: storeTrackingConfig } = useQuery({
+    queryKey: ['/api/stores', selectedStoreId, 'tracking-config'],
+    enabled: open && !!selectedStoreId,
   });
 
   // Initialize form
@@ -1567,6 +1630,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   users={users}
                   teams={teams}
                   marketingChannels={marketingChannels}
+                  storeTrackingConfig={storeTrackingConfig}
                   currentStep={currentStep}
                   onNextStep={nextStep}
                   onPrevStep={prevStep}
@@ -2284,6 +2348,54 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                 {/* TAB 6: MARKETING & BUDGET */}
                 <TabsContent value="tracking" className="space-y-4 mt-4">
+                  {/* Badge Tracking Ereditato dallo Store */}
+                  {selectedStoreId && storeTrackingConfig && (
+                    <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-blue-300 dark:border-blue-700">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
+                          <Info className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                            🏪 Tracking Pixels Ereditati dallo Store
+                          </h4>
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                            Questa campagna erediterà automaticamente i pixel di tracking configurati nello store{' '}
+                            <strong>{stores.find((s: any) => s.id === selectedStoreId)?.name}</strong>
+                          </p>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            {storeTrackingConfig.ga4MeasurementId && (
+                              <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                                ✓ GA4: {storeTrackingConfig.ga4MeasurementId}
+                              </Badge>
+                            )}
+                            {storeTrackingConfig.googleAdsConversionId && (
+                              <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                                ✓ Google Ads: {storeTrackingConfig.googleAdsConversionId}
+                              </Badge>
+                            )}
+                            {storeTrackingConfig.facebookPixelId && (
+                              <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                                ✓ Facebook: {storeTrackingConfig.facebookPixelId}
+                              </Badge>
+                            )}
+                            {storeTrackingConfig.tiktokPixelId && (
+                              <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                                ✓ TikTok: {storeTrackingConfig.tiktokPixelId}
+                              </Badge>
+                            )}
+                            {!storeTrackingConfig.ga4MeasurementId && !storeTrackingConfig.googleAdsConversionId && !storeTrackingConfig.facebookPixelId && !storeTrackingConfig.tiktokPixelId && (
+                              <p className="col-span-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                                ⚠️ Nessun pixel configurato nello store. Vai in Impostazioni → Negozi → Marketing per configurarli.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800">
                     <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
                       <Target className="h-4 w-4" />
