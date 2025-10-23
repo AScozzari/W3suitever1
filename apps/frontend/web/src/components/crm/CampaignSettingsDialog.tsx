@@ -1573,7 +1573,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     </TabsTrigger>
                     <TabsTrigger value="tracking" data-testid="tab-tracking">
                       <TrendingUp className="h-4 w-4 mr-1" />
-                      Obiettivi
+                      Marketing & Budget
                     </TabsTrigger>
                     <TabsTrigger value="advanced" data-testid="tab-advanced">
                       <Wrench className="h-4 w-4 mr-1" />
@@ -1789,152 +1789,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       </FormItem>
                     )}
                   />
-
-                  <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800">
-                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
-                      <Target className="h-4 w-4" />
-                      Canali Marketing & UTM Tracking
-                    </h4>
-                    <p className="text-xs text-orange-700 dark:text-orange-300 mb-4">
-                      Seleziona i canali marketing da attivare. Il sistema genererà automaticamente link UTM per ogni canale.
-                    </p>
-
-                    <FormField
-                      control={form.control}
-                      name="marketingChannels"
-                      render={({ field }) => {
-                        const digitalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'digital' && ch.active);
-                        const traditionalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'traditional' && ch.active);
-                        const directChannels = (marketingChannels as any[]).filter(ch => ch.category === 'direct' && ch.active);
-                        
-                        return (
-                          <FormItem>
-                            <FormLabel>Canali Marketing Attivi *</FormLabel>
-                            
-                            {/* Digital Channels (con generazione UTM) */}
-                            {digitalChannels.length > 0 && (
-                              <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2 flex items-center gap-2">
-                                  🌐 Canali Digitali (con UTM)
-                                </h5>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  {digitalChannels.map((channel: any) => (
-                                    <div key={channel.code} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        checked={field.value?.includes(channel.code)}
-                                        onCheckedChange={(checked) => {
-                                          const current = field.value || [];
-                                          const updated = checked
-                                            ? [...current, channel.code]
-                                            : current.filter((code: string) => code !== channel.code);
-                                          field.onChange(updated);
-                                        }}
-                                        data-testid={`checkbox-channel-${channel.code}`}
-                                      />
-                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {channel.name}
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Traditional Channels (tracking only) */}
-                            {traditionalChannels.length > 0 && (
-                              <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                  📺 Canali Tradizionali (tracking)
-                                </h5>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  {traditionalChannels.map((channel: any) => (
-                                    <div key={channel.code} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        checked={field.value?.includes(channel.code)}
-                                        onCheckedChange={(checked) => {
-                                          const current = field.value || [];
-                                          const updated = checked
-                                            ? [...current, channel.code]
-                                            : current.filter((code: string) => code !== channel.code);
-                                          field.onChange(updated);
-                                        }}
-                                        data-testid={`checkbox-channel-${channel.code}`}
-                                      />
-                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {channel.name}
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Direct Channels (tracking only) */}
-                            {directChannels.length > 0 && (
-                              <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                  🤝 Canali Diretti (tracking)
-                                </h5>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  {directChannels.map((channel: any) => (
-                                    <div key={channel.code} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        checked={field.value?.includes(channel.code)}
-                                        onCheckedChange={(checked) => {
-                                          const current = field.value || [];
-                                          const updated = checked
-                                            ? [...current, channel.code]
-                                            : current.filter((code: string) => code !== channel.code);
-                                          field.onChange(updated);
-                                        }}
-                                        data-testid={`checkbox-channel-${channel.code}`}
-                                      />
-                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {channel.name}
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            <FormDescription className="text-xs mt-2">
-                              {field.value && field.value.length > 0 ? (
-                                <span className="text-orange-600 dark:text-orange-400 font-medium">
-                                  ✅ {field.value.length} canale{field.value.length > 1 ? 'i' : ''} selezionato{field.value.length > 1 ? 'i' : ''} - Link UTM saranno generati dopo il salvataggio per i canali digitali
-                                </span>
-                              ) : (
-                                "Seleziona almeno un canale marketing per questa campagna"
-                              )}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        );
-                      }}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="utmCampaign"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Nome Campagna UTM *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              value={field.value || ''} 
-                              placeholder="promo_black_friday_2025" 
-                              data-testid="input-utm-campaign" 
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs">
-                            Nome univoco per identificare questa campagna (usato in tutti i canali)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -2365,10 +2219,156 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                   </div>
                 </TabsContent>
 
-                {/* TAB 6: TRACKING */}
+                {/* TAB 6: MARKETING & BUDGET */}
                 <TabsContent value="tracking" className="space-y-4 mt-4">
-                  <div className="space-y-4">
-                          <h4 className="font-semibold mb-3">Budget & Spesa</h4>
+                  <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800">
+                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Canali Marketing & UTM Tracking
+                    </h4>
+                    <p className="text-xs text-orange-700 dark:text-orange-300 mb-4">
+                      Seleziona i canali marketing da attivare. Il sistema genererà automaticamente link UTM per ogni canale.
+                    </p>
+
+                    <FormField
+                      control={form.control}
+                      name="marketingChannels"
+                      render={({ field }) => {
+                        const digitalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'digital' && ch.active);
+                        const traditionalChannels = (marketingChannels as any[]).filter(ch => ch.category === 'traditional' && ch.active);
+                        const directChannels = (marketingChannels as any[]).filter(ch => ch.category === 'direct' && ch.active);
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>Canali Marketing Attivi *</FormLabel>
+                            
+                            {/* Digital Channels (con generazione UTM) */}
+                            {digitalChannels.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2 flex items-center gap-2">
+                                  🌐 Canali Digitali (con UTM)
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  {digitalChannels.map((channel: any) => (
+                                    <div key={channel.code} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(channel.code)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, channel.code]
+                                            : current.filter((code: string) => code !== channel.code);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`checkbox-channel-${channel.code}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {channel.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Traditional Channels (tracking only) */}
+                            {traditionalChannels.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                  📺 Canali Tradizionali (tracking)
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  {traditionalChannels.map((channel: any) => (
+                                    <div key={channel.code} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(channel.code)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, channel.code]
+                                            : current.filter((code: string) => code !== channel.code);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`checkbox-channel-${channel.code}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {channel.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Direct Channels (tracking only) */}
+                            {directChannels.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                  🤝 Canali Diretti (tracking)
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                  {directChannels.map((channel: any) => (
+                                    <div key={channel.code} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(channel.code)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, channel.code]
+                                            : current.filter((code: string) => code !== channel.code);
+                                          field.onChange(updated);
+                                        }}
+                                        data-testid={`checkbox-channel-${channel.code}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {channel.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <FormDescription className="text-xs mt-2">
+                              {field.value && field.value.length > 0 ? (
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                  ✅ {field.value.length} canale{field.value.length > 1 ? 'i' : ''} selezionato{field.value.length > 1 ? 'i' : ''} - Link UTM saranno generati dopo il salvataggio per i canali digitali
+                                </span>
+                              ) : (
+                                "Seleziona almeno un canale marketing per questa campagna"
+                              )}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="utmCampaign"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel>Nome Campagna UTM *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              value={field.value || ''} 
+                              placeholder="promo_black_friday_2025" 
+                              data-testid="input-utm-campaign" 
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Nome univoco per identificare questa campagna (usato in tutti i canali)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="border-t pt-4 mt-6">
+                    <h4 className="font-semibold mb-3">Budget & Spesa</h4>
 
                           <FormField
                             control={form.control}
