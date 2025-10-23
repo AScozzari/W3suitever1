@@ -6269,12 +6269,18 @@ router.get('/analytics/executive-summary', async (req, res) => {
     // Parse query parameters
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
     const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
     
     const summary = await crmAnalyticsService.getExecutiveSummary({
       tenantId,
       storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined,
       dateRange: dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined
     });
 
@@ -6318,10 +6324,16 @@ router.get('/analytics/campaign-performance', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     
     const campaigns = await crmAnalyticsService.getCampaignPerformance({
       tenantId,
-      storeIds: storeIds as string[] | undefined
+      storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined
     });
 
     res.status(200).json({
@@ -6364,10 +6376,16 @@ router.get('/analytics/channel-attribution', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     
     const attribution = await crmAnalyticsService.getChannelAttribution({
       tenantId,
-      storeIds: storeIds as string[] | undefined
+      storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined
     });
 
     res.status(200).json({
@@ -6410,10 +6428,16 @@ router.get('/analytics/lead-source-distribution', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     
     const distribution = await crmAnalyticsService.getLeadSourceDistribution({
       tenantId,
-      storeIds: storeIds as string[] | undefined
+      storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined
     });
 
     res.status(200).json({
@@ -6456,10 +6480,16 @@ router.get('/analytics/ai-score-distribution', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     
     const distribution = await crmAnalyticsService.getAIScoreDistribution({
       tenantId,
-      storeIds: storeIds as string[] | undefined
+      storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined
     });
 
     res.status(200).json({
@@ -6502,12 +6532,18 @@ router.get('/analytics/gtm-events', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined;
     const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined;
     
     const events = await crmAnalyticsService.getGTMEventsSummary({
       tenantId,
       storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined,
       dateRange: dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined
     });
 
@@ -6551,10 +6587,16 @@ router.get('/analytics/store-comparison', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     
     const comparison = await crmAnalyticsService.getStoreComparison({
       tenantId,
-      storeIds: storeIds as string[] | undefined
+      storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined
     });
 
     res.status(200).json({
@@ -6597,10 +6639,16 @@ router.get('/analytics/conversion-funnel', async (req, res) => {
     
     const storeIds = req.query.storeIds ? 
       (Array.isArray(req.query.storeIds) ? req.query.storeIds : [req.query.storeIds]) : undefined;
+    const campaignIds = req.query.campaignIds ? 
+      (Array.isArray(req.query.campaignIds) ? req.query.campaignIds : [req.query.campaignIds]) : undefined;
+    const pipelineIds = req.query.pipelineIds ? 
+      (Array.isArray(req.query.pipelineIds) ? req.query.pipelineIds : [req.query.pipelineIds]) : undefined;
     
     const funnel = await crmAnalyticsService.getConversionFunnel({
       tenantId,
-      storeIds: storeIds as string[] | undefined
+      storeIds: storeIds as string[] | undefined,
+      campaignIds: campaignIds as string[] | undefined,
+      pipelineIds: pipelineIds as string[] | undefined
     });
 
     res.status(200).json({

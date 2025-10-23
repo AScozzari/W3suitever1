@@ -31,7 +31,7 @@ export interface AnalyticsFilters {
   storeIds?: string[];
   dateRange?: DateRange;
   campaignIds?: string[];
-  pipelineId?: string;
+  pipelineIds?: string[]; // Changed from pipelineId to pipelineIds (array)
   driverIds?: string[];
 }
 
@@ -173,6 +173,16 @@ class CRMAnalyticsService {
     const dealStoreFilterSQL = filters.storeIds?.length 
       ? sql`AND d.store_id = ANY(${filters.storeIds})` 
       : sql``;
+    
+    // Build campaign filter
+    const campaignFilterSQL = filters.campaignIds?.length 
+      ? sql`AND l.campaign_id = ANY(${filters.campaignIds})` 
+      : sql``;
+    
+    // Build pipeline filter
+    const pipelineFilterSQL = filters.pipelineIds?.length 
+      ? sql`AND d.pipeline_id = ANY(${filters.pipelineIds})` 
+      : sql``;
 
     // Get current period metrics - RAW SQL with guaranteed UPPERCASE functions
     const metricsResult = await db.execute(sql`
@@ -185,6 +195,7 @@ class CRMAnalyticsService {
       WHERE l.tenant_id = ${filters.tenantId}
         ${dateFilterSQL}
         ${storeFilterSQL}
+        ${campaignFilterSQL}
     `);
 
     // Get deal metrics - RAW SQL
@@ -197,6 +208,7 @@ class CRMAnalyticsService {
       WHERE d.tenant_id = ${filters.tenantId}
         ${dealDateFilterSQL}
         ${dealStoreFilterSQL}
+        ${pipelineFilterSQL}
     `);
 
     // Get customer count - RAW SQL
@@ -257,6 +269,10 @@ class CRMAnalyticsService {
     const storeFilterSQL = filters.storeIds?.length 
       ? sql`AND c.store_id = ANY(${filters.storeIds})` 
       : sql``;
+    
+    const campaignFilterSQL = filters.campaignIds?.length 
+      ? sql`AND c.id = ANY(${filters.campaignIds})` 
+      : sql``;
 
     const campaignsResult = await db.execute(sql`
       SELECT 
@@ -278,6 +294,7 @@ class CRMAnalyticsService {
       LEFT JOIN crm_leads l ON l.campaign_id = c.id ${dateFilterSQL}
       WHERE c.tenant_id = ${filters.tenantId}
         ${storeFilterSQL}
+        ${campaignFilterSQL}
       GROUP BY c.id, c.name, c.store_id, s.nome, c.status, c.budget, c.start_date, c.end_date, c.marketing_channels
     `);
 
@@ -326,6 +343,9 @@ class CRMAnalyticsService {
   async getChannelAttribution(filters: AnalyticsFilters): Promise<ChannelAttribution[]> {
     await setTenantContext(filters.tenantId);
     
+    const campaignFilter = filters.campaignIds?.length ? 
+      inArray(crmCampaignUtmLinks.campaignId, filters.campaignIds) : sql`true`;
+    
     // Get UTM link performance
     const utmMetrics = await db
       .select({
@@ -341,7 +361,8 @@ class CRMAnalyticsService {
       .from(crmCampaignUtmLinks)
       .where(and(
         eq(crmCampaignUtmLinks.tenantId, filters.tenantId),
-        eq(crmCampaignUtmLinks.isActive, true)
+        eq(crmCampaignUtmLinks.isActive, true),
+        campaignFilter
       ))
       .groupBy(
         crmCampaignUtmLinks.channelId,
@@ -376,6 +397,9 @@ class CRMAnalyticsService {
     const storeFilter = filters.storeIds?.length ? 
       inArray(crmLeads.storeId, filters.storeIds) : sql`true`;
     
+    const campaignFilter = filters.campaignIds?.length ? 
+      inArray(crmLeads.campaignId, filters.campaignIds) : sql`true`;
+    
     // Count leads by source
     const sourceMetrics = await db
       .select({
@@ -387,7 +411,8 @@ class CRMAnalyticsService {
       .from(crmLeads)
       .where(and(
         eq(crmLeads.tenantId, filters.tenantId),
-        storeFilter
+        storeFilter,
+        campaignFilter
       ))
       .groupBy(crmLeads.leadSource);
     
@@ -413,6 +438,9 @@ class CRMAnalyticsService {
     const storeFilter = filters.storeIds?.length ? 
       inArray(crmLeads.storeId, filters.storeIds) : sql`true`;
     
+    const campaignFilter = filters.campaignIds?.length ? 
+      inArray(crmLeads.campaignId, filters.campaignIds) : sql`true`;
+    
     const distribution = await db
       .select({
         scoreRange: sql<string>`
@@ -431,7 +459,8 @@ class CRMAnalyticsService {
       .where(and(
         eq(crmLeads.tenantId, filters.tenantId),
         isNotNull(crmLeads.leadScore),
-        storeFilter
+        storeFilter,
+        campaignFilter
       ))
       .groupBy(sql`
         case 
@@ -482,6 +511,9 @@ class CRMAnalyticsService {
     
     const storeFilter = filters.storeIds?.length ? 
       inArray(gtmEventLog.storeId, filters.storeIds) : sql`true`;
+    
+    // Note: GTM events don't have direct campaign_id, would need JOIN with leads
+    // Keeping simple for now - campaign filter not applicable to GTM events directly
     
     // Get overall metrics
     const summary = await db
@@ -568,6 +600,21 @@ class CRMAnalyticsService {
     const storeFilterSQL = filters.storeIds?.length 
       ? sql`AND s.id = ANY(${filters.storeIds})` 
       : sql``;
+    
+    const campaignFilterSQL = filters.campaignIds?.length 
+      ? sql`AND l.campaign_id = ANY(${filters.campaignIds})` 
+      : sql``;
+    
+    // When pipeline filter is active, JOIN with deals to filter converted leads by pipeline
+    const pipelineJoinSQL = filters.pipelineIds?.length 
+      ? sql`
+        LEFT JOIN crm_deals d ON d.lead_id = l.id AND d.pipeline_id = ANY(${filters.pipelineIds})
+      ` 
+      : sql``;
+    
+    const pipelineWhereSQL = filters.pipelineIds?.length 
+      ? sql`AND (l.status != 'converted' OR d.id IS NOT NULL)` 
+      : sql``;
 
     const storeMetricsResult = await db.execute(sql`
       SELECT 
@@ -577,9 +624,11 @@ class CRMAnalyticsService {
         COUNT(DISTINCT l.id)::int AS total_leads,
         COUNT(DISTINCT CASE WHEN l.status = 'converted' THEN l.id END)::int AS converted_leads
       FROM stores s
-      LEFT JOIN crm_leads l ON l.store_id = s.id ${dateFilterSQL}
+      LEFT JOIN crm_leads l ON l.store_id = s.id ${dateFilterSQL} ${campaignFilterSQL}
+      ${pipelineJoinSQL}
       WHERE s.tenant_id = ${filters.tenantId}
         ${storeFilterSQL}
+        ${pipelineWhereSQL}
       GROUP BY s.id, s.nome, s.citta
     `);
 
@@ -633,6 +682,9 @@ class CRMAnalyticsService {
     const storeFilter = filters.storeIds?.length ? 
       inArray(crmLeads.storeId, filters.storeIds) : sql`true`;
     
+    const campaignFilter = filters.campaignIds?.length ? 
+      inArray(crmLeads.campaignId, filters.campaignIds) : sql`true`;
+    
     const accuracy = await db
       .select({
         totalPredictions: sql<number>`COUNT(*)`,
@@ -647,7 +699,8 @@ class CRMAnalyticsService {
       .where(and(
         eq(crmLeads.tenantId, filters.tenantId),
         isNotNull(crmLeads.leadScore),
-        storeFilter
+        storeFilter,
+        campaignFilter
       ));
 
     const result = accuracy[0];
@@ -663,8 +716,39 @@ class CRMAnalyticsService {
   async getConversionFunnel(filters: AnalyticsFilters) {
     await setTenantContext(filters.tenantId);
     
+    // When pipeline filter is active, we need to filter converted leads by pipeline via JOIN
+    if (filters.pipelineIds?.length) {
+      const result = await db.execute(sql`
+        SELECT
+          1000 AS visitors,
+          COUNT(DISTINCT l.id)::int AS leads,
+          COUNT(DISTINCT CASE WHEN l.status = 'qualified' THEN l.id END)::int AS qualified,
+          COUNT(DISTINCT CASE WHEN l.status IN ('qualified', 'converted') THEN l.id END)::int AS opportunities,
+          COUNT(DISTINCT CASE WHEN l.status = 'converted' THEN l.id END)::int AS customers
+        FROM crm_leads l
+        LEFT JOIN crm_deals d ON d.lead_id = l.id AND d.pipeline_id = ANY(${filters.pipelineIds})
+        WHERE l.tenant_id = ${filters.tenantId}
+          ${filters.storeIds?.length ? sql`AND l.store_id = ANY(${filters.storeIds})` : sql``}
+          ${filters.campaignIds?.length ? sql`AND l.campaign_id = ANY(${filters.campaignIds})` : sql``}
+          AND (l.status != 'converted' OR d.id IS NOT NULL)
+      `);
+      
+      const data = result.rows[0];
+      return [
+        { stage: 'Visitors', value: Number(data.visitors), percentage: 100 },
+        { stage: 'Leads', value: Number(data.leads), percentage: (Number(data.leads) / Number(data.visitors)) * 100 },
+        { stage: 'Qualified', value: Number(data.qualified), percentage: (Number(data.qualified) / Number(data.visitors)) * 100 },
+        { stage: 'Opportunities', value: Number(data.opportunities), percentage: (Number(data.opportunities) / Number(data.visitors)) * 100 },
+        { stage: 'Customers', value: Number(data.customers), percentage: (Number(data.customers) / Number(data.visitors)) * 100 },
+      ];
+    }
+    
+    // Original query when no pipeline filter
     const storeFilter = filters.storeIds?.length ? 
       inArray(crmLeads.storeId, filters.storeIds) : sql`true`;
+    
+    const campaignFilter = filters.campaignIds?.length ? 
+      inArray(crmLeads.campaignId, filters.campaignIds) : sql`true`;
     
     const funnel = await db
       .select({
@@ -677,7 +761,8 @@ class CRMAnalyticsService {
       .from(crmLeads)
       .where(and(
         eq(crmLeads.tenantId, filters.tenantId),
-        storeFilter
+        storeFilter,
+        campaignFilter
       ));
 
     const data = funnel[0];
