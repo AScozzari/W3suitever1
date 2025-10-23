@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -22,7 +23,9 @@ import {
   Navigation,
   CheckCircle2,
   Mail,
-  Phone
+  Phone,
+  Copy,
+  Code
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -113,6 +116,27 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
       return json.data;
     },
     enabled: open && !!storeId,
+  });
+
+  // Fetch GTM snippet
+  const { data: gtmSnippet, isLoading: isLoadingSnippet } = useQuery({
+    queryKey: ['/api/stores', storeId, 'gtm-snippet'],
+    queryFn: async () => {
+      const response = await fetch(`/api/stores/${storeId}/gtm-snippet`, {
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': 'admin-user',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch GTM snippet');
+      }
+      const json = await response.json();
+      return json.data;
+    },
+    enabled: open && !!storeId && !!trackingConfig, // Only fetch if tracking config exists
   });
 
   // GPS Form
@@ -207,10 +231,11 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'tracking-config'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'gtm-snippet'] }); // Invalidate snippet cache
       queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
       toast({
         title: 'GTM Configurato!',
-        description: 'Tag e trigger creati con successo. Pubblica il container GTM per attivare il tracking.',
+        description: 'Tag e trigger creati con successo. Snippet GTM generato e pronto per essere copiato.',
       });
       setIsConfiguringGTM(false);
     },
@@ -317,6 +342,25 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   // Handle Telefono save
   const handleTelefonoSave = (data: TelefonoFormData) => {
     updateStoreMutation.mutate(data);
+  };
+
+  // Handle Copy GTM Snippet to clipboard
+  const handleCopySnippet = async () => {
+    if (!gtmSnippet?.snippet) return;
+
+    try {
+      await navigator.clipboard.writeText(gtmSnippet.snippet);
+      toast({
+        title: 'Copiato!',
+        description: 'Snippet GTM copiato negli appunti',
+      });
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile copiare negli appunti',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (isLoadingStore || isLoadingTracking) {
@@ -646,7 +690,62 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
                   </div>
                 </div>
 
-                {/* TODO: SEZIONE 3: GTM Snippet (implementata nel prossimo task) */}
+                {/* SEZIONE 3: GTM Snippet */}
+                {trackingConfig && (
+                  <div className="border rounded-lg p-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Code className="h-5 w-5 text-orange-600" />
+                      <h3 className="text-lg font-semibold">GTM Snippet</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Copia questo snippet e incollalo nel <code className="bg-gray-100 px-2 py-1 rounded">&lt;head&gt;</code> delle tue landing page
+                    </p>
+
+                    {isLoadingSnippet ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+                        <span className="ml-2 text-sm text-gray-600">Generazione snippet in corso...</span>
+                      </div>
+                    ) : gtmSnippet?.snippet ? (
+                      <>
+                        <Textarea
+                          value={gtmSnippet.snippet}
+                          readOnly
+                          className="font-mono text-xs h-48 resize-none"
+                          data-testid="textarea-gtm-snippet"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCopySnippet}
+                          className="w-full"
+                          data-testid="button-copy-snippet"
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copia Snippet
+                        </Button>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                          <p className="text-sm text-blue-800">
+                            💡 <strong>Come usare:</strong>
+                          </p>
+                          <ol className="text-xs text-blue-700 mt-2 ml-4 space-y-1 list-decimal">
+                            <li>Copia lo snippet sopra</li>
+                            <li>Incolla nella sezione <code className="bg-blue-100 px-1 rounded">&lt;head&gt;</code> della tua landing page</li>
+                            <li>Gli UTM parameters vengono letti automaticamente dall'URL</li>
+                            <li>Il dataLayer è precompilato con tenant_id, store_id e tracking IDs</li>
+                          </ol>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                        <Code className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm text-gray-600">
+                          Configura prima i tracking IDs per generare lo snippet
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <Button 
                   type="submit" 
