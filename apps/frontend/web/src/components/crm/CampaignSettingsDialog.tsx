@@ -1546,7 +1546,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                 />
               ) : (
                 <Tabs defaultValue="general" className="w-full">
-                  <TabsList className="grid grid-cols-8 w-full">
+                  <TabsList className="grid grid-cols-7 w-full">
                     <TabsTrigger value="general" data-testid="tab-general">
                       <Settings2 className="h-4 w-4 mr-1" />
                       Generale
@@ -1557,7 +1557,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     </TabsTrigger>
                     <TabsTrigger value="targeting" data-testid="tab-targeting">
                       <Target className="h-4 w-4 mr-1" />
-                      Marketing
+                      Obiettivi & Avanzate
                     </TabsTrigger>
                     <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
                       <TrendingUp className="h-4 w-4 mr-1" />
@@ -1574,10 +1574,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     <TabsTrigger value="tracking" data-testid="tab-tracking">
                       <TrendingUp className="h-4 w-4 mr-1" />
                       Marketing & Budget
-                    </TabsTrigger>
-                    <TabsTrigger value="advanced" data-testid="tab-advanced">
-                      <Wrench className="h-4 w-4 mr-1" />
-                      Avanzate
                     </TabsTrigger>
                   </TabsList>
 
@@ -2457,42 +2453,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                             </p>
                           </div>
                   </div>
-                </TabsContent>
-
-                {/* TAB 6: AVANZATE */}
-                <TabsContent value="advanced" className="space-y-4 mt-4">
-                  <div className="rounded-lg border p-4">
-                    <h4 className="font-medium mb-2">Regole RBAC</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Le campagne sono sempre store-scoped. Solo gli utenti con accesso al negozio selezionato possono gestire questa campagna.
-                    </p>
-                    
-                    <h4 className="font-medium mb-2">Workflow Executors</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                      <li><code>campaign-lead-intake-executor</code>: Gestisce intake lead con routing ibrido</li>
-                      <li><code>pipeline-assignment-executor</code>: Assegna lead a pipeline basato su regole</li>
-                    </ul>
-                  </div>
-
-                  {mode === 'edit' && campaign && (
-                    <div className="rounded-lg border p-4 bg-muted/50">
-                      <h4 className="font-medium mb-2">Statistiche Campagna</h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Lead Totali</p>
-                          <p className="text-lg font-semibold">{campaign.totalLeads || 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Deal Totali</p>
-                          <p className="text-lg font-semibold">{campaign.totalDeals || 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Revenue Totale</p>
-                          <p className="text-lg font-semibold">€{campaign.totalRevenue?.toFixed(2) || '0.00'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </TabsContent>
 
                 {/* TAB 7: STATI LEAD */}
