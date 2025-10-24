@@ -52,6 +52,7 @@ interface CampaignSettingsDialogProps {
   onClose: () => void;
   campaignId?: string | null;
   mode: 'create' | 'edit';
+  initialCreationMode?: 'wizard' | 'advanced'; // Modalità iniziale per create mode
 }
 
 // Lead source enum (matches backend)
@@ -1452,7 +1453,7 @@ function WizardShell({
   );
 }
 
-export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: CampaignSettingsDialogProps) {
+export function CampaignSettingsDialog({ open, onClose, campaignId, mode, initialCreationMode }: CampaignSettingsDialogProps) {
   const { toast } = useToast();
   const tenantId = useRequiredTenantId();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -1471,6 +1472,14 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     preference,
     savePreference,
   } = useCampaignCreationMode();
+
+  // Sync initialCreationMode prop with hook state when dialog opens in create mode
+  useEffect(() => {
+    if (open && mode === 'create' && initialCreationMode) {
+      console.log('[CAMPAIGN-DIALOG] Setting creation mode from prop:', initialCreationMode);
+      setCreationMode(initialCreationMode);
+    }
+  }, [open, mode, initialCreationMode, setCreationMode]);
 
   // Mode selector disabled - now handled by CampaignCreationChoice in CampaignsPage
   useEffect(() => {

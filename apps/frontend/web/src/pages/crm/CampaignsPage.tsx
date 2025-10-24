@@ -1157,6 +1157,7 @@ export function CampaignsContent() {
         onClose={handleCloseDialog}
         campaignId={editingCampaignId}
         mode={editingCampaignId ? 'edit' : 'create'}
+        initialCreationMode={mode} // Pass current mode from useCampaignCreationMode hook
       />
 
       {/* Note: CampaignsContent is simplified - no filters dialog */}

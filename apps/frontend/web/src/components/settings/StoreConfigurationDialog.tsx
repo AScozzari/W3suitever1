@@ -214,13 +214,13 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   const configureGTMMutation = useMutation({
     mutationFn: async (data: MarketingFormData) => {
       return apiRequest(`/api/stores/${storeId}/tracking-config`, {
-        method: 'POST',
+        method: 'PUT',
         body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'tracking-config'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'gtm-snippet'] }); // Invalidate snippet cache
+      queryClient.invalidateQueries({ queryKey: [`/api/stores/${storeId}/gtm-snippet`] }); // Invalidate snippet cache (exact format)
       queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
       toast({
         title: 'GTM Configurato!',
