@@ -2238,6 +2238,31 @@ router.post('/campaigns', async (req, res) => {
 
     logger.info('Campaign created', { campaignId: campaign.id, tenantId });
 
+    // 🔗 Auto-generate UTM links if campaign has required fields
+    if (campaign.landingPageUrl && campaign.utmCampaign && campaign.marketingChannels && campaign.marketingChannels.length > 0) {
+      try {
+        const utmLinks = await utmLinksService.generateLinksForCampaign({
+          tenantId,
+          campaignId: campaign.id,
+          landingPageUrl: campaign.landingPageUrl,
+          utmCampaign: campaign.utmCampaign,
+          marketingChannels: campaign.marketingChannels
+        });
+        
+        logger.info('Auto-generated UTM links for new campaign', {
+          campaignId: campaign.id,
+          linksCount: utmLinks.length,
+          channels: campaign.marketingChannels
+        });
+      } catch (utmError: any) {
+        // Log error but don't fail campaign creation
+        logger.error('Failed to auto-generate UTM links', {
+          campaignId: campaign.id,
+          error: utmError?.message
+        });
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: campaign,
