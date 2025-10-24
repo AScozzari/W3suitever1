@@ -56,7 +56,6 @@ type LeadSource = typeof leadSources[number];
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Nome campagna obbligatorio").max(255),
   description: z.string().optional(),
-  objective: z.string().optional(),
   storeId: z.string().uuid("Seleziona un negozio valido"),
   legalEntityId: z.string().uuid().optional(),
   
@@ -270,7 +269,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
     defaultValues: {
       name: '',
       description: '',
-      objective: '',
       storeId: '',
       legalEntityId: '',
       routingMode: 'automatic',
@@ -312,7 +310,6 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
       form.reset({
         name: campaign.name || '',
         description: campaign.description || '',
-        objective: campaign.objective || '',
         storeId: campaign.storeId || '',
         legalEntityId: campaign.legalEntityId || '',
         defaultLeadSource: campaign.defaultLeadSource || 'web_form',
