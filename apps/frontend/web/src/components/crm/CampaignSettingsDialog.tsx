@@ -62,7 +62,6 @@ type LeadSource = typeof leadSources[number];
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Nome campagna obbligatorio").max(255),
   description: z.string().optional(),
-  objective: z.string().optional(),
   storeId: z.string().uuid("Seleziona un negozio valido"),
   legalEntityId: z.string().uuid().optional(),
   driverIds: z.array(z.string().uuid()).optional().default([]),
@@ -525,21 +524,6 @@ function WizardStep1({ form, stores }: WizardStep1Props) {
               <Textarea {...field} rows={3} placeholder="Descrizione della campagna..." data-testid="wizard-textarea-description" />
             </FormControl>
             <FormDescription>Aggiungi dettagli su obiettivi e target della campagna</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="objective"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Obiettivo</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Es: Acquisizione lead qualificati" data-testid="wizard-input-objective" />
-            </FormControl>
-            <FormDescription>L'obiettivo principale che vuoi raggiungere</FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -1420,13 +1404,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     defaultValues: {
       name: '',
       description: '',
-      objective: '',
       storeId: '',
       legalEntityId: undefined,
       driverIds: [],
       workflowId: null,
-      primaryPipelineId: null,
-      secondaryPipelineId: null,
       defaultLeadSource: null,
       landingPageUrl: '',
       utmCampaign: null,
@@ -1480,13 +1461,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
       form.reset({
         name: campaign.name || '',
         description: campaign.description || '',
-        objective: campaign.objective || '',
         storeId: campaign.storeId || '',
         legalEntityId: campaign.legalEntityId || undefined,
         driverIds: campaign.driverIds || [],
         workflowId: campaign.workflowId || null,
-        primaryPipelineId: campaign.primaryPipelineId || null,
-        secondaryPipelineId: campaign.secondaryPipelineId || null,
         defaultLeadSource: campaign.defaultLeadSource || null,
         landingPageUrl: campaign.landingPageUrl || '',
         utmCampaign: campaign.utmCampaign || null,
@@ -1642,7 +1620,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                 />
               ) : (
                 <Tabs defaultValue="general" className="w-full">
-                  <TabsList className="grid grid-cols-7 w-full">
+                  <TabsList className="grid grid-cols-6 w-full">
                     <TabsTrigger value="general" data-testid="tab-general">
                       <Settings2 className="h-4 w-4 mr-1" />
                       Generale
@@ -1650,10 +1628,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     <TabsTrigger value="tracking" data-testid="tab-tracking">
                       <TrendingUp className="h-4 w-4 mr-1" />
                       Marketing
-                    </TabsTrigger>
-                    <TabsTrigger value="targeting" data-testid="tab-targeting">
-                      <Target className="h-4 w-4 mr-1" />
-                      Targeting
                     </TabsTrigger>
                     <TabsTrigger value="routing-workflows" data-testid="tab-routing-workflows">
                       <Workflow className="h-4 w-4 mr-1" />
@@ -1697,20 +1671,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                         <FormLabel>Descrizione</FormLabel>
                         <FormControl>
                           <Textarea {...field} rows={3} placeholder="Descrizione della campagna..." data-testid="textarea-description" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="objective"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Obiettivo</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Es: Acquisizione lead" data-testid="input-objective" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1807,81 +1767,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel>Campagna Attiva</FormLabel>
-                          <FormDescription>
-                            Attiva o disattiva la campagna
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="switch-is-active"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-
-                {/* TAB 2: TARGETING */}
-                <TabsContent value="targeting" className="space-y-4 mt-4">
-                  <FormField
-                    control={form.control}
-                    name="defaultLeadSource"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lead Source (Origine Lead Predefinita)</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value || undefined}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-default-lead-source">
-                              <SelectValue placeholder="Seleziona l'origine dei lead" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="manual">Manuale</SelectItem>
-                            <SelectItem value="web_form">Form Web</SelectItem>
-                            <SelectItem value="landing_page">Landing Page</SelectItem>
-                            <SelectItem value="powerful_api">Powerful API</SelectItem>
-                            <SelectItem value="csv_import">Import CSV</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Origine predefinita dei lead acquisiti da questa campagna
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="landingPageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Landing Page URL</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            value={field.value || ''} 
-                            placeholder="https://esempio.com/landing" 
-                            data-testid="input-landing-page-url" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -1922,40 +1807,47 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     />
                   </div>
 
-                  <div className="border-t pt-4 mt-6">
-                    <div className="rounded-lg border p-4">
-                      <h4 className="font-medium mb-2">Regole RBAC</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Le campagne sono sempre store-scoped. Solo gli utenti con accesso al negozio selezionato possono gestire questa campagna.
-                      </p>
-                      
-                      <h4 className="font-medium mb-2">Workflow Executors</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                        <li><code>campaign-lead-intake-executor</code>: Gestisce intake lead con routing ibrido</li>
-                        <li><code>pipeline-assignment-executor</code>: Assegna lead a pipeline basato su regole</li>
-                      </ul>
-                    </div>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel>Campagna Attiva</FormLabel>
+                          <FormDescription>
+                            Attiva o disattiva la campagna
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-is-active"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-                    {mode === 'edit' && campaign && (
-                      <div className="rounded-lg border p-4 bg-muted/50 mt-4">
-                        <h4 className="font-medium mb-2">Statistiche Campagna</h4>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Lead Totali</p>
-                            <p className="text-lg font-semibold">{campaign.totalLeads || 0}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Deal Totali</p>
-                            <p className="text-lg font-semibold">{campaign.totalDeals || 0}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Revenue Totale</p>
-                            <p className="text-lg font-semibold">€{campaign.totalRevenue?.toFixed(2) || '0.00'}</p>
-                          </div>
+                  {mode === 'edit' && campaign && (
+                    <div className="rounded-lg border p-4 bg-muted/50 mt-4">
+                      <h4 className="font-medium mb-2">Statistiche Campagna</h4>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Lead Totali</p>
+                          <p className="text-lg font-semibold">{campaign.totalLeads || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Deal Totali</p>
+                          <p className="text-lg font-semibold">{campaign.totalDeals || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Revenue Totale</p>
+                          <p className="text-lg font-semibold">€{campaign.totalRevenue?.toFixed(2) || '0.00'}</p>
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* TAB: UTM LINKS */}
@@ -2348,6 +2240,56 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
 
                 {/* TAB 6: MARKETING & BUDGET */}
                 <TabsContent value="tracking" className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="defaultLeadSource"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lead Source (Origine Lead Predefinita)</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || undefined}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-default-lead-source">
+                              <SelectValue placeholder="Seleziona l'origine dei lead" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="manual">Manuale</SelectItem>
+                            <SelectItem value="web_form">Form Web</SelectItem>
+                            <SelectItem value="landing_page">Landing Page</SelectItem>
+                            <SelectItem value="powerful_api">Powerful API</SelectItem>
+                            <SelectItem value="csv_import">Import CSV</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Origine predefinita dei lead acquisiti da questa campagna
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="landingPageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Landing Page URL</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ''} 
+                            placeholder="https://esempio.com/landing" 
+                            data-testid="input-landing-page-url" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/* Badge Tracking Ereditato dallo Store */}
                   {selectedStoreId && storeTrackingConfig && (
                     <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-blue-300 dark:border-blue-700">
