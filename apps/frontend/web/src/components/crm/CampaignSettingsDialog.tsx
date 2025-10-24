@@ -1647,29 +1647,29 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       <Settings2 className="h-4 w-4 mr-1" />
                       Generale
                     </TabsTrigger>
-                    <TabsTrigger value="routing-workflows" data-testid="tab-routing-workflows">
-                      <Workflow className="h-4 w-4 mr-1" />
-                      Routing
+                    <TabsTrigger value="tracking" data-testid="tab-tracking">
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      Marketing
                     </TabsTrigger>
                     <TabsTrigger value="targeting" data-testid="tab-targeting">
                       <Target className="h-4 w-4 mr-1" />
-                      Obiettivi & Avanzate
+                      Targeting
                     </TabsTrigger>
-                    <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      UTM Links
-                    </TabsTrigger>
-                    <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses" disabled={mode === 'create'}>
-                      <ListTodo className="h-4 w-4 mr-1" />
-                      Stati Lead
+                    <TabsTrigger value="routing-workflows" data-testid="tab-routing-workflows">
+                      <Workflow className="h-4 w-4 mr-1" />
+                      Routing
                     </TabsTrigger>
                     <TabsTrigger value="privacy" data-testid="tab-privacy">
                       <Shield className="h-4 w-4 mr-1" />
                       Privacy
                     </TabsTrigger>
-                    <TabsTrigger value="tracking" data-testid="tab-tracking">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      Marketing & Budget
+                    <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
+                      <Link className="h-4 w-4 mr-1" />
+                      UTM
+                    </TabsTrigger>
+                    <TabsTrigger value="lead-statuses" data-testid="tab-lead-statuses" disabled={mode === 'create'}>
+                      <ListTodo className="h-4 w-4 mr-1" />
+                      Lead
                     </TabsTrigger>
                   </TabsList>
 
