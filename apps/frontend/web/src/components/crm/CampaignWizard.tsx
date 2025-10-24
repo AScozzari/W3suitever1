@@ -1009,6 +1009,54 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                   )}
                 />
 
+                {/* Badge Tracking Ereditato dallo Store */}
+                {selectedStoreId && selectedStore && (
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-blue-300 dark:border-blue-700">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
+                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                          🏪 Tracking Pixels Ereditati dallo Store
+                        </h4>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                          Questa campagna erediterà automaticamente i pixel di tracking configurati nello store{' '}
+                          <strong>{selectedStore.name}</strong>
+                        </p>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          {selectedStore.ga4MeasurementId && (
+                            <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                              ✓ GA4: {selectedStore.ga4MeasurementId}
+                            </Badge>
+                          )}
+                          {selectedStore.googleAdsConversionId && (
+                            <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                              ✓ Google Ads: {selectedStore.googleAdsConversionId}
+                            </Badge>
+                          )}
+                          {selectedStore.facebookPixelId && (
+                            <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                              ✓ Facebook: {selectedStore.facebookPixelId}
+                            </Badge>
+                          )}
+                          {selectedStore.tiktokPixelId && (
+                            <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">
+                              ✓ TikTok: {selectedStore.tiktokPixelId}
+                            </Badge>
+                          )}
+                          {!selectedStore.ga4MeasurementId && !selectedStore.googleAdsConversionId && !selectedStore.facebookPixelId && !selectedStore.tiktokPixelId && (
+                            <p className="col-span-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                              ⚠️ Nessun pixel configurato nello store. Vai in Impostazioni → Negozi → Marketing per configurarli.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Tracking Pixels with Inheritance */}
                 <div className="space-y-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
