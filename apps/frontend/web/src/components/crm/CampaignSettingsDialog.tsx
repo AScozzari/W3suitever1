@@ -1414,15 +1414,6 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
     enabled: open,
   });
 
-  // Watch storeId to fetch tracking config
-  const selectedStoreId = form.watch('storeId');
-  
-  // Fetch store tracking config when store is selected
-  const { data: storeTrackingConfig } = useQuery({
-    queryKey: ['/api/stores', selectedStoreId, 'tracking-config'],
-    enabled: open && !!selectedStoreId,
-  });
-
   // Initialize form
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -1452,6 +1443,15 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
         third_party: false,
       },
     },
+  });
+
+  // Watch storeId to fetch tracking config
+  const selectedStoreId = form.watch('storeId');
+  
+  // Fetch store tracking config when store is selected
+  const { data: storeTrackingConfig } = useQuery({
+    queryKey: ['/api/stores', selectedStoreId, 'tracking-config'],
+    enabled: open && !!selectedStoreId,
   });
 
   // Calculate suggested UTM values based on selected marketing channels
