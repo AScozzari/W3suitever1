@@ -14,7 +14,8 @@ import {
   AIMCPNodeConfigSchema,
   LeadRoutingConfigSchema,
   DealRoutingConfigSchema,
-  CustomerRoutingConfigSchema
+  CustomerRoutingConfigSchema,
+  PipelineAssignmentConfigSchema
 } from '../types/workflow-nodes';
 import { ALL_MCP_NODES } from './mcp-node-definitions';
 
@@ -485,6 +486,23 @@ export const ROUTING_NODES: BaseNodeDefinition[] = [
         { name: 'Attivo', conditions: [{ field: 'contractStatus', operator: 'equals', value: 'active' }] },
         { name: 'Inattivo', conditions: [{ field: 'contractStatus', operator: 'in', value: ['inactive', 'churned'] }] }
       ]
+    }
+  },
+  {
+    id: 'pipeline-assignment',
+    name: 'Pipeline Assignment',
+    description: 'Assign leads/deals to specific pipelines based on dynamic rules (product interest, source channel, lead score)',
+    category: 'routing',
+    icon: 'GitMerge',
+    color: '#7B2CBF', // WindTre Purple
+    version: '1.0.0',
+    configSchema: PipelineAssignmentConfigSchema,
+    defaultConfig: {
+      pipelineRules: [],
+      defaultPipelineId: undefined,
+      defaultOwnerId: undefined,
+      escalateToManager: true,
+      storeId: undefined
     }
   }
 ];
