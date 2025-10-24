@@ -133,6 +133,15 @@ const campaignFormSchema = z.object({
   message: "Landing Page URL obbligatorio quando sono selezionati canali marketing",
   path: ['landingPageUrl']
 }).refine(data => {
+  // If UTM campaign is set, landing page URL is required
+  if (data.utmCampaign && data.utmCampaign.trim() !== '' && !data.landingPageUrl) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Landing Page URL obbligatorio quando è impostato UTM Campaign",
+  path: ['landingPageUrl']
+}).refine(data => {
   // Validazione AUTOMATIC MODE
   if (data.routingMode === 'automatic') {
     if (!data.workflowId) {
@@ -172,6 +181,147 @@ const DRIVER_COLORS: Record<string, string> = {
   'ENERGIA': 'hsl(280, 65%, 60%)',        // Light Purple
   'CUSTOMER_BASE': 'hsl(220, 90%, 56%)',  // Sky Blue
 };
+
+// GTM Snippet Tab Component
+function GTMSnippetTab({ campaignId, mode, stores }: { campaignId?: string | null; mode: 'create' | 'edit'; stores: any[] }) {
+  const { toast } = useToast();
+  const tenantId = useRequiredTenantId();
+
+  // Fetch campaign data to get store info
+  const { data: campaignData, isLoading: campaignLoading } = useQuery({
+    queryKey: [`/api/crm/campaigns/${campaignId}`],
+    enabled: mode === 'edit' && !!campaignId,
+  });
+
+  // Fetch GTM snippet from backend
+  const { data: snippetData, isLoading: snippetLoading } = useQuery({
+    queryKey: [`/api/stores/${campaignData?.data?.storeId}/gtm-snippet`],
+    enabled: mode === 'edit' && !!campaignData?.data?.storeId,
+  });
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "✅ Copiato!",
+        description: "GTM Snippet copiato negli appunti",
+      });
+    } catch (error) {
+      toast({
+        title: "❌ Errore",
+        description: "Impossibile copiare negli appunti",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (mode === 'create') {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+        <Zap className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+        <h4 className="font-semibold text-lg mb-2">GTM Snippet non ancora disponibile</h4>
+        <p className="text-sm text-muted-foreground">
+          Lo snippet GTM sarà disponibile dopo aver creato la campagna e salvato le configurazioni di tracking.
+        </p>
+      </div>
+    );
+  }
+
+  if (campaignLoading || snippetLoading) {
+    return <LoadingState message="Caricamento GTM Snippet..." />;
+  }
+
+  const store = stores.find(s => s.id === campaignData?.data?.storeId);
+  const snippet = snippetData?.data?.snippet || '';
+
+  if (!snippet) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+        <AlertCircle className="h-12 w-12 mx-auto text-yellow-400 mb-4" />
+        <h4 className="font-semibold text-lg mb-2">Nessuno snippet GTM configurato</h4>
+        <p className="text-sm text-muted-foreground">
+          Configura i tracking ID del negozio nelle impostazioni per generare lo snippet GTM.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 rounded-lg bg-gradient-to-r from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 border border-orange-200 dark:border-orange-800">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900">
+            <Zap className="h-5 w-5 text-orange-600 dark:text-orange-300" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-1">
+              Google Tag Manager Snippet
+            </h4>
+            <p className="text-xs text-orange-700 dark:text-orange-300">
+              Snippet GTM generato automaticamente per lo store <strong>{store?.name}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium">Snippet HTML</label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => copyToClipboard(snippet)}
+            data-testid="button-copy-gtm-snippet"
+            className="flex items-center gap-2"
+          >
+            <Copy className="h-4 w-4" />
+            Copia Snippet
+          </Button>
+        </div>
+
+        <pre className="p-4 rounded-lg bg-gray-900 dark:bg-gray-950 text-gray-100 text-xs overflow-x-auto border border-gray-700">
+          <code>{snippet}</code>
+        </pre>
+
+        <p className="text-xs text-muted-foreground mt-2">
+          💡 Incolla questo snippet nella sezione <code>&lt;head&gt;</code> della tua landing page per attivare il tracking GTM.
+        </p>
+      </div>
+
+      {/* Tracking IDs Info */}
+      <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <h5 className="text-sm font-semibold mb-3">Tracking IDs Configurati</h5>
+        <div className="grid grid-cols-2 gap-2">
+          {store?.ga4MeasurementId && (
+            <div className="text-xs">
+              <span className="text-muted-foreground">GA4:</span>{' '}
+              <code className="font-mono bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded">{store.ga4MeasurementId}</code>
+            </div>
+          )}
+          {store?.googleAdsConversionId && (
+            <div className="text-xs">
+              <span className="text-muted-foreground">Google Ads:</span>{' '}
+              <code className="font-mono bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded">{store.googleAdsConversionId}</code>
+            </div>
+          )}
+          {store?.facebookPixelId && (
+            <div className="text-xs">
+              <span className="text-muted-foreground">Facebook Pixel:</span>{' '}
+              <code className="font-mono bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded">{store.facebookPixelId}</code>
+            </div>
+          )}
+          {store?.tiktokPixelId && (
+            <div className="text-xs">
+              <span className="text-muted-foreground">TikTok Pixel:</span>{' '}
+              <code className="font-mono bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded">{store.tiktokPixelId}</code>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // UTM Links Tab Component
 function UTMLinksTab({ campaignId, mode }: { campaignId?: string | null; mode: 'create' | 'edit' }) {
@@ -1620,7 +1770,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                 />
               ) : (
                 <Tabs defaultValue="general" className="w-full">
-                  <TabsList className="grid grid-cols-6 w-full">
+                  <TabsList className="grid grid-cols-7 w-full">
                     <TabsTrigger value="general" data-testid="tab-general">
                       <Settings2 className="h-4 w-4 mr-1" />
                       Generale
@@ -1636,6 +1786,10 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                     <TabsTrigger value="privacy" data-testid="tab-privacy">
                       <Shield className="h-4 w-4 mr-1" />
                       Privacy
+                    </TabsTrigger>
+                    <TabsTrigger value="gtm-snippet" data-testid="tab-gtm-snippet" disabled={mode === 'create'}>
+                      <Zap className="h-4 w-4 mr-1" />
+                      GTM
                     </TabsTrigger>
                     <TabsTrigger value="utm-links" data-testid="tab-utm-links" disabled={mode === 'create'}>
                       <Link className="h-4 w-4 mr-1" />
@@ -1848,6 +2002,11 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode }: Camp
                       </div>
                     </div>
                   )}
+                </TabsContent>
+
+                {/* TAB: GTM SNIPPET */}
+                <TabsContent value="gtm-snippet" className="space-y-4 mt-4">
+                  <GTMSnippetTab campaignId={campaignId} mode={mode} stores={stores} />
                 </TabsContent>
 
                 {/* TAB: UTM LINKS */}

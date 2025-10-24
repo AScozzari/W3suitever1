@@ -120,6 +120,24 @@ const campaignFormSchema = z.object({
   message: "Landing Page URL obbligatorio quando Lead Source è 'Landing Page'",
   path: ['landingPageUrl']
 }).refine(data => {
+  // If marketing channels are selected, landing page URL is required
+  if (data.marketingChannels && data.marketingChannels.length > 0 && !data.landingPageUrl) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Landing Page URL obbligatorio quando sono selezionati canali marketing",
+  path: ['landingPageUrl']
+}).refine(data => {
+  // If UTM campaign is set, landing page URL is required
+  if (data.utmCampaign && data.utmCampaign.trim() !== '' && !data.landingPageUrl) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Landing Page URL obbligatorio quando è impostato UTM Campaign",
+  path: ['landingPageUrl']
+}).refine(data => {
   // Validazione AUTOMATIC MODE
   if (data.routingMode === 'automatic') {
     if (!data.workflowId) {
