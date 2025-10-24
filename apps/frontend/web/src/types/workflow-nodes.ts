@@ -448,6 +448,24 @@ export const CustomerRoutingConfigSchema = z.object({
   })).optional()
 });
 
+// Pipeline Assignment Configuration (assigns leads/deals to specific pipelines based on rules)
+export const PipelineAssignmentConfigSchema = z.object({
+  pipelineRules: z.array(z.object({
+    name: z.string().min(1, "Nome regola obbligatorio"),
+    pipelineId: z.string().uuid("Pipeline ID deve essere un UUID valido"),
+    pipelineName: z.string().optional(), // Display name (populated from pipelineId)
+    // Condizioni per l'assegnazione
+    productInterest: z.string().optional(), // Es: "Fibra 1000Mb", "Mobile 5G"
+    sourceChannel: z.string().optional(), // Es: "facebook", "instagram", "google_ads"
+    minScore: z.number().min(0).max(100).optional(), // Lead score minimo (0-100)
+    // Future expansion: location, campaign, etc.
+  })).default([]),
+  defaultPipelineId: z.string().uuid().optional(), // Fallback pipeline se nessuna regola matcha
+  defaultOwnerId: z.string().uuid().optional(), // Owner predefinito
+  escalateToManager: z.boolean().default(true), // Escalate se nessun owner trovato
+  storeId: z.string().uuid().optional() // Store scope per validazione permessi
+});
+
 // ==================== TYPE EXPORTS ====================
 
 export type EmailActionConfig = z.infer<typeof EmailActionConfigSchema>;
@@ -471,12 +489,13 @@ export type AILeadRoutingConfig = z.infer<typeof AILeadRoutingConfigSchema>;
 export type LeadRoutingConfig = z.infer<typeof LeadRoutingConfigSchema>;
 export type DealRoutingConfig = z.infer<typeof DealRoutingConfigSchema>;
 export type CustomerRoutingConfig = z.infer<typeof CustomerRoutingConfigSchema>;
+export type PipelineAssignmentConfig = z.infer<typeof PipelineAssignmentConfigSchema>;
 
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
 export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
 export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig | AILeadRoutingConfig;
 export type IntegrationConfig = MCPConnectorConfig;
-export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig;
+export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig | PipelineAssignmentConfig;
 
 export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig | RoutingConfig;
