@@ -204,56 +204,127 @@ export function MCPInstallWizard({ open, onClose, selectedTemplate }: MCPInstall
 
   const handleInstall = () => {
     if (sourceType === 'marketplace' && selectedServer) {
-      installMutation.mutate({
-        templateId: selectedServer.id,
-        sourceType: 'npm_package'
-      });
-    } else if (sourceType === 'github' && githubUrl && customName) {
-      installMutation.mutate({
-        name: customName,
-        sourceType: 'custom_source',
-        installMethod: 'git_clone',
-        sourceUrl: githubUrl
-      });
-    } else if (sourceType === 'zip' && zipFile && customName) {
-      // ZIP upload: read file and convert to base64
-      setCurrentStep('install'); // Advance to install step immediately
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64Data = reader.result?.toString().split(',')[1];
-        if (base64Data) {
-          installMutation.mutate({
-            name: customName,
-            sourceType: 'custom_source',
-            installMethod: 'zip_extract',
-            zipData: base64Data
-          });
-        } else {
+      // NPM package install
+      setCurrentStep('install');
+      fetch('/api/mcp/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateId: selectedServer.id
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.server) {
+            setInstalledServerId(data.server.id);
+            setInstallProgress({ status: 'complete', message: 'Installation complete!', progress: 100 });
+            setTimeout(() => setCurrentStep('configure'), 1000);
+          } else {
+            throw new Error(data.error || 'Installation failed');
+          }
+        })
+        .catch(error => {
+          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
           toast({
-            title: "File Processing Error",
-            description: "Failed to process ZIP file",
+            title: "Installation Failed",
+            description: error.message,
             variant: "destructive"
           });
-          setCurrentStep('select'); // Revert to select step on error
-        }
-      };
-      reader.onerror = () => {
-        toast({
-          title: "File Read Error",
-          description: "Failed to read ZIP file",
-          variant: "destructive"
         });
-        setCurrentStep('select'); // Revert to select step on error
-      };
-      reader.readAsDataURL(zipFile);
-      return; // Exit early as async operation is in progress
+    } else if (sourceType === 'github' && githubUrl && customName) {
+      // GitHub install
+      setCurrentStep('install');
+      fetch('/api/mcp/install-github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoUrl: githubUrl,
+          serverName: customName,
+          displayName: customName,
+          category: 'other'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.server) {
+            setInstalledServerId(data.server.id);
+            setInstallProgress({ status: 'complete', message: 'GitHub installation complete!', progress: 100 });
+            setTimeout(() => setCurrentStep('configure'), 1000);
+          } else {
+            throw new Error(data.error || 'Installation failed');
+          }
+        })
+        .catch(error => {
+          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
+          toast({
+            title: "GitHub Installation Failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        });
+    } else if (sourceType === 'zip' && zipFile && customName) {
+      // ZIP upload
+      setCurrentStep('install');
+      const formData = new FormData();
+      formData.append('file', zipFile);
+      formData.append('serverName', customName);
+      formData.append('displayName', customName);
+      formData.append('category', 'other');
+      
+      fetch('/api/mcp/install-zip', {
+        method: 'POST',
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.server) {
+            setInstalledServerId(data.server.id);
+            setInstallProgress({ status: 'complete', message: 'ZIP installation complete!', progress: 100 });
+            setTimeout(() => setCurrentStep('configure'), 1000);
+          } else {
+            throw new Error(data.error || 'Installation failed');
+          }
+        })
+        .catch(error => {
+          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
+          toast({
+            title: "ZIP Installation Failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        });
     } else if (sourceType === 'code' && customCode && customName) {
-      installMutation.mutate({
-        name: customName,
-        sourceType: 'custom_source',
-        installMethod: 'code_paste',
-        sourceCode: customCode
-      });
+      // Custom code install
+      setCurrentStep('install');
+      fetch('/api/mcp/install-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serverName: customName,
+          displayName: customName,
+          category: 'other',
+          code: customCode,
+          fileName: 'server.ts'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.server) {
+            setInstalledServerId(data.server.id);
+            setInstallProgress({ status: 'complete', message: 'Code installation complete!', progress: 100 });
+            setTimeout(() => setCurrentStep('configure'), 1000);
+          } else {
+            throw new Error(data.error || 'Installation failed');
+          }
+        })
+        .catch(error => {
+          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
+          toast({
+            title: "Code Installation Failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        });
     } else {
       toast({
         title: "Validation Error",
@@ -262,7 +333,6 @@ export function MCPInstallWizard({ open, onClose, selectedTemplate }: MCPInstall
       });
       return;
     }
-    setCurrentStep('install');
   };
 
   const handleConfigure = () => {
