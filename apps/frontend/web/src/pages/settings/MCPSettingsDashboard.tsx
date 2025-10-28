@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MCPInstallWizard } from '@/components/mcp/MCPInstallWizard';
+import { ServerDetailsPanel } from '@/components/mcp/ServerDetailsPanel';
 
 // Types
 interface MCPServer {
@@ -83,6 +84,8 @@ export default function MCPSettingsDashboard() {
   const [languageFilter, setLanguageFilter] = useState<string>('all');
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<MarketplaceTemplate | null>(null);
+  const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
+  const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
 
   // Fetch installed servers
   const { data: installedServers = [], isLoading: isLoadingServers } = useQuery<MCPServer[]>({
@@ -215,7 +218,13 @@ export default function MCPSettingsDashboard() {
               >
                 {filteredInstalledServers.map((server) => (
                   <motion.div key={server.id} variants={cardVariants}>
-                    <InstalledServerCard server={server} />
+                    <InstalledServerCard 
+                      server={server}
+                      onViewDetails={() => {
+                        setSelectedServerId(server.id);
+                        setDetailsPanelOpen(true);
+                      }}
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -304,12 +313,22 @@ export default function MCPSettingsDashboard() {
         }}
         selectedTemplate={selectedTemplate || undefined}
       />
+
+      {/* Details Panel */}
+      <ServerDetailsPanel
+        open={detailsPanelOpen}
+        onClose={() => {
+          setDetailsPanelOpen(false);
+          setSelectedServerId(null);
+        }}
+        serverId={selectedServerId}
+      />
     </div>
   );
 }
 
 // Installed Server Card Component (Task 14)
-function InstalledServerCard({ server }: { server: MCPServer }) {
+function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onViewDetails: () => void }) {
   const statusConfig = {
     active: {
       color: 'text-green-700',
@@ -391,10 +410,11 @@ function InstalledServerCard({ server }: { server: MCPServer }) {
             variant="outline" 
             size="sm" 
             className="flex-1"
-            data-testid={`button-configure-${server.id}`}
+            onClick={onViewDetails}
+            data-testid={`button-view-details-${server.id}`}
           >
             <Settings className="h-3.5 w-3.5 mr-1.5" />
-            Configure
+            Details
           </Button>
           <Button 
             variant="outline" 
