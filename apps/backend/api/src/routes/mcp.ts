@@ -113,6 +113,42 @@ router.get('/servers', requirePermission('mcp.read'), async (req: Request, res: 
 });
 
 /**
+ * GET /api/mcp/servers/by-tool/:toolName
+ * Get MCP servers that have a specific tool
+ * Used by Workflow Builder to show relevant servers for node configuration
+ */
+router.get('/servers/by-tool/:toolName', requirePermission('mcp.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const toolName = req.params.toolName;
+    
+    // Get all active servers with discovered tools
+    const servers = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.tenantId, tenantId),
+        eq(mcpServers.status, 'active')
+      ))
+      .orderBy(desc(mcpServers.createdAt));
+    
+    // Filter servers that have this tool in discoveredTools
+    const serversWithTool = servers.filter(server => {
+      const discoveredTools = server.discoveredTools as any[] | null;
+      if (!discoveredTools || !Array.isArray(discoveredTools)) return false;
+      
+      return discoveredTools.some((tool: any) => 
+        tool.name === toolName || tool.name?.toLowerCase() === toolName.toLowerCase()
+      );
+    });
+    
+    res.json(serversWithTool);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch MCP servers by tool');
+  }
+});
+
+/**
  * GET /api/mcp/servers/:id
  * Get single MCP server details
  */
