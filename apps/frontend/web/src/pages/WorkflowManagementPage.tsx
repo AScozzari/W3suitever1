@@ -20,7 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics } from '../hooks/useWorkflowDashboard';
 import WorkflowBuilder from '../components/WorkflowBuilder';
-import { QueueMetricsPanel, WorkflowExecutionDrawer, WorkflowAnalyticsDashboard, MCPSettingsTab } from '@/components/workflow';
+import { QueueMetricsPanel, WorkflowExecutionDrawer, WorkflowAnalyticsDashboard } from '@/components/workflow';
+import MCPSettingsDashboard from './settings/MCPSettingsDashboard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
 import '../styles/workflow-builder.css';
@@ -1621,8 +1622,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
             </div>
           )}
 
-          {/* 🔧 MCP SETTINGS VIEW - Integration Credentials */}
-          {activeView === 'settings' && <MCPSettingsTab />}
+          {/* 🔧 MCP SETTINGS VIEW - MCP Server Management Dashboard */}
+          {activeView === 'settings' && <MCPSettingsDashboard />}
         </div>
       </div>
 
