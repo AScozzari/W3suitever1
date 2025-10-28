@@ -45,6 +45,11 @@ export interface MCPServerTemplate {
   // Trust metadata
   trustLevel: 'official' | 'verified' | 'community';
   securityNotes?: string; // Warnings or special security considerations
+  
+  // Verified Developer & Rating (for curated community servers)
+  rating?: number; // 0-5 rating (e.g., 4.5)
+  developer?: string; // GitHub username or organization (e.g., 'taylorwilsdon', 'stape-io')
+  sourceType?: string; // Package source (e.g., 'npm', 'pip', 'docker', 'remote')
 }
 
 export class MCPMarketplaceRegistry {
@@ -287,7 +292,10 @@ export class MCPMarketplaceRegistry {
         'slides_generate'
       ],
       trustLevel: 'verified',
-      securityNotes: 'Developed by verified developer Taylor Wilsdon. 696+ GitHub stars. Production-grade OAuth implementation.'
+      securityNotes: 'Developed by verified developer Taylor Wilsdon. 696+ GitHub stars. Production-grade OAuth implementation.',
+      rating: 4.5,
+      developer: 'taylorwilsdon',
+      sourceType: 'PyPI'
     },
     {
       id: 'google-tag-manager-mcp',
@@ -323,7 +331,10 @@ export class MCPMarketplaceRegistry {
         'version_control'
       ],
       trustLevel: 'verified',
-      securityNotes: 'Developed by Stape analytics team. Enterprise-grade, actively maintained. Praised by analytics professionals.'
+      securityNotes: 'Developed by Stape analytics team. Enterprise-grade, actively maintained. Praised by analytics professionals.',
+      rating: 5.0,
+      developer: 'stape-io',
+      sourceType: 'Remote'
     }
   ];
 

@@ -19,7 +19,9 @@ import {
   Shield,
   ShieldCheck,
   AlertTriangle,
-  Lock
+  Lock,
+  Star,
+  User
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MCPInstallWizard } from '@/components/mcp/MCPInstallWizard';
@@ -59,6 +61,9 @@ interface MarketplaceTemplate {
   securityNotes?: string;
   exampleTools?: string[];
   repoUrl?: string;
+  rating?: number;
+  developer?: string;
+  sourceType?: string;
 }
 
 // Framer Motion Variants
@@ -530,13 +535,30 @@ function AvailableServerCard({ template, onInstall }: { template: MarketplaceTem
               </div>
             )}
             <div>
-              <h3 className="font-semibold text-gray-900">{template.displayName}</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold text-gray-900">{template.displayName}</h3>
+                {/* Rating Stars */}
+                {template.rating && (
+                  <div className="flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                    <span className="text-xs font-medium text-gray-700">{template.rating.toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                 {/* Trust Level Badge */}
                 <Badge variant="outline" className={`text-xs border ${trust.badge.className}`}>
                   <TrustIcon className="h-3 w-3 mr-1" />
                   {trust.badge.label}
                 </Badge>
+                
+                {/* Verified Developer Badge */}
+                {template.developer && (
+                  <Badge variant="outline" className="text-xs border bg-violet-100 text-violet-700 border-violet-300">
+                    <User className="h-3 w-3 mr-1" />
+                    {template.developer}
+                  </Badge>
+                )}
                 
                 {/* Auth Type Badge */}
                 <Badge variant="outline" className={`text-xs border ${auth.className}`}>
@@ -559,10 +581,18 @@ function AvailableServerCard({ template, onInstall }: { template: MarketplaceTem
         </p>
 
         {/* Metadata Row */}
-        <div className="flex items-center gap-3 mb-4 text-xs text-gray-500">
+        <div className="flex items-center gap-3 mb-4 text-xs text-gray-500 flex-wrap">
           <span>Transport: {template.transport === 'stdio' ? 'stdio' : 'HTTP-SSE'}</span>
           <span>•</span>
           <span>Package: {template.packageManager}</span>
+          {template.sourceType && (
+            <>
+              <span>•</span>
+              <Badge variant="outline" className="text-xs bg-gray-50">
+                {template.sourceType}
+              </Badge>
+            </>
+          )}
         </div>
 
         {/* Example Tools */}
