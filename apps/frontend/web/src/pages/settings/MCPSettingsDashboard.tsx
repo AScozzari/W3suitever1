@@ -360,8 +360,16 @@ function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onV
     }
   };
 
+  const sourceTypeConfig: Record<string, { label: string; color: string }> = {
+    npm_package: { label: 'NPM', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    github_repo: { label: 'GitHub', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    zip_upload: { label: 'ZIP', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+    custom_code: { label: 'Custom', color: 'bg-pink-100 text-pink-700 border-pink-200' }
+  };
+
   const status = statusConfig[server.status];
   const StatusIcon = status.icon;
+  const sourceType = sourceTypeConfig[server.sourceType] || sourceTypeConfig['npm_package'];
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200/60 hover:border-[#FF6900]/30 bg-white/80 backdrop-blur-sm">
@@ -376,9 +384,14 @@ function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onV
                 <Server className="h-6 w-6 text-[#FF6900]" />
               </div>
             )}
-            <div>
+            <div className="flex-1">
               <h3 className="font-semibold text-gray-900">{server.displayName}</h3>
-              <p className="text-xs text-gray-500">{server.category}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-gray-500">{server.category}</p>
+                <Badge variant="outline" className={`text-xs border ${sourceType.color}`}>
+                  {sourceType.label}
+                </Badge>
+              </div>
             </div>
           </div>
 
