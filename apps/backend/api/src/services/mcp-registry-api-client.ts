@@ -16,7 +16,7 @@ interface MCPRegistryServer {
   description?: string;
   version?: string;
   packages?: Array<{
-    registry_type: 'npm' | 'pypi' | 'docker' | 'github';
+    registryType: 'npm' | 'pypi' | 'oci' | 'github'; // FIXED: API uses camelCase 'registryType'
     identifier: string; // Package name or repo URL
     version?: string;
   }>;
@@ -43,7 +43,9 @@ interface MCPRegistryServer {
 }
 
 interface MCPRegistryResponse {
-  data: MCPRegistryServer[];
+  servers: Array<{
+    server: MCPRegistryServer;
+  }>;
   pagination?: {
     total: number;
     limit: number;
@@ -99,13 +101,16 @@ export class MCPRegistryAPIClient {
 
       const data: MCPRegistryResponse = await response.json();
       
+      // Extract servers from nested structure
+      const servers = (data.servers || []).map(item => item.server);
+      
       logger.info('✅ [MCP Registry] Servers fetched', {
-        count: data.data?.length || 0,
+        count: servers.length,
         total: data.pagination?.total
       });
 
       // Transform to our internal format
-      return this.transformToTemplates(data.data || []);
+      return this.transformToTemplates(servers);
     } catch (error: any) {
       logger.error('❌ [MCP Registry] Search failed', {
         error: error.message,
@@ -168,11 +173,11 @@ export class MCPRegistryAPIClient {
    */
   private static transformServer(server: MCPRegistryServer): MCPServerTemplate | null {
     try {
-      // Extract primary package (prefer npm > pypi > docker > github)
-      const npmPkg = server.packages?.find(p => p.registry_type === 'npm');
-      const pypiPkg = server.packages?.find(p => p.registry_type === 'pypi');
-      const dockerPkg = server.packages?.find(p => p.registry_type === 'docker');
-      const githubPkg = server.packages?.find(p => p.registry_type === 'github');
+      // Extract primary package (prefer npm > pypi > oci/docker > github)
+      const npmPkg = server.packages?.find(p => p.registryType === 'npm');
+      const pypiPkg = server.packages?.find(p => p.registryType === 'pypi');
+      const dockerPkg = server.packages?.find(p => p.registryType === 'oci');
+      const githubPkg = server.packages?.find(p => p.registryType === 'github');
       
       const primaryPkg = npmPkg || pypiPkg || dockerPkg || githubPkg;
 
