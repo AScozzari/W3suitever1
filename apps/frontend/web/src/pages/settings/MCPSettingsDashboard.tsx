@@ -130,7 +130,7 @@ export default function MCPSettingsDashboard() {
               </div>
             </div>
 
-            {/* Status Summary */}
+            {/* Status Summary + Add Server Button */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -148,6 +148,16 @@ export default function MCPSettingsDashboard() {
                   <span className="text-sm font-medium text-red-700">{errorServers} Error</span>
                 </div>
               )}
+
+              {/* Add New Server Button - Always Visible */}
+              <Button 
+                onClick={() => setWizardOpen(true)}
+                className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] text-white shadow-lg hover:shadow-xl transition-all"
+                data-testid="button-add-server"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Server
+              </Button>
             </div>
           </div>
         </div>
