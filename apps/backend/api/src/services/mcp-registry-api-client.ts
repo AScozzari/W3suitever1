@@ -180,23 +180,21 @@ export class MCPRegistryAPIClient {
       const githubPkg = server.packages?.find(p => p.registryType === 'github');
       
       const primaryPkg = npmPkg || pypiPkg || dockerPkg || githubPkg;
+      const hasRemotes = (server.remotes?.length || 0) > 0;
 
-      if (!primaryPkg) {
-        // No installable package, skip
+      // FIXED: Accept both package-based AND remotes-only servers
+      if (!primaryPkg && !hasRemotes) {
+        // Skip only if server has NEITHER package NOR remotes
         return null;
       }
 
-      // Determine language from package type
+      // Determine language from package type (default to TypeScript for remotes-only)
       const language = npmPkg ? 'typescript' : pypiPkg ? 'python' : 'typescript';
-      const packageManager = npmPkg ? 'npm' : pypiPkg ? 'pip' : 'docker';
+      const packageManager = npmPkg ? 'npm' : pypiPkg ? 'pip' : dockerPkg ? 'docker' : 'none';
 
-      // Determine transport (FIXED: respect remotes correctly)
-      // If server has installable packages (npm/pypi/docker), it can run via stdio
-      // If server ONLY exposes HTTP/SSE remotes (no packages), use http-sse
-      const hasInstallablePackage = !!(npmPkg || pypiPkg || dockerPkg);
-      const hasRemotes = (server.remotes?.length || 0) > 0;
-      
+      // Determine transport
       // Priority: installable packages prefer stdio, remotes-only use http-sse
+      const hasInstallablePackage = !!(npmPkg || pypiPkg || dockerPkg);
       const transport = hasInstallablePackage ? 'stdio' : hasRemotes ? 'http-sse' : 'stdio';
 
       // Map auth type
@@ -216,8 +214,8 @@ export class MCPRegistryAPIClient {
         category,
         language,
         packageManager,
-        packageName: primaryPkg.identifier,
-        version: primaryPkg.version || server.version || 'latest',
+        packageName: primaryPkg?.identifier || server.name, // Use server name for remotes-only
+        version: primaryPkg?.version || server.version || 'latest',
         authType,
         iconUrl: server.metadata?.icon,
         officialSupport: false, // Registry servers are not official Anthropic
@@ -226,7 +224,9 @@ export class MCPRegistryAPIClient {
         repoUrl: server.metadata?.repository,
         installHints: {
           envVars: server.auth?.type === 'api_key' ? ['API_KEY'] : [],
-          postInstallNotes: `Community server from ${server.name}`
+          postInstallNotes: hasInstallablePackage 
+            ? `Community server from ${server.name}` 
+            : `Remote-only server (HTTP/SSE). Connection URL: ${server.remotes?.[0]?.url || 'See documentation'}`
         },
         oauthConfig: server.auth?.type === 'oauth2' ? {
           scopes: server.auth.scopes || [],
