@@ -15,6 +15,27 @@
 import { BaseNodeDefinition } from '../types/workflow-nodes';
 import { z } from 'zod';
 
+// 🔧 MCP Server Configuration Schema Helper
+// Shared schema fragment for all OUTBOUND MCP nodes to ensure consistency
+export const MCP_SERVER_CONFIG = {
+  schema: {
+    serverId: z.string().min(1, 'MCP Server connection required'),
+    toolName: z.string().optional(), // Can be derived from node ID if not provided
+  },
+  defaults: {
+    serverId: '',
+    toolName: '',
+  }
+} as const;
+
+// Helper to merge server config with node-specific config
+export function withServerConfig<T extends z.ZodRawShape>(nodeSchema: T) {
+  return z.object({
+    ...MCP_SERVER_CONFIG.schema,
+    ...nodeSchema
+  });
+}
+
 // 🎨 Ecosystem Colors & Badges
 export const MCP_ECOSYSTEMS = {
   google: { badge: '[G]', color: '#4285F4', name: 'Google Workspace' },
@@ -36,16 +57,14 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'google',
     icon: 'Mail',
     color: MCP_ECOSYSTEMS.google.color,
-    version: '1.0.0',
-    configSchema: z.object({
-      serverId: z.string().min(1, 'MCP Server connection required'),
-      toolName: z.string().default('gmail_send'),
+    version: '1.1.0', // Updated for server config support
+    configSchema: withServerConfig({
       to: z.array(z.string().email()),
       subject: z.string(),
       body: z.string(),
       attachments: z.array(z.string()).optional()
     }),
-    defaultConfig: { serverId: '', toolName: 'gmail_send', to: [], subject: '', body: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: [], subject: '', body: '' }
   },
   {
     id: 'mcp-google-drive-upload',
@@ -55,14 +74,14 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'google',
     icon: 'Upload',
     color: MCP_ECOSYSTEMS.google.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       fileName: z.string(),
       fileContent: z.string(),
       folderId: z.string().optional(),
       mimeType: z.string().optional()
     }),
-    defaultConfig: { fileName: '', fileContent: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, fileName: '', fileContent: '' }
   },
   {
     id: 'mcp-google-calendar-create',
@@ -72,15 +91,15 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'google',
     icon: 'Calendar',
     color: MCP_ECOSYSTEMS.google.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       summary: z.string(),
       startDateTime: z.string(),
       endDateTime: z.string(),
       calendarId: z.string().optional(), // Default: 'primary' (backend magic value)
       attendees: z.array(z.string().email()).optional()
     }),
-    defaultConfig: { summary: '', startDateTime: '', endDateTime: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, summary: '', startDateTime: '', endDateTime: '' }
   },
   {
     id: 'mcp-google-sheets-append',
@@ -90,13 +109,13 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'google',
     icon: 'Table',
     color: MCP_ECOSYSTEMS.google.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       spreadsheetId: z.string(),
       range: z.string(),
       values: z.array(z.array(z.any()))
     }),
-    defaultConfig: { spreadsheetId: '', range: 'Sheet1!A1', values: [[]] }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, spreadsheetId: '', range: 'Sheet1!A1', values: [[]] }
   },
   {
     id: 'mcp-google-docs-create',
@@ -106,12 +125,12 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'google',
     icon: 'FileText',
     color: MCP_ECOSYSTEMS.google.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       title: z.string(),
       content: z.string()
     }),
-    defaultConfig: { title: '', content: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, title: '', content: '' }
   }
 ];
 
@@ -125,15 +144,15 @@ export const AWS_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'aws',
     icon: 'Database',
     color: MCP_ECOSYSTEMS.aws.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       bucket: z.string(),
       key: z.string(),
       body: z.string(),
       contentType: z.string().optional(),
       acl: z.string().optional()
     }),
-    defaultConfig: { bucket: '', key: '', body: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, bucket: '', key: '', body: '' }
   },
   {
     id: 'mcp-aws-lambda-invoke',
@@ -143,13 +162,13 @@ export const AWS_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'aws',
     icon: 'Zap',
     color: MCP_ECOSYSTEMS.aws.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       functionName: z.string(),
       payload: z.record(z.any()),
       invocationType: z.enum(['RequestResponse', 'Event', 'DryRun']).optional()
     }),
-    defaultConfig: { functionName: '', payload: {}, invocationType: 'RequestResponse' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, functionName: '', payload: {}, invocationType: 'RequestResponse' }
   },
   {
     id: 'mcp-aws-sns-publish',
@@ -159,13 +178,13 @@ export const AWS_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'aws',
     icon: 'MessageSquare',
     color: MCP_ECOSYSTEMS.aws.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       topicArn: z.string(),
       message: z.string(),
       subject: z.string().optional()
     }),
-    defaultConfig: { topicArn: '', message: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, topicArn: '', message: '' }
   },
   {
     id: 'mcp-aws-sqs-send',
@@ -175,13 +194,13 @@ export const AWS_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'aws',
     icon: 'Inbox',
     color: MCP_ECOSYSTEMS.aws.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       queueUrl: z.string(),
       messageBody: z.string(),
       delaySeconds: z.number().optional()
     }),
-    defaultConfig: { queueUrl: '', messageBody: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, queueUrl: '', messageBody: '' }
   },
   {
     id: 'mcp-aws-dynamodb-put',
@@ -191,12 +210,12 @@ export const AWS_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'aws',
     icon: 'Database',
     color: MCP_ECOSYSTEMS.aws.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       tableName: z.string(),
       item: z.record(z.any())
     }),
-    defaultConfig: { tableName: '', item: {} }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, tableName: '', item: {} }
   }
 ];
 
@@ -210,14 +229,14 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'meta',
     icon: 'Image',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       caption: z.string(),
       imageUrl: z.string().url(),
       coverUrl: z.string().url().optional()
     }),
-    defaultConfig: { caption: '', imageUrl: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, caption: '', imageUrl: '' }
   },
   {
     id: 'mcp-meta-instagram-story',
@@ -227,14 +246,14 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'meta',
     icon: 'Camera',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       mediaUrl: z.string().url(),
       mediaType: z.enum(['IMAGE', 'VIDEO']),
       coverUrl: z.string().url().optional()
     }),
-    defaultConfig: { mediaUrl: '', mediaType: 'IMAGE' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, mediaUrl: '', mediaType: 'IMAGE' }
   },
   {
     id: 'mcp-meta-instagram-comment',
@@ -244,13 +263,13 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'meta',
     icon: 'MessageCircle',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       commentId: z.string(),
       message: z.string()
     }),
-    defaultConfig: { commentId: '', message: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, commentId: '', message: '' }
   },
   {
     id: 'mcp-meta-instagram-message',
@@ -260,13 +279,13 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'meta',
     icon: 'Send',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       recipientId: z.string(),
       message: z.string()
     }),
-    defaultConfig: { recipientId: '', message: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, recipientId: '', message: '' }
   }
 ];
 
@@ -280,14 +299,14 @@ export const MICROSOFT_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'microsoft',
     icon: 'Mail',
     color: MCP_ECOSYSTEMS.microsoft.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       to: z.array(z.string().email()),
       subject: z.string(),
       body: z.string(),
       bodyType: z.enum(['Text', 'HTML']).optional()
     }),
-    defaultConfig: { to: [], subject: '', body: '', bodyType: 'HTML' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: [], subject: '', body: '', bodyType: 'HTML' }
   },
   {
     id: 'mcp-ms-onedrive-upload',
@@ -297,13 +316,13 @@ export const MICROSOFT_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'microsoft',
     icon: 'Upload',
     color: MCP_ECOSYSTEMS.microsoft.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       fileName: z.string(),
       fileContent: z.string(),
       folderId: z.string().optional()
     }),
-    defaultConfig: { fileName: '', fileContent: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, fileName: '', fileContent: '' }
   },
   {
     id: 'mcp-ms-teams-message',
@@ -313,12 +332,12 @@ export const MICROSOFT_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'microsoft',
     icon: 'MessageSquare',
     color: MCP_ECOSYSTEMS.microsoft.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       channelId: z.string(),
       message: z.string()
     }),
-    defaultConfig: { channelId: '', message: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, channelId: '', message: '' }
   }
 ];
 
@@ -332,14 +351,14 @@ export const STRIPE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'stripe',
     icon: 'CreditCard',
     color: MCP_ECOSYSTEMS.stripe.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       amount: z.number(),
       currency: z.string(),
       description: z.string().optional(),
       metadata: z.record(z.string()).optional()
     }),
-    defaultConfig: { amount: 0, currency: 'eur' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, amount: 0, currency: 'eur' }
   },
   {
     id: 'mcp-stripe-subscription-create',
@@ -349,13 +368,13 @@ export const STRIPE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'stripe',
     icon: 'Repeat',
     color: MCP_ECOSYSTEMS.stripe.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       customerId: z.string(),
       priceId: z.string(),
       trialDays: z.number().optional()
     }),
-    defaultConfig: { customerId: '', priceId: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, customerId: '', priceId: '' }
   },
   {
     id: 'mcp-stripe-invoice-create',
@@ -365,8 +384,8 @@ export const STRIPE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'stripe',
     icon: 'FileText',
     color: MCP_ECOSYSTEMS.stripe.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       customerId: z.string(),
       items: z.array(z.object({
         description: z.string(),
@@ -374,7 +393,7 @@ export const STRIPE_OUTBOUND_NODES: BaseNodeDefinition[] = [
         quantity: z.number()
       }))
     }),
-    defaultConfig: { customerId: '', items: [] }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, customerId: '', items: [] }
   }
 ];
 
@@ -556,14 +575,14 @@ export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'gtm',
     icon: 'Activity',
     color: MCP_ECOSYSTEMS.gtm.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       eventName: z.string(),
       eventCategory: z.string().optional(),
       eventLabel: z.string().optional(),
       eventValue: z.number().optional()
     }),
-    defaultConfig: { eventName: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, eventName: '' }
   },
   {
     id: 'mcp-gtm-track-pageview',
@@ -573,13 +592,13 @@ export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'gtm',
     icon: 'Eye',
     color: MCP_ECOSYSTEMS.gtm.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       pageUrl: z.string(),
       pageTitle: z.string().optional(),
       referrer: z.string().optional()
     }),
-    defaultConfig: { pageUrl: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, pageUrl: '' }
   },
   {
     id: 'mcp-gtm-track-conversion',
@@ -589,13 +608,13 @@ export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'gtm',
     icon: 'Target',
     color: MCP_ECOSYSTEMS.gtm.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       conversionLabel: z.string(),
       conversionValue: z.number().optional(),
       currency: z.string().optional()
     }),
-    defaultConfig: { conversionLabel: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, conversionLabel: '' }
   },
   {
     id: 'mcp-gtm-setup-tag',
@@ -605,14 +624,14 @@ export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'gtm',
     icon: 'Tags',
     color: MCP_ECOSYSTEMS.gtm.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       tagName: z.string(),
       tagType: z.string(),
       accountId: z.string(),
       containerId: z.string()
     }),
-    defaultConfig: { tagName: '', tagType: '', accountId: '', containerId: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, tagName: '', tagType: '', accountId: '', containerId: '' }
   },
   {
     id: 'mcp-gtm-update-tag',
@@ -622,13 +641,13 @@ export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'gtm',
     icon: 'Edit',
     color: MCP_ECOSYSTEMS.gtm.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       tagId: z.string(),
       tagName: z.string().optional(),
       tagConfiguration: z.record(z.any()).optional()
     }),
-    defaultConfig: { tagId: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, tagId: '' }
   },
   {
     id: 'mcp-gtm-delete-tag',
@@ -638,13 +657,13 @@ export const GTM_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'gtm',
     icon: 'Trash2',
     color: MCP_ECOSYSTEMS.gtm.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       tagId: z.string(),
       accountId: z.string(),
       containerId: z.string()
     }),
-    defaultConfig: { tagId: '', accountId: '', containerId: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, tagId: '', accountId: '', containerId: '' }
   }
 ];
 
@@ -876,12 +895,12 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Search',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       query: z.string(),
       parameters: z.array(z.any()).optional()
     }),
-    defaultConfig: { query: 'SELECT * FROM table_name' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, query: 'SELECT * FROM table_name' }
   },
   {
     id: 'mcp-postgresql-execute-raw-sql',
@@ -891,12 +910,12 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Terminal',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       sql: z.string(),
       parameters: z.array(z.any()).optional()
     }),
-    defaultConfig: { sql: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, sql: '' }
   },
   {
     id: 'mcp-postgresql-insert-row',
@@ -906,13 +925,13 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'PlusCircle',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       table: z.string(),
       data: z.record(z.any()),
       returning: z.array(z.string()).optional()
     }),
-    defaultConfig: { table: '', data: {} }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, table: '', data: {} }
   },
   {
     id: 'mcp-postgresql-update-row',
@@ -922,14 +941,14 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Edit',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       table: z.string(),
       where: z.record(z.any()),
       data: z.record(z.any()),
       returning: z.array(z.string()).optional()
     }),
-    defaultConfig: { table: '', where: {}, data: {} }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, table: '', where: {}, data: {} }
   },
   {
     id: 'mcp-postgresql-delete-row',
@@ -939,13 +958,13 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Trash2',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       table: z.string(),
       where: z.record(z.any()),
       returning: z.array(z.string()).optional()
     }),
-    defaultConfig: { table: '', where: {} }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, table: '', where: {} }
   },
   {
     id: 'mcp-postgresql-begin-transaction',
@@ -955,11 +974,11 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Lock',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       isolationLevel: z.enum(['READ UNCOMMITTED', 'READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE']).optional()
     }),
-    defaultConfig: {}
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults }
   },
   {
     id: 'mcp-postgresql-commit-transaction',
@@ -969,11 +988,11 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Check',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       transactionId: z.string()
     }),
-    defaultConfig: { transactionId: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, transactionId: '' }
   },
   {
     id: 'mcp-postgresql-rollback-transaction',
@@ -983,11 +1002,11 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'RotateCcw',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       transactionId: z.string()
     }),
-    defaultConfig: { transactionId: '' }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, transactionId: '' }
   },
   {
     id: 'mcp-postgresql-create-table',
@@ -997,8 +1016,8 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
     ecosystem: 'postgresql',
     icon: 'Table',
     color: MCP_ECOSYSTEMS.postgresql.color,
-    version: '1.0.0',
-    configSchema: z.object({
+    version: '1.1.0',
+    configSchema: withServerConfig({
       tableName: z.string(),
       columns: z.array(z.object({
         name: z.string(),
@@ -1007,7 +1026,7 @@ export const POSTGRESQL_OUTBOUND_NODES: BaseNodeDefinition[] = [
       })),
       ifNotExists: z.boolean().optional()
     }),
-    defaultConfig: { tableName: '', columns: [] }
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, tableName: '', columns: [] }
   }
 ];
 

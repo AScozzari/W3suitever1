@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Plus, Trash2, Info, Sparkles, Search, Check } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
 import MCPNodeConfigModal from './MCPNodeConfigModal';
+import { MCPServerSelector } from './mcp/MCPServerSelector';
 
 interface NodeConfigPanelProps {
   node: Node | null;
@@ -2823,12 +2824,6 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
   );
   const [fallbackValue, setFallbackValue] = useState(config.errorHandling?.fallbackValue || '');
   
-  // Fetch MCP servers
-  const { data: servers = [], isLoading: serversLoading } = useQuery({
-    queryKey: ['/api/mcp/servers'],
-    enabled: true
-  });
-  
   // Fetch tools when server selected
   const { data: tools = [], isLoading: toolsLoading, refetch: refetchTools } = useQuery({
     queryKey: ['/api/mcp/servers', serverId, 'tools'],
@@ -2842,10 +2837,9 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
   });
   
   // Handle server selection
-  const handleServerChange = (newServerId: string) => {
+  const handleServerChange = (newServerId: string | null, newServerName: string | null) => {
     setServerId(newServerId);
-    const selectedServer = servers.find((s: any) => s.id === newServerId);
-    setServerName(selectedServer?.name || null);
+    setServerName(newServerName);
     // Reset tool selection
     setToolName(null);
     setToolDescription(null);
@@ -2976,49 +2970,28 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
         </div>
       </div>
       
-      {/* Server Selection */}
+      {/* Server Selection with new MCPServerSelector */}
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
-          🌐 MCP Server <span className="text-red-500">*</span>
+          🌐 MCP Connection <span className="text-red-500">*</span>
           <InfoTooltip
-            title="MCP Server"
-            description="Seleziona il server MCP configurato per accedere ai suoi tools. I server devono essere configurati dal System Admin."
+            title="MCP Connection"
+            description="Select a configured MCP server to access its tools. Servers must be configured by the System Admin in Settings → MCP."
             examples={[
-              "Google Workspace - Gmail, Calendar, Drive",
-              "AWS S3 - Object Storage",
-              "Meta/Instagram - Social Media Publishing"
+              "Google Workspace (mario@windtre.it) - Gmail, Calendar, Drive",
+              "AWS S3 (production) - Object Storage",
+              "Meta/Instagram (brand_account) - Social Media Publishing"
             ]}
           />
         </label>
         
-        {serversLoading ? (
-          <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500">
-            ⏳ Caricamento server...
-          </div>
-        ) : servers.length === 0 ? (
-          <div className="w-full px-4 py-3 border-2 border-yellow-200 rounded-lg bg-yellow-50 text-sm text-yellow-800">
-            ⚠️ Nessun server MCP configurato. Contatta il System Admin.
-          </div>
-        ) : (
-          <Select value={serverId || ''} onValueChange={handleServerChange}>
-            <SelectTrigger data-testid="select-mcp-server">
-              <SelectValue placeholder="Seleziona server MCP..." />
-            </SelectTrigger>
-            <SelectContent>
-              {servers.map((server: any) => (
-                <SelectItem key={server.id} value={server.id}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{server.name}</span>
-                    <Badge variant="outline" className="text-xs">{server.provider}</Badge>
-                    {server.status === 'disabled' && (
-                      <span className="text-xs text-red-500">(Disabilitato)</span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <MCPServerSelector
+          value={serverId}
+          onChange={handleServerChange}
+          placeholder="Select MCP connection..."
+          testId="select-mcp-server"
+          onlyActive={false}
+        />
       </div>
       
       {/* Tool Selection */}
