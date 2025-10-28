@@ -91,6 +91,7 @@ export default function MCPSettingsDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [languageFilter, setLanguageFilter] = useState<string>('all');
+  const [transportFilter, setTransportFilter] = useState<string>('all');
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<MarketplaceTemplate | null>(null);
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
@@ -103,7 +104,7 @@ export default function MCPSettingsDashboard() {
 
   // Fetch marketplace templates
   const { data: marketplaceTemplates = [], isLoading: isLoadingMarketplace } = useQuery<MarketplaceTemplate[]>({
-    queryKey: ['/api/mcp/marketplace', { search: searchQuery, category: categoryFilter !== 'all' ? categoryFilter : undefined, language: languageFilter !== 'all' ? languageFilter : undefined }],
+    queryKey: ['/api/mcp/marketplace', { search: searchQuery, category: categoryFilter !== 'all' ? categoryFilter : undefined, language: languageFilter !== 'all' ? languageFilter : undefined, transport: transportFilter !== 'all' ? transportFilter : undefined }],
   });
 
   // Filter installed servers by search
@@ -290,6 +291,17 @@ export default function MCPSettingsDashboard() {
                 <option value="all">All Languages</option>
                 <option value="typescript">TypeScript</option>
                 <option value="python">Python</option>
+              </select>
+
+              <select 
+                value={transportFilter}
+                onChange={(e) => setTransportFilter(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6900]/20"
+                data-testid="select-transport-filter"
+              >
+                <option value="all">All Types</option>
+                <option value="stdio">Package-Based (stdio)</option>
+                <option value="http-sse">Remote-Only (HTTP/SSE)</option>
               </select>
             </div>
 

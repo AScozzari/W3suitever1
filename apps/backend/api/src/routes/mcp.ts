@@ -544,7 +544,7 @@ router.get('/stats', requirePermission('mcp.read'), async (req: Request, res: Re
  */
 router.get('/marketplace', requirePermission('mcp.read'), async (req: Request, res: Response) => {
   try {
-    const { category, language, trustLevel, authType, search, includeRegistry } = req.query;
+    const { category, language, trustLevel, authType, search, transport, includeRegistry } = req.query;
     
     // Fetch from hybrid marketplace (curated + MCP Registry)
     const templates = await MCPHybridMarketplaceService.getAllServers({
@@ -553,6 +553,7 @@ router.get('/marketplace', requirePermission('mcp.read'), async (req: Request, r
       language: typeof language === 'string' ? language as any : undefined,
       trustLevel: typeof trustLevel === 'string' ? trustLevel as any : undefined,
       authType: typeof authType === 'string' ? authType : undefined,
+      transport: typeof transport === 'string' ? transport as any : undefined,
       includeRegistry: includeRegistry === 'false' ? false : true // Default: true
     });
     

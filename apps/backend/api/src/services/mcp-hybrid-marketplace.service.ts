@@ -25,6 +25,7 @@ export interface MarketplaceSearchParams {
   trustLevel?: 'official' | 'verified' | 'community';
   authType?: string;
   language?: 'typescript' | 'python' | 'go' | 'rust';
+  transport?: 'stdio' | 'http-sse';
   includeRegistry?: boolean; // Default: true
 }
 
@@ -328,6 +329,11 @@ export class MCPHybridMarketplaceService {
     // Auth type filter
     if (params.authType) {
       filtered = filtered.filter(s => s.authType === params.authType);
+    }
+
+    // Transport filter
+    if (params.transport) {
+      filtered = filtered.filter(s => s.transport === params.transport);
     }
 
     return filtered;
