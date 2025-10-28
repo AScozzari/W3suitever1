@@ -778,6 +778,278 @@ router.post('/servers/:id/test', requirePermission('mcp.read'), async (req: Requ
   }
 });
 
+// ==================== MCP CUSTOM SOURCE INSTALLATION ROUTES ====================
+
+const installFromGitHubSchema = z.object({
+  repoUrl: z.string().url(),
+  serverName: z.string().min(1),
+  displayName: z.string().min(1),
+  description: z.string().optional(),
+  category: z.enum(['communication', 'storage', 'analytics', 'crm', 'payments', 'other']).default('other')
+});
+
+/**
+ * POST /api/mcp/install-github
+ * Install MCP server from GitHub repository
+ * ⚠️ SECURITY: Only admin users can install packages (RCE risk)
+ */
+router.post('/install-github', requirePermission('admin.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const data = validateRequestBody(installFromGitHubSchema, req.body);
+    
+    // SECURITY CHECK: Validate GitHub URL
+    if (!data.repoUrl.includes('github.com')) {
+      return res.status(400).json({ 
+        error: 'Invalid repository URL',
+        hint: 'Only GitHub repositories are supported for security reasons'
+      });
+    }
+    
+    // Check for duplicate
+    const existingServers = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.tenantId, tenantId),
+        eq(mcpServers.name, data.serverName)
+      ))
+      .limit(1);
+    
+    if (existingServers.length > 0) {
+      return res.status(409).json({ 
+        error: 'Server already installed',
+        hint: 'A server with this name already exists'
+      });
+    }
+    
+    // Install from GitHub
+    const targetDir = `github-${data.serverName}`;
+    const installResult = await mcpInstallationService.installFromGitHub({
+      repoUrl: data.repoUrl,
+      targetDir
+    });
+    
+    if (!installResult.success) {
+      return res.status(500).json({ 
+        error: 'GitHub installation failed',
+        details: installResult.error
+      });
+    }
+    
+    // Create server record
+    const [newServer] = await db
+      .insert(mcpServers)
+      .values({
+        tenantId,
+        name: data.serverName,
+        displayName: data.displayName,
+        description: data.description,
+        transport: 'stdio',
+        category: data.category,
+        sourceType: 'github_repo',
+        installMethod: installResult.installMethod,
+        installLocation: installResult.installLocation,
+        status: 'configuring',
+        createdBy: userId
+      })
+      .returning();
+    
+    // Trigger discovery in background
+    mcpDiscoveryService.discoverTools(newServer.id, tenantId, userId)
+      .catch(err => console.error('Background discovery failed:', err));
+    
+    res.status(201).json({
+      message: 'MCP server installed from GitHub successfully',
+      server: newServer
+    });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to install MCP server from GitHub');
+  }
+});
+
+const installFromZipSchema = z.object({
+  serverName: z.string().min(1),
+  displayName: z.string().min(1),
+  description: z.string().optional(),
+  category: z.enum(['communication', 'storage', 'analytics', 'crm', 'payments', 'other']).default('other')
+});
+
+/**
+ * POST /api/mcp/install-zip
+ * Install MCP server from uploaded ZIP file
+ * ⚠️ SECURITY: Only admin users can install packages (RCE risk)
+ */
+router.post('/install-zip', requirePermission('admin.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    // Parse multipart form data (requires multer middleware)
+    if (!req.file) {
+      return res.status(400).json({ error: 'No ZIP file uploaded' });
+    }
+    
+    const data = validateRequestBody(installFromZipSchema, req.body);
+    
+    // Check for duplicate
+    const existingServers = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.tenantId, tenantId),
+        eq(mcpServers.name, data.serverName)
+      ))
+      .limit(1);
+    
+    if (existingServers.length > 0) {
+      return res.status(409).json({ 
+        error: 'Server already installed',
+        hint: 'A server with this name already exists'
+      });
+    }
+    
+    // Install from ZIP
+    const targetDir = `zip-${data.serverName}`;
+    const installResult = await mcpInstallationService.installFromZip({
+      zipBuffer: req.file.buffer,
+      targetDir
+    });
+    
+    if (!installResult.success) {
+      return res.status(500).json({ 
+        error: 'ZIP installation failed',
+        details: installResult.error
+      });
+    }
+    
+    // Create server record
+    const [newServer] = await db
+      .insert(mcpServers)
+      .values({
+        tenantId,
+        name: data.serverName,
+        displayName: data.displayName,
+        description: data.description,
+        transport: 'stdio',
+        category: data.category,
+        sourceType: 'zip_upload',
+        installMethod: installResult.installMethod,
+        installLocation: installResult.installLocation,
+        status: 'configuring',
+        createdBy: userId
+      })
+      .returning();
+    
+    // Trigger discovery in background
+    mcpDiscoveryService.discoverTools(newServer.id, tenantId, userId)
+      .catch(err => console.error('Background discovery failed:', err));
+    
+    res.status(201).json({
+      message: 'MCP server installed from ZIP successfully',
+      server: newServer
+    });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to install MCP server from ZIP');
+  }
+});
+
+const installFromCodeSchema = z.object({
+  serverName: z.string().min(1),
+  displayName: z.string().min(1),
+  description: z.string().optional(),
+  category: z.enum(['communication', 'storage', 'analytics', 'crm', 'payments', 'other']).default('other'),
+  code: z.string().min(1),
+  fileName: z.string().min(1), // e.g., 'server.ts' or 'server.py'
+});
+
+/**
+ * POST /api/mcp/install-code
+ * Install MCP server from pasted code
+ * ⚠️ SECURITY: Only admin users can install packages (RCE risk)
+ */
+router.post('/install-code', requirePermission('admin.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const data = validateRequestBody(installFromCodeSchema, req.body);
+    
+    // SECURITY CHECK: Validate file extension
+    const allowedExtensions = ['.ts', '.js', '.py', '.mjs'];
+    const ext = data.fileName.substring(data.fileName.lastIndexOf('.'));
+    if (!allowedExtensions.includes(ext)) {
+      return res.status(400).json({ 
+        error: 'Invalid file type',
+        hint: `Only ${allowedExtensions.join(', ')} files are allowed`
+      });
+    }
+    
+    // Check for duplicate
+    const existingServers = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.tenantId, tenantId),
+        eq(mcpServers.name, data.serverName)
+      ))
+      .limit(1);
+    
+    if (existingServers.length > 0) {
+      return res.status(409).json({ 
+        error: 'Server already installed',
+        hint: 'A server with this name already exists'
+      });
+    }
+    
+    // Install from code
+    const targetDir = `code-${data.serverName}`;
+    const installResult = await mcpInstallationService.installFromCode({
+      code: data.code,
+      fileName: data.fileName,
+      targetDir
+    });
+    
+    if (!installResult.success) {
+      return res.status(500).json({ 
+        error: 'Code installation failed',
+        details: installResult.error
+      });
+    }
+    
+    // Create server record
+    const [newServer] = await db
+      .insert(mcpServers)
+      .values({
+        tenantId,
+        name: data.serverName,
+        displayName: data.displayName,
+        description: data.description,
+        transport: 'stdio',
+        category: data.category,
+        sourceType: 'custom_code',
+        installMethod: installResult.installMethod,
+        installLocation: installResult.installLocation,
+        status: 'configuring',
+        createdBy: userId
+      })
+      .returning();
+    
+    // Trigger discovery in background
+    mcpDiscoveryService.discoverTools(newServer.id, tenantId, userId)
+      .catch(err => console.error('Background discovery failed:', err));
+    
+    res.status(201).json({
+      message: 'MCP server installed from code successfully',
+      server: newServer
+    });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to install MCP server from code');
+  }
+});
+
 // ==================== MCP TOOL DISCOVERY ROUTES ====================
 
 /**
