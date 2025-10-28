@@ -545,20 +545,27 @@ router.get('/marketplace', requirePermission('mcp.read'), async (req: Request, r
   try {
     const { category, language, authType, search } = req.query;
     
+    // Start with all templates
     let templates = MCPMarketplaceRegistry.getAllTemplates();
     
-    // Apply filters
+    // Apply filters cumulatively (not replacing)
     if (category) {
-      templates = MCPMarketplaceRegistry.getTemplatesByCategory(category as string);
+      templates = templates.filter(t => t.category === category);
     }
     if (language) {
-      templates = MCPMarketplaceRegistry.getTemplatesByLanguage(language as 'typescript' | 'python');
+      templates = templates.filter(t => t.language === language);
     }
     if (authType) {
-      templates = MCPMarketplaceRegistry.getTemplatesByAuthType(authType as string);
+      templates = templates.filter(t => t.authType === authType);
     }
     if (search) {
-      templates = MCPMarketplaceRegistry.searchTemplates(search as string);
+      const lowerQuery = (search as string).toLowerCase();
+      templates = templates.filter(t => 
+        t.displayName.toLowerCase().includes(lowerQuery) ||
+        t.description.toLowerCase().includes(lowerQuery) ||
+        t.name.toLowerCase().includes(lowerQuery) ||
+        t.exampleTools?.some(tool => tool.toLowerCase().includes(lowerQuery))
+      );
     }
     
     res.json(templates);
@@ -717,8 +724,11 @@ router.post('/servers/:id/test', requirePermission('mcp.read'), async (req: Requ
       toolCount: tools.length
     });
   } catch (error) {
-    // Update server status to 'error' if test fails
+    // Update server status to 'error' if test fails (with tenant scoping for security)
     try {
+      const serverId = req.params.id;
+      const tenantId = req.tenant!.id;
+      
       await db
         .update(mcpServers)
         .set({
@@ -727,7 +737,10 @@ router.post('/servers/:id/test', requirePermission('mcp.read'), async (req: Requ
           errorCount: sql`${mcpServers.errorCount} + 1`,
           lastError: error instanceof Error ? error.message : String(error)
         })
-        .where(eq(mcpServers.id, req.params.id));
+        .where(and(
+          eq(mcpServers.id, serverId),
+          eq(mcpServers.tenantId, tenantId)
+        ));
     } catch (updateErr) {
       console.error('Failed to update error state:', updateErr);
     }
