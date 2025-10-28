@@ -18,6 +18,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MCPInstallWizard } from '@/components/mcp/MCPInstallWizard';
 
 // Types
 interface MCPServer {
@@ -80,6 +81,8 @@ export default function MCPSettingsDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [languageFilter, setLanguageFilter] = useState<string>('all');
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<MarketplaceTemplate | null>(null);
 
   // Fetch installed servers
   const { data: installedServers = [], isLoading: isLoadingServers } = useQuery<MCPServer[]>({
@@ -194,7 +197,11 @@ export default function MCPSettingsDashboard() {
                 <p className="text-sm text-gray-500 mb-6">
                   Get started by installing a server from the marketplace
                 </p>
-                <Button className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF]">
+                <Button 
+                  className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF]"
+                  onClick={() => setWizardOpen(true)}
+                  data-testid="button-browse-marketplace"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Browse Marketplace
                 </Button>
@@ -273,7 +280,13 @@ export default function MCPSettingsDashboard() {
               >
                 {marketplaceTemplates.map((template) => (
                   <motion.div key={template.id} variants={cardVariants}>
-                    <AvailableServerCard template={template} />
+                    <AvailableServerCard 
+                      template={template} 
+                      onInstall={() => {
+                        setSelectedTemplate(template);
+                        setWizardOpen(true);
+                      }}
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -281,6 +294,16 @@ export default function MCPSettingsDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Install Wizard */}
+      <MCPInstallWizard 
+        open={wizardOpen} 
+        onClose={() => {
+          setWizardOpen(false);
+          setSelectedTemplate(null);
+        }}
+        selectedTemplate={selectedTemplate || undefined}
+      />
     </div>
   );
 }
@@ -387,7 +410,7 @@ function InstalledServerCard({ server }: { server: MCPServer }) {
 }
 
 // Available Server Card Component (Task 15)
-function AvailableServerCard({ template }: { template: MarketplaceTemplate }) {
+function AvailableServerCard({ template, onInstall }: { template: MarketplaceTemplate; onInstall: () => void }) {
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200/60 hover:border-[#FF6900]/30 bg-white/80 backdrop-blur-sm">
       <div className="p-5">
@@ -442,6 +465,7 @@ function AvailableServerCard({ template }: { template: MarketplaceTemplate }) {
         {/* Install Button */}
         <Button 
           className="w-full bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] hover:shadow-md"
+          onClick={onInstall}
           data-testid={`button-install-${template.id}`}
         >
           <Plus className="h-4 w-4 mr-2" />
