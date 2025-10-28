@@ -569,6 +569,122 @@ export class MCPMarketplaceRegistry {
       trustLevel: 'official',
       securityNotes: 'Official AWS managed service. Generally available (October 2025). No local setup required. Anchors AI responses in trusted AWS context.',
       sourceType: 'Remote'
+    },
+    {
+      id: 'telegram-mcp-dryeab',
+      name: 'mcp-telegram',
+      displayName: 'Telegram MCP Server',
+      description: 'Production-ready Telegram integration via MTProto (Telethon). Send/edit/delete messages, search chats, manage drafts, download media. Rate-limiting compliant. Works with Claude Desktop, Cursor.',
+      category: 'communication',
+      language: 'python',
+      packageManager: 'pip',
+      packageName: 'mcp-telegram',
+      version: '0.1.11',
+      authType: 'oauth2',
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/50px-Telegram_logo.svg.png',
+      officialSupport: false,
+      verified: true,
+      transport: 'stdio',
+      repoUrl: 'https://github.com/dryeab/mcp-telegram',
+      installHints: {
+        envVars: ['API_ID', 'API_HASH'],
+        postInstallNotes: 'Install: uv tool install mcp-telegram OR pip install mcp-telegram. Requires Telegram API credentials from https://my.telegram.org/apps. Run: mcp-telegram login, then mcp-telegram start.',
+        dependencies: ['Python 3.10+', 'uv (optional)']
+      },
+      oauthConfig: {
+        scopes: ['messages.read', 'messages.write', 'chats.read', 'media.download'],
+        provider: 'telegram'
+      },
+      exampleTools: [
+        'send_message',
+        'edit_message',
+        'delete_message',
+        'search_chats',
+        'get_chat_history',
+        'download_media',
+        'create_draft',
+        'manage_groups'
+      ],
+      trustLevel: 'verified',
+      securityNotes: 'Developed by dryeab (Yeabsira Driba). Listed on official MCP Registry (mcpservers.org). Active PyPI releases (0.1.11). MTProto protocol compliant.',
+      rating: 4.8,
+      developer: 'dryeab',
+      sourceType: 'PyPI'
+    },
+    {
+      id: 'whatsapp-mcp-msaelices',
+      name: 'whatsapp-mcp-server',
+      displayName: 'WhatsApp Business MCP Server',
+      description: 'Production WhatsApp Business integration via GreenAPI. Send text messages, create/manage groups (add/remove members). HTTP/WebSocket support. FastMCP framework. Perfect for business messaging automation.',
+      category: 'communication',
+      language: 'python',
+      packageManager: 'pip',
+      packageName: 'whatsapp-mcp-server',
+      version: 'latest',
+      authType: 'api_key',
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/50px-WhatsApp.svg.png',
+      officialSupport: false,
+      verified: true,
+      transport: 'stdio',
+      repoUrl: 'https://github.com/msaelices/whatsapp-mcp-server',
+      installHints: {
+        envVars: ['GREENAPI_ID_INSTANCE', 'GREENAPI_API_TOKEN'],
+        postInstallNotes: 'Install: pip install whatsapp-mcp-server. Requires GreenAPI credentials (https://green-api.com). Run: whatsapp-mcp --host 0.0.0.0 --port 8000',
+        dependencies: ['Python 3.8+', 'GreenAPI account']
+      },
+      exampleTools: [
+        'send_message',
+        'create_group',
+        'add_group_member',
+        'remove_group_member',
+        'get_contacts',
+        'get_chat_history',
+        'send_media'
+      ],
+      trustLevel: 'verified',
+      securityNotes: 'Developed by msaelices. FastMCP framework integration. Listed on MCP Market and Glama. GreenAPI provides stable WhatsApp Business API access.',
+      rating: 4.5,
+      developer: 'msaelices',
+      sourceType: 'PyPI'
+    },
+    {
+      id: 'twilio-alpha-official',
+      name: 'twilio-alpha-mcp',
+      displayName: 'Twilio Alpha MCP Server (Official)',
+      description: 'Official Twilio MCP server with ~2,000 API endpoints. Multi-channel: SMS, Voice, WhatsApp, Video, Email (SendGrid), Verify (2FA), Serverless, Studio, Flex. 100% success rate, 20.6% faster, 19.3% fewer API calls vs standard agents. Self-hostable.',
+      category: 'communication',
+      language: 'typescript',
+      packageManager: 'npm',
+      packageName: '@twilio/mcp-server',
+      version: 'latest',
+      authType: 'api_key',
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Twilio-logo-red.svg/50px-Twilio-logo-red.svg.png',
+      officialSupport: true,
+      verified: true,
+      transport: 'stdio',
+      repoUrl: 'https://twilioalpha.com/mcp',
+      installHints: {
+        envVars: ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN'],
+        postInstallNotes: 'Official Twilio server. Auto-generated from OpenAPI spec. Supports service filtering: --services api_v2010. Get credentials from Twilio Console.',
+        dependencies: ['Node.js 18+', 'Twilio account']
+      },
+      exampleTools: [
+        'send_sms',
+        'make_voice_call',
+        'send_whatsapp_message',
+        'send_email',
+        'verify_otp',
+        'create_video_room',
+        'execute_serverless_function',
+        'manage_studio_flow',
+        'get_message_logs',
+        'list_phone_numbers'
+      ],
+      trustLevel: 'official',
+      securityNotes: 'Official Twilio Labs implementation. Verified performance: 100% success rate, 20.6% faster execution. Self-hostable for security. Production-ready.',
+      rating: 5.0,
+      developer: 'twilio',
+      sourceType: 'npm'
     }
   ];
 
@@ -619,6 +735,27 @@ export class MCPMarketplaceRegistry {
       specialty: 'Microsoft 365, Enterprise Integration',
       rating: 4.9,
       servers: ['ms-365-mcp']
+    },
+    'dryeab': {
+      name: 'Yeabsira Driba (dryeab)',
+      github: 'https://github.com/dryeab',
+      specialty: 'Telegram Integration, Messaging Automation',
+      rating: 4.8,
+      servers: ['telegram-mcp-dryeab']
+    },
+    'msaelices': {
+      name: 'msaelices',
+      github: 'https://github.com/msaelices',
+      specialty: 'WhatsApp Business, FastMCP Framework',
+      rating: 4.5,
+      servers: ['whatsapp-mcp-msaelices']
+    },
+    'twilio': {
+      name: 'Twilio Labs (Official)',
+      github: 'https://github.com/twilio-labs',
+      specialty: 'Multi-Channel Communications (SMS, Voice, WhatsApp, Email)',
+      rating: 5.0,
+      servers: ['twilio-alpha-official']
     }
   };
 
