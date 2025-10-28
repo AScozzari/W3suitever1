@@ -7,7 +7,7 @@ import { db } from '../core/db';
 import { mcpServers } from '../db/schema/w3suite';
 import { eq, sql } from 'drizzle-orm';
 import { mcpClientService } from './mcp-client-service';
-import { logger } from '../utils/logger';
+import { logger } from '../core/logger';
 
 interface DiscoveredTool {
   name: string;

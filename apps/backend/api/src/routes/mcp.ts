@@ -604,18 +604,47 @@ const installMCPServerSchema = z.object({
 /**
  * POST /api/mcp/install
  * Install MCP server from marketplace template
+ * ⚠️ SECURITY: Only admin users can install packages (RCE risk)
  */
-router.post('/install', requirePermission('mcp.write'), async (req: Request, res: Response) => {
+router.post('/install', requirePermission('admin.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
     const userId = req.user!.id;
     
     const data = validateRequestBody(installMCPServerSchema, req.body);
     
-    // Get template from marketplace
+    // Get template from marketplace (SECURITY: only allow whitelisted templates)
     const template = MCPMarketplaceRegistry.getTemplate(data.templateId);
     if (!template) {
-      return res.status(404).json({ error: 'Marketplace template not found' });
+      return res.status(404).json({ 
+        error: 'Marketplace template not found',
+        hint: 'Only whitelisted templates can be installed for security reasons'
+      });
+    }
+    
+    // SECURITY CHECK: Prevent custom names that could create path traversal
+    if (data.customName && (data.customName.includes('..') || data.customName.includes('/'))) {
+      return res.status(400).json({ 
+        error: 'Invalid custom name',
+        hint: 'Custom names cannot contain path separators or traversal sequences'
+      });
+    }
+    
+    // Check if tenant already has this server installed (prevent duplicates)
+    const existingServers = await db
+      .select()
+      .from(mcpServers)
+      .where(and(
+        eq(mcpServers.tenantId, tenantId),
+        eq(mcpServers.name, data.customName || template.name)
+      ))
+      .limit(1);
+    
+    if (existingServers.length > 0) {
+      return res.status(409).json({ 
+        error: 'Server already installed',
+        hint: 'A server with this name already exists for your tenant'
+      });
     }
     
     // Install package
