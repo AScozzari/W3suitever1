@@ -323,17 +323,29 @@ export default function MCPSettingsDashboard() {
                 animate="visible"
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                {marketplaceTemplates.map((template) => (
-                  <motion.div key={template.id} variants={cardVariants}>
-                    <AvailableServerCard 
-                      template={template} 
-                      onInstall={() => {
-                        setSelectedTemplate(template);
-                        setWizardOpen(true);
-                      }}
-                    />
-                  </motion.div>
-                ))}
+                {marketplaceTemplates.map((template) => {
+                  // Check if this template is already installed
+                  const installedServer = installedServers.find(s => s.name === template.name);
+                  
+                  return (
+                    <motion.div key={template.id} variants={cardVariants}>
+                      <AvailableServerCard 
+                        template={template}
+                        isInstalled={!!installedServer}
+                        onInstall={() => {
+                          setSelectedTemplate(template);
+                          setWizardOpen(true);
+                        }}
+                        onManage={() => {
+                          if (installedServer) {
+                            setSelectedServerId(installedServer.id);
+                            setDetailsPanelOpen(true);
+                          }
+                        }}
+                      />
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             )}
           </TabsContent>
@@ -479,7 +491,17 @@ function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onV
 }
 
 // Available Server Card Component (Task 15 + Trust Badges)
-function AvailableServerCard({ template, onInstall }: { template: MarketplaceTemplate; onInstall: () => void }) {
+function AvailableServerCard({ 
+  template, 
+  isInstalled = false,
+  onInstall, 
+  onManage 
+}: { 
+  template: MarketplaceTemplate; 
+  isInstalled?: boolean;
+  onInstall: () => void;
+  onManage?: () => void;
+}) {
   // Trust level config
   const trustConfig = {
     official: {
@@ -546,6 +568,14 @@ function AvailableServerCard({ template, onInstall }: { template: MarketplaceTem
                 )}
               </div>
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                {/* Installed Badge (shown first if installed) */}
+                {isInstalled && (
+                  <Badge variant="outline" className="text-xs border bg-green-100 text-green-700 border-green-300">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Installed
+                  </Badge>
+                )}
+                
                 {/* Trust Level Badge */}
                 <Badge variant="outline" className={`text-xs border ${trust.badge.className}`}>
                   <TrustIcon className="h-3 w-3 mr-1" />
@@ -614,15 +644,26 @@ function AvailableServerCard({ template, onInstall }: { template: MarketplaceTem
           </div>
         )}
 
-        {/* Install Button */}
-        <Button 
-          className="w-full bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] hover:shadow-md"
-          onClick={onInstall}
-          data-testid={`button-install-${template.id}`}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Install
-        </Button>
+        {/* Install/Manage Button */}
+        {isInstalled ? (
+          <Button 
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-md"
+            onClick={onManage}
+            data-testid={`button-manage-${template.id}`}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Manage
+          </Button>
+        ) : (
+          <Button 
+            className="w-full bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] hover:shadow-md"
+            onClick={onInstall}
+            data-testid={`button-install-${template.id}`}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Install
+          </Button>
+        )}
       </div>
     </Card>
   );
