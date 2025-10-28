@@ -249,8 +249,105 @@ export class MCPMarketplaceRegistry {
       ],
       trustLevel: 'official',
       securityNotes: 'Use read-only database credentials. Write operations available but should be restricted in production.'
+    },
+
+    // ==================== VERIFIED COMMUNITY DEVELOPERS ====================
+    {
+      id: 'workspace-mcp',
+      name: 'workspace-mcp',
+      displayName: 'Google Workspace MCP',
+      description: 'Comprehensive Google Workspace integration: Gmail, Calendar, Drive, Docs, Sheets, Slides, Forms, Tasks, Chat, and Search. Production-ready OAuth 2.1 with multi-user support.',
+      category: 'productivity',
+      language: 'python',
+      packageManager: 'pip',
+      packageName: 'workspace-mcp',
+      version: 'latest',
+      authType: 'oauth2',
+      iconUrl: 'https://www.gstatic.com/images/branding/product/2x/workspace_64dp.png',
+      officialSupport: false,
+      verified: true,
+      transport: 'stdio',
+      repoUrl: 'https://github.com/taylorwilsdon/google_workspace_mcp',
+      installHints: {
+        envVars: ['GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'],
+        postInstallNotes: 'Install: uvx workspace-mcp OR pip install workspace-mcp. Supports Docker deployment and Claude Desktop 1-click setup.',
+        dependencies: ['Python 3.10+']
+      },
+      oauthConfig: {
+        scopes: ['gmail', 'calendar', 'drive', 'docs', 'sheets', 'slides'],
+        provider: 'google'
+      },
+      exampleTools: [
+        'gmail_send',
+        'gmail_search',
+        'calendar_create_event',
+        'drive_upload',
+        'docs_create',
+        'sheets_read',
+        'slides_generate'
+      ],
+      trustLevel: 'verified',
+      securityNotes: 'Developed by verified developer Taylor Wilsdon. 696+ GitHub stars. Production-grade OAuth implementation.'
+    },
+    {
+      id: 'google-tag-manager-mcp',
+      name: 'google-tag-manager-mcp',
+      displayName: 'Google Tag Manager MCP',
+      description: 'Enterprise GTM automation by Stape. Full API coverage: accounts, containers, workspaces, tags, triggers, variables, version control. Deploy analytics without touching GTM interface.',
+      category: 'analytics',
+      language: 'typescript',
+      packageManager: 'none',
+      packageName: 'mcp-remote',
+      version: 'latest',
+      authType: 'oauth2',
+      iconUrl: 'https://www.gstatic.com/analytics-suite/header/suite/v2/ic_tag_manager.svg',
+      officialSupport: false,
+      verified: true,
+      transport: 'http-sse',
+      repoUrl: 'https://github.com/stape-io/google-tag-manager-mcp-server',
+      installHints: {
+        envVars: [],
+        postInstallNotes: 'Remote server hosted by Stape. Use: npx -y mcp-remote https://gtm-mcp.stape.ai/mcp',
+        dependencies: ['Node.js 16+']
+      },
+      oauthConfig: {
+        scopes: ['tagmanager.edit.containers', 'tagmanager.publish'],
+        provider: 'google'
+      },
+      exampleTools: [
+        'create_tag',
+        'update_trigger',
+        'list_variables',
+        'deploy_container',
+        'manage_workspaces',
+        'version_control'
+      ],
+      trustLevel: 'verified',
+      securityNotes: 'Developed by Stape analytics team. Enterprise-grade, actively maintained. Praised by analytics professionals.'
     }
   ];
+
+  /**
+   * VERIFIED DEVELOPERS REGISTRY
+   * 
+   * Developers whose MCP servers receive special "Verified Developer" badge
+   */
+  private static verifiedDevelopers = {
+    'taylorwilsdon': {
+      name: 'Taylor Wilsdon',
+      github: 'https://github.com/taylorwilsdon',
+      specialty: 'Google Workspace, Enterprise MCP',
+      rating: 4.5,
+      servers: ['workspace-mcp']
+    },
+    'stape-io': {
+      name: 'Stape Team',
+      github: 'https://github.com/stape-io',
+      specialty: 'Analytics, GTM, Marketing Tech',
+      rating: 5.0,
+      servers: ['google-tag-manager-mcp']
+    }
+  };
 
   /**
    * Get all curated servers (high-trust)
@@ -305,5 +402,26 @@ export class MCPMarketplaceRegistry {
    */
   static isCuratedPackage(packageName: string): boolean {
     return this.curatedServers.some(s => s.packageName === packageName);
+  }
+
+  /**
+   * Get verified developers registry
+   */
+  static getVerifiedDevelopers() {
+    return this.verifiedDevelopers;
+  }
+
+  /**
+   * Check if developer is verified
+   */
+  static isVerifiedDeveloper(developerId: string): boolean {
+    return developerId in this.verifiedDevelopers;
+  }
+
+  /**
+   * Get developer info by ID
+   */
+  static getDeveloperInfo(developerId: string) {
+    return this.verifiedDevelopers[developerId as keyof typeof this.verifiedDevelopers];
   }
 }
