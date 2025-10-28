@@ -22,6 +22,7 @@ export interface BaseNodeDefinition {
   deprecated?: boolean;
   configSchema: z.ZodSchema<any>; // Zod schema for validation
   defaultConfig: Record<string, any>;
+  toolName?: string; // MCP tool name (e.g., 'gmail_send', 'drive_upload') - used to filter available servers
 }
 
 // ==================== ACTION NODES ====================

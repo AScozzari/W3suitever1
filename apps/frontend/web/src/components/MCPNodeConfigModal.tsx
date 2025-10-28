@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from './InfoTooltip';
 import { AlertCircle, Sparkles, Globe, Settings, X, RefreshCw } from 'lucide-react';
 import { getMCPNodeById } from '@/lib/mcp-node-definitions';
+import { MCPServerSelector } from '@/components/mcp/MCPServerSelector';
 import { z } from 'zod';
 
 interface ConnectedAccount {
@@ -315,6 +316,33 @@ function renderFieldByType(
 ): React.ReactNode {
   const label = formatFieldLabel(fieldName);
   const isRequired = !fieldSchema.isOptional();
+
+  // 🎯 CUSTOM: MCP Server ID Selector (filters by toolName from node definition)
+  if (fieldName === 'serverId') {
+    const mcpDefinition = getMCPNodeById(nodeId);
+    const toolName = mcpDefinition?.toolName || '';
+    
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-2">
+          MCP Server {isRequired && <span className="text-red-500">*</span>}
+        </label>
+        <MCPServerSelector 
+          value={value || null}
+          onChange={(serverId, serverName) => {
+            updateField('serverId', serverId);
+            // Also store server name for display purposes
+            if (serverName) {
+              updateField('_serverName', serverName);
+            }
+          }}
+          toolName={toolName}
+          placeholder="Select MCP server with this tool..."
+          onlyActive={true}
+        />
+      </div>
+    );
+  }
 
   // 🎯 CUSTOM: Instagram Account Dropdown for Meta nodes
   if (fieldName === 'instagramAccountId' && ecosystem === 'meta') {

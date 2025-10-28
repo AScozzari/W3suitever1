@@ -58,6 +58,7 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     icon: 'Mail',
     color: MCP_ECOSYSTEMS.google.color,
     version: '1.1.0', // Updated for server config support
+    toolName: 'gmail_send', // MCP tool name for server filtering
     configSchema: withServerConfig({
       to: z.array(z.string().email()),
       subject: z.string(),
