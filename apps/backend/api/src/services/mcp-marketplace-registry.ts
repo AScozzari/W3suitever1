@@ -580,7 +580,7 @@ export class MCPMarketplaceRegistry {
       packageManager: 'pip',
       packageName: 'mcp-telegram',
       version: '0.1.11',
-      authType: 'oauth2',
+      authType: 'api_key',
       iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/50px-Telegram_logo.svg.png',
       officialSupport: false,
       verified: true,
@@ -588,12 +588,8 @@ export class MCPMarketplaceRegistry {
       repoUrl: 'https://github.com/dryeab/mcp-telegram',
       installHints: {
         envVars: ['API_ID', 'API_HASH'],
-        postInstallNotes: 'Install: uv tool install mcp-telegram OR pip install mcp-telegram. Requires Telegram API credentials from https://my.telegram.org/apps. Run: mcp-telegram login, then mcp-telegram start.',
-        dependencies: ['Python 3.10+', 'uv (optional)']
-      },
-      oauthConfig: {
-        scopes: ['messages.read', 'messages.write', 'chats.read', 'media.download'],
-        provider: 'telegram'
+        postInstallNotes: 'Install: uv tool install mcp-telegram OR pip install mcp-telegram. Requires Telegram API credentials (API_ID + API_HASH) from https://my.telegram.org/apps. First run: mcp-telegram login (interactive phone code verification), then mcp-telegram start. Session persists after initial login.',
+        dependencies: ['Python 3.10+', 'uv (optional)', 'Phone number for initial verification']
       },
       exampleTools: [
         'send_message',
