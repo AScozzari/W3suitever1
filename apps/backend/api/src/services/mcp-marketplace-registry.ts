@@ -335,6 +335,46 @@ export class MCPMarketplaceRegistry {
       rating: 5.0,
       developer: 'stape-io',
       sourceType: 'Remote'
+    },
+    {
+      id: 'meta-ads-mcp',
+      name: 'meta-ads-mcp',
+      displayName: 'Meta Ads MCP (Facebook & Instagram)',
+      description: 'AI-powered Facebook and Instagram ads management by Pipeboard. Full campaign lifecycle: create, optimize, analyze performance. Works with all Meta platforms (FB, IG, Messenger). Budget optimization and real-time insights.',
+      category: 'analytics',
+      language: 'python',
+      packageManager: 'pip',
+      packageName: 'meta-ads-mcp',
+      version: 'latest',
+      authType: 'oauth2',
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/50px-2023_Facebook_icon.svg.png',
+      officialSupport: false,
+      verified: true,
+      transport: 'stdio',
+      repoUrl: 'https://github.com/pipeboard-co/meta-ads-mcp',
+      installHints: {
+        envVars: ['PIPEBOARD_API_TOKEN'],
+        postInstallNotes: 'Install: uvx meta-ads-mcp OR pip install meta-ads-mcp. Supports remote MCP mode: https://mcp.pipeboard.co/meta-ads-mcp',
+        dependencies: ['Python 3.10+']
+      },
+      oauthConfig: {
+        scopes: ['ads_management', 'ads_read', 'pages_read_engagement'],
+        provider: 'meta'
+      },
+      exampleTools: [
+        'mcp_meta_ads_get_ad_accounts',
+        'mcp_meta_ads_get_campaigns',
+        'mcp_meta_ads_create_campaign',
+        'mcp_meta_ads_get_adsets',
+        'mcp_meta_ads_search',
+        'mcp_meta_ads_get_insights',
+        'mcp_meta_ads_optimize_budget'
+      ],
+      trustLevel: 'verified',
+      securityNotes: 'Developed by Pipeboard (nictuku). 311+ GitHub stars, 40.3K+ downloads. Production-ready, actively maintained.',
+      rating: 4.8,
+      developer: 'nictuku',
+      sourceType: 'PyPI'
     }
   ];
 
@@ -357,6 +397,13 @@ export class MCPMarketplaceRegistry {
       specialty: 'Analytics, GTM, Marketing Tech',
       rating: 5.0,
       servers: ['google-tag-manager-mcp']
+    },
+    'nictuku': {
+      name: 'Pipeboard (nictuku)',
+      github: 'https://github.com/pipeboard-co',
+      specialty: 'Meta Ads, Facebook, Instagram Marketing',
+      rating: 4.8,
+      servers: ['meta-ads-mcp']
     }
   };
 
