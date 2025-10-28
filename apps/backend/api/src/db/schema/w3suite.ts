@@ -3930,6 +3930,12 @@ export const mcpServers = w3suiteSchema.table("mcp_servers", {
   iconUrl: varchar("icon_url", { length: 500 }), // Optional icon for UI
   category: mcpToolCategoryEnum("category").default('other'),
   
+  // Installation & Source
+  sourceType: varchar("source_type", { length: 50 }).default('npm_package'), // 'npm_package' or 'custom_source'
+  installMethod: text("install_method"), // e.g., 'npm install @modelcontextprotocol/server-slack'
+  installLocation: text("install_location"), // e.g., 'node_modules/@modelcontextprotocol/server-slack' or '/mcp-servers/custom-webhook'
+  discoveredTools: jsonb("discovered_tools").default([]), // Cache of discovered tools [{name, description, schema}]
+  
   // Health & Monitoring
   lastHealthCheck: timestamp("last_health_check"),
   lastError: text("last_error"),

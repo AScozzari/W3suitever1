@@ -38,12 +38,14 @@ export const GOOGLE_OUTBOUND_NODES: BaseNodeDefinition[] = [
     color: MCP_ECOSYSTEMS.google.color,
     version: '1.0.0',
     configSchema: z.object({
+      serverId: z.string().min(1, 'MCP Server connection required'),
+      toolName: z.string().default('gmail_send'),
       to: z.array(z.string().email()),
       subject: z.string(),
       body: z.string(),
       attachments: z.array(z.string()).optional()
     }),
-    defaultConfig: { to: [], subject: '', body: '' }
+    defaultConfig: { serverId: '', toolName: 'gmail_send', to: [], subject: '', body: '' }
   },
   {
     id: 'mcp-google-drive-upload',

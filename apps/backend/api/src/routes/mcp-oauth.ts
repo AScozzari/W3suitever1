@@ -1610,41 +1610,48 @@ router.get('/test-gmail-send', async (req: Request, res: Response) => {
 });
 
 /**
- * 🧪 TEST ENDPOINT: Test Gmail Send Executor
- * POST /api/mcp/oauth/test-gmail-executor
+ * 🧪 TEST ENDPOINT: Test MCP Connector Executor
+ * POST /api/mcp/oauth/test-mcp-connector
  * 
- * Tests the gmail-send-executor with template variables
- * Body: { to, subject, body, inputData }
+ * Tests the mcp-connector-executor with any MCP tool
+ * Body: { serverId, toolName, parameters, inputData }
  */
-router.post('/test-gmail-executor', async (req: Request, res: Response) => {
+router.post('/test-mcp-connector', async (req: Request, res: Response) => {
   try {
-    logger.info('🧪 [Gmail Executor Test] Starting test...', {
+    logger.info('🧪 [MCP Connector Test] Starting test...', {
       body: req.body
     });
 
-    const { to, subject, body, inputData } = req.body;
+    const { serverId, toolName, parameters, inputData } = req.body;
+
+    if (!serverId || !toolName) {
+      return res.status(400).json({
+        success: false,
+        error: 'serverId and toolName are required'
+      });
+    }
 
     // Import executor registry
     const { actionExecutorsRegistry } = await import('../services/action-executors-registry');
 
-    // Get gmail-send-executor
-    const executor = actionExecutorsRegistry.getExecutor('gmail-send-executor');
+    // Get mcp-connector-executor
+    const executor = actionExecutorsRegistry.getExecutor('mcp-connector-executor');
     
     if (!executor) {
       return res.status(404).json({
         success: false,
-        error: 'Gmail Send Executor not found in registry'
+        error: 'MCP Connector Executor not found in registry'
       });
     }
 
     // Prepare step configuration (simulating workflow node)
     const step = {
-      nodeId: 'test-gmail-node',
-      executorId: 'gmail-send-executor',
+      nodeId: 'test-mcp-node',
+      executorId: 'mcp-connector-executor',
       config: {
-        to: to || '{{lead.email}}',
-        subject: subject || 'Test from W3Suite',
-        body: body || 'Hello {{lead.firstName}}, this is a test!'
+        serverId,
+        toolName,
+        parameters: parameters || {}
       }
     };
 
@@ -1656,40 +1663,30 @@ router.post('/test-gmail-executor', async (req: Request, res: Response) => {
       templateId: 'test-template'
     };
 
-    // Prepare input data (for template variable resolution)
-    const testInputData = inputData || {
-      lead: {
-        email: 'm.tavaroli@easydigitalgroup.it',
-        firstName: 'Mario',
-        lastName: 'Tavaroli',
-        company: 'Easy Digital Group'
-      }
-    };
-
-    logger.info('📧 [Gmail Executor Test] Executing with:', {
+    logger.info('🔌 [MCP Connector Test] Executing with:', {
       step,
-      inputData: testInputData,
+      inputData,
       context
     });
 
     // Execute the executor
-    const result = await executor.execute(step, testInputData, context);
+    const result = await executor.execute(step, inputData, context);
 
-    logger.info('✅ [Gmail Executor Test] Execution result:', result);
+    logger.info('✅ [MCP Connector Test] Execution result:', result);
 
     res.json({
       success: true,
-      message: 'Gmail executor test completed',
+      message: 'MCP connector test completed',
       executorResult: result,
       testConfig: {
         step,
-        inputData: testInputData,
+        inputData,
         context
       }
     });
 
   } catch (error) {
-    logger.error('❌ [Gmail Executor Test] Failed', {
+    logger.error('❌ [MCP Connector Test] Failed', {
       error: error instanceof Error ? error.message : String(error)
     });
 
