@@ -15,7 +15,11 @@ import {
   AlertCircle,
   Settings,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  ShieldCheck,
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MCPInstallWizard } from '@/components/mcp/MCPInstallWizard';
@@ -43,13 +47,18 @@ interface MarketplaceTemplate {
   name: string;
   displayName: string;
   description: string;
-  category: 'productivity' | 'communication' | 'storage' | 'database' | 'payment' | 'analytics' | 'other';
-  language: 'typescript' | 'python';
-  packageManager: 'npm' | 'pip';
+  category: 'productivity' | 'communication' | 'storage' | 'database' | 'development' | 'analytics' | 'other';
+  language: 'typescript' | 'python' | 'go' | 'rust';
+  packageManager: 'npm' | 'pip' | 'docker' | 'none';
   authType: string;
   iconUrl?: string;
   officialSupport: boolean;
+  verified: boolean;
+  trustLevel: 'official' | 'verified' | 'community';
+  transport: 'stdio' | 'http-sse';
+  securityNotes?: string;
   exampleTools?: string[];
+  repoUrl?: string;
 }
 
 // Framer Motion Variants
@@ -452,11 +461,52 @@ function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onV
   );
 }
 
-// Available Server Card Component (Task 15)
+// Available Server Card Component (Task 15 + Trust Badges)
 function AvailableServerCard({ template, onInstall }: { template: MarketplaceTemplate; onInstall: () => void }) {
+  // Trust level config
+  const trustConfig = {
+    official: {
+      badge: { icon: ShieldCheck, label: 'Official', className: 'bg-green-100 text-green-700 border-green-300' },
+      showWarning: false
+    },
+    verified: {
+      badge: { icon: Shield, label: 'Verified', className: 'bg-blue-100 text-blue-700 border-blue-300' },
+      showWarning: false
+    },
+    community: {
+      badge: { icon: Package, label: 'Community', className: 'bg-amber-100 text-amber-700 border-amber-300' },
+      showWarning: true
+    }
+  };
+
+  // Auth type config
+  const authConfig = {
+    oauth2: { label: 'OAuth2', icon: Lock, className: 'bg-purple-100 text-purple-700 border-purple-200' },
+    api_key: { label: 'API Key', icon: Lock, className: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+    bearer_token: { label: 'Token', icon: Lock, className: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+    basic_auth: { label: 'Basic Auth', icon: Lock, className: 'bg-teal-100 text-teal-700 border-teal-200' },
+    none: { label: 'No Auth', icon: CheckCircle2, className: 'bg-gray-100 text-gray-600 border-gray-200' }
+  };
+
+  const trust = trustConfig[template.trustLevel];
+  const TrustIcon = trust.badge.icon;
+  const auth = authConfig[template.authType as keyof typeof authConfig] || authConfig.none;
+  const AuthIcon = auth.icon;
+
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200/60 hover:border-[#FF6900]/30 bg-white/80 backdrop-blur-sm">
       <div className="p-5">
+        {/* Security Warning Banner (for unverified/community servers) */}
+        {trust.showWarning && template.securityNotes && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs font-medium text-amber-800 mb-1">Security Notice</p>
+              <p className="text-xs text-amber-700">{template.securityNotes}</p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -469,13 +519,23 @@ function AvailableServerCard({ template, onInstall }: { template: MarketplaceTem
             )}
             <div>
               <h3 className="font-semibold text-gray-900">{template.displayName}</h3>
-              <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="secondary" className="text-xs">{template.language}</Badge>
-                {template.officialSupport && (
-                  <Badge variant="default" className="text-xs bg-green-100 text-green-700 border-green-200">
-                    Official
-                  </Badge>
-                )}
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                {/* Trust Level Badge */}
+                <Badge variant="outline" className={`text-xs border ${trust.badge.className}`}>
+                  <TrustIcon className="h-3 w-3 mr-1" />
+                  {trust.badge.label}
+                </Badge>
+                
+                {/* Auth Type Badge */}
+                <Badge variant="outline" className={`text-xs border ${auth.className}`}>
+                  <AuthIcon className="h-3 w-3 mr-1" />
+                  {auth.label}
+                </Badge>
+
+                {/* Language Badge */}
+                <Badge variant="secondary" className="text-xs">
+                  {template.language}
+                </Badge>
               </div>
             </div>
           </div>
@@ -485,6 +545,13 @@ function AvailableServerCard({ template, onInstall }: { template: MarketplaceTem
         <p className="text-sm text-gray-600 mb-4 line-clamp-3">
           {template.description}
         </p>
+
+        {/* Metadata Row */}
+        <div className="flex items-center gap-3 mb-4 text-xs text-gray-500">
+          <span>Transport: {template.transport === 'stdio' ? 'stdio' : 'HTTP-SSE'}</span>
+          <span>•</span>
+          <span>Package: {template.packageManager}</span>
+        </div>
 
         {/* Example Tools */}
         {template.exampleTools && template.exampleTools.length > 0 && (

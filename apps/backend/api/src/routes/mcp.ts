@@ -13,6 +13,7 @@ import { mcpClientService } from '../services/mcp-client-service';
 import { mcpInstallationService } from '../services/mcp-installation.service';
 import { mcpDiscoveryService } from '../services/mcp-discovery.service';
 import { MCPMarketplaceRegistry } from '../services/mcp-marketplace-registry';
+import { MCPHybridMarketplaceService } from '../services/mcp-hybrid-marketplace.service';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { handleApiError, validateRequestBody, parseUUIDParam } from '../core/error-utils';
 import { z } from 'zod';
@@ -543,30 +544,17 @@ router.get('/stats', requirePermission('mcp.read'), async (req: Request, res: Re
  */
 router.get('/marketplace', requirePermission('mcp.read'), async (req: Request, res: Response) => {
   try {
-    const { category, language, authType, search } = req.query;
+    const { category, language, trustLevel, authType, search, includeRegistry } = req.query;
     
-    // Start with all templates
-    let templates = MCPMarketplaceRegistry.getAllTemplates();
-    
-    // Apply filters cumulatively (not replacing)
-    if (category) {
-      templates = templates.filter(t => t.category === category);
-    }
-    if (language) {
-      templates = templates.filter(t => t.language === language);
-    }
-    if (authType) {
-      templates = templates.filter(t => t.authType === authType);
-    }
-    if (search) {
-      const lowerQuery = (search as string).toLowerCase();
-      templates = templates.filter(t => 
-        t.displayName.toLowerCase().includes(lowerQuery) ||
-        t.description.toLowerCase().includes(lowerQuery) ||
-        t.name.toLowerCase().includes(lowerQuery) ||
-        t.exampleTools?.some(tool => tool.toLowerCase().includes(lowerQuery))
-      );
-    }
+    // Fetch from hybrid marketplace (curated + MCP Registry)
+    const templates = await MCPHybridMarketplaceService.getAllServers({
+      query: typeof search === 'string' ? search : undefined,
+      category: typeof category === 'string' ? category as any : undefined,
+      language: typeof language === 'string' ? language as any : undefined,
+      trustLevel: typeof trustLevel === 'string' ? trustLevel as any : undefined,
+      authType: typeof authType === 'string' ? authType : undefined,
+      includeRegistry: includeRegistry === 'false' ? false : true // Default: true
+    });
     
     res.json(templates);
   } catch (error) {
@@ -581,7 +569,7 @@ router.get('/marketplace', requirePermission('mcp.read'), async (req: Request, r
 router.get('/marketplace/:id', requirePermission('mcp.read'), async (req: Request, res: Response) => {
   try {
     const templateId = req.params.id;
-    const template = MCPMarketplaceRegistry.getTemplate(templateId);
+    const template = await MCPHybridMarketplaceService.getServerById(templateId);
     
     if (!template) {
       return res.status(404).json({ error: 'Marketplace template not found' });
