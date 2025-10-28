@@ -21,7 +21,7 @@ import {
   Code2,
   ExternalLink
 } from 'lucide-react';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient, getCurrentTenantId } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -103,55 +103,6 @@ export function MCPInstallWizard({ open, onClose, selectedTemplate }: MCPInstall
     enabled: sourceType === 'marketplace'
   });
 
-  // Install mutation
-  const installMutation = useMutation({
-    mutationFn: async (params: any) => {
-      // Simulate progress updates
-      setInstallProgress({ status: 'downloading', message: 'Downloading package...', progress: 25 });
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setInstallProgress({ status: 'installing', message: 'Installing dependencies...', progress: 50 });
-      
-      const response = await apiRequest('/api/mcp/servers/install', {
-        method: 'POST',
-        body: JSON.stringify(params)
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setInstallProgress({ status: 'discovering', message: 'Discovering tools...', progress: 75 });
-      
-      return response;
-    },
-    onSuccess: async (data: any) => {
-      setInstallProgress({ status: 'complete', message: 'Installation complete!', progress: 100 });
-      setInstalledServerId(data.id);
-      
-      // Fetch discovered tools
-      try {
-        const toolsResponse = await fetch(`/api/mcp/servers/${data.id}/tools`);
-        const toolsData = await toolsResponse.json();
-        setDiscoveredTools(toolsData.tools || []);
-      } catch (error) {
-        console.error('Failed to fetch tools:', error);
-      }
-      
-      // Move to configure step
-      setTimeout(() => setCurrentStep('configure'), 1000);
-    },
-    onError: (error: any) => {
-      setInstallProgress({ 
-        status: 'error', 
-        message: error.message || 'Installation failed', 
-        progress: 0 
-      });
-      toast({
-        title: "Installation Failed",
-        description: error.message || "Failed to install MCP server",
-        variant: "destructive"
-      });
-    }
-  });
-
   // Configure mutation
   const configureMutation = useMutation({
     mutationFn: async (credentials: Record<string, string>) => {
@@ -202,136 +153,118 @@ export function MCPInstallWizard({ open, onClose, selectedTemplate }: MCPInstall
     }
   });
 
-  const handleInstall = () => {
-    if (sourceType === 'marketplace' && selectedServer) {
-      // NPM package install
-      setCurrentStep('install');
-      fetch('/api/mcp/install', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          templateId: selectedServer.id
-        })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.server) {
-            setInstalledServerId(data.server.id);
-            setInstallProgress({ status: 'complete', message: 'Installation complete!', progress: 100 });
-            setTimeout(() => setCurrentStep('configure'), 1000);
-          } else {
-            throw new Error(data.error || 'Installation failed');
-          }
-        })
-        .catch(error => {
-          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
-          toast({
-            title: "Installation Failed",
-            description: error.message,
-            variant: "destructive"
-          });
+  const handleInstall = async () => {
+    setCurrentStep('install');
+    setInstallProgress({ status: 'downloading', message: 'Starting installation...', progress: 10 });
+
+    try {
+      let result: any;
+
+      if (sourceType === 'marketplace' && selectedServer) {
+        // NPM package install
+        setInstallProgress({ status: 'downloading', message: 'Installing NPM package...', progress: 30 });
+        result = await apiRequest('/api/mcp/install', {
+          method: 'POST',
+          body: { templateId: selectedServer.id }
         });
-    } else if (sourceType === 'github' && githubUrl && customName) {
-      // GitHub install
-      setCurrentStep('install');
-      fetch('/api/mcp/install-github', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          repoUrl: githubUrl,
-          serverName: customName,
-          displayName: customName,
-          category: 'other'
-        })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.server) {
-            setInstalledServerId(data.server.id);
-            setInstallProgress({ status: 'complete', message: 'GitHub installation complete!', progress: 100 });
-            setTimeout(() => setCurrentStep('configure'), 1000);
-          } else {
-            throw new Error(data.error || 'Installation failed');
+      } else if (sourceType === 'github' && githubUrl && customName) {
+        // GitHub clone install
+        setInstallProgress({ status: 'downloading', message: 'Cloning GitHub repository...', progress: 30 });
+        result = await apiRequest('/api/mcp/install-github', {
+          method: 'POST',
+          body: {
+            repoUrl: githubUrl,
+            serverName: customName,
+            displayName: customName,
+            category: 'other'
           }
-        })
-        .catch(error => {
-          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
-          toast({
-            title: "GitHub Installation Failed",
-            description: error.message,
-            variant: "destructive"
-          });
         });
-    } else if (sourceType === 'zip' && zipFile && customName) {
-      // ZIP upload
-      setCurrentStep('install');
-      const formData = new FormData();
-      formData.append('file', zipFile);
-      formData.append('serverName', customName);
-      formData.append('displayName', customName);
-      formData.append('category', 'other');
+      } else if (sourceType === 'zip' && zipFile && customName) {
+        // ZIP upload install - use fetch directly for FormData with tenant UUID and auth headers
+        setInstallProgress({ status: 'installing', message: 'Uploading and extracting ZIP...', progress: 30 });
+        const formData = new FormData();
+        formData.append('file', zipFile);
+        formData.append('serverName', customName);
+        formData.append('displayName', customName);
+        formData.append('category', 'other');
+        
+        // Get tenant UUID (NOT slug) from queryClient
+        const tenantId = getCurrentTenantId();
+        
+        const response = await fetch('/api/mcp/install-zip', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include', // Include cookies for auth
+          headers: {
+            'X-Tenant-ID': tenantId, // Use UUID from queryClient
+            'X-Auth-Session': 'authenticated' // Development auth header
+          }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+          throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+        }
+        
+        result = await response.json();
+      } else if (sourceType === 'code' && customCode && customName) {
+        // Custom code install
+        setInstallProgress({ status: 'installing', message: 'Installing custom code...', progress: 30 });
+        result = await apiRequest('/api/mcp/install-code', {
+          method: 'POST',
+          body: {
+            serverName: customName,
+            displayName: customName,
+            category: 'other',
+            code: customCode,
+            fileName: 'server.ts'
+          }
+        });
+      } else {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
+        setCurrentStep('select');
+        return;
+      }
+
+      // Installation successful
+      setInstallProgress({ status: 'discovering', message: 'Discovering tools...', progress: 70 });
       
-      fetch('/api/mcp/install-zip', {
-        method: 'POST',
-        body: formData
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.server) {
-            setInstalledServerId(data.server.id);
-            setInstallProgress({ status: 'complete', message: 'ZIP installation complete!', progress: 100 });
-            setTimeout(() => setCurrentStep('configure'), 1000);
-          } else {
-            throw new Error(data.error || 'Installation failed');
-          }
-        })
-        .catch(error => {
-          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
-          toast({
-            title: "ZIP Installation Failed",
-            description: error.message,
-            variant: "destructive"
+      if (result?.server?.id) {
+        setInstalledServerId(result.server.id);
+        
+        // Fetch discovered tools
+        try {
+          const toolsResponse = await apiRequest(`/api/mcp/servers/${result.server.id}/tools`, {
+            method: 'GET'
           });
-        });
-    } else if (sourceType === 'code' && customCode && customName) {
-      // Custom code install
-      setCurrentStep('install');
-      fetch('/api/mcp/install-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serverName: customName,
-          displayName: customName,
-          category: 'other',
-          code: customCode,
-          fileName: 'server.ts'
-        })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.server) {
-            setInstalledServerId(data.server.id);
-            setInstallProgress({ status: 'complete', message: 'Code installation complete!', progress: 100 });
-            setTimeout(() => setCurrentStep('configure'), 1000);
-          } else {
-            throw new Error(data.error || 'Installation failed');
-          }
-        })
-        .catch(error => {
-          setInstallProgress({ status: 'error', message: error.message, progress: 0 });
-          toast({
-            title: "Code Installation Failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        });
-    } else {
+          setDiscoveredTools(toolsResponse.tools || []);
+        } catch (error) {
+          console.warn('Failed to fetch tools, continuing anyway:', error);
+          setDiscoveredTools([]);
+        }
+
+        setInstallProgress({ status: 'complete', message: 'Installation complete!', progress: 100 });
+        setTimeout(() => setCurrentStep('configure'), 1000);
+      } else {
+        throw new Error(result?.error || 'Invalid server response');
+      }
+    } catch (error: any) {
+      console.error('Installation error:', error);
+      setInstallProgress({ 
+        status: 'error', 
+        message: error.message || 'Installation failed', 
+        progress: 0 
+      });
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: "Installation Failed",
+        description: error.message || "Failed to install MCP server",
         variant: "destructive"
       });
-      return;
+      setCurrentStep('select');
     }
   };
 
@@ -440,7 +373,7 @@ export function MCPInstallWizard({ open, onClose, selectedTemplate }: MCPInstall
           <Button
             variant="outline"
             onClick={currentStep === 'select' ? handleClose : () => setCurrentStep('select')}
-            disabled={currentStep === 'install' || installMutation.isPending}
+            disabled={currentStep === 'install'}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             {currentStep === 'select' ? 'Cancel' : 'Back'}
