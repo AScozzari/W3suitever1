@@ -30,6 +30,7 @@ const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'))
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
 const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
 const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettingsPage'));
+const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 
 // Loading fallback component
@@ -278,6 +279,19 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/impostazioni`}>
         <AuthenticatedRoute>
           <SettingsPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🔌 MCP SETTINGS - Server MCP management dashboard */}
+      <Route path={`/${tenantSlug}/settings/mcp`}>
+        <AuthenticatedRoute>
+          <MCPSettingsDashboard />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/settings/channels`}>
+        <AuthenticatedRoute>
+          <ChannelSettingsPage />
         </AuthenticatedRoute>
       </Route>
       
