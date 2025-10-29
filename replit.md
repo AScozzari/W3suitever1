@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust security, and utilizes PostgreSQL with Row Level Security (RLS) for strong tenant isolation. The platform aims to provide a scalable, secure, and comprehensive business solution to enhance operational efficiency and capitalize on significant market opportunities.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a distinct WindTre glassmorphism design, robust security measures, and leverages PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform's primary goal is to deliver a scalable, secure, and comprehensive business solution, aiming to enhance operational efficiency and capitalize on market opportunities.
 
 # User Preferences
 ### DATABASE SCHEMA LOCATION (OBBLIGATORIO)
@@ -201,15 +201,12 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 - ❌ Never use hex colors directly - use CSS variables
 
 # System Architecture
-## UI/UX Decisions
-The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui` for consistency. The `@w3suite/frontend-kit` centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks, all styled with CSS variables and Tailwind CSS. All pages maintain app structure with header and sidebar, and have a white background.
-
-## Technical Implementations
+- **UI/UX Decisions**: Glassmorphism WindTre Design System using `shadcn/ui`. `@w3suite/frontend-kit` centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks, styled with CSS variables and Tailwind CSS. All pages maintain app structure with header and sidebar and have a white background.
 - **Monorepo Structure**: Centralized code organization.
 - **Database Architecture**: A 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
 - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
 - **Multitenancy**: Achieved through PostgreSQL RLS, a `TenantProvider`, and global unique constraints.
-- **Universal Workflow System**: Features approval hierarchies, RBAC, event-driven state machines, and audit trails.
+- **Universal Workflow System**: Approval hierarchies, RBAC, event-driven state machines, and audit trails.
 - **Unified Notification System**: Real-time notifications.
 - **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
 - **Task Management System**: Flexible task creation with workflow integration and RBAC-enabled API.
@@ -229,33 +226,20 @@ The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui
 - **Enhanced Error Handling UI**: Toast notifications for mutation failures and structured error responses.
 
 # External Dependencies
-## Database Services
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
 - **Redis**: Used for BullMQ and the Unified Notification System.
-
-## Authentication Services
 - **OAuth2/OIDC Enterprise**: For secure user authentication.
-
-## UI Component Ecosystem
 - **SHADCN/UI**: Primary library for UI components.
 - **Radix UI**: Provides headless component primitives.
-
-## Icon & Utility Libraries
 - **Lucide React**: Icon library.
 - **TanStack React Query**: For efficient server state management.
 - **React Hook Form**: Facilitates robust form handling and validation.
-
-## Development Tools
 - **Vite**: Frontend build tool.
 - **Drizzle Kit**: For database schema management and migrations.
 - **PostCSS**: For CSS pre-processing.
 - **ESBuild**: For bundling server-side code.
 - **Nginx**: Serves as a reverse proxy.
-
-## AI Services
 - **OpenAI**: Utilized for AI Workflow Builder and PDC Analyzer, specifically `gpt-4o`.
-
-## Third-Party Integrations (OAuth Providers)
 - **Google Workspace**
 - **AWS**
 - **Meta/Instagram**

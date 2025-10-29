@@ -2302,6 +2302,131 @@ router.post('/instances/:id/steps/:stepId/retry', rbacMiddleware, requirePermiss
 // ==================== WORKFLOW TEST RUN ====================
 
 /**
+ * Helper: Simulate input data for a step based on node type and context
+ */
+function simulateStepInput(step: any, context: any): Record<string, any> {
+  const baseInput: Record<string, any> = {
+    stepId: step.nodeId,
+    stepName: step.name,
+    tenantId: context.tenantId,
+    userId: context.userId,
+    timestamp: new Date().toISOString()
+  };
+
+  // Add node-specific input data based on type
+  switch (step.type) {
+    case 'trigger':
+      return { ...baseInput, triggerData: step.config || {}, source: 'test-run' };
+    case 'action':
+      return { ...baseInput, actionConfig: step.config || {}, context: context.variables };
+    case 'condition':
+      return { ...baseInput, conditionConfig: step.config || {}, evaluationContext: context.variables };
+    case 'routing':
+      return { ...baseInput, routingRules: step.config?.rules || [], candidates: ['user-1', 'user-2'] };
+    default:
+      return { ...baseInput, config: step.config || {} };
+  }
+}
+
+/**
+ * Helper: Simulate step execution and generate output/messages
+ */
+function simulateStepExecution(step: any, inputData: any, context: any): {
+  status: 'success' | 'warning' | 'error';
+  outputData: Record<string, any> | null;
+  messages: string[];
+  warnings: string[];
+  stack?: string;
+} {
+  const messages: string[] = [];
+  const warnings: string[] = [];
+  
+  // Simulate realistic execution based on executor type
+  const executorId = step.executorId || 'generic-action-executor';
+  
+  // Random chance of warning (10%)
+  const hasWarning = Math.random() < 0.1;
+  
+  // Random chance of error (5% - for testing error UI)
+  const hasError = Math.random() < 0.05;
+  
+  if (hasError) {
+    return {
+      status: 'error',
+      outputData: null,
+      messages: [`Simulated error in ${step.name}: Test execution failure`],
+      warnings: [],
+      stack: `Error: Test execution failure\n  at ${executorId}.execute()\n  at WorkflowEngine.runStep(${step.nodeId})\n  at WorkflowInstance.processNext()`
+    };
+  }
+
+  // Generate realistic output based on executor type
+  let outputData: Record<string, any> = {};
+  
+  if (executorId.includes('email')) {
+    outputData = { 
+      emailSent: true, 
+      messageId: `msg-${Date.now()}`, 
+      recipient: inputData.config?.to || 'test@example.com',
+      sentAt: new Date().toISOString()
+    };
+    messages.push(`Email sent successfully to ${outputData.recipient}`);
+    if (hasWarning) {
+      warnings.push('SMTP response time slower than expected (>300ms)');
+    }
+  } else if (executorId.includes('approval')) {
+    outputData = { 
+      approved: true, 
+      approver: 'admin-user', 
+      approvedAt: new Date().toISOString(),
+      comments: 'Test approval'
+    };
+    messages.push('Approval granted by admin-user');
+  } else if (executorId.includes('lead') || executorId.includes('crm')) {
+    outputData = { 
+      leadId: `lead-${Date.now()}`, 
+      leadScore: 85, 
+      status: 'qualified',
+      updatedFields: ['status', 'score', 'assignedTo']
+    };
+    messages.push('Lead record updated successfully');
+    if (hasWarning) {
+      warnings.push('Lead score calculation took longer than threshold');
+    }
+  } else if (executorId.includes('routing') || executorId.includes('assignment')) {
+    outputData = { 
+      assignedTo: 'user-1', 
+      assignmentMethod: 'round-robin',
+      queuePosition: 3,
+      estimatedResponseTime: '15 minutes'
+    };
+    messages.push('Task assigned to user-1 via round-robin routing');
+  } else if (executorId.includes('condition') || executorId.includes('decision')) {
+    outputData = { 
+      conditionMet: true, 
+      evaluatedValue: inputData.config?.value || 'true',
+      branch: 'success'
+    };
+    messages.push('Condition evaluated to TRUE');
+  } else {
+    // Generic action output
+    outputData = { 
+      executionResult: 'success', 
+      processedData: inputData.config || {},
+      timestamp: new Date().toISOString()
+    };
+    messages.push(`${step.name} executed successfully`);
+  }
+
+  return {
+    status: hasWarning ? 'warning' : 'success',
+    outputData,
+    messages,
+    warnings
+  };
+}
+
+/**
  * POST /api/workflows/test-run
  * Test workflow execution without saving to database
  * Accepts ReactFlow nodes/edges directly and simulates execution
@@ -2400,33 +2525,80 @@ router.post('/test-run', rbacMiddleware, requirePermission('workflow.create'), a
       } as ApiErrorResponse);
     }
 
-    // Simulate execution (dry-run without actual actions)
+    // Simulate execution (dry-run with detailed debug tracking)
     const startTime = Date.now();
     const executionResults = [];
     let currentNodeId = parsedWorkflow.startNodeId;
     let failedNodeId: string | null = null;
     let failureReason: string | null = null;
+    let failureStack: string | null = null;
+    
+    // Context accumulator (simulates workflow state)
+    const workflowContext: Record<string, any> = {
+      tenantId,
+      userId,
+      startedAt: new Date().toISOString(),
+      variables: {}
+    };
 
     try {
       // Walk through the workflow graph
       for (let i = 0; i < parsedWorkflow.totalSteps && i < 100; i++) { // Max 100 steps safety limit
+        const stepStartTime = Date.now();
         const step = parsedWorkflow.steps.get(currentNodeId);
         
         if (!step) {
           failedNodeId = currentNodeId;
           failureReason = 'Step not found in workflow definition';
+          failureStack = `at WorkflowParser.getStep(${currentNodeId})\n  at TestRunner.execute()\n  at POST /api/workflows/test-run`;
           break;
         }
 
-        // Simulate step execution
+        // Simulate input data based on node type and config
+        const inputData = simulateStepInput(step, workflowContext);
+        
+        // Simulate step execution with potential warnings
+        const stepResult = simulateStepExecution(step, inputData, workflowContext);
+        
+        const stepEndTime = Date.now();
+        const stepDuration = stepEndTime - stepStartTime;
+
+        // Add simulated delay for realistic timing
+        const simulatedDelay = Math.floor(Math.random() * 50) + 5; // 5-55ms
+        
+        // Track detailed execution result
         executionResults.push({
           nodeId: step.nodeId,
           nodeName: step.name,
           nodeType: step.type,
-          status: 'simulated',
           executorId: step.executorId,
+          status: stepResult.status, // 'success' | 'warning' | 'error'
+          durationMs: stepDuration + simulatedDelay,
+          startedAt: new Date(stepStartTime).toISOString(),
+          completedAt: new Date(stepEndTime).toISOString(),
+          inputData: inputData,
+          outputData: stepResult.outputData,
+          contextSnapshot: { ...workflowContext.variables },
+          messages: stepResult.messages,
+          warnings: stepResult.warnings,
           config: step.config
         });
+
+        // Update workflow context with step output
+        if (stepResult.outputData) {
+          workflowContext.variables = {
+            ...workflowContext.variables,
+            ...stepResult.outputData
+          };
+        }
+
+        // Check if step failed
+        if (stepResult.status === 'error') {
+          failedNodeId = step.nodeId;
+          failureReason = stepResult.messages?.[0] || 'Step execution failed';
+          failureStack = stepResult.stack || `at ${step.executorId}.execute()\n  at WorkflowEngine.runStep()\n  at POST /api/workflows/test-run`;
+          break;
+        }
 
         // Find next step
         const nextSteps = parsedWorkflow.edges.filter(e => e.source === currentNodeId);
@@ -2458,7 +2630,9 @@ router.post('/test-run', rbacMiddleware, requirePermission('workflow.create'), a
             executedSteps: executionResults.length,
             failedNodeId,
             failureReason,
-            executionResults
+            failureStack,
+            executionResults,
+            workflowContext: workflowContext.variables
           },
           message: `Test run failed at node: ${failedNodeId}`,
           timestamp: new Date().toISOString()
@@ -2480,7 +2654,8 @@ router.post('/test-run', rbacMiddleware, requirePermission('workflow.create'), a
           totalSteps: parsedWorkflow.totalSteps,
           executedSteps: executionResults.length,
           startNodeId: parsedWorkflow.startNodeId,
-          executionResults
+          executionResults,
+          workflowContext: workflowContext.variables
         },
         message: 'Workflow test run completed successfully',
         timestamp: new Date().toISOString()
@@ -2491,6 +2666,7 @@ router.post('/test-run', rbacMiddleware, requirePermission('workflow.create'), a
         executedSteps: number;
         startNodeId: string;
         executionResults: any[];
+        workflowContext: Record<string, any>;
       }>);
 
     } catch (executionError: any) {

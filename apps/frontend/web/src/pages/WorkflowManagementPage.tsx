@@ -24,6 +24,7 @@ import { QueueMetricsPanel, WorkflowExecutionDrawer, WorkflowAnalyticsDashboard 
 import MCPSettingsDashboard from './settings/MCPSettingsDashboard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
+import { WorkflowTestResultDialog } from '../components/WorkflowTestResultDialog';
 import '../styles/workflow-builder.css';
 import { 
   Play, 
@@ -140,6 +141,10 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [selectedTeamForWorkflows, setSelectedTeamForWorkflows] = useState<Team | null>(null);
+  
+  // 🧪 Workflow test state
+  const [testRunResult, setTestRunResult] = useState<any | null>(null);
+  const [isRunningTest, setIsRunningTest] = useState(false);
   
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
@@ -281,13 +286,62 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
     });
   };
   
-  // 🎯 Handle running workflow
-  const handleRunWorkflow = (templateId: string) => {
-    // TODO: Implement run workflow
-    toast({
-      title: 'Run Workflow',
-      description: 'Workflow execution coming soon...',
-    });
+  // 🎯 Handle running workflow test
+  const handleRunWorkflow = async (templateId: string) => {
+    setIsRunningTest(true);
+    setTestRunResult(null);
+
+    try {
+      // Get template data
+      const template = templates.find(t => t.id === templateId);
+      if (!template) {
+        toast({
+          title: 'Error',
+          description: 'Template not found',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Call test-run endpoint
+      const response = await fetch('/api/workflows/test-run', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          nodes: template.workflowData?.nodes || [],
+          edges: template.workflowData?.edges || [],
+          testName: template.name
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Test run completed:', result);
+        setTestRunResult(result);
+      } else {
+        console.error('❌ Test run failed:', result);
+        setTestRunResult({ 
+          success: false, 
+          error: result.error || 'Test run failed',
+          message: result.message,
+          data: result.data || {}
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Test run request failed:', error);
+      setTestRunResult({ 
+        success: false, 
+        error: 'Network error',
+        message: error.message || 'Failed to connect to server',
+        data: {}
+      });
+    } finally {
+      setIsRunningTest(false);
+    }
   };
 
   return (
@@ -1633,6 +1687,13 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
         onOpenChange={setShowExecutionDrawer}
         instanceId={selectedInstanceId}
         instanceName={selectedInstanceName}
+      />
+
+      {/* 🧪 Workflow Test Result Dialog */}
+      <WorkflowTestResultDialog
+        result={testRunResult}
+        open={testRunResult !== null}
+        onOpenChange={(open) => !open && setTestRunResult(null)}
       />
       </div>
     </Layout>
