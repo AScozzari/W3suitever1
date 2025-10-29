@@ -301,9 +301,9 @@ export function MCPServerTooltip({
                           Quando configuri GA4, Facebook Pixel o TikTok IDs nel modal <strong>Modifica Punto Vendita → Marketing</strong>, questo server crea automaticamente:
                         </p>
                         <ul className="mt-1.5 ml-3 space-y-0.5 text-xs text-orange-800">
-                          <li key="trigger">• Trigger condizionale per lo store</li>
-                          <li key="tags">• Tag GA4, Facebook Pixel, TikTok</li>
-                          <li key="vars">• Variabili tenant_id e store_id</li>
+                          {['Trigger condizionale per lo store', 'Tag GA4, Facebook Pixel, TikTok', 'Variabili tenant_id e store_id'].map((item, idx) => (
+                            <li key={`gtm-item-${idx}`}>• {item}</li>
+                          ))}
                         </ul>
                       </div>
                       <div key="gtm-snippet" className="bg-green-50 border border-green-200 rounded-lg p-2.5">
