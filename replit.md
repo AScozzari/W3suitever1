@@ -79,7 +79,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Integrated Marketing Attribution**: Features UTM tracking, GTM integration, social media webhooks, AI lead scoring, and Enhanced Conversions for Google Ads/GA4.
 - **GTM Auto-Configuration System (MCP)**: Utilizes `google-tag-manager-mcp` server for automated store tracking setup.
 - **VoIP Telephony System (Enterprise WebRTC)**: Supports multi-store trunks, tenant-scoped SIP, user-specific WebRTC extensions, floating softphone, call actions integrated with CRM entities, CDR analytics, and policy-based routing.
-- **AI Voice Agent System**: Production-ready intelligent voice assistant powered by OpenAI Realtime API (gpt-4o-realtime) via W3 Voice Gateway Microservice for bridging FreeSWITCH audio, function calling, time-based routing, graceful degradation, security, and session tracking.
+- **AI Voice Agent System**: Production-ready intelligent voice assistant powered by OpenAI Realtime API (gpt-4o-realtime) via W3 Voice Gateway Microservice for bridging FreeSWITCH audio, function calling, time-based routing, graceful degradation, security, and session tracking. Centralized in Brand Interface `aiAgentsRegistry` as "customer-care-voice" agent with moduleContext "support", linked to VoIP trunks via `aiAgentRef` for seamless inbound call routing.
 - **Dual-Mode Campaign Creation**: Provides a beginner-friendly wizard and an advanced interface, with user preference persistence.
 - **GDPR Consent Enforcement System**: Backend service validating campaign consents against lead status, blocking non-compliant conversions.
 - **Enhanced Error Handling UI**: Provides toast notifications for mutation failures and structured error responses.
