@@ -290,6 +290,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   
   // 🎯 Handle running workflow test
   const handleRunWorkflow = async (templateId: string) => {
+    console.log('🎯 handleRunWorkflow called with templateId:', templateId);
     setIsRunningTest(true);
     setTestRunResult(null);
 
@@ -297,11 +298,13 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
       // Get template data
       const template = templates.find((t: WorkflowTemplate) => t.id === templateId);
       if (!template) {
+        console.error('❌ Template not found:', templateId);
         toast({
           title: 'Error',
           description: 'Template not found',
           variant: 'destructive',
         });
+        setIsRunningTest(false);
         return;
       }
 
@@ -309,7 +312,10 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
       const nodes = template.workflowData?.nodes || [];
       const edges = template.workflowData?.edges || [];
       
+      console.log('📊 Workflow data:', { nodes: nodes.length, edges: edges.length, template });
+      
       if (nodes.length === 0) {
+        console.warn('⚠️ Workflow has no nodes, showing toast');
         toast({
           title: 'Workflow Vuoto',
           description: 'Il workflow non contiene nodi. Apri il workflow nel canvas e aggiungi almeno un nodo prima di testarlo.',
