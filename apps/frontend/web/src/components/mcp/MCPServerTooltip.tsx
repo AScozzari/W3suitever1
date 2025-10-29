@@ -217,43 +217,45 @@ export function MCPServerTooltip({
 
             {/* Tools Tab */}
             <TabsContent value="tools" className="space-y-3 mt-3">
-              {discoveredTools.length > 0 ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-gray-600">
-                    <span className="font-semibold text-gray-900">{discoveredTools.length}</span> tools available in this server
-                  </p>
-                  <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                    {discoveredTools.map(tool => (
-                      <div
-                        key={tool.name}
-                        className="bg-gradient-to-r from-[#FF6900]/5 to-[#7B2CBF]/5 border border-gray-200 rounded-lg p-2.5"
-                      >
-                        <code className="text-xs font-mono font-semibold text-gray-900 block mb-1">
-                          {tool.name}
-                        </code>
-                        {tool.description && (
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {tool.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+              <div>
+                {discoveredTools.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-600">
+                      <span className="font-semibold text-gray-900">{discoveredTools.length}</span> tools available in this server
+                    </p>
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                      {discoveredTools.map(tool => (
+                        <div
+                          key={tool.name}
+                          className="bg-gradient-to-r from-[#FF6900]/5 to-[#7B2CBF]/5 border border-gray-200 rounded-lg p-2.5"
+                        >
+                          <code className="text-xs font-mono font-semibold text-gray-900 block mb-1">
+                            {tool.name}
+                          </code>
+                          {tool.description && (
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              {tool.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : marketplaceData.exampleTools && marketplaceData.exampleTools.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-600 mb-2">Example tools provided by this server:</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {marketplaceData.exampleTools.map((tool, idx) => (
-                      <Badge key={`example-${tool}-${idx}`} variant="secondary" className="text-xs font-mono">
-                        {tool}
-                      </Badge>
-                    ))}
+                ) : marketplaceData.exampleTools && marketplaceData.exampleTools.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-600 mb-2">Example tools provided by this server:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {marketplaceData.exampleTools.map((tool, idx) => (
+                        <Badge key={`example-${tool}-${idx}`} variant="secondary" className="text-xs font-mono">
+                          {tool}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500 italic">No tools information available</p>
-              )}
+                ) : (
+                  <p className="text-xs text-gray-500 italic">No tools information available</p>
+                )}
+              </div>
             </TabsContent>
 
             {/* Security Tab */}

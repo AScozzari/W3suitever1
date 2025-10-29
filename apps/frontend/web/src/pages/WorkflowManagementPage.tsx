@@ -308,22 +308,11 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
         return;
       }
 
-      // Validate workflow has nodes
+      // Get workflow data (allow empty workflows for testing)
       const nodes = template.workflowData?.nodes || [];
       const edges = template.workflowData?.edges || [];
       
       console.log('📊 Workflow data:', { nodes: nodes.length, edges: edges.length, template });
-      
-      if (nodes.length === 0) {
-        console.warn('⚠️ Workflow has no nodes, showing toast');
-        toast({
-          title: 'Workflow Vuoto',
-          description: 'Il workflow non contiene nodi. Apri il workflow nel canvas e aggiungi almeno un nodo prima di testarlo.',
-          variant: 'destructive',
-        });
-        setIsRunningTest(false);
-        return;
-      }
 
       // Call test-run endpoint
       const response = await fetch('/api/workflows/test-run', {

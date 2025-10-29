@@ -1,0 +1,67 @@
+)
+overrideMethod @ hook.js:608
+printWarning @ react_jsx-dev-runtime.js?v=20cc9b00:64
+error @ react_jsx-dev-runtime.js?v=20cc9b00:48
+validateExplicitKey @ react_jsx-dev-runtime.js?v=20cc9b00:724
+validateChildKeys @ react_jsx-dev-runtime.js?v=20cc9b00:737
+jsxWithValidation @ react_jsx-dev-runtime.js?v=20cc9b00:855
+MCPServerTooltip @ MCPServerTooltip.tsx:225
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=20cc9b00:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=20cc9b00:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=20cc9b00:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=20cc9b00:103
+flush @ @tanstack_react-query.js?v=20cc9b00:610
+batch @ @tanstack_react-query.js?v=20cc9b00:628
+dispatch_fn @ @tanstack_react-query.js?v=20cc9b00:1260
+setData @ @tanstack_react-query.js?v=20cc9b00:931
+fetch @ @tanstack_react-query.js?v=20cc9b00:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=20cc9b00:1639
+onSubscribe @ @tanstack_react-query.js?v=20cc9b00:1335
+subscribe @ @tanstack_react-query.js?v=20cc9b00:24
+(anonymous) @ @tanstack_react-query.js?v=20cc9b00:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=20cc9b00:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=20cc9b00:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=20cc9b00:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=20cc9b00:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=20cc9b00:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=20cc9b00:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:18627Understand this error
+WorkflowManagementPage.tsx:293 🎯 handleRunWorkflow called with templateId: 721c9819-23aa-42ab-a86f-1f787948681c
+WorkflowManagementPage.tsx:315 📊 Workflow data: {nodes: 0, edges: 0, template: {…}}
+WorkflowManagementPage.tsx:318 ⚠️ Workflow has no nodes, showing toast
+overrideMethod @ hook.js:608
+handleRunWorkflow @ WorkflowManagementPage.tsx:318
+onClick @ WorkflowManagementPage.tsx:895
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=20cc9b00:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=20cc9b00:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=20cc9b00:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=20cc9b00:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=20cc9b00:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=20cc9b00:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=20cc9b00:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=20cc9b00:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5449Understand this warning
+WorkflowManagementPage.tsx:293 🎯 handleRunWorkflow called with templateId: 721c9819-23aa-42ab-a86f-1f787948681c
+WorkflowManagementPage.tsx:315 📊 Workflow data: {nodes: 0, edges: 0, template: {…}}
+WorkflowManagementPage.tsx:318 ⚠️ Workflow has no nodes, showing toast
