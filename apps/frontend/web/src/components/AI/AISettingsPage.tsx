@@ -9,7 +9,7 @@ import {
   CheckCircle, Users, Lock, Unlock, Upload, Link, CheckSquare,
   ChevronDown, ChevronUp, Globe, Mic, Image, Video, FileUp
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AISettings {
   tenantId: string;
@@ -1822,6 +1822,9 @@ export default function AISettingsPage() {
               <Brain className="w-6 h-6 text-[#FF6900]" />
               <span>Training AI - Tippy (Agent Specific)</span>
             </DialogTitle>
+            <DialogDescription>
+              Importa contenuti da URL o carica file per arricchire il contesto dell'agente AI.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">
@@ -1977,6 +1980,9 @@ export default function AISettingsPage() {
               <Eye className="w-6 h-6 text-blue-600" />
               <span>Storyboard Training - Tippy (Agent Specific)</span>
             </DialogTitle>
+            <DialogDescription>
+              Visualizza e gestisci i contenuti di training caricati per l'agente AI.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
