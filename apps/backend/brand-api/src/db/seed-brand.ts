@@ -1329,7 +1329,7 @@ Sei pronto ad assistere i clienti con professionalità ed efficienza!`,
           voice_characteristics: "calm_clear_friendly",
           language: "italian"
         },
-        moduleContext: "voip",
+        moduleContext: "support",
         baseConfiguration: {
           default_model: "gpt-4o-realtime-preview-2024-10-01",
           voice: "alloy",
