@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PhoneConfigDialog } from '@/components/crm/PhoneConfigDialog';
+import { PhoneVoIPConfig } from '@/components/crm/PhoneVoIPConfig';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,14 +116,14 @@ const cardVariants = {
 };
 
 export default function ChannelSettingsPage() {
-  const [isPhoneConfigOpen, setIsPhoneConfigOpen] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
 
   const handleChannelClick = (channelId: string) => {
-    if (channelId === 'phone') {
-      setIsPhoneConfigOpen(true);
+    // Toggle: if clicking on already selected channel, close it
+    if (selectedChannel === channelId) {
+      setSelectedChannel(null);
     } else {
-      // Future: open config dialog for other channels
-      console.log(`Channel ${channelId} configuration coming soon`);
+      setSelectedChannel(channelId);
     }
   };
 
@@ -231,6 +231,21 @@ export default function ChannelSettingsPage() {
         })}
       </motion.div>
 
+      {/* Phone/VoIP Configuration - Embedded */}
+      {selectedChannel === 'phone' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <PhoneVoIPConfig 
+            visible={true} 
+            onClose={() => setSelectedChannel(null)} 
+          />
+        </motion.div>
+      )}
+
       {/* Info Banner */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -253,12 +268,6 @@ export default function ChannelSettingsPage() {
           </div>
         </Card>
       </motion.div>
-
-      {/* Phone Config Dialog */}
-      <PhoneConfigDialog 
-        open={isPhoneConfigOpen} 
-        onClose={() => setIsPhoneConfigOpen(false)} 
-      />
     </div>
   );
 }
