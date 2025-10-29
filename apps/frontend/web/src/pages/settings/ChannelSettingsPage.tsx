@@ -213,7 +213,7 @@ export default function ChannelSettingsPage() {
                 {/* Action Button */}
                 {channel.enabled && (
                   <Button 
-                    className="w-full mt-4"
+                    className="w-full mt-4 pointer-events-none"
                     variant="outline"
                     style={{ 
                       borderColor: `${channel.color}50`,
