@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a distinct WindTre glassmorphism design, robust security measures, and leverages PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform's primary goal is to deliver a scalable, secure, and comprehensive business solution, aiming to enhance operational efficiency and capitalize on market opportunities.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust security, and utilizes PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform aims to provide a scalable, secure, and comprehensive business solution to improve operational efficiency and leverage market opportunities.
 
 # User Preferences
 ### DATABASE SCHEMA LOCATION (OBBLIGATORIO)
@@ -38,7 +38,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 ```typescript
 // ✅ CORRECT - Direct from canonical schema
 import { users, stores, leaveRequests } from './db/schema/w3suite';
-import { countries, paymentMethods } from './db/schema/public';
+import { countries, payment methods } from './db/schema/public';
 import { brandTenants } from './db/schema/brand-interface';
 
 // ✅ ACCEPTABLE - Backward compatibility (index.ts re-exports)
@@ -201,29 +201,30 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 - ❌ Never use hex colors directly - use CSS variables
 
 # System Architecture
-- **UI/UX Decisions**: Glassmorphism WindTre Design System using `shadcn/ui`. `@w3suite/frontend-kit` centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks, styled with CSS variables and Tailwind CSS. All pages maintain app structure with header and sidebar and have a white background.
-- **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: A 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
-- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `frontend-kit` for design tokens, templates, and components, styled with CSS variables and Tailwind CSS. All pages maintain app structure with header, sidebar, and a white background.
+- **Monorepo Structure**: Centralized code organization for efficient management.
+- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
+- **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system for secure access control.
 - **Multitenancy**: Achieved through PostgreSQL RLS, a `TenantProvider`, and global unique constraints.
-- **Universal Workflow System**: Approval hierarchies, RBAC, event-driven state machines, and audit trails.
-- **Unified Notification System**: Real-time notifications.
+- **Universal Workflow System**: Features approval hierarchies, RBAC, event-driven state machines, and audit trails.
+- **Unified Notification System**: Provides real-time notifications across the platform.
 - **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
-- **Task Management System**: Flexible task creation with workflow integration and RBAC-enabled API.
+- **Task Management System**: Offers flexible task creation with workflow integration and an RBAC-enabled API.
 - **MCP Multi-Provider OAuth System**: Manages unified credentials for third-party services with per-user OAuth isolation.
 - **AI Enforcement Middleware**: Hierarchical API-level blocking for AI functionalities.
 - **AI Workflow Builder**: Generates natural language workflows using OpenAI `gpt-4o` in strict JSON mode, outputting ReactFlow DSL.
 - **Intelligent Workflow Routing**: Supports automatic and manual task assignment.
 - **AI Tools Ecosystem with PDC Analyzer**: Dashboard for AI tools, including automated PDF contract analysis using GPT-4.
 - **CRM Module Backend**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, and lead-to-deal workflows, with RESTful endpoints, Zod validation, RLS, and structured logging.
-- **CRM Pipeline Visualization**: Table, Kanban, and Gantt views using TanStack Table and `@dnd-kit`, including workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **CRM Pipeline Visualization**: Offers Table, Kanban, and Gantt views using TanStack Table and `@dnd-kit`, including workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
 - **CRM Workflow Auto-Trigger**: Dual-mode (automatic/manual) execution of pipeline workflows.
-- **Integrated Marketing Attribution**: UTM tracking, GTM integration, social media webhooks, AI lead scoring, and Enhanced Conversions for Google Ads/GA4.
+- **Integrated Marketing Attribution**: Features UTM tracking, GTM integration, social media webhooks, AI lead scoring, and Enhanced Conversions for Google Ads/GA4.
 - **GTM Auto-Configuration System (MCP)**: Utilizes `google-tag-manager-mcp` server for automated store tracking setup.
-- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunks, tenant-scoped SIP, user-specific WebRTC extensions, floating softphone, call actions integrated with CRM entities, CDR analytics, and policy-based routing.
-- **Dual-Mode Campaign Creation**: Beginner-friendly wizard and advanced interface, with user preference persistence.
+- **VoIP Telephony System (Enterprise WebRTC)**: Supports multi-store trunks, tenant-scoped SIP, user-specific WebRTC extensions, floating softphone, call actions integrated with CRM entities, CDR analytics, and policy-based routing.
+- **AI Voice Agent System**: Production-ready intelligent voice assistant powered by OpenAI Realtime API (gpt-4o-realtime) via W3 Voice Gateway Microservice for bridging FreeSWITCH audio, function calling, time-based routing, graceful degradation, security, and session tracking.
+- **Dual-Mode Campaign Creation**: Provides a beginner-friendly wizard and an advanced interface, with user preference persistence.
 - **GDPR Consent Enforcement System**: Backend service validating campaign consents against lead status, blocking non-compliant conversions.
-- **Enhanced Error Handling UI**: Toast notifications for mutation failures and structured error responses.
+- **Enhanced Error Handling UI**: Provides toast notifications for mutation failures and structured error responses.
 
 # External Dependencies
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
@@ -239,10 +240,10 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 - **PostCSS**: For CSS pre-processing.
 - **ESBuild**: For bundling server-side code.
 - **Nginx**: Serves as a reverse proxy.
-- **OpenAI**: Utilized for AI Workflow Builder and PDC Analyzer, specifically `gpt-4o`.
-- **Google Workspace**
-- **AWS**
-- **Meta/Instagram**
-- **Microsoft 365**
-- **Stripe**
-- **GTM/Analytics**
+- **OpenAI**: Utilized for AI Workflow Builder, PDC Analyzer, and AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
+- **Google Workspace**: Integration for various services.
+- **AWS**: Cloud services.
+- **Meta/Instagram**: Social media integrations.
+- **Microsoft 365**: Office suite integration.
+- **Stripe**: Payment processing.
+- **GTM/Analytics**: Google Tag Manager and analytics services.
