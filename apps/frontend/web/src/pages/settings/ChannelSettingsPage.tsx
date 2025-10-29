@@ -130,101 +130,88 @@ export default function ChannelSettingsPage() {
   return (
     <div>
 
-      {/* Channels Grid */}
+      {/* Channels Menu Bar - Horizontal Compact Cards */}
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="flex flex-wrap gap-3 mb-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         {channels.map((channel) => {
           const Icon = channel.icon;
+          const isSelected = selectedChannel === channel.id;
           return (
             <motion.div
               key={channel.id}
               variants={cardVariants}
-              whileHover={{ y: -8, transition: { type: "spring", stiffness: 400 } }}
+              whileHover={{ scale: channel.enabled ? 1.02 : 1, transition: { type: "spring", stiffness: 300 } }}
+              whileTap={{ scale: channel.enabled ? 0.98 : 1 }}
             >
               <Card 
                 className={`
-                  p-6 h-full
-                  bg-gradient-to-br ${channel.gradient} backdrop-blur-sm
-                  border-2 border-white/20 hover:border-white/40
-                  shadow-lg hover:shadow-xl
-                  transition-all duration-300
+                  relative overflow-hidden
+                  px-4 py-3
+                  flex items-center gap-3
+                  ${isSelected 
+                    ? 'bg-white border-2 shadow-lg' 
+                    : 'bg-white/80 backdrop-blur-sm border border-gray-200 hover:border-gray-300'
+                  }
+                  transition-all duration-200
                   ${channel.enabled ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}
                 `}
+                style={isSelected ? { borderColor: channel.color } : {}}
                 onClick={() => channel.enabled && handleChannelClick(channel.id)}
                 data-testid={`card-channel-${channel.id}`}
               >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
+                {/* Colored left border indicator */}
+                {isSelected && (
                   <div 
-                    className="p-3 rounded-xl shadow-md"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${channel.color}50, ${channel.color}70)`,
-                      border: `2px solid ${channel.color}80`
-                    }}
-                  >
-                    <Icon className="w-8 h-8" style={{ color: '#ffffff' }} />
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    {channel.enabled ? (
-                      <Badge variant="outline" className="bg-green-500/20 text-green-300 border-green-500/30">
-                        <Zap className="w-3 h-3 mr-1" />
-                        Available
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-gray-500/20 text-gray-400 border-gray-500/30">
-                        Coming Soon
-                      </Badge>
-                    )}
-                    
-                    {channel.configured && (
-                      <Badge variant="outline" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Configured
-                      </Badge>
-                    )}
-                  </div>
+                    className="absolute left-0 top-0 bottom-0 w-1"
+                    style={{ backgroundColor: channel.color }}
+                  />
+                )}
+                
+                {/* Icon */}
+                <div 
+                  className="p-2 rounded-lg flex-shrink-0"
+                  style={{ 
+                    backgroundColor: `${channel.color}15`,
+                  }}
+                >
+                  <Icon className="w-5 h-5" style={{ color: channel.color }} />
                 </div>
-
-                {/* Content */}
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold text-white mb-2 drop-shadow-sm">
+                
+                {/* Channel Name */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-800 truncate">
                     {channel.name}
                   </h3>
-                  <p className="text-sm text-gray-200 mb-4 font-medium">
-                    {channel.description}
-                  </p>
-
-                  {/* Features List */}
-                  <div className="space-y-2">
-                    {channel.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-200 font-medium">
-                        <CheckCircle2 className="w-3 h-3 text-green-300" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {channel.enabled && channel.configured && (
+                    <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Configured
+                    </p>
+                  )}
                 </div>
-
-                {/* Action Button */}
-                {channel.enabled && (
-                  <Button 
-                    className="w-full mt-4 pointer-events-none"
-                    variant="outline"
-                    style={{ 
-                      borderColor: `${channel.color}50`,
-                      color: channel.color
-                    }}
-                    data-testid={`button-configure-${channel.id}`}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure Channel
-                  </Button>
-                )}
+                
+                {/* Status Badge */}
+                <div className="flex-shrink-0">
+                  {channel.enabled ? (
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs border-green-300 text-green-700 bg-green-50"
+                    >
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs border-gray-300 text-gray-500 bg-gray-50"
+                    >
+                      Soon
+                    </Badge>
+                  )}
+                </div>
               </Card>
             </motion.div>
           );
