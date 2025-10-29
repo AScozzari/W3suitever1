@@ -8,8 +8,10 @@
  * - Drive: folderId="root" (user's My Drive root)
  * 
  * Node counts by ecosystem:
- * - OUTBOUND actions: Google 5, AWS 11, Meta 9, MS 7, Stripe 6, GTM 6, PostgreSQL 9
+ * - OUTBOUND actions: Google 5, AWS 11, Meta 3, MS 8, Stripe 6, GTM 6, PostgreSQL 9, Telegram 8, WhatsApp 7, Twilio 10
  * - INBOUND triggers: Google 5, AWS 5, Meta 6, MS 4, Stripe 4, GTM 15, PostgreSQL 6
+ * - TOTAL: 95 nodes (70 outbound + 30 new nodes, 45 inbound triggers)
+ * - NOTE: Instagram comment reply disabled (tool not available in Instagram MCP Server)
  */
 
 import { BaseNodeDefinition } from '../types/workflow-nodes';
@@ -44,7 +46,10 @@ export const MCP_ECOSYSTEMS = {
   microsoft: { badge: '[MS]', color: '#0078D4', name: 'Microsoft 365' },
   stripe: { badge: '[STRIPE]', color: '#635BFF', name: 'Stripe' },
   gtm: { badge: '[GTM]', color: '#4CAF50', name: 'GTM/Analytics' },
-  postgresql: { badge: '[PG]', color: '#336791', name: 'PostgreSQL' }
+  postgresql: { badge: '[PG]', color: '#336791', name: 'PostgreSQL' },
+  telegram: { badge: '[TG]', color: '#0088CC', name: 'Telegram' },
+  whatsapp: { badge: '[WA]', color: '#25D366', name: 'WhatsApp Business' },
+  twilio: { badge: '[TWILIO]', color: '#F22F46', name: 'Twilio' }
 } as const;
 
 // 🔵 GOOGLE WORKSPACE OUTBOUND (12 nodes)
@@ -225,12 +230,13 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
   {
     id: 'mcp-meta-instagram-post',
     name: '[META] Instagram Create Post',
-    description: 'Publish image/carousel post to Instagram Feed',
+    description: 'Publish image/carousel post to Instagram Feed (Instagram MCP Server)',
     category: 'mcp-outbound',
     ecosystem: 'meta',
     icon: 'Image',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.1.0',
+    version: '1.2.0', // Updated with toolName
+    toolName: 'publish_media', // Instagram MCP server (jlbadano)
     configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       caption: z.string(),
@@ -242,12 +248,13 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
   {
     id: 'mcp-meta-instagram-story',
     name: '[META] Instagram Publish Story',
-    description: 'Publish photo/video story (24h lifespan)',
+    description: 'Publish photo/video story (24h lifespan) (Instagram MCP Server)',
     category: 'mcp-outbound',
     ecosystem: 'meta',
     icon: 'Camera',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.1.0',
+    version: '1.2.0',
+    toolName: 'publish_media', // Instagram MCP server (jlbadano) - same tool, different media type
     configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       mediaUrl: z.string().url(),
@@ -256,31 +263,38 @@ export const META_OUTBOUND_NODES: BaseNodeDefinition[] = [
     }),
     defaultConfig: { ...MCP_SERVER_CONFIG.defaults, mediaUrl: '', mediaType: 'IMAGE' }
   },
-  {
+  // NOTE: Instagram MCP Server (jlbadano) does NOT have a dedicated "reply to comment" tool
+  // Available tools are: get_profile_info, get_media_posts, get_media_insights, publish_media, 
+  // get_engagement_metrics, list_facebook_pages, read_direct_messages, send_direct_message
+  // Comment moderation might require Graph API direct access or Meta Ads MCP
+  // Keeping this node disabled until proper tool is identified or added to Instagram MCP
+  /*{
     id: 'mcp-meta-instagram-comment',
     name: '[META] Instagram Reply Comment',
-    description: 'Reply to Instagram comment with text',
+    description: 'Reply to Instagram comment with text (DISABLED - tool not available in Instagram MCP Server)',
     category: 'mcp-outbound',
     ecosystem: 'meta',
     icon: 'MessageCircle',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.1.0',
+    version: '1.2.0',
+    toolName: 'DISABLED', // Instagram MCP server does not support comment replies
     configSchema: withServerConfig({
-      instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
+      instagramAccountId: z.string().optional(),
       commentId: z.string(),
       message: z.string()
     }),
     defaultConfig: { ...MCP_SERVER_CONFIG.defaults, commentId: '', message: '' }
-  },
+  },*/
   {
     id: 'mcp-meta-instagram-message',
     name: '[META] Instagram Send DM',
-    description: 'Send direct message to Instagram user',
+    description: 'Send direct message to Instagram user (Instagram MCP Server)',
     category: 'mcp-outbound',
     ecosystem: 'meta',
     icon: 'Send',
     color: MCP_ECOSYSTEMS.meta.color,
-    version: '1.1.0',
+    version: '1.2.0',
+    toolName: 'send_direct_message', // Instagram MCP server (jlbadano)
     configSchema: withServerConfig({
       instagramAccountId: z.string().optional(), // Backend uses 'primary' (first connected account) if omitted
       recipientId: z.string(),
@@ -339,6 +353,92 @@ export const MICROSOFT_OUTBOUND_NODES: BaseNodeDefinition[] = [
       message: z.string()
     }),
     defaultConfig: { ...MCP_SERVER_CONFIG.defaults, channelId: '', message: '' }
+  },
+  {
+    id: 'mcp-ms-sharepoint-upload',
+    name: '[MS] SharePoint Upload',
+    description: 'Upload document to SharePoint site library',
+    category: 'mcp-outbound',
+    ecosystem: 'microsoft',
+    icon: 'Upload',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: withServerConfig({
+      siteId: z.string(),
+      fileName: z.string(),
+      fileContent: z.string(),
+      folderId: z.string().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, siteId: '', fileName: '', fileContent: '' }
+  },
+  {
+    id: 'mcp-ms-planner-create-task',
+    name: '[MS] Planner Create Task',
+    description: 'Create task in Microsoft Planner board',
+    category: 'mcp-outbound',
+    ecosystem: 'microsoft',
+    icon: 'CheckSquare',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: withServerConfig({
+      planId: z.string(),
+      title: z.string(),
+      dueDate: z.string().optional(),
+      assignedTo: z.array(z.string()).optional(),
+      priority: z.enum(['low', 'medium', 'high', 'urgent']).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, planId: '', title: '' }
+  },
+  {
+    id: 'mcp-ms-todo-add-item',
+    name: '[MS] To Do Add Item',
+    description: 'Add task to Microsoft To Do list',
+    category: 'mcp-outbound',
+    ecosystem: 'microsoft',
+    icon: 'ListTodo',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: withServerConfig({
+      listId: z.string(),
+      title: z.string(),
+      dueDate: z.string().optional(),
+      reminder: z.string().optional(),
+      importance: z.enum(['low', 'normal', 'high']).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, listId: '', title: '' }
+  },
+  {
+    id: 'mcp-ms-excel-write-cells',
+    name: '[MS] Excel Write Cells',
+    description: 'Write data to Excel spreadsheet cells',
+    category: 'mcp-outbound',
+    ecosystem: 'microsoft',
+    icon: 'Table',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: withServerConfig({
+      workbookId: z.string(),
+      worksheetName: z.string(),
+      range: z.string(),
+      values: z.array(z.array(z.any()))
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, workbookId: '', worksheetName: '', range: 'A1', values: [[]] }
+  },
+  {
+    id: 'mcp-ms-onenote-create-page',
+    name: '[MS] OneNote Create Page',
+    description: 'Create new page in OneNote notebook',
+    category: 'mcp-outbound',
+    ecosystem: 'microsoft',
+    icon: 'FileText',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: withServerConfig({
+      sectionId: z.string(),
+      title: z.string(),
+      content: z.string()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, sectionId: '', title: '', content: '' }
   }
 ];
 
@@ -1113,6 +1213,444 @@ export const POSTGRESQL_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
   }
 ];
 
+// 📱 TELEGRAM OUTBOUND (8 nodes)
+export const TELEGRAM_OUTBOUND_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-telegram-send-message',
+    name: '[TG] Send Message',
+    description: 'Send text or media message to Telegram chat/channel',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'Send',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'send_message',
+    configSchema: withServerConfig({
+      chatId: z.string(),
+      message: z.string(),
+      parseMode: z.enum(['Markdown', 'HTML', 'MarkdownV2']).optional(),
+      disableNotification: z.boolean().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, chatId: '', message: '' }
+  },
+  {
+    id: 'mcp-telegram-edit-message',
+    name: '[TG] Edit Message',
+    description: 'Edit existing message content in Telegram',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'Edit',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'edit_message',
+    configSchema: withServerConfig({
+      chatId: z.string(),
+      messageId: z.string(),
+      newMessage: z.string(),
+      parseMode: z.enum(['Markdown', 'HTML', 'MarkdownV2']).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, chatId: '', messageId: '', newMessage: '' }
+  },
+  {
+    id: 'mcp-telegram-delete-message',
+    name: '[TG] Delete Message',
+    description: 'Delete message from Telegram chat',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'Trash2',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'delete_message',
+    configSchema: withServerConfig({
+      chatId: z.string(),
+      messageId: z.string()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, chatId: '', messageId: '' }
+  },
+  {
+    id: 'mcp-telegram-search-chats',
+    name: '[TG] Search Chats',
+    description: 'Search across all Telegram chats for messages or contacts',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'Search',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'search_chats',
+    configSchema: withServerConfig({
+      query: z.string(),
+      limit: z.number().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, query: '' }
+  },
+  {
+    id: 'mcp-telegram-get-chat-history',
+    name: '[TG] Get Chat History',
+    description: 'Retrieve message history from Telegram chat',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'MessageSquare',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'get_chat_history',
+    configSchema: withServerConfig({
+      chatId: z.string(),
+      limit: z.number().optional(),
+      offsetDate: z.string().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, chatId: '' }
+  },
+  {
+    id: 'mcp-telegram-download-media',
+    name: '[TG] Download Media',
+    description: 'Download photos, videos, or files from Telegram messages',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'Download',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'download_media',
+    configSchema: withServerConfig({
+      messageId: z.string(),
+      chatId: z.string(),
+      destination: z.string().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, messageId: '', chatId: '' }
+  },
+  {
+    id: 'mcp-telegram-create-draft',
+    name: '[TG] Create Draft',
+    description: 'Save draft message in Telegram chat',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'FileText',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'create_draft',
+    configSchema: withServerConfig({
+      chatId: z.string(),
+      message: z.string(),
+      parseMode: z.enum(['Markdown', 'HTML', 'MarkdownV2']).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, chatId: '', message: '' }
+  },
+  {
+    id: 'mcp-telegram-manage-groups',
+    name: '[TG] Manage Groups',
+    description: 'Create or manage Telegram groups (members, settings)',
+    category: 'mcp-outbound',
+    ecosystem: 'telegram',
+    icon: 'Users',
+    color: MCP_ECOSYSTEMS.telegram.color,
+    version: '1.0.0',
+    toolName: 'manage_groups',
+    configSchema: withServerConfig({
+      action: z.enum(['create', 'add_member', 'remove_member', 'update_settings']),
+      groupId: z.string().optional(),
+      groupTitle: z.string().optional(),
+      userId: z.string().optional(),
+      settings: z.record(z.any()).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, action: 'create' }
+  }
+];
+
+// 💬 WHATSAPP OUTBOUND (7 nodes)
+export const WHATSAPP_OUTBOUND_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-whatsapp-send-message',
+    name: '[WA] Send Message',
+    description: 'Send text message via WhatsApp Business API',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'Send',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'send_message',
+    configSchema: withServerConfig({
+      to: z.string(),
+      message: z.string()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: '', message: '' }
+  },
+  {
+    id: 'mcp-whatsapp-create-group',
+    name: '[WA] Create Group',
+    description: 'Create new WhatsApp group',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'Users',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'create_group',
+    configSchema: withServerConfig({
+      groupName: z.string(),
+      participants: z.array(z.string())
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, groupName: '', participants: [] }
+  },
+  {
+    id: 'mcp-whatsapp-add-member',
+    name: '[WA] Add Group Member',
+    description: 'Add member to WhatsApp group',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'UserPlus',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'add_group_member',
+    configSchema: withServerConfig({
+      groupId: z.string(),
+      userId: z.string()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, groupId: '', userId: '' }
+  },
+  {
+    id: 'mcp-whatsapp-remove-member',
+    name: '[WA] Remove Group Member',
+    description: 'Remove member from WhatsApp group',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'UserMinus',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'remove_group_member',
+    configSchema: withServerConfig({
+      groupId: z.string(),
+      userId: z.string()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, groupId: '', userId: '' }
+  },
+  {
+    id: 'mcp-whatsapp-get-contacts',
+    name: '[WA] Get Contacts',
+    description: 'Retrieve WhatsApp contacts list',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'Book',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'get_contacts',
+    configSchema: withServerConfig({
+      limit: z.number().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults }
+  },
+  {
+    id: 'mcp-whatsapp-get-history',
+    name: '[WA] Get Chat History',
+    description: 'Retrieve chat message history',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'MessageSquare',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'get_chat_history',
+    configSchema: withServerConfig({
+      chatId: z.string(),
+      limit: z.number().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, chatId: '' }
+  },
+  {
+    id: 'mcp-whatsapp-send-media',
+    name: '[WA] Send Media',
+    description: 'Send photo, video, or document via WhatsApp',
+    category: 'mcp-outbound',
+    ecosystem: 'whatsapp',
+    icon: 'Image',
+    color: MCP_ECOSYSTEMS.whatsapp.color,
+    version: '1.0.0',
+    toolName: 'send_media',
+    configSchema: withServerConfig({
+      to: z.string(),
+      mediaUrl: z.string().url(),
+      mediaType: z.enum(['image', 'video', 'document']),
+      caption: z.string().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: '', mediaUrl: '', mediaType: 'image' }
+  }
+];
+
+// 📞 TWILIO OUTBOUND (10 nodes)
+export const TWILIO_OUTBOUND_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'mcp-twilio-send-sms',
+    name: '[TWILIO] Send SMS',
+    description: 'Send SMS message via Twilio',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'MessageSquare',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'send_sms',
+    configSchema: withServerConfig({
+      to: z.string(),
+      from: z.string(),
+      message: z.string()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: '', from: '', message: '' }
+  },
+  {
+    id: 'mcp-twilio-make-call',
+    name: '[TWILIO] Make Voice Call',
+    description: 'Initiate voice call via Twilio',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Phone',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'make_voice_call',
+    configSchema: withServerConfig({
+      to: z.string(),
+      from: z.string(),
+      twimlUrl: z.string().url().optional(),
+      message: z.string().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: '', from: '' }
+  },
+  {
+    id: 'mcp-twilio-send-whatsapp',
+    name: '[TWILIO] Send WhatsApp',
+    description: 'Send WhatsApp message via Twilio Business API',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'MessageCircle',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'send_whatsapp_message',
+    configSchema: withServerConfig({
+      to: z.string(),
+      from: z.string(),
+      message: z.string(),
+      mediaUrl: z.string().url().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: '', from: '', message: '' }
+  },
+  {
+    id: 'mcp-twilio-send-email',
+    name: '[TWILIO] Send Email',
+    description: 'Send email via Twilio SendGrid',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Mail',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'send_email',
+    configSchema: withServerConfig({
+      to: z.array(z.string().email()),
+      from: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+      bodyType: z.enum(['text', 'html']).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: [], from: '', subject: '', body: '' }
+  },
+  {
+    id: 'mcp-twilio-verify-otp',
+    name: '[TWILIO] Verify OTP',
+    description: 'Send and verify 2FA OTP code via Twilio Verify',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Shield',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'verify_otp',
+    configSchema: withServerConfig({
+      to: z.string(),
+      channel: z.enum(['sms', 'call', 'email']),
+      code: z.string().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, to: '', channel: 'sms' }
+  },
+  {
+    id: 'mcp-twilio-create-video-room',
+    name: '[TWILIO] Create Video Room',
+    description: 'Create video conference room via Twilio Video',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Video',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'create_video_room',
+    configSchema: withServerConfig({
+      roomName: z.string(),
+      roomType: z.enum(['group', 'peer-to-peer', 'group-small']).optional(),
+      maxParticipants: z.number().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, roomName: '' }
+  },
+  {
+    id: 'mcp-twilio-execute-function',
+    name: '[TWILIO] Execute Serverless Function',
+    description: 'Execute Twilio Serverless function',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Code',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'execute_serverless_function',
+    configSchema: withServerConfig({
+      functionUrl: z.string().url(),
+      parameters: z.record(z.any()).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, functionUrl: '' }
+  },
+  {
+    id: 'mcp-twilio-manage-studio',
+    name: '[TWILIO] Manage Studio Flow',
+    description: 'Control Twilio Studio workflow execution',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Workflow',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'manage_studio_flow',
+    configSchema: withServerConfig({
+      flowSid: z.string(),
+      to: z.string(),
+      from: z.string(),
+      parameters: z.record(z.any()).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults, flowSid: '', to: '', from: '' }
+  },
+  {
+    id: 'mcp-twilio-get-logs',
+    name: '[TWILIO] Get Message Logs',
+    description: 'Retrieve message delivery logs and status',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'FileText',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'get_message_logs',
+    configSchema: withServerConfig({
+      messageSid: z.string().optional(),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+      limit: z.number().optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults }
+  },
+  {
+    id: 'mcp-twilio-list-phones',
+    name: '[TWILIO] List Phone Numbers',
+    description: 'Get available Twilio phone numbers',
+    category: 'mcp-outbound',
+    ecosystem: 'twilio',
+    icon: 'Hash',
+    color: MCP_ECOSYSTEMS.twilio.color,
+    version: '1.0.0',
+    toolName: 'list_phone_numbers',
+    configSchema: withServerConfig({
+      countryCode: z.string().optional(),
+      areaCode: z.string().optional(),
+      capabilities: z.array(z.enum(['voice', 'sms', 'mms', 'fax'])).optional()
+    }),
+    defaultConfig: { ...MCP_SERVER_CONFIG.defaults }
+  }
+];
+
 // 🔄 Export all MCP nodes
 export const MCP_OUTBOUND_NODES = [
   ...GOOGLE_OUTBOUND_NODES,
@@ -1121,7 +1659,10 @@ export const MCP_OUTBOUND_NODES = [
   ...MICROSOFT_OUTBOUND_NODES,
   ...STRIPE_OUTBOUND_NODES,
   ...GTM_OUTBOUND_NODES,
-  ...POSTGRESQL_OUTBOUND_NODES
+  ...POSTGRESQL_OUTBOUND_NODES,
+  ...TELEGRAM_OUTBOUND_NODES,
+  ...WHATSAPP_OUTBOUND_NODES,
+  ...TWILIO_OUTBOUND_NODES
 ];
 
 export const MCP_INBOUND_NODES = [

@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MCPInstallWizard } from '@/components/mcp/MCPInstallWizard';
 import { ServerDetailsPanel } from '@/components/mcp/ServerDetailsPanel';
+import { MCPServerTooltip } from '@/components/mcp/MCPServerTooltip';
 
 // Types
 interface MCPServer {
@@ -64,6 +65,11 @@ interface MarketplaceTemplate {
   rating?: number;
   developer?: string;
   sourceType?: string;
+  installHints?: {
+    envVars?: string[];
+    dependencies?: string[];
+    postInstallNotes?: string;
+  };
 }
 
 // Framer Motion Variants
@@ -241,17 +247,25 @@ export default function MCPSettingsDashboard() {
                 animate="visible"
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                {filteredInstalledServers.map((server) => (
-                  <motion.div key={server.id} variants={cardVariants}>
-                    <InstalledServerCard 
-                      server={server}
-                      onViewDetails={() => {
-                        setSelectedServerId(server.id);
-                        setDetailsPanelOpen(true);
-                      }}
-                    />
-                  </motion.div>
-                ))}
+                {filteredInstalledServers.map((server) => {
+                  // Match installed server with marketplace template by name
+                  const marketplaceTemplate = marketplaceTemplates.find(
+                    template => template.name === server.name || template.id.includes(server.name)
+                  );
+                  
+                  return (
+                    <motion.div key={server.id} variants={cardVariants}>
+                      <InstalledServerCard 
+                        server={server}
+                        marketplaceTemplate={marketplaceTemplate}
+                        onViewDetails={() => {
+                          setSelectedServerId(server.id);
+                          setDetailsPanelOpen(true);
+                        }}
+                      />
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             )}
           </TabsContent>
@@ -376,7 +390,15 @@ export default function MCPSettingsDashboard() {
 }
 
 // Installed Server Card Component (Task 14)
-function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onViewDetails: () => void }) {
+function InstalledServerCard({ 
+  server, 
+  onViewDetails,
+  marketplaceTemplate 
+}: { 
+  server: MCPServer; 
+  onViewDetails: () => void;
+  marketplaceTemplate?: MarketplaceTemplate;
+}) {
   const statusConfig = {
     active: {
       color: 'text-green-700',
@@ -433,7 +455,22 @@ function InstalledServerCard({ server, onViewDetails }: { server: MCPServer; onV
               </div>
             )}
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">{server.displayName}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900">{server.displayName}</h3>
+                {/* Info Tooltip */}
+                <MCPServerTooltip
+                  serverName={server.displayName}
+                  marketplaceData={marketplaceTemplate ? {
+                    installHints: marketplaceTemplate.installHints,
+                    exampleTools: marketplaceTemplate.exampleTools,
+                    securityNotes: marketplaceTemplate.securityNotes,
+                    repoUrl: marketplaceTemplate.repoUrl,
+                    authType: marketplaceTemplate.authType,
+                    transport: marketplaceTemplate.transport
+                  } : undefined}
+                  discoveredTools={server.discoveredTools}
+                />
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-xs text-gray-500">{server.category}</p>
                 <Badge variant="outline" className={`text-xs border ${sourceType.color}`}>
