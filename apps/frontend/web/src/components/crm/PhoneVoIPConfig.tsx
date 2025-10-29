@@ -1002,16 +1002,280 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
             <LoadingState />
           ) : showExtensionForm ? (
             <Card className="p-6 bg-gray-50/50 border-gray-200">
-              <p className="text-sm text-gray-600 mb-4">Extension form coming soon...</p>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowExtensionForm(false);
-                  setEditingExtension(null);
-                }}
-              >
-                Chiudi
-              </Button>
+              <Form {...extensionForm}>
+                <form onSubmit={extensionForm.handleSubmit(handleSubmitExtension)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={extensionForm.control}
+                      name="userId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Utente *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-extension-user" className="bg-white">
+                                <SelectValue placeholder="Seleziona utente" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {users.map((user: any) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.name} ({user.email})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="extension"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Numero Interno *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="es: 100, 101, 200" data-testid="input-extension-number" className="bg-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="sipUsername"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Username SIP *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="es: user100" data-testid="input-extension-sip-username" className="bg-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="sipPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Password SIP *</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input 
+                                type="password" 
+                                {...field} 
+                                placeholder="Min 12 caratteri" 
+                                data-testid="input-extension-sip-password" 
+                                className="bg-white flex-1"
+                              />
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              variant="outline"
+                              onClick={() => {
+                                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                                const password = Array.from({ length: 16 }, () => 
+                                  chars.charAt(Math.floor(Math.random() * chars.length))
+                                ).join('');
+                                field.onChange(password);
+                                toast({
+                                  title: "Password generata",
+                                  description: "Password sicura generata automaticamente",
+                                });
+                              }}
+                              data-testid="button-generate-password"
+                              className="whitespace-nowrap"
+                            >
+                              Generate
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="displayName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Nome Visualizzato</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ''} placeholder="es: Mario Rossi" className="bg-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} value={field.value || ''} placeholder="utente@azienda.it" className="bg-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                              <SelectItem value="suspended">Suspended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={extensionForm.control}
+                      name="voicemailEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-gray-700">Casella Vocale</FormLabel>
+                            <FormDescription className="text-xs text-gray-500">
+                              Abilita voicemail
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-voicemail-enabled"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="recordingEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-gray-700">Registrazione</FormLabel>
+                            <FormDescription className="text-xs text-gray-500">
+                              Registrazione automatica
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-recording-enabled"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="dndEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-gray-700">Do Not Disturb</FormLabel>
+                            <FormDescription className="text-xs text-gray-500">
+                              Non disturbare
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-dnd-enabled"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {extensionForm.watch('voicemailEnabled') && (
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-purple-500" />
+                        Configurazione Voicemail
+                      </h3>
+                      
+                      <FormField
+                        control={extensionForm.control}
+                        name="voicemailEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">Email Notifiche Voicemail</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="email" 
+                                {...field} 
+                                value={field.value || ''} 
+                                placeholder="notifiche@azienda.it" 
+                                data-testid="input-voicemail-email"
+                                className="bg-white"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-gray-500">
+                              Email per ricevere notifiche dei messaggi in casella vocale
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button 
+                      type="submit" 
+                      disabled={extensionMutation.isPending}
+                      data-testid="button-save-extension"
+                      className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                    >
+                      {extensionMutation.isPending ? 'Salvataggio...' : 'Salva Extension'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowExtensionForm(false);
+                        setEditingExtension(null);
+                        extensionForm.reset();
+                      }}
+                      data-testid="button-cancel-extension"
+                    >
+                      Annulla
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </Card>
           ) : (
             <div className="space-y-3">
@@ -1049,11 +1313,23 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                           size="sm" 
                           variant="ghost"
                           onClick={() => {
-                            toast({
-                              title: "Extension edit coming soon",
-                              description: "Feature in development",
+                            setEditingExtension(ext.extension.id);
+                            setShowExtensionForm(true);
+                            extensionForm.reset({
+                              userId: ext.extension.userId,
+                              extension: ext.extension.extension,
+                              sipUsername: ext.extension.sipUsername,
+                              sipPassword: ext.extension.sipPassword,
+                              displayName: ext.extension.displayName || '',
+                              email: ext.extension.email || '',
+                              voicemailEnabled: ext.extension.voicemailEnabled,
+                              voicemailEmail: ext.extension.voicemailEmail || '',
+                              recordingEnabled: ext.extension.recordingEnabled,
+                              dndEnabled: ext.extension.dndEnabled,
+                              status: ext.extension.status,
                             });
                           }}
+                          data-testid={`button-edit-extension-${ext.extension.id}`}
                           className="hover:bg-gray-100"
                         >
                           <Pencil className="w-4 h-4 text-gray-600" />
@@ -1066,6 +1342,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                               deleteExtensionMutation.mutate(ext.extension.id);
                             }
                           }}
+                          data-testid={`button-delete-extension-${ext.extension.id}`}
                           className="hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4 text-red-500" />
