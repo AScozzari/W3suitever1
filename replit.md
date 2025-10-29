@@ -1,8 +1,7 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize core business operations such as CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a distinctive WindTre glassmorphism design, robust OAuth2/OIDC security with MFA, and employs PostgreSQL with Row Level Security (RLS) for stringent tenant isolation. The platform includes a central Brand Interface HQ system for multi-brand management, aiming to provide a scalable, secure, and comprehensive business solution that enhances efficiency and unlocks market potential.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a unique WindTre glassmorphism design, robust security, and utilizes PostgreSQL with Row Level Security (RLS) for strong tenant isolation. The platform aims to provide a scalable, secure, and comprehensive business solution to enhance operational efficiency and capitalize on significant market opportunities.
 
 # User Preferences
-
 ### DATABASE SCHEMA LOCATION (OBBLIGATORIO)
 **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
 **❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
@@ -134,8 +133,8 @@ When you're already on `/staging/crm/leads` and click a tab with `path: /${tenan
   - **`[W3]`** = WindTre Suite (tenant-facing app)
   - **`[BRAND]`** = Brand Interface (HQ system)
   - **`[w3suite]`** = Schema tenant-specific (users, tenants, stores, roles, etc.)
-  - **`[PUBLIC]` = Schema dati riferimento (commercial_areas, countries, channels, etc.)
-  - **`[brand_interface]`** = Schema Brand Interface (brand_users, brand_tenants, etc.)
+  - **`[PUBLIC]`** = Schema dati riferimento (commercial_areas, countries, channels, etc.)
+  - **`[brand_interface]` = Schema Brand Interface (brand_users, brand_tenants, etc.)**
 
 ## 🎯 FRONTEND-KIT USAGE (OBBLIGATORIO)
 **Always use @w3suite/frontend-kit package for rapid development:**
@@ -202,56 +201,54 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 - ❌ Never use hex colors directly - use CSS variables
 
 # System Architecture
-
 ## UI/UX Decisions
-The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui` for consistency and accessibility. The `@w3suite/frontend-kit` package centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks, all styled with CSS variables and Tailwind CSS.
+The UI/UX adheres to a Glassmorphism WindTre Design System, utilizing `shadcn/ui` for consistency. The `@w3suite/frontend-kit` centralizes design tokens, page templates, reusable components, UI patterns, and custom React hooks, all styled with CSS variables and Tailwind CSS. All pages maintain app structure with header and sidebar, and have a white background.
 
 ## Technical Implementations
-- **Monorepo Structure**: Centralized code organization for all applications.
-- **Database Architecture**: A 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS is implemented for robust multitenancy.
-- **Security**: Comprehensive security features including OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
-- **Multitenancy**: Achieved through PostgreSQL RLS, a `TenantProvider`, and global unique constraints across the platform.
-- **Universal Workflow System**: Features approval hierarchies, RBAC, event-driven state machines, and detailed audit trails.
-- **Unified Notification System**: Provides real-time notifications across the platform.
-- **Centralized Webhook System**: Enterprise-grade system with multi-provider support, queueing, and deduplication capabilities.
-- **Task Management System**: Offers flexible task creation with workflow integration and a RBAC-enabled API.
+- **Monorepo Structure**: Centralized code organization.
+- **Database Architecture**: A 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for robust multitenancy.
+- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
+- **Multitenancy**: Achieved through PostgreSQL RLS, a `TenantProvider`, and global unique constraints.
+- **Universal Workflow System**: Features approval hierarchies, RBAC, event-driven state machines, and audit trails.
+- **Unified Notification System**: Real-time notifications.
+- **Centralized Webhook System**: Enterprise-grade with multi-provider support, queueing, and deduplication.
+- **Task Management System**: Flexible task creation with workflow integration and RBAC-enabled API.
 - **MCP Multi-Provider OAuth System**: Manages unified credentials for third-party services with per-user OAuth isolation.
-- **AI Enforcement Middleware**: Implements hierarchical API-level blocking for AI functionalities.
+- **AI Enforcement Middleware**: Hierarchical API-level blocking for AI functionalities.
 - **AI Workflow Builder**: Generates natural language workflows using OpenAI `gpt-4o` in strict JSON mode, outputting ReactFlow DSL.
-- **Intelligent Workflow Routing**: Supports both automatic and manual task assignment modes.
-- **AI Tools Ecosystem with PDC Analyzer**: A dashboard for AI tools, including automated PDF contract analysis using GPT-4.
-- **CRM Module Backend**: Features a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, and lead-to-deal workflows, with RESTful endpoints, Zod validation, RLS, and structured logging.
-- **CRM Pipeline Visualization**: Offers Table, Kanban, and Gantt views using TanStack Table and `@dnd-kit`, including workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
-- **CRM Workflow Auto-Trigger**: Supports dual-mode (automatic/manual) execution of pipeline workflows.
-- **Integrated Marketing Attribution**: Includes UTM tracking, GTM integration, social media webhooks, AI lead scoring, and Enhanced Conversions for Google Ads/GA4.
-- **GTM Auto-Configuration System (MCP)**: Utilizes `google-tag-manager-mcp` server (by Stape Team) for automated store tracking setup, generating conditional GTM triggers, GA4/Facebook Pixel/TikTok tags, tenant_id/store_id variables, and GTM snippets for landing pages.
-- **VoIP Telephony System (Enterprise WebRTC)**: Features multi-store trunks, tenant-scoped SIP, user-specific WebRTC extensions, a floating softphone, call actions integrated with CRM entities, CDR analytics, and policy-based routing.
-- **Dual-Mode Campaign Creation**: Provides both a beginner-friendly wizard and an advanced interface, with user preference persistence.
-- **GDPR Consent Enforcement System**: A backend service that validates campaign consents against lead status, blocking non-compliant conversions.
-- **Enhanced Error Handling UI**: Features toast notifications for mutation failures and structured error responses.
+- **Intelligent Workflow Routing**: Supports automatic and manual task assignment.
+- **AI Tools Ecosystem with PDC Analyzer**: Dashboard for AI tools, including automated PDF contract analysis using GPT-4.
+- **CRM Module Backend**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, and lead-to-deal workflows, with RESTful endpoints, Zod validation, RLS, and structured logging.
+- **CRM Pipeline Visualization**: Table, Kanban, and Gantt views using TanStack Table and `@dnd-kit`, including workflow validation, sorting, filters, localStorage persistence, analytics, and WindTre glassmorphism design.
+- **CRM Workflow Auto-Trigger**: Dual-mode (automatic/manual) execution of pipeline workflows.
+- **Integrated Marketing Attribution**: UTM tracking, GTM integration, social media webhooks, AI lead scoring, and Enhanced Conversions for Google Ads/GA4.
+- **GTM Auto-Configuration System (MCP)**: Utilizes `google-tag-manager-mcp` server for automated store tracking setup.
+- **VoIP Telephony System (Enterprise WebRTC)**: Multi-store trunks, tenant-scoped SIP, user-specific WebRTC extensions, floating softphone, call actions integrated with CRM entities, CDR analytics, and policy-based routing.
+- **Dual-Mode Campaign Creation**: Beginner-friendly wizard and advanced interface, with user preference persistence.
+- **GDPR Consent Enforcement System**: Backend service validating campaign consents against lead status, blocking non-compliant conversions.
+- **Enhanced Error Handling UI**: Toast notifications for mutation failures and structured error responses.
 
 # External Dependencies
-
 ## Database Services
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
 - **Redis**: Used for BullMQ and the Unified Notification System.
 
 ## Authentication Services
-- **OAuth2/OIDC Enterprise**: For secure user authentication across the platform.
+- **OAuth2/OIDC Enterprise**: For secure user authentication.
 
 ## UI Component Ecosystem
-- **SHADCN/UI**: The primary library for UI components.
-- **Radix UI**: Provides headless component primitives for accessibility and customization.
+- **SHADCN/UI**: Primary library for UI components.
+- **Radix UI**: Provides headless component primitives.
 
 ## Icon & Utility Libraries
-- **Lucide React**: An extensive icon library.
+- **Lucide React**: Icon library.
 - **TanStack React Query**: For efficient server state management.
 - **React Hook Form**: Facilitates robust form handling and validation.
 
 ## Development Tools
-- **Vite**: Frontend build tool for fast development.
+- **Vite**: Frontend build tool.
 - **Drizzle Kit**: For database schema management and migrations.
-- **PostCSS**: Used for CSS pre-processing.
+- **PostCSS**: For CSS pre-processing.
 - **ESBuild**: For bundling server-side code.
 - **Nginx**: Serves as a reverse proxy.
 
