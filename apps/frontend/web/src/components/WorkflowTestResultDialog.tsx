@@ -175,40 +175,53 @@ export function WorkflowTestResultDialog({
                 <div className={`${isSuccess ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} p-4 rounded-lg border`}>
                   <div className="text-sm text-gray-600 mb-1">Tempo Totale</div>
                   <div className={`text-2xl font-bold ${isSuccess ? 'text-green-700' : 'text-red-700'}`}>
-                    {result.data.executionTime}ms
+                    {result.data?.executionTime || 0}ms
                   </div>
                 </div>
                 <div className={`${isSuccess ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'} p-4 rounded-lg border`}>
                   <div className="text-sm text-gray-600 mb-1">Step Eseguiti</div>
                   <div className={`text-2xl font-bold ${isSuccess ? 'text-green-700' : 'text-orange-700'}`}>
-                    {result.data.executedSteps} / {result.data.totalSteps}
+                    {result.data?.executedSteps || 0} / {result.data?.totalSteps || 0}
                   </div>
                 </div>
                 <div className="bg-blue-50 border-blue-200 p-4 rounded-lg border">
                   <div className="text-sm text-gray-600 mb-1">Status</div>
                   <Badge variant={isSuccess ? 'default' : 'destructive'} className="text-sm">
-                    {result.data.status.toUpperCase()}
+                    {result.data?.status?.toUpperCase() || 'ERROR'}
                   </Badge>
                 </div>
               </div>
 
               {/* Error Summary */}
-              {!isSuccess && result.data.failedNodeId && (
+              {!isSuccess && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-red-700 mb-1">
-                        Errore al Node: {result.data.failedNodeId}
-                      </div>
-                      <div className="text-sm text-red-600">
-                        {result.data.failureReason || result.error || 'Unknown error'}
-                      </div>
-                      {debugMode && result.data.failureStack && (
-                        <div className="mt-2 text-xs text-red-600 font-mono bg-red-100 p-2 rounded">
-                          <div className="font-semibold mb-1">Stack Trace:</div>
-                          <pre className="whitespace-pre-wrap">{result.data.failureStack}</pre>
-                        </div>
+                      {result.data?.failedNodeId ? (
+                        <>
+                          <div className="text-sm font-semibold text-red-700 mb-1">
+                            Errore al Node: {result.data.failedNodeId}
+                          </div>
+                          <div className="text-sm text-red-600">
+                            {result.data.failureReason || result.error || 'Unknown error'}
+                          </div>
+                          {debugMode && result.data?.failureStack && (
+                            <div className="mt-2 text-xs text-red-600 font-mono bg-red-100 p-2 rounded">
+                              <div className="font-semibold mb-1">Stack Trace:</div>
+                              <pre className="whitespace-pre-wrap">{result.data.failureStack}</pre>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm font-semibold text-red-700 mb-1">
+                            Test Execution Failed
+                          </div>
+                          <div className="text-sm text-red-600">
+                            {result.error || result.message || 'An error occurred during test execution'}
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -216,7 +229,7 @@ export function WorkflowTestResultDialog({
               )}
 
               {/* Step-by-Step Results */}
-              {result.data.executionResults && result.data.executionResults.length > 0 && (
+              {result.data?.executionResults && result.data.executionResults.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-gray-900">
@@ -246,7 +259,7 @@ export function WorkflowTestResultDialog({
 
                   <ScrollArea className="h-[400px] border rounded-lg p-4">
                     <Accordion type="multiple" className="space-y-2">
-                      {result.data.executionResults.map((step, idx) => (
+                      {(result.data?.executionResults || []).map((step, idx) => (
                         <AccordionItem
                           key={step.nodeId}
                           value={step.nodeId}

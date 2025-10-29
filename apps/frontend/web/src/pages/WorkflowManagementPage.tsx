@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useTenant } from '@/contexts/TenantContext';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,6 +119,7 @@ interface WorkflowManagementPageProps {
 export default function WorkflowManagementPage({ defaultView = 'dashboard' }: WorkflowManagementPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentTenant } = useTenant();
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
@@ -293,7 +295,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
 
     try {
       // Get template data
-      const template = templates.find(t => t.id === templateId);
+      const template = templates.find((t: WorkflowTemplate) => t.id === templateId);
       if (!template) {
         toast({
           title: 'Error',
@@ -308,6 +310,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Tenant-ID': currentTenant?.id || '',
         },
         credentials: 'include',
         body: JSON.stringify({
