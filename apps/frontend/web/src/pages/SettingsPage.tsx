@@ -8701,7 +8701,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* SEZIONE CONFIGURAZIONE TELEFONIA */}
+              {/* SEZIONE CONFIGURAZIONE VoIP (ENTERPRISE APPROACH) */}
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
                   fontSize: '14px',
@@ -8715,201 +8715,59 @@ export default function SettingsPage() {
                   gap: '8px'
                 }}>
                   <Phone size={16} style={{ color: '#FF6900' }} />
-                  Configurazione Telefonia
+                  VoIP Extension (Opzionale)
                 </h3>
 
-                {/* Toggle Abilita Extension */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px',
-                    background: newUser.extension.enabled ? '#ecfdf5' : '#f9fafb',
-                    border: `2px solid ${newUser.extension.enabled ? '#10b981' : '#e5e7eb'}`,
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <input
-                      type="checkbox"
-                      checked={newUser.extension.enabled}
-                      onChange={(e) => setNewUser({
-                        ...newUser,
-                        extension: { ...newUser.extension, enabled: e.target.checked }
-                      })}
-                      style={{ transform: 'scale(1.2)', accentColor: '#10b981' }}
-                    />
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                      Assegna numero interno (extension) all'utente
-                    </span>
-                  </label>
+                {/* Info banner */}
+                <div style={{
+                  padding: '12px',
+                  background: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <p style={{ fontSize: '13px', color: '#0369a1', margin: 0 }}>
+                    💡 <strong>Nota:</strong> Le extensions devono essere create prima in <em>Settings → Channels → Phone/VoIP</em>. 
+                    Qui puoi solo assegnare un'extension già esistente all'utente.
+                  </p>
                 </div>
 
-                {/* Campi Extension (visibili solo se enabled) */}
-                {newUser.extension.enabled && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Numero Interno <span style={{ color: '#ef4444' }}>*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="100"
-                        value={newUser.extension.extNumber}
-                        onChange={(e) => setNewUser({
-                          ...newUser,
-                          extension: { ...newUser.extension, extNumber: e.target.value }
-                        })}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          background: '#fafafa',
-                          transition: 'all 0.2s ease',
-                          outline: 'none'
-                        }}
-                        data-testid="input-ext-number"
-                      />
-                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                        3-6 cifre (es: 100, 1001)
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        SIP Domain <span style={{ color: '#ef4444' }}>*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="tenant1.pbx.w3suite.it"
-                        value={newUser.extension.sipDomain}
-                        onChange={(e) => setNewUser({
-                          ...newUser,
-                          extension: { ...newUser.extension, sipDomain: e.target.value }
-                        })}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          background: '#fafafa',
-                          transition: 'all 0.2s ease',
-                          outline: 'none'
-                        }}
-                        data-testid="input-sip-domain"
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Class of Service
-                      </label>
-                      <select
-                        value={newUser.extension.classOfService}
-                        onChange={(e) => setNewUser({
-                          ...newUser,
-                          extension: { ...newUser.extension, classOfService: e.target.value as any }
-                        })}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          background: '#ffffff',
-                          cursor: 'pointer',
-                          outline: 'none'
-                        }}
-                        data-testid="select-class-of-service"
-                      >
-                        <option value="agent">Agent</option>
-                        <option value="supervisor">Supervisor</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Negozio (opzionale)
-                      </label>
-                      <select
-                        value={newUser.extension.storeId || ''}
-                        onChange={(e) => setNewUser({
-                          ...newUser,
-                          extension: { ...newUser.extension, storeId: e.target.value || null }
-                        })}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          background: '#ffffff',
-                          cursor: 'pointer',
-                          outline: 'none'
-                        }}
-                        data-testid="select-extension-store"
-                      >
-                        <option value="">Nessuno</option>
-                        {puntiVenditaList.map((store: any) => (
-                          <option key={store.id} value={store.id}>
-                            {store.nome || store.businessName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer'
-                      }}>
-                        <input
-                          type="checkbox"
-                          checked={newUser.extension.voicemailEnabled}
-                          onChange={(e) => setNewUser({
-                            ...newUser,
-                            extension: { ...newUser.extension, voicemailEnabled: e.target.checked }
-                          })}
-                          style={{ transform: 'scale(1.1)', accentColor: '#FF6900' }}
-                        />
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                          Abilita casella vocale (voicemail)
-                        </span>
-                      </label>
-                    </div>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Assegna Extension
+                  </label>
+                  <select
+                    value={newUser.extensionId || ''}
+                    onChange={(e) => setNewUser({ ...newUser, extensionId: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#ffffff',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    data-testid="select-user-extension"
+                  >
+                    <option value="">Nessuna extension</option>
+                    {/* TODO: Popolare con extensions disponibili da /api/voip/extensions?available=true */}
+                    <option value="ext-100">100 - Reception (sip:100@tenant.pbx.w3suite.it)</option>
+                    <option value="ext-101">101 - Sales Team (sip:101@tenant.pbx.w3suite.it)</option>
+                    <option value="ext-200">200 - Support (sip:200@tenant.pbx.w3suite.it)</option>
+                  </select>
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                    Seleziona un'extension disponibile da assegnare a questo utente. 
+                    Le extensions già assegnate ad altri utenti non compaiono nella lista.
                   </div>
-                )}
+                </div>
               </div>
 
               {/* ✅ NUOVO SISTEMA SCOPE PIRAMIDALE - ALLA FINE */}

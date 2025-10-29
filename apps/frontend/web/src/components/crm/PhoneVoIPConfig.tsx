@@ -39,7 +39,7 @@ const trunkFormSchema = z.object({
   storeId: z.string().uuid("Seleziona un negozio valido"),
   provider: z.string().optional(),
   host: z.string().min(1, "Host SIP obbligatorio"),
-  port: z.number().int().min(1).max(65535).default(5060),
+  port: z.coerce.number().int().min(1).max(65535).default(5060),
   protocol: z.enum(['udp', 'tcp', 'tls', 'wss']).default('udp'),
   username: z.string().optional(),
   password: z.string().optional(),
@@ -47,7 +47,7 @@ const trunkFormSchema = z.object({
   fromUser: z.string().optional(),
   fromDomain: z.string().optional(),
   codec: z.string().default('PCMU,PCMA,opus'),
-  maxChannels: z.number().int().min(1).max(100).default(10),
+  maxChannels: z.coerce.number().int().min(1).max(100).default(10),
   status: z.enum(['active', 'inactive', 'error']).default('active'),
   recordingEnabled: z.boolean().default(false),
   // AI Voice Agent Configuration
@@ -691,8 +691,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                             <Input 
                               type="number" 
                               {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
-                              value={field.value}
                               className="bg-white"
                             />
                           </FormControl>
@@ -763,8 +761,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                             <Input 
                               type="number" 
                               {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
-                              value={field.value}
                               className="bg-white"
                             />
                           </FormControl>
