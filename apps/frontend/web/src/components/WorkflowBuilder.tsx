@@ -65,6 +65,7 @@ import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../ho
 import NodeConfigPanel from './NodeConfigPanel';
 import { AIWorkflowChatModal } from './AIWorkflowChatModal';
 import { WorkflowTestResultDialog } from './WorkflowTestResultDialog';
+import { useTenant } from '../contexts/TenantContext';
 
 // ✅ REAL PROFESSIONAL NODE COMPONENTS - DEFINED OUTSIDE TO PREVENT RE-RENDERS
 const nodeTypes = {
@@ -107,6 +108,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const { data: templateData, isLoading: templateLoading } = useWorkflowTemplate(templateId || null);
   const createTemplateMutation = useCreateTemplate();
   const updateTemplateMutation = useUpdateTemplate();
+  
+  // 🎯 TENANT CONTEXT
+  const { currentTenant } = useTenant();
   
   // 🎯 TEMPLATE LOADING LOGIC
   React.useEffect(() => {
