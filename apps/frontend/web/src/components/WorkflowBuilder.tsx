@@ -700,6 +700,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                     <SelectItem value="mcp-stripe">💳 Stripe</SelectItem>
                     <SelectItem value="mcp-gtm">📊 GTM/Analytics</SelectItem>
                     <SelectItem value="mcp-postgresql">🐘 PostgreSQL</SelectItem>
+                    <SelectItem value="mcp-telegram">✈️ Telegram</SelectItem>
+                    <SelectItem value="mcp-whatsapp">💬 WhatsApp</SelectItem>
+                    <SelectItem value="mcp-twilio">📞 Twilio</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1303,6 +1306,174 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             style={{ backgroundColor: node.color }}
                           >
                             <span className="text-[9px] font-bold">PG</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* Telegram MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-telegram') && getMCPNodesByEcosystem('telegram').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: MCP_ECOSYSTEMS.telegram.color }}
+                    >
+                      TG
+                    </div>
+                    <span style={{ color: MCP_ECOSYSTEMS.telegram.color }}>
+                      {MCP_ECOSYSTEMS.telegram.name}
+                    </span>
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {getMCPNodesByEcosystem('telegram').length} nodes
+                    </Badge>
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('telegram')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[9px] font-bold">TG</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* WhatsApp MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-whatsapp') && getMCPNodesByEcosystem('whatsapp').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: MCP_ECOSYSTEMS.whatsapp.color }}
+                    >
+                      WA
+                    </div>
+                    <span style={{ color: MCP_ECOSYSTEMS.whatsapp.color }}>
+                      {MCP_ECOSYSTEMS.whatsapp.name}
+                    </span>
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {getMCPNodesByEcosystem('whatsapp').length} nodes
+                    </Badge>
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('whatsapp')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[9px] font-bold">WA</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                            <Badge className="mt-2" variant="outline" style={{ borderColor: node.color, color: node.color }}>
+                              {node.category === 'mcp-outbound' ? '📤 Outbound' : '📥 Inbound'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* Twilio MCP */}
+                {(selectedCategory === 'all' || selectedCategory === 'mcp-outbound' || selectedCategory === 'mcp-inbound' || selectedCategory === 'mcp-twilio') && getMCPNodesByEcosystem('twilio').length > 0 && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: MCP_ECOSYSTEMS.twilio.color }}
+                    >
+                      TW
+                    </div>
+                    <span style={{ color: MCP_ECOSYSTEMS.twilio.color }}>
+                      {MCP_ECOSYSTEMS.twilio.name}
+                    </span>
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {getMCPNodesByEcosystem('twilio').length} nodes
+                    </Badge>
+                  </h4>
+                  <div className="space-y-2">
+                    {getMCPNodesByEcosystem('twilio')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-[9px] font-bold">TW</span>
                           </div>
                           <div className="flex-1">
                             <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
