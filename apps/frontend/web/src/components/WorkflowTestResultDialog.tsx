@@ -135,7 +135,7 @@ export function WorkflowTestResultDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-4xl max-h-[90vh]" data-testid="workflow-test-result-dialog">
+      <AlertDialogContent className="max-w-4xl max-h-[90vh] bg-white" data-testid="workflow-test-result-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">

@@ -311,6 +311,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-ID': currentTenant?.id || '',
+          'X-Auth-Session': 'authenticated',
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -872,9 +873,10 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => handleRunWorkflow(template.id)}
+                                        className="hover:bg-green-50"
                                         data-testid={`button-run-${template.id}`}
                                       >
-                                        <Play className="h-4 w-4" />
+                                        <Play className="h-4 w-4 text-green-600" />
                                       </Button>
                                       <Button
                                         variant="ghost"
