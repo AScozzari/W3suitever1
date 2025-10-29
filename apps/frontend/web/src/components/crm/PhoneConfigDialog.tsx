@@ -81,25 +81,29 @@ export function PhoneConfigDialog({ open, onClose }: PhoneConfigDialogProps) {
   const [showExtensionForm, setShowExtensionForm] = useState(false);
 
   // Fetch data
-  const { data: trunks = [], isLoading: trunksLoading } = useQuery<any[]>({
+  const { data: trunksResponse, isLoading: trunksLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/trunks'],
     enabled: open,
   });
+  const trunks = trunksResponse?.data || [];
 
-  const { data: extensions = [], isLoading: extensionsLoading } = useQuery<any[]>({
+  const { data: extensionsResponse, isLoading: extensionsLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/extensions'],
     enabled: open,
   });
+  const extensions = extensionsResponse?.data || [];
 
-  const { data: stores = [] } = useQuery<any[]>({
+  const { data: storesResponse } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/stores'],
     enabled: open,
   });
+  const stores = storesResponse?.data || [];
 
-  const { data: users = [] } = useQuery<any[]>({
+  const { data: usersResponse } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/users'],
     enabled: open,
   });
+  const users = usersResponse?.data || [];
 
   // Fetch connection status for dashboard
   const { data: connectionStatus, isLoading: connectionLoading } = useQuery<any>({
