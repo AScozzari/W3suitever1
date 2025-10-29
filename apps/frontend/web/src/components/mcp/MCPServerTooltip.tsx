@@ -297,7 +297,7 @@ export function MCPServerTooltip({
                   {/* Special section for Google Tag Manager MCP */}
                   {serverName.toLowerCase().includes('tag manager') || serverName.toLowerCase().includes('gtm') ? (
                     <>
-                      <div key="gtm-config" className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-2.5">
+                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-2.5">
                         <p className="text-xs font-semibold text-orange-900 mb-1">
                           🎯 Store Tracking Auto-Configuration
                         </p>
@@ -310,17 +310,17 @@ export function MCPServerTooltip({
                           ))}
                         </ul>
                       </div>
-                      <div key="gtm-snippet" className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
                         <p className="text-xs text-green-900">
                           ✓ Snippet GTM generato automaticamente con tracking IDs
                         </p>
                       </div>
-                      <div key="gtm-conversions" className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
                         <p className="text-xs text-blue-900">
                           ✓ Enhanced Conversions: email/phone hashati (GDPR-compliant)
                         </p>
                       </div>
-                      <div key="gtm-isolation" className="bg-purple-50 border border-purple-200 rounded-lg p-2.5">
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-2.5">
                         <p className="text-xs text-purple-900">
                           ✓ Tracciamento isolato per ogni store con trigger separati
                         </p>
@@ -329,17 +329,17 @@ export function MCPServerTooltip({
                   ) : (
                     <>
                       {/* Auto-generated use cases based on server type */}
-                      <div key="use-workflow" className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
                         <p className="text-xs text-green-900">
                           ✓ Use in workflow automations with the AI Workflow Builder
                         </p>
                       </div>
-                      <div key="use-crm" className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
                         <p className="text-xs text-blue-900">
                           ✓ Trigger actions from CRM events (lead created, deal closed)
                         </p>
                       </div>
-                      <div key="use-multi" className="bg-purple-50 border border-purple-200 rounded-lg p-2.5">
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-2.5">
                         <p className="text-xs text-purple-900">
                           ✓ Connect with other MCP servers for multi-service workflows
                         </p>
