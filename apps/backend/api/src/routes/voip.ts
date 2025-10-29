@@ -1696,6 +1696,52 @@ router.get('/routes/inbound', async (req, res) => {
   }
 });
 
+// POST /api/voip/ai-sessions - Create new AI voice session (called by Voice Gateway)
+router.post('/ai-sessions', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const apiKey = req.headers['x-api-key'] as string;
+    
+    // Simple API key validation for Voice Gateway
+    if (!apiKey || apiKey !== (process.env.W3_VOICE_GATEWAY_API_KEY || 'dev-internal-key')) {
+      return res.status(401).json({ error: 'Invalid API key' } as ApiErrorResponse);
+    }
+
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const validated = insertVoipAiSessionSchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    const [newSession] = await db.insert(voipAiSessions)
+      .values(validated)
+      .returning();
+
+    logger.info('AI voice session saved', { 
+      sessionId: newSession.id, 
+      callId: newSession.callId,
+      duration: newSession.durationSec,
+      tenantId 
+    });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: newSession 
+    } as ApiSuccessResponse<typeof newSession>);
+  } catch (error) {
+    logger.error('Error saving AI session', { error });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to save AI session' } as ApiErrorResponse);
+  }
+});
+
 // GET /api/voip/ai-sessions - List AI voice sessions with analytics
 router.get('/ai-sessions', rbacMiddleware, async (req, res) => {
   try {

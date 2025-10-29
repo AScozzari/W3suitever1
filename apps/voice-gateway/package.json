@@ -1,0 +1,31 @@
+{
+  "name": "@w3suite/voice-gateway",
+  "version": "1.0.0",
+  "description": "W3 Suite Voice Gateway - FreeSWITCH to OpenAI Realtime API Bridge",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "openai": "^4.77.3",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0",
+    "winston": "^3.17.0",
+    "dotenv": "^16.4.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
