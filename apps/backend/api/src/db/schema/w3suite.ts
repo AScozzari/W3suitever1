@@ -5609,12 +5609,20 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   codecSet: varchar("codec_set", { length: 255 }).default('G729,PCMA,PCMU').notNull(), // Codec priority
   status: voipTrunkStatusEnum("status").default('active').notNull(), // REG_OK/FAIL
   note: text("note"), // Debug/info notes
+  
+  // AI Voice Agent Configuration
+  aiAgentEnabled: boolean("ai_agent_enabled").default(false).notNull(), // Enable AI agent for inbound calls
+  aiAgentRef: varchar("ai_agent_ref", { length: 100 }), // Reference to brand ai_agents (e.g., "customer-care-voice")
+  fallbackExtension: varchar("fallback_extension", { length: 20 }), // Extension to transfer if AI fails/unavailable
+  timeConditions: jsonb("time_conditions"), // {businessHours: [{day:1-7, start:"09:00", end:"18:00"}], holidays: ["2025-01-01"], timezone: "Europe/Rome"}
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("voip_trunks_tenant_idx").on(table.tenantId),
   index("voip_trunks_store_idx").on(table.storeId),
   index("voip_trunks_sip_domain_idx").on(table.sipDomain),
+  index("voip_trunks_ai_agent_idx").on(table.aiAgentEnabled),
   uniqueIndex("voip_trunks_tenant_store_auth_unique").on(table.tenantId, table.storeId, table.authUsername),
 ]);
 
@@ -5873,6 +5881,61 @@ export const insertVoipActivityLogSchema = createInsertSchema(voipActivityLog).o
 });
 export type InsertVoipActivityLog = z.infer<typeof insertVoipActivityLogSchema>;
 export type VoipActivityLog = typeof voipActivityLog.$inferSelect;
+
+// 7) voip_ai_sessions - AI Voice Agent Call Sessions Tracking
+export const voipAiSessions = w3suiteSchema.table("voip_ai_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  trunkId: uuid("trunk_id").references(() => voipTrunks.id, { onDelete: 'set null' }),
+  cdrId: uuid("cdr_id").references(() => voipCdrs.id, { onDelete: 'set null' }), // Link to CDR for full call details
+  
+  callId: varchar("call_id", { length: 255 }).notNull(), // FreeSWITCH call UUID
+  sessionId: varchar("session_id", { length: 255 }).notNull(), // OpenAI Realtime session ID
+  aiAgentRef: varchar("ai_agent_ref", { length: 100 }).notNull(), // Which AI agent handled the call
+  
+  callerNumber: varchar("caller_number", { length: 50 }), // Caller's phone number
+  didNumber: varchar("did_number", { length: 50 }), // DID called
+  
+  startTs: timestamp("start_ts").notNull(), // Session start
+  endTs: timestamp("end_ts"), // Session end
+  durationSeconds: integer("duration_seconds"), // Total session duration
+  
+  transcript: text("transcript"), // Full conversation transcript
+  actionsTaken: jsonb("actions_taken"), // [{action: "create_ticket", params: {...}, result: {...}}]
+  transferredTo: varchar("transferred_to", { length: 50 }), // Extension if transferred to human
+  transferReason: varchar("transfer_reason", { length: 255 }), // Why transferred (customer_request, ai_escalation, error)
+  
+  sentiment: varchar("sentiment", { length: 50 }), // positive, neutral, negative
+  satisfactionScore: integer("satisfaction_score"), // 1-5 if customer provided feedback
+  
+  errorOccurred: boolean("error_occurred").default(false).notNull(),
+  errorDetails: jsonb("error_details"), // Error stack if any
+  
+  costUsd: decimal("cost_usd", { precision: 10, scale: 4 }), // OpenAI API cost tracking
+  tokensUsed: integer("tokens_used"), // Total tokens consumed
+  
+  metadata: jsonb("metadata"), // Additional session data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_ai_sessions_tenant_idx").on(table.tenantId),
+  index("voip_ai_sessions_store_idx").on(table.storeId),
+  index("voip_ai_sessions_call_id_idx").on(table.callId),
+  index("voip_ai_sessions_start_ts_idx").on(table.startTs),
+  index("voip_ai_sessions_ai_agent_idx").on(table.aiAgentRef),
+  uniqueIndex("voip_ai_sessions_session_id_unique").on(table.sessionId),
+]);
+
+export const insertVoipAiSessionSchema = createInsertSchema(voipAiSessions).omit({
+  id: true,
+  createdAt: true
+}).extend({
+  callId: z.string().min(1, "Call ID is required"),
+  sessionId: z.string().min(1, "Session ID is required"),
+  aiAgentRef: z.string().min(1, "AI agent reference is required"),
+});
+export type InsertVoipAiSession = z.infer<typeof insertVoipAiSessionSchema>;
+export type VoipAiSession = typeof voipAiSessions.$inferSelect;
 
 // ==================== UTM TRACKING SYSTEM ====================
 

@@ -28,6 +28,7 @@ import {
   contactPolicies,
   voipActivityLog,
   voipCdrs,
+  voipAiSessions,
   insertVoipTrunkSchema,
   updateVoipTrunkSchema,
   insertVoipDidSchema,
@@ -41,7 +42,8 @@ import {
   insertContactPolicySchema,
   updateContactPolicySchema,
   insertVoipActivityLogSchema,
-  insertVoipCdrSchema
+  insertVoipCdrSchema,
+  insertVoipAiSessionSchema
 } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 
@@ -1433,6 +1435,300 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
   } catch (error) {
     logger.error('Error fetching connection status', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to fetch connection status' } as ApiErrorResponse);
+  }
+});
+
+// ==================== AI VOICE AGENT CONFIGURATION ====================
+
+// Helper: Check if current time is within business hours considering time conditions
+const isWithinBusinessHours = (timeConditions: any, timezone: string = 'Europe/Rome'): boolean => {
+  if (!timeConditions) return true; // No restrictions = always available
+
+  try {
+    const now = new Date();
+    const nowInTimezone = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour12: false,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(now);
+
+    // Check holidays
+    if (timeConditions.holidays && Array.isArray(timeConditions.holidays)) {
+      const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      if (timeConditions.holidays.includes(todayStr)) {
+        return false; // It's a holiday
+      }
+    }
+
+    // Check business hours
+    if (timeConditions.businessHours && Array.isArray(timeConditions.businessHours)) {
+      const dayOfWeek = now.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+      const currentTime = nowInTimezone.split(', ')[1]; // Extract HH:MM
+
+      const todaySchedule = timeConditions.businessHours.find((schedule: any) => schedule.day === dayOfWeek);
+      if (!todaySchedule) {
+        return false; // No schedule for this day
+      }
+
+      if (currentTime >= todaySchedule.start && currentTime <= todaySchedule.end) {
+        return true;
+      }
+      return false;
+    }
+
+    return true; // No time conditions specified
+  } catch (error) {
+    logger.error('Error checking business hours', { error, timeConditions });
+    return false; // Fail safe - don't enable AI if we can't validate time
+  }
+};
+
+// GET /api/voip/ai-config/:storeId - Get AI Voice Agent configuration for a store
+router.get('/ai-config/:storeId', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { storeId } = req.params;
+
+    // Get all trunks for this store with AI config
+    const trunks = await db.select()
+      .from(voipTrunks)
+      .where(and(
+        eq(voipTrunks.tenantId, tenantId),
+        eq(voipTrunks.storeId, storeId)
+      ));
+
+    const aiConfigs = trunks.map(trunk => ({
+      trunkId: trunk.id,
+      provider: trunk.provider,
+      aiAgentEnabled: trunk.aiAgentEnabled,
+      aiAgentRef: trunk.aiAgentRef,
+      fallbackExtension: trunk.fallbackExtension,
+      timeConditions: trunk.timeConditions,
+      sipDomain: trunk.sipDomain,
+      isCurrentlyActive: trunk.aiAgentEnabled && isWithinBusinessHours(
+        trunk.timeConditions, 
+        (trunk.timeConditions as any)?.timezone || 'Europe/Rome'
+      )
+    }));
+
+    return res.json({ 
+      success: true, 
+      data: { storeId, configs: aiConfigs } 
+    } as ApiSuccessResponse<{ storeId: string; configs: typeof aiConfigs }>);
+  } catch (error) {
+    logger.error('Error fetching AI voice config', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch AI voice configuration' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/ai-config/:storeId - Update AI Voice Agent configuration for store trunk
+const aiConfigSchema = z.object({
+  trunkId: z.string().uuid(),
+  aiAgentEnabled: z.boolean(),
+  aiAgentRef: z.string().optional().nullable(),
+  fallbackExtension: z.string().optional().nullable(),
+  timeConditions: z.object({
+    businessHours: z.array(z.object({
+      day: z.number().min(0).max(6), // 0=Sunday, 6=Saturday
+      start: z.string().regex(/^\d{2}:\d{2}$/), // HH:MM format
+      end: z.string().regex(/^\d{2}:\d{2}$/)
+    })).optional(),
+    holidays: z.array(z.string()).optional(), // Array of YYYY-MM-DD dates
+    timezone: z.string().optional()
+  }).optional().nullable()
+});
+
+router.post('/ai-config/:storeId', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { storeId } = req.params;
+
+    const validated = aiConfigSchema.parse(req.body);
+
+    // Verify trunk belongs to this store and tenant
+    const [trunk] = await db.select()
+      .from(voipTrunks)
+      .where(and(
+        eq(voipTrunks.id, validated.trunkId),
+        eq(voipTrunks.tenantId, tenantId),
+        eq(voipTrunks.storeId, storeId)
+      ))
+      .limit(1);
+
+    if (!trunk) {
+      return res.status(404).json({ error: 'Trunk not found for this store' } as ApiErrorResponse);
+    }
+
+    // Update trunk with AI configuration
+    const [updated] = await db.update(voipTrunks)
+      .set({
+        aiAgentEnabled: validated.aiAgentEnabled,
+        aiAgentRef: validated.aiAgentRef,
+        fallbackExtension: validated.fallbackExtension,
+        timeConditions: validated.timeConditions,
+        updatedAt: new Date()
+      })
+      .where(eq(voipTrunks.id, validated.trunkId))
+      .returning();
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'trunk',
+      validated.trunkId,
+      'ok',
+      { aiConfig: validated }
+    );
+
+    logger.info('AI Voice Agent config updated', { 
+      trunkId: validated.trunkId, 
+      storeId, 
+      aiEnabled: validated.aiAgentEnabled,
+      tenantId 
+    });
+
+    return res.json({ 
+      success: true, 
+      data: updated 
+    } as ApiSuccessResponse<typeof updated>);
+  } catch (error) {
+    logger.error('Error updating AI voice config', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to update AI voice configuration' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/routes/inbound - FreeSWITCH Inbound Routing Endpoint
+// This endpoint is called by FreeSWITCH to determine how to route an inbound call
+router.get('/routes/inbound', async (req, res) => {
+  try {
+    const { did, domain } = req.query;
+
+    if (!did || !domain) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters: did and domain' 
+      } as ApiErrorResponse);
+    }
+
+    // Find DID configuration
+    const [didConfig] = await db.select()
+      .from(voipDids)
+      .where(and(
+        eq(voipDids.e164, did as string),
+        eq(voipDids.active, true)
+      ))
+      .limit(1);
+
+    if (!didConfig) {
+      logger.warn('Inbound call to unknown DID', { did, domain });
+      return res.status(404).json({ 
+        error: 'DID not found or inactive' 
+      } as ApiErrorResponse);
+    }
+
+    // Get trunk configuration for AI settings
+    const [trunk] = await db.select()
+      .from(voipTrunks)
+      .where(and(
+        eq(voipTrunks.id, didConfig.trunkId!),
+        eq(voipTrunks.sipDomain, domain as string)
+      ))
+      .limit(1);
+
+    let routeTarget = didConfig.routeTargetType;
+    let routeRef = didConfig.routeTargetRef;
+    let aiEnabled = false;
+
+    // Check if AI agent should handle this call
+    if (trunk && trunk.aiAgentEnabled && trunk.aiAgentRef) {
+      const withinBusinessHours = isWithinBusinessHours(
+        trunk.timeConditions,
+        (trunk.timeConditions as any)?.timezone || 'Europe/Rome'
+      );
+
+      if (withinBusinessHours) {
+        aiEnabled = true;
+        routeTarget = 'ai';
+        routeRef = trunk.aiAgentRef;
+      } else {
+        // Outside business hours - use fallback
+        if (trunk.fallbackExtension) {
+          routeTarget = 'ext';
+          routeRef = trunk.fallbackExtension;
+        }
+      }
+    }
+
+    const response = {
+      tenantId: didConfig.tenantId,
+      storeId: didConfig.storeId,
+      targetType: routeTarget,
+      targetRef: routeRef,
+      aiEnabled,
+      fallbackExtension: trunk?.fallbackExtension || null,
+      sipDomain: domain
+    };
+
+    logger.info('Inbound routing resolved', { did, domain, targetType: routeTarget, aiEnabled });
+
+    return res.json({ 
+      success: true, 
+      data: response 
+    } as ApiSuccessResponse<typeof response>);
+  } catch (error) {
+    logger.error('Error resolving inbound route', { error, did: req.query.did, domain: req.query.domain });
+    return res.status(500).json({ error: 'Failed to resolve inbound route' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/ai-sessions - List AI voice sessions with analytics
+router.get('/ai-sessions', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { storeId, aiAgentRef, limit = '50' } = req.query;
+
+    const conditions = [eq(voipAiSessions.tenantId, tenantId)];
+    if (storeId) {
+      conditions.push(eq(voipAiSessions.storeId, storeId as string));
+    }
+    if (aiAgentRef) {
+      conditions.push(eq(voipAiSessions.aiAgentRef, aiAgentRef as string));
+    }
+
+    const sessions = await db.select()
+      .from(voipAiSessions)
+      .where(and(...conditions))
+      .orderBy(desc(voipAiSessions.startTs))
+      .limit(parseInt(limit as string));
+
+    return res.json({ 
+      success: true, 
+      data: sessions 
+    } as ApiSuccessResponse<typeof sessions>);
+  } catch (error) {
+    logger.error('Error fetching AI sessions', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch AI sessions' } as ApiErrorResponse);
   }
 });
 
