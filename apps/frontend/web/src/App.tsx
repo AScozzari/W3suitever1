@@ -72,11 +72,6 @@ function Router() {
   return (
     <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><div style={{ width: '48px', height: '48px', border: '4px solid #f3f4f6', borderTop: '4px solid #FF6900', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /></div>}>
       <Switch>
-        {/* 🎯 LOGIN - Public login page */}
-        <Route path="/login">
-          <Login tenantCode="staging" />
-        </Route>
-
         {/* 🎯 QR CHECK-IN - Public route for QR code scanning */}
         <Route path="/qr-checkin">
           <QRCheckinPage />
@@ -119,7 +114,7 @@ function Router() {
         {(params) => {
           const tenantSlug = params.tenant;
           // Reserved paths that cannot be tenant slugs
-          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'login', 'impostazioni', 'settings'];
+          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'impostazioni', 'settings'];
           
           if (!tenantSlug || reservedPaths.includes(tenantSlug)) {
             return <NotFound />;

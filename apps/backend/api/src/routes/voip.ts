@@ -1365,10 +1365,10 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
         storeName: stores.businessName,
         provider: voipTrunks.provider,
         status: voipTrunks.status,
-        proxy: voipTrunks.proxy,
+        host: voipTrunks.host, // TEMP FIX: use 'host' from DB instead of 'proxy'
         port: voipTrunks.port,
-        aiAgentEnabled: voipTrunks.aiAgentEnabled,
-        aiAgentRef: voipTrunks.aiAgentRef,
+        aiAgentEnabled: sql`false`.as('aiAgentEnabled'), // TEMP: column doesn't exist yet
+        aiAgentRef: sql`null::varchar`.as('aiAgentRef'), // TEMP: column doesn't exist yet
       })
       .from(voipTrunks)
       .leftJoin(stores, eq(voipTrunks.storeId, stores.id));
@@ -1377,9 +1377,9 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
     const extensionsData = await db
       .select({
         id: voipExtensions.id,
-        extNumber: voipExtensions.extNumber,
+        extNumber: voipExtensions.extension, // TEMP FIX: use 'extension' from DB instead of 'extNumber'
         displayName: voipExtensions.displayName,
-        enabled: voipExtensions.enabled,
+        enabled: sql`CASE WHEN ${voipExtensions.status} = 'active' THEN true ELSE false END`.as('enabled'), // TEMP FIX: map enum status to boolean
         userId: voipExtensions.userId,
       })
       .from(voipExtensions);
@@ -1400,7 +1400,7 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
       storeName: trunk.storeName || 'N/A',
       provider: trunk.provider || 'Unknown',
       status: trunk.status,
-      proxy: `${trunk.proxy}:${trunk.port}`,
+      proxy: `${trunk.host}:${trunk.port}`, // TEMP FIX: use 'host' from DB
       aiAgent: trunk.aiAgentEnabled ? (trunk.aiAgentRef || 'enabled') : 'disabled',
       lastPing: trunk.status === 'active' ? new Date().toISOString() : null,
     }));
