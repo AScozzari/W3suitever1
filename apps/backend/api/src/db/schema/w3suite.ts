@@ -5597,43 +5597,39 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  sipDomain: varchar("sip_domain", { length: 255 }).notNull(), // tenantA.pbx.w3suite.it
+  name: varchar("name", { length: 255 }).notNull(), // ACTUAL DB: trunk name
   provider: varchar("provider", { length: 100 }), // Messagenet, Twilio, etc.
-  proxy: varchar("proxy", { length: 255 }).notNull(), // sip.messagenet.it
+  host: varchar("host", { length: 255 }).notNull(), // ACTUAL DB: SIP proxy/host
   port: integer("port").default(5060).notNull(),
-  transport: voipProtocolEnum("transport").default('udp').notNull(), // udp/tcp/tls
-  authUsername: varchar("auth_username", { length: 255 }).notNull(), // SIP username
-  secretRef: varchar("secret_ref", { length: 500 }).notNull(), // Vault/KMS reference - NO plaintext password
-  register: boolean("register").default(true).notNull(), // true/false (registered or IP auth)
-  expirySeconds: integer("expiry_seconds").default(300).notNull(), // Registration expiry time
-  codecSet: varchar("codec_set", { length: 255 }).default('G729,PCMA,PCMU').notNull(), // Codec priority
-  status: voipTrunkStatusEnum("status").default('active').notNull(), // REG_OK/FAIL
-  note: text("note"), // Debug/info notes
-  
-  // AI Voice Agent Configuration
-  aiAgentEnabled: boolean("ai_agent_enabled").default(false).notNull(), // Enable AI agent for inbound calls
-  aiAgentRef: varchar("ai_agent_ref", { length: 100 }), // Reference to brand ai_agents (e.g., "customer-care-voice")
-  fallbackExtension: varchar("fallback_extension", { length: 20 }), // Extension to transfer if AI fails/unavailable
-  timeConditions: jsonb("time_conditions"), // {businessHours: [{day:1-7, start:"09:00", end:"18:00"}], holidays: ["2025-01-01"], timezone: "Europe/Rome"}
-  
+  protocol: voipProtocolEnum("protocol").default('udp').notNull(), // ACTUAL DB: 'protocol' not 'transport'
+  username: varchar("username", { length: 100 }), // ACTUAL DB: SIP username
+  password: text("password"), // ACTUAL DB: plaintext password (TODO: encrypt)
+  authUsername: varchar("auth_username", { length: 100 }), // ACTUAL DB: auth username
+  fromUser: varchar("from_user", { length: 100 }), // ACTUAL DB: from user
+  fromDomain: varchar("from_domain", { length: 255 }), // ACTUAL DB: from domain
+  codec: varchar("codec", { length: 255 }).default('PCMU,PCMA,opus'), // ACTUAL DB: 'codec' not 'codecSet'
+  maxChannels: integer("max_channels").default(10).notNull(), // ACTUAL DB: max channels
+  currentChannels: integer("current_channels").default(0).notNull(), // ACTUAL DB: current channels
+  status: voipTrunkStatusEnum("status").default('active').notNull(), // ACTUAL DB: status enum
+  recordingEnabled: boolean("recording_enabled").default(false).notNull(), // ACTUAL DB: recording flag
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("voip_trunks_tenant_idx").on(table.tenantId),
   index("voip_trunks_store_idx").on(table.storeId),
-  index("voip_trunks_sip_domain_idx").on(table.sipDomain),
-  index("voip_trunks_ai_agent_idx").on(table.aiAgentEnabled),
-  uniqueIndex("voip_trunks_tenant_store_auth_unique").on(table.tenantId, table.storeId, table.authUsername),
+  uniqueIndex("voip_trunks_tenant_store_name_unique").on(table.tenantId, table.storeId, table.name), // ACTUAL DB: unique on name not authUsername
 ]);
 
 export const insertVoipTrunkSchema = createInsertSchema(voipTrunks).omit({ 
-  id: true, 
+  id: true,
+  currentChannels: true, // Auto-managed
   createdAt: true, 
   updatedAt: true
 }).extend({
-  secretRef: z.string().min(1, "Secret reference is required"),
-  authUsername: z.string().min(1, "Auth username is required"),
-  sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
+  name: z.string().min(1, "Trunk name is required"),
+  host: z.string().min(1, "Host is required"),
+  port: z.number().min(1).max(65535).optional(),
+  protocol: z.enum(['udp', 'tcp', 'tls']).optional(),
 });
 export const updateVoipTrunkSchema = insertVoipTrunkSchema.omit({ tenantId: true, storeId: true }).partial();
 export type InsertVoipTrunk = z.infer<typeof insertVoipTrunkSchema>;
@@ -5680,26 +5676,30 @@ export type VoipDid = typeof voipDids.$inferSelect;
 export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }), // 1:1 relationship - ogni user ha max 1 extension
-  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }), // Optional store association
-  sipDomain: varchar("sip_domain", { length: 255 }).notNull(), // tenantA.pbx.w3suite.it
-  extNumber: varchar("ext_number", { length: 20 }).notNull(), // 1001, 1002, etc. (unique in domain)
-  sipPassword: text("sip_password").notNull(), // SIP authentication password (TODO: encrypt in production)
-  displayName: varchar("display_name", { length: 255 }).notNull(),
-  enabled: boolean("enabled").default(true).notNull(), // Registrable and callable
-  voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(),
-  forwardRules: jsonb("forward_rules"), // {busy: "1002", noAnswer: "voicemail", offHours: "ivr_main"}
-  classOfService: varchar("class_of_service", { length: 50 }).default('agent').notNull(), // agent|supervisor|admin
-  note: text("note"), // HR info, notes
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // ACTUAL DB: VARCHAR not UUID! 1:1 relationship
+  domainId: uuid("domain_id").notNull(), // ACTUAL DB: domain_id (references voip_domains)
+  extension: varchar("extension", { length: 20 }).notNull(), // ACTUAL DB: extension number
+  sipUsername: varchar("sip_username", { length: 100 }).notNull(), // ACTUAL DB: SIP auth username
+  sipPassword: text("sip_password").notNull(), // ACTUAL DB: SIP password
+  displayName: varchar("display_name", { length: 255 }), // ACTUAL DB: display name
+  email: varchar("email", { length: 255 }), // ACTUAL DB: email
+  voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(), // ACTUAL DB: voicemail flag
+  voicemailEmail: varchar("voicemail_email", { length: 255 }), // ACTUAL DB: voicemail email
+  recordingEnabled: boolean("recording_enabled").default(false).notNull(), // ACTUAL DB: recording flag
+  dndEnabled: boolean("dnd_enabled").default(false).notNull(), // ACTUAL DB: DND flag
+  forwardOnBusy: varchar("forward_on_busy", { length: 100 }), // ACTUAL DB: forward on busy
+  forwardOnNoAnswer: varchar("forward_on_no_answer", { length: 100 }), // ACTUAL DB: forward on no answer
+  forwardUnconditional: varchar("forward_unconditional", { length: 100 }), // ACTUAL DB: unconditional forward
+  status: voipExtensionStatusEnum("status").default('active').notNull(), // ACTUAL DB: status enum
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("voip_extensions_tenant_idx").on(table.tenantId),
   index("voip_extensions_user_idx").on(table.userId),
-  index("voip_extensions_store_idx").on(table.storeId),
-  index("voip_extensions_sip_domain_idx").on(table.sipDomain),
-  uniqueIndex("voip_extensions_domain_ext_unique").on(table.sipDomain, table.extNumber),
-  uniqueIndex("voip_extensions_user_unique").on(table.userId), // 1:1 constraint - ogni user max 1 extension
+  index("voip_extensions_domain_idx").on(table.domainId), // ACTUAL DB: domain index
+  uniqueIndex("voip_extensions_domain_extension_unique").on(table.domainId, table.extension), // ACTUAL DB: unique extension per domain
+  uniqueIndex("voip_extensions_domain_sip_username_unique").on(table.domainId, table.sipUsername), // ACTUAL DB: unique sip_username per domain
+  uniqueIndex("voip_extensions_user_unique").on(table.userId), // ACTUAL DB: conditional unique on user_id
 ]);
 
 export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit({ 
@@ -5707,13 +5707,14 @@ export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit
   createdAt: true, 
   updatedAt: true 
 }).extend({
-  userId: z.string().uuid().optional(), // 1:1 relationship con users (optional per legacy extensions)
-  extNumber: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
+  userId: z.string().optional(), // ACTUAL DB: VARCHAR, optional (1:1 with users)
+  domainId: z.string().uuid("Invalid domain ID"),
+  extension: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
+  sipUsername: z.string().min(1, "SIP username is required"),
   sipPassword: z.string().min(12, "SIP password must be at least 12 characters"),
-  sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
-  classOfService: z.enum(['agent', 'supervisor', 'admin']),
+  status: z.enum(['active', 'inactive', 'suspended']),
 });
-export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ tenantId: true, userId: true, sipDomain: true, extNumber: true }).partial();
+export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ tenantId: true, userId: true, domainId: true, extension: true }).partial();
 export type InsertVoipExtension = z.infer<typeof insertVoipExtensionSchema>;
 export type UpdateVoipExtension = z.infer<typeof updateVoipExtensionSchema>;
 export type VoipExtension = typeof voipExtensions.$inferSelect;

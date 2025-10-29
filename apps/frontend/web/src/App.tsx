@@ -132,7 +132,7 @@ function Router() {
           const tenantSlug = params.tenant;
           
           // Reserved paths that cannot be tenant slugs (must match /:tenant route above)
-          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'impostazioni', 'settings'];
+          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'impostazioni', 'settings', 'login'];
           if (!tenantSlug || tenantSlug === '' || reservedPaths.includes(tenantSlug)) {
             console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
             return <NotFound />;

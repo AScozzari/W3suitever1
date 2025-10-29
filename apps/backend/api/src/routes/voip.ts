@@ -1358,61 +1358,42 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
     await setTenantContext(db, tenantId);
 
     // Query all trunks with store names (RLS handles tenant isolation)
+    // TEMP: Minimal query to debug schema issue
     const trunksData = await db
-      .select({
-        id: voipTrunks.id,
-        storeId: voipTrunks.storeId,
-        storeName: stores.businessName,
-        provider: voipTrunks.provider,
-        status: voipTrunks.status,
-        host: voipTrunks.host, // TEMP FIX: use 'host' from DB instead of 'proxy'
-        port: voipTrunks.port,
-        aiAgentEnabled: sql`false`.as('aiAgentEnabled'), // TEMP: column doesn't exist yet
-        aiAgentRef: sql`null::varchar`.as('aiAgentRef'), // TEMP: column doesn't exist yet
-      })
+      .select()
       .from(voipTrunks)
       .leftJoin(stores, eq(voipTrunks.storeId, stores.id));
 
     // Query all extensions with user info (RLS handles tenant isolation)
+    // TEMP: Minimal query to debug schema issue
     const extensionsData = await db
-      .select({
-        id: voipExtensions.id,
-        extNumber: voipExtensions.extension, // TEMP FIX: use 'extension' from DB instead of 'extNumber'
-        displayName: voipExtensions.displayName,
-        enabled: sql`CASE WHEN ${voipExtensions.status} = 'active' THEN true ELSE false END`.as('enabled'), // TEMP FIX: map enum status to boolean
-        userId: voipExtensions.userId,
-      })
+      .select()
       .from(voipExtensions);
 
-    // Calculate stats
-    const trunksActive = trunksData.filter(t => t.status === 'active').length;
-    const trunksTotal = trunksData.length;
-
-    // Mock SIP registration status (in production, this would come from PBX API)
-    // For now, assume all enabled extensions are registered
-    const extensionsRegistered = extensionsData.filter(e => e.enabled).length;
-    const extensionsTotal = extensionsData.length;
-
-    // Format trunk data with mock lastPing
-    const trunks = trunksData.map(trunk => ({
-      id: trunk.id,
-      storeId: trunk.storeId,
-      storeName: trunk.storeName || 'N/A',
-      provider: trunk.provider || 'Unknown',
-      status: trunk.status,
-      proxy: `${trunk.host}:${trunk.port}`, // TEMP FIX: use 'host' from DB
-      aiAgent: trunk.aiAgentEnabled ? (trunk.aiAgentRef || 'enabled') : 'disabled',
-      lastPing: trunk.status === 'active' ? new Date().toISOString() : null,
+    // TEMP: Return minimal data while debugging
+    const trunks = trunksData.map((row: any) => ({
+      id: row.voip_trunks?.id || 'unknown',
+      storeId: row.voip_trunks?.storeId || 'unknown',
+      storeName: row.stores?.businessName || 'N/A',
+      provider: row.voip_trunks?.provider || 'Unknown',
+      status: row.voip_trunks?.status || 'unknown',
+      proxy: `${row.voip_trunks?.host || 'unknown'}:${row.voip_trunks?.port || 5060}`,
+      aiAgent: 'disabled',
+      lastPing: row.voip_trunks?.status === 'active' ? new Date().toISOString() : null,
     }));
 
-    // Format extension data with mock sipStatus
-    const extensions = extensionsData.map(ext => ({
-      id: ext.id,
-      extension: ext.extNumber,
-      displayName: ext.displayName,
-      sipStatus: ext.enabled ? 'registered' : 'unregistered',
-      lastRegistered: ext.enabled ? new Date().toISOString() : null,
+    const extensions = extensionsData.map((row: any) => ({
+      id: row.id,
+      extension: row.extension || 'unknown',
+      displayName: row.displayName || 'N/A',
+      sipStatus: row.status === 'active' ? 'registered' : 'unregistered',
+      lastRegistered: row.status === 'active' ? new Date().toISOString() : null,
     }));
+
+    const trunksActive = trunks.filter(t => t.status === 'active').length;
+    const trunksTotal = trunks.length;
+    const extensionsRegistered = extensions.filter(e => e.sipStatus === 'registered').length;
+    const extensionsTotal = extensions.length;
 
     const response = {
       trunks,
@@ -1435,7 +1416,11 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
 
     return res.json({ success: true, data: response } as ApiSuccessResponse<typeof response>);
   } catch (error) {
-    logger.error('Error fetching connection status', { error, tenantId: getTenantId(req) });
+    logger.error('Error fetching connection status', { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      tenantId: getTenantId(req) 
+    });
     return res.status(500).json({ error: 'Failed to fetch connection status' } as ApiErrorResponse);
   }
 });
