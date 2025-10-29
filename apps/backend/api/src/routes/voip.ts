@@ -1890,4 +1890,62 @@ router.get('/ai-sessions', rbacMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/voip/connection-status - Check VoIP system connection status
+router.get('/connection-status', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Count active trunks
+    const trunksResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(voipTrunks)
+      .where(and(
+        eq(voipTrunks.tenantId, tenantId),
+        eq(voipTrunks.isActive, true)
+      ));
+
+    const activeTrunks = trunksResult[0]?.count || 0;
+
+    // Count active extensions
+    const extensionsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(voipExtensions)
+      .where(and(
+        eq(voipExtensions.tenantId, tenantId),
+        eq(voipExtensions.isActive, true)
+      ));
+
+    const activeExtensions = extensionsResult[0]?.count || 0;
+
+    // Count active DIDs
+    const didsResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(voipDids)
+      .where(and(
+        eq(voipDids.tenantId, tenantId),
+        eq(voipDids.isActive, true)
+      ));
+
+    const activeDids = didsResult[0]?.count || 0;
+
+    const status = {
+      connected: activeTrunks > 0,
+      activeTrunks,
+      activeExtensions,
+      activeDids,
+      timestamp: new Date().toISOString()
+    };
+
+    return res.json({ 
+      success: true, 
+      data: status 
+    } as ApiSuccessResponse<typeof status>);
+  } catch (error) {
+    logger.error('Error fetching VoIP connection status', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch connection status' } as ApiErrorResponse);
+  }
+});
+
 export default router;
