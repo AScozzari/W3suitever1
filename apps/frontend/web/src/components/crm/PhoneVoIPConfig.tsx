@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
@@ -327,41 +328,188 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
               <Card className="p-6 bg-white/50 border-gray-200 backdrop-blur-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <Server className="w-5 h-5 text-orange-500" />
-                  SIP Trunks
+                  Riepilogo Trunks (Tutti gli Store)
                 </h3>
-                {connectionStatus?.trunks?.length > 0 ? (
-                  <div className="space-y-2">
-                    {connectionStatus.trunks.map((trunk: any) => (
-                      <div key={trunk.id} className="flex items-center justify-between p-3 bg-gray-50/80 rounded-lg border border-gray-200" data-testid={`trunk-status-${trunk.id}`}>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-medium text-gray-800">{trunk.storeName}</h4>
-                            <Badge variant={trunk.status === 'active' ? 'default' : 'secondary'} className={
-                              trunk.status === 'active' 
-                                ? 'bg-green-100 text-green-700 border-green-300' 
-                                : 'bg-red-100 text-red-700 border-red-300'
-                            }>
-                              {trunk.status === 'active' ? (
+                {trunksLoading ? (
+                  <LoadingState />
+                ) : trunks.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-8">Nessun trunk configurato</p>
+                ) : (
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                            <TableHead className="font-semibold text-gray-700">Store</TableHead>
+                            <TableHead className="font-semibold text-gray-700">Trunk Name</TableHead>
+                            <TableHead className="font-semibold text-gray-700">Status</TableHead>
+                            <TableHead className="font-semibold text-gray-700">AI Agent</TableHead>
+                            <TableHead className="font-semibold text-gray-700 text-center">Extensions</TableHead>
+                            <TableHead className="font-semibold text-gray-700 text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {trunks.map((trunk: any) => (
+                            <TableRow 
+                              key={trunk.trunk.id} 
+                              className="hover:bg-gray-50/50 transition-colors border-gray-200"
+                              data-testid={`table-row-trunk-${trunk.trunk.id}`}
+                            >
+                              <TableCell className="font-medium text-gray-800">
+                                {trunk.storeName || 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-gray-700">
+                                {trunk.trunk.name}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} 
+                                  className={
+                                    trunk.trunk.status === 'active' 
+                                      ? 'bg-green-100 text-green-700 border-green-300' 
+                                      : 'bg-red-100 text-red-700 border-red-300'
+                                  }
+                                >
+                                  {trunk.trunk.status === 'active' ? (
+                                    <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
+                                  ) : (
+                                    <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant="secondary"
+                                  className={
+                                    trunk.trunk.aiAgentEnabled 
+                                      ? 'bg-green-100 text-green-700 border-green-300' 
+                                      : 'bg-gray-100 text-gray-600 border-gray-300'
+                                  }
+                                >
+                                  {trunk.trunk.aiAgentEnabled ? (
+                                    <><CheckCircle2 className="w-3 h-3 mr-1" /> Enabled</>
+                                  ) : (
+                                    <><XCircle className="w-3 h-3 mr-1" /> Disabled</>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center text-gray-700 font-medium">
+                                {trunk.trunk.extensionsCount || 0}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-1 justify-end">
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setEditingTrunk(trunk.trunk.id);
+                                      setShowTrunkForm(true);
+                                      setActiveTab('trunks');
+                                      trunkForm.reset(trunk.trunk);
+                                    }}
+                                    data-testid={`button-edit-trunk-table-${trunk.trunk.id}`}
+                                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    title="Modifica trunk"
+                                  >
+                                    <Pencil className="w-4 h-4 text-gray-600" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      if (confirm('Sei sicuro di voler eliminare questo trunk?')) {
+                                        deleteTrunkMutation.mutate(trunk.trunk.id);
+                                      }
+                                    }}
+                                    data-testid={`button-delete-trunk-table-${trunk.trunk.id}`}
+                                    className="h-8 w-8 p-0 hover:bg-red-50"
+                                    title="Elimina trunk"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-3">
+                      {trunks.map((trunk: any) => (
+                        <div 
+                          key={trunk.trunk.id} 
+                          className="p-4 bg-gray-50/80 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                          data-testid={`card-trunk-mobile-${trunk.trunk.id}`}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-800 mb-1">{trunk.trunk.name}</h4>
+                              <p className="text-sm text-gray-600">{trunk.storeName || 'N/A'}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingTrunk(trunk.trunk.id);
+                                  setShowTrunkForm(true);
+                                  setActiveTab('trunks');
+                                  trunkForm.reset(trunk.trunk);
+                                }}
+                                className="h-8 w-8 p-0 hover:bg-white"
+                              >
+                                <Pencil className="w-4 h-4 text-gray-600" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => {
+                                  if (confirm('Sei sicuro di voler eliminare questo trunk?')) {
+                                    deleteTrunkMutation.mutate(trunk.trunk.id);
+                                  }
+                                }}
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            <Badge 
+                              variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} 
+                              className={
+                                trunk.trunk.status === 'active' 
+                                  ? 'bg-green-100 text-green-700 border-green-300' 
+                                  : 'bg-red-100 text-red-700 border-red-300'
+                              }
+                            >
+                              {trunk.trunk.status === 'active' ? (
                                 <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
                               ) : (
                                 <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
                               )}
                             </Badge>
+                            <Badge 
+                              variant="secondary"
+                              className={
+                                trunk.trunk.aiAgentEnabled 
+                                  ? 'bg-green-100 text-green-700 border-green-300' 
+                                  : 'bg-gray-100 text-gray-600 border-gray-300'
+                              }
+                            >
+                              AI: {trunk.trunk.aiAgentEnabled ? 'Enabled' : 'Disabled'}
+                            </Badge>
                           </div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            {trunk.provider} • {trunk.host} • {trunk.channels}
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Extensions:</span> {trunk.trunk.extensionsCount || 0}
                           </div>
                         </div>
-                        {trunk.lastPing && (
-                          <div className="text-xs text-gray-500">
-                            Last ping: {new Date(trunk.lastPing).toLocaleTimeString()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">Nessun trunk configurato</p>
+                      ))}
+                    </div>
+                  </>
                 )}
               </Card>
 
