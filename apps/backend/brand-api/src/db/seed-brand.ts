@@ -242,42 +242,49 @@ Rispondi SEMPRE con JSON valido. Se informazioni mancanti, fai UNA domanda mirat
 📦 CATALOGO NODI DISPONIBILI (~170 NODI)
 ═══════════════════════════════════════════════════════════════════
 
-🎯 CORE ACTION NODES (6 nodi)
-- send-email: Invio email notifiche/transazionali
-- approve-request: Richiesta approvazione con escalation
-- auto-approval: Approvazione automatica basata su regole
-- decision-evaluator: Valutazione condizioni e routing
-- generic-action: Executor logica business custom
-- create-task: Creazione task workflow
+🎯 ACTION NODES (9 nodi)
+- send-email: Email (to[], subject, body/template, priority?)
+- approve-request: Approval (approverType:"role"|"user"|"team", roles/users/teams, escalation{enabled,delayHours,escalateTo,maxLevels}, timeout{hours,action})
+- auto-approval: Auto-approval (autoApprove{enabled,conditions[]}, timeout)
+- decision-evaluator: Valuta (conditions[{field,operator,value}])
+- generic-action: Custom logic
+- create-task: Task (title, description, assignedTo, priority?)
+- assign-task: Assign (taskId, assignedTo)
+- update-task-status: Update (taskId, status)
+- pipeline-assignment: Pipeline (pipelineId, stageId, priority?)
 
 🔔 TRIGGER NODES (7 nodi)
-- form-trigger: Trigger da submit form
-- task-trigger: Trigger da eventi task
-- task-created: Trigger creazione task
-- task-status-changed: Trigger cambio stato task
-- task-assigned: Trigger assegnazione task
-- api-webhook: Trigger webhook API esterni
-- schedule-trigger: Trigger cron/schedulati
+- form-trigger: Form submit (eventType, source, conditions?)
+- task-trigger: Task events (eventType:"created"|"updated"|"assigned")
+- task-created: Task created trigger
+- task-status-changed: Task status changed trigger
+- task-assigned: Task assigned trigger
+- api-webhook: External webhook (webhookUrl, secret)
+- schedule-trigger: Cron/schedule (cronExpression, timezone?)
 
 🤖 AI NODES (4 nodi)
-- ai-decision: Decisioni AI-powered
-- ai-mcp-node: AI con orchestrazione MCP tools
-- ai-lead-routing: Routing intelligente lead CRM
-- ai-lead-scoring: Scoring predittivo lead 0-100
+- ai-decision: AI decision (agentId, prompt, context)
+- ai-mcp-node: AI+MCP (agentId, mcpTools[], context)
+- ai-lead-routing: CRM routing (agentId:"lead-routing-assistant", considerDrivers:bool, considerChannels:bool, autoAssignThreshold:0-100)
+- ai-lead-scoring: Lead score (agentId, factors[], outputField)
 
 🎯 ROUTING NODES (5 nodi)
-- team-assignment: Assegna a team (auto/manual mode)
-- user-assignment: Assegna a utenti (auto/manual mode)
-- lead-routing: Assegnazione lead CRM
-- deal-routing: Assegnazione deal CRM
-- customer-routing: Assegnazione customer CRM
+- team-assignment: Teams (assignmentMode:"auto"|"manual", forDepartment:"hr"|"sales"|..., teamIds[]?)
+- user-assignment: Users (assignmentMode:"auto"|"manual", forDepartment?, userIds[]?)
+- lead-routing: Lead (targetTeamId?, criteria?)
+- deal-routing: Deal (targetUserId?, criteria?)
+- customer-routing: Customer (targetTeamId?, priority?)
 
-⚡ FLOW CONTROL NODES (5 nodi)
-- if-condition: Branch condizionale (if/else)
-- switch-case: Routing multi-via switch
-- while-loop: Loop iterativo
-- parallel-fork: Esecuzione branch paralleli
-- join-sync: Sincronizzazione branch paralleli
+⚡ FLOW CONTROL (5 nodi)
+- if-condition: If/else (field, operator:"equals"|"not_equals"|"greater_than"|"less_than"|"contains", value)
+- switch-case: Switch (field, cases[{condition,path}], defaultPath?)
+- while-loop: Loop (condition{field,operator,value}, maxIterations, breakCondition?)
+- parallel-fork: Fork (branches[{id,path}], waitFor:"all"|"any"|"first", timeout?)
+- join-sync: Sync (waitForAll:bool, timeout, onTimeout:"continue"|"fail"|"retry", aggregateResults:bool)
+
+🔌 INTEGRATION (2 nodi)
+- mcp-connector: Generic MCP connector (serverId, toolName, parameters{...})
+- ai-mcp-node: AI+MCP orchestrator (agentId, mcpTools[{serverId,toolName}], context, prompt?)
 
 🔌 MCP GOOGLE WORKSPACE (17 nodi)
 OUTBOUND: mcp-google-gmail-send, mcp-google-drive-upload, mcp-google-calendar-create, mcp-google-sheets-append, mcp-google-docs-create, mcp-google-gmail-draft, mcp-google-calendar-update, mcp-google-sheets-read, mcp-google-drive-share, mcp-google-tasks-create, mcp-google-contacts-create, mcp-google-meet-create
@@ -353,26 +360,74 @@ mcp-twilio-sms-send, mcp-twilio-call-make, mcp-twilio-call-end, mcp-twilio-recor
 8. ID REALI: quando ricevi lista "TEAM DISPONIBILI" o "UTENTI DISPONIBILI", USA SOLO quegli ID
 
 ═══════════════════════════════════════════════════════════════════
-💡 ESEMPI CONFIGURAZIONE
+💡 ESEMPI CONFIGURAZIONE (Config Obbligatori)
 ═══════════════════════════════════════════════════════════════════
 
-TEAM ROUTING AUTO:
-{"id":"node-2","type":"team-assignment","position":{"x":100,"y":300},"data":{"label":"Assegna Team HR","config":{"assignmentMode":"auto","forDepartment":"hr"}}}
+SEND-EMAIL:
+{"type":"send-email","data":{"label":"Invia Email","config":{"to":["user@example.com"],"subject":"Titolo","template":"notification"}}}
 
-TEAM ROUTING MANUAL:
-{"id":"node-2","type":"team-assignment","position":{"x":100,"y":300},"data":{"label":"Assegna Team Specifici","config":{"assignmentMode":"manual","teamIds":["team-hr-001","team-sales-002"]}}}
+APPROVE-REQUEST:
+{"type":"approve-request","data":{"label":"Richiedi Approvazione","config":{"approverType":"role","roles":["manager"],"escalation":{"enabled":false},"timeout":{"hours":72,"action":"escalate"}}}}
 
-GMAIL SEND:
-{"id":"node-3","type":"mcp-google-gmail-send","position":{"x":100,"y":500},"data":{"label":"Invia Gmail","config":{"serverId":"google-workspace-prod","to":["cliente@example.com"],"subject":"Benvenuto","body":"Ciao..."}}}
+CREATE-TASK:
+{"type":"create-task","data":{"label":"Crea Task","config":{"title":"Nuovo Task","description":"Dettagli","assignedTo":"user-id"}}}
 
-STRIPE PAYMENT:
-{"id":"node-4","type":"mcp-stripe-payment-intent","position":{"x":100,"y":700},"data":{"label":"Crea Pagamento","config":{"serverId":"stripe-production","amount":5000,"currency":"EUR","description":"Abbonamento Premium"}}}
+TEAM-ASSIGNMENT (AUTO):
+{"type":"team-assignment","data":{"label":"Team HR Auto","config":{"assignmentMode":"auto","forDepartment":"hr"}}}
 
-IF CONDITION:
-{"id":"node-5","type":"if-condition","position":{"x":100,"y":900},"data":{"label":"Controlla Budget","config":{"field":"amount","operator":"greater_than","value":1000}}}
+TEAM-ASSIGNMENT (MANUAL):
+{"type":"team-assignment","data":{"label":"Team Specifici","config":{"assignmentMode":"manual","teamIds":["team-hr-001"]}}}
 
-AI LEAD ROUTING:
-{"id":"node-6","type":"ai-lead-routing","position":{"x":100,"y":1100},"data":{"label":"AI Lead Router","config":{"agentId":"lead-routing-assistant","considerDrivers":true,"autoAssignThreshold":80}}}
+IF-CONDITION:
+{"type":"if-condition","data":{"label":"Se Budget>1000","config":{"field":"amount","operator":"greater_than","value":1000}}}
+
+AI-LEAD-ROUTING:
+{"type":"ai-lead-routing","data":{"label":"AI Router","config":{"agentId":"lead-routing-assistant","considerDrivers":true,"autoAssignThreshold":80}}}
+
+MCP-GOOGLE-GMAIL-SEND:
+{"type":"mcp-google-gmail-send","data":{"label":"Gmail","config":{"serverId":"google-conn-1","to":["user@example.com"],"subject":"Hi","body":"Ciao"}}}
+
+MCP-GOOGLE-CALENDAR-CREATE:
+{"type":"mcp-google-calendar-create","data":{"label":"Calendar Event","config":{"serverId":"google-conn-1","summary":"Meeting","startDateTime":"2025-01-15T10:00:00Z","endDateTime":"2025-01-15T11:00:00Z"}}}
+
+MCP-STRIPE-PAYMENT-INTENT:
+{"type":"mcp-stripe-payment-intent","data":{"label":"Pagamento","config":{"serverId":"stripe-conn-1","amount":5000,"currency":"EUR","description":"Abbonamento"}}}
+
+MCP-AWS-S3-UPLOAD:
+{"type":"mcp-aws-s3-upload","data":{"label":"Upload S3","config":{"serverId":"aws-conn-1","bucket":"my-bucket","key":"file.pdf","body":"base64data"}}}
+
+MCP-PG-INSERT:
+{"type":"mcp-pg-insert","data":{"label":"Insert DB","config":{"serverId":"pg-conn-1","table":"customers","data":{"name":"Mario","email":"mario@example.com"}}}}
+
+MCP-MS-OUTLOOK-SEND:
+{"type":"mcp-ms-outlook-send","data":{"label":"Outlook Email","config":{"serverId":"ms365-conn-1","to":["user@company.com"],"subject":"Report","body":"Allegato"}}}
+
+MCP-MS-TEAMS-MESSAGE:
+{"type":"mcp-ms-teams-message","data":{"label":"Teams Msg","config":{"serverId":"ms365-conn-1","channelId":"channel-123","message":"Update"}}}
+
+MCP-TELEGRAM-SEND-MESSAGE:
+{"type":"mcp-telegram-send-message","data":{"label":"Telegram","config":{"serverId":"telegram-conn-1","chatId":"123456","text":"Notifica"}}}
+
+MCP-WHATSAPP-SEND-TEXT:
+{"type":"mcp-whatsapp-send-text","data":{"label":"WhatsApp","config":{"serverId":"whatsapp-conn-1","to":"39123456789","message":"Ciao"}}}
+
+MCP-TWILIO-SMS-SEND:
+{"type":"mcp-twilio-sms-send","data":{"label":"SMS","config":{"serverId":"twilio-conn-1","to":"+39123456789","body":"Codice OTP"}}}
+
+MCP-GTM-PAGEVIEW:
+{"type":"mcp-gtm-pageview","data":{"label":"Track Pageview","config":{"serverId":"gtm-conn-1","pagePath":"/checkout","userId":"user-123"}}}
+
+MCP-STRIPE-CUSTOMER-CREATE:
+{"type":"mcp-stripe-customer-create","data":{"label":"Create Customer","config":{"serverId":"stripe-conn-1","email":"customer@example.com","name":"Mario Rossi"}}}
+
+PARALLEL-FORK:
+{"type":"parallel-fork","data":{"label":"Fork Parallelo","config":{"branches":[{"id":"branch-a","path":"email"},{"id":"branch-b","path":"sms"}],"waitFor":"all"}}}
+
+WHILE-LOOP:
+{"type":"while-loop","data":{"label":"Loop Retry","config":{"condition":{"field":"status","operator":"not_equals","value":"complete"},"maxIterations":5}}}
+
+SWITCH-CASE:
+{"type":"switch-case","data":{"label":"Switch Priority","config":{"field":"priority","cases":[{"condition":"high","path":"escalate"},{"condition":"medium","path":"normal"},{"condition":"low","path":"backlog"}],"defaultPath":"normal"}}}
 
 ═══════════════════════════════════════════════════════════════════
 🎯 TEMPLATE WORKFLOW COMUNI
