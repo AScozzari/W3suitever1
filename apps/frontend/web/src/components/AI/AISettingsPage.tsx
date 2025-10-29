@@ -718,48 +718,6 @@ export default function AISettingsPage() {
         </div>
       </div>
 
-      {/* AI Voice Agent Configuration - Prominent Card */}
-      <div className="bg-gradient-to-br from-orange-50 via-purple-50 to-pink-50 rounded-xl border-2 border-orange-200 p-6 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-orange-500 to-purple-600 rounded-xl shadow-md">
-              <Mic className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
-                AI Voice Agent - Chiamate Inbound
-              </h3>
-              <p className="text-gray-700 max-w-2xl">
-                Configura l'agente vocale AI per gestire automaticamente le chiamate in entrata. 
-                Supporta business hours, fallback a operatori umani, e integrazione con FreeSWITCH.
-              </p>
-              <div className="flex items-center gap-4 mt-3 text-sm">
-                <div className="flex items-center gap-1.5 text-green-700">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>OpenAI Realtime API</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-blue-700">
-                  <Clock className="w-4 h-4" />
-                  <span>Time Conditions</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-purple-700">
-                  <Users className="w-4 h-4" />
-                  <span>Fallback Umano</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => setVoiceConfigModalOpen(true)}
-            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-purple-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-purple-700 transition-all shadow-md hover:shadow-xl flex items-center space-x-2"
-            data-testid="button-open-voice-config"
-          >
-            <Settings className="w-5 h-5" />
-            <span>Configura Voice Agent</span>
-          </button>
-        </div>
-      </div>
-
       {/* OpenAI API Configuration */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
