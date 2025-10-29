@@ -50,6 +50,11 @@ const trunkFormSchema = z.object({
   maxChannels: z.number().int().min(1).max(100).default(10),
   status: z.enum(['active', 'inactive', 'error']).default('active'),
   recordingEnabled: z.boolean().default(false),
+  // AI Voice Agent Configuration
+  aiAgentEnabled: z.boolean().default(false),
+  aiAgentRef: z.string().optional(),
+  aiTimePolicy: z.any().optional(), // JSON object for business hours
+  aiFailoverExtension: z.string().optional(),
 });
 
 type TrunkFormValues = z.infer<typeof trunkFormSchema>;
@@ -118,6 +123,10 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
       maxChannels: 10,
       status: 'active',
       recordingEnabled: false,
+      aiAgentEnabled: false,
+      aiAgentRef: '',
+      aiTimePolicy: null,
+      aiFailoverExtension: '',
     },
   });
 
@@ -784,6 +793,93 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* AI Voice Agent Configuration Section */}
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-purple-500" />
+                      AI Voice Agent Configuration
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={trunkForm.control}
+                        name="aiAgentEnabled"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border border-purple-200 bg-purple-50/50 p-4 col-span-2">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-gray-800 font-semibold">Enable AI Voice Agent</FormLabel>
+                              <FormDescription className="text-xs text-gray-600">
+                                Attiva l'assistente vocale AI per gestire automaticamente le chiamate in entrata su questo trunk
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                data-testid="switch-ai-agent-enabled"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="aiAgentRef"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">AI Agent Reference</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                value={field.value || ''} 
+                                placeholder="es: customer-care-voice" 
+                                className="bg-white"
+                                data-testid="input-ai-agent-ref"
+                                disabled={!trunkForm.watch('aiAgentEnabled')}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-gray-500">
+                              Riferimento all'agente AI configurato in Brand Interface
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={trunkForm.control}
+                        name="aiFailoverExtension"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">Failover Extension</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                value={field.value || ''} 
+                                placeholder="es: 100" 
+                                className="bg-white"
+                                data-testid="input-ai-failover-extension"
+                                disabled={!trunkForm.watch('aiAgentEnabled')}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-gray-500">
+                              Extension per trasferimento umano quando AI non può gestire la richiesta
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-xs text-gray-700">
+                          <strong>Time Policy:</strong> Business hours e routing temporale saranno configurabili a breve. 
+                          Per ora l'AI Voice Agent sarà attivo 24/7.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
