@@ -1,0 +1,233 @@
+Perfetto: hai già l’instradamento per tenant = SIP domain (es. tenantA.edvoip.it). Qui sotto trovi il contratto minimo W3 ↔ FreeSWITCH per tenere tutto semplice e coerente con il tuo modello: trunk per store, extension 1:1 con user, tenant isolation by domain.
+
+1) Chi è “master” e cosa contiene
+
+
+W3 Suite = source of truth
+
+
+voip_trunks (per store), voip_dids (DID→dest), voip_extensions (ext 1:1 con user), voip_routes (pochi pattern), voip_activity_log, voip_cdr.
+
+
+Ogni record ha: tenant_id, sip_domain (es. tenantA.edvoip.it), ed eventuale store_id (per trunk/DID/extension).
+
+
+
+
+FreeSWITCH = runtime
+
+
+Domains = tenant SIP domains.
+
+
+Dialplan per public (inbound) e internal (outbound).
+
+
+Variabili canale: tenant_id, sip_domain, store_id, user_id (quando noto), per ricadere fino ai CDR.
+
+
+
+
+
+2) Legame W3 ↔ FreeSWITCH (contratto API minimale)
+Metti 4 endpoint (idempotenti) in W3:
+
+
+Provision snapshot (per un domain):
+
+
+GET  /api/voip/provision/snapshot?sip_domain=tenantA.edvoip.it
+→ { trunks: [...], dids: [...], extensions: [...], routes: [...] }
+
+
+
+Inbound resolve (usato nel dialplan public):
+
+
+GET  /api/voip/routes/inbound?sip_domain=tenantA.edvoip.it&did=+39061234567
+→ { tenant_id, store_id, target_type: "ext|ring|ai", target_ref: "100|ring_store01|agent_voice" }
+
+
+
+Lookup extension (per associare ext→user/store in internal):
+
+
+GET  /api/voip/extensions/by-number?sip_domain=tenantA.edvoip.it&ext=100
+→ { tenant_id, store_id, user_id, cos, forwarding }
+
+
+
+CDR ingest (dal PBX verso W3):
+
+
+POST /api/voip/cdr
+{ tenant_id, store_id?, sip_domain, call_id, direction, from_uri, to_uri, did_e164?, ext_number?, start_ts, answer_ts, end_ts, billsec, disposition, recording_url?, meta_json }
+
+
+Tutte le chiamate firmate con JWT che include tenant_id/sip_domain e un provisioner client id.
+
+
+3) Provisioning: due modalità (scegline UNA per partire)
+A. Push-provision (più rapido oggi)
+
+
+W3 chiama un tuo Provisioner (script/servizio) che crea/aggiorna su FreeSWITCH:
+
+
+Domains (uno per tenant).
+
+
+Gateways (trunks) legati a store_id.
+
+
+Inbound routes per ogni DID (public).
+
+
+Extensions per ogni user (internal).
+
+
+Outbound routes (pattern semplici).
+
+
+
+
+Scrivi sempre in voip_activity_log l’operazione e l’esito.
+
+
+B. XML_CURL (pro)
+
+
+Directory & dialplan dinamici: FreeSWITCH chiede a W3 al volo (zero oggetti persistiti sul PBX).
+
+
+Perfetto quando vuoi scalare forte; più lavoro iniziale.
+
+
+Per il tuo MVP: A. Push-provision.
+
+4) Regole semplici (come si abbina tutto)
+
+
+Tenant → domain: tenantA.edvoip.it. (è ciò che hai già)
+
+
+Extension 1:1 con user: in voip_extensions salva anche user_id.
+Al REGISTER/INVITE interno, il dialplan internal fa GET /extensions/by-number e si porta su canale: tenant_id, store_id, user_id, cos.
+
+
+Trunk per store: in voip_trunks metti store_id. Le Outbound routes usano il trunk relativo allo store_id dell’extension che chiama.
+
+
+Inbound DID: in voip_dids metti store_id e route_target. Il dialplan public chiama routes/inbound e:
+
+
+se target_type=ai → audio_fork al tuo Voice Gateway del tenant;
+
+
+se target_type=ext → bridge a sofia/internal/EXT@tenantA.edvoip.it;
+
+
+se target_type=ring → ring group store (o lista ext).
+
+
+
+
+
+5) Variabili canale da impostare SEMPRE
+All’inizio della chiamata:
+
+
+sip_domain=tenantA.edvoip.it
+
+
+tenant_id=<uuid>
+
+
+store_id=<uuid> (se noto: da DID inbound o dall’extension lookup)
+
+
+user_id=<uuid> (se internal ed è 1:1)
+
+
+Queste variabili finiscono nei CDR (e quindi in W3).
+
+6) Dialplan essenziale (logica, non codice)
+
+
+PUBLIC (inbound)
+
+
+Leggi destination_number (DID) e sip_req_host (domain).
+
+
+GET /routes/inbound → ricevi target_type/ref, tenant_id, store_id.
+
+
+set variabili canale sopra.
+
+
+Se ai → answer + audio_fork verso wss://voice-gateway/<tenant>;
+se ext/ring → bridge alla destinazione;
+fallback: voicemail o annuncio (secondo policy).
+
+
+
+
+INTERNAL (outbound)
+
+
+Da caller_id_number (ext) e sip_domain → GET /extensions/by-number.
+
+
+Valida COS; applica forwarding se attivo.
+
+
+Regola 9+numero → strip 9 → trunk dello store dell’utente.
+
+
+bridge al gateway corretto.
+
+
+
+
+
+7) Sicurezza & segreti
+
+
+In voip_trunks: secret_ref (riferimento a Vault/KMS), non password in chiaro.
+
+
+JWT tra PBX↔W3 con claim sip_domain/tenant_id.
+
+
+ACL su 5080 verso IP carrier; 5060 interno/privato; 5061/7443 pubbliche per WebRTC.
+
+
+
+8) Cosa logghi (minimo)
+
+
+Ogni apply provisioning → riga in voip_activity_log (target, op, status, diff).
+
+
+Ogni chiamata → CDR POST a W3 con variabili chiave e (se presente) recording_url.
+
+
+
+9) Dove vive l’AI agent (risposta secca)
+
+
+Dentro W3 Suite (tabella ai_agents per tenant).
+
+
+FreeSWITCH non contiene logica AI: gli passa solo l’audio via audio_fork al W3 Voice Gateway che parla con GPT Realtime e chiama le API W3 (CRM, appuntamenti, ticket).
+
+
+
+10) Collegare rapidamente un DID all’AI del tenant
+In W3 → voip_dids:
+{ e164:"+39061234567", sip_domain:"tenantA.edvoip.it", tenant_id:"...", store_id:"...", route_target_type:"ai", route_target_ref:"agent_voice_default" }
+
+Il dialplan public chiama /routes/inbound e, se ai, esegue answer + audio_fork verso wss://voice-gateway/tenantA/....
+
+Se vuoi, ti preparo i 4 payload esempio (snapshot, inbound resolve, extension lookup, CDR) già con i campi esatti che hai in DB, così il team li incolla e parte subito.

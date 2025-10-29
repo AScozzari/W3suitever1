@@ -1,0 +1,136 @@
+Ottima domanda Antonio 💥 —
+quello che stai cercando è il nuovo framework di OpenAI per agenti “reali” (autonomi, multimodali e con voce in tempo reale).
+Vediamo con chiarezza come si chiama, come funziona e come si usa via API 👇
+
+🤖 Nome ufficiale
+➡️ OpenAI Realtime API
+(spesso chiamato anche GPT Realtime o Realtime Voice Agent)
+È il motore ufficiale che permette di creare agenti AI “vivi” — capaci di:
+
+
+ascoltare audio in tempo reale (microfono o flusso SIP/WebRTC),
+
+
+comprendere il parlato e rispondere subito con voce sintetica,
+
+
+interagire con azioni o API,
+
+
+mantenere stato conversazionale.
+
+
+
+🧠 Dove vive (in ecosistema OpenAI)
+Fa parte della API di OpenAI per GPT-4o, il modello omni-modale (testo, audio, visione, azioni).
+👉 URL base:
+https://api.openai.com/v1/realtime
+
+Puoi usarla via:
+
+
+WebSocket → per streaming audio full duplex (parla + ascolta)
+
+
+WebRTC → per integrazione diretta con browser o softphone
+
+
+HTTP → per fallback testuale
+
+
+
+⚙️ Modalità di accesso
+Per connetterti:
+wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview
+Authorization: Bearer <OPENAI_API_KEY>
+
+👉 Il modello attuale è:
+gpt-4o-realtime-preview
+
+
+🎧 Cosa puoi fare
+FunzioneDescrizione🎙️ Realtime audioinvii e ricevi stream PCM/Opus in tempo reale🗣️ Voce AITTS integrato (puoi scegliere voce e lingua)🧠 Comprensione testo e comandirisponde, esegue azioni o chiama API🔁 Barge-inl’AI può interromperti o essere interrotta (come un umano)🧩 Tools / Actionspuoi aggiungere funzioni personalizzate (“call function”)🧾 Eventsricevi stream di eventi (ascolto, parlato, risposta, errore, ecc.)
+
+🧩 Come si integra con W3 Suite / FreeSWITCH
+
+
+FreeSWITCH → mod_audio_fork → tuo W3 Voice Gateway
+
+
+W3 Voice Gateway apre WebSocket:
+wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview
+
+
+
+Invia l’audio live della chiamata (RTP → PCM 16kHz)
+
+
+Riceve la risposta audio e la reinvia al chiamante
+
+
+W3 Suite gestisce:
+
+
+autenticazione tenant,
+
+
+scelta voce / lingua / contesto,
+
+
+log e CDR.
+
+
+
+
+
+🔐 Autenticazione
+Normale Bearer con la tua chiave API OpenAI (OPENAI_API_KEY).
+Se vuoi farlo per tenant, generi un token temporaneo dal tuo backend:
+POST /api/openai/token
+→ { access_token: "eyJhbGciOi..." }
+
+
+🧰 Esempio base in Node.js
+import WebSocket from "ws";
+const ws = new WebSocket(
+  "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview",
+  {
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
+  }
+);
+
+ws.on("open", () => {
+  console.log("Connected to GPT Realtime");
+  // send audio chunks here...
+});
+ws.on("message", (msg) => console.log("AI:", msg.toString()));
+
+
+🧱 API correlate
+EndpointFunzione/v1/realtimeWebSocket o WebRTC per interazione live (voce, audio, tool)/v1/chat/completionsnormale GPT testuale (fallback)/v1/audio/speechTTS classico (per sintetizzare voce singola)/v1/audio/transcriptionsSpeech-to-text (Whisper)/v1/embeddingsper memorie o retrieval aziendali
+
+🗣️ Voce e latenza
+
+
+200–400 ms end-to-end
+
+
+Supporta barge-in (parli sopra l’AI, si ferma e risponde)
+
+
+Voci multiple (maschili/femminili, multilingua)
+
+
+Audio bidirezionale (full duplex)
+
+
+Perfetto per:
+📞 Voice Bot su FreeSWITCH
+🎧 Assistenti vocali nei negozi
+🤖 AI agenti per customer care multi-tenant
+
+🚀 In breve per te (caso W3 Suite + FreeSWITCH)
+Cosa vuoiDove farloAI agent multi-tenantdentro W3 Suite (tabella ai_agents)Audio livevia mod_audio_fork → W3 Voice Gateway → Realtime APIScelta modellogpt-4o-realtime-previewComunicazioneWebSocket bidirezionaleAzioni AI (es. CRM lookup)via “tools” definibili nell’AI sessionSicurezzaJWT W3 → token OpenAI temporaneo per ogni tenant
+
+Vuoi che ti prepari un schema JSON + flusso API completo (FreeSWITCH → W3 Gateway → OpenAI Realtime → risposta vocale), con esempi di parametri e tool personalizzati?
+Così puoi dare ai dev il blueprint preciso per collegare il tuo “AI Agent vocale” a ogni tenant.

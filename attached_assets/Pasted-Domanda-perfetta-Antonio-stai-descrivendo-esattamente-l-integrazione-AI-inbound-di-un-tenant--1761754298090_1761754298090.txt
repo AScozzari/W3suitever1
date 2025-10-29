@@ -1,0 +1,177 @@
+Domanda perfetta Antonio 💥 —
+stai descrivendo esattamente l’integrazione “AI inbound” di un tenant dentro W3 Suite, con FreeSWITCH come motore voce.
+Vediamo la soluzione più rapida, pulita e scalabile per:
+
+📞 ricevere una chiamata SIP (Messagenet o altro trunk) → FreeSWITCH
+🧠 associare quella chiamata al tenant corretto → W3 Suite
+🤖 instradarla a un agente AI (ChatGPT / Realtime) che risponde o inoltra
+
+⚙️ Obiettivo in una frase
+
+Una chiamata inbound deve entrare nel PBX, identificare il tenant tramite trunk o dominio, e passare l’audio a un “Voice Agent AI” del tenant, gestito da W3 Suite.
+
+🧩 Architettura base (schema logico)
+📞 Cliente chiama → DID Messagenet
+        ↓
+[SIP Trunk] → FreeSWITCH (profilo external 5080)
+        ↓
+Dialplan “public”
+        ↓
+Identifica tenant (dal trunk_id o dominio SIP)
+        ↓
+Se AI attivo → `audio_fork` → W3 Voice Gateway API
+        ↓
+[W3 Voice Gateway] → GPT Realtime Agent (tenant)
+        ↓
+Risposta vocale / eventuale transfer → FreeSWITCH
+
+🧱 1️⃣ Dove “vive” l’agente AI
+
+👉 Dentro W3 Suite, non nel PBX.
+FreeSWITCH deve restare un “media switch” (audio + signaling), non un cervello.
+
+Quindi:
+
+Ogni tenant in W3 ha un proprio “Voice Agent” (record in tabella ai_agents o voip_agents).
+
+L’agente contiene:
+
+modello AI (es. gpt-4o-realtime),
+
+lingua / voce,
+
+URL del webhook (es. https://w3suite.it/api/voice-agent/:tenantSlug/stream),
+
+policy (es. rispondi sempre / inoltra se non capisci / fallback interno).
+
+🪪 2️⃣ Identificare il tenant dal trunk o DID
+
+Ci sono 3 modi, tu scegli il più semplice:
+
+a) Dal domain SIP
+
+Se i tenant hanno domini tipo tenantX.edvoip.it, il dialplan può leggere:
+
+<variable name="sip_req_host"/>
+
+
+es. tenantx.edvoip.it → tenant_id = X
+
+b) Dal trunk gateway
+
+Nel tuo DB W3 (voip_trunks):
+
+id: trunk_messagenet_tenantX
+tenant_id: uuid-tenantX
+provider: Messagenet
+
+
+Il dialplan prende gateway = trunk usato → cerca tenant_id corrispondente.
+
+c) Dal DID assegnato
+
+Ogni numero E.164 in voip_dids ha:
+
+tenant_id | e164 | route_target_type | route_target_ref
+
+
+→ l’inbound route cerca nel DB W3 tramite API:
+
+GET /api/voip/dids/e164/+39061234567
+→ tenant_id, route_target_type
+
+⚙️ 3️⃣ Come si lega il SIP trunk inbound all’agente AI
+
+Nel DB W3:
+
+voip_dids
+├── id: did_roma01
+├── e164: +39061234567
+├── tenant_id: uuid-tenantX
+├── route_target_type: ai_agent
+├── route_target_ref: agent_voice_tenantX
+
+
+Quando arriva una chiamata su quel DID:
+
+FreeSWITCH (tramite dialplan public) fa una chiamata API verso W3:
+
+GET https://api.w3suite.it/api/voip/routes/inbound?did=+39061234567
+→ { route_target_type: "ai_agent", route_target_ref: "agent_voice_tenantX", tenant_id: "uuid-tenantX" }
+
+
+Se è ai_agent, FreeSWITCH applica mod_audio_fork:
+
+<action application="set" data="api_endpoint=https://voice-gateway.w3suite.it/api/voice-agent/tenantX/stream"/>
+<action application="audio_fork" data="${api_endpoint}"/>
+
+
+Da lì l’audio va in streaming al Voice Gateway W3, che apre una sessione con GPT Realtime per quel tenant.
+
+🧠 4️⃣ Voice Gateway W3 (microservizio)
+
+È un servizio Node/TypeScript (uno per tutto W3) che:
+
+Riceve l’audio fork via WebSocket da FreeSWITCH.
+
+Inoltra audio al modello GPT Realtime (OpenAI) o Whisper + GPT + TTS.
+
+Gestisce:
+
+tenant_id / store_id / agent_id
+
+session_id (una per chiamata)
+
+azioni (consultare CRM, aprire ticket, parlare con cliente).
+
+Restituisce l’audio vocale sintetizzato in risposta → FreeSWITCH lo inoltra al chiamante.
+
+📡 È il “cervello vocale” per tutti i tenant.
+
+🧩 5️⃣ Dialplan minimo per AI inbound (esempio reale)
+<extension name="AI Inbound">
+  <condition field="destination_number" expression="^(\+39061234567)$">
+    <!-- Recupero tenant e agent -->
+    <action application="set" data="tenant_id=uuid-tenantX"/>
+    <action application="set" data="agent_id=voiceagent-tenantX"/>
+    <!-- Audio Fork -->
+    <action application="answer"/>
+    <action application="export" data="execute_on_answer=lua start_ai_agent.lua ${tenant_id} ${agent_id}"/>
+  </condition>
+</extension>
+
+
+E nello script Lua (o Node via ESL):
+
+-- start_ai_agent.lua
+api = freeswitch.API()
+api:executeString("audio_fork start_session wss://voice-gateway.w3suite.it/api/voice-agent/" .. argv[1] .. "/stream")
+
+🧩 6️⃣ Dentro W3 Suite (DB logico)
+Tabella	Descrizione
+voip_trunks	trunk inbound/outbound per store
+voip_dids	numeri E.164 assegnati, con route_target_type = ai_agent
+ai_agents	agent vocali per tenant (nome, modello, URL, config)
+voip_cdr	log delle chiamate, agent_id incluso
+voip_activity_log	audit di provisioning e routing
+🧩 7️⃣ Bonus — fallback e transfer
+
+Il tuo Voice Gateway può:
+
+Fare transfer a un umano se l’AI non sa rispondere:
+
+fs_cli -x "uuid_transfer ${uuid} sofia/internal/1001@tenantx.edvoip.it"
+
+
+Chiudere la chiamata o generare un ticket CRM con la trascrizione.
+
+✅ In sintesi operativa
+Step	Dove	Azione
+1	W3 Suite	assegni DID → route_target_type: ai_agent
+2	FreeSWITCH	inbound dialplan → lookup su W3 API
+3	FreeSWITCH	audio_fork → wss://voice-gateway.w3suite.it/api/voice-agent/:tenant
+4	W3 Voice Gateway	gestisce GPT Realtime → genera voce
+5	FreeSWITCH	riproduce voce → utente
+6	W3	salva CDR, log, trascrizione
+
+Se vuoi, ti preparo il flusso JSON/API reale completo tra FreeSWITCH e W3 (endpoint /api/voip/routes/inbound + /api/voice-agent/:tenant/stream) così il tuo team può implementarlo subito. Vuoi che lo scriva?
