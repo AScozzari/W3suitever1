@@ -308,9 +308,9 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
         return;
       }
 
-      // Get workflow data (allow empty workflows for testing)
-      const nodes = template.workflowData?.nodes || [];
-      const edges = template.workflowData?.edges || [];
+      // Get workflow data - templates have nodes/edges directly from database
+      const nodes = template.nodes || [];
+      const edges = template.edges || [];
       
       console.log('📊 Workflow data:', { nodes: nodes.length, edges: edges.length, template });
 
@@ -324,8 +324,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
         },
         credentials: 'include',
         body: JSON.stringify({
-          nodes: template.workflowData?.nodes || [],
-          edges: template.workflowData?.edges || [],
+          nodes: nodes,
+          edges: edges,
           testName: template.name
         })
       });

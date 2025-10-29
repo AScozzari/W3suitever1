@@ -2445,9 +2445,9 @@ router.post('/test-run', rbacMiddleware, requirePermission('workflow.create'), a
       } as ApiErrorResponse);
     }
 
-    // Validate request body
+    // Validate request body (allow empty workflows for testing)
     const testRunSchema = z.object({
-      nodes: z.array(z.any()).min(1, 'At least one node is required'),
+      nodes: z.array(z.any()).optional().default([]),
       edges: z.array(z.any()).optional().default([]),
       testName: z.string().optional().default('Test Run')
     });
