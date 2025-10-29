@@ -10,7 +10,6 @@ import {
   ChevronDown, ChevronUp, Globe, Mic, Image, Video, FileUp
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import AIVoiceConfigModal from './AIVoiceConfigModal';
 
 interface AISettings {
   tenantId: string;
@@ -124,8 +123,6 @@ export default function AISettingsPage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   
-  // AI Voice Agent modal state
-  const [voiceConfigModalOpen, setVoiceConfigModalOpen] = useState(false);
 
   // Fetch AI settings
   const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery<{success: boolean, data: AISettings}>({
@@ -2164,11 +2161,6 @@ export default function AISettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Voice Agent Configuration Modal */}
-      <AIVoiceConfigModal 
-        open={voiceConfigModalOpen}
-        onClose={() => setVoiceConfigModalOpen(false)}
-      />
     </div>
   );
 }
