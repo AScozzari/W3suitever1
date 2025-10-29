@@ -366,14 +366,73 @@ export class VoiceGatewayServer {
     // Get fallback extension from W3 Suite API
     const fallbackExtension = await this.getFallbackExtension(session.tenantId, session.storeId);
     
+    let fallbackAction = '';
+    
     if (fallbackExtension) {
+      fallbackAction = `Call transferred to extension ${fallbackExtension}`;
       await this.handleCallTransfer(session, fallbackExtension, 'AI agent error - automatic fallback');
     } else {
       // No fallback configured - end call gracefully
+      fallbackAction = 'No fallback extension configured - call ended';
       logger.error('[VoiceGateway] No fallback extension configured', {
         callId: session.callId
       });
       this.endCallSession(session.callId, 'error_no_fallback');
+    }
+
+    // Send admin notification (non-blocking - log failures but continue)
+    this.sendAdminNotification(session, error.message, 'openai_error', fallbackAction).catch(notifyError => {
+      logger.error('[VoiceGateway] Admin notification failed but continuing with fallback', {
+        callId: session.callId,
+        notifyError: notifyError.message
+      });
+    });
+  }
+
+  private async sendAdminNotification(
+    session: CallSession,
+    errorMessage: string,
+    errorType: string,
+    fallbackAction: string
+  ): Promise<void> {
+    try {
+      const response = await fetch(`${this.w3ApiUrl}/api/voip/admin/ai-error-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': session.tenantId,
+          'x-api-key': this.w3ApiKey
+        },
+        body: JSON.stringify({
+          callId: session.callId,
+          did: session.did,
+          callerNumber: session.callerNumber,
+          errorMessage,
+          errorType,
+          fallbackAction
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('[VoiceGateway] Admin notification sent successfully', {
+        callId: session.callId,
+        errorType,
+        notificationCount: result.data?.notificationCount || 0
+      });
+    } catch (error: any) {
+      logger.error('[VoiceGateway] CRITICAL: Failed to send admin notification', {
+        callId: session.callId,
+        errorType,
+        errorMessage,
+        error: error.message
+      });
+      throw error;
     }
   }
 

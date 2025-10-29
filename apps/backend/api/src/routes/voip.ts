@@ -29,6 +29,8 @@ import {
   voipActivityLog,
   voipCdrs,
   voipAiSessions,
+  notifications,
+  users,
   insertVoipTrunkSchema,
   updateVoipTrunkSchema,
   insertVoipDidSchema,
@@ -1702,8 +1704,15 @@ router.post('/ai-sessions', async (req, res) => {
     const tenantId = req.headers['x-tenant-id'] as string;
     const apiKey = req.headers['x-api-key'] as string;
     
-    // Simple API key validation for Voice Gateway
-    if (!apiKey || apiKey !== (process.env.W3_VOICE_GATEWAY_API_KEY || 'dev-internal-key')) {
+    // API key validation for Voice Gateway - NO DEFAULT FALLBACK
+    const expectedApiKey = process.env.W3_VOICE_GATEWAY_API_KEY;
+    
+    if (!expectedApiKey) {
+      logger.error('W3_VOICE_GATEWAY_API_KEY not configured on backend');
+      return res.status(500).json({ error: 'Server configuration error' } as ApiErrorResponse);
+    }
+
+    if (!apiKey || apiKey !== expectedApiKey) {
       return res.status(401).json({ error: 'Invalid API key' } as ApiErrorResponse);
     }
 
@@ -1739,6 +1748,109 @@ router.post('/ai-sessions', async (req, res) => {
       return res.status(400).json({ error: error.errors } as ApiErrorResponse);
     }
     return res.status(500).json({ error: 'Failed to save AI session' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/admin/ai-error-notification - Send admin notification for AI errors (called by Voice Gateway)
+router.post('/admin/ai-error-notification', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const apiKey = req.headers['x-api-key'] as string;
+    
+    // API key validation for Voice Gateway - NO DEFAULT FALLBACK
+    const expectedApiKey = process.env.W3_VOICE_GATEWAY_API_KEY;
+    
+    if (!expectedApiKey) {
+      logger.error('W3_VOICE_GATEWAY_API_KEY not configured on backend');
+      return res.status(500).json({ error: 'Server configuration error' } as ApiErrorResponse);
+    }
+
+    if (!apiKey || apiKey !== expectedApiKey) {
+      logger.warn('Unauthorized Voice Gateway API request', { 
+        hasApiKey: !!apiKey,
+        tenantId 
+      });
+      return res.status(401).json({ error: 'Invalid API key' } as ApiErrorResponse);
+    }
+
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { callId, did, callerNumber, errorMessage, errorType, fallbackAction } = req.body;
+
+    // Find admin users for this tenant
+    const adminUsers = await db.select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.tenantId, tenantId),
+        eq(users.role, 'admin')
+      ))
+      .limit(10);
+
+    // Alert if no admin users found
+    if (adminUsers.length === 0) {
+      logger.warn('CRITICAL: No admin users found for AI error notification', {
+        tenantId,
+        callId,
+        errorMessage,
+        fallbackAction
+      });
+      return res.status(200).json({ 
+        success: true, 
+        data: { 
+          notificationCount: 0,
+          callId,
+          warning: 'No admin users found to notify'
+        } 
+      } as ApiSuccessResponse<{ notificationCount: number; callId: string; warning: string }>);
+    }
+
+    // Create notification for each admin
+    const notificationPromises = adminUsers.map(admin => 
+      db.insert(notifications).values({
+        tenantId,
+        targetUserId: admin.id,
+        type: 'alert',
+        priority: 'high',
+        category: 'support',
+        sourceModule: 'voip_ai',
+        title: 'AI Voice Agent Error',
+        message: `AI Voice Agent encountered an error on call from ${callerNumber} to DID ${did}. ${errorMessage || 'Unknown error'}. ${fallbackAction || 'Call ended.'}`,
+        data: {
+          callId,
+          did,
+          callerNumber,
+          errorMessage,
+          errorType,
+          fallbackAction,
+          timestamp: new Date().toISOString()
+        },
+        url: `/voip/analytics/ai-sessions?callId=${callId}`,
+        status: 'unread'
+      }).returning()
+    );
+
+    const createdNotifications = await Promise.all(notificationPromises);
+
+    logger.info('Admin notifications sent for AI error', { 
+      tenantId,
+      callId,
+      adminCount: adminUsers.length 
+    });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: { 
+        notificationCount: createdNotifications.length,
+        callId 
+      } 
+    } as ApiSuccessResponse<{ notificationCount: number; callId: string }>);
+  } catch (error) {
+    logger.error('Error sending admin notification', { error });
+    return res.status(500).json({ error: 'Failed to send admin notification' } as ApiErrorResponse);
   }
 });
 

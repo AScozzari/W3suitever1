@@ -10,12 +10,18 @@ const PORT = parseInt(process.env.PORT || '3005');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-10-01';
 const W3_API_URL = process.env.W3_API_URL || 'http://localhost:3004';
-const W3_API_KEY = process.env.W3_API_KEY || 'dev-internal-key';
+const W3_API_KEY = process.env.W3_VOICE_GATEWAY_API_KEY || '';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Validate required configuration
 if (!OPENAI_API_KEY) {
   logger.error('OPENAI_API_KEY environment variable is required');
+  process.exit(1);
+}
+
+if (!W3_API_KEY) {
+  logger.error('W3_VOICE_GATEWAY_API_KEY environment variable is required');
+  logger.error('Set a secure random key for production deployment');
   process.exit(1);
 }
 
