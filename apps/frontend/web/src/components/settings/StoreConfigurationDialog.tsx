@@ -135,6 +135,31 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     enabled: open && !!storeId && !!trackingConfig, // Only fetch if tracking config exists
   });
 
+  // Check GTM MCP Server status
+  const { data: gtmMcpStatus, isLoading: isLoadingGtmMcp } = useQuery({
+    queryKey: ['/api/mcp/servers', 'google-tag-manager-mcp', 'status'],
+    queryFn: async () => {
+      const response = await fetch('/api/mcp/servers', {
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': 'admin-user',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        return { configured: false };
+      }
+      const json = await response.json();
+      const gtmServer = json.data?.find((s: any) => s.name === 'google-tag-manager-mcp');
+      return {
+        configured: !!gtmServer && gtmServer.status === 'active',
+        server: gtmServer || null
+      };
+    },
+    enabled: open,
+  });
+
   // GPS Form
   const gpsForm = useForm<GPSFormData>({
     resolver: zodResolver(gpsFormSchema),
@@ -486,6 +511,44 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
           <TabsContent value="marketing" className="mt-6">
             <Form {...marketingForm}>
               <form onSubmit={marketingForm.handleSubmit(handleMarketingConfigure)} className="space-y-8">
+                {/* GTM MCP Server Status Check */}
+                {isLoadingGtmMcp ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm">Verifica configurazione GTM MCP...</span>
+                    </div>
+                  </div>
+                ) : gtmMcpStatus?.configured ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="font-medium">Google Tag Manager MCP attivo</span>
+                    </div>
+                    <p className="text-sm text-green-600 mt-1">
+                      L'auto-configurazione GTM è abilitata. I tracking IDs inseriti sotto verranno usati per creare automaticamente tag e trigger.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="text-2xl">⚠️</div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-amber-900 mb-1">
+                          Google Tag Manager MCP non configurato
+                        </p>
+                        <p className="text-sm text-amber-800 leading-relaxed mb-3">
+                          Per abilitare l'auto-configurazione GTM (creazione automatica di tag, trigger e snippet), 
+                          installa e configura il server <strong>"Google Tag Manager MCP"</strong> nella sezione Settings → MCP.
+                        </p>
+                        <p className="text-xs text-amber-700 italic">
+                          💡 Senza questo server, dovrai configurare manualmente tag e trigger nel tuo container GTM.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {trackingConfig?.gtmConfigured && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-green-700">

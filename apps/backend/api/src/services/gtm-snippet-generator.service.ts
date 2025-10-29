@@ -51,12 +51,12 @@ export class GTMSnippetGeneratorService {
    */
   private static async getGTMContainerId(tenantId: string): Promise<string> {
     try {
-      // Try to get from MCP server config
+      // Try to get from MCP server config (google-tag-manager-mcp)
       const [server] = await db
         .select()
         .from(mcpServers)
         .where(and(
-          eq(mcpServers.name, 'google-workspace-oauth-config'),
+          eq(mcpServers.name, 'google-tag-manager-mcp'),
           eq(mcpServers.tenantId, tenantId)
         ))
         .limit(1);

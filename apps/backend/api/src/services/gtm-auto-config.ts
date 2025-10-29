@@ -20,12 +20,12 @@ export class GTMAutoConfigService {
     accountId: string;
     workspaceId: string;
   }> {
-    // Try to get from MCP server config
+    // Try to get from MCP server config (google-tag-manager-mcp)
     const [server] = await db
       .select()
       .from(mcpServers)
       .where(and(
-        eq(mcpServers.name, 'google-workspace-oauth-config'),
+        eq(mcpServers.name, 'google-tag-manager-mcp'),
         eq(mcpServers.tenantId, tenantId)
       ))
       .limit(1);
@@ -43,7 +43,7 @@ export class GTMAutoConfigService {
     }
 
     if (!containerId || !accountId) {
-      throw new Error('GTM configuration not found. Please configure GTM_CONTAINER_ID and GTM_ACCOUNT_ID in MCP Settings.');
+      throw new Error('GTM MCP Server not configured. Please install and configure "Google Tag Manager MCP" in Settings → MCP to enable auto-configuration.');
     }
 
     return {
@@ -57,18 +57,18 @@ export class GTMAutoConfigService {
    * Get authenticated Tag Manager API client
    */
   private static async getTagManagerClient(tenantId: string, userId: string) {
-    // Get valid access token from Google OAuth service
+    // Get valid access token from GTM MCP Server (google-tag-manager-mcp)
     const [server] = await db
       .select()
       .from(mcpServers)
       .where(and(
-        eq(mcpServers.name, 'google-workspace-oauth-config'),
+        eq(mcpServers.name, 'google-tag-manager-mcp'),
         eq(mcpServers.tenantId, tenantId)
       ))
       .limit(1);
 
     if (!server) {
-      throw new Error('Google OAuth not configured. Please configure Google Workspace in MCP Settings.');
+      throw new Error('Google Tag Manager MCP not configured. Please install and configure "Google Tag Manager MCP" in Settings → MCP.');
     }
 
     const accessToken = await GoogleOAuthService.getValidAccessToken({
