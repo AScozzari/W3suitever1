@@ -10,7 +10,7 @@
  * Node counts by ecosystem:
  * - OUTBOUND actions: Google 5, AWS 11, Meta 3, MS 8, Stripe 6, GTM 6, PostgreSQL 9, Telegram 8, WhatsApp 7, Twilio 10
  * - INBOUND triggers: Google 5, AWS 5, Meta 6, MS 4, Stripe 4, GTM 15, PostgreSQL 6
- * - TOTAL: 95 nodes (70 outbound + 30 new nodes, 45 inbound triggers)
+ * - TOTAL: 106 nodes (70 outbound + 36 inbound triggers)
  * - NOTE: Instagram comment reply disabled (tool not available in Instagram MCP Server)
  */
 
@@ -546,6 +546,35 @@ export const GOOGLE_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
       calendarId: z.string().optional()
     }),
     defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-sheets-row-added',
+    name: '[G] Sheets Row Added',
+    description: 'Triggered when row added to Google Sheets spreadsheet',
+    category: 'mcp-inbound',
+    ecosystem: 'google',
+    icon: 'Table',
+    color: MCP_ECOSYSTEMS.google.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      spreadsheetId: z.string(),
+      sheetName: z.string().optional()
+    }),
+    defaultConfig: { spreadsheetId: '' }
+  },
+  {
+    id: 'mcp-trigger-docs-document-created',
+    name: '[G] Docs Document Created',
+    description: 'Triggered when document created in Google Docs',
+    category: 'mcp-inbound',
+    ecosystem: 'google',
+    icon: 'FileText',
+    color: MCP_ECOSYSTEMS.google.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      folderId: z.string().optional()
+    }),
+    defaultConfig: {}
   }
 ];
 
@@ -611,6 +640,64 @@ export const META_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
       recipientId: z.string().optional()
     }),
     defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-instagram-post-published',
+    name: '[META] Instagram Post Published',
+    description: 'Triggered when post published on Instagram',
+    category: 'mcp-inbound',
+    ecosystem: 'meta',
+    icon: 'Image',
+    color: MCP_ECOSYSTEMS.meta.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      accountId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-instagram-story-published',
+    name: '[META] Instagram Story Published',
+    description: 'Triggered when story published on Instagram',
+    category: 'mcp-inbound',
+    ecosystem: 'meta',
+    icon: 'Camera',
+    color: MCP_ECOSYSTEMS.meta.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      accountId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-meta-ads-insights',
+    name: '[META] Ads Insights Updated',
+    description: 'Triggered when Meta Ads insights data updated',
+    category: 'mcp-inbound',
+    ecosystem: 'meta',
+    icon: 'BarChart',
+    color: MCP_ECOSYSTEMS.meta.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      campaignId: z.string().optional(),
+      metric: z.enum(['impressions', 'clicks', 'conversions', 'spend']).optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-instagram-engagement',
+    name: '[META] Instagram Engagement',
+    description: 'Triggered when post receives like, share, or save',
+    category: 'mcp-inbound',
+    ecosystem: 'meta',
+    icon: 'Heart',
+    color: MCP_ECOSYSTEMS.meta.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      mediaId: z.string().optional(),
+      engagementType: z.enum(['like', 'share', 'save']).optional()
+    }),
+    defaultConfig: {}
   }
 ];
 
@@ -628,6 +715,50 @@ export const MICROSOFT_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
     configSchema: z.object({
       from: z.string().optional(),
       subject: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-teams-message-received',
+    name: '[MS] Teams Message Received',
+    description: 'Triggered when message posted in Teams channel',
+    category: 'mcp-inbound',
+    ecosystem: 'microsoft',
+    icon: 'MessageSquare',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      channelId: z.string().optional(),
+      teamId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-sharepoint-file-created',
+    name: '[MS] SharePoint File Created',
+    description: 'Triggered when file created in SharePoint',
+    category: 'mcp-inbound',
+    ecosystem: 'microsoft',
+    icon: 'FileUp',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      siteId: z.string().optional(),
+      listId: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-onedrive-file-modified',
+    name: '[MS] OneDrive File Modified',
+    description: 'Triggered when file modified in OneDrive',
+    category: 'mcp-inbound',
+    ecosystem: 'microsoft',
+    icon: 'RefreshCw',
+    color: MCP_ECOSYSTEMS.microsoft.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      folderId: z.string().optional()
     }),
     defaultConfig: {}
   }
@@ -661,6 +792,36 @@ export const STRIPE_INBOUND_TRIGGERS: BaseNodeDefinition[] = [
     version: '1.0.0',
     configSchema: z.object({
       failureCode: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-stripe-subscription-created',
+    name: '[STRIPE] Subscription Created',
+    description: 'Triggered when customer subscription created',
+    category: 'mcp-inbound',
+    ecosystem: 'stripe',
+    icon: 'RefreshCcw',
+    color: MCP_ECOSYSTEMS.stripe.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      priceId: z.string().optional(),
+      planName: z.string().optional()
+    }),
+    defaultConfig: {}
+  },
+  {
+    id: 'mcp-trigger-stripe-invoice-paid',
+    name: '[STRIPE] Invoice Paid',
+    description: 'Triggered when invoice successfully paid',
+    category: 'mcp-inbound',
+    ecosystem: 'stripe',
+    icon: 'DollarSign',
+    color: MCP_ECOSYSTEMS.stripe.color,
+    version: '1.0.0',
+    configSchema: z.object({
+      customerId: z.string().optional(),
+      minAmount: z.number().optional()
     }),
     defaultConfig: {}
   }
