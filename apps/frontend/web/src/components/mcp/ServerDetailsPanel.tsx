@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Dialog,
@@ -54,9 +54,38 @@ export function ServerDetailsPanel({ open, onClose, serverId }: ServerDetailsPan
   const [copiedTool, setCopiedTool] = useState<string | null>(null);
 
   // Fetch server details
-  const { data: server, isLoading } = useQuery<MCPServer>({
+  const { data: server, isLoading, refetch } = useQuery<MCPServer>({
     queryKey: [`/api/mcp/servers/${serverId}`],
     enabled: !!serverId && open,
+  });
+
+  // Mutation for refreshing discovery
+  const refreshDiscoveryMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/mcp/servers/${serverId}/discover`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to refresh discovery');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Discovery completata!",
+        description: `${data.toolCount} tools scoperti con successo`,
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore nella discovery",
+        description: error.message || 'Impossibile aggiornare i tools',
+        variant: 'destructive',
+      });
+    },
   });
 
   const handleCopyToolName = (toolName: string) => {
@@ -185,77 +214,107 @@ export function ServerDetailsPanel({ open, onClose, serverId }: ServerDetailsPan
 
               {/* Tools Tab */}
               <TabsContent value="tools" className="space-y-4 mt-4">
+                {/* Refresh Discovery Button */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    {server.discoveredTools && server.discoveredTools.length > 0 
+                      ? `${server.discoveredTools.length} tools disponibili`
+                      : 'Nessun tool scoperto'
+                    }
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refreshDiscoveryMutation.mutate()}
+                    disabled={refreshDiscoveryMutation.isPending}
+                    data-testid="button-refresh-discovery"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 mr-2 ${refreshDiscoveryMutation.isPending ? 'animate-spin' : ''}`} />
+                    {refreshDiscoveryMutation.isPending ? 'Aggiornamento...' : 'Aggiorna Tools'}
+                  </Button>
+                </div>
+
                 {server.discoveredTools && server.discoveredTools.length > 0 ? (
                   <div className="space-y-3">
-                    {server.discoveredTools.map((tool, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                      >
-                        <Card className="p-4 hover:shadow-md transition-shadow border-gray-200">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <code className="text-sm font-mono font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
-                                  {tool.name}
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleCopyToolName(tool.name)}
-                                  data-testid={`button-copy-tool-${idx}`}
-                                >
-                                  {copiedTool === tool.name ? (
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                                  ) : (
-                                    <Copy className="h-3.5 w-3.5 text-gray-400" />
-                                  )}
-                                </Button>
+                    {server.discoveredTools.map((tool, idx) => {
+                      // Handle both string format (legacy) and object format (new)
+                      const toolName = typeof tool === 'string' ? tool : tool.name;
+                      const toolDescription = typeof tool === 'string' ? null : tool.description;
+                      const toolSchema = typeof tool === 'string' ? null : tool.inputSchema;
+                      
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                        >
+                          <Card className="p-4 hover:shadow-md transition-shadow border-gray-200">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <code className="text-sm font-mono font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
+                                    {toolName}
+                                  </code>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => handleCopyToolName(toolName)}
+                                    data-testid={`button-copy-tool-${idx}`}
+                                  >
+                                    {copiedTool === toolName ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5 text-gray-400" />
+                                    )}
+                                  </Button>
+                                </div>
+                                {toolDescription ? (
+                                  <p className="text-sm text-gray-600">{toolDescription}</p>
+                                ) : (
+                                  <p className="text-sm text-gray-400 italic">
+                                    Descrizione non disponibile - clicca "Aggiorna Tools" per recuperare i dettagli
+                                  </p>
+                                )}
                               </div>
-                              <p className="text-sm text-gray-600">
-                                {tool.description || 'No description available'}
-                              </p>
                             </div>
-                          </div>
 
-                          {/* Input Schema */}
-                          {tool.inputSchema && (
-                            <details className="mt-3">
-                              <summary className="text-xs font-medium text-gray-700 cursor-pointer hover:text-[#FF6900]">
-                                View Input Schema
-                              </summary>
-                              <div className="mt-2 relative">
-                                <pre className="text-xs bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto">
-                                  {JSON.stringify(tool.inputSchema, null, 2)}
-                                </pre>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute top-2 right-2 h-7 text-xs text-gray-400 hover:text-white"
-                                  onClick={() => handleCopySchema(tool.inputSchema)}
-                                  data-testid={`button-copy-schema-${idx}`}
-                                >
-                                  <Copy className="h-3 w-3 mr-1" />
-                                  Copy
-                                </Button>
-                              </div>
-                            </details>
-                          )}
-                        </Card>
-                      </motion.div>
-                    ))}
+                            {/* Input Schema */}
+                            {toolSchema && (
+                              <details className="mt-3">
+                                <summary className="text-xs font-medium text-gray-700 cursor-pointer hover:text-[#FF6900]">
+                                  View Input Schema
+                                </summary>
+                                <div className="mt-2 relative">
+                                  <pre className="text-xs bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto">
+                                    {JSON.stringify(toolSchema, null, 2)}
+                                  </pre>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute top-2 right-2 h-7 text-xs text-gray-400 hover:text-white"
+                                    onClick={() => handleCopySchema(toolSchema)}
+                                    data-testid={`button-copy-schema-${idx}`}
+                                  >
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    Copy
+                                  </Button>
+                                </div>
+                              </details>
+                            )}
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <Card className="p-8 text-center border-dashed border-2 border-gray-300">
                     <Code2 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500 mb-2">No tools discovered yet</p>
-                    <Button variant="outline" size="sm">
-                      <RefreshCw className="h-3.5 w-3.5 mr-2" />
-                      Refresh Discovery
-                    </Button>
+                    <p className="text-sm text-gray-500 mb-2">Nessun tool scoperto</p>
+                    <p className="text-xs text-gray-400 mb-4">
+                      Clicca "Aggiorna Tools" per eseguire la discovery dei tools disponibili
+                    </p>
                   </Card>
                 )}
               </TabsContent>
