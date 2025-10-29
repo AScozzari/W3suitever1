@@ -621,6 +621,15 @@ export default function SettingsPage() {
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
+
+  // VoIP Extensions Query - Load when user modal is open
+  const { data: voipExtensionsResponse, isLoading: loadingExtensions } = useQuery({
+    queryKey: ['/api/voip/extensions'],
+    enabled: userModal.open,
+    refetchOnMount: false,
+    staleTime: 2 * 60 * 1000
+  });
+  const voipExtensions = voipExtensionsResponse?.data || [];
   
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
@@ -8756,12 +8765,22 @@ export default function SettingsPage() {
                       outline: 'none'
                     }}
                     data-testid="select-user-extension"
+                    disabled={loadingExtensions}
                   >
                     <option value="">Nessuna extension</option>
-                    {/* TODO: Popolare con extensions disponibili da /api/voip/extensions?available=true */}
-                    <option value="ext-100">100 - Reception (sip:100@tenant.pbx.w3suite.it)</option>
-                    <option value="ext-101">101 - Sales Team (sip:101@tenant.pbx.w3suite.it)</option>
-                    <option value="ext-200">200 - Support (sip:200@tenant.pbx.w3suite.it)</option>
+                    {voipExtensions
+                      .filter((ext: any) => !ext.userId || ext.userId === userModal.data?.id)
+                      .map((ext: any) => (
+                        <option key={ext.id} value={ext.id}>
+                          {ext.extNumber} - {ext.displayName || 'N/A'} (sip:{ext.extNumber}@{ext.sipDomain})
+                        </option>
+                      ))}
+                    {loadingExtensions && (
+                      <option value="" disabled>Caricamento extensions...</option>
+                    )}
+                    {!loadingExtensions && voipExtensions.length === 0 && (
+                      <option value="" disabled>Nessuna extension configurata. Crea prima le extensions in Settings → Channels.</option>
+                    )}
                   </select>
                   <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
                     Seleziona un'extension disponibile da assegnare a questo utente. 
