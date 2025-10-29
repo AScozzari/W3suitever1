@@ -2809,11 +2809,12 @@ function UserAssignmentConfig({ node, onSave, onClose }: { node: Node; onSave: (
 function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (nodeId: string, config: any) => void; onClose: () => void }) {
   const config = (node.data.config || {}) as any;
   
+  // ✅ FIXED: toolName viene dal nodo (fisso), NON dall'utente!
+  const toolName = node.data.toolName || null;  // ← Preso dalla definizione del nodo
+  
   // State management
   const [serverId, setServerId] = useState<string | null>(config.serverId || null);
   const [serverName, setServerName] = useState<string | null>(config.serverName || null);
-  const [toolName, setToolName] = useState<string | null>(config.toolName || null);
-  const [toolDescription, setToolDescription] = useState<string | null>(config.toolDescription || null);
   const [parameters, setParameters] = useState<Record<string, any>>(config.parameters || {});
   const [timeout, setTimeout] = useState(config.timeout || 30000);
   const [retryEnabled, setRetryEnabled] = useState(config.retryPolicy?.enabled ?? true);
@@ -2824,13 +2825,7 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
   );
   const [fallbackValue, setFallbackValue] = useState(config.errorHandling?.fallbackValue || '');
   
-  // Fetch tools when server selected
-  const { data: tools = [], isLoading: toolsLoading, refetch: refetchTools } = useQuery({
-    queryKey: ['/api/mcp/servers', serverId, 'tools'],
-    enabled: !!serverId
-  });
-  
-  // Fetch tool schema when tool selected
+  // Fetch tool schema directly (toolName is fixed from node definition)
   const { data: toolSchema, isLoading: schemaLoading } = useQuery({
     queryKey: ['/api/mcp/servers', serverId, 'tools', toolName, 'schema'],
     enabled: !!serverId && !!toolName
@@ -2840,18 +2835,7 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
   const handleServerChange = (newServerId: string | null, newServerName: string | null) => {
     setServerId(newServerId);
     setServerName(newServerName);
-    // Reset tool selection
-    setToolName(null);
-    setToolDescription(null);
-    setParameters({});
-  };
-  
-  // Handle tool selection
-  const handleToolChange = (newToolName: string) => {
-    setToolName(newToolName);
-    const selectedTool = tools.find((t: any) => t.name === newToolName);
-    setToolDescription(selectedTool?.description || null);
-    // Reset parameters when tool changes
+    // Reset parameters when server changes
     setParameters({});
   };
   
@@ -2929,17 +2913,21 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
   };
   
   const handleSave = useCallback(() => {
-    // Validation
-    if (!serverId || !toolName) {
-      alert('Server e Tool sono obbligatori');
+    // Validation - toolName è sempre presente dal nodo, validazione solo serverId
+    if (!serverId) {
+      alert('Server MCP è obbligatorio');
+      return;
+    }
+    
+    if (!toolName) {
+      alert('⚠️ Errore: questo nodo non ha un toolName definito. Contatta il supporto.');
       return;
     }
     
     onSave(node.id, {
       serverId,
       serverName,
-      toolName,
-      toolDescription,
+      toolName, // ← Fisso dal nodo, non dall'utente
       parameters,
       timeout,
       retryPolicy: {
@@ -2953,7 +2941,7 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
       }
     });
     onClose();
-  }, [serverId, serverName, toolName, toolDescription, parameters, timeout, retryEnabled, maxRetries, retryDelayMs, errorHandling, fallbackValue, node.id, onSave, onClose]);
+  }, [serverId, serverName, toolName, parameters, timeout, retryEnabled, maxRetries, retryDelayMs, errorHandling, fallbackValue, node.id, onSave, onClose]);
   
   return (
     <div className="space-y-6">
@@ -2994,49 +2982,31 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
         />
       </div>
       
-      {/* Tool Selection */}
-      {serverId && (
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
-            🛠️ Tool <span className="text-red-500">*</span>
+      {/* ✅ Tool Name - READ ONLY (fisso dal nodo) */}
+      {toolName && (
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="block text-sm font-medium text-blue-900 mb-1">
+                🛠️ Tool MCP (automatico)
+              </label>
+              <code className="text-sm font-mono text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                {toolName}
+              </code>
+            </div>
             <InfoTooltip
-              title="MCP Tool"
-              description="Seleziona lo strumento specifico da eseguire sul server MCP."
+              title="Tool MCP"
+              description="Il tool viene automaticamente scelto in base al tipo di nodo selezionato. Non è modificabile."
               examples={[
-                "send_email - Invia email via Gmail",
-                "create_calendar_event - Crea evento Calendar",
-                "upload_to_s3 - Upload file su S3"
+                "Nodo 'Send SMS' → tool 'send_sms'",
+                "Nodo 'Gmail Send' → tool 'gmail_send'",
+                "Nodo 'S3 Upload' → tool 's3_upload'"
               ]}
             />
-          </label>
-          
-          {toolsLoading ? (
-            <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500">
-              ⏳ Caricamento tools...
-            </div>
-          ) : tools.length === 0 ? (
-            <div className="w-full px-4 py-3 border-2 border-yellow-200 rounded-lg bg-yellow-50 text-sm text-yellow-800">
-              ⚠️ Nessun tool disponibile per questo server.
-            </div>
-          ) : (
-            <Select value={toolName || ''} onValueChange={handleToolChange}>
-              <SelectTrigger data-testid="select-mcp-tool">
-                <SelectValue placeholder="Seleziona tool..." />
-              </SelectTrigger>
-              <SelectContent>
-                {tools.map((tool: any) => (
-                  <SelectItem key={tool.name} value={tool.name}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{tool.displayName || tool.name}</span>
-                      {tool.description && (
-                        <span className="text-xs text-gray-500">{tool.description}</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          </div>
+          <p className="text-xs text-blue-600 mt-2">
+            ℹ️ Questo tool è stato pre-selezionato dal tipo di nodo. Seleziona solo il server MCP.
+          </p>
         </div>
       )}
       
@@ -3168,7 +3138,7 @@ function MCPConnectorConfig({ node, onSave, onClose }: { node: Node; onSave: (no
         </Button>
         <Button
           onClick={handleSave}
-          disabled={!serverId || !toolName}
+          disabled={!serverId}
           className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="button-save-mcp-config"
         >

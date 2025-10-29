@@ -15,7 +15,7 @@ export interface BaseNodeDefinition {
   name: string;
   description: string;
   category: NodeCategory;
-  ecosystem?: 'google' | 'aws' | 'meta' | 'microsoft' | 'stripe' | 'gtm' | 'postgresql'; // MCP ecosystem identifier
+  ecosystem?: 'google' | 'aws' | 'meta' | 'microsoft' | 'stripe' | 'gtm' | 'postgresql' | 'telegram' | 'whatsapp' | 'twilio'; // MCP ecosystem identifier
   icon: string; // Lucide icon name
   color: string; // CSS color
   version: string;
