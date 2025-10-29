@@ -155,62 +155,64 @@ export function MCPServerTooltip({
 
             {/* Setup Tab */}
             <TabsContent value="setup" className="space-y-3 mt-3">
-              {/* Environment Variables */}
-              {marketplaceData.installHints?.envVars && marketplaceData.installHints.envVars.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-700 mb-2">Required Environment Variables</p>
-                  <div className="space-y-1.5">
-                    {marketplaceData.installHints.envVars.map(envVar => (
-                      <div
-                        key={envVar}
-                        className="flex items-center justify-between bg-gray-50 rounded px-2 py-1.5 border border-gray-200"
-                      >
-                        <code className="text-xs font-mono text-gray-800">{envVar}</code>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => copyToClipboard(envVar, envVar)}
-                          data-testid={`button-copy-${envVar}`}
+              <div className="space-y-3">
+                {/* Environment Variables */}
+                {marketplaceData.installHints?.envVars && marketplaceData.installHints.envVars.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 mb-2">Required Environment Variables</p>
+                    <div className="space-y-1.5">
+                      {marketplaceData.installHints.envVars.map(envVar => (
+                        <div
+                          key={envVar}
+                          className="flex items-center justify-between bg-gray-50 rounded px-2 py-1.5 border border-gray-200"
                         >
-                          {copiedEnvVar === envVar ? (
-                            <Check className="h-3 w-3 text-green-600" />
-                          ) : (
-                            <Copy className="h-3 w-3 text-gray-500" />
-                          )}
-                        </Button>
-                      </div>
-                    ))}
+                          <code className="text-xs font-mono text-gray-800">{envVar}</code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => copyToClipboard(envVar, envVar)}
+                            data-testid={`button-copy-${envVar}`}
+                          >
+                            {copiedEnvVar === envVar ? (
+                              <Check className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <Copy className="h-3 w-3 text-gray-500" />
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Dependencies */}
-              {marketplaceData.installHints?.dependencies && marketplaceData.installHints.dependencies.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-700 mb-2">Dependencies</p>
-                  <ul className="space-y-1">
-                    {marketplaceData.installHints.dependencies.map((dep, idx) => (
-                      <li key={idx} className="text-xs text-gray-600 flex items-start">
-                        <span className="text-[#FF6900] mr-1.5">•</span>
-                        {dep}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Post-Install Notes */}
-              {marketplaceData.installHints?.postInstallNotes && (
-                <div>
-                  <p className="text-xs font-medium text-gray-700 mb-2">Setup Notes</p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
-                    <p className="text-xs text-blue-900 leading-relaxed">
-                      {marketplaceData.installHints.postInstallNotes}
-                    </p>
+                {/* Dependencies */}
+                {marketplaceData.installHints?.dependencies && marketplaceData.installHints.dependencies.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 mb-2">Dependencies</p>
+                    <ul className="space-y-1">
+                      {marketplaceData.installHints.dependencies.map((dep, idx) => (
+                        <li key={idx} className="text-xs text-gray-600 flex items-start">
+                          <span className="text-[#FF6900] mr-1.5">•</span>
+                          {dep}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Post-Install Notes */}
+                {marketplaceData.installHints?.postInstallNotes && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 mb-2">Setup Notes</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                      <p className="text-xs text-blue-900 leading-relaxed">
+                        {marketplaceData.installHints.postInstallNotes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Tools Tab */}
