@@ -440,6 +440,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Tenant-ID': currentTenant?.id || '',
+          'X-Auth-Session': 'authenticated',
         },
         credentials: 'include',
         body: JSON.stringify({

@@ -89,8 +89,8 @@ export function WorkflowTestResultDialog({
 
   if (!result) return null;
 
-  const isSuccess = result.success && result.data.status === 'success';
-  const hasWarnings = result.data.executionResults?.some(step => step.status === 'warning');
+  const isSuccess = result.success && result.data?.status === 'success';
+  const hasWarnings = result.data?.executionResults?.some(step => step.status === 'warning');
 
   // Status icon component
   const StatusIcon = ({ status }: { status: 'success' | 'warning' | 'error' }) => {
