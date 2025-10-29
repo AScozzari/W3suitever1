@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -25,6 +25,7 @@ import {
   Settings as SettingsIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getToolDescriptionFallback } from '@/lib/mcp-tool-descriptions';
 
 interface ServerDetailsPanelProps {
   open: boolean;
@@ -52,6 +53,7 @@ interface MCPServer {
 export function ServerDetailsPanel({ open, onClose, serverId }: ServerDetailsPanelProps) {
   const { toast } = useToast();
   const [copiedTool, setCopiedTool] = useState<string | null>(null);
+  const [autoDiscoveryTriggered, setAutoDiscoveryTriggered] = useState(false);
 
   // Fetch server details
   const { data: server, isLoading, refetch } = useQuery<MCPServer>({
@@ -87,6 +89,30 @@ export function ServerDetailsPanel({ open, onClose, serverId }: ServerDetailsPan
       });
     },
   });
+
+  // Auto-discovery: trigger when modal opens and tools are strings (no descriptions)
+  useEffect(() => {
+    if (!server || !open || autoDiscoveryTriggered || refreshDiscoveryMutation.isPending) {
+      return;
+    }
+
+    // Check if tools need discovery (are strings or missing descriptions)
+    const needsDiscovery = server.discoveredTools && server.discoveredTools.length > 0 && 
+      server.discoveredTools.some(tool => typeof tool === 'string' || !tool.description);
+
+    if (needsDiscovery && server.status === 'active') {
+      console.log('🔍 Auto-triggering discovery for server:', server.name);
+      setAutoDiscoveryTriggered(true);
+      refreshDiscoveryMutation.mutate();
+    }
+  }, [server, open, autoDiscoveryTriggered, refreshDiscoveryMutation]);
+
+  // Reset auto-discovery flag when modal closes
+  useEffect(() => {
+    if (!open) {
+      setAutoDiscoveryTriggered(false);
+    }
+  }, [open]);
 
   const handleCopyToolName = (toolName: string) => {
     navigator.clipboard.writeText(toolName);
@@ -242,6 +268,11 @@ export function ServerDetailsPanel({ open, onClose, serverId }: ServerDetailsPan
                       const toolDescription = typeof tool === 'string' ? null : tool.description;
                       const toolSchema = typeof tool === 'string' ? null : tool.inputSchema;
                       
+                      // Get fallback description if original is missing
+                      const fallbackDescription = toolDescription ? null : getToolDescriptionFallback(toolName);
+                      const displayDescription = toolDescription || fallbackDescription;
+                      const isLoadingDiscovery = refreshDiscoveryMutation.isPending;
+                      
                       return (
                         <motion.div
                           key={idx}
@@ -270,11 +301,21 @@ export function ServerDetailsPanel({ open, onClose, serverId }: ServerDetailsPan
                                     )}
                                   </Button>
                                 </div>
-                                {toolDescription ? (
-                                  <p className="text-sm text-gray-600">{toolDescription}</p>
+                                {isLoadingDiscovery ? (
+                                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    <span>Caricamento descrizione...</span>
+                                  </div>
+                                ) : displayDescription ? (
+                                  <p className={`text-sm ${fallbackDescription ? 'text-gray-500' : 'text-gray-600'}`}>
+                                    {displayDescription}
+                                    {fallbackDescription && (
+                                      <span className="ml-1 text-xs text-gray-400">(descrizione automatica)</span>
+                                    )}
+                                  </p>
                                 ) : (
                                   <p className="text-sm text-gray-400 italic">
-                                    Descrizione non disponibile - clicca "Aggiorna Tools" per recuperare i dettagli
+                                    Tool disponibile - funzionalità specifica del server
                                   </p>
                                 )}
                               </div>
