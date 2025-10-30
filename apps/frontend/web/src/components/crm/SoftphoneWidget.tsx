@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useSIPRegistration } from '@/hooks/useSIPRegistration';
+import { SessionState } from 'sip.js';
 import { 
   Phone, 
   PhoneOff,
@@ -23,7 +25,9 @@ import {
   Delete,
   PhoneForwarded,
   Hash,
-  Grid3x3
+  Grid3x3,
+  WifiOff,
+  Wifi
 } from 'lucide-react';
 
 interface SoftphoneWidgetProps {
@@ -34,14 +38,15 @@ interface SoftphoneWidgetProps {
 type CallState = 'idle' | 'ringing' | 'connecting' | 'active' | 'ended';
 
 export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) {
+  // SIP.js integration
+  const sip = useSIPRegistration();
+  
   const [isMinimized, setIsMinimized] = useState(true); // Start collapsed
   const [callState, setCallState] = useState<CallState>('idle');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [currentCall, setCurrentCall] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [showDialpad, setShowDialpad] = useState(false);
@@ -114,13 +119,31 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
     osc2.stop(now + 0.15);
   };
 
-  // Mock SIP registration (TODO: Replace with real SIP.js)
+  // Sync call state with SIP.js session
   useEffect(() => {
-    // DEMO MODE: Auto-register even without extensionId for testing
-    setTimeout(() => {
-      setIsRegistered(true);
-    }, 1500);
-  }, []);
+    if (!sip.currentSession) {
+      setCallState('idle');
+      return;
+    }
+
+    switch (sip.currentSession.state) {
+      case SessionState.Initial:
+        setCallState(sip.currentSession.direction === 'inbound' ? 'ringing' : 'connecting');
+        break;
+      case SessionState.Establishing:
+        setCallState('connecting');
+        break;
+      case SessionState.Established:
+        setCallState('active');
+        break;
+      case SessionState.Terminated:
+        setCallState('ended');
+        setTimeout(() => setCallState('idle'), 1000);
+        break;
+      default:
+        break;
+    }
+  }, [sip.currentSession]);
 
   // Auto-collapse after 30 seconds of inactivity (when idle)
   useEffect(() => {
@@ -141,47 +164,62 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
     setLastActivityTime(Date.now());
   };
 
-  const handleCall = () => {
-    if (!phoneNumber) return;
+  const handleCall = async () => {
+    if (!phoneNumber || !sip.isRegistered) return;
     updateActivity();
-    setCallState('connecting');
     
-    // Mock call connection (TODO: Replace with real SIP.js call)
-    setTimeout(() => {
-      setCallState('active');
-      setCurrentCall({
-        number: phoneNumber,
-        direction: 'outbound',
-        startTime: new Date()
-      });
-    }, 2000);
+    try {
+      await sip.makeCall(phoneNumber);
+    } catch (error) {
+      console.error('Failed to make call:', error);
+      setCallState('idle');
+    }
   };
 
-  const handleHangup = () => {
-    setCallState('ended');
-    setTimeout(() => {
-      setCallState('idle');
+  const handleHangup = async () => {
+    try {
+      await sip.hangup();
       setPhoneNumber('');
-      setCurrentCall(null);
-    }, 1000);
+    } catch (error) {
+      console.error('Failed to hangup:', error);
+    }
   };
 
-  const handleAnswer = () => {
-    setCallState('active');
+  const handleAnswer = async () => {
+    try {
+      await sip.answer();
+    } catch (error) {
+      console.error('Failed to answer call:', error);
+    }
   };
 
-  const handleReject = () => {
-    setCallState('ended');
-    setTimeout(() => {
-      setCallState('idle');
-      setCurrentCall(null);
-    }, 1000);
+  const handleReject = async () => {
+    try {
+      await sip.reject();
+    } catch (error) {
+      console.error('Failed to reject call:', error);
+    }
   };
 
   const addDigit = (digit: string) => {
     updateActivity();
     playDTMFTone(digit);
-    setPhoneNumber((prev) => prev + digit);
+    
+    // If in call, send DTMF; otherwise add to dialed number
+    if (callState === 'active') {
+      sip.sendDTMF(digit);
+    } else {
+      setPhoneNumber((prev) => prev + digit);
+    }
+  };
+
+  const toggleMute = () => {
+    if (isMuted) {
+      sip.unmute();
+    } else {
+      sip.mute();
+    }
+    setIsMuted(!isMuted);
   };
 
   const handleBackspace = () => {
@@ -266,13 +304,31 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
           <Badge 
             variant="outline" 
             className={`${
-              isRegistered 
+              sip.isRegistered 
                 ? 'bg-green-500/20 text-green-300 border-green-500/30' 
+                : sip.registrationError
+                ? 'bg-red-500/20 text-red-300 border-red-500/30'
                 : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full mr-2 ${isRegistered ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
-            {isRegistered ? 'Online' : 'Connecting...'}
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              sip.isRegistered ? 'bg-green-400 animate-pulse' : 
+              sip.registrationError ? 'bg-red-400' :
+              'bg-yellow-400 animate-pulse'
+            }`} />
+            {sip.isRegistered ? (
+              <>
+                <Wifi className="w-3 h-3 mr-1" />
+                Ext {sip.credentials?.extension}
+              </>
+            ) : sip.registrationError ? (
+              <>
+                <WifiOff className="w-3 h-3 mr-1" />
+                Offline
+              </>
+            ) : (
+              'Connecting...'
+            )}
           </Badge>
         </div>
 
@@ -329,8 +385,8 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   padding: '12px 16px',
                   fontSize: '16px',
                   border: 'none',
-                  cursor: phoneNumber && isRegistered ? 'pointer' : 'not-allowed',
-                  opacity: phoneNumber && isRegistered ? 1 : 0.5,
+                  cursor: phoneNumber && sip.isRegistered ? 'pointer' : 'not-allowed',
+                  opacity: phoneNumber && sip.isRegistered ? 1 : 0.5,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -338,15 +394,15 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   transition: 'opacity 0.2s'
                 }}
                 onClick={handleCall}
-                disabled={!phoneNumber || !isRegistered}
+                disabled={!phoneNumber || !sip.isRegistered}
                 data-testid="button-call"
                 onMouseEnter={(e) => {
-                  if (phoneNumber && isRegistered) {
+                  if (phoneNumber && sip.isRegistered) {
                     e.currentTarget.style.opacity = '0.9';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (phoneNumber && isRegistered) {
+                  if (phoneNumber && sip.isRegistered) {
                     e.currentTarget.style.opacity = '1';
                   }
                 }}
