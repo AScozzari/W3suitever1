@@ -105,3 +105,19 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Microsoft 365**: Office suite integration.
 - **Stripe**: Payment processing.
 - **GTM/Analytics**: Google Tag Manager and analytics services.
+
+# Deprecated Environment Variables
+The following environment variables are **no longer used** and can be safely removed:
+
+## Removed: Dedicated Meta/LinkedIn Webhook Endpoints (2025-10-30)
+- ❌ `META_APP_SECRET` - Previously used for Meta/Facebook webhook signature validation
+- ❌ `META_WEBHOOK_VERIFY_TOKEN` - Previously used for Meta webhook verification challenge
+- ❌ `LINKEDIN_CLIENT_SECRET` - Previously used for LinkedIn webhook signature validation
+- ❌ `EXTERNAL_LEADS_API_KEY` - Previously used for internal API calls from webhooks
+
+**Reason for Removal**: W3 Suite uses a **store-centric tracking model** via GTM + Facebook Pixel (configured per-store in `store_tracking_config`). Dedicated webhook endpoints for Meta/LinkedIn Lead Gen were redundant and never used in production. All social media tracking is handled through:
+- ✅ **GTM MCP Server** (`google-tag-manager-mcp`) for auto-configuration
+- ✅ **GTM Snippet Generator** with store-specific tracking IDs
+- ✅ **MCP Webhooks** (`/api/webhooks/mcp/meta/:tenantId`) for future MCP-based integrations
+
+**Migration Path**: If social media webhook ingestion is needed in the future, use the unified MCP webhook infrastructure (`/api/webhooks/mcp/*`) which provides deduplication, queueing, workflow triggers, and monitoring.
