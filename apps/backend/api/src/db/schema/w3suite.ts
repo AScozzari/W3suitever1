@@ -5678,18 +5678,46 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // ACTUAL DB: VARCHAR not UUID! 1:1 relationship
   domainId: uuid("domain_id").notNull(), // ACTUAL DB: domain_id (references voip_domains)
-  extension: varchar("extension", { length: 20 }).notNull(), // ACTUAL DB: extension number
+  extension: varchar("extension", { length: 20 }).notNull(), // ACTUAL DB: extension number (1001, 1002, etc.)
   sipUsername: varchar("sip_username", { length: 100 }).notNull(), // ACTUAL DB: SIP auth username
-  sipPassword: text("sip_password").notNull(), // ACTUAL DB: SIP password
+  sipPassword: text("sip_password").notNull(), // ACTUAL DB: SIP password (encrypted at rest)
   displayName: varchar("display_name", { length: 255 }), // ACTUAL DB: display name
   email: varchar("email", { length: 255 }), // ACTUAL DB: email
+  
+  // FreeSWITCH Best Practice Fields
+  sipServer: varchar("sip_server", { length: 255 }).default('sip.edgvoip.it'), // SIP server hostname
+  sipPort: integer("sip_port").default(5060), // SIP port (5060 for UDP, 5061 for TLS)
+  wsPort: integer("ws_port").default(8443), // WebSocket port for WebRTC
+  transport: varchar("transport", { length: 20 }).default('WSS'), // UDP|TCP|TLS|WS|WSS
+  
+  // Caller ID Configuration
+  callerIdName: varchar("caller_id_name", { length: 100 }), // Outbound caller ID name
+  callerIdNumber: varchar("caller_id_number", { length: 50 }), // Outbound caller ID number (E.164)
+  
+  // Codec Configuration (comma-separated, priority order)
+  allowedCodecs: varchar("allowed_codecs", { length: 255 }).default('OPUS,G722,PCMU,PCMA'), // Video codecs available: VP8,VP9,H264
+  
+  // Security & Authentication
+  authRealm: varchar("auth_realm", { length: 255 }), // SIP authentication realm (default: domain)
+  registrationExpiry: integer("registration_expiry").default(3600), // Registration TTL in seconds (default: 1 hour)
+  maxConcurrentCalls: integer("max_concurrent_calls").default(4), // Call limit per extension
+  
+  // Call Features
   voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(), // ACTUAL DB: voicemail flag
   voicemailEmail: varchar("voicemail_email", { length: 255 }), // ACTUAL DB: voicemail email
+  voicemailPin: varchar("voicemail_pin", { length: 20 }), // Voicemail access PIN
   recordingEnabled: boolean("recording_enabled").default(false).notNull(), // ACTUAL DB: recording flag
   dndEnabled: boolean("dnd_enabled").default(false).notNull(), // ACTUAL DB: DND flag
   forwardOnBusy: varchar("forward_on_busy", { length: 100 }), // ACTUAL DB: forward on busy
   forwardOnNoAnswer: varchar("forward_on_no_answer", { length: 100 }), // ACTUAL DB: forward on no answer
   forwardUnconditional: varchar("forward_unconditional", { length: 100 }), // ACTUAL DB: unconditional forward
+  
+  // Sync Metadata (for edgvoip API integration)
+  edgvoipExtensionId: varchar("edgvoip_extension_id", { length: 100 }), // External PBX extension ID
+  lastSyncAt: timestamp("last_sync_at"), // Last successful sync with edgvoip
+  syncStatus: varchar("sync_status", { length: 50 }).default('pending'), // pending|synced|failed
+  syncErrorMessage: text("sync_error_message"), // Last sync error if any
+  
   status: voipExtensionStatusEnum("status").default('active').notNull(), // ACTUAL DB: status enum
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -5697,6 +5725,7 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   index("voip_extensions_tenant_idx").on(table.tenantId),
   index("voip_extensions_user_idx").on(table.userId),
   index("voip_extensions_domain_idx").on(table.domainId), // ACTUAL DB: domain index
+  index("voip_extensions_sync_status_idx").on(table.syncStatus),
   uniqueIndex("voip_extensions_domain_extension_unique").on(table.domainId, table.extension), // ACTUAL DB: unique extension per domain
   uniqueIndex("voip_extensions_domain_sip_username_unique").on(table.domainId, table.sipUsername), // ACTUAL DB: unique sip_username per domain
   uniqueIndex("voip_extensions_user_unique").on(table.userId), // ACTUAL DB: conditional unique on user_id
@@ -5705,16 +5734,28 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
 export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit({ 
   id: true, 
   createdAt: true, 
-  updatedAt: true 
+  updatedAt: true,
+  lastSyncAt: true,
+  syncErrorMessage: true 
 }).extend({
   userId: z.string().optional(), // ACTUAL DB: VARCHAR, optional (1:1 with users)
   domainId: z.string().uuid("Invalid domain ID"),
   extension: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
   sipUsername: z.string().min(1, "SIP username is required"),
-  sipPassword: z.string().min(12, "SIP password must be at least 12 characters"),
-  status: z.enum(['active', 'inactive', 'suspended']),
+  sipPassword: z.string().min(16, "SIP password must be at least 16 characters"), // Auto-generated, 16+ chars
+  transport: z.enum(['UDP', 'TCP', 'TLS', 'WS', 'WSS']).optional(),
+  allowedCodecs: z.string().optional(),
+  callerIdNumber: z.string().regex(/^\+\d{7,15}$/, "Must be E.164 format").optional(),
+  status: z.enum(['active', 'inactive', 'suspended']).optional(),
+  syncStatus: z.enum(['pending', 'synced', 'failed']).optional(),
 });
-export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ tenantId: true, userId: true, domainId: true, extension: true }).partial();
+export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ 
+  tenantId: true, 
+  userId: true, 
+  domainId: true, 
+  extension: true,
+  sipPassword: true // Password changes via dedicated endpoint
+}).partial();
 export type InsertVoipExtension = z.infer<typeof insertVoipExtensionSchema>;
 export type UpdateVoipExtension = z.infer<typeof updateVoipExtensionSchema>;
 export type VoipExtension = typeof voipExtensions.$inferSelect;

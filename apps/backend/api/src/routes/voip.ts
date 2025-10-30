@@ -48,6 +48,7 @@ import {
   insertVoipAiSessionSchema
 } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
+import { voipExtensionService } from '../services/voip-extension.service';
 
 const router = express.Router();
 
@@ -492,13 +493,24 @@ router.post('/extensions', rbacMiddleware, requirePermission('manage_telephony')
 
     await setTenantContext(db, tenantId);
 
-    const validated = insertVoipExtensionSchema.parse({
-      ...req.body,
+    // Auto-generate secure SIP password (20 chars)
+    const plaintextPassword = voipExtensionService.generateSIPPassword(20);
+    
+    // Encrypt password for storage
+    const encryptedPassword = await voipExtensionService.encryptPassword(plaintextPassword, tenantId);
+
+    // Validate input (without sipPassword from request body)
+    const { sipPassword: _ignored, ...bodyWithoutPassword } = req.body;
+    const validated = insertVoipExtensionSchema.omit({ sipPassword: true }).parse({
+      ...bodyWithoutPassword,
       tenantId
     });
 
     const [newExtension] = await db.insert(voipExtensions)
-      .values(validated)
+      .values({
+        ...validated,
+        sipPassword: encryptedPassword // Store encrypted
+      })
       .returning();
 
     await logActivity(
@@ -508,15 +520,25 @@ router.post('/extensions', rbacMiddleware, requirePermission('manage_telephony')
       'ext',
       newExtension.id,
       'ok',
-      { extension: newExtension }
+      { extension: newExtension.extension, userId: newExtension.userId }
     );
 
-    logger.info('VoIP extension created', { extensionId: newExtension.id, extNumber: newExtension.extNumber, tenantId });
+    logger.info('VoIP extension created', { 
+      extensionId: newExtension.id, 
+      extension: newExtension.extension, 
+      userId: newExtension.userId,
+      tenantId 
+    });
 
+    // Return extension data WITH plaintext password (ONLY on creation!)
     return res.status(201).json({ 
       success: true, 
-      data: newExtension 
-    } as ApiSuccessResponse<typeof newExtension>);
+      data: {
+        ...newExtension,
+        plaintextPassword, // ⚠️ Plaintext password - ONLY shown on creation!
+        message: 'Extension created successfully. Save the password - it will not be shown again.'
+      }
+    } as ApiSuccessResponse);
   } catch (error) {
     logger.error('Error creating VoIP extension', { error, tenantId: getTenantId(req) });
     if (error instanceof z.ZodError) {
@@ -617,6 +639,146 @@ router.delete('/extensions/:id', rbacMiddleware, requirePermission('manage_telep
   } catch (error) {
     logger.error('Error deleting VoIP extension', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to delete VoIP extension' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/extensions/me - Get decrypted SIP credentials for logged-in user (SIP.js registration)
+router.get('/extensions/me', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: 'Authentication required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Get decrypted SIP credentials via service
+    const credentials = await voipExtensionService.getUserCredentials(userId, tenantId);
+
+    if (!credentials) {
+      return res.status(404).json({ 
+        error: 'No VoIP extension assigned to your account. Contact your administrator.' 
+      } as ApiErrorResponse);
+    }
+
+    logger.info('SIP credentials retrieved for user', { userId, tenantId, extension: credentials.extension });
+
+    return res.json({ 
+      success: true, 
+      data: credentials 
+    } as ApiSuccessResponse<typeof credentials>);
+  } catch (error) {
+    logger.error('Error retrieving user SIP credentials', { error, userId: req.user?.id, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to retrieve SIP credentials' } as ApiErrorResponse);
+  }
+});
+
+// PATCH /api/voip/extensions/:id/reset-password - Reset SIP password for extension
+router.patch('/extensions/:id/reset-password', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    // Verify extension exists
+    const extension = await db.query.voipExtensions.findFirst({
+      where: and(
+        eq(voipExtensions.id, id),
+        eq(voipExtensions.tenantId, tenantId)
+      )
+    });
+
+    if (!extension) {
+      return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
+    }
+
+    // Reset password via service
+    const newPassword = await voipExtensionService.resetPassword(id, tenantId);
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'ext',
+      id,
+      'ok',
+      { action: 'password_reset', extension: extension.extension }
+    );
+
+    logger.info('SIP password reset', { extensionId: id, extension: extension.extension, tenantId });
+
+    // Return plaintext password ONLY on reset
+    return res.json({ 
+      success: true, 
+      data: { 
+        extensionId: id,
+        extension: extension.extension,
+        newPassword, // Plaintext - ONLY returned once!
+        message: 'SIP password reset successfully. Save this password - it will not be shown again.'
+      } 
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error resetting SIP password', { error, extensionId: req.params.id, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to reset SIP password' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/extensions/:id/sync - Sync extension with edgvoip API
+router.post('/extensions/:id/sync', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    // Verify extension exists
+    const extension = await db.query.voipExtensions.findFirst({
+      where: and(
+        eq(voipExtensions.id, id),
+        eq(voipExtensions.tenantId, tenantId)
+      )
+    });
+
+    if (!extension) {
+      return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
+    }
+
+    // Sync with edgvoip (stub for now)
+    const syncResult = await voipExtensionService.syncWithEdgvoip(id, tenantId);
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'sync',
+      'ext',
+      id,
+      syncResult.success ? 'ok' : 'fail',
+      { extension: extension.extension, result: syncResult }
+    );
+
+    logger.info('Extension sync attempt', { 
+      extensionId: id, 
+      extension: extension.extension, 
+      success: syncResult.success,
+      tenantId 
+    });
+
+    return res.json({ 
+      success: syncResult.success, 
+      data: syncResult 
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error syncing extension', { error, extensionId: req.params.id, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to sync extension' } as ApiErrorResponse);
   }
 });
 
