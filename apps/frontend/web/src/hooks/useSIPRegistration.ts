@@ -63,7 +63,8 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
   const { data: credentialsResponse, isLoading, error } = useQuery<{ success: boolean; data: SIPCredentials }>({
     queryKey: ['/api/voip/extensions/me'],
     refetchOnWindowFocus: false,
-    retry: 1,
+    retry: false, // Don't retry on 404 (no extension assigned)
+    enabled: true, // Always try to fetch credentials
   });
 
   const credentials = credentialsResponse?.data || null;
