@@ -1,0 +1,271 @@
+Ragionato per 10sPerfetto: facciamo la soluzione light ma con AI agent configurabile per trunk (e per store), abilitabile/disabilitabile anche con time condition. Il PBX (edgvoip) resta “master del dialplan”, W3 decide solo se e quando attivare l’AI su quel trunk/DID.
+
+Architettura in 1 riga
+Inbound → edgvoip (identifica tenant dal SIP domain) → fa UNA GET a W3 per sapere se su quel trunk/DID l’AI è ON (e con quali parametri) → se ON: answer + audio_fork verso W3 Voice Gateway del tenant; se OFF: rotta normale (ext/ringgroup/queue).
+Le analytics/CDR restano GET da W3 verso edgvoip (come già deciso).
+
+1) Config in W3 (modellino snello)
+Tabella: voip_trunk_ai_settings
+Configurazione AI per ogni trunk (scopabile per store o per singolo DID se vuoi granularità in futuro).
+
+
+id
+
+
+tenant_id
+
+
+trunk_id
+
+
+store_id (opzionale)
+
+
+enabled (bool)
+
+
+time_windows (JSON) → es. [{ "dow":[1,2,3,4,5], "start":"09:00", "end":"19:00", "tz":"Europe/Rome" }]
+
+
+did_allowlist/did_blocklist (array E.164) (opzionali)
+
+
+agent_id → riferimento a ai_agents
+
+
+fallback_target_type (ext|ring|queue|vm)
+
+
+fallback_target_ref (es. 1001, ring_store01)
+
+
+Parametri runtime agent (per tenant/brand):
+
+
+language (es. it-IT)
+
+
+tts_voice (string)
+
+
+barge_in (bool)
+
+
+max_ai_minutes (int)
+
+
+recording (off|on|policy)
+
+
+meta (JSON libero)
+
+
+
+
+Tabella: ai_agents
+
+
+id, tenant_id, name
+
+
+model (es. gpt-4o-realtime-preview)
+
+
+gateway_url (es. wss://voice-gw.w3suite.it/rt/:tenant)
+
+
+tools_profile (quali API può chiamare)
+
+
+system_prompt (breve contesto brand/store)
+
+
+
+Se preferisci, puoi non creare ai_agents e mettere tutto in voip_trunk_ai_settings. Tenerli separati aiuta il riuso tra più trunk dello stesso tenant.
+
+
+2) API minime (GET) lato W3
+A) Routing AI (usata da edgvoip in inbound)
+GET /api/voip/ai-routing
+  ?sip_domain=tenantA.edvoip.it
+  &trunk_id=trunk-roma01
+  &did=+39061234567
+  &ts=2025-10-30T09:41:00Z
+
+Response (esempio):
+{
+  "tenant_id": "uuid-tenantA",
+  "mode": "ai" ,         // "ai" | "human"
+  "reason": "time_window_match", // per debug/telemetria
+  "agent": {
+    "agent_id": "agent_voice_default",
+    "gateway_url": "wss://voice-gw.w3suite.it/rt/tenantA",
+    "language": "it-IT",
+    "tts_voice": "it-Marta",
+    "barge_in": true,
+    "max_ai_minutes": 8,
+    "recording": "policy"
+  },
+  "fallback": {
+    "target_type": "ring",
+    "target_ref": "ring_store_roma01"
+  }
+}
+
+Se OFF:
+{
+  "tenant_id":"uuid-tenantA",
+  "mode":"human",
+  "reason":"out_of_hours",
+  "fallback":{"target_type":"ring","target_ref":"ring_store_roma01"}
+}
+
+
+Autenticazione: JWT con claim sip_domain + provisioner=edgvoip.
+
+B) CDR/Analytics (GET)
+Rimangono quelli già decisi:
+
+
+GET /api/cdr (se preferisci che W3 legga da edgvoip) oppure lasci tutto su edgvoip e W3 consuma da lì.
+(Qui non cambia nulla.)
+
+
+
+3) Dialplan edgvoip (logica essenziale)
+Nel context public (ingresso dai trunk):
+
+
+Identifica tenant dal SIP domain (già lo fai).
+
+
+Determina trunk_id e called DID.
+
+
+HTTP GET → /api/voip/ai-routing (timeout breve, es. 400–600 ms).
+
+
+Se mode = ai:
+
+
+answer
+
+
+audio_fork start → gateway_url con headers/meta: tenant_id, trunk_id, did, call_id
+
+
+se l’AI “chiama umano” o fallisce → transfer a fallback.target_ref
+
+
+
+
+Se mode = human:
+
+
+bridge verso fallback.target_ref (ring/queue/ext)
+
+
+
+
+Fail-safe: se la GET fallisce o scade, instrada subito a fallback.target_ref.
+
+4) Time condition (come applicarla)
+La gestisce W3 dentro voip_trunk_ai_settings.time_windows.
+La GET calcola in Europe/Rome:
+
+
+se match → mode=ai
+
+
+se no → mode=human
+Eventuali eccezioni (festivi, ferie) le puoi codificare in time_windows (array multipli o calendario semplificato in JSON).
+
+
+
+5) Softphone in W3 (opzionale, invariato)
+
+
+WebRTC → wss://tenantA.edvoip.it:7443
+
+
+User ↔ Extension = 1:1
+
+
+Le policy di chiamata restano in W3 (UI/CRM). Enforcement “light” (chi può chiamare chi) lato UI; se in futuro vuoi enforcement hard, aggiungiamo una sola check outbound nel dialplan.
+
+
+
+6) Voice Gateway W3 (cosa fa)
+Un microservizio unico per tutti i tenant:
+
+
+Termina WebSocket da FreeSWITCH (audio_fork)
+
+
+Apre sessione verso OpenAI Realtime API (model dell’agent)
+
+
+Spinge audio AI → FreeSWITCH
+
+
+Espone tool (API W3: CRM, appuntamenti, catalogo offerte, ecc.)
+
+
+Implementa transfer su richiesta AI (uuid_transfer verso fallback o operatori)
+
+
+Logga trascrizione e esiti (per analytics e qualità)
+
+
+
+7) Sicurezza & osservabilità
+
+
+JWT bidirezionale (edgvoip ↔ W3) con claim sip_domain, tenant_id, trunk_id.
+
+
+Rate limit su /ai-routing.
+
+
+Circuit breaker: se gateway/AI non raggiungibile → fallback immediato.
+
+
+Log: scrivi una riga in voip_activity_log per ogni decisione AI (on/off, motivo) + voip_cdr o CDR GET da edgvoip per la parte chiamate.
+
+
+
+8) Go-Live in 1 giorno (checklist rapida)
+
+
+W3: crea voip_trunk_ai_settings + ai_agents, UI di toggle Enable AI + orari.
+
+
+W3: implementa GET /api/voip/ai-routing (400–600 ms budget).
+
+
+edgvoip: nel dialplan public aggiungi il lookup HTTP e i rami AI/HUMAN.
+
+
+W3: Voice Gateway minimo (WebSocket bridge ↔ Realtime API) con fallback transfer.
+
+
+Test: in orario = AI risponde; fuori orario = suona ring/queue.
+
+
+Metriche: grafico “DID con AI ON/OFF”, “handoff a umano”, “missed da AI”.
+
+
+
+In pratica: cosa cambia rispetto alle due opzioni iniziali
+
+
+Resti PBX-first (niente provisioning massivo), ma aggiungi solo 1 GET per decidere AI per trunk/DID e per fascia oraria.
+
+
+Mantieni CDR e analytics in GET, come volevi.
+
+
+Le tue policy W3 e la ricontattabilità continuano a vivere in W3, alimentate dai CDR.
+
+
+Se vuoi, ti scrivo subito il contratto Swagger di /api/voip/ai-routing (request/response con schema dei time_windows) e la mappa variabili che edgvoip deve passare ad audio_fork (tenant, trunk, did, call_id) — così i dev possono implementare senza ambiguità.
