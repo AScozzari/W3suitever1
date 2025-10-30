@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
@@ -26,7 +27,11 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  X
+  X,
+  Copy,
+  RefreshCw,
+  Key,
+  Shield
 } from 'lucide-react';
 
 interface PhoneVoIPConfigProps {
@@ -63,13 +68,28 @@ const extensionFormSchema = z.object({
   userId: z.string().min(1, "Seleziona un utente"),
   extension: z.string().min(1, "Numero interno obbligatorio").max(20),
   sipUsername: z.string().min(1, "Username SIP obbligatorio").max(100),
-  sipPassword: z.string().min(12, "Password deve essere almeno 12 caratteri"),
   displayName: z.string().optional(),
   email: z.string().email().optional(),
+  // Advanced SIP Configuration (optional)
+  sipServer: z.string().optional(),
+  sipPort: z.coerce.number().int().min(1).max(65535).optional(),
+  wsPort: z.coerce.number().int().min(1).max(65535).optional(),
+  transport: z.enum(['udp', 'tcp', 'tls', 'wss']).optional(),
+  callerIdName: z.string().optional(),
+  callerIdNumber: z.string().optional(),
+  allowedCodecs: z.string().optional(),
+  authRealm: z.string().optional(),
+  // Features
   voicemailEnabled: z.boolean().default(true),
   voicemailEmail: z.string().email().optional(),
+  voicemailPin: z.string().optional(),
   recordingEnabled: z.boolean().default(false),
   dndEnabled: z.boolean().default(false),
+  callForwardEnabled: z.boolean().default(false),
+  callForwardNumber: z.string().optional(),
+  // Limits & Security
+  maxConcurrentCalls: z.coerce.number().int().min(1).max(10).optional(),
+  registrationExpiry: z.coerce.number().int().min(60).max(7200).optional(),
   status: z.enum(['active', 'inactive', 'suspended']).default('active'),
 });
 
@@ -83,6 +103,15 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   const [editingExtension, setEditingExtension] = useState<string | null>(null);
   const [showTrunkForm, setShowTrunkForm] = useState(false);
   const [showExtensionForm, setShowExtensionForm] = useState(false);
+  const [showAdvancedSIP, setShowAdvancedSIP] = useState(false);
+  const [sipCredentials, setSipCredentials] = useState<{
+    extension: string;
+    sipUsername: string;
+    sipPassword: string;
+    sipServer: string;
+    sipPort: number;
+    wsPort?: number;
+  } | null>(null);
 
   const { data: trunksResponse, isLoading: trunksLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/trunks'],
@@ -173,12 +202,25 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
       }
       return apiRequest('POST', '/api/voip/extensions', data);
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       toast({
         title: editingExtension ? "Extension aggiornata" : "Extension creata",
         description: "Configurazione salvata con successo",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/voip/extensions'] });
+      
+      // If creating new extension, show SIP credentials dialog (plaintext password available only on creation)
+      if (!editingExtension && response?.data?.plaintextPassword) {
+        setSipCredentials({
+          extension: response.data.extension.extension,
+          sipUsername: response.data.extension.sipUsername,
+          sipPassword: response.data.plaintextPassword,
+          sipServer: response.data.extension.sipServer || 'sip.edgvoip.com',
+          sipPort: response.data.extension.sipPort || 5060,
+          wsPort: response.data.extension.wsPort,
+        });
+      }
+      
       setShowExtensionForm(false);
       setEditingExtension(null);
       extensionForm.reset();
@@ -187,6 +229,59 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
       toast({
         title: "Errore",
         description: error.message || "Impossibile salvare extension",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (extensionId: string) => {
+      return apiRequest('PATCH', `/api/voip/extensions/${extensionId}/reset-password`, null);
+    },
+    onSuccess: (response: any) => {
+      toast({
+        title: "Password resettata",
+        description: "Nuova password generata con successo",
+      });
+      
+      // Show new credentials
+      if (response?.data?.plaintextPassword) {
+        setSipCredentials({
+          extension: response.data.extension.extension,
+          sipUsername: response.data.extension.sipUsername,
+          sipPassword: response.data.plaintextPassword,
+          sipServer: response.data.extension.sipServer || 'sip.edgvoip.com',
+          sipPort: response.data.extension.sipPort || 5060,
+          wsPort: response.data.extension.wsPort,
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/extensions'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile resettare password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const syncExtensionMutation = useMutation({
+    mutationFn: async (extensionId: string) => {
+      return apiRequest('POST', `/api/voip/extensions/${extensionId}/sync`, null);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sincronizzazione completata",
+        description: "Extension sincronizzata con edgvoip",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/extensions'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore sincronizzazione",
+        description: error.message || "Impossibile sincronizzare con edgvoip",
         variant: "destructive",
       });
     },
@@ -1054,46 +1149,21 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                       )}
                     />
 
-                    <FormField
-                      control={extensionForm.control}
-                      name="sipPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Password SIP *</FormLabel>
-                          <div className="flex gap-2">
-                            <FormControl>
-                              <Input 
-                                type="password" 
-                                {...field} 
-                                placeholder="Min 12 caratteri" 
-                                data-testid="input-extension-sip-password" 
-                                className="bg-white flex-1"
-                              />
-                            </FormControl>
-                            <Button 
-                              type="button" 
-                              variant="outline"
-                              onClick={() => {
-                                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-                                const password = Array.from({ length: 16 }, () => 
-                                  chars.charAt(Math.floor(Math.random() * chars.length))
-                                ).join('');
-                                field.onChange(password);
-                                toast({
-                                  title: "Password generata",
-                                  description: "Password sicura generata automaticamente",
-                                });
-                              }}
-                              data-testid="button-generate-password"
-                              className="whitespace-nowrap"
-                            >
-                              Generate
-                            </Button>
+                    {/* Password SIP auto-generated info */}
+                    <div className="col-span-2">
+                      <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <Key className="w-5 h-5 text-green-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-green-900">🔐 Password SIP Auto-Generata</h4>
+                            <p className="text-sm text-green-700 mt-1">
+                              Il sistema genererà automaticamente una password SIP sicura (20 caratteri) al salvataggio. 
+                              La password verrà mostrata <strong>SOLO UNA VOLTA</strong> dopo la creazione.
+                            </p>
                           </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </div>
+                      </div>
+                    </div>
 
                     <FormField
                       control={extensionForm.control}
@@ -1304,45 +1374,76 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                           <p>Display Name: {ext.extension.displayName || 'N/A'}</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingExtension(ext.extension.id);
-                            setShowExtensionForm(true);
-                            extensionForm.reset({
-                              userId: ext.extension.userId,
-                              extension: ext.extension.extension,
-                              sipUsername: ext.extension.sipUsername,
-                              sipPassword: ext.extension.sipPassword,
-                              displayName: ext.extension.displayName || '',
-                              email: ext.extension.email || '',
-                              voicemailEnabled: ext.extension.voicemailEnabled,
-                              voicemailEmail: ext.extension.voicemailEmail || '',
-                              recordingEnabled: ext.extension.recordingEnabled,
-                              dndEnabled: ext.extension.dndEnabled,
-                              status: ext.extension.status,
-                            });
-                          }}
-                          data-testid={`button-edit-extension-${ext.extension.id}`}
-                          className="hover:bg-gray-100"
-                        >
-                          <Pencil className="w-4 h-4 text-gray-600" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => {
-                            if (confirm('Sei sicuro di voler eliminare questa extension?')) {
-                              deleteExtensionMutation.mutate(ext.extension.id);
-                            }
-                          }}
-                          data-testid={`button-delete-extension-${ext.extension.id}`}
-                          className="hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm('Generare nuova password SIP? La password attuale sarà invalidata.')) {
+                                resetPasswordMutation.mutate(ext.extension.id);
+                              }
+                            }}
+                            disabled={resetPasswordMutation.isPending}
+                            data-testid={`button-reset-password-${ext.extension.id}`}
+                            className="hover:bg-orange-50"
+                            title="Reset Password SIP"
+                          >
+                            <Key className="w-4 h-4 text-orange-600" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => syncExtensionMutation.mutate(ext.extension.id)}
+                            disabled={syncExtensionMutation.isPending}
+                            data-testid={`button-sync-extension-${ext.extension.id}`}
+                            className="hover:bg-blue-50"
+                            title="Sync con edgvoip"
+                          >
+                            <RefreshCw className="w-4 h-4 text-blue-600" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingExtension(ext.extension.id);
+                              setShowExtensionForm(true);
+                              extensionForm.reset({
+                                userId: ext.extension.userId,
+                                extension: ext.extension.extension,
+                                sipUsername: ext.extension.sipUsername,
+                                displayName: ext.extension.displayName || '',
+                                email: ext.extension.email || '',
+                                voicemailEnabled: ext.extension.voicemailEnabled,
+                                voicemailEmail: ext.extension.voicemailEmail || '',
+                                recordingEnabled: ext.extension.recordingEnabled,
+                                dndEnabled: ext.extension.dndEnabled,
+                                status: ext.extension.status,
+                              });
+                            }}
+                            data-testid={`button-edit-extension-${ext.extension.id}`}
+                            className="hover:bg-gray-100"
+                            title="Modifica extension"
+                          >
+                            <Pencil className="w-4 h-4 text-gray-600" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm('Sei sicuro di voler eliminare questa extension?')) {
+                                deleteExtensionMutation.mutate(ext.extension.id);
+                              }
+                            }}
+                            data-testid={`button-delete-extension-${ext.extension.id}`}
+                            className="hover:bg-red-50"
+                            title="Elimina extension"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -1352,6 +1453,140 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* SIP Credentials Dialog - Shows ONLY on creation/reset */}
+      <Dialog open={!!sipCredentials} onOpenChange={() => setSipCredentials(null)}>
+        <DialogContent className="bg-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Shield className="w-6 h-6 text-green-500" />
+              Credenziali SIP - Extension {sipCredentials?.extension}
+            </DialogTitle>
+            <DialogDescription>
+              <strong className="text-orange-600">⚠️ ATTENZIONE:</strong> La password SIP viene mostrata <strong>SOLO UNA VOLTA</strong>. 
+              Salvala in un luogo sicuro prima di chiudere questa finestra!
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Extension</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-sm font-mono bg-white px-3 py-2 rounded border flex-1">{sipCredentials?.extension}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sipCredentials?.extension || '');
+                        toast({ title: "Copiato!", description: "Extension copiata negli appunti" });
+                      }}
+                      data-testid="button-copy-extension"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Username SIP</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-sm font-mono bg-white px-3 py-2 rounded border flex-1">{sipCredentials?.sipUsername}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sipCredentials?.sipUsername || '');
+                        toast({ title: "Copiato!", description: "Username copiato negli appunti" });
+                      }}
+                      data-testid="button-copy-username"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="text-xs font-medium text-red-600 uppercase">🔑 Password SIP (Mostra SOLO ADESSO)</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-sm font-mono bg-red-50 text-red-700 px-3 py-2 rounded border border-red-300 flex-1 select-all">
+                      {sipCredentials?.sipPassword}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sipCredentials?.sipPassword || '');
+                        toast({ 
+                          title: "Password copiata!", 
+                          description: "Salvala subito in un luogo sicuro",
+                          variant: "default"
+                        });
+                      }}
+                      data-testid="button-copy-password"
+                      className="bg-red-100 hover:bg-red-200"
+                    >
+                      <Copy className="w-4 h-4 text-red-600" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">SIP Server</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-sm font-mono bg-white px-3 py-2 rounded border flex-1">{sipCredentials?.sipServer}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sipCredentials?.sipServer || '');
+                        toast({ title: "Copiato!", description: "Server copiato negli appunti" });
+                      }}
+                      data-testid="button-copy-server"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Porta SIP</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-sm font-mono bg-white px-3 py-2 rounded border flex-1">{sipCredentials?.sipPort}</code>
+                    {sipCredentials?.wsPort && (
+                      <span className="text-xs text-gray-500">WebSocket: {sipCredentials.wsPort}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Come usare queste credenziali
+              </h4>
+              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <li>Configura il tuo softphone con questi dati</li>
+                <li>Il softphone nella dashboard si registrerà automaticamente</li>
+                <li>La password è crittografata nel database (non recuperabile)</li>
+                <li>Usa "Reset Password" se la dimentichi</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => setSipCredentials(null)}
+              className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              data-testid="button-close-credentials"
+            >
+              Ho salvato le credenziali
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
