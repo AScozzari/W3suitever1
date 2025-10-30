@@ -1,0 +1,63 @@
+initialized (12-min interval)
+TenantShell.tsx:97  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/tenants/resolve?slug=staging 404 (Not Found)
+resolveTenant @ TenantShell.tsx:97
+(anonymous) @ TenantShell.tsx:174
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantShell.tsx:97  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/tenants/resolve?slug=staging 404 (Not Found)
+resolveTenant @ TenantShell.tsx:97
+(anonymous) @ TenantShell.tsx:174
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=9094e2fe:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=9094e2fe:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=9094e2fe:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+SettingsPage.tsx:680 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:683 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+SettingsPage.tsx:680 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:683 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/extensions/me 404 (Not Found)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=9094e2fe:1097
+run @ @tanstack_react-query.js?v=9094e2fe:795
+start @ @tanstack_react-query.js?v=9094e2fe:838
+fetch @ @tanstack_react-query.js?v=9094e2fe:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+2SettingsPage.tsx:712 📋 Suppliers will be
