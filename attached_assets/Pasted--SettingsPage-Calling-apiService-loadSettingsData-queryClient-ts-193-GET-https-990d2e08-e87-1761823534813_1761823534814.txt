@@ -1,0 +1,105 @@
+ SettingsPage: Calling apiService.loadSettingsData()...
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/extensions/me 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=9094e2fe:1097
+run @ @tanstack_react-query.js?v=9094e2fe:795
+start @ @tanstack_react-query.js?v=9094e2fe:838
+fetch @ @tanstack_react-query.js?v=9094e2fe:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18667
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+SettingsPage.tsx:670 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/extensions 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=9094e2fe:1097
+run @ @tanstack_react-query.js?v=9094e2fe:795
+start @ @tanstack_react-query.js?v=9094e2fe:838
+fetch @ @tanstack_react-query.js?v=9094e2fe:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+SettingsPage.tsx:712 📋 Suppliers will be loaded via TanStack Query automatically
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/connection-status 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=9094e2fe:1097
+run @ @tanstack_react-query.js?v=9094e2fe:795
+start @ @tanstack_react-query.js?v=9094e2fe:838
+fetch @ @tanstack_react-query.js?v=9094e2fe:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+SettingsPage.tsx:712 📋 Suppliers will be loaded via TanStack Query automatically
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/extensions 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=9094e2fe:1097
+run @ @tanstack_react-query.js?v=9094e2fe:795
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9094e2fe:799
+start @ @tanstack_react-query.js?v=9094e2fe:838
+fetch @ @tanstack_react-query.js?v=9094e2fe:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/connection-status 500 (Internal Server Error)
