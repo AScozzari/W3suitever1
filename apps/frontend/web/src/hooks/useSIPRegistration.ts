@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { UserAgent, Registerer, Inviter, Invitation, Session, SessionState } from 'sip.js';
+import { UserAgent, Registerer, Inviter, Invitation, Session, SessionState, RegistererState } from 'sip.js';
 import { useQuery } from '@tanstack/react-query';
 
 export interface SIPCredentials {
@@ -20,6 +20,16 @@ export interface SIPSessionInfo {
   remoteIdentity: string;
   state: SessionState;
   startTime?: Date;
+}
+
+interface CallData {
+  callId: string;
+  direction: 'inbound' | 'outbound';
+  fromUri: string;
+  toUri: string;
+  startTs: Date;
+  answerTs?: Date;
+  endTs?: Date;
 }
 
 export interface UseSIPRegistrationReturn {
@@ -47,6 +57,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
   const registererRef = useRef<Registerer | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const callDataRef = useRef<CallData | null>(null);
 
   // Fetch SIP credentials from backend
   const { data: credentialsResponse, isLoading, error } = useQuery<{ success: boolean; data: SIPCredentials }>({
@@ -56,6 +67,50 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
   });
 
   const credentials = credentialsResponse?.data || null;
+
+  // Create CDR after call ends
+  const createCDR = useCallback(async (callData: CallData, disposition: 'answered' | 'no_answer' | 'busy' | 'failed') => {
+    if (!credentials) return;
+
+    try {
+      const billsec = callData.answerTs && callData.endTs 
+        ? Math.floor((callData.endTs.getTime() - callData.answerTs.getTime()) / 1000)
+        : 0;
+
+      const cdrPayload = {
+        sipDomain: credentials.authRealm,
+        callId: callData.callId,
+        direction: callData.direction,
+        fromUri: callData.fromUri,
+        toUri: callData.toUri,
+        startTs: callData.startTs.toISOString(),
+        answerTs: callData.answerTs?.toISOString(),
+        endTs: callData.endTs?.toISOString(),
+        billsec,
+        disposition,
+        extNumber: credentials.extension,
+      };
+
+      console.log('📊 Creating CDR:', cdrPayload);
+
+      const response = await fetch('/api/voip/cdr/client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cdrPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create CDR');
+      }
+
+      const result = await response.json();
+      console.log('✅ CDR created:', result.data?.id);
+    } catch (err) {
+      console.error('❌ Failed to create CDR:', err);
+    }
+  }, [credentials]);
 
   // Initialize remote audio element
   useEffect(() => {
@@ -115,12 +170,12 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         registerer.stateChange.addListener((state) => {
           console.log('📡 Registration state:', state);
           
-          if (state === 'Registered') {
+          if (state === RegistererState.Registered) {
             setIsRegistered(true);
             setIsRegistering(false);
             setRegistrationError(null);
             console.log('✅ SIP Registered successfully');
-          } else if (state === 'Unregistered') {
+          } else if (state === RegistererState.Unregistered) {
             setIsRegistered(false);
             setIsRegistering(false);
           }
@@ -158,6 +213,24 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
   const setupSession = useCallback((session: Session, direction: 'inbound' | 'outbound') => {
     sessionRef.current = session;
 
+    // Initialize call tracking data
+    const fromUri = direction === 'outbound' 
+      ? `${credentials?.extension}@${credentials?.authRealm}`
+      : session.remoteIdentity.uri.toString();
+    const toUri = direction === 'outbound'
+      ? session.remoteIdentity.uri.toString()
+      : `${credentials?.extension}@${credentials?.authRealm}`;
+
+    callDataRef.current = {
+      callId: session.id,
+      direction,
+      fromUri,
+      toUri,
+      startTs: new Date(),
+    };
+
+    console.log('📊 Call tracking initialized:', callDataRef.current);
+
     // Track session state
     const updateSessionInfo = () => {
       setCurrentSession({
@@ -176,9 +249,27 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
       console.log('📞 Session state changed:', state);
       updateSessionInfo();
 
+      // Track answer time when call is established
+      if (state === SessionState.Established && callDataRef.current) {
+        callDataRef.current.answerTs = new Date();
+        console.log('📊 Call answered at:', callDataRef.current.answerTs);
+      }
+
+      // Create CDR when call ends
       if (state === SessionState.Terminated) {
+        if (callDataRef.current) {
+          callDataRef.current.endTs = new Date();
+          
+          // Determine disposition based on whether call was answered
+          const disposition = callDataRef.current.answerTs ? 'answered' : 'no_answer';
+          
+          console.log('📊 Call ended, creating CDR...');
+          createCDR(callDataRef.current, disposition);
+        }
+        
         sessionRef.current = null;
         setCurrentSession(null);
+        callDataRef.current = null;
       }
     });
 
@@ -210,7 +301,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         }
       });
     }
-  }, []);
+  }, [createCDR, credentials]);
 
   // Make outbound call
   const makeCall = useCallback(async (phoneNumber: string) => {

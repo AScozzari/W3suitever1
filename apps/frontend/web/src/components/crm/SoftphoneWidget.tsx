@@ -468,7 +468,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                   variant="outline"
                   size="icon"
                   className={`rounded-full ${isMuted ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
-                  onClick={() => setIsMuted(!isMuted)}
+                  onClick={toggleMute}
                   data-testid="button-mute"
                   title={isMuted ? 'Unmute' : 'Mute'}
                 >

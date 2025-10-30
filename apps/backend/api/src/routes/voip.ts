@@ -1450,6 +1450,48 @@ router.post('/cdr', async (req, res) => {
   }
 });
 
+// POST /api/voip/cdr/client - Create CDR from authenticated frontend client (WebRTC calls)
+router.post('/cdr/client', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Validate and create CDR
+    const validated = insertVoipCdrSchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    const [newCdr] = await db.insert(voipCdrs)
+      .values(validated)
+      .returning();
+
+    logger.info('VoIP CDR created from WebRTC client', { 
+      cdrId: newCdr.id, 
+      callId: newCdr.callId, 
+      direction: newCdr.direction,
+      disposition: newCdr.disposition,
+      billsec: newCdr.billsec,
+      tenantId 
+    });
+
+    return res.status(201).json({ 
+      success: true, 
+      data: { id: newCdr.id } 
+    } as ApiSuccessResponse<{ id: string }>);
+  } catch (error) {
+    logger.error('Error creating VoIP CDR from client', { error, body: req.body });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to create VoIP CDR' } as ApiErrorResponse);
+  }
+});
+
 // ==================== VOIP PROVISION/SYNC ====================
 
 // POST /api/voip/provision/sync - Sync VoIP configuration with PBX
