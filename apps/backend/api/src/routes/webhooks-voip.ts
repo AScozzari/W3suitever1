@@ -286,7 +286,6 @@ router.post('/extension', verifyEdgvoipSignature, async (req, res) => {
             callForwardNumber: extensionData.callForwardNumber,
             maxConcurrentCalls: extensionData.maxConcurrentCalls || 2,
             status: extensionData.status || 'active',
-            syncSource: 'edgvoip',
             lastSyncAt: new Date()
           })
           .onConflictDoUpdate({
