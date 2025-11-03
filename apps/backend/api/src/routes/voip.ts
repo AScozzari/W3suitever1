@@ -78,7 +78,7 @@ const logActivity = async (
 
 // ==================== VOIP TRUNKS ====================
 
-// GET /api/voip/trunks - List all trunks for tenant
+// GET /api/voip/trunks - List all trunks for tenant with store info and extension count
 router.get('/trunks', rbacMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantId(req);
@@ -95,15 +95,38 @@ router.get('/trunks', rbacMiddleware, async (req, res) => {
       conditions.push(eq(voipTrunks.storeId, storeId as string));
     }
 
-    const trunks = await db.select()
+    // Get trunks with store names
+    const trunksWithStores = await db
+      .select({
+        trunk: voipTrunks,
+        storeName: stores.nome // Italian column name
+      })
       .from(voipTrunks)
+      .leftJoin(stores, eq(voipTrunks.storeId, stores.id))
       .where(and(...conditions))
       .orderBy(desc(voipTrunks.createdAt));
 
+    // Get total extensions count for the tenant (extensions are tenant-scoped, not store-scoped)
+    const [extensionsResult] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(voipExtensions)
+      .where(eq(voipExtensions.tenantId, tenantId));
+    
+    const totalExtensions = Number(extensionsResult?.count || 0);
+
+    // Map trunks with store names and extensions count
+    const enrichedTrunks = trunksWithStores.map(({ trunk, storeName }) => ({
+      trunk: {
+        ...trunk,
+        extensionsCount: totalExtensions // Show total tenant extensions
+      },
+      storeName
+    }));
+
     return res.json({ 
       success: true, 
-      data: trunks 
-    } as ApiSuccessResponse<typeof trunks>);
+      data: enrichedTrunks 
+    } as ApiSuccessResponse<typeof enrichedTrunks>);
   } catch (error) {
     logger.error('Error fetching VoIP trunks', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to fetch VoIP trunks' } as ApiErrorResponse);
