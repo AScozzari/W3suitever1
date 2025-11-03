@@ -117,7 +117,13 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   const extensionForm = useForm<ExtensionFormValues>({
     resolver: zodResolver(extensionFormSchema),
     defaultValues: {
+      userId: '',
+      extension: '',
+      sipUsername: '',
+      displayName: '',
+      email: '',
       voicemailEnabled: true,
+      voicemailEmail: '',
       recordingEnabled: false,
       dndEnabled: false,
       status: 'active',
