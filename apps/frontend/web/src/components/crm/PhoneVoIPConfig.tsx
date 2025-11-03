@@ -30,7 +30,8 @@ import {
   RefreshCw,
   Key,
   Shield,
-  Pencil
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 interface PhoneVoIPConfigProps {
