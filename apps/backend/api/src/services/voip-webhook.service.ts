@@ -9,6 +9,7 @@ import { db, setTenantContext } from '../core/db';
 import { logger } from '../core/logger';
 import { eq, and } from 'drizzle-orm';
 import { voipTrunks, tenants, stores, voipActivityLog } from '../db/schema/w3suite';
+import { nanoid } from 'nanoid';
 
 export interface EdgvoipTrunkPayload {
   edgvoipTrunkId: string;
@@ -150,6 +151,7 @@ export const upsertTrunkFromWebhook = async (payload: EdgvoipTrunkPayload): Prom
       aiAgentRef: payload.aiAgentRef || null,
       aiTimePolicy: payload.aiTimePolicy || null,
       aiFailoverExtension: payload.aiFailoverExtension || null,
+      webhookToken: existing?.webhookToken || nanoid(32), // Generate token if new trunk, keep existing if update
       updatedAt: new Date()
     };
 
