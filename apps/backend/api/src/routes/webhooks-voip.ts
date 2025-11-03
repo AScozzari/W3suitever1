@@ -11,6 +11,7 @@
 
 import express from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { db, setTenantContext } from '../core/db';
 import { logger, correlationMiddleware } from '../core/logger';
 import { verifyEdgvoipSignature } from '../middleware/hmac';
@@ -44,7 +45,7 @@ const extensionWebhookPayloadSchema = z.object({
   tenantId: z.string().uuid(),
   extension: z.object({
     edgvoipExtensionId: z.string(),
-    userId: z.string().uuid(),
+    userId: z.string().uuid().optional(), // ✅ Optional - assigned later in W3 Suite UI
     extension: z.string(),
     sipUsername: z.string(),
     displayName: z.string().optional(),
@@ -256,14 +257,21 @@ router.post('/extension', verifyEdgvoipSignature, async (req, res) => {
         // Set tenant context for RLS
         await setTenantContext(db, tenantId);
 
+        // WORKAROUND: Use tenantId as domainId placeholder until voip_domains table is created
+        // In the future, this should reference a proper sip_domains table
+        const domainId = tenantId; // Temporary: reuse tenantId as domainId
+
         // Upsert extension (inline implementation for quick testing)
+        // userId is optional - can be assigned later in W3 Suite UI
         const [upsertedExt] = await db.insert(voipExtensions)
           .values({
             tenantId,
+            domainId, // ✅ Temporary workaround: use tenantId as domainId
             edgvoipExtensionId: extensionData.edgvoipExtensionId,
-            userId: extensionData.userId,
+            userId: extensionData.userId || null, // ✅ Optional - assigned later
             extension: extensionData.extension,
             sipUsername: extensionData.sipUsername,
+            sipPassword: 'temp_' + crypto.randomBytes(16).toString('hex'), // Temporary password (will be synced from edgvoip)
             displayName: extensionData.displayName || extensionData.sipUsername,
             email: extensionData.email,
             sipServer: extensionData.sipServer || 'sip.edgvoip.com',
@@ -284,7 +292,8 @@ router.post('/extension', verifyEdgvoipSignature, async (req, res) => {
           .onConflictDoUpdate({
             target: [voipExtensions.tenantId, voipExtensions.edgvoipExtensionId],
             set: {
-              userId: extensionData.userId,
+              // Only update userId if provided in webhook (don't overwrite existing assignment)
+              ...(extensionData.userId && { userId: extensionData.userId }),
               extension: extensionData.extension,
               sipUsername: extensionData.sipUsername,
               displayName: extensionData.displayName || extensionData.sipUsername,

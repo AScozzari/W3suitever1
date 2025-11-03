@@ -5689,6 +5689,7 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   uniqueIndex("voip_extensions_domain_extension_unique").on(table.domainId, table.extension), // ACTUAL DB: unique extension per domain
   uniqueIndex("voip_extensions_domain_sip_username_unique").on(table.domainId, table.sipUsername), // ACTUAL DB: unique sip_username per domain
   uniqueIndex("voip_extensions_user_unique").on(table.userId), // ACTUAL DB: conditional unique on user_id
+  uniqueIndex("voip_extensions_edgvoip_id_unique").on(table.tenantId, table.edgvoipExtensionId), // For webhook upsert on (tenant_id, edgvoip_extension_id)
 ]);
 
 export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit({ 
