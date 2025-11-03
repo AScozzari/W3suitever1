@@ -907,15 +907,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { sessionAbsoluteTimeoutMiddleware } = await import('../middleware/session-timeout.js');
   app.use(sessionAbsoluteTimeoutMiddleware);
 
-  // Import raw body middleware for webhook signature validation
-  const { rawBodyMiddleware } = await import('../middleware/raw-body.js');
-  
-  // Apply raw body middleware ONLY for webhook routes (before JSON parsing)
-  // This preserves raw body for HMAC signature validation
-  app.use('/api/webhooks', rawBodyMiddleware, express.raw({ type: '*/*' }));
-  
-  // Apply JSON body parser for all other routes
-  app.use(express.json({ limit: '10mb' }));
+  // Apply JSON body parser with raw body capture for webhook signature validation
+  app.use(express.json({ 
+    limit: '10mb',
+    verify: (req: any, res, buf, encoding) => {
+      // Capture raw body ONLY for webhook routes for HMAC signature validation
+      if (req.originalUrl.startsWith('/api/webhooks')) {
+        req.rawBody = buf;
+      }
+    }
+  }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // SECURITY: Critical production configuration validation
@@ -1058,6 +1059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // API-specific exclusions (path relative to /api mount)
         apiPath.startsWith('/auth/') || 
         apiPath.startsWith('/public/') ||
+        apiPath.startsWith('/webhooks/') || // Webhooks are authenticated via HMAC signature, not session
         apiPath === '/health' ||
         apiPath === '/tenants/resolve' ||
         apiPath === '/utm-sources' || // UTM parameters are public reference data
@@ -1235,11 +1237,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== WEBHOOK ROUTES ====================
-  // Public webhook receiver + authenticated management endpoints
-  app.use('/api/webhooks', webhookRoutes);
+  // CRITICAL: Specific webhook routes MUST be registered BEFORE generic routes
+  // Otherwise, generic /:tenantId/:source pattern will match everything
+  
+  // VoIP Webhooks (edgvoip integration) - MUST be first
+  app.use('/api/webhooks/voip', voipWebhookRoutes);
   
   // MCP-specific webhook receivers (Google, AWS, Meta, Microsoft, Stripe, GTM)
   app.use('/api/webhooks/mcp', mcpWebhookRoutes);
+  
+  // Generic webhook receiver (LAST) - catches /:tenantId/:source pattern
+  app.use('/api/webhooks', webhookRoutes);
 
   // ==================== WORKFLOW MANAGEMENT ROUTES ====================
   // Register workflow management API routes with authentication and tenant middleware
@@ -1292,9 +1300,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== VOIP SYSTEM ROUTES ====================
   // VoIP telephony management API routes (domains, trunks, extensions, devices, CDRs)
   app.use('/api/voip', voipRoutes);
-  
-  // VoIP Webhooks (edgvoip integration)
-  app.use('/api/webhooks/voip', voipWebhookRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
