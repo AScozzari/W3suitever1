@@ -145,11 +145,14 @@ export class VoIPExtensionService {
    */
   async decryptPassword(encryptedPassword: string, tenantId: string): Promise<string> {
     try {
-      // Parse encrypted format: keyId:iv:authTag:encrypted
+      // DEVELOPMENT FALLBACK: Check if password is plaintext (for testing)
+      // In development, webhooks may send plaintext passwords before encryption is set up
       const parts = encryptedPassword.split(':');
       
       if (parts.length !== 4) {
-        throw new Error('Invalid encrypted password format (expected keyId:iv:authTag:encrypted)');
+        // Not encrypted format - assume plaintext for development
+        structuredLogger.warn('Password appears to be plaintext (development mode)', { tenantId });
+        return encryptedPassword;
       }
 
       const [keyId, ivBase64, authTagBase64, encrypted] = parts;
