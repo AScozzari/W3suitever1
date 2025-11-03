@@ -1,0 +1,159 @@
+ER] 📍 Route matched with params: {0: 'staging', 1: 'settings', tenant: 'staging', *: 'settings'}
+App.tsx:141 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:142 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+SettingsPage.tsx:680 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:683 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+SettingsPage.tsx:680 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:683 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+SettingsPage.tsx:670 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+SettingsPage.tsx:712 📋 Suppliers will be loaded via TanStack Query automatically
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: undefined
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+SettingsPage.tsx:712 📋 Suppliers will be loaded via TanStack Query automatically
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
+PhoneVoIPConfig.tsx:112 [VoIP] Users response: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+PhoneVoIPConfig.tsx:113 [VoIP] Users array: []
+PhoneVoIPConfig.tsx:114 [VoIP] Users count: 0
