@@ -5603,9 +5603,6 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   syncSource: varchar("sync_source", { length: 20 }).default('edgvoip').notNull(), // Always 'edgvoip'
   lastSyncAt: timestamp("last_sync_at"), // Last webhook sync timestamp
   
-  // Webhook integration token (for simplified webhook URLs)
-  webhookToken: varchar("webhook_token", { length: 64 }).unique(), // Unique token for webhook URL: /api/webhooks/voip/{token}/trunk
-  
   // Trunk configuration (synced from edgvoip)
   name: varchar("name", { length: 255 }).notNull(),
   provider: varchar("provider", { length: 100 }), // Telecom Italia, Vodafone, etc.
