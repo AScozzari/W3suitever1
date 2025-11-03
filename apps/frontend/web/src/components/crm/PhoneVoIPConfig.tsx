@@ -87,12 +87,16 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   const { data: trunksResponse, isLoading: trunksLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/trunks'],
     enabled: visible,
+    refetchOnMount: true,
+    staleTime: 0,
   });
   const trunks = trunksResponse?.data || [];
 
   const { data: extensionsResponse, isLoading: extensionsLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/extensions'],
     enabled: visible,
+    refetchOnMount: true,
+    staleTime: 0,
   });
   const extensions = extensionsResponse?.data || [];
 
