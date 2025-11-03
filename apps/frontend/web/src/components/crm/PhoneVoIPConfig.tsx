@@ -95,9 +95,17 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   // Force refetch when modal opens
   useEffect(() => {
     if (visible) {
+      console.log('[VoIP Debug] Modal opened, refetching trunks...');
       refetchTrunks();
     }
   }, [visible, refetchTrunks]);
+
+  // Debug log for trunks data
+  useEffect(() => {
+    console.log('[VoIP Debug] Trunks response:', trunksResponse);
+    console.log('[VoIP Debug] Trunks array:', trunks);
+    console.log('[VoIP Debug] Trunks length:', trunks.length);
+  }, [trunksResponse, trunks]);
 
   const { data: extensionsResponse, isLoading: extensionsLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/extensions'],
