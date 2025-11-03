@@ -792,6 +792,23 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                       )}
                     />
 
+                    <FormField
+                      control={extensionForm.control}
+                      name="sipServer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">SIP Server</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ''} placeholder="es: demo.edgvoip.it" data-testid="input-extension-sip-server" className="bg-white" />
+                          </FormControl>
+                          <FormDescription className="text-xs text-gray-500">
+                            Server SIP per la registrazione (default: sip.edgvoip.com)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     {/* Password SIP auto-generated info */}
                     <div className="col-span-2">
                       <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
