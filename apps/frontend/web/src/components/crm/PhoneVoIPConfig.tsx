@@ -658,7 +658,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                             <SelectContent>
                               {users.map((user: any) => (
                                 <SelectItem key={user.id} value={user.id}>
-                                  {user.name} ({user.email})
+                                  {user.firstName} {user.lastName} ({user.email})
                                 </SelectItem>
                               ))}
                             </SelectContent>
