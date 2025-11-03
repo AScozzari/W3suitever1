@@ -11,17 +11,16 @@
 
 import express from 'express';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { db, setTenantContext } from '../core/db';
 import { logger, correlationMiddleware } from '../core/logger';
 import { verifyEdgvoipSignature } from '../middleware/hmac';
 import { upsertTrunkFromWebhook, deleteTrunkFromWebhook } from '../services/voip-webhook.service';
-import { voipCdrs, insertVoipCdrSchema } from '../db/schema/w3suite';
+import { voipCdrs, voipTrunks, insertVoipCdrSchema } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 
-// Webhook payload validation schemas
+// Webhook payload validation schemas (token-based - no tenantId/storeId needed)
 const trunkWebhookPayloadSchema = z.object({
-  tenantId: z.string().uuid(),
-  storeId: z.string().uuid(),
   trunk: z.object({
     edgvoipTrunkId: z.string(),
     name: z.string(),
@@ -67,22 +66,41 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 /**
- * POST /api/webhooks/voip/trunk
+ * POST /api/webhooks/voip/:token/trunk
  * 
- * Receive trunk configuration updates from edgvoip
+ * Receive trunk configuration updates from edgvoip using webhook token
  * Events: trunk.created, trunk.updated, trunk.deleted
+ * 
+ * The token in URL identifies the trunk (tenant + store) without needing to pass UUIDs in payload
  */
-router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
+router.post('/:token/trunk', verifyEdgvoipSignature, async (req, res) => {
   try {
+    const { token } = req.params;
     const event = req.headers['x-edgvoip-event'] as string;
     const idempotencyKey = req.headers['x-idempotency-key'] as string;
+
+    // Lookup trunk by webhook token to get tenantId and storeId
+    const [trunk] = await db.select()
+      .from(voipTrunks)
+      .where(eq(voipTrunks.webhookToken, token))
+      .limit(1);
+
+    if (!trunk) {
+      logger.error('Invalid webhook token', { token, event });
+      return res.status(404).json({
+        error: 'Invalid webhook token - trunk not found'
+      } as ApiErrorResponse);
+    }
+
+    const { tenantId, storeId } = trunk;
 
     // Idempotency check
     if (idempotencyKey && processedWebhooks.has(idempotencyKey)) {
       logger.info('Duplicate webhook ignored (idempotency)', {
         event,
         idempotencyKey,
-        path: req.path
+        path: req.path,
+        tenantId
       });
       return res.status(200).json({
         success: true,
@@ -96,7 +114,8 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
       logger.error('Invalid trunk webhook payload schema', { 
         event, 
         errors: validated.error.errors,
-        body: req.body 
+        body: req.body,
+        tenantId
       });
       return res.status(400).json({
         error: 'Invalid webhook payload',
@@ -104,7 +123,7 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const { tenantId, storeId, trunk } = validated.data;
+    const { trunk: trunkData } = validated.data;
 
     let result;
 
@@ -112,7 +131,7 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
       case 'trunk.created':
       case 'trunk.updated':
         result = await upsertTrunkFromWebhook({
-          ...trunk,
+          ...trunkData,
           tenantId,
           storeId
         });
@@ -131,8 +150,9 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
         logger.info('Trunk webhook processed successfully', {
           event,
           trunkId: result.trunkId,
-          edgvoipTrunkId: trunk.edgvoipTrunkId,
-          tenantId
+          edgvoipTrunkId: trunkData.edgvoipTrunkId,
+          tenantId,
+          webhookToken: token
         });
 
         return res.status(200).json({
@@ -144,7 +164,7 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
         } as ApiSuccessResponse);
 
       case 'trunk.deleted':
-        result = await deleteTrunkFromWebhook(trunk.edgvoipTrunkId, tenantId);
+        result = await deleteTrunkFromWebhook(trunkData.edgvoipTrunkId, tenantId);
 
         if (!result.success) {
           return res.status(400).json({
@@ -159,8 +179,9 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
 
         logger.info('Trunk deletion webhook processed successfully', {
           event,
-          edgvoipTrunkId: trunk.edgvoipTrunkId,
-          tenantId
+          edgvoipTrunkId: trunkData.edgvoipTrunkId,
+          tenantId,
+          webhookToken: token
         });
 
         return res.status(200).json({
@@ -169,7 +190,7 @@ router.post('/trunk', verifyEdgvoipSignature, async (req, res) => {
         } as ApiSuccessResponse);
 
       default:
-        logger.error('Unknown trunk webhook event', { event, body: req.body });
+        logger.error('Unknown trunk webhook event', { event, body: req.body, tenantId });
         return res.status(400).json({
           error: `Unknown event type: ${event}`
         } as ApiErrorResponse);
