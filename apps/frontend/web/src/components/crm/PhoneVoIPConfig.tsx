@@ -29,7 +29,8 @@ import {
   Copy,
   RefreshCw,
   Key,
-  Shield
+  Shield,
+  Pencil
 } from 'lucide-react';
 
 interface PhoneVoIPConfigProps {
