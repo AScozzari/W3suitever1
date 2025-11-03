@@ -102,16 +102,10 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   });
   const stores = storesResponse?.data || [];
 
-  const { data: usersResponse } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: users = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: visible,
   });
-  const users = usersResponse?.data || [];
-  
-  // Debug logging
-  console.log('[VoIP] Users response:', usersResponse);
-  console.log('[VoIP] Users array:', users);
-  console.log('[VoIP] Users count:', users.length);
 
   const { data: connectionStatus, isLoading: connectionLoading } = useQuery<any>({
     queryKey: ['/api/voip/connection-status'],
