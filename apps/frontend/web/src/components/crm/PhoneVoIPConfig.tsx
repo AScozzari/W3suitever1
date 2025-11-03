@@ -519,10 +519,28 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 I trunks sono gestiti centralmente da edgvoip PBX. Modifiche solo via webhook.
               </p>
             </div>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Read-Only
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await queryClient.invalidateQueries({ queryKey: ['/api/voip/trunks'] });
+                  toast({
+                    title: "✅ Trunks aggiornati",
+                    description: "Dati ricaricati dal database. I trunks vengono sincronizzati automaticamente da edgvoip via webhook.",
+                  });
+                }}
+                disabled={trunksLoading}
+                data-testid="button-refresh-trunks"
+                className="hover:bg-gray-50"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${trunksLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                Read-Only
+              </Badge>
+            </div>
           </div>
 
           {trunksLoading ? (
