@@ -612,11 +612,92 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 </Card>
               ))}</div>
               
-              {/* Desktop view uses table from dashboard section */}
-              <div className="hidden md:block">
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  Vedi la tabella sopra per la vista completa dei trunks
-                </p>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 hover:bg-gray-50">
+                      <TableHead className="font-semibold text-gray-700">Store</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Trunk Name</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Provider</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Host:Port</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Status</TableHead>
+                      <TableHead className="font-semibold text-gray-700">AI Agent</TableHead>
+                      <TableHead className="font-semibold text-gray-700 text-center">Extensions</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Last Sync</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trunks.map((trunk: any) => (
+                      <TableRow 
+                        key={trunk.trunk.id} 
+                        className="hover:bg-gray-50/50 transition-colors border-gray-200"
+                        data-testid={`table-row-trunk-${trunk.trunk.id}`}
+                      >
+                        <TableCell className="font-medium text-gray-800">
+                          {trunk.storeName || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-gray-700 font-medium">
+                          {trunk.trunk.name}
+                        </TableCell>
+                        <TableCell className="text-gray-600">
+                          {trunk.trunk.provider || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-gray-600 font-mono text-sm">
+                          {trunk.trunk.host}:{trunk.trunk.port}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} 
+                            className={
+                              trunk.trunk.status === 'active' 
+                                ? 'bg-green-100 text-green-700 border-green-300' 
+                                : 'bg-red-100 text-red-700 border-red-300'
+                            }
+                          >
+                            {trunk.trunk.status === 'active' ? (
+                              <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
+                            ) : (
+                              <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="secondary"
+                            className={
+                              trunk.trunk.aiAgentEnabled 
+                                ? 'bg-green-100 text-green-700 border-green-300' 
+                                : 'bg-gray-100 text-gray-600 border-gray-300'
+                            }
+                          >
+                            {trunk.trunk.aiAgentEnabled ? (
+                              <><CheckCircle2 className="w-3 h-3 mr-1" /> Enabled</>
+                            ) : (
+                              <><XCircle className="w-3 h-3 mr-1" /> Disabled</>
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center text-gray-700 font-medium">
+                          {trunk.trunk.extensionsCount || 0}
+                        </TableCell>
+                        <TableCell>
+                          {trunk.trunk.lastSyncAt && (
+                            <p className="text-xs text-gray-500">
+                              {new Date(trunk.trunk.lastSyncAt).toLocaleDateString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </>
           )}
