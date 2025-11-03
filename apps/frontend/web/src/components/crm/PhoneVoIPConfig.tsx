@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -84,13 +84,20 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     wsPort?: number;
   } | null>(null);
 
-  const { data: trunksResponse, isLoading: trunksLoading } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: trunksResponse, isLoading: trunksLoading, refetch: refetchTrunks } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/trunks'],
     enabled: visible,
     refetchOnMount: true,
     staleTime: 0,
   });
   const trunks = trunksResponse?.data || [];
+
+  // Force refetch when modal opens
+  useEffect(() => {
+    if (visible) {
+      refetchTrunks();
+    }
+  }, [visible, refetchTrunks]);
 
   const { data: extensionsResponse, isLoading: extensionsLoading } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/voip/extensions'],
