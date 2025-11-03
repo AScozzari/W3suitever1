@@ -1,0 +1,77 @@
+Piano di Integrazione: W3 Suite ↔ edgvoip PBX
+Contesto e obiettivi
+Integrare W3 Suite (master per tenants, stores, domains, extensions) con edgvoip PBX (master per trunks, routing, CDR, AI Agent).
+Requisiti chiave: provisioning estensioni, sync trunk via webhook, ingestione CDR, softphone WebRTC, routing AI con policy orarie, sicurezza HMAC, osservabilità.
+Assunzioni confermate
+FreeSWITCH provisioning via DB centralizzato PostgreSQL (mod_odbc/mod_pgsql style, modello FusionPBX-like).
+Integration API: Node.js (Fastify) + PostgreSQL + Drizzle ORM + Zod.
+DB condiviso (un cluster): schema w3suite (W3) e schema edgvoip (edgvoip).
+Architettura
+Hub-and-spoke: W3 (source of truth per domains/extensions) → edgvoip (runtime telephony). Sincronizzazione via API + DB condiviso.
+Audio/media: browser ↔ edgvoip ↔ carrier (no hairpin su W3).
+Signaling WebRTC: SIP.js via WSS verso edgvoip.
+Modello Dati (schema edgvoip)
+Tabelle principali (DDL indicativo):
+edgvoip.sip_domains(id uuid PK, tenant_id uuid, realm text unique, w3_domain_id uuid, created_at timestamptz)
+edgvoip.sip_extensions(id uuid PK, tenant_id uuid, domain_id uuid FK → sip_domains, extension text, password_hash text, w3_extension_id uuid, status text default 'active', created_at timestamptz)
+edgvoip.sip_trunks(id uuid PK, tenant_id uuid, store_id uuid, name text, provider text, host text, port int, protocol text, max_channels int, status text, did_range text, ai_agent_ref text, ai_time_policy jsonb, created_at timestamptz)
+edgvoip.cdr(...) (strutturata per ingestion/reporting; indicare campi standard: call_id, tenant_id, store_id, from, to, direction, times, billsec, disposition, recording_url, raw jsonb)
+Indici: per multi-tenant e lookup runtime (tenant_id, domain_id, extension, realm).
+FreeSWITCH integrazione
+Config ODBC/PG: puntare al DB centralizzato; mapping directory/dialplan a viste/query su edgvoip.
+Directory lookup: auth DIGEST su sip_extensions via realm/username, verifica status.
+Codec e policy: leggere allowedCodecs/maxConcurrentCalls da sip_extensions o mapping dialplan.
+WSS abilitato (porta TLS 8443), SRTP enforced.
+Integration API (Fastify)
+Base path: /api/v1/integration.
+Sicurezza:
+Header richiesti: Authorization: Bearer <token>, X-Signature, X-Timestamp (skew ±300s).
+Firma HMAC-SHA256 su timestamp + method + path + body con secret per-tenant.
+Idempotency-Key opzionale per write (header Idempotency-Key).
+Validazione: Zod schemas su request/response.
+Endpoint: Health
+GET /health
+Response: { status, lastSyncW3, domainsActive, extensionsRegistered, sipCoreStatus }
+Endpoint: Extensions
+POST /extensions
+Body: { tenantId, domainId, domainName, sipRealm, extension, sipUsername, sipPassword, displayName, transport, allowedCodecs, maxConcurrentCalls }
+Azioni: upsert sip_domains (by realm), insert sip_extensions (hash password con Argon2id), coerzione codec/policy, audit log.
+Response: { success, edgvoipExtensionId, status: 'provisioned', wsEndpoint }.
+PATCH /extensions/:id
+Body parziale: { displayName?, status?, allowedCodecs?, maxConcurrentCalls? }
+Azioni: update atomico, invalidare registrazioni se status cambia.
+DELETE /extensions/:id
+Soft delete o status='deleted', impedire auth futura.
+Webhook client (edgvoip → W3)
+Trunk Sync
+Eventi: trunk.created|updated|deleted.
+POST https://w3suite.../api/webhooks/voip/trunk con X-edgvoip-Signature, payload con edgvoipTrunkId, campi trunk, aiTimePolicy JSON (HH:mm, timezone del tenant), aiAgentRef, aiFailoverExtension.
+Retry con backoff esponenziale, X-Idempotency-Key costante per evento.
+CDR Delivery
+POST .../voip/cdr con payload standardizzato e recordingUrl.
+Buffer locale e retry in caso di 5xx/timeouts.
+AI Voice Agent Routing
+Policy per trunk: se ai_agent_enabled true e within ai_time_policy, instradare verso Voice Gateway W3; altrimenti failover su ai_failover_extension.
+Endpoint W3 Voice Gateway (da definire): supporto SIP/HTTP bridge → OpenAI Realtime.
+Fallbacks: timeout gateway, errore 5xx o latenza > soglia → failover automatico.
+Osservabilità e operatività
+Logging strutturato (pino) con correlation id, audit degli eventi.
+Metriche Prometheus: esito provisioning, webhook latency/success, CDR throughput, registrazioni correnti.
+Dashboard salute e allarmi.
+Idempotenza e transazioni
+Scritture DB in transazione.
+Chiavi idempotenza per POST; upsert su domini/estensioni; webhook receiver W3 idempotente.
+Sicurezza
+HMAC mandatory, TLS obbligatorio (HTTPS/WSS), SRTP on media.
+Secrets per-tenant in tabella edgvoip.integration_secrets(tenant_id, hmac_secret, bearer_token, rotated_at) con rotation support.
+Rollout
+Dev: implementazione e test con mock W3.
+Staging: tenant pilota, carico 1k estensioni, test registrazioni e chiamate.
+Prod: gradual ramp-up, osservabilità attiva, piani di rollback.
+Deliverables principali
+Codice Integration API Fastify con Zod/Drizzle.
+DDL/Drizzle schema edgvoip e migrazioni.
+Config FreeSWITCH ODBC e viste/queries.
+Webhook client per trunk e CDR.
+Documentazione OpenAPI/Swagger.
+Runbook SRE e dashboard.
