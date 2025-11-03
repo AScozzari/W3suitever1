@@ -107,6 +107,11 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     enabled: visible,
   });
   const users = usersResponse?.data || [];
+  
+  // Debug logging
+  console.log('[VoIP] Users response:', usersResponse);
+  console.log('[VoIP] Users array:', users);
+  console.log('[VoIP] Users count:', users.length);
 
   const { data: connectionStatus, isLoading: connectionLoading } = useQuery<any>({
     queryKey: ['/api/voip/connection-status'],
