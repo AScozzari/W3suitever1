@@ -84,42 +84,31 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     wsPort?: number;
   } | null>(null);
 
-  const { data: trunksResponse, isLoading: trunksLoading, refetch: refetchTrunks } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: trunks = [], isLoading: trunksLoading, refetch: refetchTrunks } = useQuery<any[]>({
     queryKey: ['/api/voip/trunks'],
     enabled: visible,
     refetchOnMount: true,
     staleTime: 0,
   });
-  const trunks = trunksResponse?.data || [];
 
   // Force refetch when modal opens
   useEffect(() => {
     if (visible) {
-      console.log('[VoIP Debug] Modal opened, refetching trunks...');
       refetchTrunks();
     }
   }, [visible, refetchTrunks]);
 
-  // Debug log for trunks data
-  useEffect(() => {
-    console.log('[VoIP Debug] Trunks response:', trunksResponse);
-    console.log('[VoIP Debug] Trunks array:', trunks);
-    console.log('[VoIP Debug] Trunks length:', trunks.length);
-  }, [trunksResponse, trunks]);
-
-  const { data: extensionsResponse, isLoading: extensionsLoading } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: extensions = [], isLoading: extensionsLoading } = useQuery<any[]>({
     queryKey: ['/api/voip/extensions'],
     enabled: visible,
     refetchOnMount: true,
     staleTime: 0,
   });
-  const extensions = extensionsResponse?.data || [];
 
-  const { data: storesResponse } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: stores = [] } = useQuery<any[]>({
     queryKey: ['/api/stores'],
     enabled: visible,
   });
-  const stores = storesResponse?.data || [];
 
   const { data: users = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
