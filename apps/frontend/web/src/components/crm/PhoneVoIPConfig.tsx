@@ -20,8 +20,6 @@ import { useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { 
   Phone, 
   Plus,
-  Pencil,
-  Trash2,
   Server,
   User,
   CheckCircle2,
@@ -38,31 +36,6 @@ interface PhoneVoIPConfigProps {
   visible: boolean;
   onClose: () => void;
 }
-
-const trunkFormSchema = z.object({
-  name: z.string().min(1, "Nome trunk obbligatorio").max(255),
-  storeId: z.string().uuid("Seleziona un negozio valido"),
-  provider: z.string().optional(),
-  host: z.string().min(1, "Host SIP obbligatorio"),
-  port: z.coerce.number().int().min(1).max(65535).default(5060),
-  protocol: z.enum(['udp', 'tcp', 'tls', 'wss']).default('udp'),
-  username: z.string().optional(),
-  password: z.string().optional(),
-  authUsername: z.string().optional(),
-  fromUser: z.string().optional(),
-  fromDomain: z.string().optional(),
-  codec: z.string().default('PCMU,PCMA,opus'),
-  maxChannels: z.coerce.number().int().min(1).max(100).default(10),
-  status: z.enum(['active', 'inactive', 'error']).default('active'),
-  recordingEnabled: z.boolean().default(false),
-  // AI Voice Agent Configuration
-  aiAgentEnabled: z.boolean().default(false),
-  aiAgentRef: z.string().optional(),
-  aiTimePolicy: z.any().optional(), // JSON object for business hours
-  aiFailoverExtension: z.string().optional(),
-});
-
-type TrunkFormValues = z.infer<typeof trunkFormSchema>;
 
 const extensionFormSchema = z.object({
   userId: z.string().min(1, "Seleziona un utente"),
@@ -98,10 +71,8 @@ type ExtensionFormValues = z.infer<typeof extensionFormSchema>;
 export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   const { toast } = useToast();
   const tenantId = useRequiredTenantId();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'trunks' | 'dids' | 'extensions'>('dashboard');
-  const [editingTrunk, setEditingTrunk] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'trunks' | 'extensions'>('dashboard');
   const [editingExtension, setEditingExtension] = useState<string | null>(null);
-  const [showTrunkForm, setShowTrunkForm] = useState(false);
   const [showExtensionForm, setShowExtensionForm] = useState(false);
   const [showAdvancedSIP, setShowAdvancedSIP] = useState(false);
   const [sipCredentials, setSipCredentials] = useState<{
@@ -143,22 +114,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     refetchInterval: 30000,
   });
 
-  const trunkForm = useForm<TrunkFormValues>({
-    resolver: zodResolver(trunkFormSchema),
-    defaultValues: {
-      port: 5060,
-      protocol: 'udp',
-      codec: 'PCMU,PCMA,opus',
-      maxChannels: 10,
-      status: 'active',
-      recordingEnabled: false,
-      aiAgentEnabled: false,
-      aiAgentRef: '',
-      aiTimePolicy: null,
-      aiFailoverExtension: '',
-    },
-  });
-
   const extensionForm = useForm<ExtensionFormValues>({
     resolver: zodResolver(extensionFormSchema),
     defaultValues: {
@@ -166,32 +121,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
       recordingEnabled: false,
       dndEnabled: false,
       status: 'active',
-    },
-  });
-
-  const trunkMutation = useMutation({
-    mutationFn: async (data: TrunkFormValues) => {
-      if (editingTrunk) {
-        return apiRequest('PATCH', `/api/voip/trunks/${editingTrunk}`, data);
-      }
-      return apiRequest('POST', '/api/voip/trunks', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: editingTrunk ? "Trunk aggiornato" : "Trunk creato",
-        description: "Configurazione salvata con successo",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/voip/trunks'] });
-      setShowTrunkForm(false);
-      setEditingTrunk(null);
-      trunkForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile salvare trunk",
-        variant: "destructive",
-      });
     },
   });
 
@@ -287,26 +216,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     },
   });
 
-  const deleteTrunkMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return apiRequest('DELETE', `/api/voip/trunks/${id}`, null);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Trunk eliminato",
-        description: "Trunk rimosso con successo",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/voip/trunks'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile eliminare trunk",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteExtensionMutation = useMutation({
     mutationFn: async (id: string) => {
       return apiRequest('DELETE', `/api/voip/extensions/${id}`, null);
@@ -327,10 +236,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     },
   });
 
-  const handleSubmitTrunk = (data: TrunkFormValues) => {
-    trunkMutation.mutate(data);
-  };
-
   const handleSubmitExtension = (data: ExtensionFormValues) => {
     extensionMutation.mutate(data);
   };
@@ -347,7 +252,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
               Phone / VoIP Configuration
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Gestisci trunks SIP, DIDs e extensions per il sistema telefonico enterprise
+              Visualizza trunks SIP sincronizzati da edgvoip e gestisci extensions per il sistema telefonico enterprise
             </p>
           </div>
         </div>
@@ -363,7 +268,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100/80 backdrop-blur-sm border border-gray-200">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100/80 backdrop-blur-sm border border-gray-200">
           <TabsTrigger 
             value="dashboard" 
             data-testid="tab-dashboard" 
@@ -378,15 +283,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
             className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-orange-600"
           >
             <Server className="w-4 h-4 mr-2" />
-            Trunks
-          </TabsTrigger>
-          <TabsTrigger 
-            value="dids" 
-            data-testid="tab-dids" 
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-orange-600"
-          >
-            <Phone className="w-4 h-4 mr-2" />
-            DIDs
+            Trunks (Read-Only)
           </TabsTrigger>
           <TabsTrigger 
             value="extensions" 
@@ -450,7 +347,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                             <TableHead className="font-semibold text-gray-700">Status</TableHead>
                             <TableHead className="font-semibold text-gray-700">AI Agent</TableHead>
                             <TableHead className="font-semibold text-gray-700 text-center">Extensions</TableHead>
-                            <TableHead className="font-semibold text-gray-700 text-right">Actions</TableHead>
+                            <TableHead className="font-semibold text-gray-700">Sync Source</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -501,38 +398,15 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                               <TableCell className="text-center text-gray-700 font-medium">
                                 {trunk.trunk.extensionsCount || 0}
                               </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex gap-1 justify-end">
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setEditingTrunk(trunk.trunk.id);
-                                      setShowTrunkForm(true);
-                                      setActiveTab('trunks');
-                                      trunkForm.reset(trunk.trunk);
-                                    }}
-                                    data-testid={`button-edit-trunk-table-${trunk.trunk.id}`}
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    title="Modifica trunk"
-                                  >
-                                    <Pencil className="w-4 h-4 text-gray-600" />
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost"
-                                    onClick={() => {
-                                      if (confirm('Sei sicuro di voler eliminare questo trunk?')) {
-                                        deleteTrunkMutation.mutate(trunk.trunk.id);
-                                      }
-                                    }}
-                                    data-testid={`button-delete-trunk-table-${trunk.trunk.id}`}
-                                    className="h-8 w-8 p-0 hover:bg-red-50"
-                                    title="Elimina trunk"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                  </Button>
-                                </div>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                                  {trunk.trunk.syncSource || 'edgvoip'}
+                                </Badge>
+                                {trunk.trunk.lastSyncAt && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(trunk.trunk.lastSyncAt).toLocaleDateString()}
+                                  </p>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -553,33 +427,9 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                               <h4 className="font-semibold text-gray-800 mb-1">{trunk.trunk.name}</h4>
                               <p className="text-sm text-gray-600">{trunk.storeName || 'N/A'}</p>
                             </div>
-                            <div className="flex gap-1">
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingTrunk(trunk.trunk.id);
-                                  setShowTrunkForm(true);
-                                  setActiveTab('trunks');
-                                  trunkForm.reset(trunk.trunk);
-                                }}
-                                className="h-8 w-8 p-0 hover:bg-white"
-                              >
-                                <Pencil className="w-4 h-4 text-gray-600" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => {
-                                  if (confirm('Sei sicuro di voler eliminare questo trunk?')) {
-                                    deleteTrunkMutation.mutate(trunk.trunk.id);
-                                  }
-                                }}
-                                className="h-8 w-8 p-0 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                              {trunk.trunk.syncSource || 'edgvoip'}
+                            </Badge>
                           </div>
                           <div className="flex flex-wrap gap-2 mb-2">
                             <Badge 
@@ -659,414 +509,93 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="dids" className="space-y-4 mt-6">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600">
-              Gestisci i numeri DID (Direct Inward Dialing)
-            </p>
-            <Button 
-              onClick={() => toast({ title: "Coming soon", description: "DID management sarà disponibile a breve" })}
-              data-testid="button-add-did"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi DID
-            </Button>
-          </div>
-
-          <Card className="p-8 text-center bg-gray-50/50 border-gray-200 backdrop-blur-sm">
-            <Phone className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-600">DID management coming soon</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Configura numeri telefonici in entrata per i tuoi store
-            </p>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="trunks" className="space-y-4 mt-6">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600">
-              {trunks.length} trunk{trunks.length !== 1 ? 's' : ''} configurati
-            </p>
-            <Button 
-              onClick={() => {
-                setShowTrunkForm(true);
-                setEditingTrunk(null);
-                trunkForm.reset();
-              }}
-              data-testid="button-add-trunk"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi Trunk
-            </Button>
+            <div>
+              <p className="text-sm text-gray-600">
+                {trunks.length} trunk{trunks.length !== 1 ? 's' : ''} sincronizzati da edgvoip
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                I trunks sono gestiti centralmente da edgvoip PBX. Modifiche solo via webhook.
+              </p>
+            </div>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Read-Only
+            </Badge>
           </div>
 
           {trunksLoading ? (
             <LoadingState />
-          ) : showTrunkForm ? (
-            <Card className="p-6 bg-gray-50/50 border-gray-200">
-              <Form {...trunkForm}>
-                <form onSubmit={trunkForm.handleSubmit(handleSubmitTrunk)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={trunkForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Nome Trunk *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="es: WindTre Main" data-testid="input-trunk-name" className="bg-white" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="storeId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Negozio *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-trunk-store" className="bg-white">
-                                <SelectValue placeholder="Seleziona negozio" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {stores.map((store: any) => (
-                                <SelectItem key={store.id} value={store.id}>
-                                  {store.businessName || store.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="provider"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Provider SIP</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ''} placeholder="es: WindTre VoIP" className="bg-white" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="host"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Host *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="sip.provider.com" data-testid="input-trunk-host" className="bg-white" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="port"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Porta</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              className="bg-white"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="protocol"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Protocollo</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="udp">UDP</SelectItem>
-                              <SelectItem value="tcp">TCP</SelectItem>
-                              <SelectItem value="tls">TLS</SelectItem>
-                              <SelectItem value="wss">WSS (WebRTC)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Username</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ''} className="bg-white" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} value={field.value || ''} className="bg-white" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="maxChannels"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Max Canali</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              className="bg-white"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={trunkForm.control}
-                      name="recordingEnabled"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-gray-700">Registrazione chiamate</FormLabel>
-                            <FormDescription className="text-xs text-gray-500">
-                              Abilita registrazione automatica
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* AI Voice Agent Configuration Section */}
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-purple-500" />
-                      AI Voice Agent Configuration
-                    </h3>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={trunkForm.control}
-                        name="aiAgentEnabled"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border border-purple-200 bg-purple-50/50 p-4 col-span-2">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-gray-800 font-semibold">Enable AI Voice Agent</FormLabel>
-                              <FormDescription className="text-xs text-gray-600">
-                                Attiva l'assistente vocale AI per gestire automaticamente le chiamate in entrata su questo trunk
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                data-testid="switch-ai-agent-enabled"
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={trunkForm.control}
-                        name="aiAgentRef"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">AI Agent Reference</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                value={field.value || ''} 
-                                placeholder="es: customer-care-voice" 
-                                className="bg-white"
-                                data-testid="input-ai-agent-ref"
-                                disabled={!trunkForm.watch('aiAgentEnabled')}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs text-gray-500">
-                              Riferimento all'agente AI configurato in Brand Interface
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={trunkForm.control}
-                        name="aiFailoverExtension"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Failover Extension</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                value={field.value || ''} 
-                                placeholder="es: 100" 
-                                className="bg-white"
-                                data-testid="input-ai-failover-extension"
-                                disabled={!trunkForm.watch('aiAgentEnabled')}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs text-gray-500">
-                              Extension per trasferimento umano quando AI non può gestire la richiesta
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p className="text-xs text-gray-700">
-                          <strong>Time Policy:</strong> Business hours e routing temporale saranno configurabili a breve. 
-                          Per ora l'AI Voice Agent sarà attivo 24/7.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button 
-                      type="submit" 
-                      disabled={trunkMutation.isPending}
-                      data-testid="button-save-trunk"
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                      {trunkMutation.isPending ? 'Salvataggio...' : 'Salva Trunk'}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => {
-                        setShowTrunkForm(false);
-                        setEditingTrunk(null);
-                        trunkForm.reset();
-                      }}
-                      data-testid="button-cancel-trunk"
-                    >
-                      Annulla
-                    </Button>
-                  </div>
-                </form>
-              </Form>
+          ) : trunks.length === 0 ? (
+            <Card className="p-8 text-center bg-gray-50/50 border-gray-200">
+              <Server className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600">Nessun trunk sincronizzato</p>
+              <p className="text-sm text-gray-500 mt-2">
+                I trunks verranno sincronizzati automaticamente da edgvoip via webhook
+              </p>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {trunks.length === 0 ? (
-                <Card className="p-8 text-center bg-gray-50/50 border-gray-200">
-                  <Server className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600">Nessun trunk configurato</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Aggiungi il tuo primo trunk SIP per iniziare
-                  </p>
-                </Card>
-              ) : (
-                trunks.map((trunk: any) => (
-                  <Card key={trunk.trunk.id} className="p-4 bg-white/50 border-gray-200" data-testid={`card-trunk-${trunk.trunk.id}`}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-semibold text-gray-800">{trunk.trunk.name}</h4>
-                          <Badge variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} className={
-                            trunk.trunk.status === 'active' 
-                              ? 'bg-green-100 text-green-700 border-green-300' 
-                              : 'bg-gray-100 text-gray-700 border-gray-300'
-                          }>
-                            {trunk.trunk.status === 'active' ? (
-                              <><CheckCircle2 className="w-3 h-3 mr-1" /> Attivo</>
-                            ) : (
-                              <><XCircle className="w-3 h-3 mr-1" /> Inattivo</>
-                            )}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Store: {trunk.storeName}</p>
-                          <p>Host: {trunk.trunk.host}:{trunk.trunk.port} ({trunk.trunk.protocol.toUpperCase()})</p>
-                          <p>Provider: {trunk.trunk.provider || 'N/A'}</p>
-                          <p>Canali: {trunk.trunk.currentChannels}/{trunk.trunk.maxChannels}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingTrunk(trunk.trunk.id);
-                            setShowTrunkForm(true);
-                            trunkForm.reset(trunk.trunk);
-                          }}
-                          data-testid={`button-edit-trunk-${trunk.trunk.id}`}
-                          className="hover:bg-gray-100"
-                        >
-                          <Pencil className="w-4 h-4 text-gray-600" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => {
-                            if (confirm('Sei sicuro di voler eliminare questo trunk?')) {
-                              deleteTrunkMutation.mutate(trunk.trunk.id);
-                            }
-                          }}
-                          data-testid={`button-delete-trunk-${trunk.trunk.id}`}
-                          className="hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
+            <>
+              {/* Desktop Table View - Already rendered in dashboard section above */}
+              {/* Mobile/Tablet Card View */}
+              <div className="md:hidden space-y-3">{trunks.map((trunk: any) => (
+                <Card key={trunk.trunk.id} className="p-4 bg-gray-50/80 rounded-lg border border-gray-200" data-testid={`card-trunk-mobile-${trunk.trunk.id}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-800 mb-1">{trunk.trunk.name}</h4>
+                      <p className="text-sm text-gray-600">{trunk.storeName || 'N/A'}</p>
                     </div>
-                  </Card>
-                ))
-              )}
-            </div>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                      {trunk.trunk.syncSource || 'edgvoip'}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    <Badge 
+                      variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} 
+                      className={
+                        trunk.trunk.status === 'active' 
+                          ? 'bg-green-100 text-green-700 border-green-300' 
+                          : 'bg-red-100 text-red-700 border-red-300'
+                      }
+                    >
+                      {trunk.trunk.status === 'active' ? (
+                        <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
+                      ) : (
+                        <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
+                      )}
+                    </Badge>
+                    <Badge 
+                      variant="secondary"
+                      className={
+                        trunk.trunk.aiAgentEnabled 
+                          ? 'bg-green-100 text-green-700 border-green-300' 
+                          : 'bg-gray-100 text-gray-600 border-gray-300'
+                      }
+                    >
+                      AI: {trunk.trunk.aiAgentEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p><span className="font-medium">Host:</span> {trunk.trunk.host}:{trunk.trunk.port}</p>
+                    <p><span className="font-medium">Provider:</span> {trunk.trunk.provider || 'N/A'}</p>
+                    <p><span className="font-medium">Extensions:</span> {trunk.trunk.extensionsCount || 0}</p>
+                    {trunk.trunk.lastSyncAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Last sync: {new Date(trunk.trunk.lastSyncAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              ))}</div>
+              
+              {/* Desktop view uses table from dashboard section */}
+              <div className="hidden md:block">
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  Vedi la tabella sopra per la vista completa dei trunks
+                </p>
+              </div>
+            </>
           )}
         </TabsContent>
 

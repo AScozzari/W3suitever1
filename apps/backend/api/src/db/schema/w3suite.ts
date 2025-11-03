@@ -5592,87 +5592,47 @@ export type GtmEventLog = typeof gtmEventLog.$inferSelect;
 
 // ==================== VOIP SYSTEM (7 TABLES - FINAL SPEC) ====================
 
-// 1) voip_trunks - Trunk SIP per store/tenant
+// 1) voip_trunks - Trunk SIP per store/tenant (READ-ONLY, synced from edgvoip)
 export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  name: varchar("name", { length: 255 }).notNull(), // ACTUAL DB: trunk name
-  provider: varchar("provider", { length: 100 }), // Messagenet, Twilio, etc.
-  host: varchar("host", { length: 255 }).notNull(), // ACTUAL DB: SIP proxy/host
-  port: integer("port").default(5060).notNull(),
-  protocol: voipProtocolEnum("protocol").default('udp').notNull(), // ACTUAL DB: 'protocol' not 'transport'
-  username: varchar("username", { length: 100 }), // ACTUAL DB: SIP username
-  password: text("password"), // ACTUAL DB: plaintext password (TODO: encrypt)
-  authUsername: varchar("auth_username", { length: 100 }), // ACTUAL DB: auth username
-  fromUser: varchar("from_user", { length: 100 }), // ACTUAL DB: from user
-  fromDomain: varchar("from_domain", { length: 255 }), // ACTUAL DB: from domain
-  codec: varchar("codec", { length: 255 }).default('PCMU,PCMA,opus'), // ACTUAL DB: 'codec' not 'codecSet'
-  maxChannels: integer("max_channels").default(10).notNull(), // ACTUAL DB: max channels
-  currentChannels: integer("current_channels").default(0).notNull(), // ACTUAL DB: current channels
-  status: voipTrunkStatusEnum("status").default('active').notNull(), // ACTUAL DB: status enum
-  recordingEnabled: boolean("recording_enabled").default(false).notNull(), // ACTUAL DB: recording flag
+  
+  // Sync metadata (edgvoip is source of truth)
+  edgvoipTrunkId: varchar("edgvoip_trunk_id", { length: 255 }).unique(), // External trunk ID from edgvoip
+  syncSource: varchar("sync_source", { length: 20 }).default('edgvoip').notNull(), // Always 'edgvoip'
+  lastSyncAt: timestamp("last_sync_at"), // Last webhook sync timestamp
+  
+  // Trunk configuration (synced from edgvoip)
+  name: varchar("name", { length: 255 }).notNull(),
+  provider: varchar("provider", { length: 100 }), // Telecom Italia, Vodafone, etc.
+  host: varchar("host", { length: 255 }), // SIP proxy hostname
+  port: integer("port").default(5060),
+  protocol: voipProtocolEnum("protocol").default('udp'), // udp|tcp|tls
+  didRange: varchar("did_range", { length: 100 }), // +39 02 1234xxxx
+  maxChannels: integer("max_channels").default(10).notNull(),
+  currentChannels: integer("current_channels").default(0).notNull(),
+  status: voipTrunkStatusEnum("status").default('active').notNull(),
+  
+  // AI Voice Agent configuration (synced from edgvoip)
+  aiAgentEnabled: boolean("ai_agent_enabled").default(false).notNull(),
+  aiAgentRef: varchar("ai_agent_ref", { length: 100 }), // Reference to aiAgentsRegistry (e.g. "customer-care-voice")
+  aiTimePolicy: jsonb("ai_time_policy"), // Business hours JSON: {monday: {start: "09:00", end: "18:00"}, ...}
+  aiFailoverExtension: varchar("ai_failover_extension", { length: 20 }), // Extension to fallback when AI unavailable
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("voip_trunks_tenant_idx").on(table.tenantId),
   index("voip_trunks_store_idx").on(table.storeId),
-  uniqueIndex("voip_trunks_tenant_store_name_unique").on(table.tenantId, table.storeId, table.name), // ACTUAL DB: unique on name not authUsername
+  index("voip_trunks_edgvoip_id_idx").on(table.edgvoipTrunkId),
+  uniqueIndex("voip_trunks_tenant_store_name_unique").on(table.tenantId, table.storeId, table.name),
 ]);
 
-export const insertVoipTrunkSchema = createInsertSchema(voipTrunks).omit({ 
-  id: true,
-  currentChannels: true, // Auto-managed
-  createdAt: true, 
-  updatedAt: true
-}).extend({
-  name: z.string().min(1, "Trunk name is required"),
-  host: z.string().min(1, "Host is required"),
-  port: z.number().min(1).max(65535).optional(),
-  protocol: z.enum(['udp', 'tcp', 'tls']).optional(),
-});
-export const updateVoipTrunkSchema = insertVoipTrunkSchema.omit({ tenantId: true, storeId: true }).partial();
-export type InsertVoipTrunk = z.infer<typeof insertVoipTrunkSchema>;
-export type UpdateVoipTrunk = z.infer<typeof updateVoipTrunkSchema>;
+// Note: No insert/update schemas - trunks are managed via webhook from edgvoip
 export type VoipTrunk = typeof voipTrunks.$inferSelect;
 
-// 2) voip_dids - Numerazioni in ingresso
-export const voipDids = w3suiteSchema.table("voip_dids", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  trunkId: uuid("trunk_id").references(() => voipTrunks.id, { onDelete: 'set null' }), // Trunk d'ingresso
-  e164: varchar("e164", { length: 50 }).notNull(), // +39061234567 (E.164 format)
-  sipDomain: varchar("sip_domain", { length: 255 }), // tenantA.pbx.w3suite.it (for lookup)
-  routeTargetType: varchar("route_target_type", { length: 50 }).notNull(), // ext|ivr|queue|ai
-  routeTargetRef: varchar("route_target_ref", { length: 100 }).notNull(), // 1001, ivr_main, queue_sales, etc.
-  label: varchar("label", { length: 255 }), // "Main Line Roma"
-  active: boolean("active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => [
-  index("voip_dids_tenant_idx").on(table.tenantId),
-  index("voip_dids_store_idx").on(table.storeId),
-  index("voip_dids_trunk_idx").on(table.trunkId),
-  index("voip_dids_route_target_idx").on(table.routeTargetType, table.routeTargetRef),
-  uniqueIndex("voip_dids_e164_unique").on(table.e164),
-]);
-
-export const insertVoipDidSchema = createInsertSchema(voipDids).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-}).extend({
-  e164: z.string().regex(/^\+\d{7,15}$/, "Must be E.164 format (+39061234567)"),
-  routeTargetType: z.enum(['ext', 'ivr', 'queue', 'ai']),
-  routeTargetRef: z.string().min(1, "Route target reference is required"),
-});
-export const updateVoipDidSchema = insertVoipDidSchema.omit({ tenantId: true, storeId: true, e164: true }).partial();
-export type InsertVoipDid = z.infer<typeof insertVoipDidSchema>;
-export type UpdateVoipDid = z.infer<typeof updateVoipDidSchema>;
-export type VoipDid = typeof voipDids.$inferSelect;
-
-// 3) voip_extensions - Interni del tenant (1:1 con users)
+// 2) voip_extensions - Interni del tenant (1:1 con users)
 export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
@@ -5831,40 +5791,7 @@ export const insertVoipCdrSchema = createInsertSchema(voipCdrs).omit({
 export type InsertVoipCdr = z.infer<typeof insertVoipCdrSchema>;
 export type VoipCdr = typeof voipCdrs.$inferSelect;
 
-// 4) voip_routes - Pattern outbound routing
-export const voipRoutes = w3suiteSchema.table("voip_routes", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  name: varchar("name", { length: 255 }).notNull(), // "Uscita nazionale"
-  pattern: varchar("pattern", { length: 100 }).notNull(), // Regex: ^9(\d+)$
-  stripDigits: integer("strip_digits").default(0).notNull(), // Rimuovi primi N digit (es. 1 per togliere il 9)
-  prepend: varchar("prepend", { length: 20 }), // Prefisso da aggiungere (es. "0")
-  trunkId: uuid("trunk_id").notNull().references(() => voipTrunks.id, { onDelete: 'cascade' }), // Trunk per l'uscita
-  priority: integer("priority").default(100).notNull(), // Ordine di valutazione (lower = higher priority)
-  active: boolean("active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => [
-  index("voip_routes_tenant_idx").on(table.tenantId),
-  index("voip_routes_trunk_idx").on(table.trunkId),
-  index("voip_routes_priority_idx").on(table.priority),
-  uniqueIndex("voip_routes_tenant_name_unique").on(table.tenantId, table.name),
-]);
-
-export const insertVoipRouteSchema = createInsertSchema(voipRoutes).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true
-}).extend({
-  pattern: z.string().min(1, "Pattern is required"),
-  priority: z.number().min(0).max(1000),
-});
-export const updateVoipRouteSchema = insertVoipRouteSchema.omit({ tenantId: true }).partial();
-export type InsertVoipRoute = z.infer<typeof insertVoipRouteSchema>;
-export type UpdateVoipRoute = z.infer<typeof updateVoipRouteSchema>;
-export type VoipRoute = typeof voipRoutes.$inferSelect;
-
-// 5) contact_policies - Policy minime di contatto in JSON
+// 4) contact_policies - Policy minime di contatto in JSON
 export const contactPolicies = w3suiteSchema.table("contact_policies", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),

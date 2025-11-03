@@ -20,6 +20,7 @@ import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
 import crmRoutes from "../routes/crm";
 import gtmRoutes from "../routes/gtm";
 import voipRoutes from "../routes/voip";
+import voipWebhookRoutes from "../routes/webhooks-voip";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1291,6 +1292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== VOIP SYSTEM ROUTES ====================
   // VoIP telephony management API routes (domains, trunks, extensions, devices, CDRs)
   app.use('/api/voip', voipRoutes);
+  
+  // VoIP Webhooks (edgvoip integration)
+  app.use('/api/webhooks/voip', voipWebhookRoutes);
   
   // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
   // Employee endpoints for self-service functionality (no special permissions required)
