@@ -148,25 +148,37 @@ router.get('/extensions', rbacMiddleware, async (req, res) => {
 
     await setTenantContext(db, tenantId);
 
-    const { storeId, enabled } = req.query;
+    const { status } = req.query;
 
     const conditions = [eq(voipExtensions.tenantId, tenantId)];
-    if (storeId) {
-      conditions.push(eq(voipExtensions.storeId, storeId as string));
-    }
-    if (enabled !== undefined) {
-      conditions.push(eq(voipExtensions.enabled, enabled === 'true'));
+    
+    // Filter by status if provided (active|inactive|suspended)
+    if (status) {
+      conditions.push(eq(voipExtensions.status, status as string));
     }
 
-    const extensions = await db.select()
+    // Join with users table to get user details
+    const extensionsData = await db.select({
+      extension: voipExtensions,
+      user: users
+    })
       .from(voipExtensions)
+      .leftJoin(users, eq(voipExtensions.userId, users.id))
       .where(and(...conditions))
       .orderBy(desc(voipExtensions.createdAt));
 
+    // Format response with user details and domain FQDN
+    const formattedExtensions = extensionsData.map(({ extension, user }) => ({
+      extension,
+      userName: user ? `${user.firstName} ${user.lastName}`.trim() : '()',
+      userEmail: user?.email || '',
+      domainFqdn: extension.sipServer || 'sip.edgvoip.com'
+    }));
+
     return res.json({ 
       success: true, 
-      data: extensions 
-    } as ApiSuccessResponse<typeof extensions>);
+      data: formattedExtensions 
+    } as ApiSuccessResponse<typeof formattedExtensions>);
   } catch (error) {
     logger.error('Error fetching VoIP extensions', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to fetch VoIP extensions' } as ApiErrorResponse);
