@@ -339,6 +339,35 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     }
   }, [createCDR, credentials]);
 
+  // Normalize phone number to E.164 format for Italian numbers
+  const normalizePhoneNumber = useCallback((phoneNumber: string): string => {
+    // Remove spaces, dashes, parentheses
+    let cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    
+    // If already in E.164 format (starts with +), return as-is
+    if (cleaned.startsWith('+')) {
+      return cleaned;
+    }
+    
+    // If starts with 00, replace with +
+    if (cleaned.startsWith('00')) {
+      return '+' + cleaned.substring(2);
+    }
+    
+    // If starts with 0 (Italian local format), add +39
+    if (cleaned.startsWith('0')) {
+      return '+39' + cleaned;
+    }
+    
+    // If 10 digits starting with 3 (Italian mobile without 0), add +39
+    if (cleaned.match(/^3\d{9}$/)) {
+      return '+39' + cleaned;
+    }
+    
+    // Otherwise assume it's already international format, add +
+    return '+' + cleaned;
+  }, []);
+
   // Make outbound call
   const makeCall = useCallback(async (phoneNumber: string) => {
     if (!userAgentRef.current || !isRegistered) {
@@ -346,7 +375,11 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     }
 
     try {
-      const targetURI = UserAgent.makeURI(`sip:${phoneNumber}@${credentials?.authRealm}`);
+      // Normalize to E.164 format
+      const normalizedNumber = normalizePhoneNumber(phoneNumber);
+      console.log('📞 Normalized number:', phoneNumber, '→', normalizedNumber);
+      
+      const targetURI = UserAgent.makeURI(`sip:${normalizedNumber}@${credentials?.authRealm}`);
       if (!targetURI) {
         throw new Error('Invalid phone number');
       }
@@ -355,12 +388,12 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
       setupSession(inviter, 'outbound');
 
       await inviter.invite();
-      console.log('📞 Outbound call initiated to:', phoneNumber);
+      console.log('📞 Outbound call initiated to:', normalizedNumber);
     } catch (err: any) {
       console.error('❌ Failed to make call:', err);
       throw err;
     }
-  }, [isRegistered, credentials, setupSession]);
+  }, [isRegistered, credentials, setupSession, normalizePhoneNumber]);
 
   // Hangup current call
   const hangup = useCallback(async () => {
