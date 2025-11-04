@@ -41,17 +41,17 @@ const DAYS = [
   { key: 'sunday' as const, label: 'Domenica' }
 ];
 
-const DEFAULT_SCHEDULE: DaySchedule = {
+const createDefaultSchedule = (): DaySchedule => ({
   enabled: true,
   ranges: [{ start: '09:00', end: '18:00' }]
-};
+});
 
 const DEFAULT_HOURS: BusinessHours = {
-  monday: DEFAULT_SCHEDULE,
-  tuesday: DEFAULT_SCHEDULE,
-  wednesday: DEFAULT_SCHEDULE,
-  thursday: DEFAULT_SCHEDULE,
-  friday: DEFAULT_SCHEDULE,
+  monday: createDefaultSchedule(),
+  tuesday: createDefaultSchedule(),
+  wednesday: createDefaultSchedule(),
+  thursday: createDefaultSchedule(),
+  friday: createDefaultSchedule(),
   saturday: { enabled: false, ranges: [] },
   sunday: { enabled: false, ranges: [] }
 };
@@ -108,12 +108,18 @@ export function BusinessHoursEditor({ value, onChange, className }: BusinessHour
 
   const applyToAllWeekdays = () => {
     const mondaySchedule = hours.monday;
+    // Deep clone Monday schedule to avoid mutation across days
+    const cloneSchedule = (): DaySchedule => ({
+      enabled: mondaySchedule.enabled,
+      ranges: mondaySchedule.ranges.map(r => ({ start: r.start, end: r.end }))
+    });
+    
     const updated = {
       ...hours,
-      tuesday: { ...mondaySchedule },
-      wednesday: { ...mondaySchedule },
-      thursday: { ...mondaySchedule },
-      friday: { ...mondaySchedule }
+      tuesday: cloneSchedule(),
+      wednesday: cloneSchedule(),
+      thursday: cloneSchedule(),
+      friday: cloneSchedule()
     };
     setHours(updated);
     onChange(updated);
