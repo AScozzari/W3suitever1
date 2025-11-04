@@ -73,7 +73,6 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     console.log('🔍 [SIP Hook] Query state:', {
       isLoading,
       hasError: !!error,
-      hasResponse: !!credentialsResponse,
       hasCredentials: !!credentials,
       credentials: credentials
     });
@@ -81,7 +80,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     if (error) {
       console.error('❌ [SIP Hook] Query error:', error);
     }
-  }, [isLoading, error, credentialsResponse, credentials]);
+  }, [isLoading, error, credentials]);
 
   // Create CDR after call ends
   const createCDR = useCallback(async (callData: CallData, disposition: 'answered' | 'no_answer' | 'busy' | 'failed') => {
