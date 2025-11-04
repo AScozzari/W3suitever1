@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { UserAgent, Registerer, Inviter, Invitation, Session, SessionState, RegistererState } from 'sip.js';
 import { useQuery } from '@tanstack/react-query';
+import { useTenant } from '@/contexts/TenantContext';
 
 export interface SIPCredentials {
   sipUsername: string;
@@ -48,6 +49,7 @@ export interface UseSIPRegistrationReturn {
 }
 
 export function useSIPRegistration(): UseSIPRegistrationReturn {
+  const { tenant } = useTenant();
   const [isRegistered, setIsRegistered] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
@@ -111,6 +113,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(tenant?.id && { 'x-tenant-id': tenant.id }),
         },
         credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(cdrPayload),
@@ -125,7 +128,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     } catch (err) {
       console.error('❌ Failed to create CDR:', err);
     }
-  }, [credentials]);
+  }, [credentials, tenant]);
 
   // Initialize remote audio element
   useEffect(() => {
