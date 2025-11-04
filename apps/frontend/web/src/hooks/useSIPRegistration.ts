@@ -169,6 +169,9 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
           uri: UserAgent.makeURI(`sip:${credentials.sipUsername}@${credentials.authRealm}`),
           transportOptions: {
             server: wsServer,
+            connectionTimeout: 10, // Increased from 5s default
+            maxReconnectionAttempts: 3,
+            reconnectionDelay: 4
           },
           authorizationUsername: credentials.sipUsername,
           authorizationPassword: credentials.sipPassword,
