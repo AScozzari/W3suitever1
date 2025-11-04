@@ -69,6 +69,21 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
 
   const credentials = credentialsResponse?.data || null;
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 [SIP Hook] Query state:', {
+      isLoading,
+      hasError: !!error,
+      hasResponse: !!credentialsResponse,
+      hasCredentials: !!credentials,
+      credentials: credentials
+    });
+    
+    if (error) {
+      console.error('❌ [SIP Hook] Query error:', error);
+    }
+  }, [isLoading, error, credentialsResponse, credentials]);
+
   // Create CDR after call ends
   const createCDR = useCallback(async (callData: CallData, disposition: 'answered' | 'no_answer' | 'busy' | 'failed') => {
     if (!credentials) return;
@@ -125,17 +140,31 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
   // Setup SIP.js UserAgent and Registration
   useEffect(() => {
     if (!credentials || isLoading || error) {
+      console.log('⏸️ [SIP Hook] Skipping setup:', { 
+        hasCredentials: !!credentials, 
+        isLoading, 
+        hasError: !!error 
+      });
       return;
     }
 
     const setupSIP = async () => {
       try {
+        console.log('🚀 [SIP Hook] Starting SIP setup with credentials:', {
+          sipServer: credentials.sipServer,
+          wsPort: credentials.wsPort,
+          extension: credentials.extension,
+          transport: credentials.transport
+        });
+        
         setIsRegistering(true);
         setRegistrationError(null);
 
         // Determine WebSocket URL
         const wsPort = credentials.wsPort || 7443;
         const wsServer = `wss://${credentials.sipServer}:${wsPort}`;
+        
+        console.log('📡 [SIP Hook] Connecting to:', wsServer);
 
         // Create UserAgent configuration
         const userAgent = new UserAgent({
