@@ -181,7 +181,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
           authorizationUsername: credentials.sipUsername,
           authorizationPassword: credentials.sipPassword,
           displayName: credentials.displayName || credentials.extension,
-          logLevel: 'warn',
+          logLevel: 'debug', // Enable debug logging to see SIP messages
           delegate: {
             onInvite: (invitation: Invitation) => {
               console.log('📞 Incoming call from:', invitation.remoteIdentity.uri.toString());
@@ -387,7 +387,17 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
       const inviter = new Inviter(userAgentRef.current, targetURI);
       setupSession(inviter, 'outbound');
 
-      await inviter.invite();
+      // Configure media constraints and options
+      const inviteOptions = {
+        sessionDescriptionHandlerOptions: {
+          constraints: {
+            audio: true,
+            video: false
+          }
+        }
+      };
+
+      await inviter.invite(inviteOptions);
       console.log('📞 Outbound call initiated to:', normalizedNumber);
     } catch (err: any) {
       console.error('❌ Failed to make call:', err);
