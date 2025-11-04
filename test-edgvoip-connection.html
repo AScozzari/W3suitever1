@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Test edgvoip Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/sip.js@0.21.2/lib/platform/web/sip.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #FF6900;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { opacity: 0.9; }
+        #logs {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Connessione edgvoip.it</h1>
+    
+    <div class="status info" id="status">
+        ⏳ Premi "Test Connessione" per iniziare
+    </div>
+    
+    <button onclick="testConnection()">🔌 Test Connessione</button>
+    <button onclick="testRegistration()">📞 Test Registrazione SIP</button>
+    <button onclick="clearLogs()">🗑️ Pulisci Log</button>
+    
+    <h3>📋 Log:</h3>
+    <div id="logs"></div>
+    
+    <script>
+        const config = {
+            server: 'wss://demo.edgvoip.it:7443',
+            username: '2000',
+            password: 'test123456',
+            domain: 'demo.edgvoip.it'
+        };
+        
+        let userAgent = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : '📝';
+            
+            const logDiv = document.getElementById('logs');
+            logDiv.innerHTML += `<div style="color: ${color}; margin: 5px 0;">${icon} [${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('Log puliti', 'info');
+        }
+        
+        async function testConnection() {
+            updateStatus('⏳ Test connessione WebSocket in corso...', 'info');
+            log('Tentativo di connessione a: ' + config.server);
+            
+            try {
+                const ws = new WebSocket(config.server);
+                
+                ws.onopen = () => {
+                    log('✅ CONNESSIONE WEBSOCKET RIUSCITA!', 'success');
+                    updateStatus('✅ WebSocket connesso correttamente a demo.edgvoip.it:7443', 'success');
+                    ws.close();
+                };
+                
+                ws.onerror = (error) => {
+                    log('❌ ERRORE WEBSOCKET: ' + JSON.stringify(error), 'error');
+                    updateStatus('❌ Errore di connessione WebSocket', 'error');
+                };
+                
+                ws.onclose = (event) => {
+                    if (event.code === 1006) {
+                        log('❌ WebSocket chiuso inaspettatamente (code: 1006) - Server non raggiungibile', 'error');
+                        updateStatus('❌ Server non raggiungibile (timeout)', 'error');
+                    } else {
+                        log('WebSocket chiuso (code: ' + event.code + ')', 'info');
+                    }
+                };
+                
+                // Timeout dopo 10 secondi
+                setTimeout(() => {
+                    if (ws.readyState !== WebSocket.OPEN) {
+                        log('❌ Timeout connessione dopo 10 secondi', 'error');
+                        updateStatus('❌ Timeout - Server non risponde', 'error');
+                        ws.close();
+                    }
+                }, 10000);
+                
+            } catch (error) {
+                log('❌ Eccezione: ' + error.message, 'error');
+                updateStatus('❌ Errore: ' + error.message, 'error');
+            }
+        }
+        
+        async function testRegistration() {
+            updateStatus('⏳ Test registrazione SIP in corso...', 'info');
+            log('Configurazione SIP.js UserAgent...');
+            log('Server: ' + config.server);
+            log('Username: ' + config.username);
+            log('Domain: ' + config.domain);
+            
+            try {
+                const uri = SIP.UserAgent.makeURI(`sip:${config.username}@${config.domain}`);
+                
+                userAgent = new SIP.UserAgent({
+                    uri: uri,
+                    transportOptions: {
+                        server: config.server,
+                        connectionTimeout: 10
+                    },
+                    authorizationUsername: config.username,
+                    authorizationPassword: config.password,
+                    displayName: 'Test Extension 2000',
+                    logLevel: 'debug'
+                });
+                
+                log('UserAgent creato, avvio connessione...');
+                await userAgent.start();
+                log('✅ UserAgent avviato!', 'success');
+                
+                const registerer = new SIP.Registerer(userAgent);
+                
+                registerer.stateChange.addListener((state) => {
+                    log('📡 Stato registrazione: ' + state);
+                    
+                    if (state === SIP.RegistererState.Registered) {
+                        log('✅ REGISTRAZIONE SIP RIUSCITA!', 'success');
+                        updateStatus('✅ Extension 2000 registrata su demo.edgvoip.it', 'success');
+                    } else if (state === SIP.RegistererState.Unregistered) {
+                        log('❌ Non registrato', 'error');
+                        updateStatus('❌ Registrazione SIP fallita', 'error');
+                    }
+                });
+                
+                log('Invio richiesta REGISTER...');
+                await registerer.register();
+                
+            } catch (error) {
+                log('❌ Errore registrazione SIP: ' + error.message, 'error');
+                updateStatus('❌ Errore: ' + error.message, 'error');
+            }
+        }
+        
+        // Log iniziale
+        log('🧪 Test Tool inizializzato');
+        log('Target: ' + config.server);
+    </script>
+</body>
+</html>
