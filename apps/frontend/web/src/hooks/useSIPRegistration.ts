@@ -158,11 +158,13 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         setIsRegistering(true);
         setRegistrationError(null);
 
-        // Determine WebSocket URL
+        // Determine WebSocket URL based on transport
         const wsPort = credentials.wsPort || 7443;
-        const wsServer = `wss://${credentials.sipServer}:${wsPort}`;
+        const transport = credentials.transport?.toLowerCase() || 'wss';
+        const protocol = transport === 'ws' ? 'ws' : 'wss';
+        const wsServer = `${protocol}://${credentials.sipServer}:${wsPort}`;
         
-        console.log('📡 [SIP Hook] Connecting to:', wsServer);
+        console.log('📡 [SIP Hook] Connecting to:', wsServer, `(transport: ${transport})`);
 
         // Create UserAgent configuration
         const userAgent = new UserAgent({
