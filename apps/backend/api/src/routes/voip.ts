@@ -1123,8 +1123,9 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
       id: row.id,
       extension: row.extension || 'unknown',
       displayName: row.displayName || 'N/A',
-      sipStatus: row.status === 'active' ? 'registered' : 'unregistered',
-      lastRegistered: row.status === 'active' ? new Date().toISOString() : null,
+      sipStatus: 'unknown', // Real SIP registration status requires PBX integration
+      dbStatus: row.status, // Database status (active/inactive/suspended)
+      lastRegistered: null, // Real registration time requires PBX integration
     }));
 
     const trunksActive = trunks.filter(t => t.status === 'active').length;

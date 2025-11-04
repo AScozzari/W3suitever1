@@ -335,9 +335,9 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200 backdrop-blur-sm" data-testid="card-extensions-stats">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Extensions Registrate</p>
+                      <p className="text-sm text-gray-600 font-medium">Extensions Configurate</p>
                       <p className="text-3xl font-bold text-purple-600 mt-2">
-                        {connectionStatus?.stats?.extensionsRegistered || 0} / {connectionStatus?.stats?.extensionsTotal || 0}
+                        {connectionStatus?.stats?.extensionsTotal || 0}
                       </p>
                     </div>
                     <User className="w-12 h-12 text-purple-400/50" />
@@ -513,25 +513,24 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
                             <h4 className="font-medium text-gray-800">Interno {ext.extension}</h4>
-                            <Badge variant={ext.sipStatus === 'registered' ? 'default' : 'secondary'} className={
-                              ext.sipStatus === 'registered' 
-                                ? 'bg-green-100 text-green-700 border-green-300' 
+                            <Badge variant={ext.dbStatus === 'active' ? 'default' : 'secondary'} className={
+                              ext.dbStatus === 'active' 
+                                ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                                : ext.dbStatus === 'suspended'
+                                ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
                                 : 'bg-gray-100 text-gray-700 border-gray-300'
                             }>
-                              {ext.sipStatus === 'registered' ? (
-                                <><CheckCircle2 className="w-3 h-3 mr-1" /> Registered</>
+                              {ext.dbStatus === 'active' ? (
+                                <><CheckCircle2 className="w-3 h-3 mr-1" /> Attivo</>
+                              ) : ext.dbStatus === 'suspended' ? (
+                                <><AlertCircle className="w-3 h-3 mr-1" /> Sospeso</>
                               ) : (
-                                <><XCircle className="w-3 h-3 mr-1" /> Unregistered</>
+                                <><XCircle className="w-3 h-3 mr-1" /> Inattivo</>
                               )}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-600 mt-1">{ext.displayName}</div>
                         </div>
-                        {ext.lastRegistered && (
-                          <div className="text-xs text-gray-500">
-                            Last registered: {new Date(ext.lastRegistered).toLocaleTimeString()}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
