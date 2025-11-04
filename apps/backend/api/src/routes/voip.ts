@@ -41,6 +41,7 @@ import {
 } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { voipExtensionService } from '../services/voip-extension.service';
+import { syncAIConfigToEdgvoip } from '../services/voip-edgvoip-sync.service';
 
 const router = express.Router();
 
@@ -1707,6 +1708,96 @@ router.post('/ai-gateway/session', async (req, res) => {
     return res.status(500).json({
       error: 'Internal error processing AI routing'
     } as ApiErrorResponse);
+  }
+});
+
+// ==================== TRUNK AI CONFIGURATION ====================
+
+// PATCH /api/voip/trunks/:id/ai-config - Update AI Voice Agent configuration
+// Auto-triggers sync with edgvoip when AI settings change
+router.patch('/trunks/:id/ai-config', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+    const { id } = req.params;
+
+    // Validate request body
+    const updateSchema = z.object({
+      aiAgentEnabled: z.boolean(),
+      aiAgentRef: z.string().nullable().optional(),
+      aiTimePolicy: z.any().nullable().optional(), // JSON business hours
+      aiFailoverExtension: z.string().nullable().optional()
+    });
+
+    const validated = updateSchema.parse(req.body);
+
+    // Update trunk AI configuration
+    const [updated] = await db.update(voipTrunks)
+      .set({
+        aiAgentEnabled: validated.aiAgentEnabled,
+        aiAgentRef: validated.aiAgentRef,
+        aiTimePolicy: validated.aiTimePolicy,
+        aiFailoverExtension: validated.aiFailoverExtension,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(voipTrunks.id, id),
+        eq(voipTrunks.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Trunk not found' } as ApiErrorResponse);
+    }
+
+    logger.info('Trunk AI config updated', {
+      trunkId: id,
+      aiEnabled: validated.aiAgentEnabled,
+      aiAgentRef: validated.aiAgentRef,
+      tenantId
+    });
+
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'update',
+      'trunk',
+      id,
+      'ok',
+      { aiConfig: validated }
+    );
+
+    // ✅ AUTO-TRIGGER: Sync AI config to edgvoip
+    logger.info('Auto-triggering edgvoip AI config sync', { trunkId: id, tenantId });
+    
+    const syncResult = await syncAIConfigToEdgvoip(id, tenantId);
+
+    if (!syncResult.success) {
+      logger.warn('edgvoip sync failed, but trunk updated locally', {
+        trunkId: id,
+        syncError: syncResult.error,
+        tenantId
+      });
+    }
+
+    // Return updated trunk with sync status
+    return res.json({
+      success: true,
+      data: {
+        trunk: updated,
+        edgvoipSync: syncResult
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error updating trunk AI config', { error, trunkId: req.params.id, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to update trunk AI configuration' } as ApiErrorResponse);
   }
 });
 

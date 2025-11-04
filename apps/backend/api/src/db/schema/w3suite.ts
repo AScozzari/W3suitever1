@@ -5620,6 +5620,11 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   aiTimePolicy: jsonb("ai_time_policy"), // Business hours JSON: {monday: {start: "09:00", end: "18:00"}, ...}
   aiFailoverExtension: varchar("ai_failover_extension", { length: 20 }), // Extension to fallback when AI unavailable
   
+  // edgvoip AI Config Sync tracking
+  edgvoipAiSyncedAt: timestamp("edgvoip_ai_synced_at"), // Last successful AI config sync with edgvoip
+  edgvoipAiSyncStatus: varchar("edgvoip_ai_sync_status", { length: 50 }), // success|error|pending|none
+  edgvoipAiSyncError: text("edgvoip_ai_sync_error"), // Last sync error message if any
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [

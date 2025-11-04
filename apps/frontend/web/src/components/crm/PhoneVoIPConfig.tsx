@@ -31,8 +31,10 @@ import {
   Key,
   Shield,
   Pencil,
-  Trash2
+  Trash2,
+  Bot
 } from 'lucide-react';
+import { TrunkAIConfigDialog } from './TrunkAIConfigDialog';
 
 interface PhoneVoIPConfigProps {
   visible: boolean;
@@ -85,6 +87,8 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     sipPort: number;
     wsPort?: number;
   } | null>(null);
+  const [trunkAIConfig, setTrunkAIConfig] = useState<any | null>(null);
+  const [showTrunkAIConfig, setShowTrunkAIConfig] = useState(false);
 
   const { data: trunks = [], isLoading: trunksLoading, refetch: refetchTrunks } = useQuery<any[]>({
     queryKey: ['/api/voip/trunks'],
@@ -363,6 +367,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                             <TableHead className="font-semibold text-gray-700">AI Agent</TableHead>
                             <TableHead className="font-semibold text-gray-700 text-center">Extensions</TableHead>
                             <TableHead className="font-semibold text-gray-700">Sync Source</TableHead>
+                            <TableHead className="font-semibold text-gray-700 text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -422,6 +427,20 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                                     {new Date(trunk.trunk.lastSyncAt).toLocaleDateString()}
                                   </p>
                                 )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setTrunkAIConfig(trunk.trunk);
+                                    setShowTrunkAIConfig(true);
+                                  }}
+                                  data-testid={`button-config-ai-${trunk.trunk.id}`}
+                                >
+                                  <Bot className="h-4 w-4 mr-2" />
+                                  Configure AI
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1247,6 +1266,14 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Trunk AI Configuration Dialog */}
+      <TrunkAIConfigDialog
+        trunk={trunkAIConfig}
+        extensions={extensions}
+        open={showTrunkAIConfig}
+        onOpenChange={setShowTrunkAIConfig}
+      />
     </div>
   );
 }
