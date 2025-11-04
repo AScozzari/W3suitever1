@@ -15,9 +15,98 @@ const __dirname = path.dirname(__filename);
 let brandFrontendProcess: ChildProcess | null = null;
 let w3FrontendProcess: ChildProcess | null = null;
 let brandBackendProcess: ChildProcess | null = null;
+let nginxProcess: ChildProcess | null = null;
+let backendServer: any = null;
+let isShuttingDown = false;
 
 // Feature flag for nginx management  
 const ENABLE_EMBEDDED_NGINX = true;
+
+// Stop all services cleanly before restart
+async function stopAllServices() {
+  if (isShuttingDown) {
+    console.log("⏳ Already shutting down services...");
+    return;
+  }
+  
+  isShuttingDown = true;
+  console.log("🛑 Stopping all services for clean restart...");
+  
+  try {
+    // 1. Stop nginx gracefully
+    if (nginxProcess) {
+      console.log("  → Stopping nginx...");
+      try {
+        nginxProcess.kill('SIGTERM');
+        nginxProcess = null;
+      } catch (e) {
+        console.log("  → Nginx already stopped");
+      }
+    }
+    
+    // 2. Stop frontend processes
+    if (w3FrontendProcess) {
+      console.log("  → Stopping W3 Frontend...");
+      try {
+        w3FrontendProcess.kill('SIGTERM');
+        w3FrontendProcess = null;
+      } catch (e) {}
+    }
+    
+    if (brandFrontendProcess) {
+      console.log("  → Stopping Brand Frontend...");
+      try {
+        brandFrontendProcess.kill('SIGTERM');
+        brandFrontendProcess = null;
+      } catch (e) {}
+    }
+    
+    // 3. Stop backend processes
+    if (brandBackendProcess) {
+      console.log("  → Stopping Brand Backend...");
+      try {
+        brandBackendProcess.kill('SIGTERM');
+        brandBackendProcess = null;
+      } catch (e) {}
+    }
+    
+    if (backendServer) {
+      console.log("  → Stopping W3 Backend...");
+      try {
+        await new Promise((resolve) => {
+          backendServer.close(() => resolve(undefined));
+        });
+        backendServer = null;
+      } catch (e) {}
+    }
+    
+    // 4. Clean up nginx pid file and force kill any remaining nginx
+    const nginxPrefix = "/tmp/w3suite-nginx";
+    const nginxPidPath = `${nginxPrefix}/nginx.pid`;
+    
+    try {
+      if (existsSync(nginxPidPath)) {
+        const pidContent = readFileSync(nginxPidPath, 'utf8').trim();
+        if (pidContent) {
+          process.kill(parseInt(pidContent), 'SIGKILL');
+        }
+      }
+    } catch (e) {}
+    
+    // 5. Force kill any lingering nginx processes
+    await new Promise((resolve) => {
+      exec("pkill -f w3suite-nginx", () => {
+        setTimeout(resolve, 2000); // Wait 2 seconds for processes to die
+      });
+    });
+    
+    console.log("✅ All services stopped cleanly");
+  } catch (error) {
+    console.error("⚠️ Error during service shutdown:", error);
+  } finally {
+    isShuttingDown = false;
+  }
+}
 
 // Start application based on feature flag
 if (ENABLE_EMBEDDED_NGINX) {
@@ -113,7 +202,7 @@ async function startNginxAndBackend() {
     }
 
     // 3. Start nginx with isolated prefix and explicit path overrides
-    const nginxProcess = spawn("nginx", [
+    nginxProcess = spawn("nginx", [
       "-p", nginxPrefix,
       "-c", nginxGeneratedPath, 
       "-g", `error_log ${nginxPrefix}/logs/nginx_error.log warn; pid ${nginxPidPath}; daemon off;`
@@ -150,19 +239,24 @@ async function startNginxAndBackend() {
         console.log("⚠️ Could not read nginx error log");
       }
       
-      // Simple watchdog - attempt controlled restart with backoff
+      // Watchdog - restart services after unexpected nginx exit
       if (code !== 0 && signal !== 'SIGTERM' && signal !== 'SIGQUIT') {
-        console.log(`🔄 Attempting nginx restart after unexpected exit (code: ${code}, signal: ${signal})...`);
-        setTimeout(() => {
-          startNginxAndBackend().catch((restartError) => {
-            console.error("❌ Nginx restart failed:", restartError);
+        console.log(`🔄 Attempting full service restart after nginx exit (code: ${code}, signal: ${signal})...`);
+        setTimeout(async () => {
+          try {
+            await stopAllServices();  // Clean shutdown of all services
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 sec
+            startNginxAndBackend(); // Restart everything
+          } catch (restartError) {
+            console.error("❌ Service restart failed:", restartError);
             process.exit(1);
-          });
-        }, 3000); // 3 second backoff
+          }
+        }, 3000); // 3 second backoff before restart
         return;
       }
       
       if (code !== 0) {
+        console.error("❌ Nginx exited with error, shutting down application");
         process.exit(1);
       }
     });
@@ -279,6 +373,7 @@ async function startBackendOnly() {
 
   // Crea il server HTTP
   const httpServer = await registerRoutes(app);
+  backendServer = httpServer; // Save reference for lifecycle management
 
   // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ worker
   try {
@@ -405,6 +500,7 @@ async function startBackend() {
 
   // Crea il server HTTP
   const httpServer = await registerRoutes(app);
+  backendServer = httpServer; // Save reference for lifecycle management
 
   // ==================== WEBSOCKET REAL-TIME NOTIFICATIONS ====================
   try {
