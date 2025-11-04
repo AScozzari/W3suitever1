@@ -57,11 +57,32 @@ const DEFAULT_HOURS: BusinessHours = {
 };
 
 export function BusinessHoursEditor({ value, onChange, className }: BusinessHoursEditorProps) {
-  const [hours, setHours] = useState<BusinessHours>(value || DEFAULT_HOURS);
+  const [hours, setHours] = useState<BusinessHours>(() => {
+    if (!value) return DEFAULT_HOURS;
+    // Merge with defaults to ensure all days exist
+    return {
+      monday: value.monday || DEFAULT_HOURS.monday,
+      tuesday: value.tuesday || DEFAULT_HOURS.tuesday,
+      wednesday: value.wednesday || DEFAULT_HOURS.wednesday,
+      thursday: value.thursday || DEFAULT_HOURS.thursday,
+      friday: value.friday || DEFAULT_HOURS.friday,
+      saturday: value.saturday || DEFAULT_HOURS.saturday,
+      sunday: value.sunday || DEFAULT_HOURS.sunday,
+    };
+  });
 
   useEffect(() => {
     if (value) {
-      setHours(value);
+      // Merge with defaults to ensure all days exist
+      setHours({
+        monday: value.monday || DEFAULT_HOURS.monday,
+        tuesday: value.tuesday || DEFAULT_HOURS.tuesday,
+        wednesday: value.wednesday || DEFAULT_HOURS.wednesday,
+        thursday: value.thursday || DEFAULT_HOURS.thursday,
+        friday: value.friday || DEFAULT_HOURS.friday,
+        saturday: value.saturday || DEFAULT_HOURS.saturday,
+        sunday: value.sunday || DEFAULT_HOURS.sunday,
+      });
     }
   }, [value]);
 

@@ -1,0 +1,160 @@
+ stores: 22}
+2SettingsPage.tsx:712 📋 Suppliers will be loaded via TanStack Query automatically
+SettingsPage.tsx:670 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+BusinessHoursEditor.tsx:145 Uncaught TypeError: Cannot read properties of undefined (reading 'enabled')
+    at BusinessHoursEditor.tsx:145:39
+    at Array.map (<anonymous>)
+    at BusinessHoursEditor (BusinessHoursEditor.tsx:140:15)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9094e2fe:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9094e2fe:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9094e2fe:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9094e2fe:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9094e2fe:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9094e2fe:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9094e2fe:19765:15)
+(anonymous) @ BusinessHoursEditor.tsx:145
+BusinessHoursEditor @ BusinessHoursEditor.tsx:140
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9094e2fe:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9094e2fe:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9094e2fe:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9094e2fe:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9094e2fe:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9094e2fe:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+BusinessHoursEditor.tsx:145 Uncaught TypeError: Cannot read properties of undefined (reading 'enabled')
+    at BusinessHoursEditor.tsx:145:39
+    at Array.map (<anonymous>)
+    at BusinessHoursEditor (BusinessHoursEditor.tsx:140:15)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9094e2fe:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9094e2fe:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9094e2fe:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9094e2fe:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9094e2fe:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9094e2fe:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9094e2fe:19765:15)
+(anonymous) @ BusinessHoursEditor.tsx:145
+BusinessHoursEditor @ BusinessHoursEditor.tsx:140
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9094e2fe:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9094e2fe:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9094e2fe:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9094e2fe:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9094e2fe:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9094e2fe:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9094e2fe:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+hook.js:608 The above error occurred in the <BusinessHoursEditor> component:
+
+    at BusinessHoursEditor (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/crm/BusinessHoursEditor.tsx:46:39)
+    at div
+    at form
+    at FormProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-SNPXSC7A.js?v=9094e2fe:101:11)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=9094e2fe:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3FRVM557.js?v=9094e2fe:47:7
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=9094e2fe:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=9094e2fe:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=9094e2fe:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-2ZWERHHO.js?v=9094e2fe:29:5
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OCQKB4ZM.js?v=9094e2fe:239:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OCQKB4ZM.js?v=9094e2fe:162:58
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=9094e2fe:24:11)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OCQKB4ZM.js?v=9094e2fe:153:64
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=9094e2fe:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=9094e2fe:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=9094e2fe:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3FRVM557.js?v=9094e2fe:244:22
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=9094e2fe:24:11)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=9094e2fe:38:15)
+    at DialogPortal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OCQKB4ZM.js?v=9094e2fe:115:11)
+    at _c3 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/dialog.tsx:45:12)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=9094e2fe:38:15)
+    at Dialog (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OCQKB4ZM.js?v=9094e2fe:56:5)
+    at TrunkAIConfigDialog (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/crm/TrunkAIConfigDialog.tsx:41:39)
+    at div
+    at PhoneVoIPConfig (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/crm/PhoneVoIPConfig.tsx:83:35)
+    at div
+    at MotionComponent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/framer-motion.js?v=9094e2fe:945:40)
+    at div
+    at ChannelSettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/settings/ChannelSettingsPage.tsx:118:49)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:200:34)
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:344:27)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:796:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:246:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:104:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9094e2fe:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=9094e2fe:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=9094e2fe:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=9094e2fe:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=9094e2fe:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=9094e2fe:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+chunk-ZHRYBLGQ.js?v=9094e2fe:19413 Uncaught TypeError: Cannot read properties of undefined (reading 'enabled')
+    at BusinessHoursEditor.tsx:145:39
+    at Array.map (<anonymous>)
+    at BusinessHoursEditor (BusinessHoursEditor.tsx:140:15)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9094e2fe:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9094e2fe:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9094e2fe:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9094e2fe:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=9094e2fe:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=9094e2fe:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=9094e2fe:19116:15)
+(anonymous) @ BusinessHoursEditor.tsx:145
+BusinessHoursEditor @ BusinessHoursEditor.tsx:140
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9094e2fe:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9094e2fe:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9094e2fe:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9094e2fe:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+useSIPRegistration.ts:203 📡 Registration state: Unregistered
+useSIPRegistration.ts:203 📡 Registration state: Terminated
