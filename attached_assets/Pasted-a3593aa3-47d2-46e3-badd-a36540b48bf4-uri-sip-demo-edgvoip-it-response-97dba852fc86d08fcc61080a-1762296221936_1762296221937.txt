@@ -1,0 +1,113 @@
+a3593aa3-47d2-46e3-badd-a36540b48bf4", uri="sip:demo.edgvoip.it", response="97dba852fc86d08fcc61080ac72d0af3", qop=auth, cnonce="5t1lcga7fcgm", nc=00000001
+Contact: <sip:75lh8pd5@dsagsmn5cc1u.invalid;transport=ws>;expires=0
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+useSIPRegistration.ts:243 Tue Nov 04 2025 23:42:20 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Stopping sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:243 Tue Nov 04 2025 23:42:20 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of registerers
+useSIPRegistration.ts:243 Tue Nov 04 2025 23:42:20 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registerer 40aka718qatsqps1puh0331fom16tf in state Registered is being disposed
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS dsagsmn5cc1u.invalid;branch=z9hG4bK9437267;received=212.105.155.10;rport=5500
+From: "Admin User" <sip:2000@demo.edgvoip.it>;tag=331fom16tf
+To: <sip:2000@demo.edgvoip.it>;tag=003NUr2KUygge
+Call-ID: 40aka718qatsqps1puh0
+CSeq: 4 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="e5817e2f-2bd3-476c-8ec9-8cd95203f639", stale=true, algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS dsagsmn5cc1u.invalid;branch=z9hG4bK6647367
+To: <sip:2000@demo.edgvoip.it>
+From: "Admin User" <sip:2000@demo.edgvoip.it>;tag=331fom16tf
+CSeq: 5 REGISTER
+Call-ID: 40aka718qatsqps1puh0
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="e5817e2f-2bd3-476c-8ec9-8cd95203f639", uri="sip:demo.edgvoip.it", response="8d317e2274c111154d24a938fbf67531", qop=auth, cnonce="6ifmj1facdbm", nc=00000001
+Contact: <sip:75lh8pd5@dsagsmn5cc1u.invalid;transport=ws>;expires=0
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS dsagsmn5cc1u.invalid;branch=z9hG4bK6647367;received=212.105.155.10;rport=5500
+From: "Admin User" <sip:2000@demo.edgvoip.it>;tag=331fom16tf
+To: <sip:2000@demo.edgvoip.it>;tag=19veXKKQr762S
+Call-ID: 40aka718qatsqps1puh0
+CSeq: 5 REGISTER
+Date: Tue, 04 Nov 2025 22:42:21 GMT
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+useSIPRegistration.ts:207 📡 Registration state: Unregistered
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Terminated
+useSIPRegistration.ts:207 📡 Registration state: Terminated
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of sessions
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session 40aka9mtnku34d0ohcoir7ub9698vr in state Established is being disposed
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.invite-dialog | INVITE dialog 40aka9mtnku34d0ohcoir7ub9698vrZQaXSXHgyNtXj sending BYE request
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+BYE sip:+2001@93.93.113.13:5060;transport=udp SIP/2.0
+Via: SIP/2.0/WSS dsagsmn5cc1u.invalid;branch=z9hG4bK725585
+To: <sip:+2001@demo.edgvoip.it>;tag=ZQaXSXHgyNtXj
+From: "Admin User" <sip:2000@demo.edgvoip.it>;tag=r7ub9698vr
+CSeq: 2 BYE
+Call-ID: 40aka9mtnku34d0ohcoi
+Max-Forwards: 70
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.invite-dialog | INVITE dialog 40aka9mtnku34d0ohcoir7ub9698vrZQaXSXHgyNtXj destroyed
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session 40aka9mtnku34d0ohcoir7ub9698vr transitioned to state Terminated
+useSIPRegistration.ts:285 📞 Session state changed: Terminated
+useSIPRegistration.ts:302 📊 Call ended, creating CDR...
+useSIPRegistration.ts:110 📊 Creating CDR: {sipDomain: 'demo.edgvoip.it', callId: '40aka9mtnku34d0ohcoir7ub9698vr', direction: 'outbound', fromUri: '2000@demo.edgvoip.it', toUri: 'sip:+2001@demo.edgvoip.it', …}
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS dsagsmn5cc1u.invalid;branch=z9hG4bK725585;received=212.105.155.10;rport=5500
+From: "Admin User" <sip:2000@demo.edgvoip.it>;tag=r7ub9698vr
+To: <sip:+2001@demo.edgvoip.it>;tag=ZQaXSXHgyNtXj
+Call-ID: 40aka9mtnku34d0ohcoi
+CSeq: 2 BYE
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of subscriptions
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of publishers
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of transport
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Disconnecting wss://demo.edgvoip.it:7443
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnecting
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1000)
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnecting to Disconnected
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of core
+sip__js.js?v=9094e2fe:6965 Tue Nov 04 2025 23:42:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Started to Stopped
+useSIPRegistration.ts:128 ✅ CDR created: 1a528ca8-27d1-4ead-8c10-4dfa58fbc6a2
