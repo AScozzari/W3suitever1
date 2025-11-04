@@ -60,14 +60,13 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
   const callDataRef = useRef<CallData | null>(null);
 
   // Fetch SIP credentials from backend
-  const { data: credentialsResponse, isLoading, error } = useQuery<{ success: boolean; data: SIPCredentials }>({
+  // Note: queryClient automatically unwraps { data: ... } responses, so we get SIPCredentials directly
+  const { data: credentials, isLoading, error } = useQuery<SIPCredentials>({
     queryKey: ['/api/voip/extensions/me'],
     refetchOnWindowFocus: false,
     retry: false, // Don't retry on 404 (no extension assigned)
     enabled: true, // Always try to fetch credentials
   });
-
-  const credentials = credentialsResponse?.data || null;
 
   // Debug logging
   useEffect(() => {
