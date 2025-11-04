@@ -113,9 +113,10 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Auth-Session': 'authenticated',
           ...(tenant?.id && { 'x-tenant-id': tenant.id }),
         },
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include',
         body: JSON.stringify(cdrPayload),
       });
 
