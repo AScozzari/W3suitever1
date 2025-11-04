@@ -49,7 +49,7 @@ export interface UseSIPRegistrationReturn {
 }
 
 export function useSIPRegistration(): UseSIPRegistrationReturn {
-  const { tenant } = useTenant();
+  const { currentTenant } = useTenant();
   const [isRegistered, setIsRegistered] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
@@ -114,7 +114,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         headers: {
           'Content-Type': 'application/json',
           'X-Auth-Session': 'authenticated',
-          ...(tenant?.id && { 'X-Tenant-ID': tenant.id }),
+          ...(currentTenant?.id && { 'X-Tenant-ID': currentTenant.id }),
         },
         credentials: 'include',
         body: JSON.stringify(cdrPayload),
@@ -129,7 +129,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     } catch (err) {
       console.error('❌ Failed to create CDR:', err);
     }
-  }, [credentials, tenant]);
+  }, [credentials, currentTenant]);
 
   // Initialize remote audio element
   useEffect(() => {
