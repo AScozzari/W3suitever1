@@ -224,7 +224,7 @@ export class VoIPExtensionService {
         sipPassword: decryptedPassword, // Plaintext for SIP.js
         sipServer: extension.sipServer || 'sip.edgvoip.it',
         sipPort: extension.sipPort || 5060,
-        wsPort: extension.wsPort || 8443,
+        wsPort: extension.wsPort || 7443,
         transport: extension.transport || 'WSS',
         authRealm: extension.authRealm || extension.sipServer || 'sip.edgvoip.it',
         extension: extension.extension,

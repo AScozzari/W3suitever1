@@ -5647,7 +5647,7 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   // FreeSWITCH Best Practice Fields
   sipServer: varchar("sip_server", { length: 255 }).default('sip.edgvoip.it'), // SIP server hostname
   sipPort: integer("sip_port").default(5060), // SIP port (5060 for UDP, 5061 for TLS)
-  wsPort: integer("ws_port").default(8443), // WebSocket port for WebRTC
+  wsPort: integer("ws_port").default(7443), // WebSocket port for WebRTC (edgvoip uses 7443)
   transport: varchar("transport", { length: 20 }).default('WSS'), // UDP|TCP|TLS|WS|WSS
   
   // Caller ID Configuration
