@@ -5793,6 +5793,9 @@ export const insertVoipCdrSchema = createInsertSchema(voipCdrs).omit({
   sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
   direction: z.enum(['inbound', 'outbound', 'internal']),
   disposition: z.enum(['answered', 'no_answer', 'busy', 'failed', 'voicemail']),
+  startTs: z.coerce.date(),
+  answerTs: z.coerce.date().optional().nullable(),
+  endTs: z.coerce.date().optional().nullable(),
 });
 export type InsertVoipCdr = z.infer<typeof insertVoipCdrSchema>;
 export type VoipCdr = typeof voipCdrs.$inferSelect;
