@@ -1,12 +1,11 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { VoiceGatewayServer } from './websocket-server';
 import logger from './logger';
 
-// Environment configuration
-const PORT = parseInt(process.env.PORT || '3005');
+// Environment configuration  
+const PORT = parseInt(process.env.VOICE_GATEWAY_PORT || '3005');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-10-01';
 const W3_API_URL = process.env.W3_API_URL || 'http://localhost:3004';
