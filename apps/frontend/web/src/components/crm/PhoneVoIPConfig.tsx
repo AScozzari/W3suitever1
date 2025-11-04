@@ -323,7 +323,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100/50 border-orange-200 backdrop-blur-sm" data-testid="card-trunks-stats">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Trunks Attivi</p>
+                      <p className="text-sm text-gray-600 font-medium">Trunks Configurati</p>
                       <p className="text-3xl font-bold text-orange-600 mt-2">
                         {connectionStatus?.stats?.trunksActive || 0} / {connectionStatus?.stats?.trunksTotal || 0}
                       </p>
@@ -388,14 +388,19 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                                   variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} 
                                   className={
                                     trunk.trunk.status === 'active' 
-                                      ? 'bg-green-100 text-green-700 border-green-300' 
-                                      : 'bg-red-100 text-red-700 border-red-300'
+                                      ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                                      : trunk.trunk.status === 'suspended'
+                                      ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                                      : 'bg-gray-100 text-gray-700 border-gray-300'
                                   }
+                                  title="Stato nel database (non stato SIP reale)"
                                 >
                                   {trunk.trunk.status === 'active' ? (
-                                    <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
+                                    <><CheckCircle2 className="w-3 h-3 mr-1" /> Configurato</>
+                                  ) : trunk.trunk.status === 'suspended' ? (
+                                    <><AlertCircle className="w-3 h-3 mr-1" /> Sospeso</>
                                   ) : (
-                                    <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
+                                    <><XCircle className="w-3 h-3 mr-1" /> Non Configurato</>
                                   )}
                                 </Badge>
                               </TableCell>
@@ -470,14 +475,19 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                               variant={trunk.trunk.status === 'active' ? 'default' : 'secondary'} 
                               className={
                                 trunk.trunk.status === 'active' 
-                                  ? 'bg-green-100 text-green-700 border-green-300' 
-                                  : 'bg-red-100 text-red-700 border-red-300'
+                                  ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                                  : trunk.trunk.status === 'suspended'
+                                  ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                                  : 'bg-gray-100 text-gray-700 border-gray-300'
                               }
+                              title="Stato nel database (non stato SIP reale)"
                             >
                               {trunk.trunk.status === 'active' ? (
-                                <><CheckCircle2 className="w-3 h-3 mr-1" /> Active</>
+                                <><CheckCircle2 className="w-3 h-3 mr-1" /> Configurato</>
+                              ) : trunk.trunk.status === 'suspended' ? (
+                                <><AlertCircle className="w-3 h-3 mr-1" /> Sospeso</>
                               ) : (
-                                <><XCircle className="w-3 h-3 mr-1" /> Inactive</>
+                                <><XCircle className="w-3 h-3 mr-1" /> Non Configurato</>
                               )}
                             </Badge>
                             <Badge 

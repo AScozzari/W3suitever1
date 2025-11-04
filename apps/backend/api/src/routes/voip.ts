@@ -1107,16 +1107,17 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
       .select()
       .from(voipExtensions);
 
-    // TEMP: Return minimal data while debugging
+    // Map trunk data with honest status information
     const trunks = trunksData.map((row: any) => ({
       id: row.voip_trunks?.id || 'unknown',
       storeId: row.voip_trunks?.storeId || 'unknown',
       storeName: row.stores?.businessName || 'N/A',
       provider: row.voip_trunks?.provider || 'Unknown',
-      status: row.voip_trunks?.status || 'unknown',
+      dbStatus: row.voip_trunks?.status || 'unknown', // Database status (not real-time)
+      sipStatus: 'unknown', // Real SIP status requires PBX monitoring
       proxy: `${row.voip_trunks?.host || 'unknown'}:${row.voip_trunks?.port || 5060}`,
-      aiAgent: 'disabled',
-      lastPing: row.voip_trunks?.status === 'active' ? new Date().toISOString() : null,
+      aiAgent: row.voip_trunks?.aiAgentEnabled ? 'enabled' : 'disabled',
+      lastPing: null, // Real monitoring requires PBX integration
     }));
 
     const extensions = extensionsData.map((row: any) => ({
@@ -1128,7 +1129,7 @@ router.get('/connection-status', rbacMiddleware, requirePermission('view_telepho
       lastRegistered: null, // Real registration time requires PBX integration
     }));
 
-    const trunksActive = trunks.filter(t => t.status === 'active').length;
+    const trunksActive = trunks.filter(t => t.dbStatus === 'active').length;
     const trunksTotal = trunks.length;
     const extensionsRegistered = extensions.filter(e => e.sipStatus === 'registered').length;
     const extensionsTotal = extensions.length;
