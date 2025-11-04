@@ -114,7 +114,7 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
         headers: {
           'Content-Type': 'application/json',
           'X-Auth-Session': 'authenticated',
-          ...(tenant?.id && { 'x-tenant-id': tenant.id }),
+          ...(tenant?.id && { 'X-Tenant-ID': tenant.id }),
         },
         credentials: 'include',
         body: JSON.stringify(cdrPayload),
