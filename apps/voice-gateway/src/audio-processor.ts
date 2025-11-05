@@ -15,14 +15,27 @@ export class AudioProcessor {
 
   /**
    * Process incoming audio from FreeSWITCH
-   * FreeSWITCH sends PCM audio, we need to ensure it's in the correct format for OpenAI
-   * OpenAI expects: PCM16, 16kHz, mono
+   * FreeSWITCH may send WAV files with 44-byte header - OpenAI needs RAW PCM16
+   * OpenAI expects: PCM16, 16kHz, mono, NO HEADER
    */
   processIncomingAudio(audioData: Buffer): Buffer {
-    // TODO: If FreeSWITCH sends audio in different format, convert here
-    // For now, assuming FreeSWITCH is configured to send PCM16@16kHz mono
+    // Check if this is a WAV file (starts with "RIFF")
+    if (audioData.length > 44 && 
+        audioData[0] === 0x52 && // 'R'
+        audioData[1] === 0x49 && // 'I'
+        audioData[2] === 0x46 && // 'F'
+        audioData[3] === 0x46) { // 'F'
+      
+      logger.debug('[AudioProcessor] WAV header detected, stripping 44 bytes', {
+        originalSize: audioData.length,
+        rawSize: audioData.length - 44
+      });
+      
+      // Strip WAV header (first 44 bytes) to get RAW PCM
+      return audioData.subarray(44);
+    }
     
-    logger.debug('[AudioProcessor] Processing incoming audio', {
+    logger.debug('[AudioProcessor] Processing RAW PCM audio', {
       size: audioData.length,
       sampleRate: this.config.sampleRate
     });

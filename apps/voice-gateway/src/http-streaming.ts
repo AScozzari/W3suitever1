@@ -152,35 +152,12 @@ export class HttpStreamingManager {
       return { status: 'invalid_audio' };
     }
 
-    // Add to buffer
-    session.audioBuffer.push(processedAudio);
+    // Send audio directly to OpenAI - server_vad handles detection automatically
+    session.openaiClient.sendAudioChunk(processedAudio);
 
-    // Send to OpenAI when we have enough data
-    if (session.audioBuffer.length > 0) {
-      const combinedBuffer = Buffer.concat(session.audioBuffer);
-      session.openaiClient.sendAudioChunk(combinedBuffer);
-      session.audioBuffer = []; // Clear buffer after sending
-      session.audioChunkCount++;
-    }
-
-    // Commit audio buffer every 5 chunks (~1 second of audio @ 200ms/chunk)
-    // This tells OpenAI to process the audio and trigger VAD
-    const timeSinceLastCommit = Date.now() - session.lastCommitTime.getTime();
-    if (session.audioChunkCount >= 5 || timeSinceLastCommit > 2000) {
-      logger.info('[HTTP Streaming] Committing audio buffer', {
-        callId,
-        chunkCount: session.audioChunkCount,
-        timeSinceLastCommit
-      });
-      session.openaiClient.commitAudioBuffer();
-      session.audioChunkCount = 0;
-      session.lastCommitTime = new Date();
-    }
-
-    logger.debug('[HTTP Streaming] Audio streamed', {
+    logger.debug('[HTTP Streaming] Audio streamed to OpenAI', {
       callId,
-      audioSize: audioBuffer.length,
-      totalChunks: session.audioChunkCount
+      audioSize: processedAudio.length
     });
 
     return { status: 'streamed' };
