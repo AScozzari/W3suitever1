@@ -446,6 +446,88 @@ router.get('/agents', rbacMiddleware, requirePermission('workflow.view'), async 
 });
 
 /**
+ * GET /api/ai/agents/:agentId
+ * Get a specific AI agent from Brand Interface registry with full system prompt
+ * Used by Voice Gateway to fetch agent instructions
+ */
+router.get('/agents/:agentId', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Import Brand Interface database connection
+    const { db: brandDB, aiAgentsRegistry } = await import('../../../brand-api/src/db/index.js');
+    const { eq: brandEq } = await import('drizzle-orm');
+    
+    // Query agent from Brand Interface registry
+    const [agent] = await brandDB
+      .select()
+      .from(aiAgentsRegistry)
+      .where(brandEq(aiAgentsRegistry.agentId, agentId))
+      .limit(1);
+
+    if (!agent) {
+      return res.status(404).json({
+        success: false,
+        error: 'Agent not found',
+        message: `AI agent '${agentId}' not found in central registry`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (agent.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        error: 'Agent disabled',
+        message: `AI agent '${agentId}' is not active`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('AI agent retrieved for Voice Gateway', { 
+      tenantId, 
+      agentId,
+      hasSystemPrompt: !!agent.systemPrompt
+    });
+
+    // Return agent with full system prompt
+    res.status(200).json({
+      success: true,
+      data: {
+        agentId: agent.agentId,
+        name: agent.name,
+        systemPrompt: agent.systemPrompt,
+        personality: agent.personality,
+        moduleContext: agent.moduleContext,
+        baseConfiguration: agent.baseConfiguration
+      },
+      message: 'Agent retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving AI agent', { 
+      error: error.message, 
+      agentId: req.params.agentId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve AI agent',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * PUT /api/ai/agents/:agentId/toggle
  * Enable or disable a specific AI agent for the current tenant
  */
