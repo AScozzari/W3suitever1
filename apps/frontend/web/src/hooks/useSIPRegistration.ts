@@ -436,7 +436,17 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     if (!sessionRef.current || !(sessionRef.current instanceof Invitation)) return;
 
     try {
-      await sessionRef.current.accept();
+      // Configure media constraints and options (same as outbound calls)
+      const acceptOptions = {
+        sessionDescriptionHandlerOptions: {
+          constraints: {
+            audio: true,
+            video: false
+          }
+        }
+      };
+
+      await sessionRef.current.accept(acceptOptions);
       console.log('📞 Incoming call answered');
     } catch (err: any) {
       console.error('❌ Failed to answer call:', err);

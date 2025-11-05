@@ -417,7 +417,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
             <div className="text-center py-8">
               <PhoneIncoming className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
               <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-2`}>Incoming Call</p>
-              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>{currentCall?.number}</p>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>{sip.currentSession?.remoteIdentity || 'Unknown'}</p>
               <div className="flex gap-4 justify-center">
                 <Button
                   className="bg-green-600 hover:bg-green-700"
@@ -455,7 +455,7 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mx-auto mb-4 flex items-center justify-center">
                   <User className="w-8 h-8 text-white" />
                 </div>
-                <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-1`}>{currentCall?.number}</p>
+                <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-1`}>{sip.currentSession?.remoteIdentity || phoneNumber}</p>
                 <div className="flex items-center justify-center gap-2 text-green-400">
                   <Clock className="w-4 h-4" />
                   <span className="text-lg font-mono">{formatDuration(callDuration)}</span>
