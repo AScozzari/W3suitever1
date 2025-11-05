@@ -477,6 +477,30 @@ export class HttpStreamingManager {
   getAllSessions(): any[] {
     return Array.from(this.sessions.keys()).map(callId => this.getSessionInfo(callId));
   }
+
+  getDetailedSessionInfo(callId: string): any {
+    const session = this.sessions.get(callId);
+    if (!session) return null;
+
+    return {
+      callId: session.callId,
+      sessionId: session.sessionId,
+      tenantId: session.tenantId,
+      storeId: session.storeId,
+      did: session.did,
+      callerNumber: session.callerNumber,
+      aiAgentRef: session.aiAgentRef,
+      status: session.status,
+      createdAt: session.createdAt,
+      lastActivity: session.lastActivity,
+      duration: Date.now() - session.createdAt.getTime(),
+      transcript: session.transcript,
+      actions: session.actions,
+      openaiConnected: session.openaiClient.isActive(),
+      hasResponseAudio: session.responseBuffer.length > 0,
+      responseBufferSize: session.responseBuffer.length
+    };
+  }
 }
 
 // Create Express router for HTTP streaming endpoints
@@ -588,6 +612,22 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
   router.get('/api/voice/sessions', authenticateRequest, (req, res) => {
     const sessions = manager.getAllSessions();
     res.json({ sessions, count: sessions.length });
+  });
+
+  // DIAGNOSTICA: Get detailed session info with transcript and OpenAI status
+  router.get('/api/voice/diagnostic/:callId', authenticateRequest, (req, res) => {
+    const { callId } = req.params;
+    const detailedInfo = manager.getDetailedSessionInfo(callId);
+    
+    if (!detailedInfo) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    res.json({
+      diagnostic: true,
+      timestamp: new Date().toISOString(),
+      ...detailedInfo
+    });
   });
 
   return router;
