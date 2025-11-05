@@ -401,8 +401,13 @@ export class HttpStreamingManager {
 export function createHttpStreamingRouter(manager: HttpStreamingManager): Router {
   const router = Router();
 
-  // Authentication middleware - verify API key
+  // Authentication middleware - verify API key (skip for health/status endpoints)
   const authenticateRequest = (req: any, res: any, next: any) => {
+    // Skip authentication for health and status endpoints
+    if (req.path === '/health' || req.path === '/status') {
+      return next();
+    }
+    
     const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
     
     // In production, use a secure API key from environment
@@ -419,7 +424,7 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     next();
   };
 
-  // Apply authentication to all routes
+  // Apply authentication to all routes (health/status excluded in middleware)
   router.use(authenticateRequest);
 
   // Create a new streaming session
