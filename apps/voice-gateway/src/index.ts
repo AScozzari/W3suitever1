@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { VoiceGatewayServer } from './websocket-server';
+import { HttpStreamingManager, createHttpStreamingRouter } from './http-streaming';
 import logger from './logger';
 
 // Environment configuration  
@@ -33,7 +34,29 @@ app.use(morgan('combined', {
     write: (message: string) => logger.info(message.trim())
   }
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase limit for audio data
+
+// Initialize HTTP Streaming Manager
+let httpStreamingManager: HttpStreamingManager;
+let voiceGateway: VoiceGatewayServer;
+
+try {
+  httpStreamingManager = new HttpStreamingManager({
+    openaiApiKey: OPENAI_API_KEY,
+    openaiModel: OPENAI_REALTIME_MODEL,
+    w3ApiUrl: W3_API_URL,
+    w3ApiKey: W3_API_KEY
+  });
+
+  // Add HTTP streaming routes
+  const streamingRouter = createHttpStreamingRouter(httpStreamingManager);
+  app.use(streamingRouter);
+  
+  logger.info('[VoiceGateway] HTTP Streaming manager initialized');
+} catch (error: any) {
+  logger.error('Failed to initialize HTTP Streaming manager', { error: error.message });
+  process.exit(1);
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -42,7 +65,10 @@ app.get('/health', (req, res) => {
     service: 'w3-voice-gateway',
     version: '1.0.0',
     uptime: process.uptime(),
-    activeSessions: voiceGateway ? voiceGateway.getActiveSessions() : 0,
+    activeSessions: (voiceGateway ? voiceGateway.getActiveSessions() : 0) + 
+                    (httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0),
+    httpStreamingSessions: httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0,
+    websocketSessions: voiceGateway ? voiceGateway.getActiveSessions() : 0,
     environment: NODE_ENV
   });
 });
@@ -52,9 +78,13 @@ app.get('/status', (req, res) => {
   res.json({
     service: 'W3 Voice Gateway',
     websocketPort: PORT,
+    httpPort: HTTP_PORT,
     openaiModel: OPENAI_REALTIME_MODEL,
     w3ApiUrl: W3_API_URL,
-    activeSessions: voiceGateway ? voiceGateway.getActiveSessions() : 0,
+    activeSessions: (voiceGateway ? voiceGateway.getActiveSessions() : 0) + 
+                    (httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0),
+    httpStreamingSessions: httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0,
+    websocketSessions: voiceGateway ? voiceGateway.getActiveSessions() : 0,
     environment: NODE_ENV
   });
 });
@@ -67,8 +97,6 @@ app.listen(HTTP_PORT, () => {
 });
 
 // Initialize Voice Gateway WebSocket server
-let voiceGateway: VoiceGatewayServer;
-
 try {
   voiceGateway = new VoiceGatewayServer({
     port: PORT,
@@ -89,6 +117,12 @@ try {
   logger.info('=====================================');
   logger.info('📡 WebSocket endpoint: ws://localhost:' + PORT);
   logger.info('🏥 Health check: http://localhost:' + HTTP_PORT + '/health');
+  logger.info('=====================================');
+  logger.info('📞 HTTP Streaming Endpoints:');
+  logger.info('  POST   /api/voice/session/create');
+  logger.info('  POST   /api/voice/stream/:callId');
+  logger.info('  GET    /api/voice/stream/:callId/response');
+  logger.info('  POST   /api/voice/session/:callId/end');
   logger.info('=====================================');
 } catch (error: any) {
   logger.error('Failed to start Voice Gateway', { error: error.message });
