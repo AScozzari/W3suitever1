@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename);
 let brandFrontendProcess: ChildProcess | null = null;
 let w3FrontendProcess: ChildProcess | null = null;
 let brandBackendProcess: ChildProcess | null = null;
+let voiceGatewayProcess: ChildProcess | null = null;
 let nginxProcess: ChildProcess | null = null;
 let backendServer: any = null;
 let isShuttingDown = false;
@@ -67,6 +68,14 @@ async function stopAllServices() {
       try {
         brandBackendProcess.kill('SIGTERM');
         brandBackendProcess = null;
+      } catch (e) {}
+    }
+    
+    if (voiceGatewayProcess) {
+      console.log("  → Stopping Voice Gateway...");
+      try {
+        voiceGatewayProcess.kill('SIGTERM');
+        voiceGatewayProcess = null;
       } catch (e) {}
     }
     
@@ -564,6 +573,11 @@ async function startBackend() {
         brandFrontendProcess.kill("SIGTERM");
         brandFrontendProcess = null;
       }
+      if (voiceGatewayProcess) {
+        console.log("🎙️ Stopping Voice Gateway from backend shutdown...");
+        voiceGatewayProcess.kill("SIGTERM");
+        voiceGatewayProcess = null;
+      }
     } else {
       console.log("🎯 No frontend processes to stop (pure backend mode)");
     }
@@ -623,6 +637,7 @@ async function startBackend() {
       startW3Frontend();
       startBrandBackend();
       startBrandFrontend();
+      startVoiceGateway();
     } else {
       console.log("🎯 Skipping frontend services (embedded nginx mode disabled)");
     }
@@ -895,5 +910,95 @@ async function startBrandBackend() {
   } catch (error) {
     console.error("❌ Failed to start Brand Backend:", error);
     console.log("⚠️ Continuing without Brand Backend...");
+  }
+}
+
+async function startVoiceGateway() {
+  console.log("🎙️ Starting W3 Voice Gateway on ports 3005/3105...");
+  
+  try {
+    const voiceGatewayDir = path.resolve(process.cwd(), "apps/voice-gateway");
+    
+    // Verify Voice Gateway directory exists
+    if (!existsSync(voiceGatewayDir)) {
+      throw new Error(`Voice Gateway directory not found: ${voiceGatewayDir}`);
+    }
+    
+    // Set environment for Voice Gateway
+    const voiceGatewayEnv = {
+      ...process.env,
+      NODE_ENV: process.env.NODE_ENV || "development",
+      VOICE_GATEWAY_PORT: "3005",
+      W3_API_URL: "http://localhost:3004"
+    };
+    
+    // Spawn Voice Gateway using tsx to run TypeScript directly
+    voiceGatewayProcess = spawn("tsx", ["src/index.ts"], {
+      cwd: voiceGatewayDir,
+      env: voiceGatewayEnv,
+      stdio: "inherit",
+      detached: false
+    });
+    
+    voiceGatewayProcess.on("error", (error) => {
+      console.error("❌ Voice Gateway process error:", error);
+      voiceGatewayProcess = null;
+    });
+    
+    voiceGatewayProcess.on("exit", (code, signal) => {
+      voiceGatewayProcess = null;
+      if (!isShuttingDown) {
+        console.log(`⚠️ Voice Gateway exited with code ${code}, signal ${signal}`);
+        // Auto-restart if it crashes (optional)
+        console.log("🔄 Attempting Voice Gateway restart after unexpected exit...");
+        setTimeout(() => {
+          startVoiceGateway().catch((restartError) => {
+            console.error("❌ Voice Gateway restart failed:", restartError);
+          });
+        }, 3000);
+      }
+    });
+    
+    // Health check verification - wait for Voice Gateway to be ready
+    console.log("🏥 Waiting for Voice Gateway health check...");
+    const maxRetries = 15;
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+      try {
+        await new Promise((resolve, reject) => {
+          const testReq = exec("curl -s -f http://localhost:3105/health", (error, stdout, stderr) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            if (stdout && stdout.length > 0) {
+              resolve(stdout);
+            } else {
+              reject(new Error("Health check response empty"));
+            }
+          });
+        });
+        
+        console.log("✅ Voice Gateway started successfully");
+        console.log("📡 WebSocket endpoint: ws://localhost:3005");
+        console.log("🏥 Health check: http://localhost:3105/health");
+        break;
+        
+      } catch (error) {
+        retries++;
+        if (retries >= maxRetries) {
+          console.error("❌ Voice Gateway health check failed after", maxRetries, "attempts");
+          console.log("⚠️ Voice Gateway may still be starting up - continuing...");
+          break;
+        }
+        console.log(`⏳ Voice Gateway health check attempt ${retries}/${maxRetries} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+  } catch (error) {
+    console.error("❌ Failed to start Voice Gateway:", error);
+    console.log("⚠️ Continuing without Voice Gateway...");
   }
 }
