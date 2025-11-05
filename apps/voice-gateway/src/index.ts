@@ -61,7 +61,7 @@ app.get('/status', (req, res) => {
 
 // Start HTTP server for health checks
 const HTTP_PORT = PORT + 100; // HTTP on 3105 if WS is on 3005
-app.listen(HTTP_PORT, '0.0.0.0', () => {
+app.listen(HTTP_PORT, () => {
   logger.info(`[VoiceGateway] HTTP server running on port ${HTTP_PORT}`);
   logger.info(`[VoiceGateway] Health check: http://localhost:${HTTP_PORT}/health`);
 });
