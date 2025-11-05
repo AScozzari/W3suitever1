@@ -401,34 +401,8 @@ export class HttpStreamingManager {
 export function createHttpStreamingRouter(manager: HttpStreamingManager): Router {
   const router = Router();
 
-  // Health check endpoint (no authentication required)
-  router.get('/api/voice/health', (req, res) => {
-    res.json({
-      status: 'healthy',
-      service: 'w3-voice-gateway-http-streaming',
-      activeSessions: manager.getActiveSessions(),
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  // Status endpoint (no authentication required)
-  router.get('/api/voice/status', (req, res) => {
-    const sessions = manager.getAllSessions();
-    res.json({
-      service: 'W3 Voice Gateway - HTTP Streaming',
-      activeSessions: manager.getActiveSessions(),
-      sessions,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  // Authentication middleware - verify API key (skip for health/status endpoints)
+  // Authentication middleware - verify API key for protected routes
   const authenticateRequest = (req: any, res: any, next: any) => {
-    // Skip authentication for health and status endpoints
-    if (req.path === '/api/voice/health' || req.path === '/api/voice/status') {
-      return next();
-    }
-    
     const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
     
     // In production, use a secure API key from environment
@@ -445,11 +419,8 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     next();
   };
 
-  // Apply authentication to all routes (health/status excluded in middleware)
-  router.use(authenticateRequest);
-
-  // Create a new streaming session
-  router.post('/api/voice/session/create', async (req, res) => {
+  // Create a new streaming session (protected with API key)
+  router.post('/api/voice/session/create', authenticateRequest, async (req, res) => {
     try {
       const { callId, tenantId, storeId, did, callerNumber, aiAgentRef } = req.body;
 
@@ -475,8 +446,8 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     }
   });
 
-  // Stream audio chunk to a session
-  router.post('/api/voice/stream/:callId', async (req, res) => {
+  // Stream audio chunk to a session (protected with API key)
+  router.post('/api/voice/stream/:callId', authenticateRequest, async (req, res) => {
     try {
       const { callId } = req.params;
       const { audio } = req.body;
@@ -493,8 +464,8 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     }
   });
 
-  // Get response audio from a session (long polling)
-  router.get('/api/voice/stream/:callId/response', async (req, res) => {
+  // Get response audio from a session (protected with API key)
+  router.get('/api/voice/stream/:callId/response', authenticateRequest, async (req, res) => {
     try {
       const { callId } = req.params;
       const timeout = parseInt(req.query.timeout as string) || 5000;
@@ -507,8 +478,8 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     }
   });
 
-  // End a streaming session
-  router.post('/api/voice/session/:callId/end', async (req, res) => {
+  // End a streaming session (protected with API key)
+  router.post('/api/voice/session/:callId/end', authenticateRequest, async (req, res) => {
     try {
       const { callId } = req.params;
       const result = await manager.endSession(callId);
@@ -519,8 +490,8 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     }
   });
 
-  // Get session info
-  router.get('/api/voice/session/:callId', (req, res) => {
+  // Get session info (protected with API key)
+  router.get('/api/voice/session/:callId', authenticateRequest, (req, res) => {
     const { callId } = req.params;
     const info = manager.getSessionInfo(callId);
     
@@ -531,8 +502,8 @@ export function createHttpStreamingRouter(manager: HttpStreamingManager): Router
     res.json(info);
   });
 
-  // Get all active sessions
-  router.get('/api/voice/sessions', (req, res) => {
+  // Get all active sessions (protected with API key)
+  router.get('/api/voice/sessions', authenticateRequest, (req, res) => {
     const sessions = manager.getAllSessions();
     res.json({ sessions, count: sessions.length });
   });
