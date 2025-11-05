@@ -21,6 +21,8 @@ interface StreamingSession {
   status: 'active' | 'ending' | 'ended';
   createdAt: Date;
   lastActivity: Date;
+  audioChunkCount: number;
+  lastCommitTime: Date;
 }
 
 export class HttpStreamingManager {
@@ -102,7 +104,9 @@ export class HttpStreamingManager {
       actions: [],
       status: 'active',
       createdAt: new Date(),
-      lastActivity: new Date()
+      lastActivity: new Date(),
+      audioChunkCount: 0,
+      lastCommitTime: new Date()
     };
 
     // Setup OpenAI handlers
@@ -151,16 +155,32 @@ export class HttpStreamingManager {
     // Add to buffer
     session.audioBuffer.push(processedAudio);
 
-    // Send to OpenAI when we have enough data (e.g., 320 bytes = 20ms at 16kHz)
+    // Send to OpenAI when we have enough data
     if (session.audioBuffer.length > 0) {
       const combinedBuffer = Buffer.concat(session.audioBuffer);
       session.openaiClient.sendAudioChunk(combinedBuffer);
       session.audioBuffer = []; // Clear buffer after sending
+      session.audioChunkCount++;
+    }
+
+    // Commit audio buffer every 5 chunks (~1 second of audio @ 200ms/chunk)
+    // This tells OpenAI to process the audio and trigger VAD
+    const timeSinceLastCommit = Date.now() - session.lastCommitTime.getTime();
+    if (session.audioChunkCount >= 5 || timeSinceLastCommit > 2000) {
+      logger.info('[HTTP Streaming] Committing audio buffer', {
+        callId,
+        chunkCount: session.audioChunkCount,
+        timeSinceLastCommit
+      });
+      session.openaiClient.commitAudioBuffer();
+      session.audioChunkCount = 0;
+      session.lastCommitTime = new Date();
     }
 
     logger.debug('[HTTP Streaming] Audio streamed', {
       callId,
-      audioSize: audioBuffer.length
+      audioSize: audioBuffer.length,
+      totalChunks: session.audioChunkCount
     });
 
     return { status: 'streamed' };
@@ -282,7 +302,42 @@ export class HttpStreamingManager {
         });
         break;
 
+      case 'session.updated':
+        logger.info('[HTTP Streaming] OpenAI session updated', {
+          callId: session.callId,
+          session: event.session
+        });
+        break;
+
+      case 'input_audio_buffer.committed':
+        logger.info('[HTTP Streaming] ✅ Audio buffer committed to OpenAI', {
+          callId: session.callId,
+          itemId: event.item_id
+        });
+        break;
+
+      case 'input_audio_buffer.speech_started':
+        logger.info('[HTTP Streaming] 🎤 Speech detected - user started speaking', {
+          callId: session.callId,
+          audioStartMs: event.audio_start_ms
+        });
+        break;
+
+      case 'input_audio_buffer.speech_stopped':
+        logger.info('[HTTP Streaming] 🛑 Speech stopped - user finished speaking', {
+          callId: session.callId,
+          audioEndMs: event.audio_end_ms,
+          itemId: event.item_id
+        });
+        break;
+
       case 'conversation.item.created':
+        logger.info('[HTTP Streaming] Conversation item created', {
+          callId: session.callId,
+          itemType: event.item?.type,
+          role: event.item?.role
+        });
+        
         if (event.item?.type === 'message') {
           const transcript = event.item.content?.[0]?.transcript;
           if (transcript) {
@@ -297,13 +352,55 @@ export class HttpStreamingManager {
         }
         break;
 
+      case 'conversation.item.input_audio_transcription.completed':
+        logger.info('[HTTP Streaming] 📝 User speech transcribed', {
+          callId: session.callId,
+          transcript: event.transcript
+        });
+        session.transcript.push(`[User]: ${event.transcript}`);
+        break;
+
+      case 'response.created':
+        logger.info('[HTTP Streaming] 🤖 OpenAI started generating response', {
+          callId: session.callId,
+          responseId: event.response?.id
+        });
+        break;
+
+      case 'response.audio_transcript.delta':
+        logger.debug('[HTTP Streaming] AI speech transcription delta', {
+          callId: session.callId,
+          delta: event.delta
+        });
+        break;
+
       case 'response.audio.delta':
         // OpenAI sends audio chunks - add to response buffer
         if (event.delta) {
           const audioBuffer = session.audioProcessor.base64ToBuffer(event.delta);
           const processedAudio = session.audioProcessor.processOutgoingAudio(audioBuffer);
           session.responseBuffer.push(processedAudio);
+          logger.debug('[HTTP Streaming] 🔊 Audio chunk received from OpenAI', {
+            callId: session.callId,
+            audioSize: processedAudio.length
+          });
         }
+        break;
+
+      case 'response.audio.done':
+        logger.info('[HTTP Streaming] ✅ AI audio generation complete', {
+          callId: session.callId,
+          responseId: event.response_id,
+          totalBuffers: session.responseBuffer.length
+        });
+        break;
+
+      case 'response.done':
+        logger.info('[HTTP Streaming] ✅ AI response complete', {
+          callId: session.callId,
+          responseId: event.response?.id,
+          status: event.response?.status
+        });
         break;
 
       case 'response.function_call_arguments.done':
@@ -326,11 +423,19 @@ export class HttpStreamingManager {
         break;
 
       case 'error':
-        logger.error('[HTTP Streaming] OpenAI error event', {
+        logger.error('[HTTP Streaming] ❌ OpenAI error event', {
           callId: session.callId,
           error: event.error
         });
         break;
+
+      default:
+        // Log unknown events for debugging
+        logger.debug('[HTTP Streaming] Unknown OpenAI event', {
+          callId: session.callId,
+          eventType: event.type,
+          event
+        });
     }
   }
 
