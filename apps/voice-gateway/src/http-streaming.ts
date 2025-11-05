@@ -401,10 +401,31 @@ export class HttpStreamingManager {
 export function createHttpStreamingRouter(manager: HttpStreamingManager): Router {
   const router = Router();
 
+  // Health check endpoint (no authentication required)
+  router.get('/api/voice/health', (req, res) => {
+    res.json({
+      status: 'healthy',
+      service: 'w3-voice-gateway-http-streaming',
+      activeSessions: manager.getActiveSessions(),
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Status endpoint (no authentication required)
+  router.get('/api/voice/status', (req, res) => {
+    const sessions = manager.getAllSessions();
+    res.json({
+      service: 'W3 Voice Gateway - HTTP Streaming',
+      activeSessions: manager.getActiveSessions(),
+      sessions,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Authentication middleware - verify API key (skip for health/status endpoints)
   const authenticateRequest = (req: any, res: any, next: any) => {
     // Skip authentication for health and status endpoints
-    if (req.path === '/health' || req.path === '/status') {
+    if (req.path === '/api/voice/health' || req.path === '/api/voice/status') {
       return next();
     }
     
