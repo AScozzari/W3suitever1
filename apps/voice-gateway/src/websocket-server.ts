@@ -508,7 +508,9 @@ export class VoiceGatewayServer {
       const response = await fetch(`${this.w3ApiUrl}/api/ai/agents/${aiAgentRef}`, {
         headers: {
           'x-tenant-id': tenantId,
-          'x-api-key': this.w3ApiKey
+          'x-api-key': this.w3ApiKey,
+          'X-Auth-Session': 'authenticated', // Required for dev mode
+          'X-Demo-User': 'voice-gateway'    // Identify as Voice Gateway
         }
       });
 
