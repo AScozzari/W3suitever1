@@ -5,7 +5,7 @@ import { VoiceGatewayServer } from './websocket-server';
 import logger from './logger';
 
 // Environment configuration  
-const PORT = parseInt(process.env.VOICE_GATEWAY_PORT || '8000');
+const PORT = parseInt(process.env.VOICE_GATEWAY_PORT || '3005');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-10-01';
 const W3_API_URL = process.env.W3_API_URL || 'http://localhost:3004';
@@ -60,7 +60,7 @@ app.get('/status', (req, res) => {
 });
 
 // Start HTTP server for health checks
-const HTTP_PORT = PORT + 8; // HTTP on 8008 if WS is on 8000
+const HTTP_PORT = PORT + 100; // HTTP on 3105 if WS is on 3005
 app.listen(HTTP_PORT, '0.0.0.0', () => {
   logger.info(`[VoiceGateway] HTTP server running on port ${HTTP_PORT}`);
   logger.info(`[VoiceGateway] Health check: http://localhost:${HTTP_PORT}/health`);
