@@ -108,19 +108,29 @@ async function stopAllServices() {
   }
 }
 
-// Start application based on feature flag
-if (ENABLE_EMBEDDED_NGINX) {
-  console.log("🔧 Starting in EMBEDDED NGINX mode (legacy/rollback)");
-  console.log("📋 Nginx process management: ENABLED");
-  console.log("🎯 Frontend services management: ENABLED");
-  startNginxAndBackend();
-} else {
-  console.log("🔧 Starting in PURE BACKEND mode (nginx-external)");
-  console.log("📋 Nginx process management: DISABLED");
-  console.log("🎯 Frontend services management: DISABLED");
-  console.log("🚀 Backend will run standalone on platform port (ENV PORT)");
-  startBackendOnly();
-}
+// Start application based on feature flag (wrapped in async IIFE to ensure await)
+(async () => {
+  if (ENABLE_EMBEDDED_NGINX) {
+    console.log("🔧 Starting in EMBEDDED NGINX mode (legacy/rollback)");
+    console.log("📋 Nginx process management: ENABLED");
+    console.log("🎯 Frontend services management: ENABLED");
+    await startNginxAndBackend();
+  } else {
+    console.log("🔧 Starting in PURE BACKEND mode (nginx-external)");
+    console.log("📋 Nginx process management: DISABLED");
+    console.log("🎯 Frontend services management: DISABLED");
+    console.log("🚀 Backend will run standalone on platform port (ENV PORT)");
+    await startBackendOnly();
+  }
+  
+  // Keep process alive - server and child processes need the main process running
+  console.log("🔄 Main process will stay alive to keep all services running");
+  // The HTTP servers and child processes will keep the event loop active
+  // No need for setInterval - just don't call process.exit()
+})().catch((error) => {
+  console.error("❌ Fatal error during startup:", error);
+  process.exit(1);
+});
 
 async function startNginxAndBackend() {
   const port = Number(process.env.PORT || 3000);
@@ -577,56 +587,73 @@ async function startBackend() {
   // W3 Suite backend on dedicated port 3004 (internal only)
   const backendPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
 
-  httpServer.listen(backendPort, "127.0.0.1", async () => {
-    console.log(`🚀 W3 Suite backend running on localhost:${backendPort} (internal only)`);
-    console.log(`🔌 API available internally at: http://localhost:${backendPort}/api`);
-    console.log(`🔍 Health check: http://localhost:${backendPort}/api/health`);
-    
-    // Health check retry loop (like Brand Backend)
-    const healthUrl = `http://localhost:${backendPort}/api/health`;
-    const maxRetries = 15;
-    let retryCount = 0;
-    
-    const checkHealth = async (): Promise<boolean> => {
+  // Wrap listen in Promise to ensure proper awaiting
+  await new Promise<void>((resolve, reject) => {
+    httpServer.listen(backendPort, "127.0.0.1", async () => {
       try {
-        const response = await fetch(healthUrl);
-        if (response.ok) {
-          return true;
+        console.log(`🚀 W3 Suite backend running on localhost:${backendPort} (internal only)`);
+        console.log(`🔌 API available internally at: http://localhost:${backendPort}/api`);
+        console.log(`🔍 Health check: http://localhost:${backendPort}/api/health`);
+        
+        // Health check retry loop (like Brand Backend)
+        const healthUrl = `http://localhost:${backendPort}/api/health`;
+        const maxRetries = 15;
+        let retryCount = 0;
+        
+        const checkHealth = async (): Promise<boolean> => {
+          try {
+            const response = await fetch(healthUrl);
+            if (response.ok) {
+              return true;
+            }
+            return false;
+          } catch (error) {
+            return false;
+          }
+        };
+        
+        while (retryCount < maxRetries) {
+          retryCount++;
+          const isHealthy = await checkHealth();
+          
+          if (isHealthy) {
+            console.log(`✅ W3 Suite backend started successfully on port ${backendPort}`);
+            console.log(`🔌 W3 Suite backend accessible at: http://localhost:${backendPort}`);
+            break;
+          } else {
+            console.log(`⏳ W3 Suite backend health check attempt ${retryCount}/${maxRetries} failed, retrying...`);
+            await new Promise(res => setTimeout(res, 1000)); // Wait 1 second
+          }
         }
-        return false;
+        
+        if (retryCount >= maxRetries) {
+          console.log(`❌ W3 Suite backend health check failed after ${maxRetries} attempts`);
+        }
+        
+        // Start frontend services only in embedded nginx mode
+        if (ENABLE_EMBEDDED_NGINX) {
+          console.log("🎯 Starting frontend services (embedded nginx mode)");
+          await Promise.all([
+            startW3Frontend(),
+            startBrandBackend(),
+            startBrandFrontend()
+          ]);
+        } else {
+          console.log("🎯 Skipping frontend services (embedded nginx mode disabled)");
+        }
+        
+        // Signal that initialization is complete
+        console.log("🎉 All services initialized - server will remain running");
+        // Resolve the promise - server and child processes will keep process alive
+        resolve();
       } catch (error) {
-        return false;
+        reject(error);
       }
-    };
-    
-    while (retryCount < maxRetries) {
-      retryCount++;
-      const isHealthy = await checkHealth();
-      
-      if (isHealthy) {
-        console.log(`✅ W3 Suite backend started successfully on port ${backendPort}`);
-        console.log(`🔌 W3 Suite backend accessible at: http://localhost:${backendPort}`);
-        break;
-      } else {
-        console.log(`⏳ W3 Suite backend health check attempt ${retryCount}/${maxRetries} failed, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-      }
-    }
-    
-    if (retryCount >= maxRetries) {
-      console.log(`❌ W3 Suite backend health check failed after ${maxRetries} attempts`);
-    }
-    
-    // Start frontend services only in embedded nginx mode
-    if (ENABLE_EMBEDDED_NGINX) {
-      console.log("🎯 Starting frontend services (embedded nginx mode)");
-      startW3Frontend();
-      startBrandBackend();
-      startBrandFrontend();
-    } else {
-      console.log("🎯 Skipping frontend services (embedded nginx mode disabled)");
-    }
+    }).on('error', reject);
   });
+  
+  // Server and child processes will keep the process alive from here on
+  console.log("✅ Startup complete - all services running");
 }
 
 async function startBrandFrontend() {
