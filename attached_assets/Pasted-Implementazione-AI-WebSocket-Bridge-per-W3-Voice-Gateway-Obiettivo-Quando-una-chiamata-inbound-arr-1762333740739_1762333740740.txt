@@ -1,0 +1,268 @@
+Implementazione AI WebSocket Bridge per W3 Voice Gateway
+Obiettivo
+Quando una chiamata inbound arriva e l'Integration API risponde con AI_ENABLED=true, FreeSWITCH deve:
+
+Aprire connessione WebSocket a W3 Voice Gateway
+Streaming audio bidirezionale (FreeSWITCH ↔ W3 Gateway)
+Gestire eventi call (hangup, DTMF)
+Fallback automatico a extension se WebSocket fallisce
+Architettura Flusso Completo
+Chiamata Inbound DID 5406594427
+    ↓
+FreeSWITCH dialplan: curl API
+    ↓
+Backend Proxy → Integration API (porta 8085)
+    ↓
+Risposta: AI_ENABLED=true, WS_URL=wss://...
+    ↓
+FreeSWITCH: lua script ai_websocket_bridge.lua
+    ↓
+WebSocket a W3 Voice Gateway
+    ↓
+Audio Stream bidirezionale
+Implementazione
+1. Script Lua WebSocket Bridge
+File: /usr/local/freeswitch/scripts/ai_websocket_bridge.lua
+
+-- AI WebSocket Bridge per W3 Voice Gateway
+-- Connette chiamata FreeSWITCH a W3 AI agent via WebSocket
+
+local socket = require("socket")
+local http = require("socket.http")
+local ltn12 = require("ltn12")
+
+function log(level, msg)
+    freeswitch.consoleLog(level, "[AI_WS_BRIDGE] " .. msg .. "\n")
+end
+
+function ai_bridge(ws_url, failover_ext, domain_name)
+    log("NOTICE", "Starting AI WebSocket Bridge")
+    log("NOTICE", "WS URL: " .. ws_url)
+    log("NOTICE", "Failover: " .. failover_ext .. "@" .. domain_name)
+    
+    local session = freeswitch.Session()
+    
+    if not session:ready() then
+        log("ERROR", "Session not ready")
+        return
+    end
+    
+    -- Answer call
+    session:answer()
+    session:sleep(100)
+    
+    -- Try WebSocket connection
+    log("NOTICE", "Attempting WebSocket connection...")
+    
+    -- Parse WebSocket URL
+    local protocol, host, port, path = ws_url:match("^(wss?)://([^:/]+):?(%d*)(.*)$")
+    if not host then
+        log("ERROR", "Invalid WebSocket URL: " .. ws_url)
+        log("WARNING", "Falling back to extension " .. failover_ext)
+        session:execute("bridge", "user/" .. failover_ext .. "@" .. domain_name)
+        return
+    end
+    
+    port = port ~= "" and tonumber(port) or (protocol == "wss" and 443 or 80)
+    path = path ~= "" and path or "/"
+    
+    log("NOTICE", "Parsed: " .. protocol .. "://" .. host .. ":" .. port .. path)
+    
+    -- For now, we'll use FreeSWITCH's built-in capabilities
+    -- Create a temporary solution using HTTP long-polling or similar
+    -- Full WebSocket requires external library
+    
+    -- TEMPORARY: Play announcement and transfer
+    log("WARNING", "WebSocket library not available, using HTTP fallback")
+    
+    -- Play AI greeting
+    session:execute("playback", "ivr/ivr-please_hold_while_party_contacted.wav")
+    
+    -- In a real implementation, here we would:
+    -- 1. Open WebSocket connection to W3 Gateway
+    -- 2. Stream audio from session to WebSocket
+    -- 3. Stream audio from WebSocket to session
+    -- 4. Handle events (hangup, DTMF)
+    
+    -- For now, fallback to extension after greeting
+    log("NOTICE", "Transferring to fallback extension " .. failover_ext)
+    session:transfer(failover_ext, "XML", domain_name)
+end
+
+-- Main execution
+local ws_url = argv[1] or ""
+local failover_ext = argv[2] or "2000"
+local domain_name = argv[3] or "demo.edgvoip.it"
+
+if ws_url == "" then
+    log("ERROR", "No WebSocket URL provided")
+    log("ERROR", "Usage: lua ai_websocket_bridge.lua <ws_url> <failover_ext> <domain_name>")
+else
+    local status, err = pcall(ai_bridge, ws_url, failover_ext, domain_name)
+    if not status then
+        log("ERROR", "Bridge failed: " .. tostring(err))
+    end
+end
+2. Script Avanzato con Libreria WebSocket
+File: /usr/local/freeswitch/scripts/ai_websocket_bridge_full.lua
+
+Questo script richiede installazione di libreria WebSocket Lua:
+
+-- Richiede: luarocks install lua-websockets
+local websocket = require("websocket")
+local json = require("cjson")
+
+function ai_bridge_websocket(ws_url, session)
+    log("NOTICE", "Connecting to WebSocket: " .. ws_url)
+    
+    -- Create WebSocket client
+    local ws, err = websocket.client()
+    if not ws then
+        log("ERROR", "Failed to create WebSocket client: " .. tostring(err))
+        return false
+    end
+    
+    -- Connect
+    local ok, err = ws:connect(ws_url)
+    if not ok then
+        log("ERROR", "Failed to connect: " .. tostring(err))
+        return false
+    end
+    
+    log("NOTICE", "WebSocket connected successfully")
+    
+    -- Set up audio streaming in separate thread
+    session:execute("record_session", "/tmp/ai_session_" .. session:get_uuid() .. ".wav")
+    
+    -- Send initial metadata
+    local metadata = {
+        event = "session_start",
+        callId = session:get_uuid(),
+        caller = session:getVariable("caller_id_number"),
+        did = session:getVariable("destination_number")
+    }
+    
+    ws:send(json.encode(metadata))
+    
+    -- Audio streaming loop (simplified)
+    while session:ready() do
+        -- Read audio from session
+        -- Send to WebSocket
+        -- Receive audio from WebSocket
+        -- Play to session
+        
+        session:sleep(20) -- 20ms frame
+    end
+    
+    -- Close WebSocket
+    ws:close()
+    log("NOTICE", "WebSocket closed")
+    
+    return true
+end
+3. Dialplan Update con Conditional Bridge
+File: /usr/local/freeswitch/etc/freeswitch/dialplan/demo.edgvoip.it.xml
+
+Modificare extension inbound_ai_dynamic:
+
+<extension name="inbound_ai_dynamic">
+  <condition field="destination_number" expression="^(5406594427|\+?390686356924)$">
+    <action application="log" data="NOTICE INBOUND DID: ${destination_number}"/>
+    <action application="set" data="call_direction=inbound"/>
+    
+    <!-- API call al backend -->
+    <action application="curl" data="http://localhost:3000/api/freeswitch/ai-routing?trunk_id=b773a426-c646-47e4-ba13-1320dc8724cb&call_id=${uuid}&caller=${caller_id_number}&did=${destination_number}&tenant_id=42b7b735-7994-4c54-a451-6ba67cb68f60 get"/>
+    
+    <!-- Parse risposta -->
+    <action application="set" data="ai_enabled=${curl_response_data(AI_ENABLED)}"/>
+    <action application="set" data="failover_ext=${curl_response_data(FAILOVER_EXT)}"/>
+    <action application="set" data="ws_url=${curl_response_data(WS_URL)}"/>
+    
+    <action application="log" data="NOTICE AI Decision: enabled=${ai_enabled}, fallback=${failover_ext}"/>
+    <action application="log" data="NOTICE WebSocket URL: ${ws_url}"/>
+    
+    <!-- Conditional: Se AI enabled, usa Lua bridge -->
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+  </condition>
+  
+  <!-- Condition 2: AI Enabled = true -->
+  <condition field="${ai_enabled}" expression="^true$">
+    <action application="log" data="NOTICE AI ENABLED - Using WebSocket bridge"/>
+    <action application="lua" data="ai_websocket_bridge.lua ${ws_url} ${failover_ext} ${domain_name}"/>
+    <anti-action application="log" data="NOTICE AI DISABLED - Using fallback extension"/>
+    <anti-action application="bridge" data="user/${failover_ext}@${domain_name}"/>
+  </condition>
+  
+  <!-- Voicemail se nessuno risponde -->
+  <condition field="destination_number" expression="^(5406594427|\+?390686356924)$">
+    <action application="answer"/>
+    <action application="sleep" data="1000"/>
+    <action application="voicemail" data="default ${domain_name} ${failover_ext}"/>
+  </condition>
+</extension>
+4. Backend: Costruire WS URL Corretto
+File: packages/backend/src/routes/freeswitch-ai.routes.ts
+
+Modificare per costruire URL con parametri:
+
+// Se Integration API risponde con shouldRouteToAi=true
+if (decision.shouldRouteToAi) {
+  const wsUrl = `wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/ai-gateway/route?callId=${call_id}&tenantId=${tenant_id}&storeId=${store_id || ''}&did=${did}&caller=${caller}&aiAgentRef=customer-care-voice`;
+  
+  response = [
+    `AI_ENABLED=true`,
+    `FAILOVER_EXT=${decision.failoverExtension || '2000'}`,
+    `WS_URL=${wsUrl}`,
+    `REASON=AI active`
+  ].join('\n');
+}
+Opzioni di Implementazione
+Opzione A: Soluzione Minimale (2-3 ore)
+Script Lua basico che:
+Prova connessione WebSocket
+Se fallisce → fallback a extension
+Play messaggio durante tentativo connessione
+Pro: Veloce da implementare
+
+Contro: Audio streaming non perfetto
+
+Opzione B: Soluzione con Libreria (1-2 giorni)
+Installare lua-websockets via luarocks
+Script Lua completo con streaming audio
+Gestione eventi completa
+Pro: Funzionalità completa
+
+Contro: Richiede installazione dipendenze
+
+Opzione C: Module C Custom (1-2 settimane)
+Sviluppare mod_ai_websocket_bridge.c
+Integrazione nativa con FreeSWITCH
+Performance ottimali
+Pro: Production-ready, performance
+
+Contro: Sviluppo lungo
+
+Raccomandazione
+Per testing immediato: Iniziare con Opzione A (script Lua basico)
+
+Permette di testare il flusso end-to-end
+Verifica integrazione con W3 Gateway
+Identifica eventuali problemi
+Per produzione: Pianificare Opzione B o C
+
+Testing
+1. Verifica W3 Gateway Attivo
+curl https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/health
+2. Test Script Lua
+/usr/local/freeswitch/bin/fs_cli -x "lua ai_websocket_bridge.lua 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/ai-gateway/route?callId=test&tenantId=42b7b735-7994-4c54-a451-6ba67cb68f60&did=5406594427&caller=393331234567&aiAgentRef=customer-care-voice' '2000' 'demo.edgvoip.it'"
+3. Test Chiamata Inbound
+Chiama DID 5406594427
+Verifica log FreeSWITCH per "AI ENABLED"
+Verifica connessione WebSocket nei log
+Verifica audio streaming
+Note Implementazione
+Lo script Lua deve gestire timeout connessione (5 secondi)
+Fallback automatico a extension se WebSocket fallisce
+Log dettagliati per debugging
+Gestione cleanup risorse (chiusura WebSocket, file temporanei)
