@@ -22,6 +22,7 @@ import {
   real,
   decimal,
   bigint,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -5103,6 +5104,10 @@ export const crmCustomers = w3suiteSchema.table("crm_customers", {
   primaryContactName: varchar("primary_contact_name", { length: 200 }), // Nome referente principale per B2B
   sedi: jsonb("sedi"), // JSONB array of locations { type, address, city, zip, province }
   secondaryContacts: jsonb("secondary_contacts"), // JSONB array [{ name, role, email, phone }]
+  companySize: varchar("company_size", { length: 50 }), // 'micro' (1-9), 'small' (10-49), 'medium' (50-249), 'large' (250+)
+  industry: varchar("industry", { length: 255 }), // Settore industriale
+  decisionMakers: jsonb("decision_makers"), // JSONB array [{ name, role, email, phone, department }]
+  parentCompanyId: uuid("parent_company_id"), // Self-reference per holding/gruppi aziendali
   
   // Common fields
   sourceDealId: uuid("source_deal_id").references(() => crmDeals.id),
@@ -5119,6 +5124,37 @@ export const crmCustomers = w3suiteSchema.table("crm_customers", {
   tenantPersonIdIdx: index("crm_customers_tenant_person_id_idx").on(table.tenantId, table.personId),
   tenantTypeStatusIdx: index("crm_customers_tenant_type_status_idx").on(table.tenantId, table.customerType, table.status),
   tenantIdIdx: index("crm_customers_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Orders - Sales transactions (mock data until POS integration)
+export const crmOrders = w3suiteSchema.table("crm_orders", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  customerId: uuid("customer_id").notNull().references(() => crmCustomers.id),
+  orderNumber: varchar("order_number", { length: 100 }).notNull(),
+  orderDate: timestamp("order_date").notNull(),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).default('EUR'),
+  status: varchar("status", { length: 50 }).notNull().default('completed'),
+  paymentMethod: varchar("payment_method", { length: 100 }),
+  paymentStatus: varchar("payment_status", { length: 50 }).default('paid'),
+  shippingAddress: jsonb("shipping_address"),
+  billingAddress: jsonb("billing_address"),
+  items: jsonb("items").notNull(),
+  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }).default('0'),
+  taxAmount: numeric("tax_amount", { precision: 12, scale: 2 }).default('0'),
+  shippingAmount: numeric("shipping_amount", { precision: 12, scale: 2 }).default('0'),
+  notes: text("notes"),
+  storeId: uuid("store_id"),
+  channelType: varchar("channel_type", { length: 50 }),
+  createdBy: varchar("created_by", { length: 255 }),
+  updatedBy: varchar("updated_by", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantCustomerDateIdx: index("crm_orders_tenant_customer_date_idx").on(table.tenantId, table.customerId, table.orderDate),
+  tenantOrderNumberUniq: uniqueIndex("crm_orders_tenant_order_number_uniq").on(table.tenantId, table.orderNumber),
+  tenantIdIdx: index("crm_orders_tenant_id_idx").on(table.tenantId),
 }));
 
 // CRM Campaign Pipeline Links - N:N relationships
@@ -5479,6 +5515,14 @@ export const insertCrmCustomerSchema = createInsertSchema(crmCustomers).omit({
 });
 export type InsertCrmCustomer = z.infer<typeof insertCrmCustomerSchema>;
 export type CrmCustomer = typeof crmCustomers.$inferSelect;
+
+export const insertCrmOrderSchema = createInsertSchema(crmOrders).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmOrder = z.infer<typeof insertCrmOrderSchema>;
+export type CrmOrder = typeof crmOrders.$inferSelect;
 
 export const insertCrmCampaignPipelineLinkSchema = createInsertSchema(crmCampaignPipelineLinks).omit({ 
   id: true, 

@@ -27,6 +27,7 @@ import {
   crmPipelineStages,
   crmDeals,
   crmCustomers,
+  crmOrders,
   crmInteractions,
   crmTasks,
   crmPersonIdentities,
@@ -325,7 +326,7 @@ router.get('/leads', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const { status, storeId, campaign, limit = '100', offset = '0' } = req.query;
+    const { status, storeId, campaign, customerId, personId, limit = '100', offset = '0' } = req.query;
     
     await setTenantContext(tenantId);
 
@@ -339,6 +340,26 @@ router.get('/leads', async (req, res) => {
     }
     if (campaign) {
       conditions.push(eq(crmLeads.campaignId, campaign as string));
+    }
+    if (personId) {
+      conditions.push(eq(crmLeads.personId, personId as string));
+    }
+    if (customerId) {
+      const customer = await db
+        .select({ personId: crmCustomers.personId })
+        .from(crmCustomers)
+        .where(and(eq(crmCustomers.id, customerId as string), eq(crmCustomers.tenantId, tenantId)))
+        .limit(1);
+      if (customer[0]?.personId) {
+        conditions.push(eq(crmLeads.personId, customer[0].personId));
+      } else {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          message: 'No leads found for this customer',
+          timestamp: new Date().toISOString()
+        } as ApiSuccessResponse);
+      }
     }
 
     const leads = await db
@@ -4177,7 +4198,7 @@ router.get('/deals', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const { status, pipelineId, stage, limit = '100', offset = '0' } = req.query;
+    const { status, pipelineId, stage, customerId, limit = '100', offset = '0' } = req.query;
     
     await setTenantContext(tenantId);
 
@@ -4191,6 +4212,9 @@ router.get('/deals', async (req, res) => {
     }
     if (stage) {
       conditions.push(eq(crmDeals.stage, stage as string));
+    }
+    if (customerId) {
+      conditions.push(eq(crmDeals.customerId, customerId as string));
     }
 
     const deals = await db
@@ -4814,6 +4838,206 @@ router.get('/customers/:id', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve customer',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/customers/:id/360
+ * Get complete customer 360° view with related data
+ */
+router.get('/customers/:id/360', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const [customer] = await db
+      .select()
+      .from(crmCustomers)
+      .where(and(
+        eq(crmCustomers.id, id),
+        eq(crmCustomers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Customer not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [leads, deals, orders, interactions] = await Promise.all([
+      db
+        .select()
+        .from(crmLeads)
+        .where(and(
+          eq(crmLeads.personId, customer.personId),
+          eq(crmLeads.tenantId, tenantId)
+        ))
+        .orderBy(desc(crmLeads.createdAt)),
+      
+      db
+        .select()
+        .from(crmDeals)
+        .where(and(
+          eq(crmDeals.customerId, id),
+          eq(crmDeals.tenantId, tenantId)
+        ))
+        .orderBy(desc(crmDeals.createdAt)),
+      
+      db
+        .select()
+        .from(crmOrders)
+        .where(and(
+          eq(crmOrders.customerId, id),
+          eq(crmOrders.tenantId, tenantId)
+        ))
+        .orderBy(desc(crmOrders.orderDate)),
+      
+      db
+        .select()
+        .from(crmInteractions)
+        .where(and(
+          eq(crmInteractions.entityId, id),
+          eq(crmInteractions.entityType, 'customer'),
+          eq(crmInteractions.tenantId, tenantId)
+        ))
+        .orderBy(desc(crmInteractions.occurredAt))
+        .limit(50)
+    ]);
+
+    const totalRevenue = orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+    const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+    
+    const lastOrderDate = orders.length > 0 ? orders[0].orderDate : null;
+    const daysSinceLastOrder = lastOrderDate 
+      ? Math.floor((new Date().getTime() - new Date(lastOrderDate).getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        customer,
+        leads,
+        deals,
+        orders,
+        interactions,
+        analytics: {
+          totalRevenue,
+          totalOrders: orders.length,
+          avgOrderValue,
+          lastOrderDate,
+          daysSinceLastOrder,
+          totalLeads: leads.length,
+          totalDeals: deals.length,
+          wonDeals: deals.filter(d => d.status === 'won').length,
+          lostDeals: deals.filter(d => d.status === 'lost').length,
+          totalInteractions: interactions.length
+        }
+      },
+      message: 'Customer 360° data retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving customer 360° data', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve customer 360° data',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/customers/search
+ * Search customers by firstName, lastName, email, phone, businessName
+ */
+router.get('/customers/search', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { q, limit = '20' } = req.query;
+    if (!q || typeof q !== 'string' || q.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query must be at least 2 characters',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const searchTerm = `%${q.trim()}%`;
+    
+    const customers = await db
+      .select({
+        id: crmCustomers.id,
+        customerType: crmCustomers.customerType,
+        firstName: crmCustomers.firstName,
+        lastName: crmCustomers.lastName,
+        email: crmCustomers.email,
+        phone: crmCustomers.phone,
+        companyName: crmCustomers.companyName,
+        vatNumber: crmCustomers.vatNumber,
+        status: crmCustomers.status,
+      })
+      .from(crmCustomers)
+      .where(and(
+        eq(crmCustomers.tenantId, tenantId),
+        or(
+          ilike(crmCustomers.firstName, searchTerm),
+          ilike(crmCustomers.lastName, searchTerm),
+          ilike(crmCustomers.email, searchTerm),
+          ilike(crmCustomers.phone, searchTerm),
+          ilike(crmCustomers.companyName, searchTerm),
+          sql`CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName}) ILIKE ${searchTerm}`
+        )
+      ))
+      .orderBy(desc(crmCustomers.createdAt))
+      .limit(parseInt(limit as string));
+
+    res.status(200).json({
+      success: true,
+      data: customers,
+      message: 'Customers search completed',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error searching customers', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to search customers',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

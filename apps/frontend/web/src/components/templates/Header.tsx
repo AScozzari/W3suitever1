@@ -11,6 +11,7 @@ import { apiService } from '../../services/ApiService';
 import { useUserAvatar } from '../../hooks/useUserAvatar';
 import { useIdleAwareRefetch } from '../../hooks/useIdleAwareRefetch';
 import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
+import GlobalCustomerSearch from '../GlobalCustomerSearch';
 
 // Palette colori W3 Suite - Consistent con Layout
 const COLORS = {
@@ -226,31 +227,10 @@ export default function Header({
         </div>
       </div>
 
-      {/* Barra di ricerca centrale - Hidden on mobile */}
+      {/* Global Customer Search - Hidden on mobile */}
       {!isMobile && (
         <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
-          <div style={{ position: 'relative' }}>
-            <Search size={16} style={{ 
-              position: 'absolute', 
-              left: '12px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              color: '#6b7280' 
-            }} />
-            <input
-              placeholder={searchPlaceholder}
-              style={{
-                width: '100%',
-                padding: '8px 12px 8px 40px',
-                background: 'hsla(0, 0%, 100%, 0.25)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none'
-              }}
-            />
-          </div>
+          <GlobalCustomerSearch placeholder="Cerca cliente..." />
         </div>
       )}
       
