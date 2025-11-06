@@ -677,6 +677,39 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
         {/* Sezione destra - Responsive */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+          {/* AI Voice Test Button */}
+          {user && !isMobile && (
+            <button
+              onClick={() => navigate('ai-voice-test')}
+              data-testid="button-ai-voice-test"
+              style={{
+                width: '40px',
+                height: '40px',
+                padding: 0,
+                background: 'hsla(0, 0%, 100%, 0.1)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid hsla(0, 0%, 100%, 0.15)',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.15)';
+                e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.1)';
+                e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.15)';
+              }}
+              title="Test AI Voice Agent"
+            >
+              <Smartphone size={20} style={{ color: '#6b7280' }} />
+            </button>
+          )}
+          
           {/* Notification Bell */}
           {user && <NotificationBell isMobile={isMobile} />}
           

@@ -32,6 +32,7 @@ const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
 const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettingsPage'));
 const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
+const AIVoiceTest = lazy(() => import('../pages/AIVoiceTest'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -379,6 +380,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/ai-tools`}>
         <AuthenticatedRoute>
           <AIToolsDashboardPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/ai-voice-test`}>
+        <AuthenticatedRoute>
+          <AIVoiceTest />
         </AuthenticatedRoute>
       </Route>
       
