@@ -69,11 +69,12 @@ export class OpenAIRealtimeClient {
           type: 'server_vad',
           threshold: 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 700 // Increased for natural conversation
+          silence_duration_ms: 400 // REDUCED for faster, more natural interruptions (like real conversation)
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
-        temperature: 0.85 // Slightly higher for more natural sales conversation
+        temperature: 0.95, // INCREASED for maximum naturalness and variability
+        max_response_output_tokens: 150 // LIMIT response length for brevity
       }
     };
 
