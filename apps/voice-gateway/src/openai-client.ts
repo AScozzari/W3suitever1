@@ -67,9 +67,9 @@ export class OpenAIRealtimeClient {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.4, // LOWER = more sensitive to start speaking
-          prefix_padding_ms: 200, // REDUCED for faster response start
-          silence_duration_ms: 300 // VERY SHORT for ultra-responsive conversation
+          threshold: 0.3, // ULTRA-SENSITIVE - interrupts immediately when user speaks
+          prefix_padding_ms: 100, // MINIMAL padding for instant interruption
+          silence_duration_ms: 200 // ULTRA-SHORT for immediate turn-taking
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
