@@ -181,8 +181,24 @@ if (ENABLE_ESL) {
       w3ApiKey: W3_API_KEY
     });
 
-    eslServer.start().then(() => {
+    eslServer.start().then(async () => {
       logger.info('[VoiceGateway] ESL server started successfully');
+      
+      // Start ngrok tunnel to expose ESL port publicly
+      if (process.env.NGROK_AUTHTOKEN) {
+        try {
+          logger.info('[VoiceGateway] Starting ngrok TCP tunnel for ESL port...');
+          const { startNgrokTunnel } = await import('../ngrok-tunnel');
+          await startNgrokTunnel();
+        } catch (ngrokError: any) {
+          logger.error('[VoiceGateway] Failed to start ngrok tunnel', { error: ngrokError.message });
+          logger.warn('[VoiceGateway] ESL server running but NOT publicly accessible');
+          logger.warn('[VoiceGateway] FreeSWITCH connections will only work from localhost');
+        }
+      } else {
+        logger.warn('[VoiceGateway] NGROK_AUTHTOKEN not set - ESL server only accessible locally');
+        logger.warn('[VoiceGateway] Set NGROK_AUTHTOKEN to expose ESL port publicly for FreeSWITCH');
+      }
     }).catch((error: any) => {
       logger.error('[VoiceGateway] Failed to start ESL server', { error: error.message });
       logger.warn('[VoiceGateway] Continuing without ESL support');

@@ -65,4 +65,8 @@ async function startNgrokTunnel() {
 }
 
 // Start tunnel
-startNgrokTunnel();
+if (require.main === module) {
+  startNgrokTunnel();
+}
+
+export { startNgrokTunnel };
