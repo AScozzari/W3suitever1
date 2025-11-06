@@ -59,7 +59,7 @@ export class OpenAIRealtimeClient {
       session: {
         modalities: ['text', 'audio'],
         instructions: this.config.instructions || 'You are a helpful Italian customer service agent.',
-        voice: this.config.voice || 'nova',
+        voice: this.config.voice || 'shimmer',
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         input_audio_transcription: {

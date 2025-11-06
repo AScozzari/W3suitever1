@@ -58,7 +58,7 @@ export class BrowserTestServer {
     const openaiClient = new OpenAIRealtimeClient({
       apiKey: this.openaiApiKey,
       model: this.openaiModel,
-      voice: 'nova', // Female voice, friendly for sales
+      voice: 'shimmer', // Female voice, warm and friendly for sales
       instructions: `Tu sei Sara, assistente vocale in ITALIANO che lavora per WindTre nel negozio "Den" (Milano, Via Roma 123).
 
 **LINGUA OBBLIGATORIA: ITALIANO**
