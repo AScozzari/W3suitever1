@@ -61,7 +61,7 @@ export default function AIVoiceTest() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            sampleRate: 24000,
+            sampleRate: 24000, // OpenAI supports 24kHz for better quality
             channelCount: 1,
             echoCancellation: true,
             noiseSuppression: true,
@@ -70,16 +70,16 @@ export default function AIVoiceTest() {
         });
 
         audioStreamRef.current = stream;
-        addLog('🎤 Microfono attivato', 'success');
+        addLog('🎤 Microfono attivato (24kHz)', 'success');
       } catch (err: any) {
         addLog(`❌ Errore microfono: ${err.message}`, 'error');
         setStatus('disconnected');
         return;
       }
 
-      // Initialize AudioContext with OpenAI sample rate (16kHz for gpt-4o-realtime)
-      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-      addLog('🔊 Audio context inizializzato (16kHz)', 'success');
+      // Initialize AudioContext with 24kHz (matching OpenAI output)
+      audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      addLog('🔊 Audio context inizializzato (24kHz)', 'success');
 
       // WebSocket URL - Use Nginx proxy path for browser test (works on both HTTP and HTTPS)
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -209,8 +209,6 @@ export default function AIVoiceTest() {
         // Decode and queue audio chunk (raw PCM16 from OpenAI)
         if (data.delta && audioContextRef.current) {
           try {
-            addLog(`🔊 Audio chunk ricevuto (${data.delta.length} bytes base64)`, 'info');
-            
             // Decode base64 to binary
             const audioData = atob(data.delta);
             const uint8Array = new Uint8Array(audioData.length);
@@ -226,17 +224,16 @@ export default function AIVoiceTest() {
               float32Array[i] = int16Array[i] / (int16Array[i] < 0 ? 32768 : 32767);
             }
 
-            // Create AudioBuffer manually (OpenAI uses 16kHz mono PCM16)
+            // Create AudioBuffer at 24kHz (matching OpenAI output and our AudioContext)
             const audioBuffer = audioContextRef.current.createBuffer(
               1, // mono
               float32Array.length,
-              16000 // 16kHz sample rate
+              24000 // 24kHz sample rate (matching AudioContext)
             );
             audioBuffer.getChannelData(0).set(float32Array);
             
             audioQueueRef.current.push(audioBuffer);
-            addLog(`✅ Audio decodificato: ${float32Array.length} samples`, 'success');
-            playAudioQueue();
+            playAudioQueue(); // Start playing immediately for low latency
           } catch (err) {
             addLog(`❌ Errore decodifica audio: ${err}`, 'error');
             console.error('Error decoding audio:', err);

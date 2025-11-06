@@ -58,8 +58,8 @@ export class OpenAIRealtimeClient {
       type: 'session.update',
       session: {
         modalities: ['text', 'audio'],
-        instructions: this.config.instructions || 'You are a helpful customer service agent for W3 Suite.',
-        voice: this.config.voice || 'alloy',
+        instructions: this.config.instructions || 'You are a helpful Italian customer service agent.',
+        voice: this.config.voice || 'nova',
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         input_audio_transcription: {
@@ -69,11 +69,11 @@ export class OpenAIRealtimeClient {
           type: 'server_vad',
           threshold: 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 500
+          silence_duration_ms: 700 // Increased for natural conversation
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
-        temperature: 0.8
+        temperature: 0.85 // Slightly higher for more natural sales conversation
       }
     };
 
