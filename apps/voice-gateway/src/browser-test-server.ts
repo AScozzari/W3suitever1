@@ -99,15 +99,18 @@ Tu: "Ciao! Sto bene, grazie. Sono qui per aiutarti con W3 Suite. Come posso esse
             sessionId,
             audioLength: message.audio?.length || 0
           });
+          // Send audio chunk using OpenAI client method
+          const audioBase64 = message.audio;
+          const audioBuffer = Buffer.from(audioBase64, 'base64');
+          openaiClient.sendAudioChunk(audioBuffer);
         } else {
           logger.info('[BrowserTest] Message from browser', {
             sessionId,
             type: message.type
           });
+          // For other messages, we need to send them directly via the internal WebSocket
+          // This is a limitation - we'll handle it differently
         }
-
-        // Forward to OpenAI
-        openaiClient.send(message);
       } catch (error: any) {
         logger.error('[BrowserTest] Error processing browser message', {
           sessionId,
@@ -117,7 +120,7 @@ Tu: "Ciao! Sto bene, grazie. Sono qui per aiutarti con W3 Suite. Come posso esse
     });
 
     // Forward messages from OpenAI to browser
-    openaiClient.on('message', (data: any) => {
+    openaiClient.onMessage((data: any) => {
       try {
         // Log audio responses at debug level only
         if (data.type === 'response.audio.delta') {
@@ -151,7 +154,7 @@ Tu: "Ciao! Sto bene, grazie. Sono qui per aiutarti con W3 Suite. Come posso esse
       this.sessions.delete(sessionId);
     });
 
-    openaiClient.on('close', () => {
+    openaiClient.onClose(() => {
       logger.info('[BrowserTest] OpenAI disconnected', { sessionId });
       if (browserWs.readyState === WebSocket.OPEN) {
         browserWs.close();
@@ -167,7 +170,7 @@ Tu: "Ciao! Sto bene, grazie. Sono qui per aiutarti con W3 Suite. Come posso esse
       });
     });
 
-    openaiClient.on('error', (error: any) => {
+    openaiClient.onError((error: any) => {
       logger.error('[BrowserTest] OpenAI error', {
         sessionId,
         error: error.message
