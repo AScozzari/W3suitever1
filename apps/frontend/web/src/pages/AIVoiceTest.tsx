@@ -81,8 +81,10 @@ export default function AIVoiceTest() {
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       addLog('🔊 Audio context inizializzato', 'success');
 
-      // WebSocket URL
-      const wsUrl = `ws://${window.location.hostname}:3005`;
+      // WebSocket URL - Use Nginx proxy path (works on both HTTP and HTTPS)
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsHost = window.location.host; // includes port if present
+      const wsUrl = `${wsProtocol}//${wsHost}/ws/voice-gateway`;
       addLog(`📡 Connessione WebSocket: ${wsUrl}`, 'info');
 
       const ws = new WebSocket(wsUrl);
