@@ -122,8 +122,7 @@ export class OpenAIRealtimeClient {
     const event = {
       type: 'response.create',
       response: {
-        modalities: ['text', 'audio'],
-        instructions: 'Please respond to the customer query.'
+        modalities: ['text', 'audio']
       }
     };
 

@@ -144,20 +144,32 @@ export class HttpStreamingManager {
     // Decode base64 audio to buffer
     const audioBuffer = Buffer.from(audioData, 'base64');
     
+    logger.info('[HTTP Streaming] 📦 Audio received from FreeSWITCH', {
+      callId,
+      rawSize: audioBuffer.length,
+      base64Length: audioData.length
+    });
+    
     // Process and validate audio
     const processedAudio = session.audioProcessor.processIncomingAudio(audioBuffer);
     
     if (!session.audioProcessor.validateAudioFormat(processedAudio)) {
-      logger.warn('[HTTP Streaming] Invalid audio format', { callId });
+      logger.warn('[HTTP Streaming] ❌ Invalid audio format', { callId });
       return { status: 'invalid_audio' };
     }
+
+    logger.info('[HTTP Streaming] ✅ Audio processed and validated', {
+      callId,
+      processedSize: processedAudio.length,
+      format: 'PCM16'
+    });
 
     // Send audio directly to OpenAI - server_vad handles detection automatically
     session.openaiClient.sendAudioChunk(processedAudio);
 
-    logger.debug('[HTTP Streaming] Audio streamed to OpenAI', {
+    logger.info('[HTTP Streaming] 📤 Audio sent to OpenAI', {
       callId,
-      audioSize: processedAudio.length
+      bytesSent: processedAudio.length
     });
 
     return { status: 'streamed' };
@@ -266,9 +278,11 @@ export class HttpStreamingManager {
   }
 
   private async handleOpenAIEvent(session: StreamingSession, event: any): Promise<void> {
-    logger.debug('[HTTP Streaming] OpenAI event', {
+    // Log ALL events (including unknown ones) for debugging
+    logger.info('[HTTP Streaming] 🔔 OpenAI Event', {
       callId: session.callId,
-      eventType: event.type
+      eventType: event.type,
+      event: event  // Full event for debugging
     });
 
     switch (event.type) {
@@ -284,6 +298,11 @@ export class HttpStreamingManager {
           callId: session.callId,
           session: event.session
         });
+        
+        // ✅ FIX: Far partire l'AI immediatamente con il saluto
+        // L'AI dirà: "Buongiorno, sono l'assistente vocale di W3 Suite. Come posso aiutarti?"
+        logger.info('[HTTP Streaming] 🎤 Triggering initial AI greeting', { callId: session.callId });
+        session.openaiClient.createResponse();
         break;
 
       case 'input_audio_buffer.committed':
