@@ -3,15 +3,19 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { VoiceGatewayServer } from './websocket-server';
 import { HttpStreamingManager, createHttpStreamingRouter } from './http-streaming';
+import { VoiceGatewayESLServer } from './esl-server';
 import logger from './logger';
 
 // Environment configuration  
 const PORT = parseInt(process.env.VOICE_GATEWAY_PORT || '3005');
+const ESL_PORT = parseInt(process.env.ESL_PORT || '8084');
+const ESL_HOST = process.env.ESL_HOST || '0.0.0.0';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-10-01';
 const W3_API_URL = process.env.W3_API_URL || 'http://localhost:3004';
 const W3_API_KEY = process.env.W3_VOICE_GATEWAY_API_KEY || '';
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const ENABLE_ESL = process.env.ENABLE_ESL === 'true' || true; // ESL enabled by default
 
 // Validate required configuration
 if (!OPENAI_API_KEY) {
@@ -39,6 +43,7 @@ app.use(express.json({ limit: '10mb' })); // Increase limit for audio data
 // Initialize HTTP Streaming Manager
 let httpStreamingManager: HttpStreamingManager;
 let voiceGateway: VoiceGatewayServer;
+let eslServer: VoiceGatewayESLServer;
 
 try {
   httpStreamingManager = new HttpStreamingManager({
@@ -66,9 +71,12 @@ app.get('/health', (req, res) => {
     version: '1.0.0',
     uptime: process.uptime(),
     activeSessions: (voiceGateway ? voiceGateway.getActiveSessions() : 0) + 
-                    (httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0),
+                    (httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0) +
+                    (eslServer ? eslServer.getActiveCallCount() : 0),
     httpStreamingSessions: httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0,
     websocketSessions: voiceGateway ? voiceGateway.getActiveSessions() : 0,
+    eslCalls: eslServer ? eslServer.getActiveCallCount() : 0,
+    eslEnabled: ENABLE_ESL,
     environment: NODE_ENV
   });
 });
@@ -79,12 +87,16 @@ app.get('/status', (req, res) => {
     service: 'W3 Voice Gateway',
     websocketPort: PORT,
     httpPort: HTTP_PORT,
+    eslPort: ESL_PORT,
+    eslEnabled: ENABLE_ESL,
     openaiModel: OPENAI_REALTIME_MODEL,
     w3ApiUrl: W3_API_URL,
     activeSessions: (voiceGateway ? voiceGateway.getActiveSessions() : 0) + 
-                    (httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0),
+                    (httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0) +
+                    (eslServer ? eslServer.getActiveCallCount() : 0),
     httpStreamingSessions: httpStreamingManager ? httpStreamingManager.getActiveSessions() : 0,
     websocketSessions: voiceGateway ? voiceGateway.getActiveSessions() : 0,
+    eslCalls: eslServer ? eslServer.getActiveCallCount() : 0,
     environment: NODE_ENV
   });
 });
@@ -129,22 +141,57 @@ try {
   process.exit(1);
 }
 
+// Initialize ESL Server (Enterprise FreeSWITCH Integration)
+if (ENABLE_ESL) {
+  try {
+    eslServer = new VoiceGatewayESLServer({
+      port: ESL_PORT,
+      host: ESL_HOST,
+      openaiApiKey: OPENAI_API_KEY,
+      openaiModel: OPENAI_REALTIME_MODEL,
+      w3ApiUrl: W3_API_URL,
+      w3ApiKey: W3_API_KEY
+    });
+
+    eslServer.start().then(() => {
+      logger.info('[VoiceGateway] ESL server started successfully');
+    }).catch((error: any) => {
+      logger.error('[VoiceGateway] Failed to start ESL server', { error: error.message });
+      logger.warn('[VoiceGateway] Continuing without ESL support');
+    });
+  } catch (error: any) {
+    logger.error('[VoiceGateway] ESL server initialization failed', { error: error.message });
+    logger.warn('[VoiceGateway] Continuing without ESL support');
+  }
+} else {
+  logger.info('[VoiceGateway] ESL server disabled (set ENABLE_ESL=true to enable)');
+}
+
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('[VoiceGateway] Received SIGINT, shutting down gracefully');
   voiceGateway.close();
+  if (eslServer) {
+    await eslServer.stop();
+  }
   process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('[VoiceGateway] Received SIGTERM, shutting down gracefully');
   voiceGateway.close();
+  if (eslServer) {
+    await eslServer.stop();
+  }
   process.exit(0);
 });
 
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', async (error) => {
   logger.error('[VoiceGateway] Uncaught exception', { error: error.message, stack: error.stack });
   voiceGateway.close();
+  if (eslServer) {
+    await eslServer.stop();
+  }
   process.exit(1);
 });
 
