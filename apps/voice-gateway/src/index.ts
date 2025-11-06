@@ -10,7 +10,7 @@ import logger from './logger';
 // Environment configuration  
 const PORT = parseInt(process.env.VOICE_GATEWAY_PORT || '3005');
 const BROWSER_TEST_PORT = parseInt(process.env.BROWSER_TEST_PORT || '3006');
-const ESL_PORT = parseInt(process.env.ESL_PORT || '8084');
+const ESL_PORT = parseInt(process.env.ESL_PORT || '8081'); // Changed to 8081 - Replit supported port
 const ESL_HOST = process.env.ESL_HOST || '0.0.0.0';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-10-01';

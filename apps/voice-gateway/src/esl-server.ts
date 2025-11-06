@@ -5,9 +5,12 @@
  * Listens for incoming socket connections from FreeSWITCH and manages AI voice calls.
  * 
  * Architecture:
- * - FreeSWITCH executes: <action application="socket" data="REPLIT_IP:8084 async full"/>
+ * - FreeSWITCH executes: <action application="socket" data="REPLIT_IP:8081 async full"/>
  * - This server receives the connection and handles bidirectional audio
  * - Each connection spawns an ESLCallHandler for that specific call
+ * 
+ * IMPORTANT: Port 8081 is used (not 8084) because Replit only supports exposing
+ * these external ports: 3000, 3001, 3002, 3003, 4200, 5000, 5173, 6000, 6800, 8000, 8008, 8081
  */
 
 import * as esl from 'modesl';
