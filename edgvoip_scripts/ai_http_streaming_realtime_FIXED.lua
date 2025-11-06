@@ -216,14 +216,23 @@ if session:ready() then
                 -- Decode from base64 to RAW PCM
                 os.execute("base64 -d " .. ai_b64_file .. " > " .. ai_audio_file)
                 
-                -- Play RAW PCM16 audio using file_string://
-                -- Format: file_string://sample_rate!channels!/path/to/file.raw
-                local play_string = "file_string://16000!1!" .. ai_audio_file
-                session:execute("playback", play_string)
+                -- Convert RAW PCM16 to WAV with header for FreeSWITCH compatibility
+                -- OpenAI returns: PCM16, 16kHz, mono, little-endian
+                local ai_wav_file = "/tmp/ai_audio_" .. uuid .. ".wav"
+                local sox_cmd = string.format(
+                    "sox -r 16000 -e signed -b 16 -c 1 %s %s",
+                    ai_audio_file,
+                    ai_wav_file
+                )
+                os.execute(sox_cmd)
+                
+                -- Play WAV file (universal FreeSWITCH support)
+                session:execute("playback", ai_wav_file)
                 
                 -- Cleanup
                 os.remove(ai_b64_file)
                 os.remove(ai_audio_file)
+                os.remove(ai_wav_file)
                 
                 log_msg("info", "✅ AI audio played successfully")
                 
