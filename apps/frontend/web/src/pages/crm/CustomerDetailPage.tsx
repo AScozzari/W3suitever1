@@ -13,6 +13,8 @@ import { CustomerTimelineView } from '@/components/crm/CustomerTimelineView';
 import { CustomerConsentManager } from '@/components/crm/CustomerConsentManager';
 import { CustomerActions } from '@/components/crm/CustomerActions';
 import { CustomerAnalytics } from '@/components/crm/CustomerAnalytics';
+import { CustomerOverviewTab } from '@/components/crm/CustomerOverviewTab';
+import { CustomerSalesTab } from '@/components/crm/CustomerSalesTab';
 import {
   User,
   Mail,
@@ -23,29 +25,42 @@ import {
   TrendingUp,
   DollarSign,
   Target,
-  Activity
+  Activity,
+  ShoppingCart,
+  FileText,
+  BarChart3,
+  MessageSquare,
+  Eye
 } from 'lucide-react';
+
+interface Customer360Data {
+  customer: any;
+  leads: any[];
+  deals: any[];
+  orders: any[];
+  interactions: any[];
+  analytics: {
+    totalRevenue: number;
+    totalOrders: number;
+    avgOrderValue: number;
+    lastOrderDate: string | null;
+    daysSinceLastOrder: number | null;
+    totalLeads: number;
+    totalDeals: number;
+    wonDeals: number;
+    lostDeals: number;
+    totalInteractions: number;
+  };
+}
 
 export function CustomerDetailPage() {
   const [currentModule, setCurrentModule] = useState('crm');
+  const [activeTab, setActiveTab] = useState('overview');
   const params = useParams();
   const customerId = params.id;
 
-  // Fetch customer data
-  const { data: customer, isLoading } = useQuery<any>({
-    queryKey: [`/api/crm/customers/${customerId}`],
-    enabled: !!customerId,
-  });
-
-  // Fetch deals for this customer
-  const { data: deals = [] } = useQuery<any[]>({
-    queryKey: ['/api/crm/deals', { personId: customerId }],
-    enabled: !!customerId,
-  });
-
-  // Fetch leads for this customer
-  const { data: leads = [] } = useQuery<any[]>({
-    queryKey: ['/api/crm/leads', { personId: customerId }],
+  const { data: customer360, isLoading } = useQuery<Customer360Data>({
+    queryKey: [`/api/crm/customers/${customerId}/360`],
     enabled: !!customerId,
   });
 
@@ -55,13 +70,16 @@ export function CustomerDetailPage() {
         <CRMCommandPalette />
         <div className="flex flex-col h-full">
           <CRMNavigationBar />
-          <Skeleton className="h-64 w-full" />
+          <div className="p-6">
+            <Skeleton className="h-48 w-full mb-6" />
+            <Skeleton className="h-96 w-full" />
+          </div>
         </div>
       </Layout>
     );
   }
 
-  if (!customer) {
+  if (!customer360?.customer) {
     return (
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         <CRMCommandPalette />
@@ -73,10 +91,26 @@ export function CustomerDetailPage() {
     );
   }
 
-  const initials = `${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase();
-  const totalDealsValue = deals.reduce((sum: number, deal: any) => sum + (deal.estimatedValue || 0), 0);
-  const totalLeads = leads.length;
-  const wonDeals = deals.filter((d: any) => d.status === 'won').length;
+  const { customer, leads, deals, orders, interactions, analytics } = customer360;
+
+  const isB2B = customer.type === 'business';
+  const customerName = isB2B 
+    ? customer.businessName || 'N/D'
+    : `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'N/D';
+  
+  const initials = isB2B
+    ? (customer.businessName?.[0] || 'B').toUpperCase()
+    : `${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase();
+
+  const statusConfig = {
+    active: { label: 'Attivo', color: 'hsl(142, 76%, 36%)' },
+    inactive: { label: 'Inattivo', color: 'hsl(0, 84%, 60%)' },
+    prospect: { label: 'Prospect', color: 'hsl(220, 90%, 56%)' }
+  };
+  const status = statusConfig[customer.status as keyof typeof statusConfig] || { 
+    label: customer.status || 'N/D', 
+    color: 'hsl(220, 90%, 56%)' 
+  };
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
@@ -84,206 +118,240 @@ export function CustomerDetailPage() {
       <div className="flex flex-col h-full">
         <CRMNavigationBar />
 
-      {/* Header Section with KPI Cards */}
-      <div className="mb-8">
-        <Card 
-          className="p-6"
-          style={{
-            background: 'rgba(255, 255, 255, 0.7)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '16px',
-          }}
-        >
-          <div className="flex items-start gap-6">
-            {/* Avatar */}
-            <Avatar className="h-24 w-24">
-              <AvatarFallback 
-                className="text-2xl font-bold"
-                style={{ 
-                  background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-                  color: 'white' 
-                }}
-              >
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+        <div className="p-6 space-y-6">
+          <Card 
+            className="p-6"
+            style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '16px',
+            }}
+          >
+            <div className="flex items-start gap-6">
+              <Avatar className="h-24 w-24">
+                <AvatarFallback 
+                  className="text-2xl font-bold"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                    color: 'white' 
+                  }}
+                >
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
 
-            {/* Customer Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold" style={{ color: '#1a1a1a' }} data-testid="customer-name">
-                  {customer.firstName} {customer.lastName}
-                </h1>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <h1 
+                    className="text-3xl font-bold" 
+                    style={{ color: '#1a1a1a' }}
+                    data-testid="customer-name"
+                  >
+                    {customerName}
+                  </h1>
+                  <Badge 
+                    variant="outline" 
+                    style={{ borderColor: status.color, color: status.color }}
+                  >
+                    {status.label}
+                  </Badge>
+                  {isB2B && (
+                    <Badge variant="outline" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
+                      <Building2 className="h-3 w-3 mr-1" />
+                      B2B
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm mb-4" style={{ color: '#6b7280' }}>
+                  {customer.emailCanonical && (
+                    <div className="flex items-center gap-2" data-testid="customer-email">
+                      <Mail className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
+                      <span>{customer.emailCanonical}</span>
+                    </div>
+                  )}
+                  {customer.phone && (
+                    <div className="flex items-center gap-2" data-testid="customer-phone">
+                      <Phone className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
+                      <span>{customer.phone}</span>
+                    </div>
+                  )}
+                  {isB2B && customer.vatNumber && (
+                    <div className="flex items-center gap-2" data-testid="customer-vat">
+                      <Building2 className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
+                      <span>P.IVA: {customer.vatNumber}</span>
+                    </div>
+                  )}
+                  {!isB2B && customer.fiscalCode && (
+                    <div className="flex items-center gap-2" data-testid="customer-fiscal-code">
+                      <User className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
+                      <span>CF: {customer.fiscalCode}</span>
+                    </div>
+                  )}
+                  {customer.address && (
+                    <div className="flex items-center gap-2" data-testid="customer-address">
+                      <MapPin className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
+                      <span>{customer.address}</span>
+                    </div>
+                  )}
+                  {customer.createdAt && (
+                    <div className="flex items-center gap-2" data-testid="customer-created">
+                      <Calendar className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
+                      <span>Cliente dal {new Date(customer.createdAt).toLocaleDateString('it-IT')}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <DollarSign className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>
+                      €{analytics.totalRevenue.toLocaleString('it-IT')}
+                    </div>
+                    <div className="text-xs" style={{ color: '#6b7280' }}>Revenue Totale</div>
+                  </Card>
+                  <Card className="p-4 text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <ShoppingCart className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>
+                      {analytics.totalOrders}
+                    </div>
+                    <div className="text-xs" style={{ color: '#6b7280' }}>Ordini</div>
+                  </Card>
+                  <Card className="p-4 text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <Target className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>
+                      {analytics.wonDeals}/{analytics.totalDeals}
+                    </div>
+                    <div className="text-xs" style={{ color: '#6b7280' }}>Deal Vinti</div>
+                  </Card>
+                  <Card className="p-4 text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <Activity className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
+                    </div>
+                    <div className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>
+                      {analytics.totalInteractions}
+                    </div>
+                    <div className="text-xs" style={{ color: '#6b7280' }}>Interazioni</div>
+                  </Card>
+                </div>
               </div>
 
-              {/* Contact Details */}
-              <div className="grid grid-cols-2 gap-3 text-sm" style={{ color: '#6b7280' }}>
-                {customer.emailCanonical && (
-                  <div className="flex items-center gap-2" data-testid="customer-email">
-                    <Mail className="h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
-                    <span>{customer.emailCanonical}</span>
-                  </div>
-                )}
-                {customer.phoneCanonical && (
-                  <div className="flex items-center gap-2" data-testid="customer-phone">
-                    <Phone className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-                    <span>{customer.phoneCanonical}</span>
-                  </div>
-                )}
-                {customer.createdAt && (
-                  <div className="flex items-center gap-2" data-testid="customer-since">
-                    <Calendar className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-                    <span>Cliente dal {new Date(customer.createdAt).toLocaleDateString('it-IT')}</span>
-                  </div>
-                )}
+              <div>
+                <CustomerActions customer={customer} />
               </div>
             </div>
-
-            {/* Quick Actions */}
-            <CustomerActions customerId={customerId!} customer={customer} />
-          </div>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-4 gap-4 mt-6">
-            <Card className="p-4" style={{ background: 'rgba(123, 44, 191, 0.05)', border: '1px solid rgba(123, 44, 191, 0.2)' }} data-testid="kpi-total-value">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Valore Totale Deal</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: 'hsl(var(--brand-purple))' }}>
-                    €{totalDealsValue.toLocaleString()}
-                  </p>
-                </div>
-                <DollarSign className="h-8 w-8" style={{ color: 'hsl(var(--brand-purple))' }} />
-              </div>
-            </Card>
-
-            <Card className="p-4" style={{ background: 'rgba(255, 105, 0, 0.05)', border: '1px solid rgba(255, 105, 0, 0.2)' }} data-testid="kpi-won-deals">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Deal Vinti</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: 'hsl(var(--brand-orange))' }}>
-                    {wonDeals}
-                  </p>
-                </div>
-                <Target className="h-8 w-8" style={{ color: 'hsl(var(--brand-orange))' }} />
-              </div>
-            </Card>
-
-            <Card className="p-4" style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)' }} data-testid="kpi-total-leads">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Lead Totali</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: '#22c55e' }}>
-                    {totalLeads}
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8" style={{ color: '#22c55e' }} />
-              </div>
-            </Card>
-
-            <Card className="p-4" style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }} data-testid="kpi-conversion-rate">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium" style={{ color: '#6b7280' }}>Tasso di Conversione</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: '#3b82f6' }}>
-                    {totalLeads > 0 ? Math.round((wonDeals / totalLeads) * 100) : 0}%
-                  </p>
-                </div>
-                <Activity className="h-8 w-8" style={{ color: '#3b82f6' }} />
-              </div>
-            </Card>
-          </div>
-        </Card>
-      </div>
-
-      {/* Tabs Section */}
-      <Tabs defaultValue="timeline" className="w-full">
-        <TabsList 
-          className="w-full grid grid-cols-5 mb-6"
-          style={{
-            background: 'rgba(243, 244, 246, 0.8)',
-            backdropFilter: 'blur(10px)',
-            padding: '4px',
-            borderRadius: '12px',
-            height: 'auto',
-          }}
-        >
-          <TabsTrigger value="timeline" data-testid="tab-timeline">
-            Journey Timeline
-          </TabsTrigger>
-          <TabsTrigger value="deals" data-testid="tab-deals">
-            Deal & Pipeline
-          </TabsTrigger>
-          <TabsTrigger value="consent" data-testid="tab-consent">
-            Consensi GDPR
-          </TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="tab-analytics">
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="documents" data-testid="tab-documents">
-            Documenti
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="timeline">
-          <CustomerTimelineView customerId={customerId!} />
-        </TabsContent>
-
-        <TabsContent value="deals">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Deal History</h3>
-            {deals.length > 0 ? (
-              <div className="space-y-3">
-                {deals.map((deal: any) => (
-                  <div 
-                    key={deal.id} 
-                    className="p-4 rounded-lg border"
-                    style={{ background: 'rgba(255, 255, 255, 0.5)' }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{deal.title}</p>
-                        <p className="text-sm" style={{ color: '#6b7280' }}>Status: {deal.status}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
-                          €{deal.estimatedValue?.toLocaleString()}
-                        </p>
-                        <Badge variant={deal.status === 'won' ? 'default' : 'outline'}>
-                          {deal.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8" style={{ color: '#9ca3af' }}>
-                Nessun deal trovato
-              </p>
-            )}
           </Card>
-        </TabsContent>
 
-        <TabsContent value="consent">
-          <CustomerConsentManager customerId={customerId!} />
-        </TabsContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-8 mb-6">
+              <TabsTrigger value="overview" data-testid="tab-overview">
+                <Eye className="h-4 w-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="vendite" data-testid="tab-vendite">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Vendite
+              </TabsTrigger>
+              <TabsTrigger value="marketing" data-testid="tab-marketing">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Marketing
+              </TabsTrigger>
+              <TabsTrigger value="attivita" data-testid="tab-attivita">
+                <Activity className="h-4 w-4 mr-2" />
+                Attività
+              </TabsTrigger>
+              <TabsTrigger value="documenti" data-testid="tab-documenti">
+                <FileText className="h-4 w-4 mr-2" />
+                Documenti
+              </TabsTrigger>
+              <TabsTrigger value="analytics" data-testid="tab-analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="consensi" data-testid="tab-consensi">
+                <Target className="h-4 w-4 mr-2" />
+                Consensi
+              </TabsTrigger>
+              <TabsTrigger value="note" data-testid="tab-note">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Note
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="analytics">
-          <CustomerAnalytics customerId={customerId!} />
-        </TabsContent>
+            <TabsContent value="overview" className="space-y-6">
+              <CustomerOverviewTab
+                customer={customer}
+                leads={leads}
+                deals={deals}
+                orders={orders}
+                interactions={interactions}
+                analytics={analytics}
+              />
+            </TabsContent>
 
-        <TabsContent value="documents">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Documenti & Contratti</h3>
-            <p className="text-center py-8" style={{ color: '#9ca3af' }}>
-              Feature in sviluppo
-            </p>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="vendite" className="space-y-6">
+              <CustomerSalesTab
+                orders={orders}
+                analytics={analytics}
+              />
+            </TabsContent>
+
+            <TabsContent value="marketing" className="space-y-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Attribution & Campagne</h3>
+                <p className="text-sm text-muted-foreground">
+                  UTM attribution, canali preferiti, attribution path - Da implementare
+                </p>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="attivita" className="space-y-6">
+              <CustomerTimelineView 
+                customerId={customerId as string}
+                interactions={interactions}
+              />
+            </TabsContent>
+
+            <TabsContent value="documenti" className="space-y-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Documenti</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upload/download documenti, preview, versioning - Da implementare
+                </p>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <CustomerAnalytics
+                customerId={customerId as string}
+                deals={deals}
+                customer={customer}
+                analytics={analytics}
+              />
+            </TabsContent>
+
+            <TabsContent value="consensi" className="space-y-6">
+              <CustomerConsentManager customerId={customerId as string} />
+            </TabsContent>
+
+            <TabsContent value="note" className="space-y-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Note Team</h3>
+                <p className="text-sm text-muted-foreground">
+                  Editor note, tag manager, segmentazione manuale - Da implementare
+                </p>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </Layout>
   );
