@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Phone, PhoneOff, Volume2 } from 'lucide-react';
+import { Phone, PhoneOff, Volume2, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type LogEntry = {
@@ -12,15 +12,16 @@ type LogEntry = {
 
 export default function AIVoiceTest() {
   const [isConnected, setIsConnected] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'speaking'>('disconnected');
+  const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   
   const wsRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const audioQueueRef = useRef<AudioBuffer[]>([]);
+  const isPlayingRef = useRef(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     setLogs(prev => [...prev, { timestamp: new Date(), message, type }]);
@@ -32,39 +33,68 @@ export default function AIVoiceTest() {
     }
   }, [logs]);
 
+  const playAudioQueue = async () => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+    if (!audioContextRef.current) return;
+
+    isPlayingRef.current = true;
+    const audioBuffer = audioQueueRef.current.shift()!;
+    
+    const source = audioContextRef.current.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContextRef.current.destination);
+    
+    source.onended = () => {
+      isPlayingRef.current = false;
+      playAudioQueue(); // Play next in queue
+    };
+    
+    source.start();
+  };
+
   const connect = async () => {
     try {
       setStatus('connecting');
-      addLog('Connessione al Voice Gateway...', 'info');
+      addLog('🔌 Connessione al Voice Gateway...', 'info');
+
+      // Request microphone access first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: 24000,
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+        audioStreamRef.current = stream;
+        addLog('🎤 Microfono attivato', 'success');
+      } catch (err: any) {
+        addLog(`❌ Errore microfono: ${err.message}`, 'error');
+        setStatus('disconnected');
+        return;
+      }
+
+      // Initialize AudioContext
+      audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      addLog('🔊 Audio context inizializzato', 'success');
 
       // WebSocket URL
       const wsUrl = `ws://${window.location.hostname}:3005`;
-      addLog(`WebSocket: ${wsUrl}`, 'info');
+      addLog(`📡 Connessione WebSocket: ${wsUrl}`, 'info');
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = async () => {
+      ws.onopen = () => {
         setStatus('connected');
         setIsConnected(true);
-        addLog('✅ Connesso al Voice Gateway!', 'success');
+        addLog('✅ Connesso! Conversazione iniziata - Parla liberamente!', 'success');
 
-        // Request microphone access
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              sampleRate: 16000,
-              channelCount: 1,
-              echoCancellation: true,
-              noiseSuppression: true,
-            },
-          });
-
-          audioStreamRef.current = stream;
-          addLog('🎤 Microfono attivato', 'success');
-        } catch (err: any) {
-          addLog(`❌ Errore microfono: ${err.message}`, 'error');
-        }
+        // Start streaming audio to WebSocket
+        startAudioStreaming();
       };
 
       ws.onmessage = (event) => {
@@ -78,13 +108,12 @@ export default function AIVoiceTest() {
 
       ws.onerror = () => {
         addLog('❌ Errore WebSocket', 'error');
-        setStatus('disconnected');
+        disconnect();
       };
 
       ws.onclose = () => {
-        setStatus('disconnected');
-        setIsConnected(false);
-        addLog('Disconnesso', 'info');
+        addLog('📞 Conversazione terminata', 'info');
+        disconnect();
       };
     } catch (err: any) {
       addLog(`❌ Errore: ${err.message}`, 'error');
@@ -92,10 +121,52 @@ export default function AIVoiceTest() {
     }
   };
 
+  const startAudioStreaming = () => {
+    if (!audioContextRef.current || !audioStreamRef.current || !wsRef.current) return;
+
+    const audioContext = audioContextRef.current;
+    const source = audioContext.createMediaStreamSource(audioStreamRef.current);
+    
+    // Use ScriptProcessorNode for audio processing (deprecated but widely supported)
+    // In production, use AudioWorklet instead
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    processorRef.current = processor;
+
+    processor.onaudioprocess = (e) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+      const inputData = e.inputBuffer.getChannelData(0);
+      
+      // Convert Float32Array to Int16Array (PCM16)
+      const pcm16 = new Int16Array(inputData.length);
+      for (let i = 0; i < inputData.length; i++) {
+        const s = Math.max(-1, Math.min(1, inputData[i]));
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+
+      // Convert to base64
+      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
+
+      // Send to WebSocket
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'input_audio_buffer.append',
+          audio: base64Audio,
+        })
+      );
+    };
+
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+
+    addLog('🎙️ Streaming audio attivo - Parla quando vuoi!', 'success');
+  };
+
   const disconnect = () => {
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
+    // Stop audio streaming
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
     }
 
     if (audioStreamRef.current) {
@@ -103,19 +174,52 @@ export default function AIVoiceTest() {
       audioStreamRef.current = null;
     }
 
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
     setIsConnected(false);
     setStatus('disconnected');
+    addLog('📞 Disconnesso', 'info');
   };
 
-  const handleWebSocketMessage = (data: any) => {
+  const handleWebSocketMessage = async (data: any) => {
     switch (data.type) {
       case 'session.created':
-        addLog('📞 Sessione AI creata', 'success');
+        addLog('📞 Sessione AI creata - Parla liberamente!', 'success');
         break;
 
       case 'response.audio_transcript.done':
         if (data.transcript) {
           addLog(`🤖 AI: "${data.transcript}"`, 'ai');
+        }
+        break;
+
+      case 'response.audio.delta':
+        // Decode and queue audio chunk
+        if (data.delta && audioContextRef.current) {
+          try {
+            const audioData = atob(data.delta);
+            const arrayBuffer = new Uint8Array(audioData.length);
+            
+            for (let i = 0; i < audioData.length; i++) {
+              arrayBuffer[i] = audioData.charCodeAt(i);
+            }
+
+            const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer.buffer);
+            audioQueueRef.current.push(audioBuffer);
+            playAudioQueue();
+          } catch (err) {
+            console.error('Error decoding audio:', err);
+          }
         }
         break;
 
@@ -133,82 +237,14 @@ export default function AIVoiceTest() {
         }
         break;
 
+      case 'response.done':
+        addLog('✅ Risposta completata', 'info');
+        break;
+
       case 'error':
         addLog(`❌ ${data.error?.message || 'Errore'}`, 'error');
         break;
     }
-  };
-
-  const startRecording = async () => {
-    if (!audioStreamRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      addLog('❌ Connessione non pronta', 'error');
-      return;
-    }
-
-    setStatus('speaking');
-    setIsRecording(true);
-    addLog('🎙️ Inizio registrazione...', 'info');
-
-    audioChunksRef.current = [];
-
-    const mediaRecorder = new MediaRecorder(audioStreamRef.current, {
-      mimeType: 'audio/webm',
-    });
-
-    mediaRecorderRef.current = mediaRecorder;
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunksRef.current.push(event.data);
-      }
-    };
-
-    mediaRecorder.start(100);
-  };
-
-  const stopRecording = () => {
-    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return;
-
-    setStatus('connected');
-    setIsRecording(false);
-    addLog('⏹️ Fine registrazione', 'info');
-
-    mediaRecorderRef.current.stop();
-
-    mediaRecorderRef.current.onstop = async () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-
-      try {
-        // Convert to PCM16
-        const arrayBuffer = await audioBlob.arrayBuffer();
-        const audioContext = new AudioContext({ sampleRate: 16000 });
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-        const pcmData = audioBuffer.getChannelData(0);
-        const pcm16 = new Int16Array(pcmData.length);
-
-        for (let i = 0; i < pcmData.length; i++) {
-          pcm16[i] = Math.max(-32768, Math.min(32767, Math.floor(pcmData[i] * 32768)));
-        }
-
-        // Convert to base64
-        const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
-
-        // Send to WebSocket
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: 'input_audio_buffer.append',
-              audio: base64Audio,
-            })
-          );
-
-          addLog(`📤 Audio inviato (${(base64Audio.length / 1024).toFixed(1)} KB)`, 'success');
-        }
-      } catch (err: any) {
-        addLog(`❌ Errore conversione audio: ${err.message}`, 'error');
-      }
-    };
   };
 
   const getStatusColor = () => {
@@ -217,8 +253,6 @@ export default function AIVoiceTest() {
         return 'bg-green-500';
       case 'connecting':
         return 'bg-yellow-500';
-      case 'speaking':
-        return 'bg-blue-500';
       default:
         return 'bg-gray-500';
     }
@@ -227,13 +261,11 @@ export default function AIVoiceTest() {
   const getStatusText = () => {
     switch (status) {
       case 'connected':
-        return 'Connesso - Pronto';
+        return '🎙️ In Conversazione - Parla Liberamente';
       case 'connecting':
-        return 'Connessione...';
-      case 'speaking':
-        return 'Sto Ascoltando...';
+        return '🔌 Connessione...';
       default:
-        return 'Disconnesso';
+        return '⚫ Disconnesso';
     }
   };
 
@@ -246,7 +278,7 @@ export default function AIVoiceTest() {
             Test AI Voice Agent
           </CardTitle>
           <CardDescription>
-            Testa l'assistente vocale AI in tempo reale - OpenAI Realtime API
+            Conversazione real-time con l'assistente vocale AI - Parla liberamente come in una telefonata
           </CardDescription>
         </CardHeader>
 
@@ -258,95 +290,86 @@ export default function AIVoiceTest() {
 
           {/* Controls */}
           <div className="flex gap-3">
-            <Button
-              onClick={connect}
-              disabled={isConnected}
-              className="flex-1"
-              data-testid="button-connect-voice"
-            >
-              <Phone className="h-4 w-4 mr-2" />
-              Connetti
-            </Button>
-
-            <Button
-              onClick={disconnect}
-              disabled={!isConnected}
-              variant="destructive"
-              className="flex-1"
-              data-testid="button-disconnect-voice"
-            >
-              <PhoneOff className="h-4 w-4 mr-2" />
-              Disconnetti
-            </Button>
+            {!isConnected ? (
+              <Button
+                onClick={connect}
+                className="flex-1 h-16 text-lg bg-green-600 hover:bg-green-700"
+                data-testid="button-connect-voice"
+              >
+                <Phone className="h-5 w-5 mr-2" />
+                Inizia Conversazione
+              </Button>
+            ) : (
+              <Button
+                onClick={disconnect}
+                variant="destructive"
+                className="flex-1 h-16 text-lg"
+                data-testid="button-disconnect-voice"
+              >
+                <PhoneOff className="h-5 w-5 mr-2" />
+                Termina Conversazione
+              </Button>
+            )}
           </div>
 
-          {/* Talk Button */}
-          <Button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              startRecording();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              stopRecording();
-            }}
-            disabled={!isConnected}
-            className={cn(
-              'w-full h-20 text-lg',
-              isRecording && 'bg-red-500 hover:bg-red-600 animate-pulse'
-            )}
-            data-testid="button-talk-voice"
-          >
-            {isRecording ? (
-              <>
-                <MicOff className="h-6 w-6 mr-2" />
-                STO ASCOLTANDO...
-              </>
-            ) : (
-              <>
-                <Mic className="h-6 w-6 mr-2" />
-                Tieni Premuto per Parlare
-              </>
-            )}
-          </Button>
+          {/* Live Indicator */}
+          {isConnected && (
+            <div className="flex items-center justify-center gap-3 p-4 bg-green-50 rounded-lg border-2 border-green-500">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                <Mic className="h-5 w-5 text-green-600" />
+                <span className="font-semibold text-green-700">
+                  Microfono Attivo - Parla quando vuoi
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Instructions */}
-          <Card className="bg-yellow-50 border-yellow-200">
+          <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4">
-              <h3 className="font-semibold mb-2">📋 Come Usare:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-sm">
-                <li>Clicca "Connetti" per collegarti al Voice Gateway</li>
+              <h3 className="font-semibold mb-2 text-blue-900">💬 Come Funziona:</h3>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+                <li>Clicca <strong>"Inizia Conversazione"</strong></li>
                 <li>Permetti l'accesso al microfono quando richiesto</li>
-                <li>Tieni premuto "Parla" e parla in italiano</li>
-                <li>Rilascia per ascoltare la risposta dell'AI</li>
+                <li><strong>Parla liberamente in italiano</strong> - non serve premere bottoni!</li>
+                <li>L'AI ti risponderà automaticamente quando finisci di parlare</li>
+                <li>La conversazione continua fino a quando clicchi <strong>"Termina"</strong></li>
               </ol>
+              <p className="mt-3 text-xs text-blue-700 italic">
+                ✨ Esperienza real-time come una vera telefonata - Voice Activity Detection automatico
+              </p>
             </CardContent>
           </Card>
 
           {/* Logs */}
           <div className="space-y-2">
-            <h3 className="font-semibold">📜 Log:</h3>
+            <h3 className="font-semibold">📜 Log Conversazione:</h3>
             <div
               ref={logContainerRef}
               className="bg-gray-50 rounded-lg p-4 h-64 overflow-y-auto font-mono text-xs space-y-1"
             >
-              {logs.map((log, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'border-l-4 pl-2 py-1',
-                    log.type === 'success' && 'border-green-500 text-green-700',
-                    log.type === 'error' && 'border-red-500 text-red-700',
-                    log.type === 'ai' && 'border-purple-500 text-purple-700 font-bold',
-                    log.type === 'user' && 'border-blue-500 text-blue-700',
-                    log.type === 'info' && 'border-gray-400 text-gray-700'
-                  )}
-                >
-                  [{log.timestamp.toLocaleTimeString('it-IT')}] {log.message}
+              {logs.length === 0 ? (
+                <div className="text-gray-400 text-center py-8">
+                  Nessun log ancora. Clicca "Inizia Conversazione" per cominciare.
                 </div>
-              ))}
+              ) : (
+                logs.map((log, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'border-l-4 pl-2 py-1',
+                      log.type === 'success' && 'border-green-500 text-green-700',
+                      log.type === 'error' && 'border-red-500 text-red-700',
+                      log.type === 'ai' && 'border-purple-500 text-purple-700 font-bold',
+                      log.type === 'user' && 'border-blue-500 text-blue-700',
+                      log.type === 'info' && 'border-gray-400 text-gray-700'
+                    )}
+                  >
+                    [{log.timestamp.toLocaleTimeString('it-IT')}] {log.message}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </CardContent>
