@@ -67,14 +67,13 @@ export class OpenAIRealtimeClient {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 400 // REDUCED for faster, more natural interruptions (like real conversation)
+          threshold: 0.4, // LOWER = more sensitive to start speaking
+          prefix_padding_ms: 200, // REDUCED for faster response start
+          silence_duration_ms: 300 // VERY SHORT for ultra-responsive conversation
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
-        temperature: 0.95, // INCREASED for maximum naturalness and variability
-        max_response_output_tokens: 150 // LIMIT response length for brevity
+        temperature: 1.0 // MAXIMUM for most human-like, natural speech
       }
     };
 
