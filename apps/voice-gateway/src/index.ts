@@ -184,20 +184,18 @@ if (ENABLE_ESL) {
     eslServer.start().then(async () => {
       logger.info('[VoiceGateway] ESL server started successfully');
       
-      // Start ngrok tunnel to expose ESL port publicly
-      if (process.env.NGROK_AUTHTOKEN) {
-        try {
-          logger.info('[VoiceGateway] Starting ngrok TCP tunnel for ESL port...');
-          const { startNgrokTunnel } = await import('../ngrok-tunnel');
-          await startNgrokTunnel();
-        } catch (ngrokError: any) {
-          logger.error('[VoiceGateway] Failed to start ngrok tunnel', { error: ngrokError.message });
-          logger.warn('[VoiceGateway] ESL server running but NOT publicly accessible');
-          logger.warn('[VoiceGateway] FreeSWITCH connections will only work from localhost');
-        }
-      } else {
-        logger.warn('[VoiceGateway] NGROK_AUTHTOKEN not set - ESL server only accessible locally');
-        logger.warn('[VoiceGateway] Set NGROK_AUTHTOKEN to expose ESL port publicly for FreeSWITCH');
+      // Start LocalTunnel to expose ESL port publicly (FREE - no registration needed!)
+      try {
+        logger.info('[VoiceGateway] Starting LocalTunnel for ESL port...');
+        const { startLocalTunnel } = await import('../localtunnel');
+        // Start in background - don't await to prevent blocking
+        startLocalTunnel().catch((err) => {
+          logger.error('[VoiceGateway] LocalTunnel startup failed', { error: err.message });
+        });
+      } catch (tunnelError: any) {
+        logger.error('[VoiceGateway] Failed to start LocalTunnel', { error: tunnelError.message });
+        logger.warn('[VoiceGateway] ESL server running but NOT publicly accessible');
+        logger.warn('[VoiceGateway] FreeSWITCH connections will only work from localhost');
       }
     }).catch((error: any) => {
       logger.error('[VoiceGateway] Failed to start ESL server', { error: error.message });
