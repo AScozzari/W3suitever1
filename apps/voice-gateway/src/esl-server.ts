@@ -10,7 +10,7 @@
  * - Each connection spawns an ESLCallHandler for that specific call
  */
 
-import { Server as ESLServer, Connection } from 'modesl';
+import * as esl from 'modesl';
 import logger from './logger';
 import { ESLCallHandler, ESLCallConfig } from './esl-call-handler';
 
@@ -24,29 +24,28 @@ export interface ESLServerConfig {
 }
 
 export class VoiceGatewayESLServer {
-  private server: ESLServer;
+  private server: any; // modesl.Server type
   private config: ESLServerConfig;
   private activeCallHandlers: Map<string, ESLCallHandler> = new Map();
+  private isStarted: boolean = false;
 
   constructor(config: ESLServerConfig) {
     this.config = config;
-    this.server = new ESLServer();
-
-    this.setupServerHandlers();
+    // Initialize server later in start() method
   }
 
   /**
    * Setup ESL server event handlers
    */
   private setupServerHandlers(): void {
-    this.server.on('connection::open', (conn: Connection) => {
-      logger.info('[ESL-Server] New FreeSWITCH connection received');
+    this.server.on('connection::ready', (conn: any, id: string) => {
+      logger.info('[ESL-Server] New FreeSWITCH connection ready', { connectionId: id });
       
       this.handleNewConnection(conn);
     });
 
-    this.server.on('connection::close', (conn: Connection) => {
-      logger.info('[ESL-Server] FreeSWITCH connection closed');
+    this.server.on('connection::close', (conn: any, id: string) => {
+      logger.info('[ESL-Server] FreeSWITCH connection closed', { connectionId: id });
     });
 
     this.server.on('error', (error: Error) => {
@@ -57,29 +56,22 @@ export class VoiceGatewayESLServer {
   /**
    * Handle new incoming connection from FreeSWITCH
    */
-  private async handleNewConnection(conn: Connection): Promise<void> {
+  private async handleNewConnection(conn: any): Promise<void> {
     try {
-      // Subscribe to all events from FreeSWITCH
-      conn.subscribe([
-        'CHANNEL_ANSWER',
-        'CHANNEL_HANGUP',
-        'CHANNEL_BRIDGE',
-        'DTMF',
-        'CUSTOM'
-      ]);
+      // Get call UUID and basic info
+      const callUUID = conn.getInfo().getHeader('Unique-ID') || conn.getInfo().getHeader('unique-id');
+      const callerNumber = conn.getInfo().getHeader('Caller-Caller-ID-Number') || 'unknown';
+      const did = conn.getInfo().getHeader('Caller-Destination-Number') || 'unknown';
 
-      // Get call variables from FreeSWITCH
-      conn.api('uuid_getvar', `${conn.getInfo().getHeader('unique-id')} variable_sip_from_user`, (res: any) => {
-        const callerNumber = res.getBody() || 'unknown';
-        
-        conn.api('uuid_getvar', `${conn.getInfo().getHeader('unique-id')} variable_sip_req_user`, (res2: any) => {
-          const did = res2.getBody() || 'unknown';
-          
-          this.initializeCall(conn, {
-            callerNumber: callerNumber.trim(),
-            did: did.trim()
-          });
-        });
+      logger.info('[ESL-Server] Call info extracted', {
+        callUUID,
+        callerNumber,
+        did
+      });
+
+      await this.initializeCall(conn, {
+        callerNumber: callerNumber.trim(),
+        did: did.trim()
       });
 
     } catch (error) {
@@ -95,7 +87,7 @@ export class VoiceGatewayESLServer {
   /**
    * Initialize call handler for the incoming call
    */
-  private async initializeCall(conn: Connection, callInfo: { callerNumber: string; did: string }): Promise<void> {
+  private async initializeCall(conn: any, callInfo: { callerNumber: string; did: string }): Promise<void> {
     try {
       logger.info('[ESL-Server] Initializing call', {
         callerNumber: callInfo.callerNumber,
@@ -155,7 +147,7 @@ export class VoiceGatewayESLServer {
    * Start capturing audio from the call
    * Uses FreeSWITCH's record_session or uuid_record to capture audio
    */
-  private startAudioCapture(conn: Connection, callHandler: ESLCallHandler): void {
+  private startAudioCapture(conn: any, callHandler: ESLCallHandler): void {
     try {
       const callId = callHandler.getCallId();
       const audioFile = `/tmp/${callId}_audio.raw`;
@@ -230,8 +222,19 @@ export class VoiceGatewayESLServer {
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.server.listen(
-          { port: this.config.port, host: this.config.host },
+        if (this.isStarted) {
+          logger.warn('[ESL-Server] Server already started');
+          resolve();
+          return;
+        }
+
+        // Create modesl server with configuration
+        this.server = new esl.Server(
+          { 
+            port: this.config.port, 
+            host: this.config.host,
+            myevents: true // Enable myevents for this connection
+          },
           () => {
             logger.info('=====================================');
             logger.info('🎙️  W3 Voice Gateway ESL Server Started');
@@ -243,13 +246,19 @@ export class VoiceGatewayESLServer {
             logger.info('📡 Waiting for FreeSWITCH connections...');
             logger.info('=====================================');
             
+            this.isStarted = true;
             resolve();
           }
         );
 
+        // Setup event handlers AFTER server creation
+        this.setupServerHandlers();
+
         this.server.on('error', (error: Error) => {
-          logger.error('[ESL-Server] Failed to start server', { error: error.message });
-          reject(error);
+          logger.error('[ESL-Server] Server error', { error: error.message });
+          if (!this.isStarted) {
+            reject(error);
+          }
         });
 
       } catch (error) {
@@ -274,8 +283,8 @@ export class VoiceGatewayESLServer {
       }
       this.activeCallHandlers.clear();
 
-      // Close server
-      this.server.close();
+      // Close server (modesl doesn't have a built-in close method, it closes on process exit)
+      this.isStarted = false;
 
       logger.info('[ESL-Server] Server stopped');
     } catch (error) {

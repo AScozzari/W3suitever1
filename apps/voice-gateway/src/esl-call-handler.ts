@@ -5,7 +5,6 @@
  * Each incoming ESL connection from FreeSWITCH gets its own call handler instance.
  */
 
-import { Connection } from 'modesl';
 import logger from './logger';
 import { OpenAIRealtimeClient } from './openai-client';
 import { AudioProcessor } from './audio-processor';
@@ -24,7 +23,7 @@ export interface ESLCallConfig {
 }
 
 export class ESLCallHandler {
-  private conn: Connection;
+  private conn: any; // modesl Connection type
   private config: ESLCallConfig;
   private callId: string;
   private openaiClient: OpenAIRealtimeClient | null = null;
@@ -34,7 +33,7 @@ export class ESLCallHandler {
   private responseBuffer: Buffer[] = [];
   private lastCommitTime: Date = new Date();
 
-  constructor(conn: Connection, config: ESLCallConfig) {
+  constructor(conn: any, config: ESLCallConfig) {
     this.conn = conn;
     this.config = config;
     this.callId = this.generateCallId();
