@@ -67,9 +67,9 @@ export class OpenAIRealtimeClient {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.4, // Sensitive enough to detect when user starts speaking
-          prefix_padding_ms: 300, // Padding to capture start of speech
-          silence_duration_ms: 700 // CRITICAL: Wait for user to FINISH speaking before responding
+          threshold: 0.3, // ULTRA-AGGRESSIVE: Maximum sensitivity for instant interruption detection
+          prefix_padding_ms: 300, // Capture full start of user speech
+          silence_duration_ms: 300 // EXTREME: Minimal wait for natural conversation flow with interruptions
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
