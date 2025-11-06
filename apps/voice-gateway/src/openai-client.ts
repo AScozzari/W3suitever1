@@ -67,9 +67,9 @@ export class OpenAIRealtimeClient {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.3, // ULTRA-SENSITIVE - interrupts immediately when user speaks
-          prefix_padding_ms: 100, // MINIMAL padding for instant interruption
-          silence_duration_ms: 200 // ULTRA-SHORT for immediate turn-taking
+          threshold: 0.2, // MAXIMUM SENSITIVITY - interrupts instantly when user speaks
+          prefix_padding_ms: 50, // ABSOLUTE MINIMAL padding for instant interruption
+          silence_duration_ms: 150 // MINIMAL for immediate turn-taking and interruptions
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
