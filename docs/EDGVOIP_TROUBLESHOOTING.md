@@ -170,6 +170,131 @@ Se **NON funziona**, il problema è la configurazione audio di FreeSWITCH.
 
 ---
 
+### STEP 6: Fix Audio Playback (AI Genera Audio Ma Non Si Sente)
+
+#### Sintomi
+- ✅ Voice Gateway riceve audio dal chiamante
+- ✅ OpenAI genera risposta (vedi log: "310KB audio generato")
+- ✅ FreeSWITCH riceve audio AI in formato base64
+- ❌ **L'utente NON sente l'audio AI** (silenzio)
+
+#### Causa
+Il metodo `file_string://` non funziona su tutti i setup FreeSWITCH. OpenAI restituisce PCM16 raw senza header WAV, che FreeSWITCH non riproduce correttamente.
+
+#### Soluzione: Conversione PCM → WAV con Sox
+
+Lo script `ai_http_streaming_realtime_FIXED.lua` è stato aggiornato (righe 222-233) per convertire il PCM raw in formato WAV standard prima del playback:
+
+```lua
+-- Convert RAW PCM16 to WAV with header for FreeSWITCH compatibility
+-- OpenAI returns: PCM16, 16kHz, mono, little-endian
+local ai_wav_file = "/tmp/ai_audio_" .. uuid .. ".wav"
+local sox_cmd = string.format(
+    "sox -t raw -r 16000 -e signed-integer -b 16 -c 1 -L %s %s",
+    ai_audio_file,
+    ai_wav_file
+)
+local sox_result = os.execute(sox_cmd)
+
+-- Only play if conversion succeeded
+if sox_result == 0 or sox_result == true then
+    session:execute("playback", ai_wav_file)
+else
+    -- Log error and skip playback
+    log_msg("err", "Sox conversion failed")
+end
+```
+
+#### Requisiti
+
+**1. Installa Sox su FreeSWITCH**
+
+```bash
+ssh root@pbx.edgvoip.it
+apt-get update
+apt-get install sox libsox-fmt-all -y
+
+# Verifica installazione
+sox --version
+# Deve mostrare: SoX v14.4.2 o superiore
+```
+
+**2. Testa Conversione Sox Manuale**
+
+```bash
+# Crea file PCM raw di test (silenzio 1 secondo)
+dd if=/dev/zero of=/tmp/test.raw bs=32000 count=1
+
+# Converti in WAV (IMPORTANTE: -t raw -L per specificare formato input)
+sox -t raw -r 16000 -e signed-integer -b 16 -c 1 -L /tmp/test.raw /tmp/test.wav
+
+# Verifica header WAV
+file /tmp/test.wav
+# Deve mostrare: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+```
+
+**3. Deploy Script Aggiornato**
+
+```bash
+# Dal tuo computer (dentro la repo W3 Suite)
+scp edgvoip_scripts/ai_http_streaming_realtime_FIXED.lua root@pbx.edgvoip.it:/usr/share/freeswitch/scripts/
+
+# Su FreeSWITCH
+chmod 644 /usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua
+chown freeswitch:freeswitch /usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua
+
+# NON serve restart FreeSWITCH - lo script viene ricaricato ad ogni chiamata
+```
+
+**4. Test Chiamata Reale**
+
+Chiama il numero trunk e controlla i log:
+
+```bash
+fs_cli -x "console loglevel debug" | grep -i "AI_REALTIME\|sox"
+```
+
+**Log Attesi:**
+```
+[AI_REALTIME] 🎙️ AI SPEAKING! Playing response...
+[AI_REALTIME] ✅ AI audio played successfully
+```
+
+**Se vedi errore Sox:**
+```bash
+# Errore comune: sox: command not found
+# Fix: Installa sox come indicato sopra
+
+# Errore: sox: SoX failed to determine format
+# Fix: Verifica che il file raw esista prima della conversione
+```
+
+#### Alternative se Sox Non Funziona
+
+Se sox non è disponibile, puoi usare `ffmpeg`:
+
+```lua
+-- Alternative: FFmpeg invece di Sox
+local ffmpeg_cmd = string.format(
+    "ffmpeg -f s16le -ar 16000 -ac 1 -i %s %s -y -loglevel quiet",
+    ai_audio_file,
+    ai_wav_file
+)
+local ffmpeg_result = os.execute(ffmpeg_cmd)
+
+-- Check success before playback
+if ffmpeg_result == 0 or ffmpeg_result == true then
+    session:execute("playback", ai_wav_file)
+end
+```
+
+Installa ffmpeg:
+```bash
+apt-get install ffmpeg -y
+```
+
+---
+
 ## 🛠️ Soluzioni Alternative IMMEDIATE
 
 ### SOLUZIONE A: Greeting Automatico (TEMPORANEA)

@@ -220,21 +220,24 @@ if session:ready() then
                 -- OpenAI returns: PCM16, 16kHz, mono, little-endian
                 local ai_wav_file = "/tmp/ai_audio_" .. uuid .. ".wav"
                 local sox_cmd = string.format(
-                    "sox -r 16000 -e signed -b 16 -c 1 %s %s",
+                    "sox -t raw -r 16000 -e signed-integer -b 16 -c 1 -L %s %s",
                     ai_audio_file,
                     ai_wav_file
                 )
-                os.execute(sox_cmd)
+                local sox_result = os.execute(sox_cmd)
                 
-                -- Play WAV file (universal FreeSWITCH support)
-                session:execute("playback", ai_wav_file)
+                -- Only play if conversion succeeded
+                if sox_result == 0 or sox_result == true then
+                    session:execute("playback", ai_wav_file)
+                    log_msg("info", "✅ AI audio played successfully")
+                else
+                    log_msg("err", "❌ Sox conversion failed, skipping playback")
+                end
                 
                 -- Cleanup
                 os.remove(ai_b64_file)
                 os.remove(ai_audio_file)
                 os.remove(ai_wav_file)
-                
-                log_msg("info", "✅ AI audio played successfully")
                 
                 -- Reset silence counter after AI speaks
                 silence_counter = 0
