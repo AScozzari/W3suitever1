@@ -3429,10 +3429,12 @@ router.get('/pipelines', async (req, res) => {
     const pipelines = await db
       .select({
         pipeline: crmPipelines,
-        driverName: drivers.name
+        driverName: drivers.name,
+        funnel: crmFunnels
       })
       .from(crmPipelines)
       .leftJoin(drivers, eq(crmPipelines.driverId, drivers.id))
+      .leftJoin(crmFunnels, eq(crmPipelines.funnelId, crmFunnels.id))
       .where(and(...conditions))
       .orderBy(desc(crmPipelines.createdAt))
       .limit(parseInt(limit as string))
@@ -3463,6 +3465,12 @@ router.get('/pipelines', async (req, res) => {
           ...pipelineData,
           driver: pipelineData.driverId || 'FISSO',
           driverName: row.driverName || 'FISSO',
+          funnel: row.funnel ? {
+            id: row.funnel.id,
+            name: row.funnel.name,
+            color: row.funnel.color,
+            icon: row.funnel.icon
+          } : null,
           activeDeals: metrics.active_deals || 0,
           totalValue: metrics.total_value || 0,
           conversionRate,
