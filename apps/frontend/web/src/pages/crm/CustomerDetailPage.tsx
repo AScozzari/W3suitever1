@@ -112,7 +112,7 @@ export default function CustomerDetailPage() {
       <div className="p-6 space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-          <Link href={`/${currentTenant?.code}/crm/customers`}>
+          <Link href={`/${currentTenant?.code}/crm?tab=customers`}>
             <Button variant="ghost" size="sm" className="gap-2">
               ← Torna a lista clienti
             </Button>

@@ -100,7 +100,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-purple)',
       iconColor: 'hsl(var(--brand-purple))',
       description: 'In fase di qualifica',
-      href: buildUrl('crm/leads')
+      href: buildUrl('crm?tab=leads')
     },
     {
       title: 'Deal Aperti',
@@ -118,7 +118,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--success))',
       description: 'Valore totale deals',
-      href: buildUrl('crm/pipeline')
+      href: buildUrl('crm?tab=pipeline')
     }
   ];
 
