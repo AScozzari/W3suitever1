@@ -23,13 +23,9 @@ const ChatPage = lazy(() => import('../pages/ChatPage'));
 const AIToolsDashboardPage = lazy(() => import('../pages/AIToolsDashboardPage'));
 const PDCAnalyzerPage = lazy(() => import('../pages/PDCAnalyzerPage'));
 const CRMPage = lazy(() => import('../pages/CRMPage'));
-const PipelinePage = lazy(() => import('../pages/crm/PipelinePage'));
 const PipelineDetailPage = lazy(() => import('../pages/crm/PipelineDetailPage'));
-const CampaignsPage = lazy(() => import('../pages/crm/CampaignsPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
-const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
-const CustomersPage = lazy(() => import('../pages/crm/CustomersPage'));
 const CustomerDetailPage = lazy(() => import('../pages/crm/CustomerDetailPage'));
 const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettingsPage'));
 const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
@@ -405,36 +401,10 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
-      {/* 🎯 CRM CAMPAIGNS LIST - Lista delle campagne standalone */}
-      <Route path={`/${tenantSlug}/crm/campaigns`}>
-        <AuthenticatedRoute>
-          <CampaignsPage />
-        </AuthenticatedRoute>
-      </Route>
-      
       {/* 🎯 CRM PIPELINE DETAIL - Route specifica per visualizzazione pipeline */}
       <Route path={`/${tenantSlug}/crm/pipelines/:id`}>
         <AuthenticatedRoute>
           <PipelineDetailPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      {/* 🎯 CRM PIPELINE LIST - Lista delle pipeline standalone */}
-      <Route path={`/${tenantSlug}/crm/pipelines`}>
-        <AuthenticatedRoute>
-          <PipelinePage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      {/* 🔄 LEGACY REDIRECT - Singular to Plural */}
-      <Route path={`/${tenantSlug}/crm/pipeline`}>
-        <Redirect to={`/${tenantSlug}/crm/pipelines`} replace />
-      </Route>
-      
-      {/* 🎯 CRM LEADS - Lista dei lead standalone */}
-      <Route path={`/${tenantSlug}/crm/leads`}>
-        <AuthenticatedRoute>
-          <LeadsPage />
         </AuthenticatedRoute>
       </Route>
       
@@ -445,14 +415,7 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
-      {/* 🎯 CRM CUSTOMERS LIST - Lista clienti standalone (come prima della dash 360°) */}
-      <Route path={`/${tenantSlug}/crm/customers`}>
-        <AuthenticatedRoute>
-          <CustomersPage />
-        </AuthenticatedRoute>
-      </Route>
-      
-      {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs come HR (niente più sub-routes!) */}
+      {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs per Campaigns, Leads, Customers, Pipeline list, Activities, Analytics */}
       <Route path={`/${tenantSlug}/crm`}>
         <AuthenticatedRoute>
           <CRMPage />
