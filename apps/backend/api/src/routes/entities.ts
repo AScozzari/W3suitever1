@@ -7,6 +7,7 @@
 
 import express from 'express';
 import { z } from 'zod';
+import { createHash } from 'crypto';
 import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
@@ -19,6 +20,30 @@ import { RBACStorage } from '../core/rbac-storage';
 const router = express.Router();
 
 router.use(correlationMiddleware);
+
+/**
+ * Generate a deterministic UUID v5 from a code string
+ * This allows code → id synchronization while maintaining UUID format
+ * Uses SHA-1 hash with W3Suite namespace UUID
+ */
+function codeToUUID(code: string): string {
+  // W3Suite namespace UUID (generated once, hardcoded)
+  const W3SUITE_NAMESPACE = '7f000000-0000-4000-8000-000000000000';
+  
+  // Create SHA-1 hash of namespace + code
+  const hash = createHash('sha1')
+    .update(W3SUITE_NAMESPACE + code)
+    .digest('hex');
+  
+  // Format as UUID v5: xxxxxxxx-xxxx-5xxx-yxxx-xxxxxxxxxxxx
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    '5' + hash.substring(13, 16), // version 5
+    ((parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16) + hash.substring(18, 20),
+    hash.substring(20, 32)
+  ].join('-');
+}
 
 // ==================== LEGAL ENTITIES ====================
 
@@ -84,12 +109,16 @@ router.post('/legal-entities', async (req, res) => {
 
     const createSchema = z.object({
       codice: z.string().min(1).max(20),
-      ragioneSociale: z.string().min(1).max(255),
+      ragioneSociale: z.string().min(1).max(255), // Frontend field name
       formaGiuridica: z.string().optional(),
       partitaIva: z.string().optional(),
       codiceFiscale: z.string().optional(),
       settoreAttivita: z.string().optional()
-    });
+    }).transform(data => ({
+      ...data,
+      nome: data.ragioneSociale, // Map ragioneSociale → nome for database
+      pIva: data.partitaIva  // Map partitaIva → pIva for database
+    }));
 
     const validation = createSchema.safeParse(req.body);
     if (!validation.success) {
@@ -103,15 +132,25 @@ router.post('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // RULE: Generate deterministic UUID from codice for code → id synchronization
+    const entityId = codeToUUID(validation.data.codice);
+    const entityData = {
+      ...validation.data,
+      id: entityId, // UUID generated from codice
+      tenantId
+    };
+
     const [entity] = await db
       .insert(legalEntities)
-      .values({
-        ...validation.data,
-        tenantId
-      })
+      .values(entityData)
       .returning();
 
-    logger.info('Legal entity created', { entityId: entity.id, tenantId });
+    logger.info('Legal entity created with code→UUID sync', { 
+      entityId: entity.id, 
+      codice: validation.data.codice,
+      generatedUUID: entityId,
+      tenantId 
+    });
 
     res.status(201).json({
       success: true,
@@ -237,16 +276,26 @@ router.post('/stores', async (req, res) => {
     else if (firstChar === '6') category = 'office';
     else if (firstChar === '9') category = 'sales_point';
 
+    // RULE: Generate deterministic UUID from code for code → id synchronization
+    const storeId = codeToUUID(validation.data.code);
+    const storeData = {
+      ...validation.data,
+      id: storeId, // UUID generated from code
+      tenantId,
+      category
+    };
+
     const [store] = await db
       .insert(stores)
-      .values({
-        ...validation.data,
-        tenantId,
-        category
-      })
+      .values(storeData)
       .returning();
 
-    logger.info('Store created', { storeId: store.id, tenantId });
+    logger.info('Store created with code→UUID sync', { 
+      storeId: store.id, 
+      code: validation.data.code,
+      generatedUUID: storeId,
+      tenantId 
+    });
 
     res.status(201).json({
       success: true,

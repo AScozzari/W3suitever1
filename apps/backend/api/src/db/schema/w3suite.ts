@@ -535,9 +535,11 @@ export const legalEntities = w3suiteSchema.table("legal_entities", {
 ]);
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
-  id: true, 
   createdAt: true, 
   updatedAt: true 
+}).extend({
+  // Allow id to be optionally provided (if not provided, will be auto-generated from code)
+  id: z.string().uuid().optional()
 });
 export type InsertLegalEntity = z.infer<typeof insertLegalEntitySchema>;
 export type LegalEntity = typeof legalEntities.$inferSelect;
@@ -584,9 +586,11 @@ export const stores = w3suiteSchema.table("stores", {
 ]);
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 
-  id: true, 
   createdAt: true, 
   updatedAt: true 
+}).extend({
+  // Allow id to be optionally provided (if not provided, will be auto-generated from code)
+  id: z.string().uuid().optional()
 });
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Store = typeof stores.$inferSelect;
