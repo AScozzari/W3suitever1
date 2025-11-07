@@ -1111,30 +1111,40 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      // DEBUG: Log what we're about to save
+      console.log('[FUNNEL-SAVE] Current builder state:', {
+        mode: builder.state.mode,
+        funnelId: builder.state.funnelId,
+        pipelines: builder.state.pipelines,
+        pipelineCount: builder.state.pipelines.length,
+        pipelineIds: builder.state.pipelines.map(p => p.pipelineId)
+      });
+
+      const payload = {
+        name: builder.state.funnelName,
+        description: builder.state.description,
+        color: builder.state.color,
+        aiOrchestrationEnabled: builder.state.aiEnabled,
+        expectedDurationDays: builder.state.estimatedDuration,
+        pipelineIds: builder.state.pipelines.map(p => p.pipelineId),
+        // Also include full pipeline objects for better backend sync
+        pipelines: builder.state.pipelines
+      };
+
+      console.log('[FUNNEL-SAVE] Sending payload:', payload);
+
       if (builder.state.mode === 'create') {
         return apiRequest('/api/crm/funnels', {
           method: 'POST',
-          body: JSON.stringify({
-            name: builder.state.funnelName,
-            description: builder.state.description,
-            color: builder.state.color,
-            aiOrchestrationEnabled: builder.state.aiEnabled,
-            expectedDurationDays: builder.state.estimatedDuration,
-            pipelineIds: builder.state.pipelines.map(p => p.pipelineId)
-          })
+          body: JSON.stringify(payload)
         });
       } else {
-        return apiRequest(`/api/crm/funnels/${builder.state.funnelId}`, {
+        const response = await apiRequest(`/api/crm/funnels/${builder.state.funnelId}`, {
           method: 'PATCH',
-          body: JSON.stringify({
-            name: builder.state.funnelName,
-            description: builder.state.description,
-            color: builder.state.color,
-            aiOrchestrationEnabled: builder.state.aiEnabled,
-            expectedDurationDays: builder.state.estimatedDuration,
-            pipelineIds: builder.state.pipelines.map(p => p.pipelineId)
-          })
+          body: JSON.stringify(payload)
         });
+        console.log('[FUNNEL-SAVE] Response:', response);
+        return response;
       }
     },
     onSuccess: () => {

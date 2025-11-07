@@ -3278,11 +3278,18 @@ router.post('/funnels', rbacMiddleware, requirePermission('manage_crm'), async (
 
     await setTenantContext(db, tenantId);
 
+    // Extract pipelineIds from request and map to pipelineOrder
+    const { pipelineIds, pipelines, ...otherData } = req.body;
+    
     const validated = insertCrmFunnelSchema.parse({
-      ...req.body,
+      ...otherData,
+      // Map pipelineIds to pipelineOrder for the database
+      ...(pipelineIds !== undefined ? { pipelineOrder: pipelineIds } : {}),
       tenantId,
       createdBy: req.user?.id
     });
+
+    console.log('[FUNNEL-CREATE] Creating with pipelineOrder:', validated.pipelineOrder);
 
     const [funnel] = await db
       .insert(crmFunnels)
@@ -3321,11 +3328,30 @@ router.patch('/funnels/:id', rbacMiddleware, requirePermission('manage_crm'), as
     const { id } = req.params;
     await setTenantContext(db, tenantId);
 
+    // Extract pipelineIds from request and map to pipelineOrder
+    const { pipelineIds, pipelines, ...otherData } = req.body;
+    
+    // DEBUG: Log what we received
+    console.log('[FUNNEL-UPDATE] Received from frontend:', {
+      funnelId: id,
+      pipelineIds,
+      pipelinesCount: pipelineIds?.length,
+      originalBodyKeys: Object.keys(req.body)
+    });
+
     const updateData = {
-      ...req.body,
+      ...otherData,
+      // Map pipelineIds to pipelineOrder for the database
+      ...(pipelineIds !== undefined ? { pipelineOrder: pipelineIds } : {}),
       updatedBy: req.user?.id,
       updatedAt: new Date()
     };
+
+    console.log('[FUNNEL-UPDATE] Updating with:', {
+      funnelId: id,
+      pipelineOrder: updateData.pipelineOrder,
+      pipelineOrderLength: updateData.pipelineOrder?.length
+    });
 
     const [updated] = await db
       .update(crmFunnels)
