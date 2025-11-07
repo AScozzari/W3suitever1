@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Pipeline {
   id: string;
@@ -34,11 +44,218 @@ interface Funnel {
 }
 
 // ========================================
+// ZOD SCHEMA FOR FUNNEL CREATION
+// ========================================
+
+const createFunnelSchema = z.object({
+  name: z.string().min(3, 'Il nome deve contenere almeno 3 caratteri').max(255),
+  description: z.string().optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Colore non valido').default('#3b82f6'),
+  aiOrchestrationEnabled: z.boolean().default(false),
+  expectedDurationDays: z.number().int().min(1).max(365).optional()
+});
+
+type CreateFunnelInput = z.infer<typeof createFunnelSchema>;
+
+// ========================================
+// CREATE FUNNEL DIALOG COMPONENT
+// ========================================
+
+function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { toast } = useToast();
+  
+  const form = useForm<CreateFunnelInput>({
+    resolver: zodResolver(createFunnelSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      color: '#3b82f6',
+      aiOrchestrationEnabled: false,
+      expectedDurationDays: undefined
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: CreateFunnelInput) => {
+      return apiRequest('/api/crm/funnels', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
+      toast({
+        title: 'Funnel creato',
+        description: 'Il funnel è stato creato con successo'
+      });
+      onOpenChange(false);
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile creare il funnel',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const onSubmit = (data: CreateFunnelInput) => {
+    createMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Crea Nuovo Funnel</DialogTitle>
+          <DialogDescription>
+            Crea un nuovo customer journey funnel per orchestrare pipeline multi-stage
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome Funnel *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="es. Lead to Customer Journey" 
+                      {...field} 
+                      data-testid="input-funnel-name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrizione</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Descrivi il customer journey..." 
+                      {...field} 
+                      data-testid="input-funnel-description"
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Colore</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2 items-center">
+                        <Input 
+                          type="color" 
+                          {...field} 
+                          className="w-16 h-10"
+                          data-testid="input-funnel-color"
+                        />
+                        <Input 
+                          type="text" 
+                          {...field} 
+                          placeholder="#3b82f6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="expectedDurationDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Durata Prevista (giorni)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="30" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        value={field.value || ''}
+                        data-testid="input-funnel-duration"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="aiOrchestrationEnabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">AI Orchestration</FormLabel>
+                    <FormDescription>
+                      Abilita l'intelligenza artificiale per ottimizzare il customer journey
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="switch-ai-orchestration"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                data-testid="button-cancel-funnel"
+              >
+                Annulla
+              </Button>
+              <Button
+                type="submit"
+                className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
+                disabled={createMutation.isPending}
+                data-testid="button-submit-funnel"
+              >
+                {createMutation.isPending ? 'Creazione...' : 'Crea Funnel'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ========================================
 // SUB-COMPONENTS FOR FUNNEL VIEWS
 // ========================================
 
 // Funnel Overview - Lista funnel con metriche aggregate
-function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
+function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefined; onCreateClick: () => void }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -48,7 +265,11 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
             Orchestrate multi-pipeline customer journeys with AI-powered insights
           </p>
         </div>
-        <Button data-testid="button-create-funnel" className="bg-windtre-orange hover:bg-windtre-orange/90 text-white">
+        <Button 
+          onClick={onCreateClick}
+          data-testid="button-create-funnel" 
+          className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Create Funnel
         </Button>
@@ -123,7 +344,11 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
               <p className="text-gray-600 mb-6">
                 Create your first customer journey funnel to orchestrate multi-stage conversion paths
               </p>
-              <Button data-testid="button-create-first-funnel" className="bg-windtre-orange hover:bg-windtre-orange/90 text-white">
+              <Button 
+                onClick={onCreateClick}
+                data-testid="button-create-first-funnel" 
+                className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Funnel
               </Button>
@@ -368,7 +593,7 @@ function FunnelAnalytics({ funnels }: { funnels: Funnel[] | undefined }) {
 }
 
 // Funnel Builder - Drag & drop pipeline, configure triggers
-function FunnelBuilder({ funnels }: { funnels: Funnel[] | undefined }) {
+function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefined; onCreateClick: () => void }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -378,7 +603,11 @@ function FunnelBuilder({ funnels }: { funnels: Funnel[] | undefined }) {
             Design customer journeys with drag & drop pipeline orchestration
           </p>
         </div>
-        <Button data-testid="button-new-funnel-builder" className="bg-windtre-orange hover:bg-windtre-orange/90 text-white">
+        <Button 
+          onClick={onCreateClick}
+          data-testid="button-new-funnel-builder" 
+          className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Funnel
         </Button>
@@ -421,6 +650,7 @@ function FunnelBuilder({ funnels }: { funnels: Funnel[] | undefined }) {
 export function FunnelContent() {
   const tenantId = useRequiredTenantId();
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'builder'>('overview');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data: funnels, isLoading } = useQuery<Funnel[]>({
     queryKey: ['/api/crm/funnels'],
@@ -472,7 +702,7 @@ export function FunnelContent() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <FunnelOverview funnels={funnels} />
+          <FunnelOverview funnels={funnels} onCreateClick={() => setCreateDialogOpen(true)} />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
@@ -480,9 +710,11 @@ export function FunnelContent() {
         </TabsContent>
 
         <TabsContent value="builder" className="mt-6">
-          <FunnelBuilder funnels={funnels} />
+          <FunnelBuilder funnels={funnels} onCreateClick={() => setCreateDialogOpen(true)} />
         </TabsContent>
       </Tabs>
+
+      <CreateFunnelDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
     </div>
   );
 }
