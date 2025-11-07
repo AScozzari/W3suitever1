@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +28,7 @@ interface CustomerConsentManagerProps {
 export function CustomerConsentManager({ customerId }: CustomerConsentManagerProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('current');
 
   // Fetch customer to get personId
@@ -52,12 +54,16 @@ export function CustomerConsentManager({ customerId }: CustomerConsentManagerPro
   // Update consents mutation
   const updateConsentsMutation = useMutation({
     mutationFn: async (payload: { consents: Array<{ type: string; status: string; notes?: string }> }) => {
+      if (!user?.id) {
+        throw new Error('Utente non autenticato');
+      }
+      
       return apiRequest(`/api/crm/persons/${personId}/consents`, {
         method: 'PATCH',
         body: JSON.stringify({
           ...payload,
-          updatedBy: 'current-user', // TODO: Get from auth context
-          updatedByName: 'Current User', // TODO: Get from auth context
+          updatedBy: user.id,
+          updatedByName: user.name || user.email || 'Unknown User',
         }),
       });
     },
@@ -82,6 +88,15 @@ export function CustomerConsentManager({ customerId }: CustomerConsentManagerPro
   const timeline = historyData?.data?.timeline || [];
 
   const handleToggleConsent = (type: string, currentStatus: string) => {
+    if (!user) {
+      toast({
+        title: 'Errore',
+        description: 'Utente non autenticato',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const newStatus = currentStatus === 'granted' ? 'withdrawn' : 'granted';
     
     updateConsentsMutation.mutate({
@@ -91,6 +106,14 @@ export function CustomerConsentManager({ customerId }: CustomerConsentManagerPro
 
   if (isLoadingCustomer || isLoadingConsents) {
     return <Skeleton className="h-96 w-full" />;
+  }
+
+  if (!personId) {
+    return (
+      <Card className="p-8 text-center">
+        <p style={{ color: '#6b7280' }}>Impossibile caricare i consensi: person_id mancante</p>
+      </Card>
+    );
   }
 
   const consentTypes = [
