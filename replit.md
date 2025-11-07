@@ -84,6 +84,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Dual-Mode Campaign Creation**: Provides a beginner-friendly wizard and an advanced interface, with user preference persistence.
 - **GDPR Consent Enforcement System**: Backend service validating campaign consents against lead status, blocking non-compliant conversions.
 - **Enhanced Error Handling UI**: Provides toast notifications for mutation failures and structured error responses.
+- **Customer 360° Dashboard**: Comprehensive customer view with 8 tabs (Overview, Vendite, Marketing, Attività, Documenti, Analytics, Consensi, Note). Features full B2B/B2C support with differentiated fields (P.IVA, SDI, ATECO for B2B; CF, birth date, gender for B2C). Includes real-time documents management with Object Storage integration and notes system with React Query for full CRUD operations, tenant isolation, and Zod validation.
 
 # External Dependencies
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
