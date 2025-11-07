@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,6 +52,7 @@ interface Customer360Data {
 }
 
 export default function CustomerDetailPage() {
+  const [currentModule, setCurrentModule] = useState('crm');
   const [activeTab, setActiveTab] = useState('overview');
   const params = useParams();
   const customerId = params.id;
@@ -62,16 +64,20 @@ export default function CustomerDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <Skeleton className="h-48 w-full mb-6" />
-        <Skeleton className="h-96 w-full" />
-      </div>
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <div className="p-6">
+          <Skeleton className="h-48 w-full mb-6" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </Layout>
     );
   }
 
   if (!customer360?.customer) {
     return (
-      <div className="text-center py-12">Cliente non trovato</div>
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <div className="text-center py-12">Cliente non trovato</div>
+      </Layout>
     );
   }
 
@@ -97,7 +103,8 @@ export default function CustomerDetailPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6">
           <Card 
             className="p-6"
             style={{
@@ -322,6 +329,7 @@ export default function CustomerDetailPage() {
               </Card>
             </TabsContent>
           </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 }
