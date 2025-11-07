@@ -615,15 +615,4 @@ export function AnalyticsContent() {
       </div>
   );
 }
-
-// Standalone page wrapper with Layout (for direct route access)
-export default function AnalyticsPage() {
-  const [currentModule, setCurrentModule] = useState('crm');
-  
-  return (
-    <Layout currentModule={currentModule} setCurrentModule={() => {}}>
-      <CRMCommandPalette />
-      <AnalyticsContent />
-    </Layout>
-  );
 }
