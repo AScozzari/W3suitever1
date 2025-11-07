@@ -29,6 +29,7 @@ const CampaignsPage = lazy(() => import('../pages/crm/CampaignsPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
 const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
+const CustomerDetailPage = lazy(() => import('../pages/crm/CustomerDetailPage'));
 const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettingsPage'));
 const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
@@ -436,6 +437,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
+      {/* 🎯 CRM CUSTOMER DETAIL - Dettaglio cliente con Customer 360° Dashboard */}
+      <Route path={`/${tenantSlug}/crm/customers/:id`}>
+        <AuthenticatedRoute>
+          <CustomerDetailPage />
+        </AuthenticatedRoute>
+      </Route>
       
       {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs come HR (niente più sub-routes!) */}
       <Route path={`/${tenantSlug}/crm`}>
