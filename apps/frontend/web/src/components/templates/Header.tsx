@@ -10,6 +10,7 @@ import { queryClient } from '../../lib/queryClient';
 import { apiService } from '../../services/ApiService';
 import { useUserAvatar } from '../../hooks/useUserAvatar';
 import { useIdleAwareRefetch } from '../../hooks/useIdleAwareRefetch';
+import { useTenant } from '../../contexts/TenantContext';
 import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
 import GlobalCustomerSearch from '../GlobalCustomerSearch';
 
@@ -47,6 +48,7 @@ export default function Header({
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
+  const { currentTenant } = useTenant();
   const refetchInterval = useIdleAwareRefetch(15000);
   
   // Use avatar hook for enhanced avatar functionality
@@ -151,6 +153,30 @@ export default function Header({
     }
   }, [userMenuOpen, storeMenuOpen, notificationMenuOpen]);
 
+  // Get validated tenant slug from URL or fallback
+  const getValidatedTenantSlug = (): string => {
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    const slugFromUrl = pathSegments[0];
+    
+    const validTenants = ['staging', 'demo', 'acme', 'tech'];
+    
+    if (slugFromUrl && validTenants.includes(slugFromUrl)) {
+      return slugFromUrl;
+    }
+    
+    const slugFromContext = currentTenant?.code;
+    if (slugFromContext && validTenants.includes(slugFromContext)) {
+      return slugFromContext;
+    }
+    
+    const slugFromStorage = localStorage.getItem('currentTenant');
+    if (slugFromStorage && validTenants.includes(slugFromStorage)) {
+      return slugFromStorage;
+    }
+    
+    return 'staging';
+  };
+
   const handleLogout = async () => {
     try {
       console.log('🚪 Logging out via OAuth2...');
@@ -158,12 +184,18 @@ export default function Header({
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       console.log('✅ OAuth2 logout completed');
-      window.location.href = '/brandinterface/login';
+      
+      const tenantSlug = getValidatedTenantSlug();
+      const loginUrl = `/${tenantSlug}/login`;
+      console.log(`🔄 Redirecting to tenant login: ${loginUrl}`);
+      window.location.href = loginUrl;
     } catch (error) {
       console.error('❌ Logout error:', error);
       await oauth2Client.logout();
       queryClient.clear();
-      window.location.href = '/brandinterface/login';
+      
+      const tenantSlug = getValidatedTenantSlug();
+      window.location.href = `/${tenantSlug}/login`;
     }
   };
 
