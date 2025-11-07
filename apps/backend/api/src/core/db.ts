@@ -54,10 +54,9 @@ console.log('✅ Drizzle ORM initialized with TCP connection');
  * Necessario per Row Level Security (RLS)
  */
 export const setTenantContext = async (tenantId: string) => {
-  // Use raw SQL to avoid Drizzle template literal issues with set_config
-  await db.execute(
-    sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
-  );
+  // Use native pg driver for parameterized query to avoid Drizzle SQL corruption
+  // This prevents "syntax error at or near =" bugs and SQL injection
+  await pool.query('SELECT set_config($1, $2, false)', ['app.current_tenant_id', tenantId]);
 };
 
 /**
@@ -100,12 +99,14 @@ export const withTenantTransaction = async <T>(
   operation: (tx: any) => Promise<T>
 ): Promise<T> => {
   return await db.transaction(async (tx) => {
-    // Imposta il tenant context sulla stessa connessione della transazione
+    // Set tenant context using SET LOCAL (transaction-scoped)
+    // Must use sql.raw because SET LOCAL doesn't accept bind parameters
+    // Escape single quotes to prevent SQL injection
     await tx.execute(
-      sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
+      sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId.replace(/'/g, "''")}'`)
     );
     
-    // Esegui l'operazione con la transazione tenant-scoped
+    // Execute the operation with the tenant-scoped transaction
     return await operation(tx);
   });
 };

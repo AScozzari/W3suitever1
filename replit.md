@@ -86,6 +86,32 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Enhanced Error Handling UI**: Provides toast notifications for mutation failures and structured error responses.
 - **Customer 360° Dashboard**: Comprehensive customer view with 8 tabs (Overview, Vendite, Marketing, Attività, Documenti, Analytics, Consensi, Note). Features full B2B/B2C support with differentiated fields (P.IVA, SDI, ATECO for B2B; CF, birth date, gender for B2C). Includes real-time documents management with Object Storage integration and notes system with React Query for full CRUD operations, tenant isolation, and Zod validation.
 
+# Critical Technical Notes
+
+## RLS (Row Level Security) with Drizzle ORM (2025-11-07)
+**CRITICAL**: Drizzle ORM has a **known bug** with `sql.raw` and RLS tenant context that causes "syntax error at or near =" in subsequent queries.
+
+**Root Cause**: When using `sql.raw` with `set_config` or `SET LOCAL` for RLS tenant context, Drizzle's SQL builder corrupts subsequent parameterized queries, causing PostgreSQL to fail with syntax errors.
+
+**Solution Pattern** (apps/backend/api/src/core/db.ts):
+```typescript
+// ✅ CORRECT - Use native pg Pool query
+export const setTenantContext = async (tenantId: string) => {
+  await pool.query('SELECT set_config($1, $2, false)', ['app.current_tenant_id', tenantId]);
+};
+```
+
+```typescript
+// ❌ WRONG - sql.raw corrupts subsequent Drizzle queries
+await db.execute(sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`));
+```
+
+**Affected Operations**: Avoid using Drizzle's `db.$count`, `sql<T>\`...\``, and other helpers that may fail after RLS context is set. Use native `pool.query` for critical RLS-dependent queries.
+
+**CRM Schema Note**: The `crm_deals.stage` column stores the **stage NAME** (varchar), not the stage ID (UUID). Queries joining deals with stages must use `stage.name = deals.stage`, not a non-existent foreign key.
+
+**Recommendation**: Escalate Drizzle binding bug to upstream maintainers. Consider introducing proper foreign keys between `crm_deals` and `crm_pipeline_stages` for data integrity.
+
 # External Dependencies
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
 - **Redis**: Used for BullMQ and the Unified Notification System.
