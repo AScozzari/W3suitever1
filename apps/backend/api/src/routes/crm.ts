@@ -5734,7 +5734,7 @@ router.get('/persons/:personId/analytics', async (req, res) => {
       SELECT COUNT(*)::integer AS count
       FROM w3suite.crm_leads
       WHERE tenant_id = ${tenantId}::uuid
-        AND (source_channel ILIKE '%referral%' OR utm_source ILIKE '%referral%')
+        AND (source_channel::text ILIKE '%referral%' OR utm_source ILIKE '%referral%')
     `);
     
     const referrals = Number(referralsResult.rows[0]?.count || 0);
