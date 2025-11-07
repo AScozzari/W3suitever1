@@ -322,7 +322,6 @@ export default function CustomerDetailPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
     </div>
   );
 }
