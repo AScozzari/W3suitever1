@@ -21,8 +21,11 @@ import {
   UserPlus, 
   Users, 
   CheckSquare, 
-  BarChart3
+  BarChart3,
+  Workflow
 } from 'lucide-react';
+import { Link } from 'wouter';
+import { useRequiredTenant } from '@/hooks/useRequiredTenant';
 
 // 🎯 TAB ORIGINALI ESATTI (come prima, senza Deals)
 type CRMTab = 'dashboard' | 'campaigns' | 'pipeline' | 'leads' | 'customers' | 'activities' | 'analytics';
@@ -71,6 +74,7 @@ const contentVariants = {
 export default function CRMPage() {
   const [currentModule] = useState('crm');
   const [activeTab, setActiveTab] = useState<CRMTab>('dashboard');
+  const { slug: tenantSlug } = useRequiredTenant();
 
   // Render del contenuto basato sul tab attivo usando le pagine REALI
   const renderContent = () => {
@@ -111,6 +115,15 @@ export default function CRMPage() {
                   Sistema completo per la gestione delle relazioni con i clienti
                 </p>
               </div>
+              <Link href={`/${tenantSlug}/crm/funnels`}>
+                <Button 
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                  data-testid="button-view-funnels"
+                >
+                  <Workflow className="w-4 h-4 mr-2" />
+                  Customer Journeys
+                </Button>
+              </Link>
             </div>
             
             {/* Tab Navigation - USANDO ONCLICK INVECE DI HREF! */}

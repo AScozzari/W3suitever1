@@ -54,6 +54,12 @@ interface Pipeline {
   updatedAt?: string;
   ownerId?: string;
   ownerName?: string;
+  funnel?: {
+    id: string;
+    name: string;
+    color: string;
+    icon: string | null;
+  } | null;
 }
 
 // Framer Motion Variants
@@ -513,11 +519,20 @@ export function PipelineContent() {
                       <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
                         {pipeline.name}
                       </h3>
-                      <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                        Driver: <span style={{ color: getDriverColor(pipeline.driver || 'FISSO'), fontWeight: 500 }}>
-                          {pipeline.driverName || pipeline.driver || 'N/D'}
-                        </span>
-                      </p>
+                      <div className="space-y-1 mt-1">
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          Driver: <span style={{ color: getDriverColor(pipeline.driver || 'FISSO'), fontWeight: 500 }}>
+                            {pipeline.driverName || pipeline.driver || 'N/D'}
+                          </span>
+                        </p>
+                        {pipeline.funnel && (
+                          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            Funnel: <span style={{ color: pipeline.funnel.color, fontWeight: 500 }} data-testid={`text-funnel-${pipeline.id}`}>
+                              {pipeline.funnel.name}
+                            </span>
+                          </p>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Inline Shortcuts: View + Settings */}
