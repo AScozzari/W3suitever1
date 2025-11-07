@@ -864,13 +864,15 @@ function DraggablePipelineCard({ pipeline, onEdit }: { pipeline: Pipeline; onEdi
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
-      className="windtre-glass-panel p-3 rounded-lg hover:shadow-md transition-shadow border-2 border-transparent hover:border-windtre-orange/30 cursor-grab active:cursor-grabbing"
+      className="windtre-glass-panel p-3 rounded-lg hover:shadow-md transition-shadow border-2 border-transparent hover:border-windtre-orange/30"
       data-testid={`draggable-pipeline-${pipeline.id}`}
     >
       <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
+        <div 
+          className="flex-1 cursor-grab active:cursor-grabbing"
+          {...listeners}
+          {...attributes}
+        >
           <p className="font-medium text-gray-900 text-sm">{pipeline.name}</p>
           <Badge variant="outline" className="text-xs mt-1">{pipeline.domain}</Badge>
         </div>
@@ -889,7 +891,7 @@ function DraggablePipelineCard({ pipeline, onEdit }: { pipeline: Pipeline; onEdi
               onPointerDown={(e) => e.stopPropagation()}
               data-testid={`button-edit-pipeline-${pipeline.id}`}
               title="Modifica pipeline"
-              className="h-7 w-7 p-0 cursor-pointer hover:bg-gray-100"
+              className="h-7 w-7 p-0 cursor-pointer hover:bg-gray-100 shrink-0"
             >
               <Edit className="w-4 h-4 text-gray-600 hover:text-windtre-orange" />
             </Button>
