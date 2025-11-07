@@ -29,7 +29,6 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CustomerFormModal } from '@/components/crm/CustomerFormModal';
 import { DeleteConfirmationDialog } from '@/components/crm/DeleteConfirmationDialog';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
-import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
 interface Customer {
   id: string;
@@ -64,8 +63,7 @@ const B2BCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const { tenantSlug } = useTenantNavigation();
+  const [location, setLocation] = useLocation();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
@@ -185,7 +183,7 @@ const B2BCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => setLocation(`/${tenantSlug}/crm/customers/${row.original.id}`)}
+              onClick={() => setLocation(`${location}/customers/${row.original.id}`)}
               data-testid={`view-b2b-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -331,8 +329,7 @@ const B2CCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const { tenantSlug } = useTenantNavigation();
+  const [location, setLocation] = useLocation();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
@@ -426,7 +423,7 @@ const B2CCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => setLocation(`/${tenantSlug}/crm/customers/${row.original.id}`)}
+              onClick={() => setLocation(`${location}/customers/${row.original.id}`)}
               data-testid={`view-b2c-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -569,17 +566,17 @@ export default function CustomersPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [searchQuery, setSearchQuery] = useState('');
   const [location] = useLocation();
-  const { buildUrl } = useTenantNavigation();
+  const basePath = location.split('/').slice(0, -1).join('/') || location;
 
   // CRM Navigation Tabs
   const crmTabs = [
-    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: buildUrl('crm') },
-    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: buildUrl('crm/campaigns') },
-    { value: 'pipeline', label: 'Pipeline', icon: Target, path: buildUrl('crm/pipeline') },
-    { value: 'leads', label: 'Lead', icon: UserPlus, path: buildUrl('crm/leads') },
-    { value: 'customers', label: 'Clienti', icon: Users, path: buildUrl('crm/customers') },
-    { value: 'activities', label: 'Attività', icon: CheckSquare, path: buildUrl('crm/activities') },
-    { value: 'analytics', label: 'Analytics', icon: BarChart3, path: buildUrl('crm/analytics') }
+    { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: basePath },
+    { value: 'campaigns', label: 'Campagne', icon: Megaphone, path: `${basePath}/campaigns` },
+    { value: 'pipeline', label: 'Pipeline', icon: Target, path: `${basePath}/pipeline` },
+    { value: 'leads', label: 'Lead', icon: UserPlus, path: `${basePath}/leads` },
+    { value: 'customers', label: 'Clienti', icon: Users, path: `${basePath}/customers` },
+    { value: 'activities', label: 'Attività', icon: CheckSquare, path: `${basePath}/activities` },
+    { value: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` }
   ];
 
   const getActiveTab = () => {
