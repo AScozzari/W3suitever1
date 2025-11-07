@@ -10,6 +10,7 @@ import { queryClient } from '../../lib/queryClient';
 import { apiService } from '../../services/ApiService';
 import { useUserAvatar } from '../../hooks/useUserAvatar';
 import { useIdleAwareRefetch } from '../../hooks/useIdleAwareRefetch';
+import { useTenant } from '../../contexts/TenantContext';
 import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
 import GlobalCustomerSearch from '../GlobalCustomerSearch';
 
@@ -46,6 +47,7 @@ export default function Header({
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
+  const { currentTenant } = useTenant();
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const refetchInterval = useIdleAwareRefetch(15000);
   
@@ -154,16 +156,23 @@ export default function Header({
   const handleLogout = async () => {
     try {
       console.log('🚪 Logging out via OAuth2...');
+      
+      // Get current tenant slug for redirect
+      const tenantSlug = currentTenant?.code || 'staging';
+      
       await oauth2Client.logout();
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       console.log('✅ OAuth2 logout completed');
-      window.location.href = '/brandinterface/login';
+      
+      // Redirect to login page of the same tenant
+      window.location.href = `/${tenantSlug}/login`;
     } catch (error) {
       console.error('❌ Logout error:', error);
+      const tenantSlug = currentTenant?.code || 'staging';
       await oauth2Client.logout();
       queryClient.clear();
-      window.location.href = '/brandinterface/login';
+      window.location.href = `/${tenantSlug}/login`;
     }
   };
 

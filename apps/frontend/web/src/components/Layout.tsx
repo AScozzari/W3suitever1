@@ -529,6 +529,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     try {
       console.log('🚪 Logging out via OAuth2...');
       
+      // Get current tenant slug for redirect
+      const tenantSlug = currentTenant?.code || 'staging';
+      
       // Use OAuth2 logout (clears tokens and revokes on server)
       await oauth2Client.logout();
       
@@ -538,15 +541,16 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       
       console.log('✅ OAuth2 logout completed');
       
-      // Redirect to login page
-      window.location.href = '/brandinterface/login';
+      // Redirect to login page of the same tenant
+      window.location.href = `/${tenantSlug}/login`;
       
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Fallback: force logout even if server call fails
+      const tenantSlug = currentTenant?.code || 'staging';
       await oauth2Client.logout();
       queryClient.clear();
-      window.location.href = '/brandinterface/login';
+      window.location.href = `/${tenantSlug}/login`;
     }
   };
 
