@@ -1172,13 +1172,32 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
       <div className="space-y-4">
         {/* Top Toolbar */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Funnel Builder</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {builder.state.mode === 'create' ? 'Create new funnel' : `Editing: ${builder.state.funnelName}`}
-            </p>
+          <div className="flex-1 max-w-md">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Funnel Builder</h2>
+            {builder.state.mode === 'create' ? (
+              <Input
+                placeholder="Enter funnel name..."
+                value={builder.state.funnelName}
+                onChange={(e) => builder.updateMetadata({ funnelName: e.target.value })}
+                className="max-w-sm"
+                data-testid="input-funnel-name"
+              />
+            ) : (
+              <p className="text-sm text-gray-600">Editing: {builder.state.funnelName}</p>
+            )}
           </div>
           <div className="flex gap-2">
+            {builder.state.mode === 'create' && builder.state.pipelines.length > 0 && (
+              <Button
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending || !builder.state.funnelName}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                data-testid="button-create-funnel"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saveMutation.isPending ? 'Creating...' : 'Create Funnel'}
+              </Button>
+            )}
             {builder.state.mode === 'edit' && builder.state.isDirty && (
               <>
                 <Button

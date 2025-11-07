@@ -94,10 +94,13 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
       setCurrentUser(sessionData.user);
       console.log('[TENANT-PROVIDER] 👤 User session loaded:', sessionData.user.email);
       
-      // If session includes tenant info, update it
-      if (sessionData.user.tenant) {
+      // ✅ FIX: Only update tenant from session if NOT already set from routing/localStorage
+      // This prevents session from overwriting correct tenant from URL (e.g., staging → DEMO001)
+      if (sessionData.user.tenant && !storedTenantId) {
         setCurrentTenant(sessionData.user.tenant);
         console.log('[TENANT-PROVIDER] 🏢 Tenant updated from session:', sessionData.user.tenant);
+      } else if (storedTenantId) {
+        console.log('[TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant:', storedTenantId);
       }
     }
   }, [sessionData]);
