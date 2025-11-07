@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle, Edit, Save, X, Search } from 'lucide-react';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core';
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +21,7 @@ import { useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useFunnelBuilder, type FunnelPipeline } from './hooks/useFunnelBuilder';
 
 interface Pipeline {
   id: string;
@@ -839,54 +843,447 @@ function FunnelAnalytics({ funnels }: { funnels: Funnel[] | undefined }) {
   );
 }
 
-// Funnel Builder - Drag & drop pipeline, configure triggers
-function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefined; onCreateClick: () => void }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Funnel Builder</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Design customer journeys with drag & drop pipeline orchestration
-          </p>
-        </div>
-        <Button 
-          onClick={onCreateClick}
-          data-testid="button-new-funnel-builder" 
-          className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Funnel
-        </Button>
-      </div>
+// ========================================
+// BUILDER TAB COMPONENTS
+// ========================================
 
-      <Card className="windtre-glass-panel p-12">
-        <div className="text-center">
-          <GitBranch className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Funnel Builder Coming Soon</h3>
-          <p className="text-gray-600 mb-6">
-            Drag & drop interface to build multi-pipeline funnels with AI orchestration
-          </p>
-          <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto text-left">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <WorkflowIcon className="w-6 h-6 text-blue-600 mb-2" />
-              <p className="text-sm font-medium text-blue-900">Drag & Drop</p>
-              <p className="text-xs text-blue-700 mt-1">Reorder pipeline stages visually</p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <GitBranch className="w-6 h-6 text-green-600 mb-2" />
-              <p className="text-sm font-medium text-green-900">Triggers</p>
-              <p className="text-xs text-green-700 mt-1">Configure automated transitions</p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <Sparkles className="w-6 h-6 text-purple-600 mb-2" />
-              <p className="text-sm font-medium text-purple-900">AI Rules</p>
-              <p className="text-xs text-purple-700 mt-1">Intelligent routing & scoring</p>
-            </div>
+// Draggable Pipeline Card (for available pipelines list)
+function DraggablePipelineCard({ pipeline }: { pipeline: Pipeline }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: pipeline.id,
+    data: { type: 'pipeline', pipeline }
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    opacity: isDragging ? 0.5 : 1,
+  } : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className="windtre-glass-panel p-3 rounded-lg cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border-2 border-transparent hover:border-windtre-orange/30"
+      data-testid={`draggable-pipeline-${pipeline.id}`}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <p className="font-medium text-gray-900 text-sm">{pipeline.name}</p>
+          <Badge variant="outline" className="text-xs mt-1">{pipeline.domain}</Badge>
+        </div>
+        <Badge className="bg-blue-100 text-blue-700 text-xs">
+          {pipeline.stagesConfig.length} stages
+        </Badge>
+      </div>
+      <div className="flex gap-1 mt-2 flex-wrap">
+        {pipeline.stagesConfig.slice(0, 3).map(stage => (
+          <div
+            key={stage.order}
+            className="w-6 h-6 rounded"
+            style={{ backgroundColor: stage.color }}
+            title={stage.name}
+          />
+        ))}
+        {pipeline.stagesConfig.length > 3 && (
+          <div className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+            +{pipeline.stagesConfig.length - 3}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Sortable Funnel Pipeline Card (for canvas)
+function SortableFunnelPipelineCard({ pipeline, onRemove }: { pipeline: FunnelPipeline; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: pipeline.pipelineId
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="windtre-glass-panel p-4 rounded-lg border-2 border-windtre-orange/30"
+      data-testid={`canvas-pipeline-${pipeline.pipelineId}`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <div {...listeners} className="cursor-grab active:cursor-grabbing p-2 hover:bg-gray-100 rounded">
+            <WorkflowIcon className="w-4 h-4 text-gray-600" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">{pipeline.pipelineName}</p>
+            <p className="text-xs text-gray-500">{pipeline.stagesCount} stages</p>
           </div>
         </div>
-      </Card>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          data-testid={`button-remove-pipeline-${pipeline.pipelineId}`}
+        >
+          <X className="w-4 h-4 text-red-600" />
+        </Button>
+      </div>
     </div>
+  );
+}
+
+// Funnel Builder - Drag & drop pipeline, configure triggers
+function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefined; onCreateClick: () => void }) {
+  const { toast } = useToast();
+  const builder = useFunnelBuilder();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [unsavedChangesDialog, setUnsavedChangesDialog] = useState(false);
+  const initializedRef = useRef(false);
+
+  // Initialize builder in create mode on mount (only once)
+  useEffect(() => {
+    if (!initializedRef.current) {
+      builder.startCreate();
+      initializedRef.current = true;
+    }
+  }, [builder]);
+
+  // Fetch all available pipelines
+  const { data: allPipelines } = useQuery<Pipeline[]>({
+    queryKey: ['/api/crm/pipelines']
+  });
+
+  const handleEditFunnel = (funnel: Funnel) => {
+    if (builder.state.isDirty) {
+      setUnsavedChangesDialog(true);
+      return;
+    }
+
+    const funnelPipelines: FunnelPipeline[] = funnel.pipelines.map((p, idx) => ({
+      pipelineId: p.id,
+      pipelineName: p.name,
+      stageOrder: idx,
+      stagesCount: p.stagesConfig.length,
+      color: p.stagesConfig[0]?.color
+    }));
+
+    builder.loadFunnel({
+      id: funnel.id,
+      name: funnel.name,
+      description: funnel.description || '',
+      color: funnel.color,
+      aiEnabled: funnel.aiOrchestrationEnabled,
+      estimatedDuration: funnel.avgJourneyDurationDays || 30,
+      pipelines: funnelPipelines
+    });
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragId(null);
+
+    if (!over) return;
+
+    // Check if dragging from pipeline list to canvas
+    if (active.data.current?.type === 'pipeline' && over.id === 'canvas-dropzone') {
+      const pipeline = active.data.current.pipeline as Pipeline;
+      builder.addPipeline({
+        pipelineId: pipeline.id,
+        pipelineName: pipeline.name,
+        stageOrder: builder.state.pipelines.length,
+        stagesCount: pipeline.stagesConfig.length,
+        color: pipeline.stagesConfig[0]?.color
+      });
+      return;
+    }
+
+    // Check if reordering within canvas
+    if (active.id !== over.id && builder.state.pipelines.find(p => p.pipelineId === active.id)) {
+      const oldIndex = builder.state.pipelines.findIndex(p => p.pipelineId === active.id);
+      const newIndex = builder.state.pipelines.findIndex(p => p.pipelineId === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(builder.state.pipelines, oldIndex, newIndex);
+        builder.reorderPipelines(reordered);
+      }
+    }
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (builder.state.mode === 'create') {
+        return apiRequest('/api/crm/funnels', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: builder.state.funnelName,
+            description: builder.state.description,
+            color: builder.state.color,
+            aiOrchestrationEnabled: builder.state.aiEnabled,
+            expectedDurationDays: builder.state.estimatedDuration,
+            pipelineIds: builder.state.pipelines.map(p => p.pipelineId)
+          })
+        });
+      } else {
+        return apiRequest(`/api/crm/funnels/${builder.state.funnelId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            name: builder.state.funnelName,
+            description: builder.state.description,
+            color: builder.state.color,
+            aiOrchestrationEnabled: builder.state.aiEnabled,
+            expectedDurationDays: builder.state.estimatedDuration,
+            pipelineIds: builder.state.pipelines.map(p => p.pipelineId)
+          })
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
+      builder.clearDirty();
+      toast({
+        title: '✅ Funnel salvato',
+        description: `Il funnel "${builder.state.funnelName}" è stato salvato con successo`
+      });
+      builder.startCreate();
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore',
+        description: error?.message || 'Impossibile salvare il funnel',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const filteredFunnels = funnels?.filter(f => 
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Group pipelines: available vs already in funnel
+  const pipelinesInFunnel = new Set(builder.state.pipelines.map(p => p.pipelineId));
+  const availablePipelines = allPipelines?.filter(p => !pipelinesInFunnel.has(p.id)) || [];
+  const orchestratedPipelines = allPipelines?.filter(p => pipelinesInFunnel.has(p.id)) || [];
+
+  return (
+    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="space-y-4">
+        {/* Top Toolbar */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Funnel Builder</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {builder.state.mode === 'create' ? 'Create new funnel' : `Editing: ${builder.state.funnelName}`}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {builder.state.mode === 'edit' && builder.state.isDirty && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => builder.reset()}
+                  data-testid="button-cancel-changes"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => saveMutation.mutate()}
+                  disabled={saveMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  data-testid="button-save-funnel"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </>
+            )}
+            <Button 
+              onClick={onCreateClick}
+              data-testid="button-new-funnel-builder" 
+              className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Funnel
+            </Button>
+          </div>
+        </div>
+
+        {/* Three-Panel Layout */}
+        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-300px)]">
+          {/* LEFT: Funnel Library */}
+          <div className="col-span-3 space-y-4 overflow-y-auto">
+            <Card className="windtre-glass-panel p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <GitBranch className="w-5 h-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Funnel Library</h3>
+              </div>
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search funnels..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-funnels"
+                />
+              </div>
+              <div className="space-y-2">
+                {filteredFunnels?.map(funnel => (
+                  <div
+                    key={funnel.id}
+                    className={`windtre-glass-panel p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow border-2 ${
+                      builder.state.funnelId === funnel.id
+                        ? 'border-windtre-orange'
+                        : 'border-transparent'
+                    }`}
+                    onClick={() => handleEditFunnel(funnel)}
+                    data-testid={`funnel-library-item-${funnel.id}`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded"
+                          style={{ backgroundColor: funnel.color }}
+                        />
+                        <p className="font-medium text-sm text-gray-900">{funnel.name}</p>
+                      </div>
+                      {funnel.aiOrchestrationEnabled && (
+                        <Sparkles className="w-3 h-3 text-purple-600" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Badge variant="secondary" className="text-xs">
+                        {funnel.pipelines.length} pipelines
+                      </Badge>
+                      <span>{funnel.totalLeads} leads</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* CENTER: Canvas */}
+          <div className="col-span-6">
+            <CanvasDropzone
+              pipelines={builder.state.pipelines}
+              onRemove={(pipelineId) => builder.removePipeline(pipelineId)}
+            />
+          </div>
+
+          {/* RIGHT: Available Pipelines */}
+          <div className="col-span-3 space-y-4 overflow-y-auto">
+            <Card className="windtre-glass-panel p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <WorkflowIcon className="w-5 h-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Available Pipelines</h3>
+              </div>
+              
+              {availablePipelines.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  <p className="text-xs font-medium text-gray-600 uppercase">Not in funnel</p>
+                  {availablePipelines.map(pipeline => (
+                    <DraggablePipelineCard key={pipeline.id} pipeline={pipeline} />
+                  ))}
+                </div>
+              )}
+
+              {orchestratedPipelines.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-gray-600 uppercase">Already orchestrated</p>
+                  {orchestratedPipelines.map(pipeline => (
+                    <DraggablePipelineCard key={pipeline.id} pipeline={pipeline} />
+                  ))}
+                </div>
+              )}
+
+              {allPipelines?.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  Nessuna pipeline disponibile
+                </p>
+              )}
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog open={unsavedChangesDialog} onOpenChange={setUnsavedChangesDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifiche non salvate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hai modifiche non salvate. Vuoi procedere senza salvare?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              builder.reset();
+              setUnsavedChangesDialog(false);
+            }}>
+              Procedi senza salvare
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DndContext>
+  );
+}
+
+// Canvas Dropzone Component
+function CanvasDropzone({ pipelines, onRemove }: { pipelines: FunnelPipeline[]; onRemove: (pipelineId: string) => void }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'canvas-dropzone'
+  });
+
+  return (
+    <Card
+      ref={setNodeRef}
+      className={`windtre-glass-panel p-6 h-full ${isOver ? 'border-4 border-windtre-orange border-dashed' : ''}`}
+      data-testid="canvas-dropzone"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-5 h-5 text-gray-600" />
+        <h3 className="font-semibold text-gray-900">Funnel Journey Canvas</h3>
+      </div>
+
+      {pipelines.length === 0 ? (
+        <div className="h-full flex items-center justify-center text-center py-12">
+          <div>
+            <GitBranch className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium mb-2">Drag pipelines here to start building</p>
+            <p className="text-sm text-gray-500">
+              Drag & drop pipelines from the right panel to create your customer journey
+            </p>
+          </div>
+        </div>
+      ) : (
+        <SortableContext items={pipelines.map(p => p.pipelineId)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {pipelines.map(pipeline => (
+              <SortableFunnelPipelineCard
+                key={pipeline.pipelineId}
+                pipeline={pipeline}
+                onRemove={() => onRemove(pipeline.pipelineId)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      )}
+    </Card>
   );
 }
 
