@@ -129,9 +129,9 @@ export default function CustomerDetailPage() {
             }}
           >
             <div className="flex items-start gap-6">
-              <Avatar className="h-24 w-24">
+              <Avatar className="h-12 w-12">
                 <AvatarFallback 
-                  className="text-2xl font-bold"
+                  className="text-lg font-semibold"
                   style={{ 
                     background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                     color: 'white' 
