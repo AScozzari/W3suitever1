@@ -3,12 +3,13 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch } from 'lucide-react';
+import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -264,7 +265,73 @@ function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 // ========================================
 
 // Funnel Overview - Lista funnel con metriche aggregate
-function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefined; onCreateClick: () => void }) {
+function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
+  const { toast } = useToast();
+  const [viewFunnel, setViewFunnel] = useState<Funnel | null>(null);
+  const [deleteFunnel, setDeleteFunnel] = useState<Funnel | null>(null);
+
+  const archiveMutation = useMutation({
+    mutationFn: async (funnelId: string) => {
+      return apiRequest(`/api/crm/funnels/${funnelId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: false })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
+      toast({
+        title: '📦 Funnel archiviato',
+        description: 'Il funnel è stato archiviato con successo'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore',
+        description: error?.message || 'Impossibile archiviare il funnel',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (funnelId: string) => {
+      return apiRequest(`/api/crm/funnels/${funnelId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
+      setDeleteFunnel(null);
+      toast({
+        title: '🗑️ Funnel eliminato',
+        description: 'Il funnel è stato eliminato definitivamente'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore',
+        description: error?.message || 'Impossibile eliminare il funnel',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteFunnel) return;
+
+    // Check if there are active deals
+    const hasActiveDeals = deleteFunnel.totalLeads > 0;
+
+    if (hasActiveDeals) {
+      // Archive instead of delete
+      archiveMutation.mutate(deleteFunnel.id);
+      setDeleteFunnel(null);
+    } else {
+      // Delete permanently
+      deleteMutation.mutate(deleteFunnel.id);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -274,14 +341,6 @@ function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefi
             Orchestrate multi-pipeline customer journeys with AI-powered insights
           </p>
         </div>
-        <Button 
-          onClick={onCreateClick}
-          data-testid="button-create-funnel" 
-          className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Funnel
-        </Button>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
@@ -349,18 +408,10 @@ function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefi
           <Card className="windtre-glass-panel p-12">
             <div className="text-center">
               <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No funnels yet</h3>
-              <p className="text-gray-600 mb-6">
-                Create your first customer journey funnel to orchestrate multi-stage conversion paths
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun funnel configurato</h3>
+              <p className="text-gray-600">
+                Vai alla tab "Builder" per creare il tuo primo funnel multi-pipeline
               </p>
-              <Button 
-                onClick={onCreateClick}
-                data-testid="button-create-first-funnel" 
-                className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Funnel
-              </Button>
             </div>
           </Card>
         ) : (
@@ -391,7 +442,7 @@ function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefi
                           </Badge>
                         )}
                         {!funnel.isActive && (
-                          <Badge variant="secondary">Inactive</Badge>
+                          <Badge variant="secondary">Archiviato</Badge>
                         )}
                       </div>
                       {funnel.description && (
@@ -399,21 +450,55 @@ function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefi
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="text-center">
-                      <p className="text-gray-600">Leads</p>
-                      <p className="font-semibold text-gray-900">{funnel.totalLeads}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-gray-600">Conversion</p>
-                      <p className="font-semibold text-gray-900">{funnel.conversionRate}%</p>
-                    </div>
-                    {funnel.avgJourneyDurationDays && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 text-sm mr-4">
                       <div className="text-center">
-                        <p className="text-gray-600">Avg Duration</p>
-                        <p className="font-semibold text-gray-900">{funnel.avgJourneyDurationDays}d</p>
+                        <p className="text-gray-600">Leads</p>
+                        <p className="font-semibold text-gray-900">{funnel.totalLeads}</p>
                       </div>
-                    )}
+                      <div className="text-center">
+                        <p className="text-gray-600">Conversion</p>
+                        <p className="font-semibold text-gray-900">{funnel.conversionRate}%</p>
+                      </div>
+                      {funnel.avgJourneyDurationDays && (
+                        <div className="text-center">
+                          <p className="text-gray-600">Avg Duration</p>
+                          <p className="font-semibold text-gray-900">{funnel.avgJourneyDurationDays}d</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewFunnel(funnel)}
+                        data-testid={`button-view-funnel-${funnel.id}`}
+                        title="Visualizza dettagli"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {funnel.isActive && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => archiveMutation.mutate(funnel.id)}
+                          disabled={archiveMutation.isPending}
+                          data-testid={`button-archive-funnel-${funnel.id}`}
+                          title="Archivia funnel"
+                        >
+                          <Archive className="w-4 h-4 text-gray-600" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteFunnel(funnel)}
+                        data-testid={`button-delete-funnel-${funnel.id}`}
+                        title="Elimina funnel"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -469,6 +554,145 @@ function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefi
           ))
         )}
       </div>
+
+      {/* View Funnel Dialog */}
+      <Dialog open={!!viewFunnel} onOpenChange={() => setViewFunnel(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: `${viewFunnel?.color}20` }}
+              >
+                <Target className="w-5 h-5" style={{ color: viewFunnel?.color }} />
+              </div>
+              {viewFunnel?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Dettagli completi del funnel e pipeline associate
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewFunnel && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Descrizione</p>
+                  <p className="text-sm text-gray-900 mt-1">{viewFunnel.description || 'Nessuna descrizione'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Status</p>
+                  <p className="text-sm text-gray-900 mt-1">{viewFunnel.isActive ? 'Attivo' : 'Archiviato'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Leads Totali</p>
+                  <p className="text-sm text-gray-900 mt-1">{viewFunnel.totalLeads}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
+                  <p className="text-sm text-gray-900 mt-1">{viewFunnel.conversionRate}%</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">AI Orchestration</p>
+                  <p className="text-sm text-gray-900 mt-1">{viewFunnel.aiOrchestrationEnabled ? 'Abilitata' : 'Disabilitata'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Durata Media Journey</p>
+                  <p className="text-sm text-gray-900 mt-1">{viewFunnel.avgJourneyDurationDays ? `${viewFunnel.avgJourneyDurationDays} giorni` : 'N/A'}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-3">Pipeline Associate ({viewFunnel.pipelines?.length || 0})</p>
+                {viewFunnel.pipelines && viewFunnel.pipelines.length > 0 ? (
+                  <div className="space-y-3">
+                    {viewFunnel.pipelines.map(pipeline => (
+                      <Card key={pipeline.id} className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium text-gray-900">{pipeline.name}</p>
+                          <Badge variant="outline">{pipeline.domain}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1 overflow-x-auto pb-2">
+                          {pipeline.stagesConfig.sort((a, b) => a.order - b.order).map((stage, idx) => (
+                            <div key={`${pipeline.id}-${stage.order}`} className="flex items-center gap-1">
+                              <div
+                                className="px-3 py-1.5 rounded text-white text-xs font-medium min-w-[100px] text-center"
+                                style={{ backgroundColor: stage.color || '#3b82f6' }}
+                              >
+                                {stage.name}
+                              </div>
+                              {idx < pipeline.stagesConfig.length - 1 && (
+                                <svg width="12" height="12" viewBox="0 0 16 16" className="flex-shrink-0">
+                                  <path d="M 4 8 L 12 8 M 9 5 L 12 8 L 9 11" stroke="#9CA3AF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Nessuna pipeline associata</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewFunnel(null)}>
+              Chiudi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete/Archive Funnel Alert Dialog */}
+      <AlertDialog open={!!deleteFunnel} onOpenChange={() => setDeleteFunnel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              {deleteFunnel && deleteFunnel.totalLeads > 0 
+                ? 'Funnel con lead attive - Verrà archiviato'
+                : 'Conferma eliminazione funnel'
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteFunnel && deleteFunnel.totalLeads > 0 ? (
+                <div className="space-y-2">
+                  <p className="font-medium text-orange-600">
+                    ⚠️ Questo funnel ha {deleteFunnel.totalLeads} lead attive
+                  </p>
+                  <p>
+                    Per proteggere i dati, il funnel verrà <strong>archiviato</strong> invece di essere eliminato.
+                    Potrai riattivarlo in qualsiasi momento o eliminarlo quando non ci saranno più lead associate.
+                  </p>
+                </div>
+              ) : (
+                <p>
+                  Sei sicuro di voler eliminare il funnel "<strong>{deleteFunnel?.name}</strong>"?
+                  Questa azione è irreversibile e rimuoverà tutte le configurazioni associate.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteFunnel(null)}>
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className={deleteFunnel && deleteFunnel.totalLeads > 0 
+                ? "bg-orange-600 hover:bg-orange-700" 
+                : "bg-red-600 hover:bg-red-700"
+              }
+            >
+              {deleteFunnel && deleteFunnel.totalLeads > 0 ? '📦 Archivia' : '🗑️ Elimina'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -734,7 +958,7 @@ export function FunnelContent() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <FunnelOverview funnels={funnels} onCreateClick={() => setCreateDialogOpen(true)} />
+          <FunnelOverview funnels={funnels} />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
