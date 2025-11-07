@@ -122,7 +122,7 @@ export default function CampaignDetailPage() {
           }}
         >
           <button
-            onClick={() => navigate('crm/campaigns')}
+            onClick={() => navigate('crm?view=campaigns')}
             className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-windtre-orange"
             style={{ color: 'var(--text-secondary)' }}
             data-testid="breadcrumb-back-to-campaigns"
