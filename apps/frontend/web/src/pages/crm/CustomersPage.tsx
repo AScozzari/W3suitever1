@@ -184,7 +184,7 @@ const B2BCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => navigate(`crm/customers/${row.original.id}`)}
+              onClick={() => navigate(`customers/${row.original.id}`)}
               data-testid={`view-b2b-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -424,7 +424,7 @@ const B2CCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => navigate(`crm/customers/${row.original.id}`)}
+              onClick={() => navigate(`customers/${row.original.id}`)}
               data-testid={`view-b2c-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
