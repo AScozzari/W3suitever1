@@ -4,7 +4,7 @@ import { Plus, TrendingUp, Users, Target, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useRequiredTenantId } from '@/hooks/useRequiredTenant';
+import { useRequiredTenantId } from '@/hooks/useTenantSafety';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Pipeline {
