@@ -74,7 +74,7 @@ export class OpenAIRealtimeClient {
         tools: this.config.tools || [],
         tool_choice: 'auto',
         temperature: 1.0, // MAXIMUM for most human-like, natural speech
-        max_response_output_tokens: 50 // CRITICAL: Limit response length to force brief answers (5-10 words)
+        max_response_output_tokens: 250 // Natural conversation: allows 2-3 complete sentences (50-70 words)
       }
     };
 

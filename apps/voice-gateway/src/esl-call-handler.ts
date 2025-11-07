@@ -93,7 +93,7 @@ export class ESLCallHandler {
   }
 
   /**
-   * Fetch AI agent instructions from Brand API
+   * Fetch AI agent instructions from Brand API with store context
    */
   private async fetchAgentInstructions(): Promise<string> {
     try {
@@ -112,15 +112,78 @@ export class ESLCallHandler {
           status: response.status,
           aiAgentRef: this.config.aiAgentRef
         });
-        return 'Sei un assistente vocale di W3 Suite. Rispondi sempre in italiano in modo professionale e cortese.';
+        return this.buildDefaultInstructions();
       }
 
       const data = await response.json();
-      return data.data?.systemPrompt || 'Sei un assistente vocale di W3 Suite. Rispondi sempre in italiano in modo professionale e cortese.';
+      const baseInstructions = data.data?.systemPrompt || this.buildDefaultInstructions();
+      
+      // Fetch store context and inject into instructions
+      const storeContext = await this.fetchStoreContext();
+      return this.injectStoreContext(baseInstructions, storeContext);
     } catch (error) {
       logger.error('[ESL-CallHandler] Error fetching agent instructions', { error });
-      return 'Sei un assistente vocale di W3 Suite. Rispondi sempre in italiano in modo professionale e cortese.';
+      return this.buildDefaultInstructions();
     }
+  }
+
+  /**
+   * Fetch store information for contextualized responses
+   */
+  private async fetchStoreContext(): Promise<any> {
+    try {
+      const response = await fetch(
+        `${this.config.w3ApiUrl}/api/stores/${this.config.storeId}`,
+        {
+          headers: {
+            'X-API-Key': this.config.w3ApiKey,
+            'X-Tenant-ID': this.config.tenantId
+          }
+        }
+      );
+
+      if (!response.ok) {
+        logger.warn('[ESL-CallHandler] Failed to fetch store context', {
+          storeId: this.config.storeId
+        });
+        return null;
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      logger.error('[ESL-CallHandler] Error fetching store context', { error });
+      return null;
+    }
+  }
+
+  /**
+   * Inject store context into AI instructions
+   */
+  private injectStoreContext(baseInstructions: string, storeContext: any): string {
+    if (!storeContext) {
+      return baseInstructions;
+    }
+
+    const contextAddition = `
+
+INFORMAZIONI SUL TUO STORE:
+- Nome: ${storeContext.name}
+- Città: ${storeContext.city || 'Non specificata'}
+- Indirizzo: ${storeContext.address || 'Non specificato'}
+- Telefono: ${storeContext.phone || 'Non specificato'}
+- Manager: ${storeContext.manager || 'Non specificato'}
+
+Quando parli con i clienti, ricorda che rappresenti questo store specifico. Usa queste informazioni quando rilevanti per la conversazione.`;
+
+    return baseInstructions + contextAddition;
+  }
+
+  /**
+   * Build default instructions when agent not found
+   */
+  private buildDefaultInstructions(): string {
+    return 'Sei un assistente vocale di W3 Suite. Rispondi sempre in italiano in modo professionale e cortese.';
   }
 
   /**
