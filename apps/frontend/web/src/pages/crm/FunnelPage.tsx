@@ -448,7 +448,7 @@ export function FunnelContent() {
           <TabsTrigger 
             value="overview" 
             data-testid="tab-funnel-overview"
-            className="data-[state=active]:bg-windtre-orange data-[state=active]:text-white"
+            className="data-[state=active]:bg-windtre-orange data-[state=active]:!text-white"
           >
             <Target className="w-4 h-4 mr-2" />
             Overview
@@ -456,7 +456,7 @@ export function FunnelContent() {
           <TabsTrigger 
             value="analytics" 
             data-testid="tab-funnel-analytics"
-            className="data-[state=active]:bg-windtre-orange data-[state=active]:text-white"
+            className="data-[state=active]:bg-windtre-orange data-[state=active]:!text-white"
           >
             <BarChart2 className="w-4 h-4 mr-2" />
             Analytics
@@ -464,7 +464,7 @@ export function FunnelContent() {
           <TabsTrigger 
             value="builder" 
             data-testid="tab-funnel-builder"
-            className="data-[state=active]:bg-windtre-orange data-[state=active]:text-white"
+            className="data-[state=active]:bg-windtre-orange data-[state=active]:!text-white"
           >
             <WorkflowIcon className="w-4 h-4 mr-2" />
             Builder
