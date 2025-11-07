@@ -185,7 +185,18 @@ const B2BCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => setLocation(`/${currentTenant?.code}/crm/customers/${row.original.id}`)}
+              onClick={() => {
+                const customerId = row.original.id;
+                const tenantCode = currentTenant?.code;
+                console.log('[B2B Customer] Navigating to detail:', { tenantCode, customerId });
+                if (!tenantCode || !customerId) {
+                  console.error('[B2B Customer] Missing required data:', { tenantCode, customerId });
+                  return;
+                }
+                const path = `/${tenantCode}/crm/customers/${customerId}`;
+                console.log('[B2B Customer] Final path:', path);
+                setLocation(path);
+              }}
               data-testid={`view-b2b-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -426,7 +437,18 @@ const B2CCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => setLocation(`/${currentTenant?.code}/crm/customers/${row.original.id}`)}
+              onClick={() => {
+                const customerId = row.original.id;
+                const tenantCode = currentTenant?.code;
+                console.log('[B2C Customer] Navigating to detail:', { tenantCode, customerId });
+                if (!tenantCode || !customerId) {
+                  console.error('[B2C Customer] Missing required data:', { tenantCode, customerId });
+                  return;
+                }
+                const path = `/${tenantCode}/crm/customers/${customerId}`;
+                console.log('[B2C Customer] Final path:', path);
+                setLocation(path);
+              }}
               data-testid={`view-b2c-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
