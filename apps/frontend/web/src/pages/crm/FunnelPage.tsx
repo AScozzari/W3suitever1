@@ -77,24 +77,33 @@ function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateFunnelInput) => {
-      return apiRequest('/api/crm/funnels', {
+      console.log('[FUNNEL-CREATE] Sending data:', data);
+      const response = await apiRequest('/api/crm/funnels', {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      console.log('[FUNNEL-CREATE] Response:', response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[FUNNEL-CREATE] Success:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
       toast({
-        title: 'Funnel creato',
-        description: 'Il funnel è stato creato con successo'
+        title: '✅ Funnel creato',
+        description: `Il funnel "${data?.name || 'nuovo'}" è stato creato con successo`
       });
       onOpenChange(false);
       form.reset();
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error('[FUNNEL-CREATE] Error:', error);
+      const errorMessage = error?.message || error?.error || 'Impossibile creare il funnel';
       toast({
-        title: 'Errore',
-        description: error.message || 'Impossibile creare il funnel',
+        title: '❌ Errore creazione funnel',
+        description: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage),
         variant: 'destructive'
       });
     }
@@ -409,29 +418,43 @@ function FunnelOverview({ funnels, onCreateClick }: { funnels: Funnel[] | undefi
                 </div>
 
                 <div className="border-t border-white/20 pt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Pipeline Journey</p>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Pipeline Journey - Stage Flow</p>
+                  <div className="space-y-3">
                     {funnel.pipelines && funnel.pipelines.length > 0 ? (
-                      funnel.pipelines.map((pipeline, idx) => (
-                        <div key={pipeline.id} className="flex items-center gap-2 flex-shrink-0">
-                          <Card
-                            className="windtre-glass-panel p-3 min-w-[200px]"
-                            data-testid={`card-pipeline-${pipeline.id}`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="font-medium text-sm text-gray-900">{pipeline.name}</p>
-                              <Badge variant="outline" className="text-xs">{pipeline.domain}</Badge>
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-gray-600">
-                              <span>{pipeline.stagesConfig.length} stages</span>
-                              <span>•</span>
-                              <span>{pipeline.activeDeals} deals</span>
-                            </div>
-                          </Card>
-                          {idx < funnel.pipelines.length - 1 && (
-                            <div className="flex items-center">
-                              <div className="w-8 h-0.5 bg-gray-300" />
-                              <div className="w-2 h-2 bg-gray-300 rounded-full ml-[-4px]" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }} />
+                      funnel.pipelines.map((pipeline, pipelineIdx) => (
+                        <div key={pipeline.id} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-gray-600 uppercase">{pipeline.name}</p>
+                            <Badge variant="outline" className="text-xs">{pipeline.domain}</Badge>
+                          </div>
+                          <div className="flex items-center gap-1 overflow-x-auto pb-2" data-testid={`pipeline-stages-${pipeline.id}`}>
+                            {pipeline.stagesConfig
+                              .sort((a, b) => a.order - b.order)
+                              .map((stage, stageIdx) => (
+                                <div key={`${pipeline.id}-${stage.order}`} className="flex items-center gap-1 flex-shrink-0">
+                                  <div
+                                    className="px-4 py-2 rounded-lg text-white text-xs font-medium min-w-[120px] text-center shadow-sm"
+                                    style={{ 
+                                      backgroundColor: stage.color || '#3b82f6',
+                                      boxShadow: `0 2px 8px ${stage.color}33`
+                                    }}
+                                    data-testid={`stage-${pipeline.id}-${stage.order}`}
+                                  >
+                                    {stage.name}
+                                  </div>
+                                  {stageIdx < pipeline.stagesConfig.length - 1 && (
+                                    <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0">
+                                      <path d="M 4 8 L 12 8 M 9 5 L 12 8 L 9 11" stroke="#9CA3AF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                          {pipelineIdx < funnel.pipelines.length - 1 && (
+                            <div className="flex items-center gap-2 py-2">
+                              <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300" />
+                              <span className="text-xs text-gray-500 font-medium px-2">NEXT PIPELINE</span>
+                              <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300" />
                             </div>
                           )}
                         </div>
