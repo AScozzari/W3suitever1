@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +40,8 @@ interface Note {
   content: string;
   tags: string[];
   createdBy: string;
-  createdAt: Date;
-  updatedAt?: Date;
+  createdAt: string;
+  updatedAt?: string;
   isPinned: boolean;
 }
 
@@ -47,54 +50,126 @@ interface CustomerNotesTabProps {
 }
 
 export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
-  const [notes, setNotes] = useState<Note[]>([
-    {
-      id: '1',
-      title: 'Chiamata commerciale - 15 Ottobre',
-      content: 'Cliente interessato a nuovi prodotti. Ha richiesto preventivo per fornitura annuale. Follow-up previsto tra 1 settimana.',
-      tags: ['Vendite', 'Follow-up'],
-      createdBy: 'Mario Rossi',
-      createdAt: new Date('2024-10-15T10:30:00'),
-      isPinned: true
-    },
-    {
-      id: '2',
-      title: 'Feedback prodotto',
-      content: 'Cliente molto soddisfatto della qualità. Ha segnalato un piccolo ritardo nella consegna, problema risolto.',
-      tags: ['Supporto', 'Qualità'],
-      createdBy: 'Sara Bianchi',
-      createdAt: new Date('2024-09-28T14:15:00'),
-      isPinned: false
-    },
-    {
-      id: '3',
-      title: 'Note meeting strategico',
-      content: 'Discusso piano di espansione 2025. Cliente vuole aumentare ordini del 30%. Necessaria nuova trattativa commerciale.',
-      tags: ['Strategia', 'Opportunità'],
-      createdBy: 'Luca Verdi',
-      createdAt: new Date('2024-08-20T16:00:00'),
-      isPinned: false
-    }
-  ]);
-
+  const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [newNote, setNewNote] = useState({ title: '', content: '', tags: '' });
 
-  const allTags = Array.from(new Set(notes.flatMap(note => note.tags)));
+  // Fetch notes
+  const { data: response, isLoading } = useQuery({
+    queryKey: [`/api/crm/customers/${customerId}/notes`],
+    enabled: !!customerId,
+  });
+
+  const notes = response?.data || [];
+
+  const allTags = Array.from(new Set(notes.flatMap((note: Note) => note.tags || [])));
   
   const filteredNotes = notes
-    .filter(note => {
+    .filter((note: Note) => {
       const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            note.content.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTag = selectedTag === 'all' || note.tags.includes(selectedTag);
+      const matchesTag = selectedTag === 'all' || (note.tags || []).includes(selectedTag);
       return matchesSearch && matchesTag;
-    })
-    .sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return b.createdAt.getTime() - a.createdAt.getTime();
     });
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: { title: string; content: string; tags: string[] }) => {
+      return apiRequest(`/api/crm/customers/${customerId}/notes`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/customers/${customerId}/notes`] });
+      toast({
+        title: 'Nota creata',
+        description: 'La nota è stata creata con successo',
+      });
+      setIsCreateOpen(false);
+      setNewNote({ title: '', content: '', tags: '' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error?.message || 'Impossibile creare la nota',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Update mutation (for pinning)
+  const updateMutation = useMutation({
+    mutationFn: async ({ noteId, isPinned }: { noteId: string; isPinned: boolean }) => {
+      return apiRequest(`/api/crm/customers/${customerId}/notes/${noteId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isPinned }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/customers/${customerId}/notes`] });
+      toast({
+        title: 'Nota aggiornata',
+        description: 'La nota è stata aggiornata con successo',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error?.message || 'Impossibile aggiornare la nota',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      return apiRequest(`/api/crm/customers/${customerId}/notes/${noteId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/customers/${customerId}/notes`] });
+      toast({
+        title: 'Nota eliminata',
+        description: 'La nota è stata eliminata con successo',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error?.message || 'Impossibile eliminare la nota',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const handleCreateNote = () => {
+    if (!newNote.title || !newNote.content) {
+      toast({
+        title: 'Campi obbligatori',
+        description: 'Titolo e contenuto sono obbligatori',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const tags = newNote.tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+
+    createMutation.mutate({
+      title: newNote.title,
+      content: newNote.content,
+      tags
+    });
+  };
 
   const getTagColor = (tag: string) => {
     const colors: Record<string, string> = {
@@ -107,6 +182,15 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
     };
     return colors[tag] || 'hsl(0, 0%, 50%)';
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+        <p className="mt-4 text-gray-500">Caricamento note...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -145,6 +229,8 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
                   <label className="text-sm font-medium mb-2 block">Titolo</label>
                   <Input 
                     placeholder="Titolo della nota..."
+                    value={newNote.title}
+                    onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                     data-testid="input-note-title"
                   />
                 </div>
@@ -152,6 +238,8 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
                   <label className="text-sm font-medium mb-2 block">Contenuto</label>
                   <Textarea 
                     placeholder="Scrivi qui il contenuto della nota..."
+                    value={newNote.content}
+                    onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                     rows={6}
                     data-testid="textarea-note-content"
                   />
@@ -160,6 +248,8 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
                   <label className="text-sm font-medium mb-2 block">Tag (separati da virgola)</label>
                   <Input 
                     placeholder="es: Vendite, Follow-up, Supporto"
+                    value={newNote.tags}
+                    onChange={(e) => setNewNote({ ...newNote, tags: e.target.value })}
                     data-testid="input-note-tags"
                   />
                 </div>
@@ -171,9 +261,10 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
                 <Button 
                   data-testid="button-save-note"
                   style={{ backgroundColor: 'hsl(var(--brand-purple))' }}
-                  onClick={() => setIsCreateOpen(false)}
+                  onClick={handleCreateNote}
+                  disabled={createMutation.isPending}
                 >
-                  Salva Nota
+                  {createMutation.isPending ? 'Salvataggio...' : 'Salva Nota'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -211,7 +302,7 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
               <p>Nessuna nota trovata</p>
             </div>
           ) : (
-            filteredNotes.map((note) => (
+            filteredNotes.map((note: Note) => (
               <Card 
                 key={note.id}
                 className="p-4 hover:shadow-md transition-shadow"
@@ -240,13 +331,18 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          data-testid={`button-edit-${note.id}`}
+                          onClick={() => updateMutation.mutate({ noteId: note.id, isPinned: !note.isPinned })}
+                          disabled={updateMutation.isPending}
+                          title={note.isPinned ? 'Rimuovi pin' : 'Fissa in alto'}
+                          data-testid={`button-pin-${note.id}`}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => deleteMutation.mutate(note.id)}
+                          disabled={deleteMutation.isPending}
                           data-testid={`button-delete-note-${note.id}`}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
@@ -256,7 +352,7 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
 
                     <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
-                        {note.tags.map(tag => (
+                        {(note.tags || []).map(tag => (
                           <Badge 
                             key={tag}
                             variant="outline"
@@ -276,7 +372,7 @@ export function CustomerNotesTab({ customerId }: CustomerNotesTabProps) {
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {note.createdAt.toLocaleDateString('it-IT', {
+                          {new Date(note.createdAt).toLocaleDateString('it-IT', {
                             day: '2-digit',
                             month: 'short',
                             hour: '2-digit',

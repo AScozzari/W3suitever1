@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,12 +36,14 @@ import {
 interface Document {
   id: string;
   name: string;
-  type: string;
+  fileType: string;
   category: string;
   uploadedBy: string;
-  uploadedAt: Date;
-  size: string;
-  url?: string;
+  createdAt: string;
+  fileSize: number;
+  objectPath: string;
+  description?: string;
+  tags?: string[];
 }
 
 interface CustomerDocumentsTabProps {
@@ -46,49 +51,66 @@ interface CustomerDocumentsTabProps {
 }
 
 export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      name: 'Contratto_firmato_2024.pdf',
-      type: 'pdf',
-      category: 'Contratti',
-      uploadedBy: 'Mario Rossi',
-      uploadedAt: new Date('2024-10-15'),
-      size: '2.4 MB'
-    },
-    {
-      id: '2',
-      name: 'Fattura_001_2024.pdf',
-      type: 'pdf',
-      category: 'Fatture',
-      uploadedBy: 'Sistema',
-      uploadedAt: new Date('2024-09-20'),
-      size: '850 KB'
-    },
-    {
-      id: '3',
-      name: 'Documento_identita.jpg',
-      type: 'jpg',
-      category: 'Documenti',
-      uploadedBy: 'Sara Bianchi',
-      uploadedAt: new Date('2024-08-10'),
-      size: '1.2 MB'
-    }
-  ]);
-
+  const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const categories = ['Contratti', 'Fatture', 'Documenti', 'Preventivi', 'Altro'];
   
+  // Fetch documents
+  const { data: response, isLoading } = useQuery({
+    queryKey: [`/api/crm/customers/${customerId}/documents`],
+    enabled: !!customerId,
+  });
+
+  const documents = response?.data || [];
+  
   const filteredDocuments = selectedCategory === 'all' 
     ? documents 
-    : documents.filter(doc => doc.category === selectedCategory);
+    : documents.filter((doc: Document) => doc.category === selectedCategory);
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (documentId: string) => {
+      return apiRequest(`/api/crm/customers/${customerId}/documents/${documentId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/customers/${customerId}/documents`] });
+      toast({
+        title: 'Documento eliminato',
+        description: 'Il documento è stato eliminato con successo',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error?.message || 'Impossibile eliminare il documento',
+        variant: 'destructive',
+      });
+    }
+  });
 
   const getFileIcon = (type: string) => {
     const iconStyle = { color: 'hsl(var(--brand-orange))' };
     return <FileText className="h-8 w-8" style={iconStyle} />;
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+        <p className="mt-4 text-gray-500">Caricamento documenti...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -178,7 +200,7 @@ export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) 
               <p>Nessun documento trovato</p>
             </div>
           ) : (
-            filteredDocuments.map((doc) => (
+            filteredDocuments.map((doc: Document) => (
               <Card 
                 key={doc.id} 
                 className="p-4 hover:shadow-md transition-shadow"
@@ -186,7 +208,7 @@ export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) 
               >
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
-                    {getFileIcon(doc.type)}
+                    {getFileIcon(doc.fileType)}
                   </div>
                   
                   <div className="flex-1 min-w-0">
@@ -203,9 +225,9 @@ export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) 
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {doc.uploadedAt.toLocaleDateString('it-IT')}
+                        {new Date(doc.createdAt).toLocaleDateString('it-IT')}
                       </span>
-                      <span>{doc.size}</span>
+                      <span>{formatFileSize(doc.fileSize)}</span>
                     </div>
                   </div>
 
@@ -214,6 +236,8 @@ export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) 
                       variant="ghost" 
                       size="sm"
                       data-testid={`button-preview-${doc.id}`}
+                      disabled
+                      title="Anteprima non disponibile"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -221,6 +245,8 @@ export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) 
                       variant="ghost" 
                       size="sm"
                       data-testid={`button-download-${doc.id}`}
+                      disabled
+                      title="Download non disponibile"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -228,6 +254,8 @@ export function CustomerDocumentsTab({ customerId }: CustomerDocumentsTabProps) 
                       variant="ghost" 
                       size="sm"
                       data-testid={`button-delete-${doc.id}`}
+                      onClick={() => deleteMutation.mutate(doc.id)}
+                      disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
