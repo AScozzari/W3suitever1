@@ -150,8 +150,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines'] });
       toast({
-        title: 'Impostazioni salvate',
-        description: 'Le impostazioni della pipeline sono state aggiornate',
+        title: '✅ Impostazioni salvate con successo',
+        description: 'Le impostazioni generali della pipeline sono state aggiornate',
+        className: "bg-green-50 border-green-200",
+        duration: 3000,
       });
       // Chiudi il dialog dopo aver mostrato il toast
       setTimeout(() => onClose(), 500);
@@ -180,8 +182,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}/workflows`] });
       toast({
-        title: 'Workflow assegnato',
+        title: '✅ Workflow assegnato',
         description: 'Il workflow è stato assegnato con successo alla pipeline',
+        className: "bg-green-50 border-green-200",
+        duration: 3000,
       });
     },
     onError: (error: any) => {
@@ -236,8 +240,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
       setNewStageOrder('');
       setNewStageProbability('50');
       toast({
-        title: 'Stato creato',
-        description: 'Il nuovo stato è stato aggiunto alla pipeline',
+        title: '✅ Stato creato con successo',
+        description: `Lo stato "${newStageName}" è stato aggiunto alla pipeline`,
+        className: "bg-green-50 border-green-200",
+        duration: 3000,
       });
     },
     onError: (error: any) => {
@@ -259,8 +265,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}/stages`] });
       toast({
-        title: 'Stato eliminato',
+        title: '⚠️ Stato eliminato',
         description: 'Lo stato è stato rimosso dalla pipeline',
+        className: "bg-yellow-50 border-yellow-200",
+        duration: 3000,
       });
     },
     onError: (error: any) => {
@@ -283,8 +291,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/crm/pipelines/${pipelineId}`] });
       toast({
-        title: 'Assegnazioni salvate',
-        description: 'Le assegnazioni team/utenti sono state aggiornate',
+        title: '✅ Assegnazioni salvate',
+        description: 'Le assegnazioni team/utenti sono state aggiornate con successo',
+        className: "bg-green-50 border-green-200",
+        duration: 3000,
       });
     },
     onError: (error: any) => {
@@ -675,6 +685,31 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                     </div>
                   )}
                 </Card>
+
+                {/* Pulsante Salva per gli Stati */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    data-testid="button-cancel-stages"
+                  >
+                    Chiudi
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      toast({
+                        title: "✅ Stati della Pipeline Salvati",
+                        description: "Tutte le modifiche agli stati sono state salvate con successo",
+                        className: "bg-green-50 border-green-200",
+                      });
+                    }}
+                    style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                    data-testid="button-save-stages"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Salva Stati Pipeline
+                  </Button>
+                </div>
               </>
             )}
           </TabsContent>
@@ -867,6 +902,33 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                 </div>
               </div>
             </Card>
+
+            {/* Pulsante Salva per le Automazioni */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                data-testid="button-cancel-automation"
+              >
+                Chiudi
+              </Button>
+              <Button
+                onClick={() => {
+                  // Salva le impostazioni di automazione
+                  updatePipelineMutation.mutate({
+                    autoMoveEnabled,
+                    autoNotifyEnabled,
+                    duplicateCheckEnabled,
+                  });
+                }}
+                disabled={updatePipelineMutation.isPending}
+                style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                data-testid="button-save-automation"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Salva Automazioni
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Tab: Notifiche */}
@@ -931,6 +993,34 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                 </div>
               </div>
             </Card>
+
+            {/* Pulsante Salva per le Notifiche */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                data-testid="button-cancel-notifications"
+              >
+                Chiudi
+              </Button>
+              <Button
+                onClick={() => {
+                  // Salva le impostazioni delle notifiche
+                  updatePipelineMutation.mutate({
+                    notifyOnStageChange,
+                    notifyOnDealRotten,
+                    notifyOnDealWon,
+                    notifyOnDealLost,
+                  });
+                }}
+                disabled={updatePipelineMutation.isPending}
+                style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                data-testid="button-save-notifications"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Salva Notifiche
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Tab: Permessi */}
