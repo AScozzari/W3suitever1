@@ -67,13 +67,13 @@ export class OpenAIRealtimeClient {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.3, // ULTRA-AGGRESSIVE: Maximum sensitivity for instant interruption detection
+          threshold: 0.5, // BALANCED: Good sensitivity without false positives
           prefix_padding_ms: 300, // Capture full start of user speech
-          silence_duration_ms: 300 // EXTREME: Minimal wait for natural conversation flow with interruptions
+          silence_duration_ms: 700 // BALANCED: Wait 0.7s of silence before detecting end of speech
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
-        temperature: 1.0, // MAXIMUM for most human-like, natural speech
+        temperature: 0.8, // BALANCED: Natural speech without hallucinations
         max_response_output_tokens: 250 // Natural conversation: allows 2-3 complete sentences (50-70 words)
       }
     };
