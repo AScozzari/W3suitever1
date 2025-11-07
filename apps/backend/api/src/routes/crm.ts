@@ -21,6 +21,7 @@ import {
   crmLeads,
   crmCampaigns,
   crmCampaignUtmLinks,
+  crmFunnels,
   crmPipelines,
   crmPipelineSettings,
   crmPipelineWorkflows,
@@ -45,6 +46,7 @@ import {
   storeTrackingConfig,
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
+  insertCrmFunnelSchema,
   insertCrmPipelineSchema,
   insertCrmPipelineSettingsSchema,
   insertCrmPipelineWorkflowSchema,
@@ -3137,6 +3139,260 @@ router.patch('/campaigns/:id', async (req, res) => {
       message: error?.message || 'Failed to update campaign',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
+  }
+});
+
+// ==================== FUNNELS ====================
+
+/**
+ * GET /api/crm/funnels
+ * Get all funnels with their pipelines and metrics
+ */
+router.get('/funnels', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { isActive } = req.query;
+
+    const conditions = [eq(crmFunnels.tenantId, tenantId)];
+    if (isActive !== undefined) {
+      conditions.push(eq(crmFunnels.isActive, isActive === 'true'));
+    }
+
+    const funnels = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(...conditions))
+      .orderBy(desc(crmFunnels.createdAt));
+
+    // For each funnel, fetch associated pipelines
+    const funnelsWithPipelines = await Promise.all(
+      funnels.map(async (funnel) => {
+        const pipelines = await db
+          .select()
+          .from(crmPipelines)
+          .where(eq(crmPipelines.funnelId, funnel.id))
+          .orderBy(sql`${crmPipelines.funnelStageOrder} ASC NULLS LAST`);
+
+        return {
+          ...funnel,
+          pipelines
+        };
+      })
+    );
+
+    return res.json({ 
+      success: true, 
+      data: funnelsWithPipelines,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof funnelsWithPipelines>);
+
+  } catch (error: any) {
+    logger.error('Error fetching funnels', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch funnels' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:id
+ * Get a single funnel by ID with pipelines and analytics
+ */
+router.get('/funnels/:id', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(db, tenantId);
+
+    const [funnel] = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, id),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!funnel) {
+      return res.status(404).json({ success: false, error: 'Funnel not found' } as ApiErrorResponse);
+    }
+
+    // Fetch pipelines
+    const pipelines = await db
+      .select()
+      .from(crmPipelines)
+      .where(eq(crmPipelines.funnelId, funnel.id))
+      .orderBy(sql`${crmPipelines.funnelStageOrder} ASC NULLS LAST`);
+
+    // Calculate journey analytics
+    const dealsInFunnel = await db
+      .select()
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.tenantId, tenantId),
+        inArray(crmDeals.pipelineId, pipelines.map(p => p.id))
+      ));
+
+    const totalDeals = dealsInFunnel.length;
+    const wonDeals = dealsInFunnel.filter(d => d.status === 'won').length;
+    const conversionRate = totalDeals > 0 ? (wonDeals / totalDeals) * 100 : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        ...funnel,
+        pipelines,
+        analytics: {
+          totalDeals,
+          wonDeals,
+          conversionRate: Math.round(conversionRate * 100) / 100
+        }
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching funnel', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch funnel' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/funnels
+ * Create a new funnel
+ */
+router.post('/funnels', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const validated = insertCrmFunnelSchema.parse({
+      ...req.body,
+      tenantId,
+      createdBy: req.user?.id
+    });
+
+    const [funnel] = await db
+      .insert(crmFunnels)
+      .values(validated)
+      .returning();
+
+    logger.info('Funnel created', { funnelId: funnel.id, tenantId });
+
+    return res.status(201).json({
+      success: true,
+      data: funnel,
+      message: 'Funnel created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating funnel', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ success: false, error: 'Failed to create funnel' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/funnels/:id
+ * Update a funnel
+ */
+router.patch('/funnels/:id', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(db, tenantId);
+
+    const updateData = {
+      ...req.body,
+      updatedBy: req.user?.id,
+      updatedAt: new Date()
+    };
+
+    const [updated] = await db
+      .update(crmFunnels)
+      .set(updateData)
+      .where(and(
+        eq(crmFunnels.id, id),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Funnel not found' } as ApiErrorResponse);
+    }
+
+    logger.info('Funnel updated', { funnelId: id, tenantId });
+
+    return res.json({
+      success: true,
+      data: updated,
+      message: 'Funnel updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating funnel', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to update funnel' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/funnels/:id
+ * Delete a funnel (pipelines will be unassigned, not deleted)
+ */
+router.delete('/funnels/:id', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(db, tenantId);
+
+    const [deleted] = await db
+      .delete(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, id),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Funnel not found' } as ApiErrorResponse);
+    }
+
+    logger.info('Funnel deleted', { funnelId: id, tenantId });
+
+    return res.json({
+      success: true,
+      data: { id },
+      message: 'Funnel deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<{ id: string }>);
+
+  } catch (error: any) {
+    logger.error('Error deleting funnel', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to delete funnel' } as ApiErrorResponse);
   }
 });
 

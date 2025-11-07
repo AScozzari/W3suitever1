@@ -4915,10 +4915,63 @@ export const leadStatusHistory = w3suiteSchema.table("lead_status_history", {
   changedAtIdx: index("lead_status_history_changed_at_idx").on(table.changedAt),
 }));
 
+// ==================== CRM FUNNELS - Customer Journey Orchestration ====================
+// Funnel rappresenta la customer journey strategica che contiene multiple pipelines
+export const crmFunnels = w3suiteSchema.table("crm_funnels", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Funnel Identity
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  color: varchar("color", { length: 7 }).default('#3b82f6'), // Primary color for funnel visualization
+  icon: varchar("icon", { length: 50 }), // Lucide icon name
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Journey Configuration
+  pipelineOrder: text("pipeline_order").array(), // Array di pipeline IDs nell'ordine del journey
+  expectedDurationDays: smallint("expected_duration_days"), // Durata media attesa del journey completo
+  
+  // AI Journey Orchestration
+  aiOrchestrationEnabled: boolean("ai_orchestration_enabled").default(false).notNull(),
+  aiJourneyInsights: jsonb("ai_journey_insights"), // AI-generated insights: bottlenecks, optimizations, predictions
+  aiNextBestActionRules: jsonb("ai_next_best_action_rules"), // Rules per AI routing tra pipeline
+  aiScoringWeights: jsonb("ai_scoring_weights"), // Pesi per lead scoring contestuali al funnel
+  
+  // Analytics & Metrics
+  totalLeads: integer("total_leads").default(0).notNull(),
+  conversionRate: real("conversion_rate").default(0), // Conversion rate end-to-end
+  avgJourneyDurationDays: real("avg_journey_duration_days"), // Durata media reale del journey
+  dropoffRate: real("dropoff_rate"), // Percentuale di abbandono
+  
+  // Metadata
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIdIdx: index("crm_funnels_tenant_id_idx").on(table.tenantId),
+  tenantActiveIdx: index("crm_funnels_tenant_active_idx").on(table.tenantId, table.isActive),
+}));
+
+export const insertCrmFunnelSchema = createInsertSchema(crmFunnels).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  totalLeads: true,
+  conversionRate: true,
+  avgJourneyDurationDays: true,
+  dropoffRate: true
+});
+export type InsertCrmFunnel = z.infer<typeof insertCrmFunnelSchema>;
+export type CrmFunnel = typeof crmFunnels.$inferSelect;
+
 // CRM Pipelines - Sales processes
 export const crmPipelines = w3suiteSchema.table("crm_pipelines", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
+  funnelId: uuid("funnel_id").references(() => crmFunnels.id, { onDelete: 'set null' }), // Appartiene a un funnel
+  funnelStageOrder: smallint("funnel_stage_order"), // Ordine della pipeline nel funnel (1=prima, 2=seconda, etc)
   isBrandTemplate: boolean("is_brand_template").default(false),
   brandPipelineId: uuid("brand_pipeline_id"),
   name: varchar("name", { length: 255 }).notNull(),
@@ -4930,6 +4983,8 @@ export const crmPipelines = w3suiteSchema.table("crm_pipelines", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   tenantIdIdx: index("crm_pipelines_tenant_id_idx").on(table.tenantId),
+  funnelIdIdx: index("crm_pipelines_funnel_id_idx").on(table.funnelId),
+  tenantFunnelIdx: index("crm_pipelines_tenant_funnel_idx").on(table.tenantId, table.funnelId),
 }));
 
 // CRM Pipeline Settings - Settings dedicati per pipeline
