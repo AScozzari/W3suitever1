@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'wouter';
+import { useParams, Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useTenant } from '@/contexts/TenantContext';
 import { CustomerTimelineView } from '@/components/crm/CustomerTimelineView';
 import { CustomerConsentManager } from '@/components/crm/CustomerConsentManager';
 import { CustomerActions } from '@/components/crm/CustomerActions';
@@ -56,6 +58,7 @@ export default function CustomerDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const params = useParams();
   const customerId = params.id;
+  const { currentTenant } = useTenant();
 
   const { data: customer360, isLoading } = useQuery<Customer360Data>({
     queryKey: [`/api/crm/customers/${customerId}/360`],
@@ -83,13 +86,13 @@ export default function CustomerDetailPage() {
 
   const { customer, leads, deals, orders, interactions, analytics } = customer360;
 
-  const isB2B = customer.type === 'business';
+  const isB2B = customer.customerType === 'b2b';
   const customerName = isB2B 
-    ? customer.businessName || 'N/D'
+    ? customer.companyName || 'N/D'
     : `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'N/D';
   
   const initials = isB2B
-    ? (customer.businessName?.[0] || 'B').toUpperCase()
+    ? (customer.companyName?.[0] || 'B').toUpperCase()
     : `${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase();
 
   const statusConfig = {
@@ -105,6 +108,14 @@ export default function CustomerDetailPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="p-6 space-y-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <Link href={`/${currentTenant?.code}/crm/customers`}>
+            <Button variant="ghost" size="sm" className="gap-2">
+              ← Torna a lista clienti
+            </Button>
+          </Link>
+        </div>
           <Card 
             className="p-6"
             style={{
