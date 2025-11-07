@@ -7,13 +7,13 @@ import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { DashboardContent } from './crm/CRMDashboardPage';
 import { CampaignsContent } from './crm/CampaignsPage';
 import { PipelineContent } from './crm/PipelinePage';
+import { FunnelContent } from './crm/FunnelPage';
 import { LeadsContent } from './crm/LeadsPage';
 import { CustomersContent } from './crm/CustomersPage';
 import { ActivitiesContent } from './crm/ActivitiesPage';
 import { AnalyticsContent } from './crm/AnalyticsPage';
 
 // UI Components
-import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
   Megaphone, 
@@ -24,10 +24,10 @@ import {
   BarChart3,
   Workflow
 } from 'lucide-react';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 
-// 🎯 TAB ORIGINALI ESATTI (come prima, senza Deals)
-type CRMTab = 'dashboard' | 'campaigns' | 'pipeline' | 'leads' | 'customers' | 'activities' | 'analytics';
+// 🎯 CRM Tabs with Funnels integration
+type CRMTab = 'dashboard' | 'campaigns' | 'pipeline' | 'funnels' | 'leads' | 'customers' | 'activities' | 'analytics';
 
 interface TabConfig {
   id: CRMTab;
@@ -39,6 +39,7 @@ const tabsConfig: TabConfig[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'campaigns', label: 'Campagne', icon: Megaphone },
   { id: 'pipeline', label: 'Pipeline', icon: Target },
+  { id: 'funnels', label: 'Funnels', icon: Workflow },
   { id: 'leads', label: 'Lead', icon: UserPlus },
   { id: 'customers', label: 'Clienti', icon: Users },
   { id: 'activities', label: 'Attività', icon: CheckSquare },
@@ -85,6 +86,8 @@ export default function CRMPage() {
         return <CampaignsContent />;
       case 'pipeline':
         return <PipelineContent />;
+      case 'funnels':
+        return <FunnelContent />;
       case 'leads':
         return <LeadsContent />;
       case 'customers':
@@ -106,24 +109,13 @@ export default function CRMPage() {
         {/* WindTre Glassmorphism Header con Tabs */}
         <div className="windtre-glass-panel border-b border-white/20 mb-6">
           <div className="px-6 py-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Customer Relationship Management
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Sistema completo per la gestione delle relazioni con i clienti
-                </p>
-              </div>
-              <Link href={`/${tenantSlug}/crm/funnels`}>
-                <Button 
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                  data-testid="button-view-funnels"
-                >
-                  <Workflow className="w-4 h-4 mr-2" />
-                  Customer Journeys
-                </Button>
-              </Link>
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900">
+                Customer Relationship Management
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Sistema completo per la gestione delle relazioni con i clienti
+              </p>
             </div>
             
             {/* Tab Navigation - USANDO ONCLICK INVECE DI HREF! */}

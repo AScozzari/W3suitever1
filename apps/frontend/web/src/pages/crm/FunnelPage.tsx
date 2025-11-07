@@ -32,7 +32,8 @@ interface Funnel {
   pipelines: Pipeline[];
 }
 
-export default function FunnelPage() {
+// Exported content component for embedding in CRMPage tabs
+export function FunnelContent() {
   const tenantId = useRequiredTenantId();
   const [selectedFunnel, setSelectedFunnel] = useState<string | null>(null);
 
@@ -43,7 +44,7 @@ export default function FunnelPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-8 w-48" />
@@ -61,8 +62,7 @@ export default function FunnelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="p-8 space-y-6">
+    <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Customer Journey Funnels</h1>
@@ -243,7 +243,9 @@ export default function FunnelPage() {
             ))
           )}
         </div>
-      </div>
     </div>
   );
 }
+
+// Default export for backward compatibility
+export default FunnelContent;
