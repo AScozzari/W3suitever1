@@ -29,6 +29,7 @@ const CampaignsPage = lazy(() => import('../pages/crm/CampaignsPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
 const LeadsPage = lazy(() => import('../pages/crm/LeadsPage'));
+const CustomersPage = lazy(() => import('../pages/crm/CustomersPage'));
 const CustomerDetailPage = lazy(() => import('../pages/crm/CustomerDetailPage'));
 const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettingsPage'));
 const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
@@ -441,6 +442,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm/customers/:id`}>
         <AuthenticatedRoute>
           <CustomerDetailPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🎯 CRM CUSTOMERS LIST - Lista clienti standalone (come prima della dash 360°) */}
+      <Route path={`/${tenantSlug}/crm/customers`}>
+        <AuthenticatedRoute>
+          <CustomersPage />
         </AuthenticatedRoute>
       </Route>
       
