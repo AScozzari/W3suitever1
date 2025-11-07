@@ -609,6 +609,7 @@ router.get('/leads/:id/consent-compliance', async (req, res) => {
 /**
  * GET /api/crm/persons/:personId/consents
  * Get all current consents for a person (unified across lead/deal/customer)
+ * With automatic fallback to legacy crm_leads data if no audit trail exists
  */
 router.get('/persons/:personId/consents', async (req, res) => {
   try {
@@ -624,8 +625,8 @@ router.get('/persons/:personId/consents', async (req, res) => {
     const { personId } = req.params;
     await setTenantContext(tenantId);
 
-    // Get all consents for this person
-    const consents = await db
+    // Get all consents for this person from audit trail table
+    let consents = await db
       .select({
         id: crmPersonConsents.id,
         consentType: crmPersonConsents.consentType,
@@ -654,6 +655,130 @@ router.get('/persons/:personId/consents', async (req, res) => {
         eq(crmPersonConsents.personId, personId)
       ))
       .orderBy(desc(crmPersonConsents.updatedAt));
+
+    // FALLBACK: If no consents in audit trail, inherit from crm_leads
+    if (consents.length === 0) {
+      const leadConsents = await db
+        .select({
+          leadId: crmLeads.id,
+          marketingConsent: crmLeads.marketingConsent,
+          profilingConsent: crmLeads.profilingConsent,
+          privacyPolicyConsent: crmLeads.privacyPolicyConsent,
+          thirdPartyConsent: crmLeads.thirdPartyConsent,
+          campaignId: crmLeads.campaignId,
+          campaignName: crmCampaigns.name,
+          consentTimestamp: crmLeads.consentTimestamp,
+          consentSource: crmLeads.consentSource,
+          createdAt: crmLeads.createdAt,
+        })
+        .from(crmLeads)
+        .leftJoin(crmCampaigns, eq(crmLeads.campaignId, crmCampaigns.id))
+        .where(and(
+          eq(crmLeads.personId, personId),
+          eq(crmLeads.tenantId, tenantId)
+        ))
+        .orderBy(desc(crmLeads.createdAt))
+        .limit(1);
+
+      if (leadConsents.length > 0) {
+        const lead = leadConsents[0];
+        
+        // Map legacy boolean fields to new consent format
+        consents = [
+          {
+            id: null,
+            consentType: 'privacy_policy' as const,
+            status: lead.privacyPolicyConsent ? 'granted' : 'denied',
+            grantedAt: lead.privacyPolicyConsent ? (lead.consentTimestamp || lead.createdAt) : null,
+            withdrawnAt: null,
+            expiresAt: null,
+            source: lead.consentSource || 'inherited_from_lead',
+            sourceEntityType: 'lead',
+            sourceEntityId: lead.leadId,
+            campaignId: lead.campaignId,
+            campaignName: lead.campaignName,
+            updatedBy: null,
+            updatedByName: null,
+            ipAddress: null,
+            consentMethod: 'inherited',
+            language: 'it',
+            notes: 'Consenso ereditato da lead originale',
+            createdAt: lead.createdAt,
+            updatedAt: lead.createdAt,
+          },
+          {
+            id: null,
+            consentType: 'marketing' as const,
+            status: lead.marketingConsent ? 'granted' : 'denied',
+            grantedAt: lead.marketingConsent ? (lead.consentTimestamp || lead.createdAt) : null,
+            withdrawnAt: null,
+            expiresAt: null,
+            source: lead.consentSource || 'inherited_from_lead',
+            sourceEntityType: 'lead',
+            sourceEntityId: lead.leadId,
+            campaignId: lead.campaignId,
+            campaignName: lead.campaignName,
+            updatedBy: null,
+            updatedByName: null,
+            ipAddress: null,
+            consentMethod: 'inherited',
+            language: 'it',
+            notes: 'Consenso ereditato da lead originale',
+            createdAt: lead.createdAt,
+            updatedAt: lead.createdAt,
+          },
+          {
+            id: null,
+            consentType: 'profiling' as const,
+            status: lead.profilingConsent ? 'granted' : 'denied',
+            grantedAt: lead.profilingConsent ? (lead.consentTimestamp || lead.createdAt) : null,
+            withdrawnAt: null,
+            expiresAt: null,
+            source: lead.consentSource || 'inherited_from_lead',
+            sourceEntityType: 'lead',
+            sourceEntityId: lead.leadId,
+            campaignId: lead.campaignId,
+            campaignName: lead.campaignName,
+            updatedBy: null,
+            updatedByName: null,
+            ipAddress: null,
+            consentMethod: 'inherited',
+            language: 'it',
+            notes: 'Consenso ereditato da lead originale',
+            createdAt: lead.createdAt,
+            updatedAt: lead.createdAt,
+          },
+          {
+            id: null,
+            consentType: 'third_party' as const,
+            status: lead.thirdPartyConsent ? 'granted' : 'denied',
+            grantedAt: lead.thirdPartyConsent ? (lead.consentTimestamp || lead.createdAt) : null,
+            withdrawnAt: null,
+            expiresAt: null,
+            source: lead.consentSource || 'inherited_from_lead',
+            sourceEntityType: 'lead',
+            sourceEntityId: lead.leadId,
+            campaignId: lead.campaignId,
+            campaignName: lead.campaignName,
+            updatedBy: null,
+            updatedByName: null,
+            ipAddress: null,
+            consentMethod: 'inherited',
+            language: 'it',
+            notes: 'Consenso ereditato da lead originale',
+            createdAt: lead.createdAt,
+            updatedAt: lead.createdAt,
+          },
+        ];
+
+        logger.info('Consents inherited from legacy crm_leads', {
+          personId,
+          leadId: lead.leadId,
+          tenantId,
+          consentsCount: consents.length
+        });
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -6209,73 +6334,6 @@ router.delete('/customers/:id/notes/:noteId', async (req, res) => {
 });
 
 // ==================== PERSONS ENDPOINTS ====================
-
-/**
- * GET /api/crm/persons/:personId/consents
- * Get consent information for a person
- */
-router.get('/persons/:personId/consents', async (req, res) => {
-  try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing tenant context',
-        timestamp: new Date().toISOString()
-      } as ApiErrorResponse);
-    }
-
-    const { personId } = req.params;
-    await setTenantContext(tenantId);
-
-    // Get consent data from leads associated with this person
-    const leads = await db
-      .select({
-        leadId: crmLeads.id,
-        marketingConsent: crmLeads.marketingConsent,
-        profilingConsent: crmLeads.profilingConsent,
-        consentTimestamp: crmLeads.consentTimestamp,
-        consentSource: crmLeads.consentSource
-      })
-      .from(crmLeads)
-      .where(and(
-        eq(crmLeads.personId, personId),
-        eq(crmLeads.tenantId, tenantId)
-      ))
-      .limit(10);
-
-    // Return the most recent consent if available
-    const consents = leads.map(lead => ({
-      type: 'lead',
-      leadId: lead.leadId,
-      marketingConsent: lead.marketingConsent || false,
-      profilingConsent: lead.profilingConsent || false,
-      timestamp: lead.consentTimestamp,
-      source: lead.consentSource
-    }));
-
-    res.status(200).json({
-      success: true,
-      data: consents,
-      message: 'Consents retrieved successfully',
-      timestamp: new Date().toISOString()
-    } as ApiSuccessResponse);
-
-  } catch (error: any) {
-    logger.error('Error retrieving person consents', { 
-      errorMessage: error?.message || 'Unknown error',
-      errorStack: error?.stack,
-      tenantId: req.user?.tenantId,
-      personId: req.params.personId
-    });
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      message: error?.message || 'Failed to retrieve consents',
-      timestamp: new Date().toISOString()
-    } as ApiErrorResponse);
-  }
-});
 
 /**
  * GET /api/crm/persons/:personId/analytics

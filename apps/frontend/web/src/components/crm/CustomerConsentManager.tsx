@@ -38,14 +38,6 @@ export function CustomerConsentManager({ customerId }: CustomerConsentManagerPro
   });
 
   const personId = customerData?.personId || customerData?.data?.personId;
-  
-  // Debug logging
-  console.log('[CustomerConsentManager] Debug:', {
-    customerId,
-    customerData,
-    personId,
-    isLoadingCustomer
-  });
 
   // Fetch consent data
   const { data: consentsData, isLoading: isLoadingConsents } = useQuery({
