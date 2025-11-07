@@ -423,6 +423,15 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
+      {/* 🔄 CRM LIST REDIRECTS - Redirect /crm/campaigns and /crm/customers to CRM page with view param */}
+      <Route path={`/${tenantSlug}/crm/campaigns`}>
+        <Redirect to={`/${tenantSlug}/crm?view=campaigns`} replace />
+      </Route>
+      
+      <Route path={`/${tenantSlug}/crm/customers`}>
+        <Redirect to={`/${tenantSlug}/crm?view=customers`} replace />
+      </Route>
+      
       {/* 🎯 CRM ROUTE UNIFICATA - Usa state-based tabs per Campaigns, Leads, Customers, Pipeline list, Activities, Analytics */}
       <Route path={`/${tenantSlug}/crm`}>
         <AuthenticatedRoute>
