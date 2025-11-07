@@ -91,7 +91,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'Identity graph completo',
-      href: buildUrl('crm/persons')
+      href: buildUrl('crm?tab=customers')
     },
     {
       title: 'Lead Attivi',
@@ -109,7 +109,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-gradient)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'In trattativa attiva',
-      href: buildUrl('crm/deals')
+      href: buildUrl('crm?tab=pipeline')
     },
     {
       title: 'Valore Pipeline',
