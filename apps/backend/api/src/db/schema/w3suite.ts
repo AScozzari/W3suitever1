@@ -5693,6 +5693,24 @@ export const insertGtmEventLogSchema = createInsertSchema(gtmEventLog).omit({
 export type InsertGtmEventLog = z.infer<typeof insertGtmEventLogSchema>;
 export type GtmEventLog = typeof gtmEventLog.$inferSelect;
 
+// ==================== CUSTOMER 360° INSERT SCHEMAS ====================
+
+export const insertCrmCustomerDocumentSchema = createInsertSchema(crmCustomerDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmCustomerDocument = z.infer<typeof insertCrmCustomerDocumentSchema>;
+export type CrmCustomerDocument = typeof crmCustomerDocuments.$inferSelect;
+
+export const insertCrmCustomerNoteSchema = createInsertSchema(crmCustomerNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmCustomerNote = z.infer<typeof insertCrmCustomerNoteSchema>;
+export type CrmCustomerNote = typeof crmCustomerNotes.$inferSelect;
+
 // ==================== VOIP SYSTEM (7 TABLES - FINAL SPEC) ====================
 
 // 1) voip_trunks - Trunk SIP per store/tenant (READ-ONLY, synced from edgvoip)

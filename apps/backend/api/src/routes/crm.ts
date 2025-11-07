@@ -50,6 +50,8 @@ import {
   insertCrmPipelineStageSchema,
   insertCrmDealSchema,
   insertCrmCustomerSchema,
+  insertCrmCustomerDocumentSchema,
+  insertCrmCustomerNoteSchema,
   insertLeadStatusSchema,
   insertLeadStatusHistorySchema,
   insertStoreTrackingConfigSchema
@@ -5245,33 +5247,33 @@ router.post('/customers/:id/documents', async (req, res) => {
     }
 
     const { id } = req.params;
-    const { name, category, fileType, fileSize, objectPath, description, tags } = req.body;
 
     await setTenantContext(tenantId);
 
-    // Validate required fields
-    if (!name || !category || !fileType || !fileSize || !objectPath) {
+    // Parse and validate request body
+    const bodyData = {
+      ...req.body,
+      tenantId,
+      customerId: id,
+      uploadedBy: userId,
+      fileSize: req.body.fileSize ? parseInt(req.body.fileSize, 10) : undefined,
+      tags: req.body.tags && typeof req.body.tags === 'string' ? JSON.parse(req.body.tags) : req.body.tags
+    };
+
+    const validationResult = insertCrmCustomerDocumentSchema.safeParse(bodyData);
+    
+    if (!validationResult.success) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: name, category, fileType, fileSize, objectPath',
+        error: 'Validation failed',
+        message: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
 
     const [document] = await db
       .insert(crmCustomerDocuments)
-      .values({
-        tenantId,
-        customerId: id,
-        name,
-        category,
-        fileType,
-        fileSize: parseInt(fileSize, 10),
-        objectPath,
-        description: description || null,
-        tags: tags ? JSON.parse(tags) : null,
-        uploadedBy: userId
-      })
+      .values(validationResult.data)
       .returning();
 
     logger.info('Document uploaded', { documentId: document.id, customerId: id, tenantId });
@@ -5426,29 +5428,33 @@ router.post('/customers/:id/notes', async (req, res) => {
     }
 
     const { id } = req.params;
-    const { title, content, tags, isPinned } = req.body;
 
     await setTenantContext(tenantId);
 
-    if (!title || !content) {
+    // Parse and validate request body
+    const bodyData = {
+      ...req.body,
+      tenantId,
+      customerId: id,
+      createdBy: userId,
+      isPinned: req.body.isPinned || false,
+      tags: req.body.tags || []
+    };
+
+    const validationResult = insertCrmCustomerNoteSchema.safeParse(bodyData);
+    
+    if (!validationResult.success) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: title, content',
+        error: 'Validation failed',
+        message: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
 
     const [note] = await db
       .insert(crmCustomerNotes)
-      .values({
-        tenantId,
-        customerId: id,
-        title,
-        content,
-        tags: tags || [],
-        isPinned: isPinned || false,
-        createdBy: userId
-      })
+      .values(validationResult.data)
       .returning();
 
     logger.info('Note created', { noteId: note.id, customerId: id, tenantId });
