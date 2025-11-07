@@ -27,6 +27,8 @@ import {
   crmPipelineStages,
   crmDeals,
   crmCustomers,
+  crmCustomerDocuments,
+  crmCustomerNotes,
   crmOrders,
   crmInteractions,
   crmTasks,
@@ -5169,6 +5171,434 @@ router.delete('/customers/:id', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to delete customer',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== CUSTOMER DOCUMENTS ENDPOINTS ====================
+
+/**
+ * GET /api/crm/customers/:id/documents
+ * Get all documents for a customer
+ */
+router.get('/customers/:id/documents', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const documents = await db
+      .select()
+      .from(crmCustomerDocuments)
+      .where(and(
+        eq(crmCustomerDocuments.customerId, id),
+        eq(crmCustomerDocuments.tenantId, tenantId)
+      ))
+      .orderBy(desc(crmCustomerDocuments.createdAt));
+
+    res.status(200).json({
+      success: true,
+      data: documents,
+      message: 'Documents retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving customer documents', { 
+      errorMessage: error?.message || 'Unknown error',
+      customerId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve documents',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/customers/:id/documents
+ * Upload a new document (multipart/form-data)
+ */
+router.post('/customers/:id/documents', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context or user ID',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const { name, category, fileType, fileSize, objectPath, description, tags } = req.body;
+
+    await setTenantContext(tenantId);
+
+    // Validate required fields
+    if (!name || !category || !fileType || !fileSize || !objectPath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: name, category, fileType, fileSize, objectPath',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [document] = await db
+      .insert(crmCustomerDocuments)
+      .values({
+        tenantId,
+        customerId: id,
+        name,
+        category,
+        fileType,
+        fileSize: parseInt(fileSize, 10),
+        objectPath,
+        description: description || null,
+        tags: tags ? JSON.parse(tags) : null,
+        uploadedBy: userId
+      })
+      .returning();
+
+    logger.info('Document uploaded', { documentId: document.id, customerId: id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: document,
+      message: 'Document uploaded successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error uploading document', { 
+      errorMessage: error?.message || 'Unknown error',
+      customerId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to upload document',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/customers/:id/documents/:documentId
+ * Delete a document
+ */
+router.delete('/customers/:id/documents/:documentId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id, documentId } = req.params;
+    await setTenantContext(tenantId);
+
+    const [document] = await db
+      .delete(crmCustomerDocuments)
+      .where(and(
+        eq(crmCustomerDocuments.id, documentId),
+        eq(crmCustomerDocuments.customerId, id),
+        eq(crmCustomerDocuments.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        error: 'Document not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Document deleted', { documentId, customerId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: document,
+      message: 'Document deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting document', { 
+      errorMessage: error?.message || 'Unknown error',
+      documentId: req.params.documentId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete document',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== CUSTOMER NOTES ENDPOINTS ====================
+
+/**
+ * GET /api/crm/customers/:id/notes
+ * Get all notes for a customer
+ */
+router.get('/customers/:id/notes', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    const notes = await db
+      .select()
+      .from(crmCustomerNotes)
+      .where(and(
+        eq(crmCustomerNotes.customerId, id),
+        eq(crmCustomerNotes.tenantId, tenantId)
+      ))
+      .orderBy(desc(crmCustomerNotes.isPinned), desc(crmCustomerNotes.createdAt));
+
+    res.status(200).json({
+      success: true,
+      data: notes,
+      message: 'Notes retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving customer notes', { 
+      errorMessage: error?.message || 'Unknown error',
+      customerId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve notes',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/customers/:id/notes
+ * Create a new note
+ */
+router.post('/customers/:id/notes', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context or user ID',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const { title, content, tags, isPinned } = req.body;
+
+    await setTenantContext(tenantId);
+
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: title, content',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [note] = await db
+      .insert(crmCustomerNotes)
+      .values({
+        tenantId,
+        customerId: id,
+        title,
+        content,
+        tags: tags || [],
+        isPinned: isPinned || false,
+        createdBy: userId
+      })
+      .returning();
+
+    logger.info('Note created', { noteId: note.id, customerId: id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: note,
+      message: 'Note created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating note', { 
+      errorMessage: error?.message || 'Unknown error',
+      customerId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create note',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/customers/:id/notes/:noteId
+ * Update a note
+ */
+router.patch('/customers/:id/notes/:noteId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context or user ID',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id, noteId } = req.params;
+    const { title, content, tags, isPinned } = req.body;
+
+    await setTenantContext(tenantId);
+
+    const updateData: any = { updatedBy: userId, updatedAt: new Date() };
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (tags !== undefined) updateData.tags = tags;
+    if (isPinned !== undefined) updateData.isPinned = isPinned;
+
+    const [note] = await db
+      .update(crmCustomerNotes)
+      .set(updateData)
+      .where(and(
+        eq(crmCustomerNotes.id, noteId),
+        eq(crmCustomerNotes.customerId, id),
+        eq(crmCustomerNotes.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        error: 'Note not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Note updated', { noteId, customerId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: note,
+      message: 'Note updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating note', { 
+      errorMessage: error?.message || 'Unknown error',
+      noteId: req.params.noteId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update note',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/customers/:id/notes/:noteId
+ * Delete a note
+ */
+router.delete('/customers/:id/notes/:noteId', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id, noteId } = req.params;
+    await setTenantContext(tenantId);
+
+    const [note] = await db
+      .delete(crmCustomerNotes)
+      .where(and(
+        eq(crmCustomerNotes.id, noteId),
+        eq(crmCustomerNotes.customerId, id),
+        eq(crmCustomerNotes.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        error: 'Note not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Note deleted', { noteId, customerId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: note,
+      message: 'Note deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting note', { 
+      errorMessage: error?.message || 'Unknown error',
+      noteId: req.params.noteId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete note',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

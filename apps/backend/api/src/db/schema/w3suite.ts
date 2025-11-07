@@ -5157,6 +5157,65 @@ export const crmOrders = w3suiteSchema.table("crm_orders", {
   tenantIdIdx: index("crm_orders_tenant_id_idx").on(table.tenantId),
 }));
 
+// CRM Customer Documents - Document management with Object Storage
+export const crmCustomerDocuments = w3suiteSchema.table("crm_customer_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  customerId: uuid("customer_id").notNull().references(() => crmCustomers.id, { onDelete: 'cascade' }),
+  
+  // Document metadata
+  name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(), // 'Contratti', 'Fatture', 'Documenti', 'Preventivi', 'Altro'
+  fileType: varchar("file_type", { length: 50 }).notNull(), // pdf, jpg, png, docx, etc.
+  fileSize: integer("file_size").notNull(), // bytes
+  
+  // Object Storage reference
+  objectPath: varchar("object_path", { length: 500 }).notNull(), // path in object storage
+  
+  // Version tracking
+  version: integer("version").default(1),
+  previousVersionId: uuid("previous_version_id"),
+  
+  // Metadata
+  description: text("description"),
+  tags: jsonb("tags"), // Array of tags
+  
+  // Audit
+  uploadedBy: varchar("uploaded_by", { length: 255 }).notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantCustomerIdx: index("crm_customer_documents_tenant_customer_idx").on(table.tenantId, table.customerId),
+  categoryIdx: index("crm_customer_documents_category_idx").on(table.category),
+  tenantIdIdx: index("crm_customer_documents_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Customer Notes - Internal team notes with tags and pinning
+export const crmCustomerNotes = w3suiteSchema.table("crm_customer_notes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  customerId: uuid("customer_id").notNull().references(() => crmCustomers.id, { onDelete: 'cascade' }),
+  
+  // Note content
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  tags: jsonb("tags").default('[]'), // Array of tag strings
+  
+  // Organization
+  isPinned: boolean("is_pinned").default(false),
+  
+  // Audit
+  createdBy: varchar("created_by", { length: 255 }).notNull().references(() => users.id),
+  updatedBy: varchar("updated_by", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantCustomerIdx: index("crm_customer_notes_tenant_customer_idx").on(table.tenantId, table.customerId),
+  pinnedIdx: index("crm_customer_notes_pinned_idx").on(table.isPinned),
+  createdAtIdx: index("crm_customer_notes_created_at_idx").on(table.createdAt),
+  tenantIdIdx: index("crm_customer_notes_tenant_id_idx").on(table.tenantId),
+}));
+
 // CRM Campaign Pipeline Links - N:N relationships
 export const crmCampaignPipelineLinks = w3suiteSchema.table("crm_campaign_pipeline_links", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
