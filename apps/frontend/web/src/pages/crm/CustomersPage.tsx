@@ -29,6 +29,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CustomerFormModal } from '@/components/crm/CustomerFormModal';
 import { DeleteConfirmationDialog } from '@/components/crm/DeleteConfirmationDialog';
 import { CRMSearchBar } from '@/components/crm/CRMSearchBar';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface Customer {
   id: string;
@@ -63,7 +64,8 @@ const B2BCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
+  const { currentTenant } = useTenant();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
@@ -183,7 +185,7 @@ const B2BCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => setLocation(`${location}/customers/${row.original.id}`)}
+              onClick={() => setLocation(`/${currentTenant?.code}/crm/customers/${row.original.id}`)}
               data-testid={`view-b2b-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -329,7 +331,8 @@ const B2CCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
+  const { currentTenant } = useTenant();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
@@ -423,7 +426,7 @@ const B2CCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => setLocation(`${location}/customers/${row.original.id}`)}
+              onClick={() => setLocation(`/${currentTenant?.code}/crm/customers/${row.original.id}`)}
               data-testid={`view-b2c-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
