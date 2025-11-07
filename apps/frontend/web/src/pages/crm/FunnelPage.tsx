@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle, Edit, Save, X, Search } from 'lucide-react';
+import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle, Edit, Save, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useFunnelBuilder, type FunnelPipeline } from './hooks/useFunnelBuilder';
+import { PipelineSettingsDialog } from '@/components/crm/PipelineSettingsDialog';
 
 interface Pipeline {
   id: string;
@@ -848,7 +849,7 @@ function FunnelAnalytics({ funnels }: { funnels: Funnel[] | undefined }) {
 // ========================================
 
 // Draggable Pipeline Card (for available pipelines list)
-function DraggablePipelineCard({ pipeline }: { pipeline: Pipeline }) {
+function DraggablePipelineCard({ pipeline, onEdit }: { pipeline: Pipeline; onEdit?: (pipeline: Pipeline) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: pipeline.id,
     data: { type: 'pipeline', pipeline }
@@ -865,17 +866,35 @@ function DraggablePipelineCard({ pipeline }: { pipeline: Pipeline }) {
       style={style}
       {...listeners}
       {...attributes}
-      className="windtre-glass-panel p-3 rounded-lg cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border-2 border-transparent hover:border-windtre-orange/30"
+      className="windtre-glass-panel p-3 rounded-lg hover:shadow-md transition-shadow border-2 border-transparent hover:border-windtre-orange/30 cursor-grab active:cursor-grabbing"
       data-testid={`draggable-pipeline-${pipeline.id}`}
     >
       <div className="flex items-start justify-between mb-2">
-        <div>
+        <div className="flex-1">
           <p className="font-medium text-gray-900 text-sm">{pipeline.name}</p>
           <Badge variant="outline" className="text-xs mt-1">{pipeline.domain}</Badge>
         </div>
-        <Badge className="bg-blue-100 text-blue-700 text-xs">
-          {pipeline.stagesConfig.length} stages
-        </Badge>
+        <div className="flex items-center gap-1">
+          <Badge className="bg-blue-100 text-blue-700 text-xs">
+            {pipeline.stagesConfig.length} stages
+          </Badge>
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(pipeline);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              data-testid={`button-edit-pipeline-${pipeline.id}`}
+              title="Modifica pipeline"
+              className="h-6 w-6 p-0 cursor-pointer"
+            >
+              <Edit className="w-3 h-3 text-gray-600" />
+            </Button>
+          )}
+        </div>
       </div>
       <div className="flex gap-1 mt-2 flex-wrap">
         {pipeline.stagesConfig.slice(0, 3).map(stage => (
@@ -897,7 +916,19 @@ function DraggablePipelineCard({ pipeline }: { pipeline: Pipeline }) {
 }
 
 // Sortable Funnel Pipeline Card (for canvas)
-function SortableFunnelPipelineCard({ pipeline, onRemove }: { pipeline: FunnelPipeline; onRemove: () => void }) {
+function SortableFunnelPipelineCard({ 
+  pipeline, 
+  pipelineDetails, 
+  isExpanded,
+  onToggleExpand,
+  onRemove 
+}: { 
+  pipeline: FunnelPipeline; 
+  pipelineDetails?: Pipeline;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onRemove: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: pipeline.pipelineId
   });
@@ -921,20 +952,67 @@ function SortableFunnelPipelineCard({ pipeline, onRemove }: { pipeline: FunnelPi
           <div {...listeners} className="cursor-grab active:cursor-grabbing p-2 hover:bg-gray-100 rounded">
             <WorkflowIcon className="w-4 h-4 text-gray-600" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="font-medium text-gray-900">{pipeline.pipelineName}</p>
             <p className="text-xs text-gray-500">{pipeline.stagesCount} stages</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRemove}
-          data-testid={`button-remove-pipeline-${pipeline.pipelineId}`}
-        >
-          <X className="w-4 h-4 text-red-600" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {pipelineDetails && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleExpand}
+              data-testid={`button-expand-stages-${pipeline.pipelineId}`}
+              title={isExpanded ? 'Nascondi stage' : 'Mostra stage'}
+            >
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-gray-600" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-600" />
+              )}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            data-testid={`button-remove-pipeline-${pipeline.pipelineId}`}
+          >
+            <X className="w-4 h-4 text-red-600" />
+          </Button>
+        </div>
       </div>
+
+      {/* Collapsible Stages List */}
+      {isExpanded && pipelineDetails && (
+        <div className="mt-4 pt-4 border-t border-white/20">
+          <p className="text-xs font-medium text-gray-600 uppercase mb-3">Pipeline Stages</p>
+          <div className="space-y-2">
+            {pipelineDetails.stagesConfig
+              .sort((a, b) => a.order - b.order)
+              .map((stage) => (
+                <div
+                  key={stage.order}
+                  className="flex items-center gap-3 p-2 rounded-lg bg-white/30"
+                  data-testid={`stage-item-${stage.order}`}
+                >
+                  <div
+                    className="w-8 h-8 rounded flex-shrink-0"
+                    style={{ backgroundColor: stage.color }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{stage.name}</p>
+                    <p className="text-xs text-gray-500">{stage.category}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    #{stage.order + 1}
+                  </Badge>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -944,8 +1022,11 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
   const { toast } = useToast();
   const builder = useFunnelBuilder();
   const [searchQuery, setSearchQuery] = useState('');
+  const [pipelineSearchQuery, setPipelineSearchQuery] = useState('');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [unsavedChangesDialog, setUnsavedChangesDialog] = useState(false);
+  const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null);
+  const [expandedPipelines, setExpandedPipelines] = useState<Set<string>>(new Set());
   const initializedRef = useRef(false);
 
   // Initialize builder in create mode on mount (only once)
@@ -989,6 +1070,11 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
   };
+
+  // Get the active pipeline being dragged
+  const activePipeline = activeDragId 
+    ? allPipelines?.find(p => p.id === activeDragId)
+    : null;
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -1071,10 +1157,15 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Group pipelines: available vs already in funnel
+  // Group pipelines: only show pipelines NOT in the funnel, with search filter
   const pipelinesInFunnel = new Set(builder.state.pipelines.map(p => p.pipelineId));
-  const availablePipelines = allPipelines?.filter(p => !pipelinesInFunnel.has(p.id)) || [];
-  const orchestratedPipelines = allPipelines?.filter(p => pipelinesInFunnel.has(p.id)) || [];
+  const availablePipelines = allPipelines
+    ?.filter(p => !pipelinesInFunnel.has(p.id))
+    .filter(p => 
+      pipelineSearchQuery === '' || 
+      p.name.toLowerCase().includes(pipelineSearchQuery.toLowerCase()) ||
+      p.domain.toLowerCase().includes(pipelineSearchQuery.toLowerCase())
+    ) || [];
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -1179,6 +1270,19 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
           <div className="col-span-6">
             <CanvasDropzone
               pipelines={builder.state.pipelines}
+              allPipelines={allPipelines}
+              expandedPipelines={expandedPipelines}
+              onToggleExpand={(pipelineId) => {
+                setExpandedPipelines(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(pipelineId)) {
+                    newSet.delete(pipelineId);
+                  } else {
+                    newSet.add(pipelineId);
+                  }
+                  return newSet;
+                });
+              }}
               onRemove={(pipelineId) => builder.removePipeline(pipelineId)}
             />
           </div>
@@ -1191,27 +1295,35 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
                 <h3 className="font-semibold text-gray-900">Available Pipelines</h3>
               </div>
               
-              {availablePipelines.length > 0 && (
-                <div className="space-y-3 mb-4">
-                  <p className="text-xs font-medium text-gray-600 uppercase">Not in funnel</p>
-                  {availablePipelines.map(pipeline => (
-                    <DraggablePipelineCard key={pipeline.id} pipeline={pipeline} />
-                  ))}
-                </div>
-              )}
-
-              {orchestratedPipelines.length > 0 && (
+              {/* Search Field */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search pipelines..."
+                  value={pipelineSearchQuery}
+                  onChange={(e) => setPipelineSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-pipelines"
+                />
+              </div>
+              
+              {availablePipelines.length > 0 ? (
                 <div className="space-y-3">
-                  <p className="text-xs font-medium text-gray-600 uppercase">Already orchestrated</p>
-                  {orchestratedPipelines.map(pipeline => (
-                    <DraggablePipelineCard key={pipeline.id} pipeline={pipeline} />
+                  {availablePipelines.map(pipeline => (
+                    <DraggablePipelineCard 
+                      key={pipeline.id} 
+                      pipeline={pipeline}
+                      onEdit={(p) => setEditingPipeline(p)}
+                    />
                   ))}
                 </div>
-              )}
-
-              {allPipelines?.length === 0 && (
+              ) : (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  Nessuna pipeline disponibile
+                  {pipelineSearchQuery !== '' 
+                    ? 'Nessuna pipeline trovata'
+                    : allPipelines?.length === 0 
+                      ? 'Nessuna pipeline disponibile' 
+                      : 'Tutte le pipeline sono già nel funnel'}
                 </p>
               )}
             </Card>
@@ -1239,12 +1351,69 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Drag Overlay - shows pipeline card during drag */}
+      <DragOverlay>
+        {activePipeline && (
+          <div className="windtre-glass-panel p-3 rounded-lg shadow-2xl border-2 border-windtre-orange rotate-3 opacity-90">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="font-medium text-gray-900 text-sm">{activePipeline.name}</p>
+                <Badge variant="outline" className="text-xs mt-1">{activePipeline.domain}</Badge>
+              </div>
+              <Badge className="bg-blue-100 text-blue-700 text-xs">
+                {activePipeline.stagesConfig.length} stages
+              </Badge>
+            </div>
+            <div className="flex gap-1 mt-2 flex-wrap">
+              {activePipeline.stagesConfig.slice(0, 3).map(stage => (
+                <div
+                  key={stage.order}
+                  className="w-6 h-6 rounded"
+                  style={{ backgroundColor: stage.color }}
+                  title={stage.name}
+                />
+              ))}
+              {activePipeline.stagesConfig.length > 3 && (
+                <div className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+                  +{activePipeline.stagesConfig.length - 3}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </DragOverlay>
+
+      {/* Pipeline Settings Dialog */}
+      {editingPipeline && (
+        <PipelineSettingsDialog
+          open={!!editingPipeline}
+          onClose={() => {
+            setEditingPipeline(null);
+            // Refresh pipelines list after edit
+            queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines'] });
+          }}
+          pipelineId={editingPipeline.id}
+        />
+      )}
     </DndContext>
   );
 }
 
 // Canvas Dropzone Component
-function CanvasDropzone({ pipelines, onRemove }: { pipelines: FunnelPipeline[]; onRemove: (pipelineId: string) => void }) {
+function CanvasDropzone({ 
+  pipelines, 
+  allPipelines,
+  expandedPipelines,
+  onToggleExpand,
+  onRemove 
+}: { 
+  pipelines: FunnelPipeline[]; 
+  allPipelines?: Pipeline[];
+  expandedPipelines: Set<string>;
+  onToggleExpand: (pipelineId: string) => void;
+  onRemove: (pipelineId: string) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'canvas-dropzone'
   });
@@ -1273,13 +1442,19 @@ function CanvasDropzone({ pipelines, onRemove }: { pipelines: FunnelPipeline[]; 
       ) : (
         <SortableContext items={pipelines.map(p => p.pipelineId)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
-            {pipelines.map(pipeline => (
-              <SortableFunnelPipelineCard
-                key={pipeline.pipelineId}
-                pipeline={pipeline}
-                onRemove={() => onRemove(pipeline.pipelineId)}
-              />
-            ))}
+            {pipelines.map(pipeline => {
+              const pipelineDetails = allPipelines?.find(p => p.id === pipeline.pipelineId);
+              return (
+                <SortableFunnelPipelineCard
+                  key={pipeline.pipelineId}
+                  pipeline={pipeline}
+                  pipelineDetails={pipelineDetails}
+                  isExpanded={expandedPipelines.has(pipeline.pipelineId)}
+                  onToggleExpand={() => onToggleExpand(pipeline.pipelineId)}
+                  onRemove={() => onRemove(pipeline.pipelineId)}
+                />
+              );
+            })}
           </div>
         </SortableContext>
       )}
