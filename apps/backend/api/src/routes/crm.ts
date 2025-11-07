@@ -4715,11 +4715,26 @@ router.get('/pipelines/:pipelineId/stages/:stageId/deals/count', async (req, res
     const { stageId } = req.params;
     await setTenantContext(tenantId);
 
+    // First, get the stage to find its name
+    const [stage] = await db
+      .select()
+      .from(crmPipelineStages)
+      .where(eq(crmPipelineStages.id, stageId))
+      .limit(1);
+
+    if (!stage) {
+      return res.status(404).json({
+        success: false,
+        error: 'Stage not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     const result = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(crmDeals)
       .where(and(
-        eq(crmDeals.stageId, stageId),
+        eq(crmDeals.stage, stage.name),
         eq(crmDeals.tenantId, tenantId)
       ));
 
@@ -4802,12 +4817,12 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
       } as ApiErrorResponse);
     }
 
-    // Check if stage has any deals
+    // Check if stage has any deals (using stage name since deals store stage as varchar)
     const dealCountResult = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(crmDeals)
       .where(and(
-        eq(crmDeals.stageId, stageId),
+        eq(crmDeals.stage, stage.name),
         eq(crmDeals.tenantId, tenantId)
       ));
 
