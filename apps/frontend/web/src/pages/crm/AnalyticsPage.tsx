@@ -615,4 +615,3 @@ export function AnalyticsContent() {
       </div>
   );
 }
-}
