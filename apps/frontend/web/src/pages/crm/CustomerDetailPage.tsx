@@ -53,7 +53,7 @@ interface Customer360Data {
   };
 }
 
-export function CustomerDetailPage() {
+export default function CustomerDetailPage() {
   const [currentModule, setCurrentModule] = useState('crm');
   const [activeTab, setActiveTab] = useState('overview');
   const params = useParams();
@@ -245,7 +245,7 @@ export function CustomerDetailPage() {
               </div>
 
               <div>
-                <CustomerActions customer={customer} />
+                <CustomerActions customerId={customerId as string} customer={customer} />
               </div>
             </div>
           </Card>
@@ -314,10 +314,7 @@ export function CustomerDetailPage() {
             </TabsContent>
 
             <TabsContent value="attivita" className="space-y-6">
-              <CustomerTimelineView 
-                customerId={customerId as string}
-                interactions={interactions}
-              />
+              <CustomerTimelineView customerId={customerId as string} />
             </TabsContent>
 
             <TabsContent value="documenti" className="space-y-6">
@@ -330,12 +327,7 @@ export function CustomerDetailPage() {
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
-              <CustomerAnalytics
-                customerId={customerId as string}
-                deals={deals}
-                customer={customer}
-                analytics={analytics}
-              />
+              <CustomerAnalytics customerId={customerId as string} />
             </TabsContent>
 
             <TabsContent value="consensi" className="space-y-6">
