@@ -23,7 +23,7 @@ import {
   Search, Plus, Building, User, Eye, MoreHorizontal, Pencil, Trash2,
   Users, LayoutDashboard, Megaphone, Target, UserPlus, CheckSquare, BarChart3
 } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CustomerFormModal } from '@/components/crm/CustomerFormModal';
