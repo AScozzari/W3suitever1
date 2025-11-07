@@ -5126,6 +5126,68 @@ export const crmCustomers = w3suiteSchema.table("crm_customers", {
   tenantIdIdx: index("crm_customers_tenant_id_idx").on(table.tenantId),
 }));
 
+// ==================== CRM PERSON CONSENTS - GDPR AUDIT TRAIL ====================
+// Enterprise-grade consent tracking with full audit trail across lead → deal → customer lifecycle
+export const crmPersonConsents = w3suiteSchema.table("crm_person_consents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  personId: uuid("person_id").notNull(), // Same person_id across lead/deal/customer for unified consent tracking
+  
+  // Consent details
+  consentType: crmConsentTypeEnum("consent_type").notNull(), // 'privacy_policy', 'marketing', 'profiling', 'third_party'
+  status: crmConsentStatusEnum("status").notNull(), // 'granted', 'denied', 'withdrawn', 'pending'
+  
+  // Timestamps for audit trail
+  grantedAt: timestamp("granted_at"), // When consent was granted
+  withdrawnAt: timestamp("withdrawn_at"), // When consent was withdrawn (if applicable)
+  expiresAt: timestamp("expires_at"), // Optional expiry date for consent
+  
+  // Source tracking - where consent originated
+  source: varchar("source", { length: 100 }), // 'campaign', 'customer_modal', 'api', 'web_form', 'import'
+  sourceEntityType: varchar("source_entity_type", { length: 50 }), // 'lead', 'deal', 'customer', 'campaign'
+  sourceEntityId: uuid("source_entity_id"), // ID of the source entity (campaign_id, lead_id, etc.)
+  campaignId: uuid("campaign_id").references(() => crmCampaigns.id), // If originated from a campaign
+  
+  // Audit fields - who made the change
+  updatedBy: varchar("updated_by", { length: 255 }), // User ID who last updated this consent
+  updatedByName: varchar("updated_by_name", { length: 255 }), // User name for display
+  ipAddress: varchar("ip_address", { length: 45 }), // IP address of consent action (IPv4/IPv6)
+  userAgent: text("user_agent"), // Browser/device info
+  
+  // Change log - complete history of all modifications
+  auditTrail: jsonb("audit_trail"), // Array of { timestamp, action, status, user, reason, metadata }
+  
+  // Additional metadata
+  consentMethod: varchar("consent_method", { length: 100 }), // 'checkbox', 'toggle', 'api', 'double_opt_in'
+  language: varchar("language", { length: 10 }), // Language code when consent was given (it, en, etc.)
+  notes: text("notes"), // Optional notes about this consent
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Primary lookup index - get all consents for a person
+  tenantPersonIdx: index("crm_person_consents_tenant_person_idx").on(table.tenantId, table.personId),
+  
+  // Consent type lookup - find all people with specific consent type
+  tenantTypeStatusIdx: index("crm_person_consents_tenant_type_status_idx").on(table.tenantId, table.consentType, table.status),
+  
+  // Campaign attribution - which campaigns generated consents
+  campaignIdx: index("crm_person_consents_campaign_idx").on(table.campaignId),
+  
+  // Expiry tracking - find expiring consents
+  expiresAtIdx: index("crm_person_consents_expires_at_idx").on(table.expiresAt),
+  
+  // Audit tracking - who modified consents
+  updatedByIdx: index("crm_person_consents_updated_by_idx").on(table.updatedBy),
+  
+  // Composite unique constraint - one consent type per person (latest record wins)
+  tenantPersonTypeUniq: uniqueIndex("crm_person_consents_tenant_person_type_uniq").on(table.tenantId, table.personId, table.consentType),
+  
+  // Tenant isolation
+  tenantIdIdx: index("crm_person_consents_tenant_id_idx").on(table.tenantId),
+}));
+
 // CRM Orders - Sales transactions (mock data until POS integration)
 export const crmOrders = w3suiteSchema.table("crm_orders", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

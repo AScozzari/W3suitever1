@@ -27,6 +27,7 @@ import {
   crmPipelineStages,
   crmDeals,
   crmCustomers,
+  crmPersonConsents,
   crmCustomerDocuments,
   crmCustomerNotes,
   crmOrders,
@@ -367,8 +368,162 @@ router.get('/leads', async (req, res) => {
     }
 
     const leads = await db
-      .select()
+      .select({
+        // Core lead fields
+        id: crmLeads.id,
+        tenantId: crmLeads.tenantId,
+        legalEntityId: crmLeads.legalEntityId,
+        storeId: crmLeads.storeId,
+        personId: crmLeads.personId,
+        ownerUserId: crmLeads.ownerUserId,
+        campaignId: crmLeads.campaignId,
+        sourceChannel: crmLeads.sourceChannel,
+        sourceSocialAccountId: crmLeads.sourceSocialAccountId,
+        status: crmLeads.status,
+        leadScore: crmLeads.leadScore,
+        firstName: crmLeads.firstName,
+        lastName: crmLeads.lastName,
+        email: crmLeads.email,
+        phone: crmLeads.phone,
+        companyName: crmLeads.companyName,
+        productInterest: crmLeads.productInterest,
+        driverId: crmLeads.driverId,
+        notes: crmLeads.notes,
+        
+        // UTM & Attribution
+        utmSource: crmLeads.utmSource,
+        utmMedium: crmLeads.utmMedium,
+        utmCampaign: crmLeads.utmCampaign,
+        utmSourceId: crmLeads.utmSourceId,
+        utmMediumId: crmLeads.utmMediumId,
+        utmContent: crmLeads.utmContent,
+        utmTerm: crmLeads.utmTerm,
+        landingPageUrl: crmLeads.landingPageUrl,
+        referrerUrl: crmLeads.referrerUrl,
+        eventName: crmLeads.eventName,
+        eventSource: crmLeads.eventSource,
+        sessionId: crmLeads.sessionId,
+        clientIpAddress: crmLeads.clientIpAddress,
+        
+        // Consents
+        privacyPolicyAccepted: crmLeads.privacyPolicyAccepted,
+        marketingConsent: crmLeads.marketingConsent,
+        profilingConsent: crmLeads.profilingConsent,
+        thirdPartyConsent: crmLeads.thirdPartyConsent,
+        consentTimestamp: crmLeads.consentTimestamp,
+        consentSource: crmLeads.consentSource,
+        
+        // GTM Tracking
+        gtmClientId: crmLeads.gtmClientId,
+        gtmSessionId: crmLeads.gtmSessionId,
+        gtmUserId: crmLeads.gtmUserId,
+        gtmEvents: crmLeads.gtmEvents,
+        gtmProductsViewed: crmLeads.gtmProductsViewed,
+        gtmConversionEvents: crmLeads.gtmConversionEvents,
+        gtmGoalsCompleted: crmLeads.gtmGoalsCompleted,
+        
+        // Multi-PDV
+        originStoreId: crmLeads.originStoreId,
+        originStoreName: crmLeads.originStoreName,
+        storesVisited: crmLeads.storesVisited,
+        storeInteractions: crmLeads.storeInteractions,
+        preferredStoreId: crmLeads.preferredStoreId,
+        nearestStoreId: crmLeads.nearestStoreId,
+        
+        // Social & Forms
+        socialProfiles: crmLeads.socialProfiles,
+        socialInteractionsByStore: crmLeads.socialInteractionsByStore,
+        socialCampaignResponses: crmLeads.socialCampaignResponses,
+        formsSubmitted: crmLeads.formsSubmitted,
+        totalFormsStarted: crmLeads.totalFormsStarted,
+        totalFormsCompleted: crmLeads.totalFormsCompleted,
+        formCompletionRate: crmLeads.formCompletionRate,
+        averageFormTime: crmLeads.averageFormTime,
+        
+        // Fiscal Documents
+        fiscalCode: crmLeads.fiscalCode,
+        vatNumber: crmLeads.vatNumber,
+        documentType: crmLeads.documentType,
+        documentNumber: crmLeads.documentNumber,
+        documentExpiry: crmLeads.documentExpiry,
+        pecEmail: crmLeads.pecEmail,
+        
+        // Customer Journey
+        customerJourney: crmLeads.customerJourney,
+        firstTouchAttribution: crmLeads.firstTouchAttribution,
+        lastTouchAttribution: crmLeads.lastTouchAttribution,
+        firstContactDate: crmLeads.firstContactDate,
+        lastContactDate: crmLeads.lastContactDate,
+        contactCount: crmLeads.contactCount,
+        nextActionDate: crmLeads.nextActionDate,
+        nextActionType: crmLeads.nextActionType,
+        
+        // Business Profiling
+        customerType: crmLeads.customerType,
+        companyRole: crmLeads.companyRole,
+        companySize: crmLeads.companySize,
+        companySector: crmLeads.companySector,
+        annualRevenue: crmLeads.annualRevenue,
+        employeeCount: crmLeads.employeeCount,
+        budgetRange: crmLeads.budgetRange,
+        purchaseTimeframe: crmLeads.purchaseTimeframe,
+        painPoints: crmLeads.painPoints,
+        competitors: crmLeads.competitors,
+        
+        // Address
+        addressStreet: crmLeads.addressStreet,
+        addressNumber: crmLeads.addressNumber,
+        addressCity: crmLeads.addressCity,
+        addressProvince: crmLeads.addressProvince,
+        addressPostalCode: crmLeads.addressPostalCode,
+        addressCountry: crmLeads.addressCountry,
+        geoLat: crmLeads.geoLat,
+        geoLng: crmLeads.geoLng,
+        deliveryAddress: crmLeads.deliveryAddress,
+        
+        // Engagement Metrics
+        pageViewsCount: crmLeads.pageViewsCount,
+        emailsOpenedCount: crmLeads.emailsOpenedCount,
+        emailsClickedCount: crmLeads.emailsClickedCount,
+        documentsDownloaded: crmLeads.documentsDownloaded,
+        videosWatched: crmLeads.videosWatched,
+        sessionDuration: crmLeads.sessionDuration,
+        deviceType: crmLeads.deviceType,
+        browserInfo: crmLeads.browserInfo,
+        engagementScore: crmLeads.engagementScore,
+        
+        // Conversion Tracking
+        convertedToCustomerId: crmLeads.convertedToCustomerId,
+        conversionDate: crmLeads.conversionDate,
+        conversionValue: crmLeads.conversionValue,
+        lifecycleStage: crmLeads.lifecycleStage,
+        conversionProbability: crmLeads.conversionProbability,
+        lostReason: crmLeads.lostReason,
+        
+        // AI Enrichment
+        aiEnrichmentDate: crmLeads.aiEnrichmentDate,
+        aiSentimentScore: crmLeads.aiSentimentScore,
+        aiIntentSignals: crmLeads.aiIntentSignals,
+        aiPredictedValue: crmLeads.aiPredictedValue,
+        aiRecommendations: crmLeads.aiRecommendations,
+        
+        // Timestamps
+        createdAt: crmLeads.createdAt,
+        updatedAt: crmLeads.updatedAt,
+        
+        // Joined fields (derived data)
+        campaignName: crmCampaigns.name,
+        ownerName: sql<string>`CASE 
+          WHEN ${users.firstName} IS NOT NULL OR ${users.lastName} IS NOT NULL 
+          THEN TRIM(CONCAT(COALESCE(${users.firstName}, ''), ' ', COALESCE(${users.lastName}, '')))
+          ELSE NULL
+        END`,
+        originStoreNameFromJoin: stores.nome,
+      })
       .from(crmLeads)
+      .leftJoin(crmCampaigns, eq(crmLeads.campaignId, crmCampaigns.id))
+      .leftJoin(users, eq(crmLeads.ownerUserId, users.id))
+      .leftJoin(stores, eq(crmLeads.originStoreId, stores.id))
       .where(and(...conditions))
       .orderBy(desc(crmLeads.createdAt))
       .limit(parseInt(limit as string))
@@ -444,6 +599,326 @@ router.get('/leads/:id/consent-compliance', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to check consent compliance',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PERSON CONSENTS MANAGEMENT (GDPR ENTERPRISE) ====================
+
+/**
+ * GET /api/crm/persons/:personId/consents
+ * Get all current consents for a person (unified across lead/deal/customer)
+ */
+router.get('/persons/:personId/consents', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { personId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Get all consents for this person
+    const consents = await db
+      .select({
+        id: crmPersonConsents.id,
+        consentType: crmPersonConsents.consentType,
+        status: crmPersonConsents.status,
+        grantedAt: crmPersonConsents.grantedAt,
+        withdrawnAt: crmPersonConsents.withdrawnAt,
+        expiresAt: crmPersonConsents.expiresAt,
+        source: crmPersonConsents.source,
+        sourceEntityType: crmPersonConsents.sourceEntityType,
+        sourceEntityId: crmPersonConsents.sourceEntityId,
+        campaignId: crmPersonConsents.campaignId,
+        campaignName: crmCampaigns.name,
+        updatedBy: crmPersonConsents.updatedBy,
+        updatedByName: crmPersonConsents.updatedByName,
+        ipAddress: crmPersonConsents.ipAddress,
+        consentMethod: crmPersonConsents.consentMethod,
+        language: crmPersonConsents.language,
+        notes: crmPersonConsents.notes,
+        createdAt: crmPersonConsents.createdAt,
+        updatedAt: crmPersonConsents.updatedAt,
+      })
+      .from(crmPersonConsents)
+      .leftJoin(crmCampaigns, eq(crmPersonConsents.campaignId, crmCampaigns.id))
+      .where(and(
+        eq(crmPersonConsents.tenantId, tenantId),
+        eq(crmPersonConsents.personId, personId)
+      ))
+      .orderBy(desc(crmPersonConsents.updatedAt));
+
+    res.status(200).json({
+      success: true,
+      data: consents,
+      message: 'Person consents retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving person consents', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: getTenantId(req),
+      personId: req.params.personId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve person consents',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/persons/:personId/consents
+ * Update consents for a person (with full audit trail)
+ */
+router.patch('/persons/:personId/consents', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { personId } = req.params;
+    const { consents, updatedBy, updatedByName, ipAddress, userAgent } = req.body;
+
+    // Validation
+    const consentSchema = z.object({
+      consents: z.array(z.object({
+        type: z.enum(['privacy_policy', 'marketing', 'profiling', 'third_party']),
+        status: z.enum(['granted', 'denied', 'withdrawn', 'pending']),
+        notes: z.string().optional()
+      })),
+      updatedBy: z.string().optional(),
+      updatedByName: z.string().optional(),
+      ipAddress: z.string().optional(),
+      userAgent: z.string().optional()
+    });
+
+    const validation = consentSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const updatedConsents = [];
+
+    // Update each consent type
+    for (const consentUpdate of consents) {
+      // Get existing consent to build audit trail
+      const [existingConsent] = await db
+        .select()
+        .from(crmPersonConsents)
+        .where(and(
+          eq(crmPersonConsents.tenantId, tenantId),
+          eq(crmPersonConsents.personId, personId),
+          eq(crmPersonConsents.consentType, consentUpdate.type as any)
+        ))
+        .limit(1);
+
+      const now = new Date();
+      
+      // Build audit trail entry
+      const auditEntry = {
+        timestamp: now.toISOString(),
+        action: existingConsent ? 'update' : 'create',
+        previousStatus: existingConsent?.status || null,
+        newStatus: consentUpdate.status,
+        updatedBy: updatedBy || 'api',
+        updatedByName: updatedByName || 'API User',
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        notes: consentUpdate.notes || null,
+        source: 'customer_modal'
+      };
+
+      // Append to existing audit trail or create new one
+      const auditTrail = existingConsent?.auditTrail 
+        ? [...(existingConsent.auditTrail as any[]), auditEntry]
+        : [auditEntry];
+
+      // Determine timestamps based on status
+      const statusData: any = {};
+      if (consentUpdate.status === 'granted' && (!existingConsent || existingConsent.status !== 'granted')) {
+        statusData.grantedAt = now;
+        statusData.withdrawnAt = null;
+      } else if (consentUpdate.status === 'withdrawn') {
+        statusData.withdrawnAt = now;
+      } else if (consentUpdate.status === 'denied') {
+        statusData.grantedAt = null;
+        statusData.withdrawnAt = null;
+      }
+
+      // Upsert consent (update if exists, insert if not)
+      const [result] = await db
+        .insert(crmPersonConsents)
+        .values({
+          tenantId,
+          personId,
+          consentType: consentUpdate.type as any,
+          status: consentUpdate.status as any,
+          ...statusData,
+          source: existingConsent?.source || 'customer_modal',
+          sourceEntityType: existingConsent?.sourceEntityType || 'customer',
+          updatedBy: updatedBy || 'api',
+          updatedByName: updatedByName || 'API User',
+          ipAddress: ipAddress || null,
+          userAgent: userAgent || null,
+          auditTrail: auditTrail as any,
+          consentMethod: existingConsent?.consentMethod || 'toggle',
+          notes: consentUpdate.notes || existingConsent?.notes || null,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [crmPersonConsents.tenantId, crmPersonConsents.personId, crmPersonConsents.consentType],
+          set: {
+            status: consentUpdate.status as any,
+            ...statusData,
+            updatedBy: updatedBy || 'api',
+            updatedByName: updatedByName || 'API User',
+            ipAddress: ipAddress || null,
+            userAgent: userAgent || null,
+            auditTrail: auditTrail as any,
+            notes: consentUpdate.notes || sql`${crmPersonConsents.notes}`,
+            updatedAt: now,
+          }
+        })
+        .returning();
+
+      updatedConsents.push(result);
+
+      logger.info('Person consent updated', {
+        tenantId,
+        personId,
+        consentType: consentUpdate.type,
+        status: consentUpdate.status,
+        updatedBy: updatedBy || 'api'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedConsents,
+      message: 'Person consents updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating person consents', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: getTenantId(req),
+      personId: req.params.personId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update person consents',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/persons/:personId/consents/history
+ * Get full audit trail history for all consents of a person
+ */
+router.get('/persons/:personId/consents/history', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { personId } = req.params;
+    await setTenantContext(tenantId);
+
+    // Get all consents with full audit trail
+    const consents = await db
+      .select({
+        id: crmPersonConsents.id,
+        consentType: crmPersonConsents.consentType,
+        status: crmPersonConsents.status,
+        auditTrail: crmPersonConsents.auditTrail,
+        grantedAt: crmPersonConsents.grantedAt,
+        withdrawnAt: crmPersonConsents.withdrawnAt,
+        source: crmPersonConsents.source,
+        sourceEntityType: crmPersonConsents.sourceEntityType,
+        campaignId: crmPersonConsents.campaignId,
+        campaignName: crmCampaigns.name,
+        createdAt: crmPersonConsents.createdAt,
+        updatedAt: crmPersonConsents.updatedAt,
+      })
+      .from(crmPersonConsents)
+      .leftJoin(crmCampaigns, eq(crmPersonConsents.campaignId, crmCampaigns.id))
+      .where(and(
+        eq(crmPersonConsents.tenantId, tenantId),
+        eq(crmPersonConsents.personId, personId)
+      ))
+      .orderBy(desc(crmPersonConsents.updatedAt));
+
+    // Flatten audit trail into timeline
+    const timeline: any[] = [];
+    consents.forEach(consent => {
+      if (consent.auditTrail && Array.isArray(consent.auditTrail)) {
+        consent.auditTrail.forEach((entry: any) => {
+          timeline.push({
+            consentType: consent.consentType,
+            ...entry,
+            campaignName: consent.campaignName
+          });
+        });
+      }
+    });
+
+    // Sort timeline by timestamp descending
+    timeline.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    res.status(200).json({
+      success: true,
+      data: {
+        consents,
+        timeline
+      },
+      message: 'Person consents history retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving person consents history', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: getTenantId(req),
+      personId: req.params.personId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve person consents history',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
@@ -537,6 +1012,48 @@ router.post('/leads', async (req, res) => {
       validation.data.sourceSocialAccountId
     );
 
+    // ==================== AUTO-POPULATION: Lifecycle Stage ====================
+    // Auto-assign lifecycle stage based on lead score
+    const leadScore = validation.data.leadScore || 0;
+    const lifecycleStage = validation.data.lifecycleStage || (
+      leadScore >= 81 ? 'Opportunity' :
+      leadScore >= 61 ? 'SQL' :
+      leadScore >= 31 ? 'MQL' :
+      'Lead'
+    );
+
+    // ==================== AUTO-POPULATION: Engagement Score ====================
+    // Calculate engagement score from behavioral metrics
+    const pageViewsCount = validation.data.pageViewsCount || 0;
+    const emailsOpenedCount = validation.data.emailsOpenedCount || 0;
+    const emailsClickedCount = validation.data.emailsClickedCount || 0;
+    const documentsDownloaded = validation.data.documentsDownloaded || [];
+    
+    const engagementScore = validation.data.engagementScore || Math.min(100, Math.round(
+      pageViewsCount * 2 +
+      emailsOpenedCount * 3 +
+      emailsClickedCount * 5 +
+      documentsDownloaded.length * 10
+    ));
+
+    // ==================== AUTO-POPULATION: Origin Store Name ====================
+    // Populate store name from origin_store_id if not provided
+    let originStoreName = validation.data.originStoreName;
+    if (validation.data.originStoreId && !originStoreName) {
+      const [store] = await db
+        .select({ nome: stores.nome })
+        .from(stores)
+        .where(and(
+          eq(stores.id, validation.data.originStoreId),
+          eq(stores.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (store) {
+        originStoreName = store.nome;
+      }
+    }
+
     const [lead] = await db
       .insert(crmLeads)
       .values({
@@ -544,7 +1061,10 @@ router.post('/leads', async (req, res) => {
         tenantId,
         personId,
         utmSourceId,
-        utmMediumId
+        utmMediumId,
+        lifecycleStage,
+        engagementScore,
+        originStoreName
       })
       .returning();
 
@@ -851,10 +1371,76 @@ router.patch('/leads/:id', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // Get existing lead to merge values for auto-calculation
+    const [existingLead] = await db
+      .select()
+      .from(crmLeads)
+      .where(and(
+        eq(crmLeads.id, id),
+        eq(crmLeads.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existingLead) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lead not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Merge existing data with update
+    const mergedData = { ...existingLead, ...validation.data };
+
+    // ==================== AUTO-POPULATION: Lifecycle Stage ====================
+    // Auto-assign lifecycle stage based on lead score (if not explicitly set)
+    const leadScore = mergedData.leadScore || 0;
+    const lifecycleStage = validation.data.lifecycleStage || (
+      leadScore >= 81 ? 'Opportunity' :
+      leadScore >= 61 ? 'SQL' :
+      leadScore >= 31 ? 'MQL' :
+      'Lead'
+    );
+
+    // ==================== AUTO-POPULATION: Engagement Score ====================
+    // Calculate engagement score from behavioral metrics (if not explicitly set)
+    const pageViewsCount = mergedData.pageViewsCount || 0;
+    const emailsOpenedCount = mergedData.emailsOpenedCount || 0;
+    const emailsClickedCount = mergedData.emailsClickedCount || 0;
+    const documentsDownloaded = mergedData.documentsDownloaded || [];
+    
+    const engagementScore = validation.data.engagementScore || Math.min(100, Math.round(
+      pageViewsCount * 2 +
+      emailsOpenedCount * 3 +
+      emailsClickedCount * 5 +
+      documentsDownloaded.length * 10
+    ));
+
+    // ==================== AUTO-POPULATION: Origin Store Name ====================
+    // Populate store name from origin_store_id if not provided
+    let originStoreName = validation.data.originStoreName || existingLead.originStoreName;
+    if (mergedData.originStoreId && !originStoreName) {
+      const [store] = await db
+        .select({ nome: stores.nome })
+        .from(stores)
+        .where(and(
+          eq(stores.id, mergedData.originStoreId),
+          eq(stores.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (store) {
+        originStoreName = store.nome;
+      }
+    }
+
     const [updated] = await db
       .update(crmLeads)
       .set({
         ...validation.data,
+        lifecycleStage,
+        engagementScore,
+        originStoreName,
         updatedAt: new Date()
       })
       .where(and(
@@ -862,14 +1448,6 @@ router.patch('/leads/:id', async (req, res) => {
         eq(crmLeads.tenantId, tenantId)
       ))
       .returning();
-
-    if (!updated) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead not found',
-        timestamp: new Date().toISOString()
-      } as ApiErrorResponse);
-    }
 
     logger.info('Lead updated', { leadId: id, tenantId });
 
@@ -4244,7 +4822,11 @@ router.get('/deals', async (req, res) => {
         createdAt: crmDeals.createdAt,
         updatedAt: crmDeals.updatedAt,
         // Join fields
-        ownerName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        ownerName: sql<string>`CASE 
+          WHEN ${users.firstName} IS NOT NULL OR ${users.lastName} IS NOT NULL 
+          THEN TRIM(CONCAT(COALESCE(${users.firstName}, ''), ' ', COALESCE(${users.lastName}, '')))
+          ELSE NULL
+        END`,
         customerName: sql<string>`CASE 
           WHEN ${crmCustomers.customerType} = 'b2b' THEN ${crmCustomers.companyName}
           WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName})
