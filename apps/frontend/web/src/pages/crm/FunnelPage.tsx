@@ -889,9 +889,9 @@ function DraggablePipelineCard({ pipeline, onEdit }: { pipeline: Pipeline; onEdi
               onPointerDown={(e) => e.stopPropagation()}
               data-testid={`button-edit-pipeline-${pipeline.id}`}
               title="Modifica pipeline"
-              className="h-6 w-6 p-0 cursor-pointer"
+              className="h-7 w-7 p-0 cursor-pointer hover:bg-gray-100"
             >
-              <Edit className="w-3 h-3 text-gray-600" />
+              <Edit className="w-4 h-4 text-gray-600 hover:text-windtre-orange" />
             </Button>
           )}
         </div>
@@ -1142,7 +1142,11 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
         title: '✅ Funnel salvato',
         description: `Il funnel "${builder.state.funnelName}" è stato salvato con successo`
       });
-      builder.startCreate();
+      
+      // Reset builder only in create mode, not in edit mode
+      if (builder.state.mode === 'create') {
+        builder.startCreate();
+      }
     },
     onError: (error: any) => {
       toast({
