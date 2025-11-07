@@ -24,8 +24,7 @@ import {
   BarChart3,
   Workflow
 } from 'lucide-react';
-import { Link } from 'wouter';
-import { useRequiredTenant } from '@/hooks/useRequiredTenant';
+import { Link, useLocation } from 'wouter';
 
 // 🎯 TAB ORIGINALI ESATTI (come prima, senza Deals)
 type CRMTab = 'dashboard' | 'campaigns' | 'pipeline' | 'leads' | 'customers' | 'activities' | 'analytics';
@@ -74,7 +73,8 @@ const contentVariants = {
 export default function CRMPage() {
   const [currentModule] = useState('crm');
   const [activeTab, setActiveTab] = useState<CRMTab>('dashboard');
-  const { slug: tenantSlug } = useRequiredTenant();
+  const [location] = useLocation();
+  const tenantSlug = location.split('/')[1] || 'staging';
 
   // Render del contenuto basato sul tab attivo usando le pagine REALI
   const renderContent = () => {
