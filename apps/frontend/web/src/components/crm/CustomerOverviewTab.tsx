@@ -11,7 +11,14 @@ import {
   User,
   Target,
   ShoppingCart,
-  DollarSign
+  DollarSign,
+  Building2,
+  UserCircle,
+  Mail,
+  Phone,
+  MapPin,
+  FileText,
+  Briefcase
 } from 'lucide-react';
 
 interface CustomerOverviewTabProps {
@@ -103,8 +110,118 @@ export function CustomerOverviewTab({
     }
   ];
 
+  const isB2B = customer.customerType === 'b2b';
+
   return (
     <div className="space-y-6">
+      {/* Anagrafica Dettagliata */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          {isB2B ? (
+            <Building2 className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+          ) : (
+            <UserCircle className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
+          )}
+          {isB2B ? 'Dati Aziendali' : 'Dati Anagrafici'}
+        </h3>
+        
+        <div className="grid grid-cols-2 gap-6">
+          {isB2B ? (
+            // B2B Fields
+            <>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Ragione Sociale</label>
+                  <p className="text-sm font-semibold mt-1">{customer.companyName || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Forma Giuridica</label>
+                  <p className="text-sm mt-1">{customer.legalForm?.toUpperCase() || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Partita IVA</label>
+                  <p className="text-sm font-mono mt-1">{customer.vatNumber || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Codice SDI</label>
+                  <p className="text-sm font-mono mt-1">{customer.sdiCode || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Codice ATECO</label>
+                  <p className="text-sm font-mono mt-1">{customer.atecoCode || 'N/D'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Referente Principale</label>
+                  <p className="text-sm font-semibold mt-1">{customer.primaryContactName || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Email PEC</label>
+                  <p className="text-sm mt-1">{customer.pecEmail || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Email</label>
+                  <p className="text-sm mt-1">{customer.email || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Telefono</label>
+                  <p className="text-sm mt-1">{customer.phone || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Dimensione Aziendale</label>
+                  <p className="text-sm mt-1 capitalize">{customer.companySize || 'N/D'}</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            // B2C Fields
+            <>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Nome</label>
+                  <p className="text-sm font-semibold mt-1">{customer.firstName || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Cognome</label>
+                  <p className="text-sm font-semibold mt-1">{customer.lastName || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Codice Fiscale</label>
+                  <p className="text-sm font-mono mt-1">{customer.fiscalCode || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Data di Nascita</label>
+                  <p className="text-sm mt-1">
+                    {customer.dateOfBirth 
+                      ? new Date(customer.dateOfBirth).toLocaleDateString('it-IT')
+                      : 'N/D'}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Genere</label>
+                  <p className="text-sm mt-1 capitalize">{customer.gender || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Email</label>
+                  <p className="text-sm mt-1">{customer.email || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Telefono</label>
+                  <p className="text-sm mt-1">{customer.phone || 'N/D'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Indirizzo</label>
+                  <p className="text-sm mt-1">{customer.address || 'N/D'}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
+
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <TrendingUp className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />

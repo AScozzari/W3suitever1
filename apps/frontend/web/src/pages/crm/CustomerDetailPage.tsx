@@ -13,6 +13,8 @@ import { CustomerTimelineView } from '@/components/crm/CustomerTimelineView';
 import { CustomerConsentManager } from '@/components/crm/CustomerConsentManager';
 import { CustomerActions } from '@/components/crm/CustomerActions';
 import { CustomerAnalytics } from '@/components/crm/CustomerAnalytics';
+import { CustomerDocumentsTab } from '@/components/crm/CustomerDocumentsTab';
+import { CustomerNotesTab } from '@/components/crm/CustomerNotesTab';
 import { CustomerOverviewTab } from '@/components/crm/CustomerOverviewTab';
 import { CustomerSalesTab } from '@/components/crm/CustomerSalesTab';
 import {
@@ -315,12 +317,7 @@ export default function CustomerDetailPage() {
             </TabsContent>
 
             <TabsContent value="documenti" className="space-y-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Documenti</h3>
-                <p className="text-sm text-muted-foreground">
-                  Upload/download documenti, preview, versioning - Da implementare
-                </p>
-              </Card>
+              <CustomerDocumentsTab customerId={customerId as string} />
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
@@ -332,12 +329,7 @@ export default function CustomerDetailPage() {
             </TabsContent>
 
             <TabsContent value="note" className="space-y-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Note Team</h3>
-                <p className="text-sm text-muted-foreground">
-                  Editor note, tag manager, segmentazione manuale - Da implementare
-                </p>
-              </Card>
+              <CustomerNotesTab customerId={customerId as string} />
             </TabsContent>
           </Tabs>
       </div>
