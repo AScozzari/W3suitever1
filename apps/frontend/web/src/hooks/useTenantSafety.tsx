@@ -1,4 +1,5 @@
 import { useContext } from 'react';
+import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
 import { getCurrentTenantId } from '../lib/queryClient';
 
@@ -164,17 +165,18 @@ export const useCurrentTenantSlug = (): string => {
  */
 export const useTenantNavigation = () => {
   const tenantSlug = useCurrentTenantSlug();
+  const [, setLocation] = useLocation();
   
   /**
    * Naviga verso una pagina mantenendo il tenant context
-   * Usa path ASSOLUTO completo per evitare doppi slug
+   * Usa wouter per navigazione client-side senza full page reload
    */
   const navigate = (path: string) => {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     const fullPath = `/${tenantSlug}/${cleanPath}`;
     
     console.log(`[TENANT-NAV] Navigating to: ${fullPath}`);
-    window.location.href = fullPath;
+    setLocation(fullPath);
   };
   
   /**
