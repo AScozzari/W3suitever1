@@ -203,7 +203,12 @@ const B2BCustomersTable = () => {
               Visualizza
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => setEditCustomer(row.original)}
+              onClick={() => {
+                const customerId = row.original.id;
+                const tenantCode = currentTenant?.code;
+                if (!tenantCode || !customerId) return;
+                setLocation(`/${tenantCode}/crm/customers/${customerId}`);
+              }}
               data-testid={`edit-b2b-customer-${row.original.id}`}
             >
               <Pencil className="h-4 w-4 mr-2" />
@@ -455,7 +460,12 @@ const B2CCustomersTable = () => {
               Visualizza
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => setEditCustomer(row.original)}
+              onClick={() => {
+                const customerId = row.original.id;
+                const tenantCode = currentTenant?.code;
+                if (!tenantCode || !customerId) return;
+                setLocation(`/${tenantCode}/crm/customers/${customerId}`);
+              }}
               data-testid={`edit-b2c-customer-${row.original.id}`}
             >
               <Pencil className="h-4 w-4 mr-2" />

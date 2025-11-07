@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
-import { CRMNavigationBar } from '@/components/crm/CRMNavigationBar';
 import { CustomerTimelineView } from '@/components/crm/CustomerTimelineView';
 import { CustomerConsentManager } from '@/components/crm/CustomerConsentManager';
 import { CustomerActions } from '@/components/crm/CustomerActions';
@@ -54,7 +51,6 @@ interface Customer360Data {
 }
 
 export default function CustomerDetailPage() {
-  const [currentModule, setCurrentModule] = useState('crm');
   const [activeTab, setActiveTab] = useState('overview');
   const params = useParams();
   const customerId = params.id;
@@ -66,28 +62,16 @@ export default function CustomerDetailPage() {
 
   if (isLoading) {
     return (
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <CRMCommandPalette />
-        <div className="flex flex-col h-full">
-          <CRMNavigationBar />
-          <div className="p-6">
-            <Skeleton className="h-48 w-full mb-6" />
-            <Skeleton className="h-96 w-full" />
-          </div>
-        </div>
-      </Layout>
+      <div className="p-6">
+        <Skeleton className="h-48 w-full mb-6" />
+        <Skeleton className="h-96 w-full" />
+      </div>
     );
   }
 
   if (!customer360?.customer) {
     return (
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        <CRMCommandPalette />
-        <div className="flex flex-col h-full">
-          <CRMNavigationBar />
-          <div className="text-center py-12">Cliente non trovato</div>
-        </div>
-      </Layout>
+      <div className="text-center py-12">Cliente non trovato</div>
     );
   }
 
@@ -113,12 +97,7 @@ export default function CustomerDetailPage() {
   };
 
   return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <CRMCommandPalette />
-      <div className="flex flex-col h-full">
-        <CRMNavigationBar />
-
-        <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
           <Card 
             className="p-6"
             style={{
@@ -344,7 +323,6 @@ export default function CustomerDetailPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    </Layout>
+    </div>
   );
 }
