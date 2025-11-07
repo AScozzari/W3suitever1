@@ -11,7 +11,7 @@
 
 import express from 'express';
 import { z } from 'zod';
-import { db, setTenantContext } from '../core/db';
+import { db, setTenantContext, withTenantTransaction } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { eq, and, sql, desc, or, ilike, getTableColumns, inArray } from 'drizzle-orm';
@@ -5388,16 +5388,19 @@ router.get('/customers/:id', async (req, res) => {
     }
 
     const { id } = req.params;
-    await setTenantContext(tenantId);
 
-    const [customer] = await db
-      .select()
-      .from(crmCustomers)
-      .where(and(
-        eq(crmCustomers.id, id),
-        eq(crmCustomers.tenantId, tenantId)
-      ))
-      .limit(1);
+    const customer = await withTenantTransaction(tenantId, async (tx) => {
+      const [result] = await tx
+        .select()
+        .from(crmCustomers)
+        .where(and(
+          eq(crmCustomers.id, id),
+          eq(crmCustomers.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      return result;
+    });
 
     if (!customer) {
       return res.status(404).json({
@@ -5445,16 +5448,69 @@ router.get('/customers/:id/360', async (req, res) => {
     }
 
     const { id } = req.params;
-    await setTenantContext(tenantId);
 
-    const [customer] = await db
-      .select()
-      .from(crmCustomers)
-      .where(and(
-        eq(crmCustomers.id, id),
-        eq(crmCustomers.tenantId, tenantId)
-      ))
-      .limit(1);
+    const { customer, leads, deals, orders, interactions } = await withTenantTransaction(tenantId, async (tx) => {
+      const [customerResult] = await tx
+        .select()
+        .from(crmCustomers)
+        .where(and(
+          eq(crmCustomers.id, id),
+          eq(crmCustomers.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (!customerResult) {
+        return { customer: null, leads: [], deals: [], orders: [], interactions: [] };
+      }
+
+      const [leadsResult, dealsResult, ordersResult, interactionsResult] = await Promise.all([
+        tx
+          .select()
+          .from(crmLeads)
+          .where(and(
+            eq(crmLeads.personId, customerResult.personId),
+            eq(crmLeads.tenantId, tenantId)
+          ))
+          .orderBy(desc(crmLeads.createdAt)),
+        
+        tx
+          .select()
+          .from(crmDeals)
+          .where(and(
+            eq(crmDeals.customerId, id),
+            eq(crmDeals.tenantId, tenantId)
+          ))
+          .orderBy(desc(crmDeals.createdAt)),
+        
+        tx
+          .select()
+          .from(crmOrders)
+          .where(and(
+            eq(crmOrders.customerId, id),
+            eq(crmOrders.tenantId, tenantId)
+          ))
+          .orderBy(desc(crmOrders.orderDate)),
+        
+        tx
+          .select()
+          .from(crmInteractions)
+          .where(and(
+            eq(crmInteractions.entityId, id),
+            eq(crmInteractions.entityType, 'customer'),
+            eq(crmInteractions.tenantId, tenantId)
+          ))
+          .orderBy(desc(crmInteractions.occurredAt))
+          .limit(50)
+      ]);
+
+      return {
+        customer: customerResult,
+        leads: leadsResult,
+        deals: dealsResult,
+        orders: ordersResult,
+        interactions: interactionsResult
+      };
+    });
 
     if (!customer) {
       return res.status(404).json({
@@ -5463,46 +5519,6 @@ router.get('/customers/:id/360', async (req, res) => {
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
-
-    const [leads, deals, orders, interactions] = await Promise.all([
-      db
-        .select()
-        .from(crmLeads)
-        .where(and(
-          eq(crmLeads.personId, customer.personId),
-          eq(crmLeads.tenantId, tenantId)
-        ))
-        .orderBy(desc(crmLeads.createdAt)),
-      
-      db
-        .select()
-        .from(crmDeals)
-        .where(and(
-          eq(crmDeals.customerId, id),
-          eq(crmDeals.tenantId, tenantId)
-        ))
-        .orderBy(desc(crmDeals.createdAt)),
-      
-      db
-        .select()
-        .from(crmOrders)
-        .where(and(
-          eq(crmOrders.customerId, id),
-          eq(crmOrders.tenantId, tenantId)
-        ))
-        .orderBy(desc(crmOrders.orderDate)),
-      
-      db
-        .select()
-        .from(crmInteractions)
-        .where(and(
-          eq(crmInteractions.entityId, id),
-          eq(crmInteractions.entityType, 'customer'),
-          eq(crmInteractions.tenantId, tenantId)
-        ))
-        .orderBy(desc(crmInteractions.occurredAt))
-        .limit(50)
-    ]);
 
     const totalRevenue = orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
     const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;

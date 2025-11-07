@@ -89,3 +89,23 @@ export const withTenantContext = async <T>(
     await db.execute(sql.raw(`SELECT set_config('app.current_tenant_id', NULL, false)`));
   }
 };
+
+/**
+ * Wrapper per eseguire operazioni DB nel contesto di un tenant specifico
+ * Usa una singola transazione per garantire che RLS funzioni correttamente
+ * Risolve il problema di connessioni multiple dal pool che non hanno il tenant context
+ */
+export const withTenantTransaction = async <T>(
+  tenantId: string,
+  operation: (tx: any) => Promise<T>
+): Promise<T> => {
+  return await db.transaction(async (tx) => {
+    // Imposta il tenant context sulla stessa connessione della transazione
+    await tx.execute(
+      sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
+    );
+    
+    // Esegui l'operazione con la transazione tenant-scoped
+    return await operation(tx);
+  });
+};
