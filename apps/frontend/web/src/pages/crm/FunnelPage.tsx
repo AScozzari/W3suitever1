@@ -891,9 +891,9 @@ function DraggablePipelineCard({ pipeline, onEdit }: { pipeline: Pipeline; onEdi
               onPointerDown={(e) => e.stopPropagation()}
               data-testid={`button-edit-pipeline-${pipeline.id}`}
               title="Modifica pipeline"
-              className="h-7 w-7 p-0 cursor-pointer hover:bg-gray-100 shrink-0"
+              className="h-9 w-9 p-0 cursor-pointer hover:bg-gray-100 shrink-0"
             >
-              <Edit className="w-4 h-4 text-gray-600 hover:text-windtre-orange" />
+              <Edit className="w-6 h-6 text-gray-600 hover:text-windtre-orange" />
             </Button>
           )}
         </div>

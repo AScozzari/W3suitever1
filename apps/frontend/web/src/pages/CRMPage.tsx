@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
@@ -74,8 +74,27 @@ const contentVariants = {
 export default function CRMPage() {
   const [currentModule] = useState('crm');
   const [activeTab, setActiveTab] = useState<CRMTab>('dashboard');
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const tenantSlug = location.split('/')[1] || 'staging';
+
+  // 🎯 CRITICAL FIX: Read view param from URL and sync activeTab
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    
+    // Map view param to CRMTab
+    const validTabs: CRMTab[] = ['dashboard', 'campaigns', 'pipeline', 'funnels', 'leads', 'customers', 'activities', 'analytics'];
+    
+    // Handle special case: 'funnel' (singular) maps to 'funnels' (plural)
+    let mappedView = viewParam as CRMTab;
+    if (viewParam === 'funnel') {
+      mappedView = 'funnels';
+    }
+    
+    if (mappedView && validTabs.includes(mappedView)) {
+      setActiveTab(mappedView);
+    }
+  }, [location]); // Re-run when location changes
 
   // Render del contenuto basato sul tab attivo usando le pagine REALI
   const renderContent = () => {
@@ -127,7 +146,14 @@ export default function CRMPage() {
                 return (
                   <motion.button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      // Update URL to match tab for proper navigation
+                      const newUrl = tab.id === 'dashboard' 
+                        ? `/${tenantSlug}/crm` 
+                        : `/${tenantSlug}/crm?view=${tab.id}`;
+                      setLocation(newUrl);
+                    }}
                     className={`
                       flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
                       whitespace-nowrap min-w-fit
