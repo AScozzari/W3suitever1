@@ -11,10 +11,10 @@
 
 import express from 'express';
 import { z } from 'zod';
-import { db, pool, setTenantContext, withTenantTransaction } from '../core/db';
+import { db, setTenantContext, withTenantTransaction } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
-import { eq, and, sql, desc, or, ilike, getTableColumns, inArray, count } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, getTableColumns, inArray } from 'drizzle-orm';
 import {
   users,
   stores,
@@ -4764,8 +4764,7 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
     }
 
     const { pipelineId, stageId } = req.params;
-
-    // Tenant context already set by middleware - no need to set again
+    await setTenantContext(tenantId);
 
     // Verify pipeline belongs to tenant
     const [pipeline] = await db
@@ -4780,8 +4779,7 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
     if (!pipeline) {
       return res.status(404).json({
         success: false,
-        error: 'Not found',
-        message: 'Pipeline not found',
+        error: 'Pipeline not found',
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
@@ -4799,21 +4797,21 @@ router.delete('/pipelines/:pipelineId/stages/:stageId', rbacMiddleware, requireP
     if (!stage) {
       return res.status(404).json({
         success: false,
-        error: 'Not found',
-        message: 'Stage not found',
+        error: 'Stage not found',
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }
 
-    // Check if stage has any deals using native pg query to avoid Drizzle RLS issues
-    // Note: crm_deals.stage stores the stage NAME, not the ID
-    const result = await pool.query(
-      `SELECT COUNT(*) as count FROM w3suite.crm_deals d
-       WHERE d.pipeline_id = $1 AND d.tenant_id = $2
-       AND EXISTS (SELECT 1 FROM w3suite.crm_pipeline_stages s WHERE s.id = $3 AND s.name = d.stage)`,
-      [pipelineId, tenantId, stageId]
-    );
-    const dealCount = parseInt(result.rows[0].count);
+    // Check if stage has any deals
+    const dealCountResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.stageId, stageId),
+        eq(crmDeals.tenantId, tenantId)
+      ));
+
+    const dealCount = dealCountResult[0]?.count || 0;
 
     // If stage has deals, archive it instead of deleting
     if (dealCount > 0) {

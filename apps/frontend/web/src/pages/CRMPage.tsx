@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'wouter';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 
@@ -71,18 +70,7 @@ const contentVariants = {
 
 export default function CRMPage() {
   const [currentModule] = useState('crm');
-  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<CRMTab>('dashboard');
-
-  // 🎯 Support navigation via query param (e.g., /crm?tab=leads)
-  useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1] || '');
-    const tabParam = params.get('tab') as CRMTab;
-    
-    if (tabParam && ['dashboard', 'campaigns', 'pipeline', 'leads', 'customers', 'activities', 'analytics'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [location]);
 
   // Render del contenuto basato sul tab attivo usando le pagine REALI
   const renderContent = () => {
@@ -134,12 +122,7 @@ export default function CRMPage() {
                 return (
                   <motion.button
                     key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      // Update URL with query param for direct navigation support
-                      const basePath = location.split('?')[0];
-                      setLocation(`${basePath}?tab=${tab.id}`);
-                    }}
+                    onClick={() => setActiveTab(tab.id)}
                     className={`
                       flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
                       whitespace-nowrap min-w-fit

@@ -29,50 +29,42 @@ export function CRMNavigationBar({ className = '' }: CRMNavigationBarProps) {
       value: 'campaigns',
       label: 'Campagne',
       icon: Megaphone,
-      path: buildUrl('crm?tab=campaigns')
+      path: buildUrl('crm/campaigns')
     },
     {
       value: 'pipeline',
       label: 'Pipeline',
       icon: Target,
-      path: buildUrl('crm?tab=pipeline')
+      path: buildUrl('crm/pipeline')
     },
     {
       value: 'leads',
       label: 'Lead',
       icon: UserPlus,
-      path: buildUrl('crm?tab=leads')
+      path: buildUrl('crm/leads')
     },
     {
       value: 'customers',
       label: 'Clienti',
       icon: Users,
-      path: buildUrl('crm?tab=customers')
+      path: buildUrl('crm/customers')
     },
     {
       value: 'activities',
       label: 'Attività',
       icon: CheckSquare,
-      path: buildUrl('crm?tab=activities')
+      path: buildUrl('crm/activities')
     },
     {
       value: 'analytics',
       label: 'Analytics',
       icon: BarChart3,
-      path: buildUrl('crm?tab=analytics')
+      path: buildUrl('crm/analytics')
     }
   ];
 
-  // Determine active tab based on query param or location
+  // Determine active tab based on current location
   const getActiveTab = () => {
-    const params = new URLSearchParams(location.split('?')[1] || '');
-    const tabParam = params.get('tab');
-    
-    if (tabParam && ['campaigns', 'leads', 'pipeline', 'customers', 'activities', 'analytics'].includes(tabParam)) {
-      return tabParam;
-    }
-    
-    // Fallback to location-based detection for detail pages
     if (location.includes('/crm/campaigns')) return 'campaigns';
     if (location.includes('/crm/leads')) return 'leads';
     if (location.includes('/crm/pipeline')) return 'pipeline';

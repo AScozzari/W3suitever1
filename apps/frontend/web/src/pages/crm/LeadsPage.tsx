@@ -130,7 +130,7 @@ export function LeadsContent() {
   const campaignName = campaignId ? 'Campagna Esempio' : null;
 
   const handleClearCampaignFilter = () => {
-    setLocation(buildUrl('crm?tab=leads'));
+    setLocation(buildUrl('crm/leads'));
   };
 
   const toggleRowExpansion = (id: string) => {

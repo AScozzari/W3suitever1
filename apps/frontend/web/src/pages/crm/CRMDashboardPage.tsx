@@ -91,7 +91,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'Identity graph completo',
-      href: buildUrl('crm?tab=customers')
+      href: buildUrl('crm/persons')
     },
     {
       title: 'Lead Attivi',
@@ -100,7 +100,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-purple)',
       iconColor: 'hsl(var(--brand-purple))',
       description: 'In fase di qualifica',
-      href: buildUrl('crm?tab=leads')
+      href: buildUrl('crm/leads')
     },
     {
       title: 'Deal Aperti',
@@ -109,7 +109,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-gradient)',
       iconColor: 'hsl(var(--brand-orange))',
       description: 'In trattativa attiva',
-      href: buildUrl('crm?tab=pipeline')
+      href: buildUrl('crm/deals')
     },
     {
       title: 'Valore Pipeline',
@@ -118,7 +118,7 @@ export function DashboardContent() {
       gradient: 'var(--brand-glass-orange)',
       iconColor: 'hsl(var(--success))',
       description: 'Valore totale deals',
-      href: buildUrl('crm?tab=pipeline')
+      href: buildUrl('crm/pipeline')
     }
   ];
 

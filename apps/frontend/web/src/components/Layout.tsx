@@ -158,7 +158,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   
   const { isIdle } = useIdleDetection();
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
-  const { currentTenant } = useTenant();
   const [location] = useLocation();
   const { navigate } = useTenantNavigation();
   
@@ -539,21 +538,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       
       console.log('✅ OAuth2 logout completed');
       
-      // Get validated tenant slug using existing validator
-      const tenantSlug = getTenantFromUrl();
-      const loginUrl = `/${tenantSlug}/login`;
-      console.log(`🔄 Redirecting to tenant login: ${loginUrl}`);
-      window.location.href = loginUrl;
+      // Redirect to login page
+      window.location.href = '/brandinterface/login';
       
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Fallback: force logout even if server call fails
       await oauth2Client.logout();
       queryClient.clear();
-      
-      // Fallback: redirect to tenant login even on error
-      const tenantSlug = getTenantFromUrl();
-      window.location.href = `/${tenantSlug}/login`;
+      window.location.href = '/brandinterface/login';
     }
   };
 
