@@ -105,7 +105,7 @@ import {
   type LegalForm,
   type Country,
 } from "../db/schema/public";
-import { db, setTenantContext, withTenantContext } from "./db";
+import { db, setTenantContext, withTenantContext, withTenantScopedQuery } from "./db";
 import { eq, and, or, gte, lte, desc, asc, sql, isNull, isNotNull, inArray } from "drizzle-orm";
 import { CalendarScope, CALENDAR_PERMISSIONS } from "./hr-storage";
 
@@ -1204,54 +1204,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnreadNotificationCount(tenantId: string, userId?: string): Promise<number> {
-    console.log(`[STORAGE-RLS] 🔔 getUnreadNotificationCount: Setting tenant context for ${tenantId}`);
+    console.log(`[STORAGE-RLS] 🔔 getUnreadNotificationCount: Using tenant-scoped query for ${tenantId}`);
     
-    // Ensure tenant context is set for RLS
-    await setTenantContext(tenantId);
-    
-    const conditions = [
-      eq(notifications.tenantId, tenantId),
-      eq(notifications.status, 'unread')
-    ];
-    
-    // User-specific notifications: broadcast or targeted to specific user
-    if (userId) {
-      const userConditions = [
-        eq(notifications.broadcast, true),
-        eq(notifications.targetUserId, userId),
-        sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))` as any
-      ].filter(Boolean);
+    return await withTenantScopedQuery(tenantId, async (tenantDb) => {
+      const conditions = [
+        eq(notifications.tenantId, tenantId),
+        eq(notifications.status, 'unread')
+      ];
       
-      if (userConditions.length > 0) {
-        const userCondition = or(...userConditions);
-        if (userCondition) {
-          conditions.push(userCondition);
+      // User-specific notifications: broadcast or targeted to specific user
+      if (userId) {
+        const userConditions = [
+          eq(notifications.broadcast, true),
+          eq(notifications.targetUserId, userId),
+          sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))` as any
+        ].filter(Boolean);
+        
+        if (userConditions.length > 0) {
+          const userCondition = or(...userConditions);
+          if (userCondition) {
+            conditions.push(userCondition);
+          }
         }
       }
-    }
-    
-    // Filter out expired notifications
-    const expiryConditions = [
-      isNull(notifications.expiresAt),
-      gte(notifications.expiresAt, new Date())
-    ].filter(Boolean);
-    
-    if (expiryConditions.length > 0) {
-      const expiryCondition = or(...expiryConditions);
-      if (expiryCondition) {
-        conditions.push(expiryCondition);
+      
+      // Filter out expired notifications
+      const expiryConditions = [
+        isNull(notifications.expiresAt),
+        gte(notifications.expiresAt, new Date())
+      ].filter(Boolean);
+      
+      if (expiryConditions.length > 0) {
+        const expiryCondition = or(...expiryConditions);
+        if (expiryCondition) {
+          conditions.push(expiryCondition);
+        }
       }
-    }
-    
-    const [result] = await db
-      .select({ count: sql<string>`count(*)::text` })
-      .from(notifications)
-      .where(and(...conditions));
-    
-    const count = parseInt(result.count, 10);
-    console.log(`[STORAGE-RLS] ✅ getUnreadNotificationCount: Found ${count} unread notifications for tenant ${tenantId}`);
-    
-    return count;
+      
+      const [result] = await tenantDb
+        .select({ count: sql<string>`count(*)::text` })
+        .from(notifications)
+        .where(and(...conditions));
+      
+      const count = parseInt(result.count, 10);
+      console.log(`[STORAGE-RLS] ✅ getUnreadNotificationCount: Found ${count} unread notifications for tenant ${tenantId}`);
+      
+      return count;
+    });
   }
 
   async createNotification(notificationData: InsertNotification): Promise<Notification> {

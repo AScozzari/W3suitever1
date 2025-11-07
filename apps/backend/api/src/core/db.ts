@@ -93,6 +93,8 @@ export const withTenantContext = async <T>(
  * Wrapper per eseguire operazioni DB nel contesto di un tenant specifico
  * Usa una singola transazione per garantire che RLS funzioni correttamente
  * Risolve il problema di connessioni multiple dal pool che non hanno il tenant context
+ * 
+ * DEPRECATED: Use withTenantScopedQuery instead for better connection handling
  */
 export const withTenantTransaction = async <T>(
   tenantId: string,
@@ -109,4 +111,59 @@ export const withTenantTransaction = async <T>(
     // Execute the operation with the tenant-scoped transaction
     return await operation(tx);
   });
+};
+
+/**
+ * Request-scoped tenant query wrapper (ARCHITECT-APPROVED PATTERN)
+ * 
+ * Acquires a dedicated PostgreSQL client from the pool, sets RLS tenant context
+ * using SET LOCAL inside a transaction, executes operations, and releases client.
+ * 
+ * This ensures the same pg client is used for all queries in the operation,
+ * preventing tenant context loss from connection pooling.
+ * 
+ * @param tenantId - The tenant UUID to set in app.current_tenant_id
+ * @param operation - Function that receives a tenant-scoped Drizzle instance
+ * @returns The result of the operation
+ * 
+ * @example
+ * const notifications = await withTenantScopedQuery(tenantId, async (tenantDb) => {
+ *   return await tenantDb.select().from(notifications).where(...);
+ * });
+ */
+export const withTenantScopedQuery = async <T>(
+  tenantId: string,
+  operation: (tenantDb: typeof db) => Promise<T>
+): Promise<T> => {
+  const client = await pool.connect();
+  
+  try {
+    // Start transaction
+    await client.query('BEGIN');
+    
+    // Set tenant context using SET LOCAL (transaction-scoped)
+    // NOTE: SET LOCAL doesn't support bind parameters in PostgreSQL
+    // We escape single quotes to prevent SQL injection: ' becomes ''
+    const escapedTenantId = tenantId.replace(/'/g, "''");
+    await client.query(`SET LOCAL app.current_tenant_id = '${escapedTenantId}'`);
+    
+    // Create Drizzle instance bound to this specific client
+    // This ensures all queries use the same connection with RLS context
+    const tenantDb = drizzle(client, { schema });
+    
+    // Execute operation with tenant-scoped db instance
+    const result = await operation(tenantDb);
+    
+    // Commit transaction
+    await client.query('COMMIT');
+    
+    return result;
+  } catch (error) {
+    // Rollback on error
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    // Always release client back to pool
+    client.release();
+  }
 };
