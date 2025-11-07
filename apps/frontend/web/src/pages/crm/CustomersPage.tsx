@@ -64,7 +64,8 @@ const B2BCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const { buildUrl, navigate } = useTenantNavigation();
+  const { buildUrl } = useTenantNavigation();
+  const [, setLocation] = useLocation();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2b' }],
@@ -184,7 +185,7 @@ const B2BCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => navigate(`crm/customers/${row.original.id}`)}
+              onClick={() => setLocation(buildUrl(`crm/customers/${row.original.id}`))}
               data-testid={`view-b2b-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -330,7 +331,8 @@ const B2CCustomersTable = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
-  const { buildUrl, navigate } = useTenantNavigation();
+  const { buildUrl } = useTenantNavigation();
+  const [, setLocation] = useLocation();
 
   const { data: customersResponse, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/crm/customers', { customerType: 'b2c' }],
@@ -424,7 +426,7 @@ const B2CCustomersTable = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => navigate(`crm/customers/${row.original.id}`)}
+              onClick={() => setLocation(buildUrl(`crm/customers/${row.original.id}`))}
               data-testid={`view-b2c-customer-${row.original.id}`}
             >
               <Eye className="h-4 w-4 mr-2" />
