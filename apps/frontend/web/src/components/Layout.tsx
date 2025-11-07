@@ -160,6 +160,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const [location] = useLocation();
   const { navigate } = useTenantNavigation();
+  const { currentTenant } = useTenant();
   
   // ✅ Sicuro: Ottieni e valida tenant dal path URL con fallback robusto
   const getTenantFromUrl = () => {
