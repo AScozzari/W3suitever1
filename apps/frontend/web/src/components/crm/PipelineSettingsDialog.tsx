@@ -118,11 +118,16 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   // Operational permissions (mode-based)
   const [dealCreationMode, setDealCreationMode] = useState<'all' | 'deal_managers' | 'pipeline_admins' | 'supervisor_only' | 'custom' | 'none'>('all');
   const [stateModificationMode, setStateModificationMode] = useState<'all' | 'deal_managers' | 'pipeline_admins' | 'supervisor_only' | 'custom' | 'none'>('all');
-  const [dealDeletionMode, setDealDeletionMode] = useState<'pipeline_admins' | 'supervisor_only' | 'none'>('pipeline_admins');
+  const [dealDeletionMode, setDealDeletionMode] = useState<'pipeline_admins' | 'supervisor_only' | 'custom' | 'none'>('pipeline_admins');
+  
+  // Custom users lists for each permission type
+  const [customCreateUsers, setCustomCreateUsers] = useState<string[]>([]);
+  const [customModifyUsers, setCustomModifyUsers] = useState<string[]>([]);
+  const [customDeleteUsers, setCustomDeleteUsers] = useState<string[]>([]);
 
   // Modal state for user assignments
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
-  const [assignmentType, setAssignmentType] = useState<'deal' | 'admin'>('deal');
+  const [assignmentType, setAssignmentType] = useState<'deal' | 'admin' | 'custom_create' | 'custom_modify' | 'custom_delete'>('deal');
 
   // Stage form state
   const [newStageName, setNewStageName] = useState('');
@@ -1147,79 +1152,143 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                 )}
 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="space-y-1">
-                      <Label className="text-gray-900">Creazione Deal</Label>
-                      <p className="text-sm text-gray-500">
-                        Chi può creare nuovi deal in questa pipeline
-                      </p>
+                  {/* Creazione Deal */}
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="text-gray-900">Creazione Deal</Label>
+                        <p className="text-sm text-gray-500">
+                          Chi può creare nuovi deal in questa pipeline
+                        </p>
+                      </div>
+                      <Select 
+                        value={dealCreationMode} 
+                        onValueChange={(v: any) => setDealCreationMode(v)}
+                        disabled={selectedTeams.length === 0}
+                      >
+                        <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-create-deal">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti membri team</SelectItem>
+                          <SelectItem value="deal_managers">Solo gestori deal</SelectItem>
+                          <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
+                          <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
+                          <SelectItem value="custom">Custom Users</SelectItem>
+                          <SelectItem value="none">Nessuno</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select 
-                      value={dealCreationMode} 
-                      onValueChange={(v: any) => setDealCreationMode(v)}
-                      disabled={selectedTeams.length === 0}
-                    >
-                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-create-deal">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tutti membri team</SelectItem>
-                        <SelectItem value="deal_managers">Solo gestori deal</SelectItem>
-                        <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
-                        <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
-                        <SelectItem value="custom">Custom Users</SelectItem>
-                        <SelectItem value="none">Nessuno</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {dealCreationMode === 'custom' && (
+                      <div className="flex items-center justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAssignmentType('custom_create');
+                            setAssignmentModalOpen(true);
+                          }}
+                          className="bg-white border-gray-300"
+                          data-testid="button-select-custom-create"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Seleziona Utenti ({customCreateUsers.length})
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="space-y-1">
-                      <Label className="text-gray-900">Modifica Stati</Label>
-                      <p className="text-sm text-gray-500">
-                        Chi può modificare gli stati della pipeline
-                      </p>
+                  {/* Modifica Stati */}
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="text-gray-900">Modifica Stati</Label>
+                        <p className="text-sm text-gray-500">
+                          Chi può modificare gli stati della pipeline
+                        </p>
+                      </div>
+                      <Select 
+                        value={stateModificationMode} 
+                        onValueChange={(v: any) => setStateModificationMode(v)}
+                        disabled={selectedTeams.length === 0}
+                      >
+                        <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-edit-stages">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti membri team</SelectItem>
+                          <SelectItem value="deal_managers">Solo gestori deal</SelectItem>
+                          <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
+                          <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
+                          <SelectItem value="custom">Custom Users</SelectItem>
+                          <SelectItem value="none">Nessuno</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select 
-                      value={stateModificationMode} 
-                      onValueChange={(v: any) => setStateModificationMode(v)}
-                      disabled={selectedTeams.length === 0}
-                    >
-                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-edit-stages">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tutti membri team</SelectItem>
-                        <SelectItem value="deal_managers">Solo gestori deal</SelectItem>
-                        <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
-                        <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
-                        <SelectItem value="custom">Custom Users</SelectItem>
-                        <SelectItem value="none">Nessuno</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {stateModificationMode === 'custom' && (
+                      <div className="flex items-center justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAssignmentType('custom_modify');
+                            setAssignmentModalOpen(true);
+                          }}
+                          className="bg-white border-gray-300"
+                          data-testid="button-select-custom-modify"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Seleziona Utenti ({customModifyUsers.length})
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="space-y-1">
-                      <Label className="text-gray-900">Eliminazione Deal</Label>
-                      <p className="text-sm text-gray-500">
-                        Chi può eliminare deal dalla pipeline
-                      </p>
+                  {/* Eliminazione Deal */}
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="text-gray-900">Eliminazione Deal</Label>
+                        <p className="text-sm text-gray-500">
+                          Chi può eliminare deal dalla pipeline
+                        </p>
+                      </div>
+                      <Select 
+                        value={dealDeletionMode} 
+                        onValueChange={(v: any) => setDealDeletionMode(v)}
+                        disabled={selectedTeams.length === 0}
+                      >
+                        <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-delete-deals">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
+                          <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
+                          <SelectItem value="custom">Custom Users</SelectItem>
+                          <SelectItem value="none">Nessuno</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select 
-                      value={dealDeletionMode} 
-                      onValueChange={(v: any) => setDealDeletionMode(v)}
-                      disabled={selectedTeams.length === 0}
-                    >
-                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-delete-deals">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
-                        <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
-                        <SelectItem value="none">Nessuno</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {dealDeletionMode === 'custom' && (
+                      <div className="flex items-center justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAssignmentType('custom_delete');
+                            setAssignmentModalOpen(true);
+                          }}
+                          className="bg-white border-gray-300"
+                          data-testid="button-select-custom-delete"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Seleziona Utenti ({customDeleteUsers.length})
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -1300,13 +1369,25 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
         currentAssignedUsers={
           assignmentType === 'deal' 
             ? dealManagers 
-            : pipelineAdmins
+            : assignmentType === 'admin'
+            ? pipelineAdmins
+            : assignmentType === 'custom_create'
+            ? customCreateUsers
+            : assignmentType === 'custom_modify'
+            ? customModifyUsers
+            : customDeleteUsers
         }
         onSave={(selectedUserIds) => {
           if (assignmentType === 'deal') {
             setDealManagers(selectedUserIds);
-          } else {
+          } else if (assignmentType === 'admin') {
             setPipelineAdmins(selectedUserIds);
+          } else if (assignmentType === 'custom_create') {
+            setCustomCreateUsers(selectedUserIds);
+          } else if (assignmentType === 'custom_modify') {
+            setCustomModifyUsers(selectedUserIds);
+          } else if (assignmentType === 'custom_delete') {
+            setCustomDeleteUsers(selectedUserIds);
           }
           toast({
             title: 'Assegnazioni salvate',
@@ -1316,12 +1397,24 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
         title={
           assignmentType === 'deal' 
             ? 'Assegna Gestori Deal' 
-            : 'Assegna Amministratori Pipeline'
+            : assignmentType === 'admin'
+            ? 'Assegna Amministratori Pipeline'
+            : assignmentType === 'custom_create'
+            ? 'Utenti Custom - Creazione Deal'
+            : assignmentType === 'custom_modify'
+            ? 'Utenti Custom - Modifica Stati'
+            : 'Utenti Custom - Eliminazione Deal'
         }
         description={
           assignmentType === 'deal' 
             ? 'Seleziona gli utenti che possono creare e gestire deal' 
-            : 'Seleziona gli utenti con accesso completo alle impostazioni'
+            : assignmentType === 'admin'
+            ? 'Seleziona gli utenti con accesso completo alle impostazioni'
+            : assignmentType === 'custom_create'
+            ? 'Seleziona gli utenti che possono creare nuovi deal in questa pipeline'
+            : assignmentType === 'custom_modify'
+            ? 'Seleziona gli utenti che possono modificare gli stati dei deal'
+            : 'Seleziona gli utenti che possono eliminare deal dalla pipeline'
         }
       />
     </Dialog>
