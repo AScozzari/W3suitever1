@@ -1031,20 +1031,28 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
 
 // ==================== TEAMS ENDPOINTS ====================
 
-// GET /api/teams - Get all teams for tenant
+// GET /api/teams - Get all teams for tenant (with optional type filter)
 router.get('/teams', requirePermission('teams.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
+    const typeFilter = req.query.type as string | undefined; // e.g., "crm,sales"
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    const allTeams = await db
+    let query = db
       .select()
       .from(teams)
-      .where(eq(teams.tenantId, tenantId))
-      .orderBy(asc(teams.name));
+      .where(eq(teams.tenantId, tenantId));
+
+    // Apply type filter if provided
+    if (typeFilter) {
+      const types = typeFilter.split(',').map(t => t.trim());
+      query = query.where(inArray(teams.teamType, types));
+    }
+
+    const allTeams = await query.orderBy(asc(teams.name));
 
     res.json(allTeams);
   } catch (error) {
