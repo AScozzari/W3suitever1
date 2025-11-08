@@ -1546,7 +1546,7 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode, initia
   });
 
   const { data: teams = [] } = useQuery({
-    queryKey: ['/api/teams'],
+    queryKey: ['/api/teams', { type: 'crm,sales' }],
     enabled: open,
   });
 
