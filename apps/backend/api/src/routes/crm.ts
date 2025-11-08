@@ -1197,6 +1197,143 @@ router.post('/leads', async (req, res) => {
 
     logger.info('Lead created', { leadId: lead.id, tenantId });
 
+    // 🚀 Campaign Workflow Automation: Check if lead has campaign and apply routing
+    if (validation.data.campaignId) {
+      (async () => {
+        try {
+          logger.info('🎯 [CAMPAIGN] Processing campaign routing for lead', {
+            leadId: lead.id,
+            campaignId: validation.data.campaignId,
+            tenantId
+          });
+
+          // 🔒 Set tenant context for RLS
+          await setTenantContext(tenantId);
+
+          // Fetch campaign details
+          const [campaign] = await db
+            .select()
+            .from(crmCampaigns)
+            .where(and(
+              eq(crmCampaigns.id, validation.data.campaignId),
+              eq(crmCampaigns.tenantId, tenantId)
+            ))
+            .limit(1);
+
+          if (campaign) {
+            logger.info('📋 [CAMPAIGN] Found campaign configuration', {
+              campaignName: campaign.name,
+              routingMode: campaign.routingMode,
+              enableAIScoring: campaign.enableAIScoring,
+              workflowId: campaign.workflowId
+            });
+
+            // MODALITÀ MANUALE: Assegnazione immediata a pipeline
+            if (campaign.routingMode === 'manual' && campaign.manualPipelineId1) {
+              logger.info('🔧 [MANUAL MODE] Assigning lead to manual pipeline', {
+                leadId: lead.id,
+                pipelineId: campaign.manualPipelineId1
+              });
+
+              // Assegna subito a pipeline manuale
+              await db
+                .update(crmLeads)
+                .set({ pipelineId: campaign.manualPipelineId1 })
+                .where(and(
+                  eq(crmLeads.id, lead.id),
+                  eq(crmLeads.tenantId, tenantId)
+                ));
+
+              // Crea deal automaticamente nella pipeline
+              const [deal] = await db
+                .insert(crmDeals)
+                .values({
+                  tenantId,
+                  leadId: lead.id,
+                  pipelineId: campaign.manualPipelineId1,
+                  stage: 'new',
+                  title: `${lead.firstName || 'Lead'} ${lead.lastName || ''}`.trim() || 'New Deal',
+                  value: 0,
+                  probability: 10,
+                  status: 'open',
+                  assignedTo: null // Will be assigned by workflow or manually
+                })
+                .returning();
+
+              logger.info('✅ [MANUAL MODE] Deal created in manual pipeline', {
+                dealId: deal.id,
+                pipelineId: campaign.manualPipelineId1
+              });
+
+              // Notifica utenti configurati
+              if (campaign.notifyUserIds && campaign.notifyUserIds.length > 0) {
+                for (const userId of campaign.notifyUserIds) {
+                  await db.insert(crmLeadNotifications).values({
+                    tenantId,
+                    leadId: lead.id,
+                    userId,
+                    notificationType: 'new_lead',
+                    priority: 'medium',
+                    message: `📧 Nuovo lead da campagna "${campaign.name}": ${lead.firstName || 'Lead'} ${lead.lastName || ''}`,
+                    metadata: {
+                      campaignId: campaign.id,
+                      campaignName: campaign.name,
+                      pipelineId: campaign.manualPipelineId1,
+                      source: lead.source
+                    },
+                    deliveryStatus: 'pending',
+                    deliveryChannels: ['in_app', 'email']
+                  });
+                }
+                logger.info('🔔 [MANUAL MODE] Notifications created for configured users', {
+                  userIds: campaign.notifyUserIds
+                });
+              }
+            }
+            
+            // MODALITÀ AUTOMATICA: Trigger workflow (implementeremo dopo)
+            else if (campaign.routingMode === 'automatic' && campaign.workflowId) {
+              logger.info('🤖 [AUTOMATIC MODE] Will trigger workflow for lead', {
+                leadId: lead.id,
+                workflowId: campaign.workflowId
+              });
+              // TODO: Implementare trigger workflow (task 3)
+            }
+
+            // AI Scoring condizionale basato su campaign setting
+            if (campaign.enableAIScoring) {
+              logger.info('🧠 [CAMPAIGN] AI Scoring enabled for campaign, will calculate score', {
+                leadId: lead.id
+              });
+              // Il codice AI scoring esistente verrà eseguito sotto
+            } else {
+              logger.info('⏭️ [CAMPAIGN] AI Scoring disabled for campaign, skipping', {
+                leadId: lead.id
+              });
+              // Salta il blocco AI scoring sotto
+            }
+          } else {
+            logger.warn('⚠️ [CAMPAIGN] Campaign not found for lead', {
+              leadId: lead.id,
+              campaignId: validation.data.campaignId
+            });
+          }
+        } catch (campaignError) {
+          logger.error('❌ [CAMPAIGN] Campaign routing failed', {
+            leadId: lead.id,
+            error: campaignError instanceof Error ? campaignError.message : 'Unknown error',
+            stack: campaignError instanceof Error ? campaignError.stack : undefined
+          });
+        }
+      })().catch(err => {
+        logger.error('[UNHANDLED] Campaign routing promise rejected', {
+          leadId: lead.id,
+          error: err instanceof Error ? err.message : 'Unknown',
+          stack: err instanceof Error ? err.stack : undefined
+        });
+      });
+    }
+
     // 📊 GTM Event Tracking: Send lead_created event to GA4/Google Ads (non-blocking)
     // Fire-and-forget Promise (no await) to avoid blocking response
     (async () => {
@@ -1254,15 +1391,34 @@ router.post('/leads', async (req, res) => {
     });
 
     // 🤖 AI Lead Scoring: Calculate score in background (non-blocking)
-    // Fire-and-forget Promise (no await) to avoid blocking response
-    (async () => {
-      try {
-        logger.info('🤖 [BACKGROUND] Starting AI scoring', { leadId: lead.id, tenantId });
-        
-        // 🔒 CRITICAL: Set tenant context for RLS in async execution
-        await setTenantContext(tenantId);
-        
-        const scoringResult = await leadScoringService.calculateLeadScore({
+    // Check if AI scoring should run based on campaign settings or default behavior
+    const shouldRunAIScoring = await (async () => {
+      if (!validation.data.campaignId) {
+        // No campaign, run AI scoring by default
+        return true;
+      }
+      // Check campaign settings
+      const [campaign] = await db
+        .select({ enableAIScoring: crmCampaigns.enableAIScoring })
+        .from(crmCampaigns)
+        .where(and(
+          eq(crmCampaigns.id, validation.data.campaignId),
+          eq(crmCampaigns.tenantId, tenantId)
+        ))
+        .limit(1);
+      return campaign?.enableAIScoring || false;
+    })();
+
+    if (shouldRunAIScoring) {
+      // Fire-and-forget Promise (no await) to avoid blocking response
+      (async () => {
+        try {
+          logger.info('🤖 [BACKGROUND] Starting AI scoring', { leadId: lead.id, tenantId });
+          
+          // 🔒 CRITICAL: Set tenant context for RLS in async execution
+          await setTenantContext(tenantId);
+          
+          const scoringResult = await leadScoringService.calculateLeadScore({
           leadId: lead.id,
           tenantId
         });
@@ -1349,6 +1505,7 @@ router.post('/leads', async (req, res) => {
         stack: err instanceof Error ? err.stack : undefined
       });
     });
+    } // Close shouldRunAIScoring if
 
     // 🎯 UTM Attribution: Auto-attribute lead to UTM link if UTM params exist (non-blocking)
     // Fire-and-forget Promise (no await) to avoid blocking response
