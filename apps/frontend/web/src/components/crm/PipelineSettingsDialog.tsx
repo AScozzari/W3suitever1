@@ -110,13 +110,18 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
 
   // Team & User assignments state
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
-  const [leadManagers, setLeadManagers] = useState<string[]>([]);
-  const [dealApprovers, setDealApprovers] = useState<string[]>([]);
+  const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
+  const [dealManagers, setDealManagers] = useState<string[]>([]);
   const [pipelineAdmins, setPipelineAdmins] = useState<string[]>([]);
+  
+  // Operational permissions (mode-based)
+  const [dealCreationMode, setDealCreationMode] = useState<'all' | 'admins' | 'custom' | 'none'>('all');
+  const [stateModificationMode, setStateModificationMode] = useState<'all' | 'admins' | 'custom' | 'none'>('all');
+  const [dealDeletionMode, setDealDeletionMode] = useState<'admins' | 'none'>('admins');
 
   // Modal state for user assignments
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
-  const [assignmentType, setAssignmentType] = useState<'lead' | 'approver' | 'admin'>('lead');
+  const [assignmentType, setAssignmentType] = useState<'deal' | 'admin'>('deal');
 
   // Stage form state
   const [newStageName, setNewStageName] = useState('');
@@ -320,9 +325,13 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     // Save settings (assignments) separately
     updateSettingsMutation.mutate({
       assignedTeams: selectedTeams,
-      leadManagers,
-      dealApprovers,
+      assignedUsers,
       pipelineAdmins,
+      dealManagementMode: 'custom',
+      dealManagementUsers: dealManagers,
+      dealCreationMode,
+      stateModificationMode,
+      dealDeletionMode,
     });
   };
 
@@ -367,9 +376,12 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   useEffect(() => {
     if (pipelineSettings) {
       setSelectedTeams(pipelineSettings.assignedTeams || []);
-      setLeadManagers(pipelineSettings.leadManagers || []);
-      setDealApprovers(pipelineSettings.dealApprovers || []);
+      setAssignedUsers(pipelineSettings.assignedUsers || []);
+      setDealManagers(pipelineSettings.dealManagementUsers || []);
       setPipelineAdmins(pipelineSettings.pipelineAdmins || []);
+      setDealCreationMode(pipelineSettings.dealCreationMode || 'all');
+      setStateModificationMode(pipelineSettings.stateModificationMode || 'all');
+      setDealDeletionMode(pipelineSettings.dealDeletionMode || 'admins');
     }
   }, [pipelineSettings]);
 
@@ -1062,45 +1074,23 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="space-y-1">
-                      <Label className="text-gray-900">Gestione Lead</Label>
+                      <Label className="text-gray-900">Gestione Deal</Label>
                       <p className="text-sm text-gray-500">
-                        Utenti che possono creare e gestire lead in questa pipeline
+                        Utenti che possono creare e gestire deal in questa pipeline
                       </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setAssignmentType('lead');
+                        setAssignmentType('deal');
                         setAssignmentModalOpen(true);
                       }}
                       disabled={selectedTeams.length === 0}
-                      data-testid="button-assign-lead-managers"
+                      data-testid="button-assign-deal-managers"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Assegna ({leadManagers.length})
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="space-y-1">
-                      <Label className="text-gray-900">Approvazione Trattative</Label>
-                      <p className="text-sm text-gray-500">
-                        Utenti che possono approvare trattative ad alto valore
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setAssignmentType('approver');
-                        setAssignmentModalOpen(true);
-                      }}
-                      disabled={selectedTeams.length === 0}
-                      data-testid="button-assign-approvers"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Assegna ({dealApprovers.length})
+                      Assegna ({dealManagers.length})
                     </Button>
                   </div>
 
@@ -1130,22 +1120,40 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
 
               <Card className="p-6 bg-white border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900">Permessi Operativi</h3>
+                
+                {selectedTeams.length === 0 && (
+                  <div className="flex items-start gap-3 p-4 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-900">
+                      <p className="font-medium mb-1">Seleziona prima un team</p>
+                      <p className="text-blue-700">
+                        I permessi operativi possono essere configurati solo dopo aver assegnato un team alla pipeline nella sezione "Visibilità e Accesso".
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="space-y-1">
-                      <Label className="text-gray-900">Creazione Lead</Label>
+                      <Label className="text-gray-900">Creazione Deal</Label>
                       <p className="text-sm text-gray-500">
-                        Chi può creare nuovi lead in questa pipeline
+                        Chi può creare nuovi deal in questa pipeline
                       </p>
                     </div>
-                    <Select defaultValue="team">
-                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-create-lead">
+                    <Select 
+                      value={dealCreationMode} 
+                      onValueChange={(v: any) => setDealCreationMode(v)}
+                      disabled={selectedTeams.length === 0}
+                    >
+                      <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-create-deal">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Solo Admin</SelectItem>
-                        <SelectItem value="team">Team Members</SelectItem>
-                        <SelectItem value="all">Tutti gli utenti</SelectItem>
+                        <SelectItem value="all">Tutti</SelectItem>
+                        <SelectItem value="admins">Solo Admin</SelectItem>
+                        <SelectItem value="custom">Custom Users</SelectItem>
+                        <SelectItem value="none">Nessuno</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1157,32 +1165,40 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                         Chi può modificare gli stati della pipeline
                       </p>
                     </div>
-                    <Select defaultValue="admin">
+                    <Select 
+                      value={stateModificationMode} 
+                      onValueChange={(v: any) => setStateModificationMode(v)}
+                      disabled={selectedTeams.length === 0}
+                    >
                       <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-edit-stages">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Solo Admin</SelectItem>
-                        <SelectItem value="team">Team Members</SelectItem>
-                        <SelectItem value="all">Tutti gli utenti</SelectItem>
+                        <SelectItem value="all">Tutti</SelectItem>
+                        <SelectItem value="admins">Solo Admin</SelectItem>
+                        <SelectItem value="custom">Custom Users</SelectItem>
+                        <SelectItem value="none">Nessuno</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="space-y-1">
-                      <Label className="text-gray-900">Eliminazione Trattative</Label>
+                      <Label className="text-gray-900">Eliminazione Deal</Label>
                       <p className="text-sm text-gray-500">
-                        Chi può eliminare trattative dalla pipeline
+                        Chi può eliminare deal dalla pipeline
                       </p>
                     </div>
-                    <Select defaultValue="admin">
+                    <Select 
+                      value={dealDeletionMode} 
+                      onValueChange={(v: any) => setDealDeletionMode(v)}
+                      disabled={selectedTeams.length === 0}
+                    >
                       <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-delete-deals">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Solo Admin</SelectItem>
-                        <SelectItem value="team">Team Members</SelectItem>
+                        <SelectItem value="admins">Solo Admin</SelectItem>
                         <SelectItem value="none">Nessuno</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1264,17 +1280,13 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
         onClose={() => setAssignmentModalOpen(false)}
         teamIds={selectedTeams}
         currentAssignedUsers={
-          assignmentType === 'lead' 
-            ? leadManagers 
-            : assignmentType === 'approver' 
-            ? dealApprovers 
+          assignmentType === 'deal' 
+            ? dealManagers 
             : pipelineAdmins
         }
         onSave={(selectedUserIds) => {
-          if (assignmentType === 'lead') {
-            setLeadManagers(selectedUserIds);
-          } else if (assignmentType === 'approver') {
-            setDealApprovers(selectedUserIds);
+          if (assignmentType === 'deal') {
+            setDealManagers(selectedUserIds);
           } else {
             setPipelineAdmins(selectedUserIds);
           }
@@ -1284,17 +1296,13 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           });
         }}
         title={
-          assignmentType === 'lead' 
-            ? 'Assegna Gestori Lead' 
-            : assignmentType === 'approver' 
-            ? 'Assegna Approvatori Trattative' 
+          assignmentType === 'deal' 
+            ? 'Assegna Gestori Deal' 
             : 'Assegna Amministratori Pipeline'
         }
         description={
-          assignmentType === 'lead' 
-            ? 'Seleziona gli utenti che possono creare e gestire lead' 
-            : assignmentType === 'approver' 
-            ? 'Seleziona gli utenti che possono approvare trattative ad alto valore' 
+          assignmentType === 'deal' 
+            ? 'Seleziona gli utenti che possono creare e gestire deal' 
             : 'Seleziona gli utenti con accesso completo alle impostazioni'
         }
       />
