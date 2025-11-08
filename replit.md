@@ -58,6 +58,15 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **✅ ALWAYS use `useTenantNavigation` hook**
   - **❌ FORBIDDEN - Template Literals with tenantSlug**
 
+# Recent Changes
+- **2025-11-08**: Enhanced CRM DealsDataTable component for better user experience:
+  - Replaced Deal ID column with "Cliente" column showing customer names
+  - Added company name display for B2B customers (person name + company)
+  - Removed "Valore" (Value) column as not needed
+  - Translated all column headers to Italian (Assegnato, Team Assegnato, Stato, Giorni nello stato, Data Chiusura, Fonte, Azioni)
+  - Updated backend deals query to return customerName and customerCompanyName from joined tables
+  - Improved column widths and alignment for better readability
+
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism Design System, utilizing `shadcn/ui` and `@w3suite/frontend-kit` for design tokens, templates, and components, styled with CSS variables and Tailwind CSS. All pages maintain a consistent app structure with header, sidebar, and a white background.
 - **Monorepo Structure**: Centralized code organization for efficient management.
