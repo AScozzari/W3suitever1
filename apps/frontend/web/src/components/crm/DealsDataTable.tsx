@@ -70,6 +70,9 @@ interface Deal {
   legalEntityId?: string | null;
   storeId: string;
   ownerUserId: string;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  assignedTeamId?: string | null;
   pipelineId: string;
   stage: string;
   status: 'open' | 'won' | 'lost';
@@ -91,6 +94,24 @@ interface Deal {
 interface DealsDataTableProps {
   pipelineId: string;
 }
+
+// Helper: Get avatar color from name hash
+const getAvatarColor = (name: string): string => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 55%)`;
+};
+
+// Helper: Get initials from name
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
 
 // Helper: Get channel icon
 const getChannelIcon = (channel?: string | null) => {
@@ -208,20 +229,52 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
       {
         accessorKey: 'ownerUserId',
         header: 'Owner',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div
-              className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium"
-              style={{ background: 'hsl(var(--brand-orange) / 0.2)', color: 'hsl(var(--brand-orange))' }}
-            >
-              {row.original.ownerUserId.slice(0, 1).toUpperCase()}
+        cell: ({ row }) => {
+          const ownerName = row.original.ownerName || 'Non assegnato';
+          const ownerEmail = row.original.ownerEmail || '';
+          const avatarColor = getAvatarColor(ownerName);
+          const initials = getInitials(ownerName);
+          
+          return (
+            <div className="flex items-center gap-2">
+              <div
+                className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
+                style={{ background: avatarColor }}
+                title={ownerEmail}
+              >
+                {initials}
+              </div>
+              <span className="text-sm truncate max-w-[100px]" title={ownerEmail}>
+                {ownerName}
+              </span>
             </div>
-            <span className="text-sm truncate max-w-[100px]" title={row.original.ownerUserId}>
-              {row.original.ownerUserId}
-            </span>
-          </div>
-        ),
+          );
+        },
         filterFn: 'includesString',
+      },
+      {
+        accessorKey: 'assignedTeamId',
+        header: 'Team',
+        cell: ({ row }) => {
+          const hasTeam = !!row.original.assignedTeamId;
+          
+          if (!hasTeam) {
+            return <span className="text-muted-foreground text-sm">-</span>;
+          }
+          
+          return (
+            <Badge 
+              variant="secondary" 
+              className="font-medium bg-blue-50 text-blue-700 border-blue-200"
+            >
+              <Users className="h-3 w-3 mr-1" />
+              Team
+            </Badge>
+          );
+        },
+        filterFn: (row, id, value) => {
+          return !!row.getValue(id) === value;
+        },
       },
       {
         accessorKey: 'wonAt',
