@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { 
@@ -1042,17 +1043,29 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                 <h3 className="text-lg font-semibold mb-4 text-gray-900">Visibilità e Accesso</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-700">Team Assegnati alla Pipeline</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Label className="text-gray-700 cursor-help flex items-center gap-1">
+                            Team Assegnati alla Pipeline
+                            <Info className="h-4 w-4 text-gray-400" />
+                          </Label>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Vengono mostrati solo team di tipo CRM o Sales</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Select 
                       value={selectedTeams[0] || ''} 
                       onValueChange={(value) => setSelectedTeams([value])}
                     >
                       <SelectTrigger className="bg-white border-gray-300" data-testid="select-team">
-                        <SelectValue placeholder="Seleziona un team CRM" />
+                        <SelectValue placeholder="Seleziona un team CRM o Sales" />
                       </SelectTrigger>
                       <SelectContent>
                         {crmTeams.length === 0 ? (
-                          <SelectItem value="_none" disabled>Nessun team CRM disponibile</SelectItem>
+                          <SelectItem value="_none" disabled>Nessun team CRM/Sales disponibile</SelectItem>
                         ) : (
                           crmTeams.map((team: any) => (
                             <SelectItem key={team.id} value={team.id}>

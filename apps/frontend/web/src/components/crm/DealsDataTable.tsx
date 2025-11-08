@@ -152,6 +152,11 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
     queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`],
   });
 
+  // Fetch teams for Team column lookup
+  const { data: allTeams = [] } = useQuery<Array<{ id: string; name: string; teamType: string }>>({
+    queryKey: ['/api/teams'],
+  });
+
   const deals = dealsResponse || [];
 
   // Column definitions
@@ -256,19 +261,35 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         accessorKey: 'assignedTeamId',
         header: 'Team',
         cell: ({ row }) => {
-          const hasTeam = !!row.original.assignedTeamId;
+          const teamId = row.original.assignedTeamId;
           
-          if (!hasTeam) {
+          if (!teamId) {
             return <span className="text-muted-foreground text-sm">-</span>;
           }
+          
+          // Lookup team from allTeams
+          const team = allTeams.find((t: any) => t.id === teamId);
+          
+          if (!team) {
+            return <span className="text-muted-foreground text-sm">Unknown Team</span>;
+          }
+          
+          // Determine badge color based on team type
+          const isCRM = team.teamType === 'crm';
+          const badgeColor = isCRM 
+            ? 'bg-blue-50 text-blue-700 border-blue-200' 
+            : 'bg-purple-50 text-purple-700 border-purple-200';
           
           return (
             <Badge 
               variant="secondary" 
-              className="font-medium bg-blue-50 text-blue-700 border-blue-200"
+              className={`font-medium ${badgeColor}`}
             >
               <Users className="h-3 w-3 mr-1" />
-              Team
+              {team.name}
+              <span className="ml-1 text-[10px] opacity-70">
+                ({isCRM ? 'CRM' : 'Sales'})
+              </span>
             </Badge>
           );
         },
@@ -377,7 +398,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         ),
       },
     ],
-    []
+    [allTeams]
   );
 
   const table = useReactTable({
