@@ -1291,13 +1291,39 @@ router.post('/leads', async (req, res) => {
               }
             }
             
-            // MODALITÀ AUTOMATICA: Trigger workflow (implementeremo dopo)
-            else if (campaign.routingMode === 'automatic' && campaign.workflowId) {
-              logger.info('🤖 [AUTOMATIC MODE] Will trigger workflow for lead', {
+            // MODALITÀ AUTOMATICA: Trigger workflow con fallback timer
+            else if (campaign.routingMode === 'automatic') {
+              logger.info('🤖 [AUTOMATIC MODE] Triggering workflow for lead', {
                 leadId: lead.id,
-                workflowId: campaign.workflowId
+                workflowId: campaign.workflowId,
+                fallbackPipeline: campaign.fallbackPipelineId1,
+                fallbackTimeout: campaign.fallbackTimeoutSeconds
               });
-              // TODO: Implementare trigger workflow (task 3)
+              
+              // Import dynamically to avoid circular dependencies
+              const { CampaignWorkflowTriggerService } = await import('../services/campaign-workflow-trigger-service.js');
+              
+              // Trigger workflow with fallback management
+              const workflowResult = await CampaignWorkflowTriggerService.triggerWorkflowForLead(
+                lead,
+                campaign,
+                tenantId,
+                'system' // triggeredBy
+              );
+              
+              if (workflowResult.success) {
+                logger.info('✅ [AUTOMATIC MODE] Workflow triggered successfully', {
+                  leadId: lead.id,
+                  workflowInstanceId: workflowResult.workflowInstanceId,
+                  workflowName: workflowResult.workflowName,
+                  fallbackScheduled: workflowResult.fallbackScheduled
+                });
+              } else {
+                logger.error('❌ [AUTOMATIC MODE] Workflow trigger failed', {
+                  leadId: lead.id,
+                  error: workflowResult.error
+                });
+              }
             }
 
             // AI Scoring condizionale basato su campaign setting
