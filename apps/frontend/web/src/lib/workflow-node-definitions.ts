@@ -15,7 +15,12 @@ import {
   LeadRoutingConfigSchema,
   DealRoutingConfigSchema,
   CustomerRoutingConfigSchema,
-  PipelineAssignmentConfigSchema
+  PipelineAssignmentConfigSchema,
+  FunnelStageTransitionConfigSchema,
+  FunnelPipelineTransitionConfigSchema,
+  AIFunnelOrchestratorConfigSchema,
+  FunnelExitConfigSchema,
+  DealStageWebhookTriggerConfigSchema
 } from '../types/workflow-nodes';
 import { ALL_MCP_NODES } from './mcp-node-definitions';
 
@@ -503,6 +508,96 @@ export const ROUTING_NODES: BaseNodeDefinition[] = [
       defaultOwnerId: undefined,
       escalateToManager: true,
       storeId: undefined
+    }
+  },
+  {
+    id: 'funnel-stage-transition',
+    name: 'Funnel Stage Transition',
+    description: 'Move deal to a different stage within current pipeline with automatic workflow triggers',
+    category: 'routing',
+    icon: 'MoveHorizontal',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: FunnelStageTransitionConfigSchema,
+    defaultConfig: {
+      triggerWorkflows: true,
+      notifyAssignee: true,
+      auditTrail: true
+    }
+  },
+  {
+    id: 'funnel-pipeline-transition',
+    name: 'Funnel Pipeline Transition',
+    description: 'Move deal to a different pipeline within same funnel with optional stage reset',
+    category: 'routing',
+    icon: 'GitBranch',
+    color: '#7B2CBF', // WindTre Purple
+    version: '1.0.0',
+    configSchema: FunnelPipelineTransitionConfigSchema,
+    defaultConfig: {
+      resetStage: true,
+      preserveHistory: true,
+      notifyTeam: true
+    }
+  },
+  {
+    id: 'ai-funnel-orchestrator',
+    name: 'AI Funnel Orchestrator',
+    description: 'Intelligent AI-powered routing to determine next best pipeline based on deal context and historical patterns',
+    category: 'routing',
+    icon: 'Brain',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: AIFunnelOrchestratorConfigSchema,
+    defaultConfig: {
+      aiAgentId: 'funnel-orchestrator-assistant',
+      confidenceThreshold: 80,
+      suggestThreshold: 60,
+      fallbackBehavior: 'maintain_current',
+      defaultPipelineId: undefined,
+      evaluationCriteria: ['deal_value', 'customer_segment', 'lead_score'],
+      enableLearning: true,
+      auditLog: true
+    }
+  },
+  {
+    id: 'funnel-exit',
+    name: 'Funnel Exit',
+    description: 'Close deal and exit funnel with outcome tracking (won/lost/churned) and customer record creation',
+    category: 'routing',
+    icon: 'DoorOpen',
+    color: '#7B2CBF', // WindTre Purple
+    version: '1.0.0',
+    configSchema: FunnelExitConfigSchema,
+    defaultConfig: {
+      archiveDeal: false,
+      createCustomerRecord: true,
+      notifyTeam: true,
+      triggerAnalytics: true,
+      webhookTrigger: false
+    }
+  },
+  {
+    id: 'deal-stage-webhook-trigger',
+    name: 'Deal Stage Webhook',
+    description: 'Trigger external webhooks on deal stage/pipeline changes with retry policy and authentication',
+    category: 'routing',
+    icon: 'Webhook',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: DealStageWebhookTriggerConfigSchema,
+    defaultConfig: {
+      method: 'POST',
+      payloadTemplate: 'standard',
+      authentication: { type: 'none' },
+      retryPolicy: {
+        enabled: true,
+        maxRetries: 3,
+        backoffStrategy: 'exponential',
+        initialDelayMs: 5000
+      },
+      timeout: 30000,
+      triggerOn: ['stage_change']
     }
   }
 ];

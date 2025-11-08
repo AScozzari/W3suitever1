@@ -467,6 +467,77 @@ export const PipelineAssignmentConfigSchema = z.object({
   storeId: z.string().uuid().optional() // Store scope per validazione permessi
 });
 
+// ==================== FUNNEL ORCHESTRATION NODES ====================
+
+// Funnel Stage Transition Configuration
+export const FunnelStageTransitionConfigSchema = z.object({
+  targetStage: z.string().optional(), // Will be required when executing, optional for initial config
+  triggerWorkflows: z.boolean().default(true), // Execute stage workflows automatically
+  notifyAssignee: z.boolean().default(true),
+  auditTrail: z.boolean().default(true)
+});
+
+// Funnel Pipeline Transition Configuration
+export const FunnelPipelineTransitionConfigSchema = z.object({
+  targetPipelineId: z.string().optional(), // Will be UUID validated at runtime, optional for initial config
+  targetPipelineName: z.string().optional(), // Display name (populated from API)
+  resetStage: z.boolean().default(true), // Reset to first stage of target pipeline
+  transitionReason: z.string().optional(), // Required at execution time, optional for initial config
+  preserveHistory: z.boolean().default(true),
+  notifyTeam: z.boolean().default(true)
+});
+
+// AI Funnel Orchestrator Configuration
+export const AIFunnelOrchestratorConfigSchema = z.object({
+  aiAgentId: z.string().default("funnel-orchestrator-assistant"), // Brand AI Registry agent ID
+  confidenceThreshold: z.number().min(0).max(100).default(80), // Auto-assign if confidence > threshold
+  suggestThreshold: z.number().min(0).max(100).default(60), // Suggest to user if between this and confidenceThreshold
+  fallbackBehavior: z.enum(['maintain_current', 'assign_default', 'escalate_to_manager']).default('maintain_current'),
+  defaultPipelineId: z.string().uuid().optional(), // Used if fallbackBehavior is 'assign_default'
+  evaluationCriteria: z.array(z.enum([
+    'deal_value',
+    'customer_segment',
+    'lead_score',
+    'interaction_quality',
+    'historical_patterns',
+    'product_interest'
+  ])).default(['deal_value', 'customer_segment', 'lead_score']),
+  enableLearning: z.boolean().default(true), // Track success/failure for AI improvement
+  auditLog: z.boolean().default(true)
+});
+
+// Funnel Exit Configuration
+export const FunnelExitConfigSchema = z.object({
+  exitReason: z.enum(['won', 'lost', 'churned']).optional(), // Required at runtime, optional for initial config
+  lostReason: z.string().optional(), // Required if exitReason is 'lost'
+  archiveDeal: z.boolean().default(false),
+  createCustomerRecord: z.boolean().default(true), // Auto-create customer if won
+  notifyTeam: z.boolean().default(true),
+  triggerAnalytics: z.boolean().default(true), // Update funnel analytics
+  webhookTrigger: z.boolean().default(false) // Trigger external webhooks
+});
+
+// Deal Stage Webhook Trigger Configuration
+export const DealStageWebhookTriggerConfigSchema = z.object({
+  webhookUrl: z.string().optional(), // Required at runtime, optional for initial config (will validate URL format when provided)
+  method: z.enum(['POST', 'PUT', 'PATCH']).default('POST'),
+  headers: z.record(z.string(), z.string()).optional(),
+  payloadTemplate: z.enum(['minimal', 'standard', 'full', 'custom']).default('standard'),
+  customPayload: z.record(z.string(), z.any()).optional(), // For custom template
+  authentication: z.object({
+    type: z.enum(['none', 'bearer', 'api_key', 'hmac']),
+    credentials: z.record(z.string(), z.string()).optional()
+  }).default({ type: 'none' }),
+  retryPolicy: z.object({
+    enabled: z.boolean().default(true),
+    maxRetries: z.number().min(0).max(5).default(3),
+    backoffStrategy: z.enum(['linear', 'exponential']).default('exponential'),
+    initialDelayMs: z.number().min(1000).default(5000)
+  }).optional(),
+  timeout: z.number().min(1000).max(60000).default(30000), // 30s default timeout
+  triggerOn: z.array(z.enum(['stage_change', 'pipeline_change', 'deal_won', 'deal_lost'])).default(['stage_change'])
+});
+
 // ==================== TYPE EXPORTS ====================
 
 export type EmailActionConfig = z.infer<typeof EmailActionConfigSchema>;
@@ -491,12 +562,17 @@ export type LeadRoutingConfig = z.infer<typeof LeadRoutingConfigSchema>;
 export type DealRoutingConfig = z.infer<typeof DealRoutingConfigSchema>;
 export type CustomerRoutingConfig = z.infer<typeof CustomerRoutingConfigSchema>;
 export type PipelineAssignmentConfig = z.infer<typeof PipelineAssignmentConfigSchema>;
+export type FunnelStageTransitionConfig = z.infer<typeof FunnelStageTransitionConfigSchema>;
+export type FunnelPipelineTransitionConfig = z.infer<typeof FunnelPipelineTransitionConfigSchema>;
+export type AIFunnelOrchestratorConfig = z.infer<typeof AIFunnelOrchestratorConfigSchema>;
+export type FunnelExitConfig = z.infer<typeof FunnelExitConfigSchema>;
+export type DealStageWebhookTriggerConfig = z.infer<typeof DealStageWebhookTriggerConfigSchema>;
 
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
 export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
 export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig | AILeadRoutingConfig;
 export type IntegrationConfig = MCPConnectorConfig;
-export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig | PipelineAssignmentConfig;
+export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig | PipelineAssignmentConfig | FunnelStageTransitionConfig | FunnelPipelineTransitionConfig | AIFunnelOrchestratorConfig | FunnelExitConfig | DealStageWebhookTriggerConfig;
 
 export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig | RoutingConfig;

@@ -26,6 +26,24 @@ interface FunnelAnalyticsProps {
   funnels: Funnel[] | undefined;
 }
 
+// Analytics API response types
+interface OverviewData {
+  totalLeads: number;
+  activeDeals: number;
+  conversionRate: number;
+  avgJourneyDurationDays: number;
+  totalRevenue: number;
+  churnRate: number;
+  wonDeals: number;
+  lostDeals: number;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  timestamp: string;
+}
+
 export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
   const { toast } = useToast();
 
@@ -60,37 +78,37 @@ export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
   }
 
   // Fetch analytics data
-  const { data: overviewData, isLoading: overviewLoading } = useQuery({
+  const { data: overviewData, isLoading: overviewLoading } = useQuery<ApiResponse<OverviewData>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/overview', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
 
-  const { data: stagePerformanceData, isLoading: stagePerformanceLoading } = useQuery({
+  const { data: stagePerformanceData, isLoading: stagePerformanceLoading } = useQuery<ApiResponse<any[]>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/stage-performance', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
 
-  const { data: channelEffectivenessData, isLoading: channelEffectivenessLoading } = useQuery({
+  const { data: channelEffectivenessData, isLoading: channelEffectivenessLoading } = useQuery<ApiResponse<any[]>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/channel-effectiveness', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
 
-  const { data: timeToCloseData, isLoading: timeToCloseLoading } = useQuery({
+  const { data: timeToCloseData, isLoading: timeToCloseLoading } = useQuery<ApiResponse<any>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/time-to-close', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
 
-  const { data: dropoffData, isLoading: dropoffLoading } = useQuery({
+  const { data: dropoffData, isLoading: dropoffLoading } = useQuery<ApiResponse<any>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/dropoff', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
 
-  const { data: campaignAttributionData, isLoading: campaignAttributionLoading } = useQuery({
+  const { data: campaignAttributionData, isLoading: campaignAttributionLoading } = useQuery<ApiResponse<any[]>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/campaign-attribution', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
 
-  const { data: aiImpactData, isLoading: aiImpactLoading } = useQuery({
+  const { data: aiImpactData, isLoading: aiImpactLoading } = useQuery<ApiResponse<any>>({
     queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics/ai-impact', queryParams.toString()],
     enabled: !!filters.funnelId,
   });
