@@ -6972,6 +6972,339 @@ router.patch('/deals/:id/assign', async (req, res) => {
   }
 });
 
+// ==================== FUNNEL ORCHESTRATION ====================
+
+/**
+ * POST /api/crm/deals/:dealId/transition-stage
+ * Transition deal to different stage within same pipeline
+ */
+router.post('/deals/:dealId/transition-stage', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { dealId } = req.params;
+    const transitionSchema = z.object({
+      targetStage: z.string().min(1),
+      notifyTeam: z.boolean().optional(),
+      triggerWorkflows: z.boolean().optional()
+    });
+
+    const validation = transitionSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { funnelOrchestrationService } = await import('../services/funnel-orchestration.service');
+    const result = await funnelOrchestrationService.transitionStage({
+      dealId,
+      targetStage: validation.data.targetStage,
+      tenantId,
+      userId,
+      notifyTeam: validation.data.notifyTeam,
+      triggerWorkflows: validation.data.triggerWorkflows
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || 'Transition failed',
+        message: result.message,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result.data,
+      message: result.message,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error transitioning deal stage', { 
+      errorMessage: error?.message || 'Unknown error',
+      dealId: req.params.dealId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to transition stage',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/deals/:dealId/transition-pipeline
+ * Transition deal to different pipeline within same funnel
+ */
+router.post('/deals/:dealId/transition-pipeline', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { dealId } = req.params;
+    const transitionSchema = z.object({
+      targetPipelineId: z.string().uuid(),
+      resetStage: z.boolean().optional(),
+      triggerAIReScore: z.boolean().optional(),
+      transitionReason: z.string().optional()
+    });
+
+    const validation = transitionSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { funnelOrchestrationService } = await import('../services/funnel-orchestration.service');
+    const result = await funnelOrchestrationService.transitionPipeline({
+      dealId,
+      targetPipelineId: validation.data.targetPipelineId,
+      tenantId,
+      userId,
+      resetStage: validation.data.resetStage,
+      triggerAIReScore: validation.data.triggerAIReScore,
+      transitionReason: validation.data.transitionReason
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || 'Transition failed',
+        message: result.message,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result.data,
+      message: result.message,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error transitioning deal pipeline', { 
+      errorMessage: error?.message || 'Unknown error',
+      dealId: req.params.dealId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to transition pipeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/deals/:dealId/exit-funnel
+ * Exit deal from funnel (won/lost/churned)
+ */
+router.post('/deals/:dealId/exit-funnel', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { dealId } = req.params;
+    const exitSchema = z.object({
+      exitReason: z.enum(['won', 'lost', 'churned', 'disqualified']),
+      lostReason: z.string().optional(),
+      createCustomerRecord: z.boolean().optional(),
+      archiveDeal: z.boolean().optional()
+    });
+
+    const validation = exitSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { funnelOrchestrationService } = await import('../services/funnel-orchestration.service');
+    const result = await funnelOrchestrationService.exitFunnel({
+      dealId,
+      exitReason: validation.data.exitReason,
+      tenantId,
+      userId,
+      lostReason: validation.data.lostReason,
+      createCustomerRecord: validation.data.createCustomerRecord,
+      archiveDeal: validation.data.archiveDeal
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || 'Exit failed',
+        message: result.message,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result.data,
+      message: result.message,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error exiting deal from funnel', { 
+      errorMessage: error?.message || 'Unknown error',
+      dealId: req.params.dealId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to exit funnel',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/orchestration-suggestions
+ * Get AI suggestions for next best pipeline
+ */
+router.get('/funnels/:funnelId/orchestration-suggestions', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dealId } = req.query;
+
+    if (!dealId || typeof dealId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing dealId query parameter',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { funnelOrchestrationService } = await import('../services/funnel-orchestration.service');
+    const result = await funnelOrchestrationService.getOrchestrationSuggestions({
+      dealId,
+      funnelId,
+      tenantId,
+      userId
+    });
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to get suggestions',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result.suggestions,
+      message: 'AI suggestions retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error getting AI orchestration suggestions', { 
+      errorMessage: error?.message || 'Unknown error',
+      funnelId: req.params.funnelId,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to get suggestions',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== INTERACTIONS ====================
 
 /**
