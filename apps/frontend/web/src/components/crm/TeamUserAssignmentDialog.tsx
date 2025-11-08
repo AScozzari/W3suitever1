@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Users, Search, UserCheck } from 'lucide-react';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
+import { apiRequest } from '@/lib/queryClient';
 
 interface TeamUserAssignmentDialogProps {
   open: boolean;
@@ -31,7 +32,7 @@ export function TeamUserAssignmentDialog({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>(currentAssignedUsers);
 
-  // Fetch users from selected teams
+  // Fetch users from selected teams using apiRequest which handles authentication
   const { data: teamMembersData, isLoading } = useQuery({
     queryKey: ['/api/teams/members', { teamIds }],
     queryFn: async () => {
@@ -39,20 +40,15 @@ export function TeamUserAssignmentDialog({
       
       const allMembers = await Promise.all(
         teamIds.map(async (teamId) => {
-          const response = await fetch(`/api/teams/${teamId}/members`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Tenant-ID': localStorage.getItem('tenantId') || '',
-            },
-          });
-          if (!response.ok) {
-            console.error(`Failed to fetch members for team ${teamId}:`, response.status);
+          try {
+            const data = await apiRequest(`/api/teams/${teamId}/members`, {
+              method: 'GET',
+            });
+            return data.members || [];
+          } catch (error) {
+            console.error(`Failed to fetch members for team ${teamId}:`, error);
             return [];
           }
-          const data = await response.json();
-          return data.members || [];
         })
       );
 
