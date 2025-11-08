@@ -3607,6 +3607,815 @@ router.delete('/funnels/:id', rbacMiddleware, requirePermission('manage_crm'), a
   }
 });
 
+// ==================== FUNNEL ANALYTICS ====================
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/overview
+ * Get KPI overview metrics for a specific funnel
+ */
+router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo, segment } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Verify funnel exists and belongs to tenant
+    const funnel = await db.query.crmFunnels.findFirst({
+      where: and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      )
+    });
+
+    if (!funnel) {
+      return res.status(404).json({ success: false, error: 'Funnel not found' } as ApiErrorResponse);
+    }
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Build segment filter (B2B/B2C)
+    let segmentFilter = sql`TRUE`;
+    if (segment === 'b2b') {
+      segmentFilter = sql`c.customer_type = 'b2b'`;
+    } else if (segment === 'b2c') {
+      segmentFilter = sql`c.customer_type = 'b2c'`;
+    }
+
+    // Query KPI metrics
+    const metricsResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      funnel_deals AS (
+        SELECT 
+          d.*,
+          c.customer_type
+        FROM w3suite.crm_deals d
+        LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+        WHERE d.pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND d.tenant_id = ${tenantId}
+        AND ${dateFilter}
+        AND ${segmentFilter}
+      )
+      SELECT
+        COUNT(DISTINCT d.id)::int as total_leads,
+        COUNT(DISTINCT d.id) FILTER (WHERE d.status NOT IN ('won', 'lost'))::int as active_deals,
+        COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'won')::int as won_deals,
+        COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'lost')::int as lost_deals,
+        COUNT(DISTINCT d.id) FILTER (WHERE d.status IN ('won', 'lost'))::int as closed_deals,
+        COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as total_revenue,
+        COALESCE(AVG(
+          EXTRACT(EPOCH FROM (
+            COALESCE(d.won_at, d.lost_at, NOW()) - d.created_at
+          )) / 86400
+        ), 0)::float as avg_journey_duration_days
+      FROM funnel_deals d
+    `);
+
+    const metrics = metricsResult.rows[0] as any;
+    
+    // Calculate conversion rate and churn rate
+    const conversionRate = metrics.closed_deals > 0
+      ? Math.round((metrics.won_deals / metrics.closed_deals) * 100)
+      : 0;
+    
+    const churnRate = metrics.total_leads > 0
+      ? Math.round((metrics.lost_deals / metrics.total_leads) * 100)
+      : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        totalLeads: metrics.total_leads || 0,
+        activeDeals: metrics.active_deals || 0,
+        conversionRate,
+        avgJourneyDurationDays: Math.round(metrics.avg_journey_duration_days || 0),
+        totalRevenue: metrics.total_revenue || 0,
+        churnRate,
+        wonDeals: metrics.won_deals || 0,
+        lostDeals: metrics.lost_deals || 0
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching funnel analytics overview', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch analytics overview' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/stage-performance
+ * Get detailed stage-by-stage performance metrics
+ */
+router.get('/funnels/:funnelId/analytics/stage-performance', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo, segment } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build filters
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    let segmentFilter = sql`TRUE`;
+    if (segment === 'b2b') {
+      segmentFilter = sql`c.customer_type = 'b2b'`;
+    } else if (segment === 'b2c') {
+      segmentFilter = sql`c.customer_type = 'b2c'`;
+    }
+
+    // Query stage performance with advanced metrics
+    const stagePerformanceResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id, name FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      stage_deals AS (
+        SELECT 
+          p.id as pipeline_id,
+          p.name as pipeline_name,
+          d.current_stage_order,
+          s.name as stage_name,
+          s.category as stage_category,
+          d.id as deal_id,
+          d.status,
+          d.estimated_value,
+          EXTRACT(EPOCH FROM (NOW() - d.stage_updated_at)) / 86400 as days_in_stage,
+          c.customer_type
+        FROM w3suite.crm_deals d
+        INNER JOIN funnel_pipelines p ON d.pipeline_id = p.id
+        LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = p.id AND s."order" = d.current_stage_order
+        LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+        WHERE d.tenant_id = ${tenantId}
+        AND ${dateFilter}
+        AND ${segmentFilter}
+      )
+      SELECT
+        pipeline_id,
+        pipeline_name,
+        current_stage_order as stage_order,
+        stage_name,
+        stage_category,
+        COUNT(deal_id)::int as deal_count,
+        COALESCE(AVG(days_in_stage), 0)::float as avg_days_in_stage,
+        COUNT(deal_id) FILTER (WHERE status = 'won')::int as won_count,
+        COUNT(deal_id) FILTER (WHERE status = 'lost')::int as lost_count,
+        COUNT(deal_id) FILTER (WHERE status IN ('won', 'lost'))::int as closed_count,
+        COALESCE(SUM(estimated_value), 0)::float as total_revenue
+      FROM stage_deals
+      GROUP BY pipeline_id, pipeline_name, current_stage_order, stage_name, stage_category
+      ORDER BY pipeline_id, current_stage_order
+    `);
+
+    const stagePerformance = stagePerformanceResult.rows.map((row: any) => {
+      const conversionRate = row.closed_count > 0
+        ? Math.round((row.won_count / row.closed_count) * 100)
+        : 0;
+      
+      const dropOffRate = row.deal_count > 0
+        ? Math.round((row.lost_count / row.deal_count) * 100)
+        : 0;
+
+      return {
+        pipelineId: row.pipeline_id,
+        pipelineName: row.pipeline_name,
+        stageOrder: row.stage_order,
+        stageName: row.stage_name || 'Non assegnato',
+        stageCategory: row.stage_category,
+        dealCount: row.deal_count,
+        avgDays: Math.round(row.avg_days_in_stage * 10) / 10,
+        conversionRate,
+        dropOffRate,
+        revenue: row.total_revenue,
+        trend: 0 // TODO: Calculate trend vs previous period
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: stagePerformance,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching stage performance', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch stage performance' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/channel-effectiveness
+ * Get workflow channel effectiveness heatmap data
+ */
+router.get('/funnels/:funnelId/analytics/channel-effectiveness', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`i.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Query interaction effectiveness by channel and stage
+    const channelEffectivenessResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      deal_interactions AS (
+        SELECT 
+          d.id as deal_id,
+          d.current_stage_order,
+          d.status,
+          i.channel,
+          i.direction,
+          s.name as stage_name
+        FROM w3suite.crm_deals d
+        INNER JOIN funnel_pipelines fp ON d.pipeline_id = fp.id
+        LEFT JOIN w3suite.crm_interactions i ON i.deal_id = d.id
+        LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = d.pipeline_id AND s."order" = d.current_stage_order
+        WHERE d.tenant_id = ${tenantId}
+        AND i.channel IS NOT NULL
+        AND ${dateFilter}
+      )
+      SELECT
+        stage_name,
+        channel,
+        COUNT(DISTINCT deal_id)::int as interaction_count,
+        COUNT(DISTINCT deal_id) FILTER (WHERE status = 'won')::int as conversions
+      FROM deal_interactions
+      GROUP BY stage_name, channel
+      HAVING COUNT(DISTINCT deal_id) > 0
+      ORDER BY stage_name, channel
+    `);
+
+    const heatmapData = channelEffectivenessResult.rows.map((row: any) => ({
+      stageName: row.stage_name || 'Non assegnato',
+      channel: row.channel,
+      interactionCount: row.interaction_count,
+      conversions: row.conversions,
+      conversionRate: row.interaction_count > 0
+        ? Math.round((row.conversions / row.interaction_count) * 100)
+        : 0
+    }));
+
+    return res.json({
+      success: true,
+      data: heatmapData,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching channel effectiveness', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch channel effectiveness' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/campaign-attribution
+ * Get campaign attribution and ROI for funnel
+ */
+router.get('/funnels/:funnelId/analytics/campaign-attribution', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo, limit = '10' } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`l.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Query campaign performance for this funnel
+    const campaignAttributionResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      funnel_leads AS (
+        SELECT 
+          l.id,
+          l.campaign_id,
+          l.source,
+          l.ai_lead_score,
+          d.status,
+          d.estimated_value
+        FROM w3suite.crm_leads l
+        LEFT JOIN w3suite.crm_deals d ON d.lead_id = l.id AND d.pipeline_id IN (SELECT id FROM funnel_pipelines)
+        WHERE l.tenant_id = ${tenantId}
+        AND ${dateFilter}
+      )
+      SELECT
+        c.id as campaign_id,
+        c.name as campaign_name,
+        c.budget,
+        COUNT(fl.id)::int as lead_count,
+        COUNT(fl.id) FILTER (WHERE fl.status = 'won')::int as conversions,
+        COALESCE(AVG(fl.ai_lead_score), 0)::float as avg_lead_quality,
+        COALESCE(SUM(fl.estimated_value) FILTER (WHERE fl.status = 'won'), 0)::float as revenue
+      FROM funnel_leads fl
+      LEFT JOIN w3suite.crm_campaigns c ON fl.campaign_id = c.id
+      GROUP BY c.id, c.name, c.budget
+      HAVING COUNT(fl.id) > 0
+      ORDER BY revenue DESC
+      LIMIT ${parseInt(limit as string)}
+    `);
+
+    const campaignAttribution = campaignAttributionResult.rows.map((row: any) => {
+      const conversionRate = row.lead_count > 0
+        ? Math.round((row.conversions / row.lead_count) * 100)
+        : 0;
+      
+      const roi = row.budget > 0
+        ? Math.round(((row.revenue - row.budget) / row.budget) * 100)
+        : 0;
+
+      return {
+        campaignId: row.campaign_id,
+        campaignName: row.campaign_name || 'Senza campagna',
+        budget: row.budget || 0,
+        leadCount: row.lead_count,
+        conversions: row.conversions,
+        conversionRate,
+        avgLeadQuality: Math.round(row.avg_lead_quality),
+        revenue: row.revenue,
+        roi
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: campaignAttribution,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching campaign attribution', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch campaign attribution' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/time-to-close
+ * Get time-to-close distribution and benchmarks
+ */
+router.get('/funnels/:funnelId/analytics/time-to-close', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Query time-to-close distribution
+    const timeToCloseResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      closed_deals AS (
+        SELECT 
+          EXTRACT(EPOCH FROM (COALESCE(won_at, lost_at) - created_at)) / 86400 as days_to_close,
+          status
+        FROM w3suite.crm_deals
+        WHERE pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND tenant_id = ${tenantId}
+        AND status IN ('won', 'lost')
+        AND ${dateFilter}
+      ),
+      buckets AS (
+        SELECT
+          CASE
+            WHEN days_to_close <= 7 THEN '0-7'
+            WHEN days_to_close <= 14 THEN '8-14'
+            WHEN days_to_close <= 30 THEN '15-30'
+            WHEN days_to_close <= 60 THEN '31-60'
+            ELSE '60+'
+          END as bucket,
+          COUNT(*)::int as count,
+          COUNT(*) FILTER (WHERE status = 'won')::int as won_count
+        FROM closed_deals
+        GROUP BY 1
+      )
+      SELECT 
+        bucket,
+        count,
+        won_count,
+        (SELECT AVG(days_to_close)::float FROM closed_deals) as avg_days,
+        (SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_to_close)::float FROM closed_deals) as median_days
+      FROM buckets
+      ORDER BY 
+        CASE bucket
+          WHEN '0-7' THEN 1
+          WHEN '8-14' THEN 2
+          WHEN '15-30' THEN 3
+          WHEN '31-60' THEN 4
+          ELSE 5
+        END
+    `);
+
+    const distribution = timeToCloseResult.rows.map((row: any) => ({
+      bucket: row.bucket,
+      count: row.count,
+      wonCount: row.won_count,
+      avgDays: row.avg_days ? Math.round(row.avg_days * 10) / 10 : 0,
+      medianDays: row.median_days ? Math.round(row.median_days * 10) / 10 : 0
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        distribution,
+        benchmark: {
+          avgDays: distribution[0]?.avgDays || 0,
+          medianDays: distribution[0]?.medianDays || 0
+        }
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching time-to-close analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch time-to-close analytics' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/ai-impact
+ * Get AI routing/scoring impact comparison
+ */
+router.get('/funnels/:funnelId/analytics/ai-impact', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`l.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Query AI vs Manual comparison
+    const aiImpactResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      lead_deals AS (
+        SELECT 
+          l.id as lead_id,
+          l.ai_lead_score,
+          l.routing_type,
+          d.status,
+          d.estimated_value,
+          EXTRACT(EPOCH FROM (COALESCE(d.won_at, d.lost_at, NOW()) - d.created_at)) / 86400 as days_to_close
+        FROM w3suite.crm_leads l
+        LEFT JOIN w3suite.crm_deals d ON d.lead_id = l.id AND d.pipeline_id IN (SELECT id FROM funnel_pipelines)
+        WHERE l.tenant_id = ${tenantId}
+        AND ${dateFilter}
+      )
+      SELECT
+        routing_type,
+        COUNT(lead_id)::int as total_leads,
+        COUNT(lead_id) FILTER (WHERE status = 'won')::int as conversions,
+        COALESCE(AVG(days_to_close) FILTER (WHERE status IN ('won', 'lost')), 0)::float as avg_time_to_close,
+        COALESCE(AVG(estimated_value) FILTER (WHERE status = 'won'), 0)::float as avg_revenue_per_deal,
+        COALESCE(AVG(ai_lead_score), 0)::float as avg_ai_score
+      FROM lead_deals
+      GROUP BY routing_type
+    `);
+
+    const aiData = aiImpactResult.rows.find((r: any) => r.routing_type === 'ai_routed');
+    const manualData = aiImpactResult.rows.find((r: any) => r.routing_type === 'manual');
+
+    const formatMetrics = (data: any) => {
+      if (!data) return null;
+      const conversionRate = data.total_leads > 0
+        ? Math.round((data.conversions / data.total_leads) * 100)
+        : 0;
+      
+      return {
+        totalLeads: data.total_leads,
+        conversions: data.conversions,
+        conversionRate,
+        avgTimeToClose: Math.round(data.avg_time_to_close * 10) / 10,
+        avgRevenuePerDeal: Math.round(data.avg_revenue_per_deal),
+        avgAiScore: Math.round(data.avg_ai_score)
+      };
+    };
+
+    return res.json({
+      success: true,
+      data: {
+        aiRouted: formatMetrics(aiData),
+        manual: formatMetrics(manualData)
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching AI impact analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch AI impact analytics' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/segmentation
+ * Get customer segmentation breakdown (B2B/B2C, source, size)
+ */
+router.get('/funnels/:funnelId/analytics/segmentation', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Query segmentation data
+    const segmentationResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      )
+      SELECT
+        c.customer_type,
+        l.source,
+        CASE
+          WHEN d.estimated_value < 5000 THEN '0-5k'
+          WHEN d.estimated_value < 20000 THEN '5-20k'
+          WHEN d.estimated_value < 50000 THEN '20-50k'
+          ELSE '50k+'
+        END as deal_size_bucket,
+        COUNT(d.id)::int as deal_count,
+        COUNT(d.id) FILTER (WHERE d.status = 'won')::int as conversions,
+        COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as revenue
+      FROM w3suite.crm_deals d
+      INNER JOIN funnel_pipelines fp ON d.pipeline_id = fp.id
+      LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+      LEFT JOIN w3suite.crm_leads l ON d.lead_id = l.id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      GROUP BY c.customer_type, l.source, deal_size_bucket
+      ORDER BY revenue DESC
+    `);
+
+    const segmentation = segmentationResult.rows.map((row: any) => ({
+      customerType: row.customer_type || 'unknown',
+      source: row.source || 'unknown',
+      dealSizeBucket: row.deal_size_bucket,
+      dealCount: row.deal_count,
+      conversions: row.conversions,
+      conversionRate: row.deal_count > 0
+        ? Math.round((row.conversions / row.deal_count) * 100)
+        : 0,
+      revenue: row.revenue
+    }));
+
+    return res.json({
+      success: true,
+      data: segmentation,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching segmentation analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch segmentation analytics' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/dropoff
+ * Get drop-off waterfall chart data
+ */
+router.get('/funnels/:funnelId/analytics/dropoff', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Query drop-off by stage
+    const dropoffResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id, name FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      )
+      SELECT
+        p.name as pipeline_name,
+        s."order" as stage_order,
+        s.name as stage_name,
+        COUNT(d.id)::int as total_deals,
+        COUNT(d.id) FILTER (WHERE d.status = 'lost')::int as lost_deals,
+        COUNT(d.id) FILTER (WHERE d.status = 'won')::int as won_deals
+      FROM w3suite.crm_deals d
+      INNER JOIN funnel_pipelines p ON d.pipeline_id = p.id
+      LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = p.id AND s."order" = d.current_stage_order
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      GROUP BY p.name, s."order", s.name
+      ORDER BY p.name, s."order"
+    `);
+
+    const dropoffData = dropoffResult.rows.map((row: any) => {
+      const dropOffRate = row.total_deals > 0
+        ? Math.round((row.lost_deals / row.total_deals) * 100)
+        : 0;
+
+      return {
+        pipelineName: row.pipeline_name,
+        stageOrder: row.stage_order,
+        stageName: row.stage_name || 'Non assegnato',
+        totalDeals: row.total_deals,
+        lostDeals: row.lost_deals,
+        wonDeals: row.won_deals,
+        dropOffRate
+      };
+    });
+
+    // Identify top 3 drop-off points
+    const topDropoffs = [...dropoffData]
+      .sort((a, b) => b.dropOffRate - a.dropOffRate)
+      .slice(0, 3);
+
+    return res.json({
+      success: true,
+      data: {
+        dropoffData,
+        topDropoffs
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching dropoff analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch dropoff analytics' } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/funnels/:funnelId/analytics/forecast
+ * Get revenue forecast and trends
+ */
+router.get('/funnels/:funnelId/analytics/forecast', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+
+    await setTenantContext(db, tenantId);
+
+    // Query revenue trends and forecast
+    const forecastResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      monthly_revenue AS (
+        SELECT
+          DATE_TRUNC('month', COALESCE(won_at, created_at)) as month,
+          SUM(estimated_value) FILTER (WHERE status = 'won')::float as revenue,
+          COUNT(*) FILTER (WHERE status = 'won')::int as deals_won
+        FROM w3suite.crm_deals
+        WHERE pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND tenant_id = ${tenantId}
+        AND created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY 1
+        ORDER BY 1
+      ),
+      expected_closes AS (
+        SELECT
+          CASE
+            WHEN expected_close_date <= NOW() + INTERVAL '30 days' THEN '0-30'
+            WHEN expected_close_date <= NOW() + INTERVAL '60 days' THEN '31-60'
+            WHEN expected_close_date <= NOW() + INTERVAL '90 days' THEN '61-90'
+            ELSE '90+'
+          END as bucket,
+          COUNT(*)::int as deal_count,
+          SUM(estimated_value)::float as pipeline_value
+        FROM w3suite.crm_deals
+        WHERE pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND tenant_id = ${tenantId}
+        AND status NOT IN ('won', 'lost')
+        AND expected_close_date IS NOT NULL
+        GROUP BY 1
+      )
+      SELECT
+        (SELECT json_agg(json_build_object('month', month, 'revenue', revenue, 'dealsWon', deals_won) ORDER BY month) FROM monthly_revenue) as trends,
+        (SELECT json_agg(json_build_object('bucket', bucket, 'dealCount', deal_count, 'pipelineValue', pipeline_value)) FROM expected_closes) as forecast
+    `);
+
+    const result = forecastResult.rows[0] as any;
+
+    return res.json({
+      success: true,
+      data: {
+        trends: result.trends || [],
+        forecast: result.forecast || []
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching forecast analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch forecast analytics' } as ApiErrorResponse);
+  }
+});
+
 // ==================== PIPELINES ====================
 
 /**
