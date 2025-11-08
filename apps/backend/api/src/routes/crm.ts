@@ -18,6 +18,7 @@ import { eq, and, sql, desc, or, ilike, getTableColumns, inArray } from 'drizzle
 import {
   users,
   stores,
+  teams,
   crmLeads,
   crmCampaigns,
   crmCampaignUtmLinks,
@@ -5447,6 +5448,7 @@ router.get('/deals', async (req, res) => {
           THEN TRIM(CONCAT(COALESCE(${users.firstName}, ''), ' ', COALESCE(${users.lastName}, '')))
           ELSE NULL
         END`,
+        ownerEmail: users.email,
         customerName: sql<string>`CASE 
           WHEN ${crmCustomers.customerType} = 'b2b' THEN ${crmCustomers.companyName}
           WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName})
@@ -5806,6 +5808,171 @@ router.patch('/deals/:id/move', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to move deal',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/deals/:id/assign
+ * Assign deal to user and/or team
+ * Requires pipeline access permission (RBAC validation)
+ */
+router.patch('/deals/:id/assign', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'User ID required',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const assignSchema = z.object({
+      userId: z.string().uuid().optional(),
+      teamId: z.string().uuid().optional()
+    });
+
+    const validation = assignSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Reject empty payload (at least one field must be present)
+    if (!validation.data.userId && !validation.data.teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'At least one of userId or teamId must be provided',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Fetch deal to get pipelineId for RBAC validation
+    const [deal] = await db
+      .select({ pipelineId: crmDeals.pipelineId })
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ));
+
+    if (!deal) {
+      return res.status(404).json({
+        success: false,
+        error: 'Deal not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // RBAC Validation: Check if current user has access to this pipeline
+    const [pipelineSettings] = await db
+      .select()
+      .from(crmPipelineSettings)
+      .where(and(
+        eq(crmPipelineSettings.pipelineId, deal.pipelineId),
+        eq(crmPipelineSettings.tenantId, tenantId)
+      ));
+
+    if (!pipelineSettings) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'Pipeline settings not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if user has pipeline access (assignedTeams, assignedUsers, or pipelineAdmins)
+    const hasUserAccess = pipelineSettings.assignedUsers?.includes(userId);
+    const isAdmin = pipelineSettings.pipelineAdmins?.includes(userId);
+
+    // Check if user belongs to any of the assigned teams
+    let hasTeamAccess = false;
+    if (pipelineSettings.assignedTeams && pipelineSettings.assignedTeams.length > 0) {
+      const userTeams = await db
+        .select({ id: teams.id })
+        .from(teams)
+        .where(and(
+          eq(teams.tenantId, tenantId),
+          sql`${teams.id} = ANY(${pipelineSettings.assignedTeams})`,
+          sql`${userId} = ANY(${teams.userMembers})`
+        ));
+      
+      hasTeamAccess = userTeams.length > 0;
+    }
+
+    if (!hasTeamAccess && !hasUserAccess && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have permission to assign deals in this pipeline',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Update deal assignment
+    const updateData: any = { updatedAt: new Date() };
+    if (validation.data.userId !== undefined) {
+      updateData.ownerUserId = validation.data.userId;
+    }
+    if (validation.data.teamId !== undefined) {
+      updateData.assignedTeamId = validation.data.teamId;
+    }
+
+    const [updated] = await db
+      .update(crmDeals)
+      .set(updateData)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ))
+      .returning();
+
+    logger.info('Deal assigned', { 
+      dealId: id, 
+      tenantId, 
+      assignedUserId: validation.data.userId,
+      assignedTeamId: validation.data.teamId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: 'Deal assigned successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error assigning deal', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      dealId: req.params.id,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to assign deal',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
