@@ -4978,6 +4978,32 @@ export const insertCrmFunnelSchema = createInsertSchema(crmFunnels).omit({
 export type InsertCrmFunnel = z.infer<typeof insertCrmFunnelSchema>;
 export type CrmFunnel = typeof crmFunnels.$inferSelect;
 
+// CRM Funnel Workflows - Many-to-many: Funnel <-> Workflow Templates (for AI orchestration across pipelines)
+export const crmFunnelWorkflows = w3suiteSchema.table("crm_funnel_workflows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  funnelId: uuid("funnel_id").notNull().references(() => crmFunnels.id, { onDelete: 'cascade' }),
+  workflowTemplateId: uuid("workflow_template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  executionMode: workflowExecutionModeEnum("execution_mode").default('manual').notNull(),
+  isActive: boolean("is_active").default(true),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  notes: text("notes"),
+}, (table) => ({
+  funnelWorkflowUniq: uniqueIndex("crm_funnel_workflows_funnel_workflow_uniq").on(table.tenantId, table.funnelId, table.workflowTemplateId),
+  tenantIdIdx: index("crm_funnel_workflows_tenant_id_idx").on(table.tenantId),
+  funnelIdIdx: index("crm_funnel_workflows_funnel_id_idx").on(table.funnelId),
+  workflowTemplateIdIdx: index("crm_funnel_workflows_workflow_template_id_idx").on(table.workflowTemplateId),
+}));
+
+export const insertCrmFunnelWorkflowSchema = createInsertSchema(crmFunnelWorkflows).omit({ 
+  id: true, 
+  tenantId: true,
+  assignedAt: true
+});
+export type InsertCrmFunnelWorkflow = z.infer<typeof insertCrmFunnelWorkflowSchema>;
+export type CrmFunnelWorkflow = typeof crmFunnelWorkflows.$inferSelect;
+
 // CRM Pipelines - Sales processes
 export const crmPipelines = w3suiteSchema.table("crm_pipelines", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

@@ -23,6 +23,7 @@ import {
   crmCampaigns,
   crmCampaignUtmLinks,
   crmFunnels,
+  crmFunnelWorkflows,
   crmPipelines,
   crmPipelineSettings,
   crmPipelineWorkflows,
@@ -48,6 +49,7 @@ import {
   insertCrmLeadSchema,
   insertCrmCampaignSchema,
   insertCrmFunnelSchema,
+  insertCrmFunnelWorkflowSchema,
   insertCrmPipelineSchema,
   insertCrmPipelineSettingsSchema,
   insertCrmPipelineWorkflowSchema,
@@ -3604,6 +3606,343 @@ router.delete('/funnels/:id', rbacMiddleware, requirePermission('manage_crm'), a
   } catch (error: any) {
     logger.error('Error deleting funnel', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ success: false, error: 'Failed to delete funnel' } as ApiErrorResponse);
+  }
+});
+
+// ==================== FUNNEL WORKFLOWS ====================
+
+/**
+ * GET /api/crm/funnels/:funnelId/workflows
+ * Get all workflows assigned to a funnel with details
+ */
+router.get('/funnels/:funnelId/workflows', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    await setTenantContext(db, tenantId);
+
+    // Verify funnel exists and belongs to tenant
+    const [funnel] = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!funnel) {
+      return res.status(404).json({
+        success: false,
+        error: 'Funnel not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get workflow assignments with template details
+    const workflows = await db
+      .select({
+        id: crmFunnelWorkflows.id,
+        funnelId: crmFunnelWorkflows.funnelId,
+        workflowTemplateId: crmFunnelWorkflows.workflowTemplateId,
+        executionMode: crmFunnelWorkflows.executionMode,
+        isActive: crmFunnelWorkflows.isActive,
+        assignedBy: crmFunnelWorkflows.assignedBy,
+        assignedAt: crmFunnelWorkflows.assignedAt,
+        notes: crmFunnelWorkflows.notes,
+        workflowTemplate: workflowTemplates
+      })
+      .from(crmFunnelWorkflows)
+      .leftJoin(workflowTemplates, eq(crmFunnelWorkflows.workflowTemplateId, workflowTemplates.id))
+      .where(and(
+        eq(crmFunnelWorkflows.funnelId, funnelId),
+        eq(crmFunnelWorkflows.tenantId, tenantId)
+      ));
+
+    return res.json({
+      success: true,
+      data: workflows,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching funnel workflows', { error, funnelId: req.params.funnelId });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch funnel workflows',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/funnels/:funnelId/workflows
+ * Assign a workflow to a funnel (for AI orchestration across pipelines)
+ */
+router.post('/funnels/:funnelId/workflows', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
+
+    if (!tenantId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context or user authentication',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+
+    const validation = insertCrmFunnelWorkflowSchema.omit({ assignedBy: true }).safeParse({
+      ...req.body,
+      funnelId
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Verify funnel belongs to tenant
+    const [funnel] = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!funnel) {
+      return res.status(404).json({
+        success: false,
+        error: 'Funnel not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Verify workflow template exists
+    const [template] = await db
+      .select()
+      .from(workflowTemplates)
+      .where(eq(workflowTemplates.id, validation.data.workflowTemplateId))
+      .limit(1);
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        error: 'Workflow template not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Create workflow assignment
+    const [assignment] = await db
+      .insert(crmFunnelWorkflows)
+      .values({
+        ...validation.data,
+        tenantId,
+        assignedBy: userId
+      })
+      .returning();
+
+    logger.info('Workflow assigned to funnel', { funnelId, workflowTemplateId: validation.data.workflowTemplateId, userId });
+
+    return res.status(201).json({
+      success: true,
+      data: assignment,
+      message: 'Workflow assigned to funnel successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error assigning workflow to funnel', { error, funnelId: req.params.funnelId });
+
+    // Handle unique constraint violation
+    if (error.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        error: 'This workflow is already assigned to the funnel',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to assign workflow to funnel',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/crm/funnels/:funnelId/workflows/:workflowId
+ * Update funnel workflow assignment (e.g., execution mode)
+ */
+router.patch('/funnels/:funnelId/workflows/:workflowId', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { funnelId, workflowId } = req.params;
+    await setTenantContext(db, tenantId);
+
+    // Verify funnel belongs to tenant
+    const [funnel] = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!funnel) {
+      return res.status(404).json({
+        success: false,
+        error: 'Funnel not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Update workflow assignment
+    const [updated] = await db
+      .update(crmFunnelWorkflows)
+      .set({
+        ...req.body,
+        // Prevent updating immutable fields
+        id: undefined,
+        tenantId: undefined,
+        funnelId: undefined,
+        workflowTemplateId: undefined,
+        assignedBy: undefined,
+        assignedAt: undefined
+      })
+      .where(and(
+        eq(crmFunnelWorkflows.id, workflowId),
+        eq(crmFunnelWorkflows.funnelId, funnelId),
+        eq(crmFunnelWorkflows.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Workflow assignment not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Funnel workflow updated', { funnelId, workflowId, updates: req.body });
+
+    return res.json({
+      success: true,
+      data: updated,
+      message: 'Workflow assignment updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating funnel workflow', { error, funnelId: req.params.funnelId, workflowId: req.params.workflowId });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update workflow assignment',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/crm/funnels/:funnelId/workflows/:workflowId
+ * Remove a workflow assignment from a funnel
+ */
+router.delete('/funnels/:funnelId/workflows/:workflowId', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { funnelId, workflowId } = req.params;
+    await setTenantContext(db, tenantId);
+
+    // Verify funnel belongs to tenant
+    const [funnel] = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!funnel) {
+      return res.status(404).json({
+        success: false,
+        error: 'Funnel not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Delete workflow assignment
+    const [deleted] = await db
+      .delete(crmFunnelWorkflows)
+      .where(and(
+        eq(crmFunnelWorkflows.id, workflowId),
+        eq(crmFunnelWorkflows.funnelId, funnelId),
+        eq(crmFunnelWorkflows.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: 'Workflow assignment not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Workflow removed from funnel', { funnelId, workflowId });
+
+    return res.json({
+      success: true,
+      data: { id: workflowId },
+      message: 'Workflow removed from funnel successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error removing funnel workflow', { error, funnelId: req.params.funnelId, workflowId: req.params.workflowId });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to remove workflow from funnel',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
   }
 });
 

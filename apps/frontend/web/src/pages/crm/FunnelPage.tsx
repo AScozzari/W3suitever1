@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle, Edit, Save, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, TrendingUp, Users, Target, Sparkles, BarChart2, Workflow as WorkflowIcon, GitBranch, Eye, Archive, Trash2, AlertTriangle, Edit, Save, X, Search, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useFunnelBuilder, type FunnelPipeline } from './hooks/useFunnelBuilder';
 import { PipelineSettingsDialog } from '@/components/crm/PipelineSettingsDialog';
+import { FunnelSettingsDialog } from '@/components/crm/FunnelSettingsDialog';
 import { FunnelAnalytics } from '@/components/crm/FunnelAnalytics';
 
 interface Pipeline {
@@ -275,6 +276,7 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
   const { toast } = useToast();
   const [viewFunnel, setViewFunnel] = useState<Funnel | null>(null);
   const [deleteFunnel, setDeleteFunnel] = useState<Funnel | null>(null);
+  const [settingsFunnel, setSettingsFunnel] = useState<Funnel | null>(null);
 
   const archiveMutation = useMutation({
     mutationFn: async (funnelId: string) => {
@@ -477,6 +479,15 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setSettingsFunnel(funnel)}
+                        data-testid={`button-settings-funnel-${funnel.id}`}
+                        title="Impostazioni Workflow"
+                      >
+                        <Settings2 className="w-4 h-4 text-windtre-purple" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setViewFunnel(funnel)}
                         data-testid={`button-view-funnel-${funnel.id}`}
                         title="Visualizza dettagli"
@@ -652,6 +663,16 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Funnel Settings Dialog */}
+      {settingsFunnel && (
+        <FunnelSettingsDialog
+          open={!!settingsFunnel}
+          onClose={() => setSettingsFunnel(null)}
+          funnelId={settingsFunnel.id}
+          funnelName={settingsFunnel.name}
+        />
+      )}
 
       {/* Delete/Archive Funnel Alert Dialog */}
       <AlertDialog open={!!deleteFunnel} onOpenChange={() => setDeleteFunnel(null)}>
