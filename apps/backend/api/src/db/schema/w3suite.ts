@@ -2793,7 +2793,7 @@ export const teams = w3suiteSchema.table("teams", {
   // Team identification
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
-  teamType: varchar("team_type", { length: 50 }).default("functional"), // 'functional', 'project', 'department'
+  teamType: varchar("team_type", { length: 50 }).default("functional"), // 'functional', 'project', 'department', 'crm', 'sales'
   
   // Hybrid membership (users + roles)
   userMembers: text("user_members").array().default([]), // Array of user IDs
