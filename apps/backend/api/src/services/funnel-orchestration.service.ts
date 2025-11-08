@@ -87,7 +87,12 @@ export class FunnelOrchestrationService {
           stage: params.targetStage,
           updatedAt: new Date()
         })
-        .where(eq(crmDeals.id, params.dealId))
+        .where(
+          and(
+            eq(crmDeals.id, params.dealId),
+            eq(crmDeals.tenantId, params.tenantId)
+          )
+        )
         .returning();
 
       logger.info('✅ [FUNNEL-ORCHESTRATION] Stage transition completed', {
@@ -217,7 +222,12 @@ export class FunnelOrchestrationService {
           stage: targetStage,
           updatedAt: new Date()
         })
-        .where(eq(crmDeals.id, params.dealId))
+        .where(
+          and(
+            eq(crmDeals.id, params.dealId),
+            eq(crmDeals.tenantId, params.tenantId)
+          )
+        )
         .returning();
 
       logger.info('✅ [FUNNEL-ORCHESTRATION] Pipeline transition completed', {
@@ -313,7 +323,12 @@ export class FunnelOrchestrationService {
           isArchived: params.archiveDeal || false,
           updatedAt: new Date()
         })
-        .where(eq(crmDeals.id, params.dealId))
+        .where(
+          and(
+            eq(crmDeals.id, params.dealId),
+            eq(crmDeals.tenantId, params.tenantId)
+          )
+        )
         .returning();
 
       logger.info('✅ [FUNNEL-ORCHESTRATION] Funnel exit completed', {
