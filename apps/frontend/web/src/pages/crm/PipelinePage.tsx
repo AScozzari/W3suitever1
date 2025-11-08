@@ -734,3 +734,5 @@ export function PipelineContent() {
     </div>
   );
 }
+
+export default PipelineContent;

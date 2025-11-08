@@ -24,6 +24,7 @@ const AIToolsDashboardPage = lazy(() => import('../pages/AIToolsDashboardPage'))
 const PDCAnalyzerPage = lazy(() => import('../pages/PDCAnalyzerPage'));
 const CRMPage = lazy(() => import('../pages/CRMPage'));
 const FunnelPage = lazy(() => import('../pages/crm/FunnelPage'));
+const PipelinePage = lazy(() => import('../pages/crm/PipelinePage'));
 const PipelineDetailPage = lazy(() => import('../pages/crm/PipelineDetailPage'));
 const CampaignDetailPage = lazy(() => import('../pages/crm/CampaignDetailPage'));
 const CampaignLeadsPage = lazy(() => import('../pages/crm/CampaignLeadsPage'));
@@ -406,6 +407,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm/funnels`}>
         <AuthenticatedRoute>
           <FunnelPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🎯 CRM PIPELINE LIST - Lista di tutte le pipeline */}
+      <Route path={`/${tenantSlug}/crm/pipelines`}>
+        <AuthenticatedRoute>
+          <PipelinePage />
         </AuthenticatedRoute>
       </Route>
       

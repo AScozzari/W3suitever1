@@ -83,15 +83,15 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
     enabled: open,
   });
 
-  // Fetch CRM teams (teams with 'crm' in assignedDepartments)
+  // Fetch CRM/Sales teams (teams with teamType 'crm' or 'sales')
   const { data: allTeams = [] } = useQuery({
     queryKey: ['/api/teams'],
     enabled: open,
   });
 
-  // Filter teams with CRM department
+  // Filter teams with CRM/Sales type
   const crmTeams = allTeams.filter((team: any) => 
-    team.assignedDepartments?.includes('crm')
+    team.teamType === 'crm' || team.teamType === 'sales'
   );
 
   // Fetch drivers from public schema
