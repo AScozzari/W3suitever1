@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { eq, and, sql, asc, desc, isNull, inArray } from 'drizzle-orm';
-import { db } from '../core/db';
+import { db, setTenantContext } from '../core/db';
 import { requirePermission } from '../middleware/tenant';
 import { 
   organizationalStructure, 
