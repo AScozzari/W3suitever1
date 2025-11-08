@@ -637,27 +637,8 @@ function calculateDueDate(rules: any): Date {
 
 // ==================== WORKFLOW MANAGEMENT ENDPOINTS ====================
 
-// GET /api/teams - Get all teams for tenant
-router.get('/teams', requirePermission('workflow.read'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    
-    if (!tenantId) {
-      return res.status(400).json({ error: 'Tenant ID is required' });
-    }
-
-    const result = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.tenantId, tenantId))
-      .orderBy(desc(teams.createdAt));
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching teams:', error);
-    res.status(500).json({ error: 'Failed to fetch teams' });
-  }
-});
+// NOTE: GET /api/teams endpoint moved to TEAMS ENDPOINTS section (line ~1050)
+// to avoid routing conflicts and support both workflow.read and teams.read permissions
 
 // POST /api/teams - Create new team
 router.post('/teams', requirePermission('workflow.create'), async (req: Request, res: Response) => {
@@ -1032,7 +1013,8 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
 // ==================== TEAMS ENDPOINTS ====================
 
 // GET /api/teams - Get all teams for tenant (with optional type filter)
-router.get('/teams', requirePermission('teams.read'), async (req: Request, res: Response) => {
+// Supports workflow.read permission (used by both workflow and teams features)
+router.get('/teams', requirePermission('workflow.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const typeFilter = req.query.type as string | undefined; // e.g., "crm,sales"
@@ -1041,18 +1023,20 @@ router.get('/teams', requirePermission('teams.read'), async (req: Request, res: 
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    let query = db
-      .select()
-      .from(teams)
-      .where(eq(teams.tenantId, tenantId));
-
+    // Build where conditions
+    let whereCondition = eq(teams.tenantId, tenantId);
+    
     // Apply type filter if provided
     if (typeFilter) {
       const types = typeFilter.split(',').map(t => t.trim());
-      query = query.where(inArray(teams.teamType, types));
+      whereCondition = and(whereCondition, inArray(teams.teamType, types));
     }
 
-    const allTeams = await query.orderBy(asc(teams.name));
+    const allTeams = await db
+      .select()
+      .from(teams)
+      .where(whereCondition)
+      .orderBy(asc(teams.name));
 
     res.json(allTeams);
   } catch (error) {

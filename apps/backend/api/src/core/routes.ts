@@ -1277,6 +1277,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI configuration and OpenAI connection management
   app.use('/api/ai', aiSettingsRoutes);
   
+  // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
+  // Mount the hierarchy system router BEFORE entitiesRoutes to avoid catch-all interception
+  // ⚠️ CRITICAL: hierarchyRouter must be mounted before entitiesRoutes because entitiesRoutes
+  // has a generic GET /api/:entity catch-all that would intercept /api/teams
+  app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
+  
   // ==================== ENTITIES MANAGEMENT ROUTES ====================
   // Legal entities, stores, and users management API routes
   app.use('/api', entitiesRoutes);
@@ -14124,10 +14130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
-  // Mount the hierarchy system router with authentication
-  app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
+  // NOTE: hierarchyRouter is now mounted earlier (line ~1287) BEFORE entitiesRoutes
+  // to prevent the generic GET /api/:entity catch-all from intercepting /api/teams
   
-  // ==================== PUBLIC ROUTES (OUTSIDE /api PREFIX) ====================
+  // ==================== PUBLIC ROUTES (OUTSIDE /API PREFIX) ====================
   
   // Direct health check route
   app.get("/health", async (req, res) => {
