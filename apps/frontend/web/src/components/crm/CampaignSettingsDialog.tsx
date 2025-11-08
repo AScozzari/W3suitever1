@@ -2345,7 +2345,19 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode, initia
                       name="notifyTeamId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Team da Notificare</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            Team da Notificare
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Vengono mostrati solo i team di tipo CRM e Sales</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
                               <SelectTrigger data-testid="select-notify-team">
