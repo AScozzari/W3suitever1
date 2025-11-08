@@ -40,11 +40,17 @@ export function TeamUserAssignmentDialog({
       const allMembers = await Promise.all(
         teamIds.map(async (teamId) => {
           const response = await fetch(`/api/teams/${teamId}/members`, {
+            method: 'GET',
+            credentials: 'include',
             headers: {
+              'Content-Type': 'application/json',
               'X-Tenant-ID': localStorage.getItem('tenantId') || '',
             },
           });
-          if (!response.ok) return [];
+          if (!response.ok) {
+            console.error(`Failed to fetch members for team ${teamId}:`, response.status);
+            return [];
+          }
           const data = await response.json();
           return data.members || [];
         })
