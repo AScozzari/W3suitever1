@@ -68,6 +68,7 @@ import { gtmEventsService } from '../services/gtm-events.service';
 import { attributionService } from '../services/attribution.service';
 import { GDPRConsentService } from '../services/gdpr-consent.service';
 import { GTMSnippetGeneratorService } from '../services/gtm-snippet-generator.service';
+import { dealNotificationService } from '../services/deal-notification-service';
 
 const router = express.Router();
 
@@ -5609,6 +5610,23 @@ router.patch('/deals/:id', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    // Fetch existing deal before update (for notification comparison)
+    const [existingDeal] = await db
+      .select()
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ));
+
+    if (!existingDeal) {
+      return res.status(404).json({
+        success: false,
+        error: 'Deal not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     // Check if status is being changed to won/lost
     let updateData = { ...validation.data, updatedAt: new Date() };
     if (validation.data.status === 'won' && !validation.data.wonAt) {
@@ -5635,6 +5653,57 @@ router.patch('/deals/:id', async (req, res) => {
     }
 
     logger.info('Deal updated', { dealId: id, tenantId, status: updateData.status });
+
+    // NOTIFICATION TRIGGERS (Task #7)
+    // Trigger notifications based on changes (async, don't block response)
+    (async () => {
+      try {
+        // Stage change notification
+        if (validation.data.currentStage && validation.data.currentStage !== existingDeal.currentStage) {
+          await dealNotificationService.notifyStateChange({
+            dealId: id,
+            tenantId,
+            pipelineId: updated.pipelineId,
+            fromStage: existingDeal.currentStage || 'unknown',
+            toStage: validation.data.currentStage,
+            dealTitle: updated.title,
+            ownerUserId: updated.ownerId || undefined,
+            assignedTeamId: updated.teamId || undefined
+          });
+        }
+
+        // Won deal notification
+        if (validation.data.status === 'won' && existingDeal.status !== 'won') {
+          await dealNotificationService.notifyDealWon({
+            dealId: id,
+            tenantId,
+            pipelineId: updated.pipelineId,
+            dealTitle: updated.title,
+            value: updated.value || undefined,
+            ownerUserId: updated.ownerId || undefined,
+            assignedTeamId: updated.teamId || undefined
+          });
+        }
+
+        // Lost deal notification
+        if (validation.data.status === 'lost' && existingDeal.status !== 'lost') {
+          await dealNotificationService.notifyDealLost({
+            dealId: id,
+            tenantId,
+            pipelineId: updated.pipelineId,
+            dealTitle: updated.title,
+            lostReason: updated.lostReason || undefined,
+            ownerUserId: updated.ownerId || undefined,
+            assignedTeamId: updated.teamId || undefined
+          });
+        }
+      } catch (notifError) {
+        logger.error('Failed to send deal notifications', {
+          error: notifError instanceof Error ? notifError.message : 'Unknown error',
+          dealId: id
+        });
+      }
+    })();
 
     res.status(200).json({
       success: true,

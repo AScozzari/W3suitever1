@@ -116,9 +116,9 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   const [pipelineAdmins, setPipelineAdmins] = useState<string[]>([]);
   
   // Operational permissions (mode-based)
-  const [dealCreationMode, setDealCreationMode] = useState<'all' | 'admins' | 'custom' | 'none'>('all');
-  const [stateModificationMode, setStateModificationMode] = useState<'all' | 'admins' | 'custom' | 'none'>('all');
-  const [dealDeletionMode, setDealDeletionMode] = useState<'admins' | 'none'>('admins');
+  const [dealCreationMode, setDealCreationMode] = useState<'all' | 'deal_managers' | 'pipeline_admins' | 'supervisor_only' | 'custom' | 'none'>('all');
+  const [stateModificationMode, setStateModificationMode] = useState<'all' | 'deal_managers' | 'pipeline_admins' | 'supervisor_only' | 'custom' | 'none'>('all');
+  const [dealDeletionMode, setDealDeletionMode] = useState<'pipeline_admins' | 'supervisor_only' | 'none'>('pipeline_admins');
 
   // Modal state for user assignments
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
@@ -1163,8 +1163,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tutti</SelectItem>
-                        <SelectItem value="admins">Solo Admin</SelectItem>
+                        <SelectItem value="all">Tutti membri team</SelectItem>
+                        <SelectItem value="deal_managers">Solo gestori deal</SelectItem>
+                        <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
+                        <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
                         <SelectItem value="custom">Custom Users</SelectItem>
                         <SelectItem value="none">Nessuno</SelectItem>
                       </SelectContent>
@@ -1187,8 +1189,10 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tutti</SelectItem>
-                        <SelectItem value="admins">Solo Admin</SelectItem>
+                        <SelectItem value="all">Tutti membri team</SelectItem>
+                        <SelectItem value="deal_managers">Solo gestori deal</SelectItem>
+                        <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
+                        <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
                         <SelectItem value="custom">Custom Users</SelectItem>
                         <SelectItem value="none">Nessuno</SelectItem>
                       </SelectContent>
@@ -1211,7 +1215,8 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admins">Solo Admin</SelectItem>
+                        <SelectItem value="pipeline_admins">Solo admin pipeline</SelectItem>
+                        <SelectItem value="supervisor_only">Solo supervisor</SelectItem>
                         <SelectItem value="none">Nessuno</SelectItem>
                       </SelectContent>
                     </Select>

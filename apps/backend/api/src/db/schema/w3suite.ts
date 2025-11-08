@@ -66,8 +66,8 @@ export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'priv
 export const objectTypeEnum = pgEnum('object_type', ['avatar', 'document', 'image', 'file']);
 
 // CRM Pipeline Permission Enums
-export const pipelinePermissionModeEnum = pgEnum('pipeline_permission_mode', ['all', 'admins', 'custom', 'none']);
-export const pipelineDeletionModeEnum = pgEnum('pipeline_deletion_mode', ['admins', 'none']);
+export const pipelinePermissionModeEnum = pgEnum('pipeline_permission_mode', ['all', 'deal_managers', 'pipeline_admins', 'supervisor_only', 'custom', 'none']);
+export const pipelineDeletionModeEnum = pgEnum('pipeline_deletion_mode', ['admins', 'supervisor_only', 'none']);
 
 // Supplier Enums
 export const supplierOriginEnum = pgEnum('supplier_origin', ['brand', 'tenant']);
@@ -5029,6 +5029,12 @@ export const crmPipelineSettings = w3suiteSchema.table("crm_pipeline_settings", 
   // Deal Deletion Permission
   dealDeletionMode: pipelineDeletionModeEnum("deal_deletion_mode").default('admins'),
   dealDeletionUsers: text("deal_deletion_users").array().default([]), // Reserved for future use
+  
+  // 🔔 Notification Preferences (Pipeline-level)
+  notifyOnStageChange: boolean("notify_on_stage_change").default(true), // Notify when deal changes stage
+  notifyOnDealRotten: boolean("notify_on_deal_rotten").default(true), // Notify when deal becomes stale
+  notifyOnDealWon: boolean("notify_on_deal_won").default(true), // Notify when deal is won
+  notifyOnDealLost: boolean("notify_on_deal_lost").default(true), // Notify when deal is lost
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
