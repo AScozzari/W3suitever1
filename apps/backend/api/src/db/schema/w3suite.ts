@@ -4642,6 +4642,10 @@ export const crmCampaigns = w3suiteSchema.table("crm_campaigns", {
   manualPipelineId1: uuid("manual_pipeline_id1"), // Pipeline 1 per assegnazione manuale
   manualPipelineId2: uuid("manual_pipeline_id2"), // Pipeline 2 per assegnazione manuale
   
+  // AI CONTROLS (entrambe le modalità)
+  enableAIScoring: boolean("enable_ai_scoring").default(false), // Abilita AI Lead Scoring (per manual e automatic)
+  enableAIRouting: boolean("enable_ai_routing").default(false), // Abilita AI Routing (solo per automatic, workflow può sovrascrivere)
+  
   // NOTIFICHE (entrambe le modalità)
   notifyTeamId: uuid("notify_team_id"), // Team da notificare
   notifyUserIds: uuid("notify_user_ids").array(), // Array di user ID da notificare
