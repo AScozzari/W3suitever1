@@ -80,6 +80,10 @@ const campaignFormSchema = z.object({
   manualPipelineId1: z.string().uuid().optional().nullable(),
   manualPipelineId2: z.string().uuid().optional().nullable(),
   
+  // AI Controls (entrambe le modalità)
+  enableAIScoring: z.boolean().default(false),
+  enableAIRouting: z.boolean().default(false),
+  
   // Notifiche
   notifyTeamId: z.string().uuid().optional().nullable(),
   notifyUserIds: z.array(z.string().uuid()).optional().default([]),
@@ -1576,6 +1580,8 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode, initia
       startDate: null,
       endDate: null,
       isActive: true,
+      enableAIScoring: false,
+      enableAIRouting: false,
       requiredConsents: {
         privacy_policy: false,
         marketing: false,
@@ -1633,6 +1639,8 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode, initia
         startDate: campaign.startDate ? campaign.startDate.split('T')[0] : null,
         endDate: campaign.endDate ? campaign.endDate.split('T')[0] : null,
         isActive: campaign.isActive ?? true,
+        enableAIScoring: campaign.enableAIScoring ?? false,
+        enableAIRouting: campaign.enableAIRouting ?? false,
         requiredConsents: campaign.requiredConsents || {
           privacy_policy: false,
           marketing: false,
@@ -2077,6 +2085,78 @@ export function CampaignSettingsDialog({ open, onClose, campaignId, mode, initia
                       </FormItem>
                     )}
                   />
+
+                  {/* AI Controls - Available for both modes */}
+                  <div className="space-y-4 rounded-lg border p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🤖</span>
+                      <h4 className="font-semibold">Controlli AI</h4>
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="enableAIScoring"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              AI Lead Scoring
+                            </FormLabel>
+                            <FormDescription>
+                              Calcola automaticamente il punteggio di conversione del lead (0-100)
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-ai-scoring"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {(selectedRoutingMode === 'automatic' || !selectedRoutingMode) && (
+                      <FormField
+                        control={form.control}
+                        name="enableAIRouting"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">
+                                AI Lead Routing
+                              </FormLabel>
+                              <FormDescription>
+                                Usa l'AI per decidere la pipeline ottimale (workflow può sovrascrivere)
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                data-testid="switch-ai-routing"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {selectedRoutingMode === 'manual' && (
+                      <div className="text-sm text-muted-foreground">
+                        ℹ️ In modalità manuale, il lead viene assegnato immediatamente alla pipeline selezionata.
+                        L'AI scoring può comunque calcolare il punteggio per analisi.
+                      </div>
+                    )}
+                    
+                    {(selectedRoutingMode === 'automatic' || !selectedRoutingMode) && (
+                      <div className="text-sm text-muted-foreground">
+                        ℹ️ In modalità automatica, il workflow gestisce l'assegnazione. Se il workflow ha nodi AI,
+                        questi avranno priorità su queste impostazioni.
+                      </div>
+                    )}
+                  </div>
 
                   {/* Automatic Mode Fields */}
                   {(selectedRoutingMode === 'automatic' || !selectedRoutingMode) && (
