@@ -1,5 +1,5 @@
 import { db } from '../core/db';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 import { crmPipelineSettings, teams, users } from '../db/schema/w3suite';
 
 export type PipelineAction = 'create' | 'modify' | 'delete';
@@ -19,15 +19,21 @@ export type PipelineAction = 'create' | 'modify' | 'delete';
  */
 export async function canUserPerformAction(
   userId: string,
+  tenantId: string,
   pipelineId: string,
   action: PipelineAction
 ): Promise<{ allowed: boolean; reason?: string }> {
   try {
-    // 1. Fetch pipeline settings
+    // 1. Fetch pipeline settings (with tenant isolation)
     const [settings] = await db
       .select()
       .from(crmPipelineSettings)
-      .where(eq(crmPipelineSettings.pipelineId, pipelineId));
+      .where(
+        and(
+          eq(crmPipelineSettings.pipelineId, pipelineId),
+          eq(crmPipelineSettings.tenantId, tenantId)
+        )
+      );
 
     if (!settings) {
       return { allowed: false, reason: 'Pipeline settings not found' };
@@ -61,7 +67,7 @@ export async function canUserPerformAction(
 
       case 'all':
         // All team members allowed - check if user in any assigned team
-        return await isUserInTeams(userId, settings.assignedTeams || []);
+        return await isUserInTeams(userId, tenantId, settings.assignedTeams || []);
 
       case 'deal_managers':
         // Only deal managers (dealManagementUsers)
@@ -79,7 +85,7 @@ export async function canUserPerformAction(
 
       case 'supervisor_only':
         // Only team supervisor
-        return await isUserSupervisorOfTeams(userId, settings.assignedTeams || []);
+        return await isUserSupervisorOfTeams(userId, tenantId, settings.assignedTeams || []);
 
       case 'custom':
         // Custom users list for this action
@@ -107,7 +113,7 @@ export async function canUserPerformAction(
 /**
  * Check if user is member of any of the given teams
  */
-async function isUserInTeams(userId: string, teamIds: string[]): Promise<{ allowed: boolean; reason?: string }> {
+async function isUserInTeams(userId: string, tenantId: string, teamIds: string[]): Promise<{ allowed: boolean; reason?: string }> {
   if (!teamIds || teamIds.length === 0) {
     return { allowed: false, reason: 'No teams assigned to pipeline' };
   }
@@ -117,6 +123,7 @@ async function isUserInTeams(userId: string, teamIds: string[]): Promise<{ allow
     .from(teams)
     .where(
       and(
+        eq(teams.tenantId, tenantId),
         inArray(teams.id, teamIds),
         // Check if user in userMembers array
         // Note: This is PostgreSQL array contains syntax
@@ -135,7 +142,7 @@ async function isUserInTeams(userId: string, teamIds: string[]): Promise<{ allow
 /**
  * Check if user is supervisor of any of the given teams
  */
-async function isUserSupervisorOfTeams(userId: string, teamIds: string[]): Promise<{ allowed: boolean; reason?: string }> {
+async function isUserSupervisorOfTeams(userId: string, tenantId: string, teamIds: string[]): Promise<{ allowed: boolean; reason?: string }> {
   if (!teamIds || teamIds.length === 0) {
     return { allowed: false, reason: 'No teams assigned to pipeline' };
   }
@@ -145,6 +152,7 @@ async function isUserSupervisorOfTeams(userId: string, teamIds: string[]): Promi
     .from(teams)
     .where(
       and(
+        eq(teams.tenantId, tenantId),
         inArray(teams.id, teamIds),
         eq(teams.supervisorUserId, userId)
       )

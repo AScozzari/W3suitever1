@@ -1,6 +1,6 @@
 import { NotificationService } from '../core/notification-service';
 import { db } from '../core/db';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { crmPipelineSettings, crmDeals } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 
@@ -29,11 +29,16 @@ export class DealNotificationService {
     assignedTeamId?: string;
   }): Promise<void> {
     try {
-      // Check pipeline notification preferences
+      // Check pipeline notification preferences (with tenant isolation)
       const [settings] = await db
         .select()
         .from(crmPipelineSettings)
-        .where(eq(crmPipelineSettings.pipelineId, params.pipelineId));
+        .where(
+          and(
+            eq(crmPipelineSettings.pipelineId, params.pipelineId),
+            eq(crmPipelineSettings.tenantId, params.tenantId)
+          )
+        );
 
       if (!settings || !settings.notifyOnStageChange) {
         logger.debug('[DealNotificationService] Stage change notifications disabled for pipeline', {
@@ -96,7 +101,12 @@ export class DealNotificationService {
       const [settings] = await db
         .select()
         .from(crmPipelineSettings)
-        .where(eq(crmPipelineSettings.pipelineId, params.pipelineId));
+        .where(
+          and(
+            eq(crmPipelineSettings.pipelineId, params.pipelineId),
+            eq(crmPipelineSettings.tenantId, params.tenantId)
+          )
+        );
 
       if (!settings || !settings.notifyOnDealWon) {
         return;
@@ -154,7 +164,12 @@ export class DealNotificationService {
       const [settings] = await db
         .select()
         .from(crmPipelineSettings)
-        .where(eq(crmPipelineSettings.pipelineId, params.pipelineId));
+        .where(
+          and(
+            eq(crmPipelineSettings.pipelineId, params.pipelineId),
+            eq(crmPipelineSettings.tenantId, params.tenantId)
+          )
+        );
 
       if (!settings || !settings.notifyOnDealLost) {
         return;
@@ -212,7 +227,12 @@ export class DealNotificationService {
       const [settings] = await db
         .select()
         .from(crmPipelineSettings)
-        .where(eq(crmPipelineSettings.pipelineId, params.pipelineId));
+        .where(
+          and(
+            eq(crmPipelineSettings.pipelineId, params.pipelineId),
+            eq(crmPipelineSettings.tenantId, params.tenantId)
+          )
+        );
 
       if (!settings || !settings.notifyOnDealRotten) {
         return;
