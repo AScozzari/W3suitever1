@@ -3718,6 +3718,121 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
 });
 
 /**
+ * GET /api/crm/funnels/:funnelId/analytics/sankey
+ * Get Sankey diagram data for customer journey visualization (campaign -> lead -> stages -> outcome)
+ */
+router.get('/funnels/:funnelId/analytics/sankey', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo, segment } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build filters
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    let segmentFilter = sql`TRUE`;
+    if (segment === 'b2b') {
+      segmentFilter = sql`c.customer_type = 'b2b'`;
+    } else if (segment === 'b2c') {
+      segmentFilter = sql`c.customer_type = 'b2c'`;
+    }
+
+    // Query flows for Sankey: Campaign -> Pipeline -> Stage -> Outcome
+    const sankeyFlowsResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id, name FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      )
+      SELECT
+        COALESCE(camp.name, 'Nessuna campagna') as source,
+        p.name as target,
+        COUNT(d.id)::int as value
+      FROM w3suite.crm_deals d
+      INNER JOIN funnel_pipelines p ON d.pipeline_id = p.id
+      LEFT JOIN w3suite.crm_leads l ON d.lead_id = l.id
+      LEFT JOIN w3suite.crm_campaigns camp ON l.campaign_id = camp.id
+      LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      AND ${segmentFilter}
+      GROUP BY camp.name, p.name
+      HAVING COUNT(d.id) > 0
+
+      UNION ALL
+
+      SELECT
+        p.name as source,
+        COALESCE(s.name, 'Non assegnato') as target,
+        COUNT(d.id)::int as value
+      FROM w3suite.crm_deals d
+      INNER JOIN funnel_pipelines p ON d.pipeline_id = p.id
+      LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = p.id AND s."order" = d.current_stage_order
+      LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      AND ${segmentFilter}
+      GROUP BY p.name, s.name
+      HAVING COUNT(d.id) > 0
+
+      UNION ALL
+
+      SELECT
+        COALESCE(s.name, 'Non assegnato') as source,
+        CASE 
+          WHEN d.status = 'won' THEN 'Vinto'
+          WHEN d.status = 'lost' THEN 'Perso'
+          ELSE 'In corso'
+        END as target,
+        COUNT(d.id)::int as value
+      FROM w3suite.crm_deals d
+      INNER JOIN funnel_pipelines p ON d.pipeline_id = p.id
+      LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = p.id AND s."order" = d.current_stage_order
+      LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      AND ${segmentFilter}
+      GROUP BY s.name, d.status
+      HAVING COUNT(d.id) > 0
+    `);
+
+    const nodes = new Set<string>();
+    const links = sankeyFlowsResult.rows.map((row: any) => {
+      nodes.add(row.source);
+      nodes.add(row.target);
+      return {
+        source: row.source,
+        target: row.target,
+        value: row.value
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        nodes: Array.from(nodes).map(name => ({ name })),
+        links
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error fetching Sankey analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to fetch Sankey analytics' } as ApiErrorResponse);
+  }
+});
+
+/**
  * GET /api/crm/funnels/:funnelId/analytics/stage-performance
  * Get detailed stage-by-stage performance metrics
  */

@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useFunnelBuilder, type FunnelPipeline } from './hooks/useFunnelBuilder';
 import { PipelineSettingsDialog } from '@/components/crm/PipelineSettingsDialog';
+import { FunnelAnalytics } from '@/components/crm/FunnelAnalytics';
 
 interface Pipeline {
   id: string;
@@ -702,147 +703,15 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
   );
 }
 
-// Funnel Analytics - Sankey diagram, drop-off rates, AI insights
-function FunnelAnalytics({ funnels }: { funnels: Funnel[] | undefined }) {
-  const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
-
-  // Auto-select first active funnel when data loads
-  useEffect(() => {
-    if (funnels && funnels.length > 0 && !selectedFunnelId) {
-      const activeFunnel = funnels.find(f => f.isActive) || funnels[0];
-      setSelectedFunnelId(activeFunnel.id);
-    }
-  }, [funnels, selectedFunnelId]);
-
-  const selectedFunnel = funnels?.find(f => f.id === selectedFunnelId);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Funnel Analytics</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Deep insights into conversion flows and bottleneck detection
-          </p>
-        </div>
-      </div>
-
-      {!funnels || funnels.length === 0 ? (
-        <Card className="windtre-glass-panel p-12">
-          <div className="text-center">
-            <BarChart2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No analytics available</h3>
-            <p className="text-gray-600">
-              Create funnels first to see analytics and insights
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          {/* Funnel Selector */}
-          <div className="flex gap-2 flex-wrap">
-            {funnels.map(funnel => (
-              <Button
-                key={funnel.id}
-                variant={selectedFunnelId === funnel.id ? "default" : "outline"}
-                onClick={() => setSelectedFunnelId(funnel.id)}
-                data-testid={`button-select-funnel-${funnel.id}`}
-                className={selectedFunnelId === funnel.id ? "bg-windtre-orange hover:bg-windtre-orange/90 text-white" : ""}
-              >
-                <Target className="w-4 h-4 mr-2" style={{ color: funnel.color }} />
-                {funnel.name}
-              </Button>
-            ))}
-          </div>
-
-          {selectedFunnel && (
-            <div className="grid grid-cols-2 gap-6">
-              <Card className="windtre-glass-panel p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Sankey Diagram</h3>
-                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                  <div className="text-center">
-                    <BarChart2 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Sankey visualization coming soon</p>
-                    <p className="text-xs text-gray-400 mt-1">Flow from {selectedFunnel.pipelines.length} pipelines</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="windtre-glass-panel p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Drop-off Rates</h3>
-                <div className="space-y-3" data-testid="container-dropoff-rates">
-                  {selectedFunnel.pipelines.map((pipeline, idx) => (
-                    <div 
-                      key={pipeline.id} 
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      data-testid={`dropoff-pipeline-${pipeline.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-sm font-semibold text-blue-700">
-                          {idx + 1}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900" data-testid={`text-pipeline-name-${pipeline.id}`}>
-                            {pipeline.name}
-                          </p>
-                          <p className="text-xs text-gray-500" data-testid={`text-pipeline-stages-${pipeline.id}`}>
-                            {pipeline.stagesConfig.length} stages
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900" data-testid={`text-conversion-rate-${pipeline.id}`}>
-                          {pipeline.conversionRate}%
-                        </p>
-                        <p className="text-xs text-gray-500">conversion</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card className="windtre-glass-panel p-6 col-span-2">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">AI Insights</h3>
-                  {selectedFunnel.aiOrchestrationEnabled && (
-                    <Badge className="bg-purple-100 text-purple-700">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      AI Enabled
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-blue-900">Bottleneck Detection</p>
-                        <p className="text-sm text-blue-700 mt-1">
-                          AI analysis will identify conversion bottlenecks across pipeline stages
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                    <div className="flex items-start gap-3">
-                      <TrendingUp className="w-5 h-5 text-green-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-green-900">Optimization Suggestions</p>
-                        <p className="text-sm text-green-700 mt-1">
-                          Recommended actions to improve conversion rates (Coming soon)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
+// FunnelAnalytics component is now imported from @/components/crm/FunnelAnalytics
+// The enterprise-grade analytics dashboard includes:
+// - KPI overview cards
+// - Stage performance table with bottleneck detection
+// - Channel effectiveness heatmap
+// - Time-to-close distribution
+// - Drop-off waterfall analysis
+// - Campaign attribution with ROI
+// - AI impact comparison
 
 // ========================================
 // BUILDER TAB COMPONENTS
