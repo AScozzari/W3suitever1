@@ -89,6 +89,10 @@ interface Deal {
   lostAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  // Campi restituiti dal backend con JOIN
+  customerName?: string | null;
+  customerCompanyName?: string | null;
+  customerType?: 'b2b' | 'b2c' | null;
 }
 
 interface DealsDataTableProps {
@@ -163,77 +167,37 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
   const columns = useMemo<ColumnDef<Deal>[]>(
     () => [
       {
-        accessorKey: 'id',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-transparent p-0"
-          >
-            Deal ID
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </Button>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-windtre-orange" />
-            <span className="font-medium text-sm truncate max-w-[120px]" title={row.original.id}>
-              {row.original.id.slice(0, 8)}...
-            </span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'estimatedValue',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-transparent p-0"
-          >
-            Valore
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </Button>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <Euro className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-semibold">{formatCurrency(row.original.estimatedValue)}</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'stage',
-        header: 'Stage',
-        cell: ({ row }) => (
-          <Badge variant="outline" className="font-medium">
-            {row.original.stage}
-          </Badge>
-        ),
-        filterFn: 'includesString',
-      },
-      {
-        accessorKey: 'probability',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-transparent p-0"
-          >
-            Probabilità
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </Button>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2 min-w-[100px]">
-            <span className="text-xs font-medium">{row.original.probability || 0}%</span>
-            <Progress value={row.original.probability || 0} className="h-1.5 flex-1" />
-          </div>
-        ),
+        accessorKey: 'customerName',
+        header: 'Cliente',
+        cell: ({ row }) => {
+          const customerName = row.original.customerName || 'Non definito';
+          const companyName = row.original.customerCompanyName;
+          const isB2B = row.original.customerType === 'b2b';
+          
+          return (
+            <div className="flex items-center gap-2 min-w-[200px]">
+              {isB2B ? (
+                <Building className="h-4 w-4 text-windtre-purple flex-shrink-0" />
+              ) : (
+                <User className="h-4 w-4 text-windtre-orange flex-shrink-0" />
+              )}
+              <div className="flex flex-col">
+                <span className="font-medium text-sm truncate max-w-[180px]" title={customerName}>
+                  {customerName}
+                </span>
+                {isB2B && companyName && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[180px]" title={companyName}>
+                    {companyName}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'ownerUserId',
-        header: 'Owner',
+        header: 'Assegnato',
         cell: ({ row }) => {
           const ownerName = row.original.ownerName || 'Non assegnato';
           const ownerEmail = row.original.ownerEmail || '';
@@ -259,7 +223,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
       },
       {
         accessorKey: 'assignedTeamId',
-        header: 'Team',
+        header: 'Team Assegnato',
         cell: ({ row }) => {
           const teamId = row.original.assignedTeamId;
           
@@ -271,7 +235,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
           const team = allTeams.find((t: any) => t.id === teamId);
           
           if (!team) {
-            return <span className="text-muted-foreground text-sm">Unknown Team</span>;
+            return <span className="text-muted-foreground text-sm">Non assegnato</span>;
           }
           
           // Determine badge color based on team type
@@ -288,7 +252,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
               <Users className="h-3 w-3 mr-1" />
               {team.name}
               <span className="ml-1 text-[10px] opacity-70">
-                ({isCRM ? 'CRM' : 'Sales'})
+                ({isCRM ? 'CRM' : 'Vendite'})
               </span>
             </Badge>
           );
@@ -298,18 +262,14 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         },
       },
       {
-        accessorKey: 'wonAt',
-        header: 'Close Date',
+        accessorKey: 'stage',
+        header: 'Stato',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            {row.original.wonAt ? (
-              <span>{new Date(row.original.wonAt).toLocaleDateString('it-IT')}</span>
-            ) : (
-              <span className="text-muted-foreground italic">In corso</span>
-            )}
-          </div>
+          <Badge variant="outline" className="font-medium">
+            {row.original.stage}
+          </Badge>
         ),
+        filterFn: 'includesString',
       },
       {
         accessorKey: 'agingDays',
@@ -317,9 +277,9 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-transparent p-0"
+            className="hover:bg-transparent p-0 whitespace-nowrap"
           >
-            Days in Stage
+            Giorni nello stato
             <ArrowUpDown className="ml-2 h-3 w-3" />
           </Button>
         ),
@@ -332,14 +292,28 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
               style={{ background: `${color}20`, color }}
             >
               <TrendingUp className="h-3 w-3" />
-              {days}d
+              {days} giorni
             </div>
           );
         },
       },
       {
+        accessorKey: 'wonAt',
+        header: 'Data Chiusura',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1 text-sm">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            {row.original.wonAt ? (
+              <span>{new Date(row.original.wonAt).toLocaleDateString('it-IT')}</span>
+            ) : (
+              <span className="text-muted-foreground italic">In corso</span>
+            )}
+          </div>
+        ),
+      },
+      {
         accessorKey: 'sourceChannel',
-        header: 'Source',
+        header: 'Fonte',
         cell: ({ row }) => {
           const ChannelIcon = getChannelIcon(row.original.sourceChannel);
           return (
@@ -354,18 +328,6 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         filterFn: 'includesString',
       },
       {
-        accessorKey: 'customerId',
-        header: 'Company',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Building className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm truncate max-w-[100px]" title={row.original.customerId || 'N/A'}>
-              {row.original.customerId ? row.original.customerId.slice(0, 8) : 'N/A'}
-            </span>
-          </div>
-        ),
-      },
-      {
         id: 'actions',
         header: 'Azioni',
         cell: ({ row }) => (
@@ -378,20 +340,20 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem data-testid={`action-view-${row.original.id}`}>
                 <Eye className="mr-2 h-4 w-4" />
-                Visualizza
+                Visualizza Dettagli
               </DropdownMenuItem>
               <DropdownMenuItem data-testid={`action-edit-${row.original.id}`}>
                 <Edit className="mr-2 h-4 w-4" />
-                Modifica
+                Modifica Deal
               </DropdownMenuItem>
               <DropdownMenuItem data-testid={`action-move-${row.original.id}`}>
                 <MoveRight className="mr-2 h-4 w-4" />
-                Sposta Stage
+                Cambia Stato
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" data-testid={`action-delete-${row.original.id}`}>
                 <Trash className="mr-2 h-4 w-4" />
-                Elimina
+                Elimina Deal
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

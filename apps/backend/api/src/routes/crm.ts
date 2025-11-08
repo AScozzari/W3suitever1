@@ -5451,10 +5451,11 @@ router.get('/deals', async (req, res) => {
         END`,
         ownerEmail: users.email,
         customerName: sql<string>`CASE 
-          WHEN ${crmCustomers.customerType} = 'b2b' THEN ${crmCustomers.companyName}
-          WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName})
+          WHEN ${crmCustomers.customerType} = 'b2b' THEN CONCAT(COALESCE(${crmCustomers.firstName}, ''), ' ', COALESCE(${crmCustomers.lastName}, ''))
+          WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(COALESCE(${crmCustomers.firstName}, ''), ' ', COALESCE(${crmCustomers.lastName}, ''))
           ELSE NULL
         END`,
+        customerCompanyName: crmCustomers.companyName,
         customerType: crmCustomers.customerType,
       })
       .from(crmDeals)
