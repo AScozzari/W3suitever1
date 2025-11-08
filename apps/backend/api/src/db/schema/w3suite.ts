@@ -65,6 +65,10 @@ export const notificationCategoryEnum = pgEnum('notification_category', ['sales'
 export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'private']);
 export const objectTypeEnum = pgEnum('object_type', ['avatar', 'document', 'image', 'file']);
 
+// CRM Pipeline Permission Enums
+export const pipelinePermissionModeEnum = pgEnum('pipeline_permission_mode', ['all', 'admins', 'custom', 'none']);
+export const pipelineDeletionModeEnum = pgEnum('pipeline_deletion_mode', ['admins', 'none']);
+
 // Supplier Enums
 export const supplierOriginEnum = pgEnum('supplier_origin', ['brand', 'tenant']);
 export const supplierTypeEnum = pgEnum('supplier_type', ['distributore', 'produttore', 'servizi', 'logistica']);
@@ -5004,11 +5008,27 @@ export const crmPipelineSettings = w3suiteSchema.table("crm_pipeline_settings", 
   workflowIds: text("workflow_ids").array(),
   customStatusNames: jsonb("custom_status_names"), // {new:'Primo Contatto', in_progress:'Lavorazione'}
   
-  // 🎯 Team & User Assignments (RBAC-integrated)
-  assignedTeams: text("assigned_teams").array().default([]), // Array of team IDs with CRM department
-  leadManagers: text("lead_managers").array().default([]), // Users who can create/manage leads
-  dealApprovers: text("deal_approvers").array().default([]), // Users who can approve high-value deals
+  // 🎯 Hierarchical RBAC: Parent Access (Team/Users with pipeline visibility)
+  assignedTeams: text("assigned_teams").array().default([]), // Team IDs with CRM/Sales department
+  assignedUsers: text("assigned_users").array().default([]), // Optional: Individual users (in addition to teams)
   pipelineAdmins: text("pipeline_admins").array().default([]), // Users with full pipeline settings access
+  
+  // 🎯 Hierarchical RBAC: Child Permissions (Operational - only for users with parent access)
+  // Deal Management Permission
+  dealManagementMode: pipelinePermissionModeEnum("deal_management_mode").default('all'),
+  dealManagementUsers: text("deal_management_users").array().default([]), // Used when mode='custom'
+  
+  // Deal Creation Permission
+  dealCreationMode: pipelinePermissionModeEnum("deal_creation_mode").default('all'),
+  dealCreationUsers: text("deal_creation_users").array().default([]), // Used when mode='custom'
+  
+  // State Modification Permission
+  stateModificationMode: pipelinePermissionModeEnum("state_modification_mode").default('all'),
+  stateModificationUsers: text("state_modification_users").array().default([]), // Used when mode='custom'
+  
+  // Deal Deletion Permission
+  dealDeletionMode: pipelineDeletionModeEnum("deal_deletion_mode").default('admins'),
+  dealDeletionUsers: text("deal_deletion_users").array().default([]), // Reserved for future use
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

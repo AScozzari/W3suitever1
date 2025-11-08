@@ -3893,9 +3893,16 @@ router.get('/pipelines/:id/settings', rbacMiddleware, requirePermission('crm.vie
       data: settings || {
         pipelineId,
         assignedTeams: [],
-        leadManagers: [],
-        dealApprovers: [],
+        assignedUsers: [],
         pipelineAdmins: [],
+        dealManagementMode: 'all',
+        dealManagementUsers: [],
+        dealCreationMode: 'all',
+        dealCreationUsers: [],
+        stateModificationMode: 'all',
+        stateModificationUsers: [],
+        dealDeletionMode: 'admins',
+        dealDeletionUsers: [],
       },
       message: 'Pipeline settings retrieved successfully',
       timestamp: new Date().toISOString()
