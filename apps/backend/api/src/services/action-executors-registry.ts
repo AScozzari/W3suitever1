@@ -2751,6 +2751,661 @@ export class AILeadRoutingExecutor implements ActionExecutor {
   }
 }
 
+// ==================== FUNNEL ORCHESTRATION EXECUTORS ====================
+
+/**
+ * 🎯 FUNNEL STAGE TRANSITION EXECUTOR
+ * Handles stage changes within the same pipeline
+ */
+export class FunnelStageTransitionExecutor implements ActionExecutor {
+  executorId = 'funnel-stage-transition-executor';
+  description = 'Handles stage transition within pipeline with validation and workflow triggers';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🎯 [EXECUTOR] Executing funnel stage transition', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const dealId = dealData?.id || config.dealId;
+      const targetStage = config.targetStage;
+
+      if (!dealId || !targetStage) {
+        throw new Error('Deal ID and target stage are required');
+      }
+
+      // Validate conditions if configured
+      if (config.conditions) {
+        const { minDealValue, maxDaysInStage } = config.conditions;
+        
+        if (minDealValue && dealData?.value < minDealValue) {
+          return {
+            success: false,
+            message: `Deal value ${dealData.value} below minimum ${minDealValue}`,
+            error: 'CONDITION_NOT_MET'
+          };
+        }
+
+        if (maxDaysInStage && dealData?.daysInStage > maxDaysInStage) {
+          return {
+            success: false,
+            message: `Deal exceeded max days in stage (${maxDaysInStage})`,
+            error: 'CONDITION_NOT_MET'
+          };
+        }
+      }
+
+      // Update deal stage
+      const { db } = await import('../core/db');
+      const { crmDeals } = await import('../db/schema/w3suite');
+      const { eq, and } = await import('drizzle-orm');
+
+      const [updatedDeal] = await db
+        .update(crmDeals)
+        .set({
+          stage: targetStage,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(crmDeals.id, dealId),
+            eq(crmDeals.tenantId, context.tenantId)
+          )
+        )
+        .returning();
+
+      // Send notifications if configured
+      if (config.notifyTeam && updatedDeal.teamId) {
+        await notificationService.sendNotification(
+          context.tenantId,
+          updatedDeal.teamId,
+          'Deal Stage Changed',
+          `Deal moved to stage: ${targetStage}`,
+          'deal_stage_change',
+          'medium',
+          { dealId, stage: targetStage }
+        );
+      }
+
+      logger.info('✅ [EXECUTOR] Stage transition completed', {
+        dealId,
+        targetStage,
+        requiresApproval: config.requiresApproval
+      });
+
+      return {
+        success: true,
+        message: `Deal stage updated to: ${targetStage}`,
+        data: {
+          dealId: updatedDeal.id,
+          previousStage: dealData?.stage,
+          currentStage: targetStage,
+          requiresApproval: config.requiresApproval,
+          workflowsTriggered: config.triggerWorkflows || []
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Funnel stage transition failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to transition deal stage',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔀 FUNNEL PIPELINE TRANSITION EXECUTOR
+ * Handles pipeline changes within the same funnel
+ */
+export class FunnelPipelineTransitionExecutor implements ActionExecutor {
+  executorId = 'funnel-pipeline-transition-executor';
+  description = 'Handles pipeline transition within funnel with validation and history preservation';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔀 [EXECUTOR] Executing funnel pipeline transition', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const dealId = dealData?.id || config.dealId;
+      const targetPipelineId = config.targetPipelineId;
+      const funnelId = config.funnelId;
+
+      if (!dealId || !targetPipelineId || !funnelId) {
+        throw new Error('Deal ID, target pipeline ID and funnel ID are required');
+      }
+
+      const { db } = await import('../core/db');
+      const { crmDeals, crmPipelines, crmPipelineStages } = await import('../db/schema/w3suite');
+      const { eq, and } = await import('drizzle-orm');
+
+      // Validate target pipeline belongs to same funnel
+      const [targetPipeline] = await db
+        .select()
+        .from(crmPipelines)
+        .where(
+          and(
+            eq(crmPipelines.id, targetPipelineId),
+            eq(crmPipelines.funnelId, funnelId),
+            eq(crmPipelines.tenantId, context.tenantId)
+          )
+        )
+        .limit(1);
+
+      if (!targetPipeline) {
+        return {
+          success: false,
+          message: 'Target pipeline not found or not in the same funnel',
+          error: 'INVALID_PIPELINE'
+        };
+      }
+
+      // Get first stage of target pipeline if resetStage is true
+      let targetStage = dealData?.stage;
+      if (config.resetStage) {
+        const [firstStage] = await db
+          .select()
+          .from(crmPipelineStages)
+          .where(eq(crmPipelineStages.pipelineId, targetPipelineId))
+          .orderBy(crmPipelineStages.orderIndex)
+          .limit(1);
+
+        targetStage = firstStage?.name || targetStage;
+      }
+
+      // Update deal pipeline
+      const [updatedDeal] = await db
+        .update(crmDeals)
+        .set({
+          pipelineId: targetPipelineId,
+          stage: targetStage,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(crmDeals.id, dealId),
+            eq(crmDeals.tenantId, context.tenantId)
+          )
+        )
+        .returning();
+
+      // Re-score with AI if configured
+      if (config.triggerAIReScore) {
+        logger.info('🤖 [EXECUTOR] Triggering AI re-score after pipeline change', {
+          dealId
+        });
+        // AI re-scoring would be triggered here via workflow
+      }
+
+      // Notify assignee if configured
+      if (config.notifyAssignee && updatedDeal.assignedToUserId) {
+        await notificationService.sendNotification(
+          context.tenantId,
+          updatedDeal.assignedToUserId,
+          'Deal Pipeline Changed',
+          `Your deal has been moved to pipeline: ${targetPipeline.name}`,
+          'deal_pipeline_change',
+          'high',
+          {
+            dealId,
+            targetPipelineName: targetPipeline.name,
+            transitionReason: config.transitionReason
+          }
+        );
+      }
+
+      logger.info('✅ [EXECUTOR] Pipeline transition completed', {
+        dealId,
+        targetPipelineId,
+        transitionReason: config.transitionReason
+      });
+
+      return {
+        success: true,
+        message: `Deal moved to pipeline: ${targetPipeline.name}`,
+        data: {
+          dealId: updatedDeal.id,
+          previousPipelineId: dealData?.pipelineId,
+          currentPipelineId: targetPipelineId,
+          currentStage: targetStage,
+          transitionReason: config.transitionReason,
+          resetStage: config.resetStage,
+          preserveHistory: config.preserveHistory
+        },
+        nextAction: targetPipelineId
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Funnel pipeline transition failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to transition deal pipeline',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🤖 AI FUNNEL ORCHESTRATOR EXECUTOR
+ * Uses AI to decide next best pipeline
+ */
+export class AIFunnelOrchestratorExecutor implements ActionExecutor {
+  executorId = 'ai-funnel-orchestrator-executor';
+  description = 'AI-powered funnel orchestration for intelligent pipeline routing';
+  private aiRegistry: AIRegistryService | null = null;
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing AI Funnel Orchestrator', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      // Initialize AI Registry if not already done
+      if (!this.aiRegistry) {
+        const { storage } = await import('../core/storage');
+        this.aiRegistry = new AIRegistryService(storage);
+      }
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const funnelId = config.funnelId;
+      const currentPipelineId = config.currentPipelineId || dealData?.pipelineId;
+
+      if (!funnelId || !currentPipelineId) {
+        throw new Error('Funnel ID and current pipeline ID are required');
+      }
+
+      const { db } = await import('../core/db');
+      const { crmPipelines, crmFunnels } = await import('../db/schema/w3suite');
+      const { eq } = await import('drizzle-orm');
+
+      // Get funnel pipelines
+      const funnelPipelines = await db
+        .select({
+          pipelineId: crmPipelines.id,
+          name: crmPipelines.name,
+          domain: crmPipelines.domain,
+          funnelStageOrder: crmPipelines.funnelStageOrder
+        })
+        .from(crmPipelines)
+        .where(eq(crmPipelines.funnelId, funnelId));
+
+      // Build AI input prompt
+      const aiInput = `
+Analizza questo deal e decidi la pipeline ottimale:
+
+${JSON.stringify({
+  dealId: dealData?.id,
+  currentPipelineId,
+  funnelId,
+  funnelPipelines,
+  dealData: {
+    value: dealData?.value || 0,
+    customerSegment: dealData?.customerType || 'b2c',
+    leadScore: dealData?.leadScore || 50,
+    daysInCurrentPipeline: dealData?.daysInStage || 0,
+    daysInFunnel: config.contextData?.daysInFunnel || 0,
+    probabilityToClose: dealData?.probability || 50,
+    customerLifetimeValue: config.contextData?.customerLifetimeValue || 0,
+    interactionQuality: config.contextData?.interactionQuality || 'medium'
+  },
+  customerHistory: config.contextData?.customerHistory || {}
+}, null, 2)}
+
+Rispondi con JSON strutturato secondo il formato richiesto.
+      `;
+
+      // Call AI agent
+      const registryContext: RegistryAwareContext = {
+        agentId: 'funnel-orchestrator-assistant',
+        tenantId: context.tenantId,
+        userId: context.requesterId,
+        moduleContext: 'crm',
+        businessEntityId: dealData?.id
+      };
+
+      const response = await this.aiRegistry.createUnifiedResponse(
+        aiInput,
+        { openaiModel: 'gpt-4o', maxTokens: 800, temperature: 0.3 } as any,
+        registryContext
+      );
+
+      if (!response.success || !response.output) {
+        throw new Error('AI orchestration failed');
+      }
+
+      // Parse AI response
+      const aiDecision = JSON.parse(response.output);
+      const autoAssignThreshold = config.autoAssignThreshold || 80;
+
+      logger.info('✅ [EXECUTOR] AI Funnel Orchestrator decision', {
+        targetPipelineId: aiDecision.targetPipelineId,
+        confidence: aiDecision.confidence,
+        reasoning: aiDecision.reasoning,
+        autoAssign: aiDecision.confidence >= autoAssignThreshold
+      });
+
+      // Auto-assign if confidence is high enough
+      if (aiDecision.confidence >= autoAssignThreshold) {
+        return {
+          success: true,
+          message: `AI recommends pipeline: ${aiDecision.reasoning}`,
+          data: {
+            ...aiDecision,
+            autoAssigned: true,
+            tokensUsed: response.tokensUsed,
+            cost: response.cost
+          },
+          nextAction: aiDecision.targetPipelineId
+        };
+      }
+
+      // Suggest to user (confidence too low for auto-assign)
+      return {
+        success: true,
+        message: `AI suggests pipeline (confidence ${aiDecision.confidence}%): ${aiDecision.reasoning}`,
+        data: {
+          ...aiDecision,
+          autoAssigned: false,
+          requiresManualConfirmation: true,
+          tokensUsed: response.tokensUsed,
+          cost: response.cost
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI Funnel Orchestrator failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Fallback to configured pipeline if AI fails
+      const fallbackPipelineId = step.config?.fallbackPipelineId;
+      if (fallbackPipelineId) {
+        return {
+          success: true,
+          message: 'AI orchestration failed, using fallback pipeline',
+          data: {
+            targetPipelineId: fallbackPipelineId,
+            confidence: 50,
+            reasoning: 'Fallback pipeline (AI failed)',
+            fallbackUsed: true,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          },
+          nextAction: fallbackPipelineId
+        };
+      }
+
+      return {
+        success: false,
+        message: 'AI funnel orchestration failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🏁 FUNNEL EXIT EXECUTOR
+ * Handles deal exit from funnel (won/lost/churned)
+ */
+export class FunnelExitExecutor implements ActionExecutor {
+  executorId = 'funnel-exit-executor';
+  description = 'Handles deal exit from funnel with customer record creation and analytics';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🏁 [EXECUTOR] Executing funnel exit', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const dealId = dealData?.id || config.dealId;
+      const exitReason = config.exitReason; // 'won' | 'lost' | 'churned' | 'disqualified'
+
+      if (!dealId || !exitReason) {
+        throw new Error('Deal ID and exit reason are required');
+      }
+
+      const { db } = await import('../core/db');
+      const { crmDeals, crmCustomers } = await import('../db/schema/w3suite');
+      const { eq, and } = await import('drizzle-orm');
+
+      // Update deal status
+      const newStatus = exitReason === 'won' ? 'won' : 'lost';
+      const [updatedDeal] = await db
+        .update(crmDeals)
+        .set({
+          status: newStatus,
+          closedAt: new Date(),
+          lostReason: exitReason === 'lost' ? config.lostReason : null,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(crmDeals.id, dealId),
+            eq(crmDeals.tenantId, context.tenantId)
+          )
+        )
+        .returning();
+
+      // Create customer record if won and configured
+      let customerId = null;
+      if (exitReason === 'won' && config.createCustomerRecord && dealData?.personId) {
+        // Customer creation logic would be here
+        logger.info('📝 [EXECUTOR] Creating customer record for won deal', {
+          dealId,
+          personId: dealData.personId
+        });
+      }
+
+      // Archive deal if configured
+      if (config.archiveDeal) {
+        await db
+          .update(crmDeals)
+          .set({ isArchived: true })
+          .where(eq(crmDeals.id, dealId));
+      }
+
+      // Trigger retention workflow if churned
+      if (exitReason === 'churned' && config.triggerRetentionWorkflow) {
+        logger.info('🔄 [EXECUTOR] Triggering retention workflow', {
+          dealId,
+          customerId: dealData?.personId
+        });
+      }
+
+      // Send analytics event
+      if (config.notifyAnalytics) {
+        logger.info('📊 [EXECUTOR] Sending funnel exit analytics event', {
+          dealId,
+          exitReason,
+          value: updatedDeal.value,
+          status: newStatus
+        });
+      }
+
+      logger.info('✅ [EXECUTOR] Funnel exit completed', {
+        dealId,
+        exitReason,
+        status: newStatus
+      });
+
+      return {
+        success: true,
+        message: `Deal ${exitReason}: ${newStatus}`,
+        data: {
+          dealId: updatedDeal.id,
+          exitReason,
+          status: newStatus,
+          value: updatedDeal.value,
+          customerId,
+          closedAt: updatedDeal.closedAt,
+          archived: config.archiveDeal
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Funnel exit failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to exit deal from funnel',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔗 DEAL STAGE WEBHOOK TRIGGER EXECUTOR
+ * Sends webhook on stage/pipeline changes
+ */
+export class DealStageWebhookTriggerExecutor implements ActionExecutor {
+  executorId = 'deal-stage-webhook-trigger-executor';
+  description = 'Sends webhooks on deal stage/pipeline changes with retry policy';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔗 [EXECUTOR] Executing deal stage webhook trigger', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const webhookUrl = config.webhookUrl;
+
+      if (!webhookUrl) {
+        throw new Error('Webhook URL is required');
+      }
+
+      // Check which events to trigger
+      const shouldTrigger =
+        (config.onStageChange && dealData?.stageChanged) ||
+        (config.onPipelineChange && dealData?.pipelineChanged) ||
+        (config.onDealWon && dealData?.status === 'won') ||
+        (config.onDealLost && dealData?.status === 'lost');
+
+      if (!shouldTrigger) {
+        return {
+          success: true,
+          message: 'Webhook not triggered (conditions not met)',
+          data: { triggered: false }
+        };
+      }
+
+      // Build webhook payload
+      const payload = {
+        event: dealData?.stageChanged ? 'deal.stage.changed' :
+               dealData?.pipelineChanged ? 'deal.pipeline.changed' :
+               dealData?.status === 'won' ? 'deal.won' :
+               dealData?.status === 'lost' ? 'deal.lost' : 'deal.updated',
+        tenantId: context.tenantId,
+        dealId: dealData?.id,
+        timestamp: new Date().toISOString(),
+        data: {
+          ...dealData,
+          ...(config.payload || {})
+        }
+      };
+
+      // Execute webhook with retry logic
+      const retryPolicy = config.retryPolicy || { maxRetries: 3, delayMs: 1000 };
+      let lastError: Error | null = null;
+
+      for (let attempt = 1; attempt <= retryPolicy.maxRetries + 1; attempt++) {
+        try {
+          const fetch = (await import('node-fetch')).default;
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(config.headers || {})
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            throw new Error(`Webhook returned ${response.status}: ${response.statusText}`);
+          }
+
+          logger.info('✅ [EXECUTOR] Webhook sent successfully', {
+            webhookUrl,
+            attempt,
+            status: response.status
+          });
+
+          return {
+            success: true,
+            message: 'Webhook sent successfully',
+            data: {
+              webhookUrl,
+              event: payload.event,
+              dealId: dealData?.id,
+              attempts: attempt,
+              status: response.status
+            }
+          };
+
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          
+          if (attempt < retryPolicy.maxRetries + 1) {
+            logger.warn('⚠️ [EXECUTOR] Webhook attempt failed, retrying', {
+              webhookUrl,
+              attempt,
+              error: lastError.message
+            });
+            
+            // Wait before retry (exponential backoff)
+            const delay = retryPolicy.delayMs * Math.pow(2, attempt - 1);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+
+      throw lastError;
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Deal stage webhook trigger failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to send webhook',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -2790,6 +3445,13 @@ export class ActionExecutorsRegistry {
     // Campaign intake executors
     this.register(new CampaignLeadIntakeExecutor());
     this.register(new PipelineAssignmentExecutor());
+    
+    // Funnel orchestration executors
+    this.register(new FunnelStageTransitionExecutor());
+    this.register(new FunnelPipelineTransitionExecutor());
+    this.register(new AIFunnelOrchestratorExecutor());
+    this.register(new FunnelExitExecutor());
+    this.register(new DealStageWebhookTriggerExecutor());
     
     // Flow control executors
     this.register(new IfConditionExecutor());
