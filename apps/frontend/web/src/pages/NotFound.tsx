@@ -2,13 +2,10 @@
 // Security-focused design that doesn't expose sensitive routing information
 
 import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle, Home, ArrowLeft, Shield, Search, HelpCircle } from 'lucide-react';
-import { useLocation, useRoute } from 'wouter';
+import { AlertTriangle, Shield, Search, HelpCircle } from 'lucide-react';
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
   const [currentPath, setCurrentPath] = useState('');
   const [showDebug] = useState(false); // Never show debug info in production
   
@@ -24,29 +21,6 @@ export default function NotFound() {
     console.warn(`[404] Page not found - segment: ${segments[0] || 'root'}`);
   }, []);
 
-  const handleGoHome = () => {
-    // Safely redirect to tenant root without exposing structure
-    const pathSegments = window.location.pathname.split('/').filter(Boolean);
-    const tenant = pathSegments[0];
-    
-    // Validate tenant format (basic UUID check)
-    const isValidTenant = tenant && (
-      tenant === 'staging' || 
-      tenant === 'demo' || 
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenant)
-    );
-    
-    if (isValidTenant) {
-      setLocation(`/${tenant}/dashboard`);
-    } else {
-      // If no valid tenant, go to root
-      setLocation('/');
-    }
-  };
-
-  const handleGoBack = () => {
-    window.history.back();
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" 
@@ -135,27 +109,6 @@ export default function NotFound() {
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={handleGoBack}
-              variant="outline"
-              className="min-w-[140px]"
-              data-testid="button-go-back"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna Indietro
-            </Button>
-            
-            <Button 
-              onClick={handleGoHome}
-              className="min-w-[140px] bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-              data-testid="button-go-home"
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Vai alla Home
-            </Button>
-          </div>
 
           {/* Request ID for support - hashed for security */}
           <div className="mt-12 pt-8 border-t border-gray-200">
