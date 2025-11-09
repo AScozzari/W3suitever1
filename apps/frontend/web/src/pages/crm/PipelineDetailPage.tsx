@@ -94,7 +94,7 @@ export default function PipelineDetailPage() {
           }}
         >
           <button
-            onClick={() => navigate('crm/pipeline')}
+            onClick={() => navigate('/crm/pipeline')}
             className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-windtre-orange"
             style={{ color: 'var(--text-secondary)' }}
             data-testid="breadcrumb-back-to-pipelines"
