@@ -870,6 +870,7 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
   const [unsavedChangesDialog, setUnsavedChangesDialog] = useState(false);
   const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null);
   const [expandedPipelines, setExpandedPipelines] = useState<Set<string>>(new Set());
+  const [settingsFunnel, setSettingsFunnel] = useState<Funnel | null>(null);
   const initializedRef = useRef(false);
 
   // Initialize builder in create mode on mount (only once)
@@ -1336,6 +1337,16 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
             queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines'] });
           }}
           pipelineId={editingPipeline.id}
+        />
+      )}
+
+      {/* Funnel Settings Dialog */}
+      {settingsFunnel && (
+        <FunnelSettingsDialog
+          open={!!settingsFunnel}
+          onClose={() => setSettingsFunnel(null)}
+          funnelId={settingsFunnel.id}
+          funnelName={settingsFunnel.name}
         />
       )}
     </DndContext>
