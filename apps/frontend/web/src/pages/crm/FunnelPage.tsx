@@ -1182,7 +1182,7 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0"
+                          className="h-7 w-7 p-0 hover:bg-gray-100"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSettingsFunnel(funnel);
@@ -1190,7 +1190,7 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
                           data-testid={`button-settings-funnel-builder-${funnel.id}`}
                           title="Impostazioni Funnel"
                         >
-                          <Settings2 className="w-3 h-3 text-gray-600" />
+                          <Settings2 className="w-4 h-4 text-gray-700" />
                         </Button>
                       </div>
                     </div>
