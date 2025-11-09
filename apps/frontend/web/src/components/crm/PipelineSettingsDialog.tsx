@@ -394,7 +394,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent 
-        className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col"
+        className="max-w-5xl max-h-[85vh] flex flex-col"
         style={{
           background: 'white',
           border: '1px solid rgba(0, 0, 0, 0.1)'
