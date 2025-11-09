@@ -199,14 +199,14 @@ localPort = 42325
 localPort = 42551
 
 [[ports]]
-localPort = 42559
-externalPort = 8080
-
-[[ports]]
 localPort = 42935
 
 [[ports]]
 localPort = 42951
+
+[[ports]]
+localPort = 43059
+externalPort = 8008
 
 [[ports]]
 localPort = 43667
