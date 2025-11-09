@@ -79,6 +79,7 @@ export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
   if (filters.segment !== 'all') {
     queryParams.set('segment', filters.segment);
   }
+  queryParams.set('dataMode', filters.dataMode);
 
   // Fetch analytics data
   const { data: overviewData, isLoading: overviewLoading } = useQuery<ApiResponse<OverviewData>>({
@@ -243,6 +244,25 @@ export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
         </Card>
       ) : (
         <div className="space-y-6">
+          {/* Freshness Banner - Real-time mode */}
+          {filters.dataMode === 'realtime' && overviewData?.timestamp && (
+            <div className="windtre-glass-panel border border-green-500/30 rounded-lg p-3 bg-green-50/50">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                  <span className="text-sm font-semibold text-green-700">Real-time Data</span>
+                </div>
+                <div className="h-4 w-px bg-green-300"></div>
+                <span className="text-xs text-green-600">
+                  Ultimo aggiornamento: {format(new Date(overviewData.timestamp), 'HH:mm:ss')}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* KPI Overview Cards */}
           <KPICards
             data={overviewData?.data || null}

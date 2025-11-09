@@ -4105,7 +4105,7 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
     }
 
     const { funnelId } = req.params;
-    const { dateFrom, dateTo, segment } = req.query;
+    const { dateFrom, dateTo, segment, dataMode = 'historical' } = req.query;
 
     await setTenantContext(db, tenantId);
 
@@ -4180,6 +4180,66 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
       ? Math.round((metrics.lost_deals / metrics.total_leads) * 100)
       : 0;
 
+    // Calculate ROI Summary (enterprise-grade ROI rollup)
+    const roiResult = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      campaign_spend AS (
+        SELECT COALESCE(SUM(cp.total_spend), 0)::float as total_marketing_spend
+        FROM w3suite.crm_campaigns cp
+        INNER JOIN w3suite.crm_leads l ON l.campaign_id = cp.id
+        INNER JOIN w3suite.crm_deals d ON d.lead_id = l.id
+        WHERE d.pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND d.tenant_id = ${tenantId}
+        AND ${dateFilter}
+      )
+      SELECT total_marketing_spend FROM campaign_spend
+    `);
+
+    const marketingSpend = (roiResult.rows[0] as any)?.total_marketing_spend || 0;
+    const currentRevenue = metrics.total_revenue || 0;
+    const margin = currentRevenue - marketingSpend;
+    const roiPercent = marketingSpend > 0 
+      ? Math.round((margin / marketingSpend) * 100)
+      : 0;
+
+    // Calculate prior period comparison for delta
+    let priorPeriodRevenue = 0;
+    let revenueDelta = 0;
+    
+    if (dateFrom && dateTo) {
+      const fromDate = new Date(dateFrom as string);
+      const toDate = new Date(dateTo as string);
+      const periodDays = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const priorFrom = new Date(fromDate);
+      priorFrom.setDate(priorFrom.getDate() - periodDays);
+      const priorTo = new Date(fromDate);
+      
+      const priorResult = await db.execute(sql`
+        WITH funnel_pipelines AS (
+          SELECT id FROM w3suite.crm_pipelines
+          WHERE tenant_id = ${tenantId}
+          AND funnel_id = ${funnelId}
+          AND is_active = true
+        )
+        SELECT COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as prior_revenue
+        FROM w3suite.crm_deals d
+        WHERE d.pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND d.tenant_id = ${tenantId}
+        AND d.created_at BETWEEN ${priorFrom.toISOString()}::timestamptz AND ${priorTo.toISOString()}::timestamptz
+      `);
+      
+      priorPeriodRevenue = (priorResult.rows[0] as any)?.prior_revenue || 0;
+      revenueDelta = priorPeriodRevenue > 0
+        ? Math.round(((currentRevenue - priorPeriodRevenue) / priorPeriodRevenue) * 100)
+        : 0;
+    }
+
     return res.json({
       success: true,
       data: {
@@ -4190,7 +4250,15 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
         totalRevenue: metrics.total_revenue || 0,
         churnRate,
         wonDeals: metrics.won_deals || 0,
-        lostDeals: metrics.lost_deals || 0
+        lostDeals: metrics.lost_deals || 0,
+        roiSummary: {
+          currentRevenue,
+          marketingSpend,
+          margin,
+          roiPercent,
+          priorPeriodRevenue,
+          revenueDelta
+        }
       },
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
