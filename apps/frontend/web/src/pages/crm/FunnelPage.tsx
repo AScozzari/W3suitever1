@@ -1155,13 +1155,19 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => saveMutation.mutate()}
-                  disabled={saveMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  data-testid="button-save-funnel"
+                  onClick={() => savePipelinesMutation.mutate()}
+                  disabled={savePipelinesMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 text-white relative"
+                  data-testid="button-save-pipelines"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  {savePipelinesMutation.isPending ? 'Saving...' : 'Save Pipeline Order'}
+                  {builder.state.isDirty && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                    </span>
+                  )}
                 </Button>
               </>
             )}
