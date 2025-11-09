@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { DialogContentScrollable } from '@/components/ui/dialog-scrollable';
@@ -28,7 +28,9 @@ import {
   AlertTriangle,
   TrendingUp,
   Info,
-  UserPlus
+  UserPlus,
+  Search,
+  ArrowUpDown
 } from 'lucide-react';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { TeamUserAssignmentDialog } from './TeamUserAssignmentDialog';
@@ -149,6 +151,56 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
 
   // Workflow execution mode state (per template)
   const [workflowExecutionModes, setWorkflowExecutionModes] = useState<Record<string, 'automatic' | 'manual'>>({});
+  
+  // Workflow search and sort state
+  const [workflowSearch, setWorkflowSearch] = useState('');
+  const [workflowSort, setWorkflowSort] = useState<'most-used' | 'last-modified' | 'recent'>('most-used');
+
+  // Filter and sort available workflow templates
+  const filteredAndSortedTemplates = useMemo(() => {
+    // Start with templates not already assigned
+    let filtered = availableTemplates.filter(
+      (template: any) => !assignedWorkflows.find((w: any) => w.workflowTemplateId === template.id)
+    );
+
+    // Apply search filter (search in name and description)
+    if (workflowSearch) {
+      const searchLower = workflowSearch.toLowerCase();
+      filtered = filtered.filter((template: any) => {
+        const nameMatch = template.name?.toLowerCase().includes(searchLower);
+        const descMatch = template.description?.toLowerCase().includes(searchLower);
+        return nameMatch || descMatch;
+      });
+    }
+
+    // Sort based on selected option
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      switch (workflowSort) {
+        case 'most-used':
+          // Use usageCount if available, fallback to 0
+          const usageA = a.usageCount || 0;
+          const usageB = b.usageCount || 0;
+          return usageB - usageA; // Descending order
+        
+        case 'last-modified':
+          // Use updatedAt if available, fallback to createdAt or epoch
+          const dateA = a.updatedAt || a.createdAt || '1970-01-01';
+          const dateB = b.updatedAt || b.createdAt || '1970-01-01';
+          return new Date(dateB).getTime() - new Date(dateA).getTime(); // Most recent first
+        
+        case 'recent':
+          // Use createdAt if available, fallback to epoch
+          const createdA = a.createdAt || '1970-01-01';
+          const createdB = b.createdAt || '1970-01-01';
+          return new Date(createdB).getTime() - new Date(createdA).getTime(); // Most recent first
+        
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [availableTemplates, assignedWorkflows, workflowSearch, workflowSort]);
 
   // Update pipeline general settings
   const updatePipelineMutation = useMutation({
@@ -798,11 +850,50 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                 </Card>
 
                 <Card className="p-6 bg-white border border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Workflow Disponibili</h3>
-                  <div className="space-y-3">
-                    {availableTemplates
-                      .filter((template: any) => !assignedWorkflows.find((w: any) => w.workflowTemplateId === template.id))
-                      .map((template: any) => (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">Workflow Disponibili</h3>
+                    </div>
+                    
+                    {/* Search and Sort Controls */}
+                    <div className="flex gap-3">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="text"
+                          placeholder="Cerca workflow per nome o descrizione..."
+                          value={workflowSearch}
+                          onChange={(e) => setWorkflowSearch(e.target.value)}
+                          className="pl-10 bg-white border-gray-300"
+                          data-testid="input-workflow-search"
+                        />
+                      </div>
+                      <Select
+                        value={workflowSort}
+                        onValueChange={(value: 'most-used' | 'last-modified' | 'recent') => setWorkflowSort(value)}
+                      >
+                        <SelectTrigger className="w-48 bg-white border-gray-300" data-testid="select-workflow-sort">
+                          <div className="flex items-center gap-2">
+                            <ArrowUpDown className="h-4 w-4" />
+                            <SelectValue />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="most-used">Più utilizzati</SelectItem>
+                          <SelectItem value="last-modified">Ultima modifica</SelectItem>
+                          <SelectItem value="recent">Recenti</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Workflow List */}
+                    <div className="space-y-3">
+                      {filteredAndSortedTemplates.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          {workflowSearch ? 'Nessun workflow trovato con i criteri di ricerca' : 'Nessun workflow disponibile'}
+                        </div>
+                      ) : (
+                        filteredAndSortedTemplates.map((template: any) => (
                         <div
                           key={template.id}
                           className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
@@ -860,7 +951,8 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      )))}
+                    </div>
                   </div>
                 </Card>
               </>
