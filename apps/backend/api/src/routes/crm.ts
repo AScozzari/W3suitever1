@@ -3609,6 +3609,151 @@ router.delete('/funnels/:id', rbacMiddleware, requirePermission('manage_crm'), a
   }
 });
 
+/**
+ * PATCH /api/crm/funnels/:funnelId/pipelines
+ * Save pipeline associations for a funnel (updates funnelId and funnelStageOrder on pipelines)
+ */
+router.patch('/funnels/:funnelId/pipelines', rbacMiddleware, requirePermission('manage_crm'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { pipelines } = req.body; // Array of { pipelineId, stageOrder }
+
+    // Validate input
+    if (!Array.isArray(pipelines)) {
+      return res.status(400).json({
+        success: false,
+        error: 'pipelines must be an array',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Verify funnel exists and belongs to tenant
+    const [funnel] = await db
+      .select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!funnel) {
+      return res.status(404).json({
+        success: false,
+        error: 'Funnel not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get all pipelines currently associated with this funnel
+    const currentPipelines = await db
+      .select()
+      .from(crmPipelines)
+      .where(and(
+        eq(crmPipelines.funnelId, funnelId),
+        eq(crmPipelines.tenantId, tenantId)
+      ));
+
+    const newPipelineIds = pipelines.map((p: any) => p.pipelineId);
+    const currentPipelineIds = currentPipelines.map(p => p.id);
+
+    // Pipelines to dissociate (were in funnel but not in new array)
+    const toDisassociate = currentPipelineIds.filter(id => !newPipelineIds.includes(id));
+
+    // Dissociate removed pipelines
+    if (toDisassociate.length > 0) {
+      await db
+        .update(crmPipelines)
+        .set({ 
+          funnelId: null, 
+          funnelStageOrder: null 
+        })
+        .where(and(
+          inArray(crmPipelines.id, toDisassociate),
+          eq(crmPipelines.tenantId, tenantId)
+        ));
+
+      logger.info('Dissociated pipelines from funnel', { 
+        funnelId, 
+        count: toDisassociate.length,
+        pipelineIds: toDisassociate 
+      });
+    }
+
+    // Associate/update pipelines
+    const updatePromises = pipelines.map(async (item: any) => {
+      const { pipelineId, stageOrder } = item;
+
+      // Verify pipeline exists and belongs to tenant
+      const [pipeline] = await db
+        .select()
+        .from(crmPipelines)
+        .where(and(
+          eq(crmPipelines.id, pipelineId),
+          eq(crmPipelines.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (!pipeline) {
+        throw new Error(`Pipeline ${pipelineId} not found`);
+      }
+
+      // Update pipeline association
+      return db
+        .update(crmPipelines)
+        .set({ 
+          funnelId, 
+          funnelStageOrder: stageOrder 
+        })
+        .where(and(
+          eq(crmPipelines.id, pipelineId),
+          eq(crmPipelines.tenantId, tenantId)
+        ));
+    });
+
+    await Promise.all(updatePromises);
+
+    logger.info('Saved funnel pipeline associations', { 
+      funnelId, 
+      pipelineCount: pipelines.length,
+      dissociatedCount: toDisassociate.length
+    });
+
+    return res.json({
+      success: true,
+      data: { 
+        funnelId,
+        associatedCount: pipelines.length,
+        dissociatedCount: toDisassociate.length
+      },
+      message: 'Pipeline associations saved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error saving funnel pipelines', { 
+      error, 
+      funnelId: req.params.funnelId 
+    });
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to save pipeline associations',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== FUNNEL WORKFLOWS ====================
 
 /**
