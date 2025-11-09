@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -115,13 +115,11 @@ export function TeamUserAssignmentDialog({
             <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}>
               <Users className="h-5 w-5" />
             </div>
-            <div>
-              <div style={{ color: '#1f2937' }}>{title}</div>
-              <div className="text-sm font-normal text-gray-500 mt-1">
-                {description}
-              </div>
-            </div>
+            <div style={{ color: '#1f2937' }}>{title}</div>
           </DialogTitle>
+          <DialogDescription className="text-sm text-gray-500 mt-2">
+            {description}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col space-y-4 py-4">
