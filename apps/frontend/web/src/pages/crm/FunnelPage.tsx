@@ -57,10 +57,7 @@ interface Funnel {
 
 const createFunnelSchema = z.object({
   name: z.string().min(3, 'Il nome deve contenere almeno 3 caratteri').max(255),
-  description: z.string().optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Colore non valido').default('#3b82f6'),
-  aiOrchestrationEnabled: z.boolean().default(false),
-  expectedDurationDays: z.number().int().min(1).max(365).optional()
+  description: z.string().optional()
 });
 
 type CreateFunnelInput = z.infer<typeof createFunnelSchema>;
@@ -76,10 +73,7 @@ function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChang
     resolver: zodResolver(createFunnelSchema),
     defaultValues: {
       name: '',
-      description: '',
-      color: '#3b82f6',
-      aiOrchestrationEnabled: false,
-      expectedDurationDays: undefined
+      description: ''
     }
   });
 
@@ -166,78 +160,6 @@ function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                     />
                   </FormControl>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Colore</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2 items-center">
-                        <Input 
-                          type="color" 
-                          {...field} 
-                          className="w-16 h-10"
-                          data-testid="input-funnel-color"
-                        />
-                        <Input 
-                          type="text" 
-                          {...field} 
-                          placeholder="#3b82f6"
-                          className="flex-1"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="expectedDurationDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Durata Prevista (giorni)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="30" 
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                        value={field.value || ''}
-                        data-testid="input-funnel-duration"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="aiOrchestrationEnabled"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">AI Orchestration</FormLabel>
-                    <FormDescription>
-                      Abilita l'intelligenza artificiale per ottimizzare il customer journey
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="switch-ai-orchestration"
-                    />
-                  </FormControl>
                 </FormItem>
               )}
             />
