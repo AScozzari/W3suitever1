@@ -417,7 +417,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-7 bg-gray-50 p-1 rounded-lg">
             <TabsTrigger 
               value="general" 
