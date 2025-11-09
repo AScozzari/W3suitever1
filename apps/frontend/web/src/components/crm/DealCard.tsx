@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Euro, User, TrendingUp, GripVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Euro, User, TrendingUp, GripVertical, MoreHorizontal, Workflow, Edit, Trash2, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { WorkflowExecutionPanel } from './WorkflowExecutionPanel';
 
 interface Deal {
   id: string;
@@ -71,6 +76,8 @@ const translateOutboundChannel = (channel?: string | null): string => {
 };
 
 export function DealCard({ deal }: DealCardProps) {
+  const [workflowDrawerOpen, setWorkflowDrawerOpen] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -112,8 +119,60 @@ export function DealCard({ deal }: DealCardProps) {
               </div>
             </div>
           </div>
-          <div {...listeners} className="cursor-grab active:cursor-grabbing">
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0"
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid={`button-deal-menu-${deal.id}`}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Apri menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setWorkflowDrawerOpen(true);
+                  }}
+                  data-testid={`menu-workflow-${deal.id}`}
+                >
+                  <Workflow className="mr-2 h-4 w-4 text-windtre-orange" />
+                  Esegui Workflow
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid={`menu-edit-${deal.id}`}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Modifica Deal
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid={`menu-duplicate-${deal.id}`}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplica Deal
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-red-600"
+                  data-testid={`menu-delete-${deal.id}`}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Elimina Deal
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div {...listeners} className="cursor-grab active:cursor-grabbing">
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
         </div>
 
@@ -164,6 +223,35 @@ export function DealCard({ deal }: DealCardProps) {
           )}
         </div>
       </Card>
+      
+      {/* Workflow Execution Drawer */}
+      <Sheet open={workflowDrawerOpen} onOpenChange={setWorkflowDrawerOpen}>
+        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Workflow className="w-5 h-5 text-windtre-orange" />
+              Gestione Workflow - Deal
+            </SheetTitle>
+            <SheetDescription>
+              Esegui workflow manuali o visualizza lo storico delle esecuzioni per questo deal
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-6">
+            <WorkflowExecutionPanel
+              entityType="deal"
+              entityId={deal.id}
+              entityData={{
+                name: deal.customerName || `Deal ${deal.id.slice(0, 8)}`,
+                stage: deal.stage,
+                value: deal.estimatedValue || 0,
+                owner: deal.ownerName || deal.ownerUserId,
+              }}
+              compact={false}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
