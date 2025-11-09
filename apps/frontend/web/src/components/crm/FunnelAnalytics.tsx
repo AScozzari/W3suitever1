@@ -58,6 +58,7 @@ export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
     preset: '30days',
     storeIds: [],
     segment: 'all',
+    dataMode: 'historical',
   });
 
   // Auto-select first active funnel when data loads

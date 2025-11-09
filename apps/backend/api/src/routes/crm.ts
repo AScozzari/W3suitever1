@@ -4784,6 +4784,143 @@ router.get('/funnels/:funnelId/analytics/ai-impact', rbacMiddleware, async (req,
 });
 
 /**
+ * GET /api/crm/funnels/:funnelId/analytics/export
+ * Export comprehensive funnel analytics as CSV
+ * Enterprise-grade export functionality for executive reporting
+ */
+router.get('/funnels/:funnelId/analytics/export', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant context' } as ApiErrorResponse);
+    }
+
+    const { funnelId } = req.params;
+    const { dateFrom, dateTo, format: exportFormat = 'csv' } = req.query;
+
+    await setTenantContext(db, tenantId);
+
+    // Build date filter
+    let dateFilter = sql`TRUE`;
+    if (dateFrom && dateTo) {
+      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+    }
+
+    // Fetch funnel details
+    const funnelResult = await db.select()
+      .from(crmFunnels)
+      .where(and(
+        eq(crmFunnels.id, funnelId),
+        eq(crmFunnels.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    const funnel = funnelResult[0];
+    if (!funnel) {
+      return res.status(404).json({ success: false, error: 'Funnel not found' } as ApiErrorResponse);
+    }
+
+    // Aggregate all analytics data
+    const analyticsData = await db.execute(sql`
+      WITH funnel_pipelines AS (
+        SELECT id, name FROM w3suite.crm_pipelines
+        WHERE tenant_id = ${tenantId}
+        AND funnel_id = ${funnelId}
+        AND is_active = true
+      ),
+      pipeline_stages AS (
+        SELECT ps.*, fp.name as pipeline_name
+        FROM w3suite.crm_pipeline_stages ps
+        INNER JOIN funnel_pipelines fp ON ps.pipeline_id = fp.id
+        WHERE ps.tenant_id = ${tenantId}
+      ),
+      deal_analytics AS (
+        SELECT 
+          ps.pipeline_name,
+          ps.name as stage_name,
+          ps.order_index as stage_order,
+          COUNT(d.id)::int as deal_count,
+          AVG(EXTRACT(EPOCH FROM (d.updated_at - d.created_at)) / 86400)::float as avg_days_in_stage,
+          COUNT(d.id) FILTER (WHERE d.status = 'won')::int as conversions,
+          COUNT(d.id) FILTER (WHERE d.status = 'lost')::int as losses,
+          COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as revenue,
+          l.source as lead_source,
+          l.routing_type,
+          c.customer_type
+        FROM w3suite.crm_deals d
+        LEFT JOIN pipeline_stages ps ON d.current_stage_id = ps.id
+        LEFT JOIN w3suite.crm_leads l ON d.lead_id = l.id
+        LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
+        WHERE d.tenant_id = ${tenantId}
+        AND d.pipeline_id IN (SELECT id FROM funnel_pipelines)
+        AND ${dateFilter}
+        GROUP BY ps.pipeline_name, ps.name, ps.order_index, l.source, l.routing_type, c.customer_type
+      )
+      SELECT * FROM deal_analytics ORDER BY stage_order, pipeline_name
+    `);
+
+    // Generate CSV content
+    const headers = [
+      'Funnel',
+      'Pipeline',
+      'Stage',
+      'Stage Order',
+      'Deal Count',
+      'Avg Days in Stage',
+      'Conversions',
+      'Losses',
+      'Conversion Rate %',
+      'Drop-off Rate %',
+      'Revenue (EUR)',
+      'Lead Source',
+      'Routing Type',
+      'Customer Type'
+    ];
+
+    const rows = analyticsData.rows.map((row: any) => {
+      const conversionRate = row.deal_count > 0
+        ? Math.round((row.conversions / row.deal_count) * 100)
+        : 0;
+      const dropOffRate = row.deal_count > 0
+        ? Math.round((row.losses / row.deal_count) * 100)
+        : 0;
+
+      return [
+        funnel.name,
+        row.pipeline_name || 'N/A',
+        row.stage_name || 'N/A',
+        row.stage_order || 0,
+        row.deal_count || 0,
+        row.avg_days_in_stage ? row.avg_days_in_stage.toFixed(1) : '0.0',
+        row.conversions || 0,
+        row.losses || 0,
+        conversionRate,
+        dropOffRate,
+        row.revenue ? row.revenue.toFixed(2) : '0.00',
+        row.lead_source || 'unknown',
+        row.routing_type || 'manual',
+        row.customer_type || 'unknown'
+      ];
+    });
+
+    // Format as CSV
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\n');
+
+    // Set response headers for download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="funnel-analytics-${funnelId}-${new Date().toISOString().split('T')[0]}.csv"`);
+    res.send(csvContent);
+
+  } catch (error: any) {
+    logger.error('Error exporting funnel analytics', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ success: false, error: 'Failed to export analytics' } as ApiErrorResponse);
+  }
+});
+
+/**
  * GET /api/crm/funnels/:funnelId/analytics/segmentation
  * Get customer segmentation breakdown (B2B/B2C, source, size)
  */

@@ -25,6 +25,7 @@ export interface FunnelAnalyticsFilters {
   preset: string;
   storeIds: string[];
   segment: 'all' | 'b2b' | 'b2c';
+  dataMode: 'realtime' | 'historical';
 }
 
 interface FunnelAnalyticsFilterBarProps {
@@ -209,6 +210,27 @@ export function FunnelAnalyticsFilterBar({
               <SelectItem value="all">Tutti</SelectItem>
               <SelectItem value="b2b">Solo B2B</SelectItem>
               <SelectItem value="b2c">Solo B2C</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Data Mode Toggle */}
+        <div className="min-w-[140px]">
+          <Select
+            value={filters.dataMode}
+            onValueChange={(value: 'realtime' | 'historical') =>
+              onFiltersChange({ ...filters, dataMode: value })
+            }
+          >
+            <SelectTrigger
+              className="bg-white/50 border-white/30"
+              data-testid="select-data-mode"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="realtime">🔴 Real-time</SelectItem>
+              <SelectItem value="historical">📊 Historical</SelectItem>
             </SelectContent>
           </Select>
         </div>
