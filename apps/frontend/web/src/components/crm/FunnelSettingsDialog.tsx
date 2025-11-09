@@ -83,8 +83,16 @@ export function FunnelSettingsDialog({ open, onClose, funnelId, funnelName }: Fu
 
   // Filter templates to show only those with funnel orchestration nodes
   const funnelOrchestrationTemplates = availableTemplates.filter((template: any) => {
-    const nodes = template.workflow?.nodes || [];
+    // Backend returns nodes in template.definition.nodes, not template.workflow.nodes
+    const nodes = template.definition?.nodes ?? template.workflow?.nodes ?? [];
     const orchestrationNodeTypes = [
+      // Node types with crm: prefix (as stored in DB)
+      'crm:funnel-stage-transition',
+      'crm:funnel-pipeline-transition',
+      'crm:ai-funnel-orchestrator',
+      'crm:funnel-exit',
+      'crm:deal-stage-webhook-trigger',
+      // Also support legacy types without prefix for backward compatibility
       'funnel-stage-transition',
       'funnel-pipeline-transition',
       'ai-funnel-orchestrator',

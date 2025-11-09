@@ -636,23 +636,25 @@ function FunnelOverview({ funnels }: { funnels: Funnel[] | undefined }) {
                 : 'Conferma eliminazione funnel'
               }
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteFunnel && deleteFunnel.totalLeads > 0 ? (
-                <div className="space-y-2">
-                  <p className="font-medium text-orange-600">
-                    ⚠️ Questo funnel ha {deleteFunnel.totalLeads} lead attive
-                  </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {deleteFunnel && deleteFunnel.totalLeads > 0 ? (
+                  <>
+                    <p className="font-medium text-orange-600">
+                      ⚠️ Questo funnel ha {deleteFunnel.totalLeads} lead attive
+                    </p>
+                    <p>
+                      Per proteggere i dati, il funnel verrà <strong>archiviato</strong> invece di essere eliminato.
+                      Potrai riattivarlo in qualsiasi momento o eliminarlo quando non ci saranno più lead associate.
+                    </p>
+                  </>
+                ) : (
                   <p>
-                    Per proteggere i dati, il funnel verrà <strong>archiviato</strong> invece di essere eliminato.
-                    Potrai riattivarlo in qualsiasi momento o eliminarlo quando non ci saranno più lead associate.
+                    Sei sicuro di voler eliminare il funnel "<strong>{deleteFunnel?.name}</strong>"?
+                    Questa azione è irreversibile e rimuoverà tutte le configurazioni associate.
                   </p>
-                </div>
-              ) : (
-                <p>
-                  Sei sicuro di voler eliminare il funnel "<strong>{deleteFunnel?.name}</strong>"?
-                  Questa azione è irreversibile e rimuoverà tutte le configurazioni associate.
-                </p>
-              )}
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
