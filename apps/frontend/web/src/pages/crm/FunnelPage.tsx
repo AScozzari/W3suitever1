@@ -57,7 +57,8 @@ interface Funnel {
 
 const createFunnelSchema = z.object({
   name: z.string().min(3, 'Il nome deve contenere almeno 3 caratteri').max(255),
-  description: z.string().optional()
+  description: z.string().optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Colore non valido').default('#FF6900')
 });
 
 type CreateFunnelInput = z.infer<typeof createFunnelSchema>;
@@ -73,7 +74,8 @@ function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChang
     resolver: zodResolver(createFunnelSchema),
     defaultValues: {
       name: '',
-      description: ''
+      description: '',
+      color: '#FF6900'
     }
   });
 
@@ -158,6 +160,33 @@ function CreateFunnelDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                       data-testid="input-funnel-description"
                       rows={3}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Colore</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2 items-center">
+                      <Input 
+                        type="color" 
+                        {...field} 
+                        className="w-16 h-10"
+                        data-testid="input-funnel-color"
+                      />
+                      <Input 
+                        type="text" 
+                        {...field} 
+                        placeholder="#FF6900"
+                        className="flex-1"
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1127,27 +1156,47 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
                 {filteredFunnels?.map(funnel => (
                   <div
                     key={funnel.id}
-                    className={`windtre-glass-panel p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow border-2 ${
+                    className={`windtre-glass-panel p-3 rounded-lg hover:shadow-md transition-shadow border-2 ${
                       builder.state.funnelId === funnel.id
                         ? 'border-windtre-orange'
                         : 'border-transparent'
                     }`}
-                    onClick={() => handleEditFunnel(funnel)}
                     data-testid={`funnel-library-item-${funnel.id}`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                      <div 
+                        className="flex items-center gap-2 flex-1 cursor-pointer"
+                        onClick={() => handleEditFunnel(funnel)}
+                      >
                         <div
                           className="w-3 h-3 rounded"
                           style={{ backgroundColor: funnel.color }}
                         />
                         <p className="font-medium text-sm text-gray-900">{funnel.name}</p>
                       </div>
-                      {funnel.aiOrchestrationEnabled && (
-                        <Sparkles className="w-3 h-3 text-purple-600" />
-                      )}
+                      <div className="flex items-center gap-1">
+                        {funnel.aiOrchestrationEnabled && (
+                          <Sparkles className="w-3 h-3 text-purple-600" />
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSettingsFunnel(funnel);
+                          }}
+                          data-testid={`button-settings-funnel-builder-${funnel.id}`}
+                          title="Impostazioni Funnel"
+                        >
+                          <Settings2 className="w-3 h-3 text-gray-600" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div 
+                      className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer"
+                      onClick={() => handleEditFunnel(funnel)}
+                    >
                       <Badge variant="secondary" className="text-xs">
                         {funnel.pipelines.length} pipelines
                       </Badge>
