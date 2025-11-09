@@ -1059,6 +1059,46 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
     }
   });
 
+  // Separate mutation for saving pipeline associations
+  const savePipelinesMutation = useMutation({
+    mutationFn: async () => {
+      if (!builder.state.funnelId) {
+        throw new Error('Funnel ID is required');
+      }
+
+      const payload = {
+        pipelines: builder.state.pipelines.map(p => ({
+          pipelineId: p.pipelineId,
+          stageOrder: p.stageOrder
+        }))
+      };
+
+      console.log('[FUNNEL-PIPELINES-SAVE] Saving associations:', payload);
+
+      return apiRequest(`/api/crm/funnels/${builder.state.funnelId}/pipelines`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+    },
+    onSuccess: (data) => {
+      console.log('[FUNNEL-PIPELINES-SAVE] Success:', data);
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/pipelines'] });
+      builder.clearDirty();
+      toast({
+        title: '✅ Pipeline salvate',
+        description: `Associazioni pipeline aggiornate con successo`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Errore',
+        description: error?.message || 'Impossibile salvare le pipeline',
+        variant: 'destructive'
+      });
+    }
+  });
+
   const filteredFunnels = funnels?.filter(f => 
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
