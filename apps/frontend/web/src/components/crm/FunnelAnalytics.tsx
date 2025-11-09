@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { subDays } from 'date-fns';
+import { queryClient } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
+import { subDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { BarChart2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -113,20 +115,75 @@ export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
     enabled: !!filters.funnelId,
   });
 
-  const handleRefresh = () => {
-    // Trigger refetch for all queries
+  const handleRefresh = async () => {
     toast({
       title: 'Aggiornamento in corso...',
       description: 'Recupero dati analytics aggiornati',
     });
+
+    // Invalidate all analytics queries for the selected funnel
+    await Promise.all([
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics'] 
+      }),
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics'] 
+      })
+    ]);
+
+    toast({
+      title: '✅ Dati aggiornati',
+      description: 'Analytics aggiornati con successo',
+    });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (!filters.funnelId) {
+      toast({
+        title: 'Errore',
+        description: 'Seleziona un funnel per esportare i dati',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     toast({
-      title: 'Export in preparazione',
-      description: 'Il download del report partirà a breve',
+      title: 'Export in corso...',
+      description: 'Generazione report CSV in corso',
     });
-    // TODO: Implement CSV/PDF export
+
+    try {
+      // Build export URL with filters
+      const exportParams = new URLSearchParams(queryParams);
+      exportParams.set('format', 'csv');
+      
+      const response = await apiRequest(
+        `/api/crm/funnels/${filters.funnelId}/analytics/export?${exportParams.toString()}`,
+        { method: 'GET' }
+      );
+
+      // Create download link
+      const blob = new Blob([response], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `funnel-analytics-${filters.funnelId}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: '✅ Export completato',
+        description: 'Il file CSV è stato scaricato con successo',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Errore export',
+        description: error?.message || 'Impossibile esportare i dati',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (!funnels || funnels.length === 0) {
