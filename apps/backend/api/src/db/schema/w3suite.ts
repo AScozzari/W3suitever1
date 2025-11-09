@@ -6321,3 +6321,129 @@ export const insertLeadTouchpointSchema = createInsertSchema(leadTouchpoints).om
 });
 export type InsertLeadTouchpoint = z.infer<typeof insertLeadTouchpointSchema>;
 export type LeadTouchpoint = typeof leadTouchpoints.$inferSelect;
+
+// ==================== WORKFLOW EXECUTION QUEUE SYSTEM ====================
+
+// Workflow Execution Queue - Track manual workflow approvals and execution requests
+export const workflowExecutionQueue = w3suiteSchema.table("workflow_execution_queue", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Workflow identification
+  workflowId: uuid("workflow_id").notNull(), // References workflow template
+  workflowName: varchar("workflow_name", { length: 255 }).notNull(),
+  workflowCategory: varchar("workflow_category", { length: 100 }), // engagement, automation, scoring, etc.
+  
+  // Entity reference
+  entityType: varchar("entity_type", { length: 50 }).notNull(), // deal, lead, customer, campaign
+  entityId: varchar("entity_id", { length: 255 }).notNull(),
+  entityName: varchar("entity_name", { length: 255 }),
+  entityStage: varchar("entity_stage", { length: 100 }),
+  entityPipeline: varchar("entity_pipeline", { length: 255 }),
+  entityValue: decimal("entity_value", { precision: 10, scale: 2 }),
+  
+  // Request details
+  requestedBy: varchar("requested_by").notNull().references(() => users.id),
+  requestedByName: varchar("requested_by_name", { length: 255 }),
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  reason: text("reason"), // Why this workflow is being requested
+  
+  // Approval details
+  requiresApproval: boolean("requires_approval").default(true).notNull(),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedByName: varchar("approved_by_name", { length: 255 }),
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedByName: varchar("rejected_by_name", { length: 255 }),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Execution tracking
+  status: varchar("status", { length: 50 }).default('pending').notNull(), // pending, approved, rejected, executing, completed, failed
+  priority: varchar("priority", { length: 20 }).default('medium').notNull(), // low, medium, high, critical
+  executionId: uuid("execution_id"), // Link to workflowExecutions once started
+  
+  // Performance & SLA
+  estimatedDuration: integer("estimated_duration"), // Estimated duration in seconds
+  slaDeadline: timestamp("sla_deadline"), // When this should be processed by
+  
+  // Dependencies
+  dependencies: text("dependencies").array().default(sql`'{}'::text[]`), // Other workflow IDs that must complete first
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("workflow_queue_tenant_idx").on(table.tenantId),
+  index("workflow_queue_entity_idx").on(table.entityType, table.entityId),
+  index("workflow_queue_status_idx").on(table.status),
+  index("workflow_queue_priority_idx").on(table.priority),
+  index("workflow_queue_requested_by_idx").on(table.requestedBy),
+  index("workflow_queue_sla_idx").on(table.slaDeadline),
+]);
+
+export const insertWorkflowExecutionQueueSchema = createInsertSchema(workflowExecutionQueue).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  entityType: z.enum(['deal', 'lead', 'customer', 'campaign']),
+  status: z.enum(['pending', 'approved', 'rejected', 'executing', 'completed', 'failed']),
+  priority: z.enum(['low', 'medium', 'high', 'critical']),
+});
+export type InsertWorkflowExecutionQueue = z.infer<typeof insertWorkflowExecutionQueueSchema>;
+export type WorkflowExecutionQueue = typeof workflowExecutionQueue.$inferSelect;
+
+// Workflow Manual Executions - High-level tracking of manual workflow runs
+export const workflowManualExecutions = w3suiteSchema.table("workflow_manual_executions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Link to queue entry if came from approval queue
+  queueId: uuid("queue_id").references(() => workflowExecutionQueue.id, { onDelete: 'set null' }),
+  
+  // Workflow & Entity
+  workflowId: uuid("workflow_id").notNull(),
+  workflowName: varchar("workflow_name", { length: 255 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(),
+  entityId: varchar("entity_id", { length: 255 }).notNull(),
+  entitySnapshot: jsonb("entity_snapshot"), // Entity state at execution time
+  
+  // Execution tracking
+  status: varchar("status", { length: 50 }).default('pending').notNull(), // pending, running, completed, failed, cancelled
+  executedBy: varchar("executed_by").notNull().references(() => users.id),
+  executedByName: varchar("executed_by_name", { length: 255 }),
+  
+  // Timing
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  durationMs: integer("duration_ms"),
+  
+  // Results
+  outputData: jsonb("output_data").default({}),
+  errorMessage: text("error_message"),
+  errorDetails: jsonb("error_details"),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("manual_executions_tenant_idx").on(table.tenantId),
+  index("manual_executions_entity_idx").on(table.entityType, table.entityId),
+  index("manual_executions_workflow_idx").on(table.workflowId),
+  index("manual_executions_status_idx").on(table.status),
+  index("manual_executions_executed_by_idx").on(table.executedBy),
+  index("manual_executions_started_idx").on(table.startedAt),
+]);
+
+export const insertWorkflowManualExecutionSchema = createInsertSchema(workflowManualExecutions).omit({ 
+  id: true, 
+  createdAt: true,
+  startedAt: true
+}).extend({
+  entityType: z.enum(['deal', 'lead', 'customer', 'campaign']),
+  status: z.enum(['pending', 'running', 'completed', 'failed', 'cancelled']),
+});
+export type InsertWorkflowManualExecution = z.infer<typeof insertWorkflowManualExecutionSchema>;
+export type WorkflowManualExecution = typeof workflowManualExecutions.$inferSelect;

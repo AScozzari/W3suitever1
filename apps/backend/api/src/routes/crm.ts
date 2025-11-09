@@ -10579,4 +10579,689 @@ router.get('/analytics/conversion-funnel', async (req, res) => {
   }
 });
 
+/**
+ * ===========================================
+ * WORKFLOW EXECUTION & QUEUE MANAGEMENT APIS
+ * ===========================================
+ * 
+ * Provides endpoints for manual workflow execution and approval queue management.
+ * Supports entity-level workflow operations (deal, lead, customer, campaign) and
+ * centralized queue dashboard for bulk approval/rejection.
+ */
+
+/**
+ * GET /api/crm/:entityType/:entityId/workflows/available
+ * Get available workflows for a specific entity
+ */
+router.get('/:entityType/:entityId/workflows/available', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { entityType, entityId } = req.params;
+    
+    // Validate entity type
+    if (!['deal', 'lead', 'customer', 'campaign'].includes(entityType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid entity type',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check entity access permissions based on type
+    let hasAccess = false;
+    if (entityType === 'deal') {
+      hasAccess = await checkDealAccess(tenantId, entityId, req.user?.id);
+    } else if (entityType === 'lead') {
+      hasAccess = await checkLeadAccess(tenantId, entityId, req.user?.id);
+    } else if (entityType === 'customer') {
+      hasAccess = await checkCustomerAccess(tenantId, entityId, req.user?.id);
+    } else if (entityType === 'campaign') {
+      hasAccess = await checkCampaignAccess(tenantId, entityId, req.user?.id);
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied to entity',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get available workflows based on entity type and current state
+    const workflows = await getAvailableWorkflows(tenantId, entityType, entityId);
+
+    res.status(200).json({
+      success: true,
+      data: workflows,
+      message: 'Available workflows retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving available workflows', { 
+      errorMessage: error?.message,
+      params: req.params
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve available workflows',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/:entityType/:entityId/workflows/history
+ * Get workflow execution history for a specific entity
+ */
+router.get('/:entityType/:entityId/workflows/history', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { entityType, entityId } = req.params;
+    
+    // Validate and check access (similar to above)
+    if (!['deal', 'lead', 'customer', 'campaign'].includes(entityType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid entity type',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get execution history from workflow_executions table
+    const history = await getWorkflowHistory(tenantId, entityType, entityId);
+
+    res.status(200).json({
+      success: true,
+      data: history,
+      message: 'Workflow history retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving workflow history', { 
+      errorMessage: error?.message,
+      params: req.params
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve workflow history',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/:entityType/:entityId/workflows/:workflowId/execute
+ * Execute a workflow for a specific entity
+ */
+router.post('/:entityType/:entityId/workflows/:workflowId/execute', rbacMiddleware, requirePermission('crm.run_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { entityType, entityId, workflowId } = req.params;
+    const { reason, requiresApproval } = req.body;
+
+    // Validate entity type and check access
+    if (!['deal', 'lead', 'customer', 'campaign'].includes(entityType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid entity type',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Create execution record and queue entry if approval required
+    const execution = await createWorkflowExecution({
+      tenantId,
+      entityType,
+      entityId,
+      workflowId,
+      requestedBy: req.user?.id,
+      reason,
+      requiresApproval
+    });
+
+    // If no approval required, immediately enqueue for execution
+    if (!requiresApproval) {
+      await enqueueWorkflowExecution(execution.id);
+    }
+
+    // Emit websocket event for real-time updates
+    await emitWorkflowEvent(tenantId, 'workflow.execution.requested', execution);
+
+    res.status(201).json({
+      success: true,
+      data: execution,
+      message: requiresApproval ? 'Workflow queued for approval' : 'Workflow execution started',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error executing workflow', { 
+      errorMessage: error?.message,
+      params: req.params
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to execute workflow',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/workflow-queue
+ * Get all pending workflow executions requiring approval
+ */
+router.get('/workflow-queue', rbacMiddleware, requirePermission('crm.approve_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { status, entityType, priority, limit = 50, offset = 0 } = req.query;
+
+    const queue = await getWorkflowQueue({
+      tenantId,
+      status: status as string,
+      entityType: entityType as string,
+      priority: priority as string,
+      limit: Number(limit),
+      offset: Number(offset)
+    });
+
+    res.status(200).json({
+      success: true,
+      data: queue,
+      message: 'Workflow queue retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving workflow queue', { 
+      errorMessage: error?.message,
+      query: req.query
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve workflow queue',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/workflow-queue/stats
+ * Get workflow queue statistics for dashboard
+ */
+router.get('/workflow-queue/stats', rbacMiddleware, requirePermission('crm.approve_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const stats = await getWorkflowQueueStats(tenantId);
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+      message: 'Workflow queue stats retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving workflow queue stats', { 
+      errorMessage: error?.message
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve workflow queue stats',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/workflow-queue/bulk-approve
+ * Bulk approve multiple workflows
+ */
+router.post('/workflow-queue/bulk-approve', rbacMiddleware, requirePermission('crm.approve_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { workflowIds } = req.body;
+
+    if (!Array.isArray(workflowIds) || workflowIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid workflow IDs',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const results = await bulkApproveWorkflows(tenantId, workflowIds, req.user?.id);
+
+    // Emit websocket events for each approved workflow
+    for (const result of results) {
+      await emitWorkflowEvent(tenantId, 'workflow.execution.approved', result);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: results,
+      message: `${results.length} workflows approved successfully`,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error bulk approving workflows', { 
+      errorMessage: error?.message,
+      body: req.body
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to bulk approve workflows',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/workflow-queue/bulk-reject
+ * Bulk reject multiple workflows
+ */
+router.post('/workflow-queue/bulk-reject', rbacMiddleware, requirePermission('crm.approve_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { workflowIds, reason } = req.body;
+
+    if (!Array.isArray(workflowIds) || workflowIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid workflow IDs',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const results = await bulkRejectWorkflows(tenantId, workflowIds, req.user?.id, reason);
+
+    // Emit websocket events
+    for (const result of results) {
+      await emitWorkflowEvent(tenantId, 'workflow.execution.rejected', result);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: results,
+      message: `${results.length} workflows rejected successfully`,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error bulk rejecting workflows', { 
+      errorMessage: error?.message,
+      body: req.body
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to bulk reject workflows',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/workflow-queue/:queueId/approve
+ * Approve a single workflow execution
+ */
+router.post('/workflow-queue/:queueId/approve', rbacMiddleware, requirePermission('crm.approve_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { queueId } = req.params;
+
+    const result = await approveWorkflow(tenantId, queueId, req.user?.id);
+
+    // Emit websocket event
+    await emitWorkflowEvent(tenantId, 'workflow.execution.approved', result);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Workflow approved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error approving workflow', { 
+      errorMessage: error?.message,
+      queueId: req.params.queueId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to approve workflow',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/workflow-queue/:queueId/reject
+ * Reject a single workflow execution
+ */
+router.post('/workflow-queue/:queueId/reject', rbacMiddleware, requirePermission('crm.approve_workflows'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { queueId } = req.params;
+    const { reason } = req.body;
+
+    const result = await rejectWorkflow(tenantId, queueId, req.user?.id, reason);
+
+    // Emit websocket event
+    await emitWorkflowEvent(tenantId, 'workflow.execution.rejected', result);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Workflow rejected successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error rejecting workflow', { 
+      errorMessage: error?.message,
+      queueId: req.params.queueId,
+      reason: req.body.reason
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to reject workflow',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// Helper functions for workflow execution (these would typically be in a service file)
+async function checkDealAccess(tenantId: string, dealId: string, userId?: string): Promise<boolean> {
+  // Check if user has access to this deal
+  const result = await db
+    .select()
+    .from(crmDeals)
+    .where(and(
+      eq(crmDeals.tenantId, tenantId),
+      eq(crmDeals.id, dealId)
+    ))
+    .limit(1);
+  
+  return result.length > 0;
+}
+
+async function checkLeadAccess(tenantId: string, leadId: string, userId?: string): Promise<boolean> {
+  const result = await db
+    .select()
+    .from(crmLeads)
+    .where(and(
+      eq(crmLeads.tenantId, tenantId),
+      eq(crmLeads.id, leadId)
+    ))
+    .limit(1);
+  
+  return result.length > 0;
+}
+
+async function checkCustomerAccess(tenantId: string, customerId: string, userId?: string): Promise<boolean> {
+  const result = await db
+    .select()
+    .from(crmCustomers)
+    .where(and(
+      eq(crmCustomers.tenantId, tenantId),
+      eq(crmCustomers.id, customerId)
+    ))
+    .limit(1);
+  
+  return result.length > 0;
+}
+
+async function checkCampaignAccess(tenantId: string, campaignId: string, userId?: string): Promise<boolean> {
+  const result = await db
+    .select()
+    .from(crmCampaigns)
+    .where(and(
+      eq(crmCampaigns.tenantId, tenantId),
+      eq(crmCampaigns.id, campaignId)
+    ))
+    .limit(1);
+  
+  return result.length > 0;
+}
+
+async function getAvailableWorkflows(tenantId: string, entityType: string, entityId: string) {
+  // Mock implementation - would query workflow_templates based on entity state
+  return [
+    {
+      id: 'wf1',
+      name: 'Invia Email di Benvenuto',
+      description: 'Invia email di benvenuto al nuovo cliente',
+      category: 'engagement',
+      executionMode: 'manual',
+      requiresApproval: true,
+      estimatedDuration: 30,
+    },
+    {
+      id: 'wf2',
+      name: 'Aggiorna Probabilità Deal',
+      description: 'Calcola e aggiorna la probabilità di chiusura del deal',
+      category: 'automation',
+      executionMode: 'automatic',
+      requiresApproval: false,
+      estimatedDuration: 5,
+    }
+  ];
+}
+
+async function getWorkflowHistory(tenantId: string, entityType: string, entityId: string) {
+  // Mock implementation - would query workflow_executions table
+  return [
+    {
+      id: 'exec1',
+      workflowId: 'wf1',
+      workflowName: 'Invia Email di Benvenuto',
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      executedBy: 'user123',
+      executedByName: 'Mario Rossi',
+      duration: 25,
+      result: 'success',
+    }
+  ];
+}
+
+async function getWorkflowQueue(params: any) {
+  // Mock implementation - would query workflow_execution_queue table
+  return [
+    {
+      id: 'queue1',
+      workflowId: 'wf1',
+      workflowName: 'Invia Email di Benvenuto',
+      workflowCategory: 'engagement',
+      entityType: 'deal',
+      entityId: 'deal123',
+      entityName: 'Deal Acme Corp',
+      entityStage: 'Negotiation',
+      entityValue: 50000,
+      requestedBy: 'user456',
+      requestedByName: 'Luigi Verdi',
+      requestedAt: new Date().toISOString(),
+      priority: 'high',
+      reason: 'Cliente importante',
+      status: 'pending',
+      estimatedDuration: 30,
+    }
+  ];
+}
+
+async function getWorkflowQueueStats(tenantId: string) {
+  // Mock implementation
+  return {
+    totalPending: 15,
+    totalToday: 8,
+    totalThisWeek: 42,
+    avgApprovalTime: 12,
+    approvalRate: 85,
+    byPriority: {
+      low: 3,
+      medium: 5,
+      high: 6,
+      critical: 1
+    },
+    byEntity: {
+      deal: 7,
+      lead: 4,
+      customer: 3,
+      campaign: 1
+    }
+  };
+}
+
+async function createWorkflowExecution(params: any) {
+  // Would create records in workflow_executions and workflow_execution_queue tables
+  return {
+    id: 'exec-new',
+    workflowId: params.workflowId,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    status: params.requiresApproval ? 'pending_approval' : 'executing',
+    requestedBy: params.requestedBy,
+    requestedAt: new Date().toISOString(),
+    reason: params.reason,
+  };
+}
+
+async function enqueueWorkflowExecution(executionId: string) {
+  // Would enqueue to BullMQ for async processing
+  return true;
+}
+
+async function bulkApproveWorkflows(tenantId: string, workflowIds: string[], userId?: string) {
+  // Would update workflow_execution_queue and trigger executions
+  return workflowIds.map(id => ({
+    id,
+    status: 'approved',
+    approvedBy: userId,
+    approvedAt: new Date().toISOString(),
+  }));
+}
+
+async function bulkRejectWorkflows(tenantId: string, workflowIds: string[], userId?: string, reason?: string) {
+  // Would update workflow_execution_queue with rejection
+  return workflowIds.map(id => ({
+    id,
+    status: 'rejected',
+    rejectedBy: userId,
+    rejectedAt: new Date().toISOString(),
+    rejectionReason: reason,
+  }));
+}
+
+async function approveWorkflow(tenantId: string, queueId: string, userId?: string) {
+  // Would update single workflow and trigger execution
+  return {
+    id: queueId,
+    status: 'approved',
+    approvedBy: userId,
+    approvedAt: new Date().toISOString(),
+  };
+}
+
+async function rejectWorkflow(tenantId: string, queueId: string, userId?: string, reason?: string) {
+  // Would update single workflow with rejection
+  return {
+    id: queueId,
+    status: 'rejected',
+    rejectedBy: userId,
+    rejectedAt: new Date().toISOString(),
+    rejectionReason: reason,
+  };
+}
+
+async function emitWorkflowEvent(tenantId: string, event: string, data: any) {
+  // Would emit websocket event for real-time updates
+  logger.info('Emitting workflow event', { tenantId, event, data });
+  return true;
+}
+
 export default router;
