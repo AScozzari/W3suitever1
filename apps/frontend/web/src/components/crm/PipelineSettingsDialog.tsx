@@ -394,31 +394,33 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent 
-        className="max-w-5xl max-h-[85vh] flex flex-col"
+        className="max-w-5xl w-[min(90vw,1080px)] max-h-[90vh] overflow-hidden p-0"
         style={{
           background: 'white',
           border: '1px solid rgba(0, 0, 0, 0.1)'
         }}
       >
-        <DialogHeader className="pb-4 border-b">
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}>
-              <Settings2 className="h-6 w-6" />
-            </div>
-            <div>
-              <div style={{ color: '#1f2937' }}>Impostazioni Pipeline</div>
-              <div className="text-sm font-normal text-gray-500 mt-1">
-                {pipeline?.name || 'Caricamento...'}
+        <div className="flex h-full flex-col">
+          <DialogHeader className="shrink-0 pb-4 border-b px-6 pt-6">
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}>
+                <Settings2 className="h-6 w-6" />
               </div>
-            </div>
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Configura impostazioni generali, stage, workflow e notifiche per questa pipeline CRM
-          </DialogDescription>
-        </DialogHeader>
+              <div>
+                <div style={{ color: '#1f2937' }}>Impostazioni Pipeline</div>
+                <div className="text-sm font-normal text-gray-500 mt-1">
+                  {pipeline?.name || 'Caricamento...'}
+                </div>
+              </div>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Configura impostazioni generali, stage, workflow e notifiche per questa pipeline CRM
+            </DialogDescription>
+          </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-7 bg-gray-50 p-1 rounded-lg">
+          <div className="flex flex-1 min-h-0 flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col">
+              <TabsList className="shrink-0 grid grid-cols-7 bg-gray-50 p-1 rounded-lg mx-6 mt-4" style={{ width: 'calc(100% - 3rem)' }}>
             <TabsTrigger 
               value="general" 
               className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
@@ -478,7 +480,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsList>
 
           {/* Tab: Generale */}
-          <TabsContent value="general" className="flex-1 overflow-y-auto space-y-6 py-6">
+              <TabsContent value="general" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             {pipelineLoading ? (
               <LoadingState />
             ) : (
@@ -567,7 +569,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Stati Pipeline */}
-          <TabsContent value="stages" className="flex-1 overflow-y-auto space-y-6 py-6">
+              <TabsContent value="stages" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             {stagesLoading ? (
               <LoadingState />
             ) : (
@@ -733,7 +735,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Workflow Abbinati */}
-          <TabsContent value="workflows" className="flex-1 overflow-y-auto space-y-6 py-6">
+              <TabsContent value="workflows" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             {workflowsLoading ? (
               <LoadingState />
             ) : (
@@ -873,7 +875,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Automazioni */}
-          <TabsContent value="automation" className="flex-1 overflow-y-auto space-y-6 py-6">
+              <TabsContent value="automation" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             <Card className="p-6 bg-white border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 text-gray-900">Regole di Automazione</h3>
               <div className="space-y-4">
@@ -950,7 +952,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Notifiche */}
-          <TabsContent value="notifications" className="flex-1 overflow-y-auto space-y-6 py-6">
+              <TabsContent value="notifications" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             <Card className="p-6 bg-white border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 text-gray-900">Preferenze Notifiche</h3>
               <div className="space-y-4">
@@ -1042,7 +1044,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Permessi */}
-          <TabsContent value="permissions" className="flex-1 overflow-y-auto space-y-6 py-6 pr-2">
+              <TabsContent value="permissions" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             <div className="space-y-6">
               <Card className="p-6 bg-white border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900">Visibilità e Accesso</h3>
@@ -1296,7 +1298,7 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
           </TabsContent>
 
           {/* Tab: Avanzate */}
-          <TabsContent value="advanced" className="flex-1 overflow-y-auto space-y-6 py-6">
+              <TabsContent value="advanced" className="h-full overflow-y-auto space-y-6 px-6 py-6">
             <Card className="p-6 bg-white border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 text-gray-900">Configurazioni Avanzate</h3>
               <div className="space-y-6">
@@ -1358,7 +1360,9 @@ export function PipelineSettingsDialog({ open, onClose, pipelineId }: PipelineSe
               </div>
             </Card>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+        </div>
       </DialogContent>
 
       {/* Team User Assignment Modal */}
