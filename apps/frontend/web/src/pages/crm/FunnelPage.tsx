@@ -1175,24 +1175,19 @@ function FunnelBuilder({ funnels, onCreateClick }: { funnels: Funnel[] | undefin
                         />
                         <p className="font-medium text-sm text-gray-900">{funnel.name}</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {funnel.aiOrchestrationEnabled && (
-                          <Sparkles className="w-3 h-3 text-purple-600" />
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-gray-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSettingsFunnel(funnel);
-                          }}
-                          data-testid={`button-settings-funnel-builder-${funnel.id}`}
-                          title="Impostazioni Funnel"
-                        >
-                          <Settings2 className="w-5 h-5 text-gray-700" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-gray-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSettingsFunnel(funnel);
+                        }}
+                        data-testid={`button-settings-funnel-builder-${funnel.id}`}
+                        title="Impostazioni Funnel"
+                      >
+                        <Settings2 className="w-5 h-5 text-gray-700" />
+                      </Button>
                     </div>
                     <div 
                       className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer"
