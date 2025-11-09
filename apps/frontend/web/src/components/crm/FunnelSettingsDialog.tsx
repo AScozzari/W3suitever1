@@ -234,6 +234,15 @@ export function FunnelSettingsDialog({ open, onClose, funnelId, funnelName }: Fu
     return (
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="w-5 h-5 text-windtre-orange" />
+              Impostazioni Funnel
+            </DialogTitle>
+            <DialogDescription>
+              Caricamento delle impostazioni in corso...
+            </DialogDescription>
+          </DialogHeader>
           <LoadingState message="Caricamento impostazioni funnel..." />
         </DialogContent>
       </Dialog>
