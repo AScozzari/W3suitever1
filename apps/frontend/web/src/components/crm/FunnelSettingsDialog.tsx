@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { 
@@ -16,9 +23,17 @@ import {
   Zap,
   Info,
   GitBranch,
-  Brain
+  Brain,
+  Save,
+  FileText
 } from 'lucide-react';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
+
+const updateFunnelSchema = z.object({
+  name: z.string().min(3, 'Il nome deve contenere almeno 3 caratteri').max(255),
+  description: z.string().optional(),
+  aiOrchestrationEnabled: z.boolean().default(false)
+});
 
 interface FunnelSettingsDialogProps {
   open: boolean;
@@ -29,7 +44,7 @@ interface FunnelSettingsDialogProps {
 
 export function FunnelSettingsDialog({ open, onClose, funnelId, funnelName }: FunnelSettingsDialogProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('workflows');
+  const [activeTab, setActiveTab] = useState('general');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedExecutionMode, setSelectedExecutionMode] = useState<'automatic' | 'manual'>('manual');
 
@@ -37,6 +52,21 @@ export function FunnelSettingsDialog({ open, onClose, funnelId, funnelName }: Fu
   const { data: funnel, isLoading: funnelLoading } = useQuery({
     queryKey: [`/api/crm/funnels/${funnelId}`],
     enabled: open && !!funnelId,
+  });
+
+  // Form for general settings
+  const form = useForm({
+    resolver: zodResolver(updateFunnelSchema),
+    defaultValues: {
+      name: funnel?.name || '',
+      description: funnel?.description || '',
+      aiOrchestrationEnabled: funnel?.aiOrchestrationEnabled || false
+    },
+    values: {
+      name: funnel?.name || '',
+      description: funnel?.description || '',
+      aiOrchestrationEnabled: funnel?.aiOrchestrationEnabled || false
+    }
   });
 
   // Fetch assigned workflows
@@ -145,6 +175,33 @@ export function FunnelSettingsDialog({ open, onClose, funnelId, funnelName }: Fu
     },
   });
 
+  // Update funnel general settings mutation
+  const updateFunnelMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof updateFunnelSchema>) => {
+      return apiRequest(`/api/crm/funnels/${funnelId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/funnels/${funnelId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/funnels'] });
+      toast({
+        title: '✅ Impostazioni salvate',
+        description: 'Le impostazioni del funnel sono state aggiornate con successo',
+        className: "bg-green-50 border-green-200",
+        duration: 3000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile salvare le impostazioni',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleAssignWorkflow = () => {
     if (!selectedTemplate) {
       toast({
@@ -197,12 +254,102 @@ export function FunnelSettingsDialog({ open, onClose, funnelId, funnelName }: Fu
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-1">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general" className="flex items-center gap-2" data-testid="tab-general">
+              <FileText className="w-4 h-4" />
+              Generale
+            </TabsTrigger>
             <TabsTrigger value="workflows" className="flex items-center gap-2" data-testid="tab-workflows">
               <Workflow className="w-4 h-4" />
               Workflows
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="general" className="flex-1 overflow-y-auto space-y-6 p-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit((data) => updateFunnelMutation.mutate(data))} className="space-y-6">
+                <Card className="windtre-glass-panel p-6">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Settings2 className="w-4 h-4 text-windtre-orange" />
+                    Informazioni Generali
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome Funnel *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="es. Lead to Customer Journey" 
+                              {...field} 
+                              data-testid="input-funnel-name-settings"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrizione</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descrivi il customer journey..." 
+                              {...field} 
+                              data-testid="input-funnel-description-settings"
+                              rows={3}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="aiOrchestrationEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">AI Orchestration</FormLabel>
+                            <FormDescription>
+                              Abilita l'intelligenza artificiale per ottimizzare il customer journey
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-ai-orchestration-settings"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex justify-end mt-6">
+                    <Button
+                      type="submit"
+                      disabled={updateFunnelMutation.isPending || !form.formState.isDirty}
+                      className="bg-windtre-orange hover:bg-windtre-orange/90 text-white"
+                      data-testid="button-save-funnel-settings"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {updateFunnelMutation.isPending ? 'Salvataggio...' : 'Salva Modifiche'}
+                    </Button>
+                  </div>
+                </Card>
+              </form>
+            </Form>
+          </TabsContent>
 
           <TabsContent value="workflows" className="flex-1 overflow-y-auto space-y-6 p-4">
             {/* Info Banner */}
