@@ -124,12 +124,15 @@ export function FunnelAnalytics({ funnels }: FunnelAnalyticsProps) {
     });
 
     // Invalidate all analytics queries for the selected funnel
+    // Using prefix matching on ['/api/crm/funnels', funnelId] to catch all analytics endpoints
     await Promise.all([
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics'] 
+        queryKey: ['/api/crm/funnels', filters.funnelId],
+        exact: false // Enable prefix matching
       }),
       queryClient.refetchQueries({ 
-        queryKey: ['/api/crm/funnels', filters.funnelId, 'analytics'] 
+        queryKey: ['/api/crm/funnels', filters.funnelId],
+        exact: false
       })
     ]);
 

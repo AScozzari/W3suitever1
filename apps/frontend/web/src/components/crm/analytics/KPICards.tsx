@@ -1,5 +1,6 @@
-import { TrendingUp, TrendingDown, DollarSign, Users, Clock, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, Clock, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface ROISummary {
@@ -55,6 +56,33 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
     return null;
   }
 
+  // Enterprise Benchmark Thresholds (SLA targets)
+  const benchmarks = {
+    conversionRate: { warning: 30, critical: 20 }, // Below 30% = warning, below 20% = critical
+    churnRate: { warning: 25, critical: 35 }, // Above 25% = warning, above 35% = critical
+    avgDuration: { warning: 45, critical: 60 }, // Above 45 days = warning, above 60 = critical
+  };
+
+  // Calculate alert status for each KPI
+  const getAlertStatus = (metric: string, value: number): 'nominal' | 'warning' | 'critical' => {
+    switch (metric) {
+      case 'conversionRate':
+        if (value < benchmarks.conversionRate.critical) return 'critical';
+        if (value < benchmarks.conversionRate.warning) return 'warning';
+        return 'nominal';
+      case 'churnRate':
+        if (value > benchmarks.churnRate.critical) return 'critical';
+        if (value > benchmarks.churnRate.warning) return 'warning';
+        return 'nominal';
+      case 'avgDuration':
+        if (value > benchmarks.avgDuration.critical) return 'critical';
+        if (value > benchmarks.avgDuration.warning) return 'warning';
+        return 'nominal';
+      default:
+        return 'nominal';
+    }
+  };
+
   const kpis = [
     {
       label: 'Total Leads',
@@ -64,6 +92,8 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       testId: 'kpi-total-leads',
+      alertMetric: null,
+      rawValue: data.totalLeads,
     },
     {
       label: 'Deals Attivi',
@@ -73,6 +103,8 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       testId: 'kpi-active-deals',
+      alertMetric: null,
+      rawValue: data.activeDeals,
     },
     {
       label: 'Conversion Rate',
@@ -82,6 +114,8 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       color: data.conversionRate >= 50 ? 'text-green-600' : 'text-orange-600',
       bgColor: data.conversionRate >= 50 ? 'bg-green-50' : 'bg-orange-50',
       testId: 'kpi-conversion-rate',
+      alertMetric: 'conversionRate',
+      rawValue: data.conversionRate,
     },
     {
       label: 'Media Giorni',
@@ -91,6 +125,8 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
       testId: 'kpi-avg-duration',
+      alertMetric: 'avgDuration',
+      rawValue: data.avgJourneyDurationDays,
     },
     {
       label: 'Revenue Totale',
@@ -100,6 +136,8 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       testId: 'kpi-total-revenue',
+      alertMetric: null,
+      rawValue: data.totalRevenue,
     },
     {
       label: 'Churn Rate',
@@ -109,6 +147,8 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
       color: data.churnRate > 30 ? 'text-red-600' : 'text-gray-600',
       bgColor: data.churnRate > 30 ? 'bg-red-50' : 'bg-gray-50',
       testId: 'kpi-churn-rate',
+      alertMetric: 'churnRate',
+      rawValue: data.churnRate,
     },
   ];
 
@@ -121,9 +161,41 @@ export function KPICards({ data, isLoading }: KPICardsProps) {
           return (
             <Card
               key={kpi.label}
-              className="windtre-glass-panel border-white/20 p-6 hover:shadow-lg transition-shadow"
+              className="windtre-glass-panel border-white/20 p-6 hover:shadow-lg transition-shadow relative"
               data-testid={kpi.testId}
             >
+              {/* Alert Badge - Top Right */}
+              {(() => {
+                const alertStatus = kpi.alertMetric 
+                  ? getAlertStatus(kpi.alertMetric, typeof kpi.rawValue === 'number' ? kpi.rawValue : 0)
+                  : 'nominal';
+                
+                if (alertStatus === 'critical') {
+                  return (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 flex items-center gap-1 animate-pulse"
+                      data-testid={`alert-${kpi.testId}`}
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      CRITICAL
+                    </Badge>
+                  );
+                } else if (alertStatus === 'warning') {
+                  return (
+                    <Badge 
+                      variant="outline" 
+                      className="absolute -top-2 -right-2 flex items-center gap-1 bg-orange-100 text-orange-700 border-orange-300"
+                      data-testid={`alert-${kpi.testId}`}
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      WARNING
+                    </Badge>
+                  );
+                }
+                return null;
+              })()}
+
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-sm text-gray-600 mb-1">{kpi.label}</p>
