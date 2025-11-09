@@ -3,7 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   User, Search, Bell, Settings, Menu, ChevronDown,
   Store, LogOut, UserCircle, CheckCircle, Circle,
-  AlertTriangle, AlertCircle, Info, Users, BarChart3
+  AlertTriangle, AlertCircle, Info, Users, BarChart3,
+  Workflow, Clock
 } from 'lucide-react';
 import { oauth2Client } from '../../services/OAuth2Client';
 import { queryClient } from '../../lib/queryClient';
@@ -13,6 +14,7 @@ import { useIdleAwareRefetch } from '../../hooks/useIdleAwareRefetch';
 import { useTenant } from '../../contexts/TenantContext';
 import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
 import GlobalCustomerSearch from '../GlobalCustomerSearch';
+import { useLocation } from 'wouter';
 
 // Palette colori W3 Suite - Consistent con Layout
 const COLORS = {
@@ -46,6 +48,7 @@ export default function Header({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [, navigate] = useLocation();
   
   const { currentTenant } = useTenant();
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
@@ -82,8 +85,17 @@ export default function Header({
     }
   });
 
+  // Workflow queue stats query
+  const { data: workflowStats } = useQuery({
+    queryKey: ['/api/crm/workflow-queue/stats'],
+    refetchInterval, // Only poll when user is active
+    enabled: !!user
+  });
+
   const unreadCount = unreadCountData?.unreadCount || 0;
   const notifications = notificationsData?.notifications || [];
+  const pendingWorkflows = workflowStats?.totalPending || 0;
+  const totalNotifications = unreadCount + pendingWorkflows;
 
   // Utility functions for notifications
   const getNotificationIcon = (type: string, priority: string) => {
@@ -355,15 +367,19 @@ export default function Header({
             }}
           >
             <Bell size={isMobile ? 18 : 20} />
-            {/* Dynamic notification badge */}
-            {unreadCount > 0 && (
+            {/* Dynamic notification badge - Combined count */}
+            {totalNotifications > 0 && (
               <div style={{
                 position: 'absolute',
                 top: '-2px',
                 right: '-2px',
-                minWidth: unreadCount > 9 ? '18px' : '16px',
+                minWidth: totalNotifications > 9 ? '18px' : '16px',
                 height: '16px',
-                background: '#ef4444',
+                background: pendingWorkflows > 0 && workflowStats?.byPriority?.critical > 0 
+                  ? '#ef4444' // Red for critical workflows
+                  : pendingWorkflows > 0 && workflowStats?.byPriority?.high > 0
+                  ? '#f59e0b' // Orange for high priority workflows
+                  : '#ef4444', // Default red
                 borderRadius: '8px',
                 border: '2px solid white',
                 display: 'flex',
@@ -372,10 +388,10 @@ export default function Header({
                 fontSize: '10px',
                 fontWeight: 600,
                 color: 'white',
-                padding: unreadCount > 9 ? '0 4px' : '0'
+                padding: totalNotifications > 9 ? '0 4px' : '0'
               }}
               data-testid="notification-badge">
-                {unreadCount > 99 ? '99+' : unreadCount}
+                {totalNotifications > 99 ? '99+' : totalNotifications}
               </div>
             )}
           </button>
@@ -406,7 +422,7 @@ export default function Header({
                 justifyContent: 'space-between'
               }}>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#1f2937' }}>
-                  Notifiche {unreadCount > 0 && `(${unreadCount})`}
+                  Notifiche {totalNotifications > 0 && `(${totalNotifications})`}
                 </div>
                 {unreadCount > 0 && (
                   <button
