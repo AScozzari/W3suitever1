@@ -1,0 +1,202 @@
+Seq: 106769435 NOTIFY
+Call-ID: 00c81eb1-37a2-123f-1c96-0201ab548c53
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+hook.js:608 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog Error Component Stack
+    at TitleWarning (chunk-7T5VQMYK.js?v=9490c3af:319:23)
+    at chunk-7T5VQMYK.js?v=9490c3af:239:13
+    at chunk-7T5VQMYK.js?v=9490c3af:162:58
+    at Presence (chunk-3RPIZZKC.js?v=9490c3af:24:11)
+    at chunk-7T5VQMYK.js?v=9490c3af:153:64
+    at chunk-TCRT5IO7.js?v=9490c3af:43:13
+    at chunk-TCRT5IO7.js?v=9490c3af:20:13
+    at chunk-7JN5FQRM.js?v=9490c3af:42:13
+    at chunk-R54IPKTL.js?v=9490c3af:244:22
+    at Presence (chunk-3RPIZZKC.js?v=9490c3af:24:11)
+    at Provider (chunk-3WVMON5O.js?v=9490c3af:38:15)
+    at DialogPortal (chunk-7T5VQMYK.js?v=9490c3af:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=9490c3af:38:15)
+    at Dialog (chunk-7T5VQMYK.js?v=9490c3af:56:5)
+    at FunnelSettingsDialog (FunnelSettingsDialog.tsx:30:40)
+    at div (<anonymous>)
+    at FunnelOverview (FunnelPage.tsx:275:27)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=9490c3af:42:13
+    at Presence (chunk-3RPIZZKC.js?v=9490c3af:24:11)
+    at @radix-ui_react-tabs.js?v=9490c3af:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=9490c3af:42:13
+    at Provider (chunk-3WVMON5O.js?v=9490c3af:38:15)
+    at @radix-ui_react-tabs.js?v=9490c3af:55:7
+    at div (<anonymous>)
+    at FunnelContent (FunnelPage.tsx:1396:37)
+    at div (<anonymous>)
+    at MotionComponent (framer-motion.js?v=9490c3af:945:40)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at CRMPage (CRMPage.tsx:75:27)
+    at AuthenticatedRoute (TenantShell.tsx:506:72)
+    at Route (wouter.js?v=9490c3af:206:16)
+    at Switch (wouter.js?v=9490c3af:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:226:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:81:59)
+    at Route (wouter.js?v=9490c3af:206:16)
+    at Switch (wouter.js?v=9490c3af:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=9490c3af:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7T5VQMYK.js?v=9490c3af:329
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9490c3af:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9490c3af:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9490c3af:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9490c3af:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:18627Understand this error
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-7T5VQMYK.js?v=9490c3af:335:29)
+    at chunk-7T5VQMYK.js?v=9490c3af:239:13
+    at chunk-7T5VQMYK.js?v=9490c3af:162:58
+    at Presence (chunk-3RPIZZKC.js?v=9490c3af:24:11)
+    at chunk-7T5VQMYK.js?v=9490c3af:153:64
+    at chunk-TCRT5IO7.js?v=9490c3af:43:13
+    at chunk-TCRT5IO7.js?v=9490c3af:20:13
+    at chunk-7JN5FQRM.js?v=9490c3af:42:13
+    at chunk-R54IPKTL.js?v=9490c3af:244:22
+    at Presence (chunk-3RPIZZKC.js?v=9490c3af:24:11)
+    at Provider (chunk-3WVMON5O.js?v=9490c3af:38:15)
+    at DialogPortal (chunk-7T5VQMYK.js?v=9490c3af:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=9490c3af:38:15)
+    at Dialog (chunk-7T5VQMYK.js?v=9490c3af:56:5)
+    at FunnelSettingsDialog (FunnelSettingsDialog.tsx:30:40)
+    at div (<anonymous>)
+    at FunnelOverview (FunnelPage.tsx:275:27)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=9490c3af:42:13
+    at Presence (chunk-3RPIZZKC.js?v=9490c3af:24:11)
+    at @radix-ui_react-tabs.js?v=9490c3af:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=9490c3af:42:13
+    at Provider (chunk-3WVMON5O.js?v=9490c3af:38:15)
+    at @radix-ui_react-tabs.js?v=9490c3af:55:7
+    at div (<anonymous>)
+    at FunnelContent (FunnelPage.tsx:1396:37)
+    at div (<anonymous>)
+    at MotionComponent (framer-motion.js?v=9490c3af:945:40)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at CRMPage (CRMPage.tsx:75:27)
+    at AuthenticatedRoute (TenantShell.tsx:506:72)
+    at Route (wouter.js?v=9490c3af:206:16)
+    at Switch (wouter.js?v=9490c3af:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:226:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:81:59)
+    at Route (wouter.js?v=9490c3af:206:16)
+    at Switch (wouter.js?v=9490c3af:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=9490c3af:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7T5VQMYK.js?v=9490c3af:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9490c3af:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9490c3af:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9490c3af:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9490c3af:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:18627Understand this warning
+hook.js:608 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7T5VQMYK.js?v=9490c3af:329
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=9490c3af:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=9490c3af:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=9490c3af:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9490c3af:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:18627Understand this error
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7T5VQMYK.js?v=9490c3af:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=9490c3af:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=9490c3af:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=9490c3af:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9490c3af:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:18627Understand this warning
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/funnels/a6cb4766-92f4-4b6e-b2ce-b23fcbc0e0b7/workflows 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=9490c3af:1097
+run @ @tanstack_react-query.js?v=9490c3af:795
+start @ @tanstack_react-query.js?v=9490c3af:838
+fetch @ @tanstack_react-query.js?v=9490c3af:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9490c3af:1639
+onSubscribe @ @tanstack_react-query.js?v=9490c3af:1335
+subscribe @ @tanstack_react-query.js?v=9490c3af:24
+(anonymous) @ @tanstack_react-query.js?v=9490c3af:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9490c3af:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9490c3af:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9490c3af:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9490c3af:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9490c3af:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9490c3af:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/funnels/a6cb4766-92f4-4b6e-b2ce-b23fcbc0e0b7/workflows 500 (Internal Server Error)
