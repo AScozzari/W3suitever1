@@ -27,7 +27,9 @@ import {
   Hash,
   Grid3x3,
   WifiOff,
-  Wifi
+  Wifi,
+  Pin,
+  PinOff
 } from 'lucide-react';
 
 interface SoftphoneWidgetProps {
@@ -51,6 +53,10 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [showDialpad, setShowDialpad] = useState(false);
   const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const [isPinned, setIsPinned] = useState(() => {
+    // Restore pinned state from localStorage
+    return localStorage.getItem('softphone-pinned') === 'true';
+  });
 
   // Call duration timer
   useEffect(() => {
@@ -145,9 +151,9 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
     }
   }, [sip.currentSession]);
 
-  // Auto-collapse after 30 seconds of inactivity (when idle)
+  // Auto-collapse after 30 seconds of inactivity (when idle and not pinned)
   useEffect(() => {
-    if (callState === 'idle' && !isMinimized) {
+    if (callState === 'idle' && !isMinimized && !isPinned) {
       const timeout = setTimeout(() => {
         const now = Date.now();
         if (now - lastActivityTime > 30000) { // 30 seconds
@@ -157,11 +163,18 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
       
       return () => clearTimeout(timeout);
     }
-  }, [callState, isMinimized, lastActivityTime]);
+  }, [callState, isMinimized, lastActivityTime, isPinned]);
 
   // Update activity time on any interaction
   const updateActivity = () => {
     setLastActivityTime(Date.now());
+  };
+
+  // Toggle pin state with localStorage persistence
+  const togglePin = () => {
+    const newPinnedState = !isPinned;
+    setIsPinned(newPinnedState);
+    localStorage.setItem('softphone-pinned', String(newPinnedState));
   };
 
   const handleCall = async () => {
@@ -267,6 +280,16 @@ export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) 
               <span className="font-semibold text-white">Softphone</span>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className={`h-8 w-8 p-0 text-white hover:bg-white/20 ${isPinned ? 'bg-white/30' : ''}`}
+                onClick={togglePin}
+                data-testid="button-pin-softphone"
+                title={isPinned ? 'Unpin (Auto-collapse after 30s)' : 'Pin (Keep open)'}
+              >
+                {isPinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
