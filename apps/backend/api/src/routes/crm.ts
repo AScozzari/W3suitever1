@@ -71,6 +71,7 @@ import { attributionService } from '../services/attribution.service';
 import { GDPRConsentService } from '../services/gdpr-consent.service';
 import { GTMSnippetGeneratorService } from '../services/gtm-snippet-generator.service';
 import { dealNotificationService } from '../services/deal-notification-service';
+import { analyticsCacheService } from '../services/analytics-cache.service';
 
 const router = express.Router();
 
@@ -4121,52 +4122,59 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
       return res.status(404).json({ success: false, error: 'Funnel not found' } as ApiErrorResponse);
     }
 
-    // Build date filter
-    let dateFilter = sql`TRUE`;
-    if (dateFrom && dateTo) {
-      dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
-    }
+    // Determine cache mode and params
+    const cacheMode = (dataMode === 'realtime') ? 'realtime' : 'historical';
+    const cacheParams = { dateFrom, dateTo, segment };
 
-    // Build segment filter (B2B/B2C)
-    let segmentFilter = sql`TRUE`;
-    if (segment === 'b2b') {
-      segmentFilter = sql`c.customer_type = 'b2b'`;
-    } else if (segment === 'b2c') {
-      segmentFilter = sql`c.customer_type = 'b2c'`;
-    }
+    // Fetch analytics with caching
+    const analyticsData = await analyticsCacheService.getOrFetch(
+      tenantId,
+      funnelId,
+      'overview',
+      cacheMode as 'realtime' | 'historical',
+      cacheParams,
+      async () => {
+        // Build date filter
+        let dateFilter = sql`TRUE`;
+        if (dateFrom && dateTo) {
+          dateFilter = sql`d.created_at BETWEEN ${dateFrom}::timestamptz AND ${dateTo}::timestamptz`;
+        }
 
-    // Query KPI metrics
-    const metricsResult = await db.execute(sql`
-      WITH funnel_pipelines AS (
-        SELECT id FROM w3suite.crm_pipelines
-        WHERE tenant_id = ${tenantId}
-        AND funnel_id = ${funnelId}
-        AND is_active = true
-      ),
-      funnel_deals AS (
-        SELECT 
-          d.*,
-          c.customer_type
-        FROM w3suite.crm_deals d
-        LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
-        WHERE d.pipeline_id IN (SELECT id FROM funnel_pipelines)
-        AND d.tenant_id = ${tenantId}
-        AND ${dateFilter}
-        AND ${segmentFilter}
-      )
+        // Build segment filter (B2B/B2C)
+        let segmentFilter = sql`TRUE`;
+        if (segment === 'b2b') {
+          segmentFilter = sql`c.customer_type = 'b2b'`;
+        } else if (segment === 'b2c') {
+          segmentFilter = sql`c.customer_type = 'b2c'`;
+        }
+
+        // Query KPI metrics
+        // OPTIMIZED: Direct JOIN instead of IN (SELECT) for better performance with composite indexes
+        const metricsResult = await db.execute(sql`
       SELECT
-        COUNT(DISTINCT d.id)::int as total_leads,
-        COUNT(DISTINCT d.id) FILTER (WHERE d.status NOT IN ('won', 'lost'))::int as active_deals,
-        COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'won')::int as won_deals,
-        COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'lost')::int as lost_deals,
-        COUNT(DISTINCT d.id) FILTER (WHERE d.status IN ('won', 'lost'))::int as closed_deals,
+        COUNT(d.id)::int as total_leads,
+        COUNT(d.id) FILTER (WHERE d.status NOT IN ('won', 'lost'))::int as active_deals,
+        COUNT(d.id) FILTER (WHERE d.status = 'won')::int as won_deals,
+        COUNT(d.id) FILTER (WHERE d.status = 'lost')::int as lost_deals,
+        COUNT(d.id) FILTER (WHERE d.status IN ('won', 'lost'))::int as closed_deals,
         COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as total_revenue,
         COALESCE(AVG(
           EXTRACT(EPOCH FROM (
             COALESCE(d.won_at, d.lost_at, NOW()) - d.created_at
           )) / 86400
         ), 0)::float as avg_journey_duration_days
-      FROM funnel_deals d
+      FROM w3suite.crm_deals d
+      INNER JOIN w3suite.crm_pipelines p 
+        ON d.pipeline_id = p.id 
+        AND d.tenant_id = p.tenant_id
+        AND p.funnel_id = ${funnelId}
+        AND p.is_active = true
+      LEFT JOIN w3suite.crm_customers c 
+        ON d.customer_id = c.id
+        AND d.tenant_id = c.tenant_id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      AND ${segmentFilter}
     `);
 
     const metrics = metricsResult.rows[0] as any;
@@ -4181,23 +4189,23 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
       : 0;
 
     // Calculate ROI Summary (enterprise-grade ROI rollup)
+    // OPTIMIZED: Direct JOIN chain with explicit tenant filters for security
     const roiResult = await db.execute(sql`
-      WITH funnel_pipelines AS (
-        SELECT id FROM w3suite.crm_pipelines
-        WHERE tenant_id = ${tenantId}
-        AND funnel_id = ${funnelId}
-        AND is_active = true
-      ),
-      campaign_spend AS (
-        SELECT COALESCE(SUM(cp.total_spend), 0)::float as total_marketing_spend
-        FROM w3suite.crm_campaigns cp
-        INNER JOIN w3suite.crm_leads l ON l.campaign_id = cp.id
-        INNER JOIN w3suite.crm_deals d ON d.lead_id = l.id
-        WHERE d.pipeline_id IN (SELECT id FROM funnel_pipelines)
-        AND d.tenant_id = ${tenantId}
-        AND ${dateFilter}
-      )
-      SELECT total_marketing_spend FROM campaign_spend
+      SELECT COALESCE(SUM(cp.total_spend), 0)::float as total_marketing_spend
+      FROM w3suite.crm_deals d
+      INNER JOIN w3suite.crm_pipelines p 
+        ON d.pipeline_id = p.id 
+        AND d.tenant_id = p.tenant_id
+        AND p.funnel_id = ${funnelId}
+        AND p.is_active = true
+      INNER JOIN w3suite.crm_leads l 
+        ON d.lead_id = l.id
+        AND d.tenant_id = l.tenant_id
+      INNER JOIN w3suite.crm_campaigns cp 
+        ON l.campaign_id = cp.id
+        AND l.tenant_id = cp.tenant_id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
     `);
 
     const marketingSpend = (roiResult.rows[0] as any)?.total_marketing_spend || 0;
@@ -4221,45 +4229,48 @@ router.get('/funnels/:funnelId/analytics/overview', rbacMiddleware, async (req, 
       const priorTo = new Date(fromDate);
       
       const priorResult = await db.execute(sql`
-        WITH funnel_pipelines AS (
-          SELECT id FROM w3suite.crm_pipelines
-          WHERE tenant_id = ${tenantId}
-          AND funnel_id = ${funnelId}
-          AND is_active = true
-        )
         SELECT COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as prior_revenue
         FROM w3suite.crm_deals d
-        WHERE d.pipeline_id IN (SELECT id FROM funnel_pipelines)
-        AND d.tenant_id = ${tenantId}
+        INNER JOIN w3suite.crm_pipelines p 
+          ON d.pipeline_id = p.id 
+          AND d.tenant_id = p.tenant_id
+          AND p.funnel_id = ${funnelId}
+          AND p.is_active = true
+        WHERE d.tenant_id = ${tenantId}
         AND d.created_at BETWEEN ${priorFrom.toISOString()}::timestamptz AND ${priorTo.toISOString()}::timestamptz
       `);
       
-      priorPeriodRevenue = (priorResult.rows[0] as any)?.prior_revenue || 0;
-      revenueDelta = priorPeriodRevenue > 0
-        ? Math.round(((currentRevenue - priorPeriodRevenue) / priorPeriodRevenue) * 100)
-        : 0;
-    }
+        priorPeriodRevenue = (priorResult.rows[0] as any)?.prior_revenue || 0;
+        revenueDelta = priorPeriodRevenue > 0
+          ? Math.round(((currentRevenue - priorPeriodRevenue) / priorPeriodRevenue) * 100)
+          : 0;
+        }
+
+        // Return aggregated analytics payload
+        return {
+          totalLeads: metrics.total_leads || 0,
+          activeDeals: metrics.active_deals || 0,
+          conversionRate,
+          avgJourneyDurationDays: Math.round(metrics.avg_journey_duration_days || 0),
+          totalRevenue: metrics.total_revenue || 0,
+          churnRate,
+          wonDeals: metrics.won_deals || 0,
+          lostDeals: metrics.lost_deals || 0,
+          roiSummary: {
+            currentRevenue,
+            marketingSpend,
+            margin,
+            roiPercent,
+            priorPeriodRevenue,
+            revenueDelta
+          }
+        };
+      }
+    );
 
     return res.json({
       success: true,
-      data: {
-        totalLeads: metrics.total_leads || 0,
-        activeDeals: metrics.active_deals || 0,
-        conversionRate,
-        avgJourneyDurationDays: Math.round(metrics.avg_journey_duration_days || 0),
-        totalRevenue: metrics.total_revenue || 0,
-        churnRate,
-        wonDeals: metrics.won_deals || 0,
-        lostDeals: metrics.lost_deals || 0,
-        roiSummary: {
-          currentRevenue,
-          marketingSpend,
-          margin,
-          roiPercent,
-          priorPeriodRevenue,
-          revenueDelta
-        }
-      },
+      data: analyticsData,
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
 
@@ -4414,48 +4425,38 @@ router.get('/funnels/:funnelId/analytics/stage-performance', rbacMiddleware, asy
     }
 
     // Query stage performance with advanced metrics
+    // OPTIMIZED: Removed CTE, direct JOIN for better index utilization
     const stagePerformanceResult = await db.execute(sql`
-      WITH funnel_pipelines AS (
-        SELECT id, name FROM w3suite.crm_pipelines
-        WHERE tenant_id = ${tenantId}
-        AND funnel_id = ${funnelId}
-        AND is_active = true
-      ),
-      stage_deals AS (
-        SELECT 
-          p.id as pipeline_id,
-          p.name as pipeline_name,
-          d.current_stage_order,
-          s.name as stage_name,
-          s.category as stage_category,
-          d.id as deal_id,
-          d.status,
-          d.estimated_value,
-          EXTRACT(EPOCH FROM (NOW() - d.stage_updated_at)) / 86400 as days_in_stage,
-          c.customer_type
-        FROM w3suite.crm_deals d
-        INNER JOIN funnel_pipelines p ON d.pipeline_id = p.id
-        LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = p.id AND s."order" = d.current_stage_order
-        LEFT JOIN w3suite.crm_customers c ON d.customer_id = c.id
-        WHERE d.tenant_id = ${tenantId}
-        AND ${dateFilter}
-        AND ${segmentFilter}
-      )
       SELECT
-        pipeline_id,
-        pipeline_name,
-        current_stage_order as stage_order,
-        stage_name,
-        stage_category,
-        COUNT(deal_id)::int as deal_count,
-        COALESCE(AVG(days_in_stage), 0)::float as avg_days_in_stage,
-        COUNT(deal_id) FILTER (WHERE status = 'won')::int as won_count,
-        COUNT(deal_id) FILTER (WHERE status = 'lost')::int as lost_count,
-        COUNT(deal_id) FILTER (WHERE status IN ('won', 'lost'))::int as closed_count,
-        COALESCE(SUM(estimated_value), 0)::float as total_revenue
-      FROM stage_deals
-      GROUP BY pipeline_id, pipeline_name, current_stage_order, stage_name, stage_category
-      ORDER BY pipeline_id, current_stage_order
+        p.id as pipeline_id,
+        p.name as pipeline_name,
+        d.current_stage_order as stage_order,
+        s.name as stage_name,
+        s.category as stage_category,
+        COUNT(d.id)::int as deal_count,
+        COALESCE(AVG(EXTRACT(EPOCH FROM (NOW() - d.stage_updated_at)) / 86400), 0)::float as avg_days_in_stage,
+        COUNT(d.id) FILTER (WHERE d.status = 'won')::int as won_count,
+        COUNT(d.id) FILTER (WHERE d.status = 'lost')::int as lost_count,
+        COUNT(d.id) FILTER (WHERE d.status IN ('won', 'lost'))::int as closed_count,
+        COALESCE(SUM(d.estimated_value), 0)::float as total_revenue
+      FROM w3suite.crm_deals d
+      INNER JOIN w3suite.crm_pipelines p 
+        ON d.pipeline_id = p.id 
+        AND d.tenant_id = p.tenant_id
+        AND p.funnel_id = ${funnelId}
+        AND p.is_active = true
+      LEFT JOIN w3suite.crm_pipeline_stages s 
+        ON s.pipeline_id = p.id 
+        AND s."order" = d.current_stage_order
+        AND s.tenant_id = p.tenant_id
+      LEFT JOIN w3suite.crm_customers c 
+        ON d.customer_id = c.id
+        AND d.tenant_id = c.tenant_id
+      WHERE d.tenant_id = ${tenantId}
+      AND ${dateFilter}
+      AND ${segmentFilter}
+      GROUP BY p.id, p.name, d.current_stage_order, s.name, s.category
+      ORDER BY p.id, d.current_stage_order
     `);
 
     const stagePerformance = stagePerformanceResult.rows.map((row: any) => {
@@ -4517,38 +4518,32 @@ router.get('/funnels/:funnelId/analytics/channel-effectiveness', rbacMiddleware,
     }
 
     // Query interaction effectiveness by channel and stage
+    // OPTIMIZED: Direct JOIN without CTE for performance
     const channelEffectivenessResult = await db.execute(sql`
-      WITH funnel_pipelines AS (
-        SELECT id FROM w3suite.crm_pipelines
-        WHERE tenant_id = ${tenantId}
-        AND funnel_id = ${funnelId}
-        AND is_active = true
-      ),
-      deal_interactions AS (
-        SELECT 
-          d.id as deal_id,
-          d.current_stage_order,
-          d.status,
-          i.channel,
-          i.direction,
-          s.name as stage_name
-        FROM w3suite.crm_deals d
-        INNER JOIN funnel_pipelines fp ON d.pipeline_id = fp.id
-        LEFT JOIN w3suite.crm_interactions i ON i.deal_id = d.id
-        LEFT JOIN w3suite.crm_pipeline_stages s ON s.pipeline_id = d.pipeline_id AND s."order" = d.current_stage_order
-        WHERE d.tenant_id = ${tenantId}
+      SELECT 
+        s.name as stage_name,
+        i.channel,
+        COUNT(d.id)::int as interaction_count,
+        COUNT(d.id) FILTER (WHERE d.status = 'won')::int as conversions
+      FROM w3suite.crm_deals d
+      INNER JOIN w3suite.crm_pipelines p 
+        ON d.pipeline_id = p.id 
+        AND d.tenant_id = p.tenant_id
+        AND p.funnel_id = ${funnelId}
+        AND p.is_active = true
+      LEFT JOIN w3suite.crm_interactions i 
+        ON i.deal_id = d.id
+        AND i.tenant_id = d.tenant_id
+      LEFT JOIN w3suite.crm_pipeline_stages s 
+        ON s.pipeline_id = p.id 
+        AND s."order" = d.current_stage_order
+        AND s.tenant_id = p.tenant_id
+      WHERE d.tenant_id = ${tenantId}
         AND i.channel IS NOT NULL
         AND ${dateFilter}
-      )
-      SELECT
-        stage_name,
-        channel,
-        COUNT(DISTINCT deal_id)::int as interaction_count,
-        COUNT(DISTINCT deal_id) FILTER (WHERE status = 'won')::int as conversions
-      FROM deal_interactions
-      GROUP BY stage_name, channel
-      HAVING COUNT(DISTINCT deal_id) > 0
-      ORDER BY stage_name, channel
+      GROUP BY s.name, i.channel
+      HAVING COUNT(d.id) > 0
+      ORDER BY s.name, i.channel
     `);
 
     const heatmapData = channelEffectivenessResult.rows.map((row: any) => ({
@@ -4596,38 +4591,32 @@ router.get('/funnels/:funnelId/analytics/campaign-attribution', rbacMiddleware, 
     }
 
     // Query campaign performance for this funnel
+    // OPTIMIZED: Direct JOIN chain instead of nested CTEs
     const campaignAttributionResult = await db.execute(sql`
-      WITH funnel_pipelines AS (
-        SELECT id FROM w3suite.crm_pipelines
-        WHERE tenant_id = ${tenantId}
-        AND funnel_id = ${funnelId}
-        AND is_active = true
-      ),
-      funnel_leads AS (
-        SELECT 
-          l.id,
-          l.campaign_id,
-          l.source,
-          l.ai_lead_score,
-          d.status,
-          d.estimated_value
-        FROM w3suite.crm_leads l
-        LEFT JOIN w3suite.crm_deals d ON d.lead_id = l.id AND d.pipeline_id IN (SELECT id FROM funnel_pipelines)
-        WHERE l.tenant_id = ${tenantId}
-        AND ${dateFilter}
-      )
       SELECT
         c.id as campaign_id,
         c.name as campaign_name,
         c.budget,
-        COUNT(fl.id)::int as lead_count,
-        COUNT(fl.id) FILTER (WHERE fl.status = 'won')::int as conversions,
-        COALESCE(AVG(fl.ai_lead_score), 0)::float as avg_lead_quality,
-        COALESCE(SUM(fl.estimated_value) FILTER (WHERE fl.status = 'won'), 0)::float as revenue
-      FROM funnel_leads fl
-      LEFT JOIN w3suite.crm_campaigns c ON fl.campaign_id = c.id
+        COUNT(l.id)::int as lead_count,
+        COUNT(d.id) FILTER (WHERE d.status = 'won')::int as conversions,
+        COALESCE(AVG(l.ai_lead_score), 0)::float as avg_lead_quality,
+        COALESCE(SUM(d.estimated_value) FILTER (WHERE d.status = 'won'), 0)::float as revenue
+      FROM w3suite.crm_leads l
+      LEFT JOIN w3suite.crm_deals d 
+        ON d.lead_id = l.id
+        AND d.tenant_id = l.tenant_id
+      INNER JOIN w3suite.crm_pipelines p 
+        ON d.pipeline_id = p.id 
+        AND d.tenant_id = p.tenant_id
+        AND p.funnel_id = ${funnelId}
+        AND p.is_active = true
+      LEFT JOIN w3suite.crm_campaigns c 
+        ON l.campaign_id = c.id
+        AND l.tenant_id = c.tenant_id
+      WHERE l.tenant_id = ${tenantId}
+        AND ${dateFilter}
       GROUP BY c.id, c.name, c.budget
-      HAVING COUNT(fl.id) > 0
+      HAVING COUNT(l.id) > 0
       ORDER BY revenue DESC
       LIMIT ${parseInt(limit as string)}
     `);
@@ -4689,22 +4678,21 @@ router.get('/funnels/:funnelId/analytics/time-to-close', rbacMiddleware, async (
     }
 
     // Query time-to-close distribution
+    // OPTIMIZED: Direct JOIN with single CTE for bucketing (keeps query readable)
     const timeToCloseResult = await db.execute(sql`
-      WITH funnel_pipelines AS (
-        SELECT id FROM w3suite.crm_pipelines
-        WHERE tenant_id = ${tenantId}
-        AND funnel_id = ${funnelId}
-        AND is_active = true
-      ),
-      closed_deals AS (
+      WITH closed_deals AS (
         SELECT 
-          EXTRACT(EPOCH FROM (COALESCE(won_at, lost_at) - created_at)) / 86400 as days_to_close,
-          status
-        FROM w3suite.crm_deals
-        WHERE pipeline_id IN (SELECT id FROM funnel_pipelines)
-        AND tenant_id = ${tenantId}
-        AND status IN ('won', 'lost')
-        AND ${dateFilter}
+          EXTRACT(EPOCH FROM (COALESCE(d.won_at, d.lost_at) - d.created_at)) / 86400 as days_to_close,
+          d.status
+        FROM w3suite.crm_deals d
+        INNER JOIN w3suite.crm_pipelines p 
+          ON d.pipeline_id = p.id 
+          AND d.tenant_id = p.tenant_id
+          AND p.funnel_id = ${funnelId}
+          AND p.is_active = true
+        WHERE d.tenant_id = ${tenantId}
+          AND d.status IN ('won', 'lost')
+          AND ${dateFilter}
       ),
       buckets AS (
         SELECT
@@ -7172,6 +7160,25 @@ router.post('/deals', async (req, res) => {
 
     logger.info('Deal created', { dealId: deal.id, tenantId });
 
+    // Invalidate analytics cache for affected funnel
+    if (deal.pipelineId) {
+      const pipeline = await db.query.crmPipelines.findFirst({
+        where: and(
+          eq(crmPipelines.id, deal.pipelineId),
+          eq(crmPipelines.tenantId, tenantId)
+        )
+      });
+
+      if (pipeline?.funnelId) {
+        await analyticsCacheService.invalidateFunnel(tenantId, pipeline.funnelId);
+        logger.debug('Analytics cache invalidated for funnel', { 
+          funnelId: pipeline.funnelId, 
+          dealId: deal.id, 
+          tenantId 
+        });
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: deal,
@@ -7314,6 +7321,34 @@ router.patch('/deals/:id', async (req, res) => {
       } catch (notifError) {
         logger.error('Failed to send deal notifications', {
           error: notifError instanceof Error ? notifError.message : 'Unknown error',
+          dealId: id
+        });
+      }
+    })();
+
+    // Invalidate analytics cache for affected funnel (async, don't block response)
+    (async () => {
+      try {
+        if (updated.pipelineId) {
+          const pipeline = await db.query.crmPipelines.findFirst({
+            where: and(
+              eq(crmPipelines.id, updated.pipelineId),
+              eq(crmPipelines.tenantId, tenantId)
+            )
+          });
+
+          if (pipeline?.funnelId) {
+            await analyticsCacheService.invalidateFunnel(tenantId, pipeline.funnelId);
+            logger.debug('Analytics cache invalidated for funnel', { 
+              funnelId: pipeline.funnelId, 
+              dealId: id, 
+              tenantId 
+            });
+          }
+        }
+      } catch (cacheError) {
+        logger.error('Failed to invalidate analytics cache', {
+          error: cacheError instanceof Error ? cacheError.message : 'Unknown error',
           dealId: id
         });
       }
