@@ -34,6 +34,10 @@ const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDas
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 const AIVoiceTest = lazy(() => import('../pages/AIVoiceTest'));
 
+// WMS Pages
+const ProductsPage = lazy(() => import('../pages/wms/ProductsPage'));
+const PriceListsPage = lazy(() => import('../pages/wms/PriceListsPage'));
+
 // Loading fallback component
 const PageLoader = () => (
   <div style={{
@@ -444,6 +448,19 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/crm`}>
         <AuthenticatedRoute>
           <CRMPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 📦 WMS ROUTES - Warehouse Management System */}
+      <Route path={`/${tenantSlug}/prodotti-listini/catalogo`}>
+        <AuthenticatedRoute>
+          <ProductsPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/prodotti-listini/listini-prezzi`}>
+        <AuthenticatedRoute>
+          <PriceListsPage />
         </AuthenticatedRoute>
       </Route>
       
