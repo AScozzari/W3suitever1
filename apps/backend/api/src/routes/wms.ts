@@ -1635,4 +1635,133 @@ router.post("/product-items/:tenantId/:id/status", rbacMiddleware, requirePermis
   }
 });
 
+/**
+ * GET /api/wms/product-batches
+ * Get all product batches with filters, pagination, and sorting
+ * Query params:
+ * - productId: Filter by product ID (exact match)
+ * - batchNumber: Filter by batch number (partial match)
+ * - status: Filter by batch status (available, reserved, damaged, expired)
+ * - storeId: Filter by store ID (exact match)
+ * - expiryBefore: Filter batches expiring before date (YYYY-MM-DD)
+ * - expiryAfter: Filter batches expiring after date (YYYY-MM-DD)
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 20, max: 100)
+ * - sort_by: Column to sort by (default: created_at)
+ * - sort_order: Sort order (asc/desc, default: desc)
+ */
+router.get("/product-batches", rbacMiddleware, requirePermission('wms.batch.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Parse and validate query parameters
+    const {
+      productId,
+      batchNumber,
+      status,
+      storeId,
+      expiryBefore,
+      expiryAfter,
+      page = "1",
+      limit = "20",
+      sort_by = "created_at",
+      sort_order = "desc"
+    } = req.query;
+
+    // Defensive parsing with fallbacks
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
+    const offset = (pageNum - 1) * limitNum;
+
+    // Build WHERE conditions
+    const conditions = [eq(productBatches.tenantId, tenantId)];
+
+    if (productId) {
+      conditions.push(eq(productBatches.productId, productId as string));
+    }
+
+    if (batchNumber) {
+      conditions.push(ilike(productBatches.batchNumber, `%${batchNumber}%`));
+    }
+
+    if (status && ['available', 'reserved', 'damaged', 'expired'].includes(status as string)) {
+      conditions.push(eq(productBatches.status, status as string));
+    }
+
+    if (storeId) {
+      conditions.push(eq(productBatches.storeId, storeId as string));
+    }
+
+    if (expiryBefore) {
+      conditions.push(sql`${productBatches.expiryDate} < ${expiryBefore}`);
+    }
+
+    if (expiryAfter) {
+      conditions.push(sql`${productBatches.expiryDate} > ${expiryAfter}`);
+    }
+
+    const whereClause = and(...conditions);
+
+    // Determine sort column
+    const sortColumns: Record<string, any> = {
+      created_at: productBatches.createdAt,
+      updated_at: productBatches.updatedAt,
+      batch_number: productBatches.batchNumber,
+      expiry_date: productBatches.expiryDate,
+      quantity: productBatches.quantity,
+      status: productBatches.status
+    };
+
+    const sortColumn = sortColumns[sort_by as string] || productBatches.createdAt;
+    const sortDirection = sort_order === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+    // Execute query with pagination
+    const batches = await db
+      .select()
+      .from(productBatches)
+      .where(whereClause)
+      .orderBy(sortDirection)
+      .limit(limitNum)
+      .offset(offset);
+
+    // Get total count for pagination metadata
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(productBatches)
+      .where(whereClause);
+
+    // Structured logging for monitoring
+    logger.info('WMS product batches retrieved', {
+      tenantId,
+      page: pageNum,
+      limit: limitNum,
+      totalResults: batches.length,
+      filters: { productId, batchNumber, status, storeId, expiryBefore, expiryAfter }
+    });
+
+    res.json({
+      success: true,
+      data: batches,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count,
+        totalPages: Math.ceil(count / limitNum)
+      }
+    });
+
+  } catch (error) {
+    console.error("Error retrieving WMS product batches:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to retrieve product batches",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;
