@@ -15,6 +15,20 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middlewa
 import { logger } from "../core/logger";
 import { z } from "zod";
 
+// Active product_items logistic statuses (prevent product deletion)
+// These represent inventory under tenant control or committed to orders
+const ACTIVE_ITEM_STATUSES = [
+  'in_stock',
+  'reserved',
+  'preparing',
+  'shipping',
+  'customer_return',
+  'doa_return',
+  'in_service',
+  'supplier_return',
+  'in_transfer'
+] as const;
+
 const router = Router();
 
 /**
@@ -414,6 +428,117 @@ router.patch("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.p
     
     res.status(500).json({ 
       error: "Failed to update product",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * DELETE /api/wms/products/:tenantId/:id
+ * Soft-delete a product (set is_active=false, archived_at=NOW)
+ * Params: tenantId (UUID), id (product ID)
+ * - Checks for active product_items dependencies before deletion
+ * - Prevents deletion if product has active items
+ * - Marks product as inactive with archived timestamp
+ */
+router.delete("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.product.delete'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: productId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Verify tenant ID match (security check)
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot delete product from different tenant"
+      });
+    }
+
+    // Get existing product
+    const [existingProduct] = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.id, productId)
+        )
+      )
+      .limit(1);
+
+    if (!existingProduct) {
+      return res.status(404).json({ 
+        error: "Product not found",
+        message: `Product with ID '${productId}' not found for this tenant`
+      });
+    }
+
+    // Check for ACTIVE product_items dependencies
+    // Only count items in active operational states (under tenant control or committed)
+    const activeItemsCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(productItems)
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.productId, productId),
+          inArray(productItems.logisticStatus, ACTIVE_ITEM_STATUSES)
+        )
+      );
+
+    const count = activeItemsCount[0]?.count ?? 0;
+
+    if (count > 0) {
+      return res.status(409).json({ 
+        error: "Cannot delete product with active items",
+        message: `This product has ${count} active item(s) in inventory (in_stock, reserved, preparing, etc.). Please complete or cancel these items before deleting the product.`,
+        activeItemsCount: count
+      });
+    }
+
+    // Soft-delete: update is_active=false and archived_at=NOW
+    const [deletedProduct] = await db
+      .update(products)
+      .set({ 
+        isActive: false,
+        archivedAt: new Date(),
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.id, productId)
+        )
+      )
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product soft-deleted', {
+      tenantId: sessionTenantId,
+      productId,
+      sku: deletedProduct.sku,
+      name: deletedProduct.name,
+      deletedBy: userId,
+      archivedAt: deletedProduct.archivedAt
+    });
+
+    res.json({
+      success: true,
+      message: "Product successfully archived",
+      data: deletedProduct
+    });
+
+  } catch (error) {
+    console.error("Error deleting WMS product:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to delete product",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
