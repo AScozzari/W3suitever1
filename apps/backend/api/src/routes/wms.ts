@@ -17,6 +17,7 @@ import {
   wmsInventoryAdjustments,
   wmsStockMovements,
   insertStockMovementSchema,
+  wmsWarehouseLocations,
   stores
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -2569,6 +2570,155 @@ router.post("/inventory-adjustments", rbacMiddleware, requirePermission("wms.sto
     
     res.status(500).json({ 
       error: "Failed to process inventory adjustments",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== WAREHOUSE LOCATIONS ====================
+
+/**
+ * GET /api/wms/warehouse-locations
+ * 
+ * Retrieve warehouse locations with filtering, pagination, and sorting.
+ * 
+ * @permission wms.warehouse.read
+ * @query {
+ *   storeId?: string (UUID filter)
+ *   zone?: string (partial match filter)
+ *   isActive?: boolean
+ *   locationType?: 'shelf' | 'pallet' | 'bin' | 'floor'
+ *   minCapacity?: number (capacity >= minCapacity)
+ *   maxOccupancy?: number (currentOccupancy <= maxOccupancy)
+ *   page?: number (default: 1)
+ *   limit?: number (default: 20, max: 100)
+ *   sortBy?: string (default: code)
+ *   sortOrder?: 'asc' | 'desc' (default: asc)
+ * }
+ * @returns {
+ *   success: boolean,
+ *   data: Array<WarehouseLocation>,
+ *   pagination: { page, limit, totalPages, totalCount }
+ * }
+ */
+
+const warehouseLocationQuerySchema = z.object({
+  storeId: z.string().uuid("Store ID must be valid UUID").optional(),
+  zone: z.string().max(50, "Zone filter too long").optional(),
+  isActive: z.enum(['true', 'false']).optional(),
+  locationType: z.enum(['shelf', 'pallet', 'bin', 'floor']).optional(),
+  minCapacity: z.string().regex(/^\d+$/, "Min capacity must be number").optional(),
+  maxOccupancy: z.string().regex(/^\d+$/, "Max occupancy must be number").optional(),
+  page: z.string().regex(/^\d+$/, "Page must be number").optional(),
+  limit: z.string().regex(/^\d+$/, "Limit must be number").optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+router.get("/warehouse-locations", rbacMiddleware, requirePermission('wms.warehouse.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+    
+    // Validate query params
+    const validationResult = warehouseLocationQuerySchema.safeParse(req.query);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid query parameters",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const {
+      storeId,
+      zone,
+      isActive,
+      locationType,
+      minCapacity,
+      maxOccupancy,
+      page = "1",
+      limit = "20",
+      sortBy = "code",
+      sortOrder = "asc"
+    } = validationResult.data;
+    
+    // Parse pagination with clamping (min 1)
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(Math.max(1, parseInt(limit)), 100);
+    const offset = (pageNum - 1) * limitNum;
+    
+    // Build filters
+    const filters = [eq(wmsWarehouseLocations.tenantId, tenantId)];
+    
+    if (storeId) {
+      filters.push(eq(wmsWarehouseLocations.storeId, storeId));
+    }
+    
+    if (zone) {
+      filters.push(ilike(wmsWarehouseLocations.zone, `%${zone}%`));
+    }
+    
+    if (isActive !== undefined) {
+      filters.push(eq(wmsWarehouseLocations.isActive, isActive === 'true'));
+    }
+    
+    if (locationType) {
+      filters.push(eq(wmsWarehouseLocations.locationType, locationType));
+    }
+    
+    if (minCapacity) {
+      filters.push(sql`${wmsWarehouseLocations.capacity} >= ${parseInt(minCapacity)}`);
+    }
+    
+    if (maxOccupancy) {
+      filters.push(sql`${wmsWarehouseLocations.currentOccupancy} <= ${parseInt(maxOccupancy)}`);
+    }
+    
+    // Determine sort column
+    const sortColumn = sortBy === 'name' ? wmsWarehouseLocations.name :
+                       sortBy === 'zone' ? wmsWarehouseLocations.zone :
+                       sortBy === 'capacity' ? wmsWarehouseLocations.capacity :
+                       sortBy === 'occupancy' ? wmsWarehouseLocations.currentOccupancy :
+                       sortBy === 'created_at' ? wmsWarehouseLocations.createdAt :
+                       wmsWarehouseLocations.code; // default
+    
+    const orderFn = sortOrder === 'desc' ? desc : asc;
+    
+    // Get total count for pagination
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(wmsWarehouseLocations)
+      .where(and(...filters));
+    
+    const totalCount = Number(countResult[0]?.count || 0);
+    const totalPages = Math.ceil(totalCount / limitNum);
+    
+    // Get locations
+    const locations = await db.query.wmsWarehouseLocations.findMany({
+      where: and(...filters),
+      orderBy: [orderFn(sortColumn)],
+      limit: limitNum,
+      offset
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: locations,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+        totalCount
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error fetching warehouse locations:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch warehouse locations",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

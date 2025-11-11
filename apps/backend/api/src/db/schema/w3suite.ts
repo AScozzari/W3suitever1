@@ -6844,3 +6844,71 @@ export const insertProductBatchSchema = createInsertSchema(productBatches).omit(
 });
 export type InsertProductBatch = z.infer<typeof insertProductBatchSchema>;
 export type ProductBatch = typeof productBatches.$inferSelect;
+
+// 7) wms_warehouse_locations - Structured warehouse location management
+export const wmsWarehouseLocations = w3suiteSchema.table("wms_warehouse_locations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Location identification
+  code: varchar("code", { length: 50 }).notNull(), // "A-12-5" (zone-aisle-shelf)
+  name: varchar("name", { length: 255 }).notNull(), // "Warehouse A - Aisle 12 - Shelf 5"
+  
+  // Hierarchical structure
+  zone: varchar("zone", { length: 50 }), // "A", "B", "Cold Storage"
+  aisle: varchar("aisle", { length: 20 }), // "12"
+  shelf: varchar("shelf", { length: 20 }), // "5"
+  level: integer("level").default(0), // Floor level: 0=ground, 1=first, etc.
+  
+  // Capacity management
+  capacity: integer("capacity").default(0).notNull(), // Max items
+  currentOccupancy: integer("current_occupancy").default(0).notNull(), // Current items
+  
+  // Location characteristics
+  isActive: boolean("is_active").default(true).notNull(),
+  locationType: varchar("location_type", { length: 50 }).default('shelf'), // shelf | pallet | bin | floor
+  
+  // Optional metadata (temperature control, hazmat, dimensions, etc.)
+  metadata: jsonb("metadata"),
+  notes: text("notes"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // Unique code per tenant per store
+  uniqueIndex("wms_locations_tenant_store_code_unique").on(
+    table.tenantId, 
+    table.storeId, 
+    table.code
+  ),
+  
+  index("wms_locations_tenant_idx").on(table.tenantId),
+  index("wms_locations_tenant_store_idx").on(table.tenantId, table.storeId),
+  index("wms_locations_zone_idx").on(table.zone),
+  index("wms_locations_active_idx").on(table.isActive),
+  index("wms_locations_type_idx").on(table.locationType),
+]);
+
+export const insertWarehouseLocationSchema = createInsertSchema(wmsWarehouseLocations).omit({ 
+  id: true,
+  tenantId: true,
+  createdAt: true, 
+  updatedAt: true,
+  currentOccupancy: true // Auto-calculated
+}).extend({
+  code: z.string().min(1, "Codice location è obbligatorio").max(50),
+  name: z.string().min(1, "Nome location è obbligatorio").max(255),
+  zone: z.string().max(50, "Zona troppo lunga").optional(),
+  aisle: z.string().max(20, "Corridoio troppo lungo").optional(),
+  shelf: z.string().max(20, "Scaffale troppo lungo").optional(),
+  level: z.number().int().min(0, "Livello deve essere >= 0").optional(),
+  capacity: z.number().int().min(0, "Capacità deve essere positiva").optional(),
+  isActive: z.boolean().optional(),
+  locationType: z.enum(['shelf', 'pallet', 'bin', 'floor']).optional(),
+  metadata: z.record(z.any()).optional(),
+  notes: z.string().optional(),
+});
+export type InsertWarehouseLocation = z.infer<typeof insertWarehouseLocationSchema>;
+export type WarehouseLocation = typeof wmsWarehouseLocations.$inferSelect;
