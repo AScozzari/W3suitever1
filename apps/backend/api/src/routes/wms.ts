@@ -3284,6 +3284,296 @@ router.get("/analytics/expiration-dashboard", rbacMiddleware, requirePermission(
   }
 });
 
+/**
+ * GET /api/wms/reports/export
+ * 
+ * Synchronous report export endpoint for immediate downloads.
+ * Supports CSV and JSON formats (use async job queue for PDF/XLSX).
+ * 
+ * @permission wms.analytics.read
+ * @queryParams {
+ *   reportType: 'products' | 'batches' | 'stock-movements' | 'expiration-dashboard'
+ *   format: 'csv' | 'json' (default: csv)
+ *   storeId?: string (UUID filter)
+ *   productId?: string (UUID filter)
+ *   startDate?: string (ISO date filter for movements)
+ *   endDate?: string (ISO date filter for movements)
+ *   limit?: string (number, max results, default: 1000)
+ * }
+ * @returns {
+ *   CSV file download or JSON response
+ * }
+ */
+
+const reportExportQuerySchema = z.object({
+  reportType: z.enum(['products', 'batches', 'stock-movements', 'expiration-dashboard']),
+  format: z.enum(['csv', 'json']).optional(),
+  storeId: z.string().uuid().optional(),
+  productId: z.string().uuid().optional(),
+  startDate: z.string().optional(), // ISO date
+  endDate: z.string().optional(), // ISO date
+  limit: z.string().optional(),
+});
+
+router.get("/reports/export", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const validationResult = reportExportQuerySchema.safeParse(req.query);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid query parameters",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const {
+      reportType,
+      format = 'csv',
+      storeId,
+      productId,
+      startDate,
+      endDate,
+      limit = '1000'
+    } = validationResult.data;
+    
+    const maxLimit = Math.min(parseInt(limit), 10000); // Cap at 10k rows for sync export
+    
+    let data: any[] = [];
+    let filename = '';
+    
+    // Fetch data based on report type
+    switch (reportType) {
+      case 'products': {
+        filename = `products_export_${new Date().toISOString().split('T')[0]}.${format}`;
+        
+        const filters = [eq(products.tenantId, tenantId)];
+        if (storeId) {
+          // Products don't have direct store FK, skip store filter for products
+        }
+        
+        const results = await db
+          .select({
+            id: products.id,
+            sku: products.sku,
+            name: products.name,
+            brand: products.brand,
+            ean: products.ean,
+            type: products.type,
+            isSerializable: products.isSerializable,
+            unitOfMeasure: products.unitOfMeasure,
+            quantityAvailable: products.quantityAvailable,
+            quantityReserved: products.quantityReserved,
+            reorderPoint: products.reorderPoint,
+            isActive: products.isActive,
+          })
+          .from(products)
+          .where(and(...filters))
+          .limit(maxLimit);
+        
+        data = results;
+        break;
+      }
+      
+      case 'batches': {
+        filename = `batches_export_${new Date().toISOString().split('T')[0]}.${format}`;
+        
+        const filters = [eq(productBatches.tenantId, tenantId)];
+        if (storeId) {
+          filters.push(eq(productBatches.storeId, storeId));
+        }
+        if (productId) {
+          filters.push(eq(productBatches.productId, productId));
+        }
+        
+        const results = await db
+          .select({
+            id: productBatches.id,
+            productId: productBatches.productId,
+            storeId: productBatches.storeId,
+            batchNumber: productBatches.batchNumber,
+            initialQuantity: productBatches.initialQuantity,
+            quantity: productBatches.quantity,
+            reserved: productBatches.reserved,
+            supplier: productBatches.supplier,
+            receivedDate: productBatches.receivedDate,
+            expiryDate: productBatches.expiryDate,
+            status: productBatches.status,
+            createdAt: productBatches.createdAt,
+          })
+          .from(productBatches)
+          .where(and(...filters))
+          .limit(maxLimit);
+        
+        data = results;
+        break;
+      }
+      
+      case 'stock-movements': {
+        filename = `stock_movements_export_${new Date().toISOString().split('T')[0]}.${format}`;
+        
+        const filters = [eq(wmsStockMovements.tenantId, tenantId)];
+        if (storeId) {
+          filters.push(eq(wmsStockMovements.storeId, storeId));
+        }
+        if (productId) {
+          filters.push(eq(wmsStockMovements.productId, productId));
+        }
+        if (startDate) {
+          filters.push(sql`${wmsStockMovements.createdAt} >= ${startDate}`);
+        }
+        if (endDate) {
+          filters.push(sql`${wmsStockMovements.createdAt} <= ${endDate}`);
+        }
+        
+        const results = await db
+          .select({
+            id: wmsStockMovements.id,
+            productId: wmsStockMovements.productId,
+            storeId: wmsStockMovements.storeId,
+            warehouseLocation: wmsStockMovements.warehouseLocation,
+            movementType: wmsStockMovements.movementType,
+            movementDirection: wmsStockMovements.movementDirection,
+            quantityDelta: wmsStockMovements.quantityDelta,
+            referenceId: wmsStockMovements.referenceId,
+            referenceType: wmsStockMovements.referenceType,
+            externalParty: wmsStockMovements.externalParty,
+            notes: wmsStockMovements.notes,
+            occurredAt: wmsStockMovements.occurredAt,
+            createdBy: wmsStockMovements.createdBy,
+            createdAt: wmsStockMovements.createdAt,
+          })
+          .from(wmsStockMovements)
+          .where(and(...filters))
+          .orderBy(desc(wmsStockMovements.occurredAt))
+          .limit(maxLimit);
+        
+        data = results;
+        break;
+      }
+      
+      case 'expiration-dashboard': {
+        filename = `expiration_dashboard_export_${new Date().toISOString().split('T')[0]}.${format}`;
+        
+        const filters = [eq(productBatches.tenantId, tenantId)];
+        if (storeId) {
+          filters.push(eq(productBatches.storeId, storeId));
+        }
+        if (productId) {
+          filters.push(eq(productBatches.productId, productId));
+        }
+        filters.push(sql`${productBatches.expiryDate} IS NOT NULL`);
+        
+        const batches = await db
+          .select({
+            id: productBatches.id,
+            batchNumber: productBatches.batchNumber,
+            productId: productBatches.productId,
+            storeId: productBatches.storeId,
+            quantity: productBatches.quantity,
+            expiryDate: productBatches.expiryDate,
+            status: productBatches.status,
+          })
+          .from(productBatches)
+          .where(and(...filters))
+          .limit(maxLimit);
+        
+        // Calculate urgency levels
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        data = batches.map(batch => {
+          const expiryDate = new Date(batch.expiryDate!);
+          expiryDate.setHours(0, 0, 0, 0);
+          const daysUntilExpiry = Math.floor((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          
+          let urgencyLevel: string;
+          if (daysUntilExpiry < 0) {
+            urgencyLevel = 'expired';
+          } else if (daysUntilExpiry <= 30) {
+            urgencyLevel = 'expiring-soon';
+          } else if (daysUntilExpiry <= 90) {
+            urgencyLevel = 'warning';
+          } else {
+            urgencyLevel = 'ok';
+          }
+          
+          return {
+            batchId: batch.id,
+            batchNumber: batch.batchNumber,
+            productId: batch.productId,
+            storeId: batch.storeId,
+            quantity: batch.quantity,
+            expiryDate: batch.expiryDate,
+            daysUntilExpiry,
+            urgencyLevel,
+            status: batch.status,
+          };
+        });
+        
+        break;
+      }
+    }
+    
+    // Generate output based on format
+    if (format === 'json') {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.status(200).json({
+        success: true,
+        reportType,
+        generatedAt: new Date().toISOString(),
+        recordCount: data.length,
+        data,
+      });
+    } else {
+      // CSV format
+      if (data.length === 0) {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.status(200).send('No data available for export\n');
+      }
+      
+      // Extract headers from first row
+      const headers = Object.keys(data[0]);
+      const csvRows = [headers.join(',')];
+      
+      // Convert rows to CSV
+      for (const row of data) {
+        const values = headers.map(header => {
+          const value = row[header];
+          if (value === null || value === undefined) {
+            return '';
+          }
+          // Escape commas and quotes in CSV values
+          const stringValue = String(value);
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`;
+          }
+          return stringValue;
+        });
+        csvRows.push(values.join(','));
+      }
+      
+      const csvContent = csvRows.join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.status(200).send(csvContent);
+    }
+    
+  } catch (error) {
+    console.error("Error exporting report:", error);
+    res.status(500).json({ 
+      error: "Failed to export report",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== JOB QUEUE ENDPOINTS ====================
 
 /**
