@@ -944,4 +944,150 @@ router.delete("/product-items/:tenantId/:id", rbacMiddleware, requirePermission(
   }
 });
 
+/**
+ * Valid logisticStatus transitions matrix
+ * Maps current status → allowed next statuses
+ */
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  'in_stock': ['reserved', 'preparing', 'shipping', 'internal_use', 'lost', 'damaged'],
+  'reserved': ['in_stock', 'preparing', 'customer_return'],
+  'preparing': ['shipping', 'in_stock'],
+  'shipping': ['delivered', 'in_transfer', 'customer_return', 'lost'],
+  'delivered': ['customer_return', 'internal_use'],
+  'customer_return': ['in_stock', 'doa_return'],
+  'doa_return': ['supplier_return', 'internal_use'],
+  'in_service': ['in_stock', 'internal_use'],
+  'supplier_return': ['in_stock'],
+  'in_transfer': ['in_stock'],
+  // End states (no transitions allowed)
+  'lost': [],
+  'damaged': [],
+  'internal_use': []
+};
+
+/**
+ * POST /api/wms/product-items/:tenantId/:id/status
+ * Transition product item to new logisticStatus with validation
+ * Params: tenantId (UUID), id (item ID)
+ * Body: { logisticStatus: string, notes?: string }
+ * - Validates transition is allowed per business rules
+ * - Auto-sets updatedAt timestamp
+ * - Structured logging with status audit trail
+ */
+router.post("/product-items/:tenantId/:id/status", rbacMiddleware, requirePermission('wms.item.update'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: itemId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const { logisticStatus: newStatus, notes } = req.body;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Verify tenant ID match (security check)
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot update product item from different tenant"
+      });
+    }
+
+    // Validate newStatus is provided
+    if (!newStatus) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        message: "logisticStatus is required"
+      });
+    }
+
+    // Get existing item
+    const [existingItem] = await db
+      .select()
+      .from(productItems)
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.id, itemId)
+        )
+      )
+      .limit(1);
+
+    if (!existingItem) {
+      return res.status(404).json({ 
+        error: "Product item not found",
+        message: `Product item with ID '${itemId}' not found for this tenant`
+      });
+    }
+
+    const currentStatus = existingItem.logisticStatus;
+
+    // Skip if status is the same
+    if (currentStatus === newStatus) {
+      return res.json({
+        success: true,
+        message: "Status unchanged",
+        data: existingItem
+      });
+    }
+
+    // Validate transition is allowed
+    const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
+    
+    if (!allowedTransitions.includes(newStatus)) {
+      return res.status(409).json({ 
+        error: "Invalid status transition",
+        message: `Cannot transition from '${currentStatus}' to '${newStatus}'. Allowed transitions: ${allowedTransitions.join(', ') || 'none (end state)'}`,
+        currentStatus,
+        requestedStatus: newStatus,
+        allowedStatuses: allowedTransitions
+      });
+    }
+
+    // Update item status
+    const [updatedItem] = await db
+      .update(productItems)
+      .set({ 
+        logisticStatus: newStatus,
+        notes: notes || existingItem.notes, // Append/update notes if provided
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.id, itemId)
+        )
+      )
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product item status transitioned', {
+      tenantId: sessionTenantId,
+      itemId,
+      productId: updatedItem.productId,
+      previousStatus: currentStatus,
+      newStatus,
+      notes: notes || null,
+      transitionValid: true
+    });
+
+    res.json({
+      success: true,
+      message: `Status successfully transitioned from '${currentStatus}' to '${newStatus}'`,
+      data: updatedItem,
+      transition: {
+        from: currentStatus,
+        to: newStatus
+      }
+    });
+
+  } catch (error) {
+    console.error("Error transitioning WMS product item status:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to transition product item status",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;
