@@ -6527,8 +6527,10 @@ export const products = w3suiteSchema.table("products", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
-  // RLS & uniqueness
-  uniqueIndex("products_tenant_id_unique").on(table.tenantId, table.id),
+  // Composite PK for cross-tenant identical IDs (Brand push requirement)
+  primaryKey({ columns: [table.tenantId, table.id] }),
+  
+  // Uniqueness constraints
   uniqueIndex("products_tenant_sku_unique").on(table.tenantId, table.sku),
   
   // Performance indexes (tenant_id first for RLS)
