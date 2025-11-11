@@ -1,4 +1,13 @@
 import { Router } from "express";
+import { 
+  enqueueBulkSerialImport,
+  enqueueGenerateReport,
+  enqueueBatchStockUpdate,
+  enqueueExpirationAlert,
+  getWMSQueueMetrics,
+  isRedisAvailable
+} from '../queue/wms-queue';
+import { startWMSWorker } from '../queue/wms-worker';
 import { db } from "../core/db";
 import { eq, and, ilike, or, desc, asc, sql, inArray } from "drizzle-orm";
 import crypto from "crypto";
@@ -2870,6 +2879,365 @@ router.get("/warehouse-locations", rbacMiddleware, requirePermission('wms.wareho
     console.error("Error fetching warehouse locations:", error);
     res.status(500).json({ 
       error: "Failed to fetch warehouse locations",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== JOB QUEUE ENDPOINTS ====================
+
+/**
+ * POST /api/wms/jobs/bulk-serial-import
+ * 
+ * Enqueue bulk serial import job (async processing).
+ * 
+ * @permission wms.products.write
+ * @body {
+ *   productId: string (UUID)
+ *   serials: Array<{
+ *     serialValue: string
+ *     batchId?: string (UUID)
+ *     storeId: string (UUID)
+ *     locationId?: string (UUID)
+ *   }>
+ * }
+ * @returns {
+ *   success: boolean,
+ *   jobId: string,
+ *   message: string
+ * }
+ */
+
+const bulkSerialImportJobSchema = z.object({
+  productId: z.string().uuid("Product ID must be valid UUID"),
+  serials: z.array(z.object({
+    serialValue: z.string().min(1, "Serial value required").max(255),
+    batchId: z.string().uuid().optional(),
+    storeId: z.string().uuid("Store ID must be valid UUID"),
+    locationId: z.string().uuid().optional(),
+  })).min(1, "At least one serial required").max(10000, "Maximum 10,000 serials per job"),
+});
+
+router.post("/jobs/bulk-serial-import", rbacMiddleware, requirePermission('wms.products.write'), async (req, res) => {
+  try {
+    if (!isRedisAvailable()) {
+      return res.status(503).json({ 
+        error: "Async job processing unavailable",
+        details: "Redis is required for WMS background jobs. Please configure REDIS_URL environment variable.",
+        suggestion: "For immediate processing, use synchronous endpoints instead."
+      });
+    }
+    
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const validationResult = bulkSerialImportJobSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid bulk serial import request",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const { productId, serials } = validationResult.data;
+    
+    startWMSWorker();
+    
+    const job = await enqueueBulkSerialImport({
+      tenantId,
+      userId,
+      productId,
+      serials,
+    });
+    
+    res.status(202).json({
+      success: true,
+      jobId: job.id,
+      message: `Bulk import job enqueued (${serials.length} serials)`
+    });
+    
+  } catch (error) {
+    console.error("Error enqueueing bulk serial import:", error);
+    res.status(500).json({ 
+      error: "Failed to enqueue bulk serial import",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/jobs/generate-report
+ * 
+ * Enqueue report generation job (async processing).
+ * 
+ * @permission wms.analytics.read
+ * @body {
+ *   reportType: 'stock-levels' | 'expiration-dashboard' | 'batch-kpis' | 'movements'
+ *   format: 'pdf' | 'csv' | 'xlsx'
+ *   filters?: Record<string, any>
+ * }
+ * @returns {
+ *   success: boolean,
+ *   jobId: string,
+ *   message: string
+ * }
+ */
+
+const generateReportJobSchema = z.object({
+  reportType: z.enum(['stock-levels', 'expiration-dashboard', 'batch-kpis', 'movements']),
+  format: z.enum(['pdf', 'csv', 'xlsx']),
+  filters: z.record(z.any()).optional(),
+});
+
+router.post("/jobs/generate-report", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    if (!isRedisAvailable()) {
+      return res.status(503).json({ 
+        error: "Async job processing unavailable",
+        details: "Redis is required for WMS background jobs. Please configure REDIS_URL environment variable."
+      });
+    }
+    
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const validationResult = generateReportJobSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid report generation request",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const { reportType, format, filters } = validationResult.data;
+    
+    startWMSWorker();
+    
+    const job = await enqueueGenerateReport({
+      tenantId,
+      userId,
+      reportType,
+      format,
+      filters,
+    });
+    
+    res.status(202).json({
+      success: true,
+      jobId: job.id,
+      message: `Report generation job enqueued (${reportType}.${format})`
+    });
+    
+  } catch (error) {
+    console.error("Error enqueueing report generation:", error);
+    res.status(500).json({ 
+      error: "Failed to enqueue report generation",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/jobs/batch-stock-update
+ * 
+ * Enqueue batch stock update job (async processing).
+ * 
+ * @permission wms.products.write
+ * @body {
+ *   updates: Array<{
+ *     productItemId: string (UUID)
+ *     storeId: string (UUID)
+ *     newQuantity?: number
+ *     newStatus?: string
+ *     locationId?: string (UUID)
+ *   }>
+ *   reason?: string
+ * }
+ * @returns {
+ *   success: boolean,
+ *   jobId: string,
+ *   message: string
+ * }
+ */
+
+const batchStockUpdateJobSchema = z.object({
+  updates: z.array(z.object({
+    productItemId: z.string().uuid("Product item ID must be valid UUID"),
+    storeId: z.string().uuid("Store ID must be valid UUID"),
+    newQuantity: z.number().int().min(0).optional(),
+    newStatus: z.string().optional(),
+    locationId: z.string().uuid().optional(),
+  })).min(1, "At least one update required").max(5000, "Maximum 5,000 updates per job"),
+  reason: z.string().max(500).optional(),
+});
+
+router.post("/jobs/batch-stock-update", rbacMiddleware, requirePermission('wms.products.write'), async (req, res) => {
+  try {
+    if (!isRedisAvailable()) {
+      return res.status(503).json({ 
+        error: "Async job processing unavailable",
+        details: "Redis is required for WMS background jobs. Please configure REDIS_URL environment variable."
+      });
+    }
+    
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const validationResult = batchStockUpdateJobSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid batch stock update request",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const { updates, reason } = validationResult.data;
+    
+    startWMSWorker();
+    
+    const job = await enqueueBatchStockUpdate({
+      tenantId,
+      userId,
+      updates,
+      reason,
+    });
+    
+    res.status(202).json({
+      success: true,
+      jobId: job.id,
+      message: `Batch stock update job enqueued (${updates.length} items)`
+    });
+    
+  } catch (error) {
+    console.error("Error enqueueing batch stock update:", error);
+    res.status(500).json({ 
+      error: "Failed to enqueue batch stock update",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/jobs/expiration-alert
+ * 
+ * Enqueue expiration alert job (async processing).
+ * 
+ * @permission wms.analytics.read
+ * @body {
+ *   daysThreshold: number (alert for items expiring within X days)
+ *   channels: Array<'email' | 'notification' | 'webhook'>
+ * }
+ * @returns {
+ *   success: boolean,
+ *   jobId: string,
+ *   message: string
+ * }
+ */
+
+const expirationAlertJobSchema = z.object({
+  daysThreshold: z.number().int().min(1).max(365, "Max 365 days threshold"),
+  channels: z.array(z.enum(['email', 'notification', 'webhook'])).min(1, "At least one channel required"),
+});
+
+router.post("/jobs/expiration-alert", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    if (!isRedisAvailable()) {
+      return res.status(503).json({ 
+        error: "Async job processing unavailable",
+        details: "Redis is required for WMS background jobs. Please configure REDIS_URL environment variable."
+      });
+    }
+    
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const validationResult = expirationAlertJobSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid expiration alert request",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const { daysThreshold, channels } = validationResult.data;
+    
+    startWMSWorker();
+    
+    const job = await enqueueExpirationAlert({
+      tenantId,
+      daysThreshold,
+      channels,
+    });
+    
+    res.status(202).json({
+      success: true,
+      jobId: job.id,
+      message: `Expiration alert job enqueued (${daysThreshold} days threshold)`
+    });
+    
+  } catch (error) {
+    console.error("Error enqueueing expiration alert:", error);
+    res.status(500).json({ 
+      error: "Failed to enqueue expiration alert",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/jobs/metrics
+ * 
+ * Get WMS queue metrics (waiting, active, completed, failed jobs).
+ * 
+ * @permission wms.analytics.read
+ * @returns {
+ *   success: boolean,
+ *   data: {
+ *     queueName: string,
+ *     waiting: number,
+ *     active: number,
+ *     completed: number,
+ *     failed: number,
+ *     delayed: number,
+ *     total: number
+ *   }
+ * }
+ */
+
+router.get("/jobs/metrics", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    if (!isRedisAvailable()) {
+      return res.status(503).json({ 
+        error: "Job metrics unavailable",
+        details: "Redis is required for WMS job queue metrics. Please configure REDIS_URL environment variable."
+      });
+    }
+    
+    const metrics = await getWMSQueueMetrics();
+    
+    res.status(200).json({
+      success: true,
+      data: metrics
+    });
+    
+  } catch (error) {
+    console.error("Error fetching WMS queue metrics:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch queue metrics",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
