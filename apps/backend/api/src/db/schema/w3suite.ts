@@ -399,9 +399,13 @@ export const stockMovementTypeEnum = pgEnum('stock_movement_type', [
   'purchase_in',        // Acquisto da fornitore
   'sale_out',           // Vendita
   'return_in',          // Reso da cliente
-  'transfer_out',       // Trasferimento
+  'transfer',           // Trasferimento (crea coppia inbound/outbound)
   'adjustment',         // Rettifica inventario
   'damaged'             // Danneggiato
+]);
+export const stockMovementDirectionEnum = pgEnum('stock_movement_direction', [
+  'inbound',            // Entrata (aumenta stock)
+  'outbound'            // Uscita (diminuisce stock)
 ]);
 export const priceListTypeEnum = pgEnum('price_list_type', ['b2c', 'b2b', 'wholesale']);
 
@@ -6683,7 +6687,71 @@ export const insertInventoryAdjustmentSchema = createInsertSchema(wmsInventoryAd
 export type InsertInventoryAdjustment = z.infer<typeof insertInventoryAdjustmentSchema>;
 export type InventoryAdjustment = typeof wmsInventoryAdjustments.$inferSelect;
 
-// 5) product_item_status_history - Audit trail for logistic status changes
+// 5) wms_stock_movements - Operational stock movements (purchases, sales, transfers)
+export const wmsStockMovements = w3suiteSchema.table("wms_stock_movements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Movement classification
+  movementType: stockMovementTypeEnum("movement_type").notNull(), // purchase_in, sale_out, return_in, transfer, adjustment, damaged
+  movementDirection: stockMovementDirectionEnum("movement_direction").notNull(), // inbound | outbound
+  
+  // Product reference
+  productId: varchar("product_id", { length: 100 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
+  productItemId: uuid("product_item_id").references(() => productItems.id, { onDelete: 'set null' }), // For serialized items
+  productBatchId: uuid("product_batch_id").references(() => productBatches.id, { onDelete: 'set null' }), // For batch tracking
+  
+  // Location tracking
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }), // Current store context
+  sourceStoreId: uuid("source_store_id").references(() => stores.id, { onDelete: 'set null' }), // For transfers OUT
+  destinationStoreId: uuid("destination_store_id").references(() => stores.id, { onDelete: 'set null' }), // For transfers IN
+  warehouseLocation: varchar("warehouse_location", { length: 100 }), // Shelf/zone location
+  
+  // Quantity tracking
+  quantityDelta: integer("quantity_delta").notNull(), // Signed: positive for inbound, negative for outbound
+  
+  // External references
+  referenceType: varchar("reference_type", { length: 50 }), // 'order', 'return', 'adjustment', 'purchase_order'
+  referenceId: varchar("reference_id", { length: 100 }), // External ID (orderId, adjustmentId, etc.)
+  externalParty: varchar("external_party", { length: 255 }), // Supplier name, customer name, etc.
+  
+  // Timestamps
+  occurredAt: timestamp("occurred_at").defaultNow().notNull(), // When movement happened
+  
+  // Audit trail
+  notes: text("notes"),
+  metadata: jsonb("metadata").default({}), // Extensibility for custom data
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  // Performance indexes
+  index("wms_stock_mov_tenant_idx").on(table.tenantId),
+  index("wms_stock_mov_tenant_product_occurred_idx").on(table.tenantId, table.productId, table.occurredAt.desc()),
+  index("wms_stock_mov_tenant_store_occurred_idx").on(table.tenantId, table.storeId, table.occurredAt.desc()),
+  index("wms_stock_mov_tenant_type_occurred_idx").on(table.tenantId, table.movementType, table.occurredAt.desc()),
+  index("wms_stock_mov_direction_idx").on(table.movementDirection),
+  index("wms_stock_mov_batch_idx").on(table.productBatchId),
+  index("wms_stock_mov_item_idx").on(table.productItemId),
+  
+  // Prevent duplicate postings for same reference
+  uniqueIndex("wms_stock_mov_reference_unique").on(table.referenceType, table.referenceId, table.movementDirection).where(sql`reference_type IS NOT NULL AND reference_id IS NOT NULL`),
+]);
+
+export const insertStockMovementSchema = createInsertSchema(wmsStockMovements).omit({ 
+  id: true,
+  tenantId: true,
+  createdAt: true 
+}).extend({
+  movementType: z.enum(['purchase_in', 'sale_out', 'return_in', 'transfer', 'adjustment', 'damaged']),
+  movementDirection: z.enum(['inbound', 'outbound']),
+  quantityDelta: z.number().int().refine((val) => val !== 0, "Quantity delta non può essere zero"),
+  productId: z.string().uuid("Product ID deve essere UUID valido"),
+  occurredAt: z.string().datetime().or(z.date()).optional(), // ISO string or Date object
+});
+export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
+export type StockMovement = typeof wmsStockMovements.$inferSelect;
+
+// 6) product_item_status_history - Audit trail for logistic status changes
 export const productItemStatusHistory = w3suiteSchema.table("product_item_status_history", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   productItemId: uuid("product_item_id").notNull().references(() => productItems.id, { onDelete: 'cascade' }),

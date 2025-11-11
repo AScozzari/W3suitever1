@@ -15,6 +15,8 @@ import {
   productBatches,
   insertProductBatchSchema,
   wmsInventoryAdjustments,
+  wmsStockMovements,
+  insertStockMovementSchema,
   stores
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -2069,6 +2071,302 @@ router.get(
     console.error("Error calculating WMS batch KPIs:", error);
     res.status(500).json({ 
       error: "Failed to calculate batch KPIs",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== TASK #26: POST Stock Movement ====================
+router.post("/stock-movements", rbacMiddleware, requirePermission('wms.stock.write'), async (req, res) => {
+  try {
+    // Get session tenant ID
+    const sessionTenantId = req.user?.tenantId ?? req.tenant?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ 
+        error: "Unauthorized",
+        message: "Session tenant ID not found" 
+      });
+    }
+    
+    // Validate request body
+    const validationResult = insertStockMovementSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validationResult.error.format()
+      });
+    }
+    
+    const movementData = validationResult.data;
+    
+    // Validate product exists in tenant
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.id, movementData.productId)
+        )
+      )
+      .limit(1);
+    
+    if (!product) {
+      return res.status(404).json({ 
+        error: "Product not found",
+        message: `Product with ID '${movementData.productId}' not found for this tenant`
+      });
+    }
+    
+    // Business logic for transfers: create paired records
+    if (movementData.movementType === 'transfer') {
+      // Transfers require sourceStoreId and destinationStoreId
+      if (!movementData.sourceStoreId || !movementData.destinationStoreId) {
+        return res.status(400).json({ 
+          error: "Validation failed",
+          message: "Transfer movements require both sourceStoreId and destinationStoreId"
+        });
+      }
+      
+      // Validate stock availability at source for outbound
+      if (movementData.productBatchId) {
+        const [batch] = await db
+          .select()
+          .from(productBatches)
+          .where(
+            and(
+              eq(productBatches.id, movementData.productBatchId),
+              eq(productBatches.tenantId, sessionTenantId)
+            )
+          )
+          .limit(1);
+        
+        if (!batch) {
+          return res.status(404).json({ 
+            error: "Batch not found",
+            message: `Product batch with ID '${movementData.productBatchId}' not found`
+          });
+        }
+        
+        // Check available stock (quantity - reserved)
+        const availableStock = batch.quantity - batch.reserved;
+        if (Math.abs(movementData.quantityDelta) > availableStock) {
+          return res.status(400).json({ 
+            error: "Insufficient stock",
+            message: `Not enough available stock for transfer. Available: ${availableStock}, requested: ${Math.abs(movementData.quantityDelta)}`
+          });
+        }
+      } else {
+        // Check product-level stock
+        if (Math.abs(movementData.quantityDelta) > product.quantityAvailable) {
+          return res.status(400).json({ 
+            error: "Insufficient stock",
+            message: `Not enough stock for transfer. Available: ${product.quantityAvailable}, requested: ${Math.abs(movementData.quantityDelta)}`
+          });
+        }
+      }
+      
+      // Use transaction for atomic paired record creation
+      const createdMovements = await db.transaction(async (tx) => {
+        // 1. Create OUTBOUND movement from source
+        const outboundMovement = {
+          ...movementData,
+          movementDirection: 'outbound' as const,
+          storeId: movementData.sourceStoreId,
+          quantityDelta: -Math.abs(movementData.quantityDelta), // Negative for outbound
+          tenantId: sessionTenantId,
+          createdBy: req.user?.id
+        };
+        
+        const [outbound] = await tx
+          .insert(wmsStockMovements)
+          .values(outboundMovement)
+          .returning();
+        
+        // 2. Create INBOUND movement to destination
+        const inboundMovement = {
+          ...movementData,
+          movementDirection: 'inbound' as const,
+          storeId: movementData.destinationStoreId,
+          quantityDelta: Math.abs(movementData.quantityDelta), // Positive for inbound
+          tenantId: sessionTenantId,
+          createdBy: req.user?.id,
+          referenceType: 'transfer_pair',
+          referenceId: outbound.id // Link to outbound movement
+        };
+        
+        const [inbound] = await tx
+          .insert(wmsStockMovements)
+          .values(inboundMovement)
+          .returning();
+        
+        // 3. Update inventory quantities
+        if (movementData.productBatchId) {
+          // Update batch quantity
+          await tx
+            .update(productBatches)
+            .set({ 
+              quantity: sql`${productBatches.quantity} - ${Math.abs(movementData.quantityDelta)}`,
+              updatedAt: new Date()
+            })
+            .where(eq(productBatches.id, movementData.productBatchId));
+        } else {
+          // Update product-level quantity (for non-batch items)
+          await tx
+            .update(products)
+            .set({ 
+              quantityAvailable: sql`${products.quantityAvailable} - ${Math.abs(movementData.quantityDelta)}`,
+              updatedAt: new Date()
+            })
+            .where(
+              and(
+                eq(products.tenantId, sessionTenantId),
+                eq(products.id, movementData.productId)
+              )
+            );
+        }
+        
+        return [outbound, inbound];
+      });
+      
+      // Structured logging
+      logger.info('WMS stock transfer created (paired movements)', {
+        tenantId: sessionTenantId,
+        productId: movementData.productId,
+        quantity: Math.abs(movementData.quantityDelta),
+        sourceStoreId: movementData.sourceStoreId,
+        destinationStoreId: movementData.destinationStoreId,
+        movementIds: createdMovements.map(m => m.id)
+      });
+      
+      return res.status(201).json({
+        success: true,
+        message: "Stock transfer created successfully (paired movements)",
+        data: {
+          outbound: createdMovements[0],
+          inbound: createdMovements[1]
+        }
+      });
+    }
+    
+    // Non-transfer movements (purchase_in, sale_out, return_in, adjustment, damaged)
+    
+    // Validate stock availability for outbound movements
+    if (movementData.movementDirection === 'outbound') {
+      if (movementData.productBatchId) {
+        const [batch] = await db
+          .select()
+          .from(productBatches)
+          .where(
+            and(
+              eq(productBatches.id, movementData.productBatchId),
+              eq(productBatches.tenantId, sessionTenantId)
+            )
+          )
+          .limit(1);
+        
+        if (!batch) {
+          return res.status(404).json({ 
+            error: "Batch not found",
+            message: `Product batch with ID '${movementData.productBatchId}' not found`
+          });
+        }
+        
+        const availableStock = batch.quantity - batch.reserved;
+        if (Math.abs(movementData.quantityDelta) > availableStock) {
+          return res.status(400).json({ 
+            error: "Insufficient stock",
+            message: `Not enough available stock. Available: ${availableStock}, requested: ${Math.abs(movementData.quantityDelta)}`
+          });
+        }
+      } else {
+        if (Math.abs(movementData.quantityDelta) > product.quantityAvailable) {
+          return res.status(400).json({ 
+            error: "Insufficient stock",
+            message: `Not enough stock. Available: ${product.quantityAvailable}, requested: ${Math.abs(movementData.quantityDelta)}`
+          });
+        }
+      }
+    }
+    
+    // Create movement and update inventory in transaction
+    const [createdMovement] = await db.transaction(async (tx) => {
+      // 1. Create movement record
+      const newMovement = {
+        ...movementData,
+        tenantId: sessionTenantId,
+        createdBy: req.user?.id
+      };
+      
+      const [movement] = await tx
+        .insert(wmsStockMovements)
+        .values(newMovement)
+        .returning();
+      
+      // 2. Update inventory quantities
+      const quantityChange = movementData.movementDirection === 'inbound' 
+        ? movementData.quantityDelta 
+        : -Math.abs(movementData.quantityDelta);
+      
+      if (movementData.productBatchId) {
+        // Update batch quantity
+        await tx
+          .update(productBatches)
+          .set({ 
+            quantity: sql`${productBatches.quantity} + ${quantityChange}`,
+            updatedAt: new Date()
+          })
+          .where(eq(productBatches.id, movementData.productBatchId));
+      } else {
+        // Update product-level quantity
+        await tx
+          .update(products)
+          .set({ 
+            quantityAvailable: sql`${products.quantityAvailable} + ${quantityChange}`,
+            updatedAt: new Date()
+          })
+          .where(
+            and(
+              eq(products.tenantId, sessionTenantId),
+              eq(products.id, movementData.productId)
+            )
+          );
+      }
+      
+      return [movement];
+    });
+    
+    // Structured logging
+    logger.info('WMS stock movement created', {
+      tenantId: sessionTenantId,
+      movementId: createdMovement.id,
+      movementType: movementData.movementType,
+      movementDirection: movementData.movementDirection,
+      productId: movementData.productId,
+      quantityDelta: movementData.quantityDelta
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: "Stock movement created successfully",
+      data: createdMovement
+    });
+    
+  } catch (error) {
+    console.error("Error creating WMS stock movement:", error);
+    
+    // Handle unique constraint violation (duplicate reference)
+    if (error instanceof Error && error.message.includes('unique constraint')) {
+      return res.status(409).json({ 
+        error: "Duplicate movement",
+        message: "A movement with this reference already exists"
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to create stock movement",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
