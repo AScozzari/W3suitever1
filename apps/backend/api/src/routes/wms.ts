@@ -3103,6 +3103,187 @@ router.get("/analytics/stock-levels", rbacMiddleware, requirePermission('wms.ana
   }
 });
 
+/**
+ * GET /api/wms/analytics/expiration-dashboard
+ * 
+ * Analytics endpoint for tracking product batch expiration status.
+ * Categorizes batches by urgency (expired, expiring-soon, warning, ok).
+ * 
+ * @permission wms.analytics.read
+ * @queryParams {
+ *   storeId?: string (UUID filter)
+ *   productId?: string (UUID filter)
+ *   daysThreshold?: string (number, default: 30 for "expiring soon")
+ *   warningDays?: string (number, default: 90 for "warning" zone)
+ *   includeExpired?: string (boolean, default: true)
+ * }
+ * @returns {
+ *   success: boolean,
+ *   data: {
+ *     summary: {
+ *       totalBatches: number,
+ *       totalQuantity: number,
+ *       expiredBatches: number,
+ *       expiredQuantity: number,
+ *       expiringSoonBatches: number,
+ *       expiringSoonQuantity: number,
+ *       warningBatches: number,
+ *       warningQuantity: number
+ *     },
+ *     batches: Array<{
+ *       urgencyLevel: 'expired' | 'expiring-soon' | 'warning' | 'ok',
+ *       batchId: string,
+ *       batchNumber: string,
+ *       productId: string,
+ *       storeId: string | null,
+ *       quantity: number,
+ *       expiryDate: string,
+ *       daysUntilExpiry: number,
+ *       status: string
+ *     }>
+ *   }
+ * }
+ */
+
+const expirationDashboardQuerySchema = z.object({
+  storeId: z.string().uuid().optional(),
+  productId: z.string().uuid().optional(),
+  daysThreshold: z.string().optional(), // Days for "expiring soon" category
+  warningDays: z.string().optional(), // Days for "warning" category
+  includeExpired: z.string().optional(), // Include expired batches (default: true)
+});
+
+router.get("/analytics/expiration-dashboard", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const validationResult = expirationDashboardQuerySchema.safeParse(req.query);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid query parameters",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const {
+      storeId,
+      productId,
+      daysThreshold = '30', // Default 30 days for "expiring soon"
+      warningDays = '90', // Default 90 days for "warning"
+      includeExpired = 'true'
+    } = validationResult.data;
+    
+    const thresholdDays = parseInt(daysThreshold);
+    const warningThreshold = parseInt(warningDays);
+    
+    // Build filters
+    const filters = [eq(productBatches.tenantId, tenantId)];
+    
+    if (storeId) {
+      filters.push(eq(productBatches.storeId, storeId));
+    }
+    if (productId) {
+      filters.push(eq(productBatches.productId, productId));
+    }
+    
+    // Only include batches with expiry dates
+    filters.push(sql`${productBatches.expiryDate} IS NOT NULL`);
+    
+    // Get all batches with expiry dates
+    const batches = await db
+      .select({
+        id: productBatches.id,
+        batchNumber: productBatches.batchNumber,
+        productId: productBatches.productId,
+        storeId: productBatches.storeId,
+        quantity: productBatches.quantity,
+        expiryDate: productBatches.expiryDate,
+        status: productBatches.status,
+      })
+      .from(productBatches)
+      .where(and(...filters));
+    
+    // Categorize batches by urgency
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    
+    const categorizedBatches = batches.map(batch => {
+      const expiryDate = new Date(batch.expiryDate!);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const daysUntilExpiry = Math.floor((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let urgencyLevel: 'expired' | 'expiring-soon' | 'warning' | 'ok';
+      
+      if (daysUntilExpiry < 0) {
+        urgencyLevel = 'expired';
+      } else if (daysUntilExpiry <= thresholdDays) {
+        urgencyLevel = 'expiring-soon';
+      } else if (daysUntilExpiry <= warningThreshold) {
+        urgencyLevel = 'warning';
+      } else {
+        urgencyLevel = 'ok';
+      }
+      
+      return {
+        urgencyLevel,
+        batchId: batch.id,
+        batchNumber: batch.batchNumber,
+        productId: batch.productId,
+        storeId: batch.storeId,
+        quantity: batch.quantity,
+        expiryDate: batch.expiryDate!,
+        daysUntilExpiry,
+        status: batch.status,
+      };
+    });
+    
+    // Filter out expired if requested
+    const filteredBatches = includeExpired === 'false' 
+      ? categorizedBatches.filter(b => b.urgencyLevel !== 'expired')
+      : categorizedBatches;
+    
+    // Calculate summary statistics
+    const summary = {
+      totalBatches: filteredBatches.length,
+      totalQuantity: filteredBatches.reduce((sum, b) => sum + b.quantity, 0),
+      expiredBatches: filteredBatches.filter(b => b.urgencyLevel === 'expired').length,
+      expiredQuantity: filteredBatches.filter(b => b.urgencyLevel === 'expired').reduce((sum, b) => sum + b.quantity, 0),
+      expiringSoonBatches: filteredBatches.filter(b => b.urgencyLevel === 'expiring-soon').length,
+      expiringSoonQuantity: filteredBatches.filter(b => b.urgencyLevel === 'expiring-soon').reduce((sum, b) => sum + b.quantity, 0),
+      warningBatches: filteredBatches.filter(b => b.urgencyLevel === 'warning').length,
+      warningQuantity: filteredBatches.filter(b => b.urgencyLevel === 'warning').reduce((sum, b) => sum + b.quantity, 0),
+    };
+    
+    // Sort by urgency (expired first) then by days until expiry
+    const urgencyOrder = { 'expired': 0, 'expiring-soon': 1, 'warning': 2, 'ok': 3 };
+    filteredBatches.sort((a, b) => {
+      if (urgencyOrder[a.urgencyLevel] !== urgencyOrder[b.urgencyLevel]) {
+        return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];
+      }
+      return a.daysUntilExpiry - b.daysUntilExpiry;
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        summary,
+        batches: filteredBatches,
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error fetching expiration dashboard:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch expiration dashboard",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== JOB QUEUE ENDPOINTS ====================
 
 /**
