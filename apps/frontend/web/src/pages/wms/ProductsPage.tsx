@@ -35,6 +35,8 @@ interface Product {
   ean?: string;
   imageUrl?: string;
   type: 'CANVAS' | 'PHYSICAL' | 'VIRTUAL' | 'SERVICE';
+  status: 'active' | 'inactive' | 'discontinued' | 'draft';
+  condition?: 'new' | 'used' | 'refurbished' | 'demo';
   isSerializable: boolean;
   serialType?: 'imei' | 'iccid' | 'mac_address' | 'other';
   monthlyFee?: number;
@@ -157,6 +159,64 @@ export default function ProductsPage() {
             data-testid={`badge-product-type-${row.original.id}`}
           >
             {typeLabels[type] || type}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: 'Stato',
+      cell: ({ row }) => {
+        const statusLabels: Record<string, string> = {
+          'active': 'Attivo',
+          'inactive': 'Inattivo',
+          'discontinued': 'Discontinuato',
+          'draft': 'Bozza'
+        };
+        const statusColors: Record<string, string> = {
+          'active': 'hsl(142, 76%, 36%)',
+          'inactive': 'hsl(45, 93%, 47%)',
+          'discontinued': 'hsl(0, 84%, 60%)',
+          'draft': 'hsl(215, 20%, 65%)'
+        };
+        const status = row.original.status;
+        return (
+          <Badge 
+            variant="outline" 
+            style={{ borderColor: statusColors[status] || statusColors['active'], color: statusColors[status] || statusColors['active'] }}
+            data-testid={`badge-product-status-${row.original.id}`}
+          >
+            {statusLabels[status] || status}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'condition',
+      header: 'Condizioni',
+      cell: ({ row }) => {
+        if (!row.original.condition) return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        
+        const conditionLabels: Record<string, string> = {
+          'new': 'Nuovo',
+          'used': 'Usato',
+          'refurbished': 'Ricondizionato',
+          'demo': 'Demo'
+        };
+        const conditionColors: Record<string, string> = {
+          'new': 'hsl(142, 76%, 36%)',
+          'used': 'hsl(45, 93%, 47%)',
+          'refurbished': 'hsl(220, 90%, 56%)',
+          'demo': 'hsl(280, 100%, 50%)'
+        };
+        const condition = row.original.condition;
+        return (
+          <Badge 
+            variant="outline" 
+            style={{ borderColor: conditionColors[condition] || conditionColors['new'], color: conditionColors[condition] || conditionColors['new'] }}
+            data-testid={`badge-product-condition-${row.original.id}`}
+          >
+            {conditionLabels[condition] || condition}
           </Badge>
         );
       },

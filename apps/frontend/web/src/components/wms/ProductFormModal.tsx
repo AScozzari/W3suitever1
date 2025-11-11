@@ -16,6 +16,8 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 // Schema con validazione condizionale completa
 const productSchema = z.object({
   type: z.enum(['CANVAS', 'PHYSICAL', 'VIRTUAL', 'SERVICE']),
+  status: z.enum(['active', 'inactive', 'discontinued', 'draft']),
+  condition: z.enum(['new', 'used', 'refurbished', 'demo']).optional(),
   brand: z.string().optional(),
   model: z.string().optional(),
   name: z.string().min(1, 'Nome prodotto obbligatorio'),
@@ -52,6 +54,15 @@ const productSchema = z.object({
 }, {
   message: 'Canone mensile e descrizione sono obbligatori per prodotti di tipo CANVAS',
   path: ['monthlyFee'],
+}).refine((data) => {
+  // Validation Rule: condition is required if type is PHYSICAL
+  if (data.type === 'PHYSICAL' && !data.condition) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Condizioni prodotto sono obbligatorie per prodotti di tipo PHYSICAL',
+  path: ['condition'],
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -70,6 +81,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     resolver: zodResolver(productSchema),
     defaultValues: {
       type: 'PHYSICAL',
+      status: 'active',
+      condition: undefined,
       brand: '',
       model: '',
       name: '',
@@ -93,6 +106,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     if (product) {
       form.reset({
         type: product.type || 'PHYSICAL',
+        status: product.status || 'active',
+        condition: product.condition || undefined,
         brand: product.brand || '',
         model: product.model || '',
         name: product.name || '',
@@ -110,6 +125,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     } else {
       form.reset({
         type: 'PHYSICAL',
+        status: 'active',
+        condition: undefined,
         brand: '',
         model: '',
         name: '',
@@ -231,6 +248,72 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 </FormItem>
               )}
             />
+
+            {/* CAMPO 2: STATO PRODOTTO */}
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stato <span className="text-red-500">*</span></FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    data-testid="select-status"
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona stato" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Attivo</SelectItem>
+                      <SelectItem value="inactive">Inattivo</SelectItem>
+                      <SelectItem value="discontinued">Discontinuato</SelectItem>
+                      <SelectItem value="draft">Bozza</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Stato del prodotto nel catalogo
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* CAMPO 3: CONDIZIONI PRODOTTO (Solo per PHYSICAL) */}
+            {watchType === 'PHYSICAL' && (
+              <FormField
+                control={form.control}
+                name="condition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Condizioni <span className="text-red-500">*</span></FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      data-testid="select-condition"
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona condizioni" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="new">Nuovo</SelectItem>
+                        <SelectItem value="used">Usato</SelectItem>
+                        <SelectItem value="refurbished">Ricondizionato</SelectItem>
+                        <SelectItem value="demo">Demo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Condizioni fisiche del prodotto
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               {/* Marca */}
