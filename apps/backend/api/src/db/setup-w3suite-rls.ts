@@ -173,10 +173,96 @@ export async function setupW3SuiteSupplierRLS() {
   }
 }
 
+/**
+ * CRITICAL SECURITY: Setup RLS for WMS (Warehouse Management System) tables
+ * Ensures proper tenant isolation for all product-related tables
+ */
+export async function setupW3SuiteWMSRLS() {
+  console.log('🔒 Setting up W3 Suite WMS RLS Security...\n');
+
+  try {
+    await db.execute(sql`
+      -- ==================== WMS TABLES RLS SETUP ====================
+
+      -- 1) products table
+      ALTER TABLE w3suite.products ENABLE ROW LEVEL SECURITY;
+      DROP POLICY IF EXISTS products_tenant_isolation ON w3suite.products;
+      CREATE POLICY products_tenant_isolation ON w3suite.products
+        FOR ALL
+        USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+        WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+      -- 2) product_items table
+      ALTER TABLE w3suite.product_items ENABLE ROW LEVEL SECURITY;
+      DROP POLICY IF EXISTS product_items_tenant_isolation ON w3suite.product_items;
+      CREATE POLICY product_items_tenant_isolation ON w3suite.product_items
+        FOR ALL
+        USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+        WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+      -- 3) product_serials table
+      ALTER TABLE w3suite.product_serials ENABLE ROW LEVEL SECURITY;
+      DROP POLICY IF EXISTS product_serials_tenant_isolation ON w3suite.product_serials;
+      CREATE POLICY product_serials_tenant_isolation ON w3suite.product_serials
+        FOR ALL
+        USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+        WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+      -- 4) product_item_status_history table
+      ALTER TABLE w3suite.product_item_status_history ENABLE ROW LEVEL SECURITY;
+      DROP POLICY IF EXISTS product_item_status_history_tenant_isolation ON w3suite.product_item_status_history;
+      CREATE POLICY product_item_status_history_tenant_isolation ON w3suite.product_item_status_history
+        FOR ALL
+        USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+        WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+      -- 5) product_batches table
+      ALTER TABLE w3suite.product_batches ENABLE ROW LEVEL SECURITY;
+      DROP POLICY IF EXISTS product_batches_tenant_isolation ON w3suite.product_batches;
+      CREATE POLICY product_batches_tenant_isolation ON w3suite.product_batches
+        FOR ALL
+        USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+        WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+    `);
+
+    console.log('✅ RLS policies created for WMS tables');
+
+    // Verify RLS setup
+    const rlsStatus = await db.execute(sql`
+      SELECT 
+          schemaname, 
+          tablename, 
+          rowsecurity as rls_enabled,
+          (SELECT COUNT(*) FROM pg_policies WHERE schemaname = 'w3suite' AND tablename = pg_policies.tablename) as policy_count
+      FROM pg_tables 
+      WHERE schemaname = 'w3suite' 
+      AND tablename IN ('products', 'product_items', 'product_serials', 'product_item_status_history', 'product_batches')
+      ORDER BY tablename;
+    `);
+
+    console.log('\n📊 W3 Suite WMS RLS Status:');
+    console.log('=================================');
+    
+    for (const row of rlsStatus.rows) {
+      console.log(`  🔒 ${row.schemaname}.${row.tablename}: RLS ${row.rls_enabled ? 'ENABLED' : 'DISABLED'}, ${row.policy_count} policies`);
+    }
+
+    console.log('\n🎉 W3 Suite WMS RLS setup completed successfully!');
+    console.log('🔐 WMS tables are now secured with proper RLS policies');
+
+  } catch (error) {
+    console.error('❌ W3 Suite WMS RLS setup failed:', error);
+    throw error;
+  }
+}
+
 // Execute if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  setupW3SuiteSupplierRLS().then(() => {
-    console.log('✨ W3 Suite Supplier RLS setup complete!');
+  Promise.all([
+    setupW3SuiteSupplierRLS(),
+    setupW3SuiteWMSRLS()
+  ]).then(() => {
+    console.log('✨ W3 Suite RLS setup complete (Suppliers + WMS)!');
     process.exit(0);
   }).catch(error => {
     console.error('💥 Fatal error:', error);

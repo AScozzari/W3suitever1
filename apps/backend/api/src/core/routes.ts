@@ -16,6 +16,7 @@ import mcpCredentialsRoutes from "../routes/mcp-credentials";
 import { aiSettingsRoutes } from "../routes/ai-settings";
 import entitiesRoutes from "../routes/entities";
 import productsRoutes from "../routes/products";
+import wmsRoutes from "../routes/wms";
 import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
 import crmRoutes from "../routes/crm";
 import gtmRoutes from "../routes/gtm";
@@ -1290,6 +1291,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== PRODUCTS & HIERARCHY ROUTES ====================
   // Product hierarchy API routes (drivers, categories, typologies, search)
   app.use('/api/products', productsRoutes);
+  
+  // ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) ROUTES ====================
+  // WMS API routes for inventory products, items, serials, batches, and stock management
+  app.use('/api/wms', tenantMiddleware, rbacMiddleware, wmsRoutes);
   
   // ==================== PDC ANALYZER AI ROUTES ====================
   // AI-powered PDF contract proposal analyzer routes
