@@ -103,9 +103,6 @@ export default function ProductsPage() {
             <div className="font-medium" data-testid={`text-product-sku-${row.original.id}`}>
               {row.original.sku}
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {row.original.ean || 'Nessun EAN'}
-            </div>
           </div>
         </div>
       ),
@@ -132,6 +129,15 @@ export default function ProductsPage() {
               {row.original.name}
             </div>
           )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'ean',
+      header: 'EAN',
+      cell: ({ row }) => (
+        <div className="font-mono text-sm" data-testid={`text-product-ean-${row.original.id}`}>
+          {row.original.ean || <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>}
         </div>
       ),
     },
