@@ -6498,14 +6498,19 @@ export const products = w3suiteSchema.table("products", {
   
   // Core product info
   sku: varchar("sku", { length: 100 }).notNull(), // Unique per tenant
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  brand: varchar("brand", { length: 100 }), // Product brand (e.g., "Apple", "Samsung")
+  name: varchar("name", { length: 255 }).notNull(), // Nome/Modello prodotto
+  model: varchar("model", { length: 255 }), // Modello specifico (es: "iPhone 15 Pro Max")
+  description: text("description"), // Descrizione dettagliata
+  notes: text("notes"), // Note aggiuntive
+  brand: varchar("brand", { length: 100 }), // Marca (es: "Apple", "Samsung")
   ean: varchar("ean", { length: 13 }), // EAN-13 barcode
+  imageUrl: varchar("image_url", { length: 512 }), // URL immagine prodotto
   
   // Product categorization
   type: productTypeEnum("type").notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
   isSerializable: boolean("is_serializable").default(false).notNull(), // Track at item-level if true
+  serialType: serialTypeEnum("serial_type"), // Tipo seriale: imei | iccid | mac_address | other (required if isSerializable=true)
+  monthlyFee: numeric("monthly_fee", { precision: 10, scale: 2 }), // Canone mensile €/mese (required if type=CANVAS)
   
   // Physical properties (for PHYSICAL type)
   weight: numeric("weight", { precision: 10, scale: 3 }), // kg
@@ -6546,7 +6551,8 @@ export const products = w3suiteSchema.table("products", {
   index("products_brand_product_id_idx").on(table.brandProductId),
 ]);
 
-export const insertProductSchema = createInsertSchema(products).omit({ 
+// Base schema without refine (needed for update schema .partial())
+const baseProductSchema = createInsertSchema(products).omit({ 
   tenantId: true,    // Auto-set from session
   id: true,          // Auto-generated UUID
   createdAt: true,   // Auto-set on creation
@@ -6557,16 +6563,47 @@ export const insertProductSchema = createInsertSchema(products).omit({
 }).extend({
   sku: z.string().min(1, "SKU è obbligatorio").max(100),
   name: z.string().min(1, "Nome prodotto è obbligatorio").max(255),
+  model: z.string().max(255).optional(),
+  description: z.string().optional(),
+  notes: z.string().optional(),
+  brand: z.string().max(100).optional(),
+  imageUrl: z.string().max(512).url("URL immagine non valido").or(z.literal('')).optional(),
   type: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
+  monthlyFee: z.coerce.number().min(0, "Canone deve essere maggiore o uguale a 0").optional(),
   source: z.enum(['brand', 'tenant']).optional(),
-  ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").optional(),
+  ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").or(z.literal('')).optional(),
+});
+
+// Insert schema with conditional validation
+export const insertProductSchema = baseProductSchema.refine((data) => {
+  // Validation Rule: serialType is required if isSerializable is true
+  if (data.isSerializable && !data.serialType) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Tipo seriale è obbligatorio quando il prodotto è serializzabile",
+  path: ["serialType"],
+}).refine((data) => {
+  // Validation Rule: monthlyFee and description are required if type is CANVAS
+  if (data.type === 'CANVAS') {
+    if (!data.monthlyFee || data.monthlyFee <= 0) {
+      return false;
+    }
+    if (!data.description || data.description.trim() === '') {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Canone mensile e descrizione sono obbligatori per prodotti di tipo CANVAS",
+  path: ["monthlyFee"],
 });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 
-export const updateProductSchema = insertProductSchema.partial().omit({
-  createdAt: true,   // Never modifiable
-  createdBy: true    // Never modifiable
-});
+// Update schema (partial of base, not refined schema)
+export const updateProductSchema = baseProductSchema.partial();
 export type UpdateProduct = z.infer<typeof updateProductSchema>;
 
 export type Product = typeof products.$inferSelect;

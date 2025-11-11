@@ -96,23 +96,34 @@ export default function ProductsPage() {
               {row.original.sku}
             </div>
             <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {row.original.brand || 'Nessun brand'}
+              {row.original.ean || 'Nessun EAN'}
             </div>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nome Prodotto',
+      accessorKey: 'brand',
+      header: 'Marca',
+      cell: ({ row }) => (
+        <div data-testid={`text-product-brand-${row.original.id}`}>
+          {row.original.brand || '-'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'model',
+      header: 'Modello',
       cell: ({ row }) => (
         <div>
-          <div className="font-medium" data-testid={`text-product-name-${row.original.id}`}>
-            {row.original.name}
+          <div className="font-medium" data-testid={`text-product-model-${row.original.id}`}>
+            {row.original.model || row.original.name}
           </div>
-          <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {row.original.ean ? `EAN: ${row.original.ean}` : 'Nessun EAN'}
-          </div>
+          {row.original.model && row.original.name && (
+            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {row.original.name}
+            </div>
+          )}
         </div>
       ),
     },
@@ -121,23 +132,25 @@ export default function ProductsPage() {
       header: 'Tipo',
       cell: ({ row }) => {
         const typeLabels: Record<string, string> = {
+          'CANVAS': 'Canvas',
           'PHYSICAL': 'Fisico',
-          'DIGITAL': 'Digitale',
+          'VIRTUAL': 'Digitale',
           'SERVICE': 'Servizio'
         };
         const typeColors: Record<string, string> = {
+          'CANVAS': 'hsl(280, 100%, 50%)', // Purple for Canvas
           'PHYSICAL': 'hsl(142, 76%, 36%)',
-          'DIGITAL': 'hsl(220, 90%, 56%)',
+          'VIRTUAL': 'hsl(220, 90%, 56%)',
           'SERVICE': 'hsl(25, 95%, 53%)'
         };
         const type = row.original.type;
         return (
           <Badge 
             variant="outline" 
-            style={{ borderColor: typeColors[type], color: typeColors[type] }}
+            style={{ borderColor: typeColors[type] || typeColors['PHYSICAL'], color: typeColors[type] || typeColors['PHYSICAL'] }}
             data-testid={`badge-product-type-${row.original.id}`}
           >
-            {typeLabels[type]}
+            {typeLabels[type] || type}
           </Badge>
         );
       },
