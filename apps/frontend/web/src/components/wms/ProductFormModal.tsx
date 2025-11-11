@@ -102,6 +102,13 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
   const watchType = form.watch('type');
   const watchIsSerializable = form.watch('isSerializable');
 
+  // Clear condition when type changes from PHYSICAL to another type
+  useEffect(() => {
+    if (watchType !== 'PHYSICAL') {
+      form.setValue('condition', undefined);
+    }
+  }, [watchType, form]);
+
   useEffect(() => {
     if (product) {
       form.reset({
