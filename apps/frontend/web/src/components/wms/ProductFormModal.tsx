@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Upload, X } from 'lucide-react';
 
 // Schema con validazione condizionale completa
 const productSchema = z.object({
@@ -23,6 +24,8 @@ const productSchema = z.object({
   name: z.string().min(1, 'Descrizione obbligatoria'),
   sku: z.string().min(1, 'SKU obbligatorio'),
   ean: z.string().optional(),
+  memory: z.string().optional(),
+  color: z.string().optional(),
   imageUrl: z.string().url('URL non valido').or(z.literal('')).optional(),
   notes: z.string().optional(),
   isSerializable: z.boolean(),
@@ -71,6 +74,8 @@ interface ProductFormModalProps {
 export function ProductFormModal({ open, onClose, product }: ProductFormModalProps) {
   const { toast } = useToast();
   const isEdit = !!product;
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -83,6 +88,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       name: '',
       sku: '',
       ean: '',
+      memory: '',
+      color: '',
       imageUrl: '',
       notes: '',
       isSerializable: false,
@@ -94,6 +101,84 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
 
   const watchType = form.watch('type');
   const watchIsSerializable = form.watch('isSerializable');
+
+  // Handle image upload
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Tipo file non valido',
+        description: 'Solo immagini JPEG, PNG e WebP sono supportate',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File troppo grande',
+        description: 'La dimensione massima è 5MB',
+      });
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // Upload to backend using raw fetch (FormData requires manual request)
+      const tenantId = localStorage.getItem('currentTenantId');
+      const token = localStorage.getItem('access_token');
+      
+      const response = await fetch('/api/wms/products/upload-image', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Tenant-ID': tenantId || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+
+      // Set image URL in form
+      form.setValue('imageUrl', data.imageUrl);
+      
+      // Set preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      toast({
+        title: 'Immagine caricata',
+        description: 'Immagine caricata con successo',
+      });
+
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Errore upload',
+        description: 'Impossibile caricare l\'immagine',
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   // Clear condition when type changes from PHYSICAL to another type
   useEffect(() => {
@@ -113,6 +198,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         name: product.name || '',
         sku: product.sku || '',
         ean: product.ean || '',
+        memory: product.memory || '',
+        color: product.color || '',
         imageUrl: product.imageUrl || '',
         notes: product.notes || '',
         isSerializable: product.isSerializable || false,
@@ -120,6 +207,10 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         monthlyFee: product.monthlyFee || undefined,
         unitOfMeasure: product.unitOfMeasure || 'pz',
       });
+      // Set image preview for edit mode
+      if (product.imageUrl) {
+        setImagePreview(product.imageUrl);
+      }
     } else {
       form.reset({
         type: 'PHYSICAL',
@@ -130,6 +221,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         name: '',
         sku: '',
         ean: '',
+        memory: '',
+        color: '',
         imageUrl: '',
         notes: '',
         isSerializable: false,
@@ -137,6 +230,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         monthlyFee: undefined,
         unitOfMeasure: 'pz',
       });
+      // Clear image preview for new product
+      setImagePreview(null);
     }
   }, [product, form]);
 
@@ -408,6 +503,54 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 )}
               />
 
+              {/* Memoria (solo per PHYSICAL) */}
+              {watchType === 'PHYSICAL' && (
+                <FormField
+                  control={form.control}
+                  name="memory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Memoria</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="es. 128GB, 256GB, 512GB" 
+                          data-testid="input-memory"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Capacità di memoria per dispositivi elettronici
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Colore (solo per PHYSICAL) */}
+              {watchType === 'PHYSICAL' && (
+                <FormField
+                  control={form.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Colore</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="es. Nero, Bianco, Blu Titanio" 
+                          data-testid="input-color"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Colore distintivo del prodotto
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {/* Unità di Misura */}
               <FormField
                 control={form.control}
@@ -428,23 +571,73 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
               />
             </div>
 
-            {/* Immagine URL */}
+            {/* Immagine Upload */}
             <FormField
               control={form.control}
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Immagine URL</FormLabel>
+                  <FormLabel>Immagine Prodotto</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="url"
-                      placeholder="https://esempio.com/immagine.jpg" 
-                      data-testid="input-image-url"
-                      {...field} 
-                    />
+                    <div className="space-y-4">
+                      {/* Upload Button */}
+                      {!imagePreview && !field.value && (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                              <span className="font-semibold">Clicca per caricare</span>
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              JPEG, PNG o WebP (MAX. 5MB)
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(file);
+                            }}
+                            data-testid="input-image-upload"
+                            disabled={uploadingImage}
+                          />
+                        </label>
+                      )}
+
+                      {/* Image Preview */}
+                      {(imagePreview || field.value) && (
+                        <div className="relative">
+                          <img
+                            src={imagePreview || field.value}
+                            alt="Preview"
+                            className="w-full h-48 object-cover rounded-lg"
+                            data-testid="img-preview"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2"
+                            onClick={() => {
+                              field.onChange('');
+                              setImagePreview(null);
+                            }}
+                            data-testid="button-remove-image"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {uploadingImage && (
+                        <div className="text-sm text-gray-500">Caricamento in corso...</div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormDescription>
-                    URL dell'immagine del prodotto (futura integrazione Object Storage)
+                    Carica un'immagine del prodotto (JPEG, PNG o WebP - max 5MB)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

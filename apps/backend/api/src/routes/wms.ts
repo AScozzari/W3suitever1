@@ -11,6 +11,9 @@ import { startWMSWorker } from '../queue/wms-worker';
 import { db } from "../core/db";
 import { eq, and, ilike, or, desc, asc, sql, inArray } from "drizzle-orm";
 import crypto from "crypto";
+import multer from "multer";
+import { Client } from "@replit/object-storage";
+import path from "path";
 import { 
   products,
   insertProductSchema,
@@ -48,6 +51,35 @@ const ACTIVE_ITEM_STATUSES = [
 ] as const;
 
 const router = Router();
+
+// Multer configuration for image upload
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo immagini JPEG, PNG e WebP sono supportate'));
+    }
+  }
+});
+
+// Object Storage client (lazy initialization)
+let objectStorage: Client | null = null;
+
+const getObjectStorageClient = (): Client => {
+  if (!process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID) {
+    throw new Error('Object Storage non configurato (manca DEFAULT_OBJECT_STORAGE_BUCKET_ID)');
+  }
+  if (!objectStorage) {
+    objectStorage = new Client();
+  }
+  return objectStorage;
+};
 
 /**
  * GET /api/wms/products
@@ -163,6 +195,8 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
         notes: products.notes,
         brand: products.brand,
         ean: products.ean,
+        memory: products.memory,
+        color: products.color,
         imageUrl: products.imageUrl,
         type: products.type,
         status: products.status,
@@ -565,6 +599,63 @@ router.delete("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.
     
     res.status(500).json({ 
       error: "Failed to delete product",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/products/upload-image
+ * Upload product image to Object Storage
+ * Body: multipart/form-data with 'image' field
+ * Returns: { imageUrl: string }
+ */
+router.post("/products/upload-image", rbacMiddleware, requirePermission('wms.product.create'), upload.single('image'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Nessuna immagine caricata" });
+    }
+
+    // Generate unique filename
+    const fileExtension = path.extname(req.file.originalname);
+    const uniqueFilename = `${crypto.randomUUID()}${fileExtension}`;
+    const objectPath = `public/product-images/${tenantId}/${uniqueFilename}`;
+
+    // Upload to Object Storage
+    const client = getObjectStorageClient();
+    await client.uploadFromBytes(objectPath, req.file.buffer, {
+      contentType: req.file.mimetype
+    });
+
+    // Generate public URL
+    const publicUrl = `https://storage.replit.com/${process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID}/${objectPath}`;
+
+    logger.info('Product image uploaded successfully', {
+      tenantId,
+      userId,
+      objectPath,
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimeType: req.file.mimetype
+    });
+
+    res.json({
+      success: true,
+      imageUrl: publicUrl
+    });
+
+  } catch (error) {
+    console.error("Error uploading product image:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to upload image",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

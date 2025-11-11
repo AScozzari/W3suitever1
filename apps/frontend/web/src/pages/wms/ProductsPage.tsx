@@ -93,12 +93,22 @@ export default function ProductsPage() {
       header: 'SKU',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div 
-            className="p-2 rounded-lg"
-            style={{ background: 'var(--brand-glass-orange)' }}
-          >
-            <Package className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
-          </div>
+          {/* Image Thumbnail or Package Icon */}
+          {row.original.imageUrl ? (
+            <img 
+              src={row.original.imageUrl} 
+              alt={row.original.name}
+              className="h-10 w-10 rounded-lg object-cover"
+              data-testid={`img-product-${row.original.id}`}
+            />
+          ) : (
+            <div 
+              className="p-2 rounded-lg"
+              style={{ background: 'var(--brand-glass-orange)' }}
+            >
+              <Package className="h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
+            </div>
+          )}
           <div>
             <div className="font-medium" data-testid={`text-product-sku-${row.original.id}`}>
               {row.original.sku}
@@ -140,6 +150,59 @@ export default function ProductsPage() {
           {row.original.ean || <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>}
         </div>
       ),
+    },
+    {
+      accessorKey: 'memory',
+      header: 'Memoria',
+      cell: ({ row }) => {
+        if (!row.original.memory) {
+          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        }
+        return (
+          <Badge 
+            variant="outline" 
+            style={{ borderColor: 'hsl(220, 90%, 56%)', color: 'hsl(220, 90%, 56%)' }}
+            data-testid={`badge-memory-${row.original.id}`}
+          >
+            {row.original.memory}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'color',
+      header: 'Colore',
+      cell: ({ row }) => {
+        if (!row.original.color) {
+          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        }
+        
+        // Map common colors to HSL values
+        const colorMap: Record<string, string> = {
+          'nero': 'hsl(0, 0%, 20%)',
+          'bianco': 'hsl(0, 0%, 95%)',
+          'grigio': 'hsl(0, 0%, 60%)',
+          'blu': 'hsl(220, 90%, 56%)',
+          'rosso': 'hsl(0, 84%, 60%)',
+          'verde': 'hsl(142, 76%, 36%)',
+          'giallo': 'hsl(45, 93%, 47%)',
+          'viola': 'hsl(280, 100%, 50%)',
+          'arancione': 'hsl(25, 95%, 53%)',
+        };
+        
+        const colorKey = row.original.color.toLowerCase();
+        const colorValue = colorMap[colorKey] || 'hsl(0, 0%, 60%)';
+        
+        return (
+          <Badge 
+            variant="outline" 
+            style={{ borderColor: colorValue, color: colorValue }}
+            data-testid={`badge-color-${row.original.id}`}
+          >
+            {row.original.color}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: 'serialType',

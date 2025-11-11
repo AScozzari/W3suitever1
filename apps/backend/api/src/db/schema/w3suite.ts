@@ -6505,6 +6505,8 @@ export const products = w3suiteSchema.table("products", {
   notes: text("notes"), // Note aggiuntive
   brand: varchar("brand", { length: 100 }), // Marca (es: "Apple", "Samsung")
   ean: varchar("ean", { length: 13 }), // EAN-13 barcode
+  memory: varchar("memory", { length: 50 }), // Memoria (es: "128GB", "256GB", "512GB") - PHYSICAL only
+  color: varchar("color", { length: 50 }), // Colore (es: "Nero", "Bianco", "Blu Titanio") - PHYSICAL only
   imageUrl: varchar("image_url", { length: 512 }), // URL immagine prodotto
   
   // Product categorization & status
@@ -6578,6 +6580,8 @@ const baseProductSchema = createInsertSchema(products).omit({
   monthlyFee: z.coerce.number().min(0, "Canone deve essere maggiore o uguale a 0").optional(),
   source: z.enum(['brand', 'tenant']).optional(),
   ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").or(z.literal('')).optional(),
+  memory: z.string().max(50, "Memoria troppo lunga").optional(),
+  color: z.string().max(50, "Colore troppo lungo").optional(),
 });
 
 // Insert schema with conditional validation
