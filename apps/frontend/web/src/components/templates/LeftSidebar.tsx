@@ -6,7 +6,7 @@ import {
   ChevronRight, Menu, Calendar, Clock, CalendarDays,
   BarChart3, UserCheck, Award, DollarSign, BookOpen,
   FileBarChart, Receipt, ChevronDown, ChevronUp,
-  Target, Clipboard, TrendingUp, Shield
+  Target, Clipboard, TrendingUp, Shield, Package
 } from 'lucide-react';
 // CompactCalendar rimosso - calendario integrato nel workspace
 
@@ -62,7 +62,17 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'documents', label: 'Document Drive', icon: FileText, path: '/documents' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-  { id: 'listini', label: 'Listini', icon: FileText },
+  { 
+    id: 'prodotti-listini', 
+    label: 'Prodotti e Listini', 
+    icon: Package, 
+    path: '/prodotti-listini/catalogo',
+    hasSubmenu: true,
+    submenuItems: [
+      { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini/catalogo' },
+      { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini/listini-prezzi' }
+    ]
+  },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
   { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
 ];

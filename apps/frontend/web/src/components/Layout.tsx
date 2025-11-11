@@ -12,7 +12,7 @@ import {
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
-  LogOut, HelpCircle, MapPin, UserCircle, Store, ListTodo
+  LogOut, HelpCircle, MapPin, UserCircle, Store, ListTodo, Package
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
@@ -565,7 +565,17 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
     { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
     { id: 'workflow-management', label: 'Workflow & Teams', icon: Users, path: '/workflow-management' },
-    { id: 'listini', label: 'Listini', icon: FileText, path: '/listini' },
+    { 
+      id: 'prodotti-listini', 
+      label: 'Prodotti e Listini', 
+      icon: Package, 
+      path: '/prodotti-listini/catalogo',
+      hasSubmenu: true,
+      submenuItems: [
+        { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini/catalogo' },
+        { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini/listini-prezzi' }
+      ]
+    },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag, path: '/cassa' },
     { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
   ];
