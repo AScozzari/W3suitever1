@@ -6566,9 +6566,8 @@ const baseProductSchema = createInsertSchema(products).omit({
   modifiedBy: true   // Auto-set from user session
 }).extend({
   sku: z.string().min(1, "SKU è obbligatorio").max(100),
-  name: z.string().min(1, "Nome prodotto è obbligatorio").max(255),
+  name: z.string().min(1, "Descrizione è obbligatoria").max(255),
   model: z.string().max(255).optional(),
-  description: z.string().optional(),
   notes: z.string().optional(),
   brand: z.string().max(100).optional(),
   imageUrl: z.string().max(512).url("URL immagine non valido").or(z.literal('')).optional(),
@@ -6594,18 +6593,15 @@ export const insertProductSchema = baseProductSchema
     path: ["serialType"],
   })
   .refine((data) => {
-    // Validation Rule: monthlyFee and description are required if type is CANVAS
+    // Validation Rule: monthlyFee is required if type is CANVAS
     if (data.type === 'CANVAS') {
       if (!data.monthlyFee || data.monthlyFee <= 0) {
-        return false;
-      }
-      if (!data.description || data.description.trim() === '') {
         return false;
       }
     }
     return true;
   }, {
-    message: "Canone mensile e descrizione sono obbligatori per prodotti di tipo CANVAS",
+    message: "Canone mensile obbligatorio per prodotti di tipo CANVAS",
     path: ["monthlyFee"],
   })
   .refine((data) => {

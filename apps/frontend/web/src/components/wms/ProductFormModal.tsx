@@ -20,17 +20,15 @@ const productSchema = z.object({
   condition: z.enum(['new', 'used', 'refurbished', 'demo']).optional(),
   brand: z.string().optional(),
   model: z.string().optional(),
-  name: z.string().min(1, 'Nome prodotto obbligatorio'),
+  name: z.string().min(1, 'Descrizione obbligatoria'),
   sku: z.string().min(1, 'SKU obbligatorio'),
   ean: z.string().optional(),
-  description: z.string().optional(),
   imageUrl: z.string().url('URL non valido').or(z.literal('')).optional(),
   notes: z.string().optional(),
   isSerializable: z.boolean(),
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0).optional(),
   unitOfMeasure: z.string().min(1, 'Unità di misura obbligatoria'),
-  reorderPoint: z.coerce.number().min(0, 'Punto di riordino deve essere >= 0').default(0),
 }).refine((data) => {
   // Validation Rule: serialType is required if isSerializable is true
   if (data.isSerializable && !data.serialType) {
@@ -41,18 +39,15 @@ const productSchema = z.object({
   message: 'Tipo seriale è obbligatorio quando il prodotto è serializzabile',
   path: ['serialType'],
 }).refine((data) => {
-  // Validation Rule: monthlyFee and description are required if type is CANVAS
+  // Validation Rule: monthlyFee is required if type is CANVAS
   if (data.type === 'CANVAS') {
     if (!data.monthlyFee || data.monthlyFee <= 0) {
-      return false;
-    }
-    if (!data.description || data.description.trim() === '') {
       return false;
     }
   }
   return true;
 }, {
-  message: 'Canone mensile e descrizione sono obbligatori per prodotti di tipo CANVAS',
+  message: 'Canone mensile obbligatorio per prodotti di tipo CANVAS',
   path: ['monthlyFee'],
 }).refine((data) => {
   // Validation Rule: condition is required if type is PHYSICAL
@@ -88,14 +83,12 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       name: '',
       sku: '',
       ean: '',
-      description: '',
       imageUrl: '',
       notes: '',
       isSerializable: false,
       serialType: undefined,
       monthlyFee: undefined,
       unitOfMeasure: 'pz',
-      reorderPoint: 0,
     },
   });
 
@@ -120,14 +113,12 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         name: product.name || '',
         sku: product.sku || '',
         ean: product.ean || '',
-        description: product.description || '',
         imageUrl: product.imageUrl || '',
         notes: product.notes || '',
         isSerializable: product.isSerializable || false,
         serialType: product.serialType || undefined,
         monthlyFee: product.monthlyFee || undefined,
         unitOfMeasure: product.unitOfMeasure || 'pz',
-        reorderPoint: product.reorderPoint || 0,
       });
     } else {
       form.reset({
@@ -139,14 +130,12 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         name: '',
         sku: '',
         ean: '',
-        description: '',
         imageUrl: '',
         notes: '',
         isSerializable: false,
         serialType: undefined,
         monthlyFee: undefined,
         unitOfMeasure: 'pz',
-        reorderPoint: 0,
       });
     }
   }, [product, form]);
@@ -361,13 +350,13 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 )}
               />
 
-              {/* Nome Prodotto (manteniamo per backward compatibility) */}
+              {/* Descrizione Prodotto */}
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome Prodotto <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Descrizione <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="es. Smartphone Premium" 
@@ -439,33 +428,6 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
               />
             </div>
 
-            {/* Descrizione (obbligatoria per CANVAS) */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Descrizione {watchType === 'CANVAS' && <span className="text-red-500">*</span>}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Descrizione dettagliata del prodotto"
-                      className="min-h-[100px]"
-                      data-testid="textarea-description"
-                      {...field} 
-                    />
-                  </FormControl>
-                  {watchType === 'CANVAS' && (
-                    <FormDescription className="text-orange-600">
-                      La descrizione è obbligatoria per prodotti di tipo Canvas
-                    </FormDescription>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Immagine URL */}
             <FormField
               control={form.control}
@@ -509,58 +471,32 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Punto di Riordino */}
+            {/* CAMPO CONDIZIONALE: Canone Mensile (solo per CANVAS) */}
+            {watchType === 'CANVAS' && (
               <FormField
                 control={form.control}
-                name="reorderPoint"
+                name="monthlyFee"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Punto di Riordino</FormLabel>
+                    <FormLabel>Canone Mensile (€/mese) <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
                         min="0"
-                        placeholder="0" 
-                        data-testid="input-reorder-point"
+                        step="0.01"
+                        placeholder="es. 19.99" 
+                        data-testid="input-monthly-fee"
                         {...field} 
                       />
                     </FormControl>
                     <FormDescription>
-                      Quantità minima prima di riordinare
+                      Importo mensile pagato dal cliente
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              {/* CAMPO CONDIZIONALE: Canone Mensile (solo per CANVAS) */}
-              {watchType === 'CANVAS' && (
-                <FormField
-                  control={form.control}
-                  name="monthlyFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Canone Mensile (€/mese) <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="es. 19.99" 
-                          data-testid="input-monthly-fee"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Importo mensile pagato dal cliente
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
+            )}
 
             {/* Serializzabile (checkbox) */}
             <FormField

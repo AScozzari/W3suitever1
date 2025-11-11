@@ -136,6 +136,38 @@ export default function ProductsPage() {
       ),
     },
     {
+      accessorKey: 'serialType',
+      header: 'IMEI/ICCID',
+      cell: ({ row }) => {
+        if (!row.original.isSerializable || !row.original.serialType) {
+          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        }
+        
+        const serialTypeLabels: Record<string, string> = {
+          'imei': 'IMEI',
+          'iccid': 'ICCID',
+          'mac_address': 'MAC',
+          'other': 'Altro'
+        };
+        const serialTypeColors: Record<string, string> = {
+          'imei': 'hsl(142, 76%, 36%)',
+          'iccid': 'hsl(220, 90%, 56%)',
+          'mac_address': 'hsl(280, 100%, 50%)',
+          'other': 'hsl(0, 0%, 60%)'
+        };
+        const serialType = row.original.serialType;
+        return (
+          <Badge 
+            variant="outline" 
+            style={{ borderColor: serialTypeColors[serialType] || serialTypeColors['other'], color: serialTypeColors[serialType] || serialTypeColors['other'] }}
+            data-testid={`badge-serial-type-${row.original.id}`}
+          >
+            {serialTypeLabels[serialType] || serialType}
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: 'type',
       header: 'Tipo',
       cell: ({ row }) => {
@@ -220,32 +252,6 @@ export default function ProductsPage() {
           </Badge>
         );
       },
-    },
-    {
-      accessorKey: 'quantityAvailable',
-      header: 'Disponibile',
-      cell: ({ row }) => (
-        <div className="text-center" data-testid={`text-quantity-${row.original.id}`}>
-          <div className="font-semibold">{row.original.quantityAvailable}</div>
-          <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {row.original.unitOfMeasure}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'quantityReserved',
-      header: 'Riservato',
-      cell: ({ row }) => (
-        <div className="text-center">
-          <div 
-            className="font-semibold"
-            data-testid={`text-quantity-reserved-${row.original.id}`}
-          >
-            {row.original.quantityReserved}
-          </div>
-        </div>
-      ),
     },
     {
       accessorKey: 'isSerializable',
