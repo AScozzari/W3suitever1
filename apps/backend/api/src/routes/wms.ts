@@ -2575,6 +2575,157 @@ router.post("/inventory-adjustments", rbacMiddleware, requirePermission("wms.sto
   }
 });
 
+// ==================== BARCODE GENERATION ====================
+
+/**
+ * POST /api/wms/barcodes/generate
+ * 
+ * Generate barcode images for WMS products (EAN-13, Code128, QR Code, GS1-128).
+ * 
+ * @permission wms.products.write
+ * @body {
+ *   type: 'ean13' | 'code128' | 'qrcode' | 'gs1-128'
+ *   value: string (data to encode)
+ *   options?: {
+ *     scale?: number (1-10, default: 2)
+ *     height?: number (pixels, default: 50)
+ *     includeText?: boolean (default: true)
+ *     textColor?: string (hex, default: '000000')
+ *     backgroundColor?: string (hex, default: 'FFFFFF')
+ *   }
+ *   format?: 'png' | 'svg' (default: 'png')
+ * }
+ * @returns {
+ *   success: boolean,
+ *   data: {
+ *     type: string,
+ *     value: string,
+ *     format: string,
+ *     image: string (base64 for PNG, SVG string for SVG),
+ *     mimeType: string
+ *   }
+ * }
+ */
+
+const barcodeGenerateSchema = z.object({
+  type: z.enum(['ean13', 'code128', 'qrcode', 'gs1-128'], {
+    errorMap: () => ({ message: "Type must be one of: ean13, code128, qrcode, gs1-128" })
+  }),
+  value: z.string().min(1, "Value is required").max(500, "Value too long"),
+  options: z.object({
+    scale: z.number().int().min(1).max(10).optional(),
+    height: z.number().int().min(10).max(500).optional(),
+    includeText: z.boolean().optional(),
+    textColor: z.string().regex(/^[0-9A-Fa-f]{6}$/, "Text color must be hex (e.g., 000000)").optional(),
+    backgroundColor: z.string().regex(/^[0-9A-Fa-f]{6}$/, "Background color must be hex (e.g., FFFFFF)").optional(),
+  }).optional(),
+  format: z.enum(['png', 'svg']).optional(),
+});
+
+router.post("/barcodes/generate", rbacMiddleware, requirePermission('wms.products.write'), async (req, res) => {
+  try {
+    // Validate request body
+    const validationResult = barcodeGenerateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid barcode generation request",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const { type, value, options = {}, format = 'png' } = validationResult.data;
+    
+    // Map WMS barcode types to bwip-js symbology
+    const symbologyMap: Record<string, string> = {
+      'ean13': 'ean13',
+      'code128': 'code128',
+      'qrcode': 'qrcode',
+      'gs1-128': 'gs1-128'
+    };
+    
+    const bcid = symbologyMap[type];
+    if (!bcid) {
+      return res.status(400).json({ error: `Unsupported barcode type: ${type}` });
+    }
+    
+    // Prepare bwip-js options
+    const bwipOptions: any = {
+      bcid,
+      text: value,
+      scale: options.scale || 2,
+      height: options.height || (type === 'qrcode' ? 10 : 50), // QR codes use module size
+      includetext: options.includeText !== false,
+      textxalign: 'center',
+    };
+    
+    // Apply colors
+    if (options.textColor) {
+      bwipOptions.textcolor = options.textColor;
+    }
+    if (options.backgroundColor) {
+      bwipOptions.backgroundcolor = options.backgroundColor;
+    }
+    
+    // Special handling for EAN-13 (requires 12 or 13 digits)
+    if (type === 'ean13') {
+      const digits = value.replace(/\D/g, ''); // Remove non-digits
+      if (digits.length !== 12 && digits.length !== 13) {
+        return res.status(400).json({
+          error: "EAN-13 requires 12 digits (checksum auto-calculated) or 13 digits (with checksum)"
+        });
+      }
+      bwipOptions.text = digits;
+    }
+    
+    // Generate barcode
+    let barcodeData: string;
+    let mimeType: string;
+    
+    if (format === 'svg') {
+      const bwipjs = await import('bwip-js');
+      const svg = bwipjs.toSVG(bwipOptions);
+      barcodeData = svg;
+      mimeType = 'image/svg+xml';
+    } else {
+      // PNG format (default)
+      const bwipjs = await import('bwip-js');
+      const png = await bwipjs.toBuffer(bwipOptions);
+      barcodeData = png.toString('base64');
+      mimeType = 'image/png';
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        type,
+        value,
+        format,
+        image: barcodeData,
+        mimeType
+      }
+    });
+    
+  } catch (error: any) {
+    console.error("Error generating barcode:", error);
+    
+    // Handle bwip-js specific errors
+    if (error.message?.includes('Unknown bar code type')) {
+      return res.status(400).json({ error: "Invalid barcode type" });
+    }
+    if (error.message?.includes('Invalid') || error.message?.includes('barcode')) {
+      return res.status(400).json({ 
+        error: "Invalid barcode value",
+        details: error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to generate barcode",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== WAREHOUSE LOCATIONS ====================
 
 /**

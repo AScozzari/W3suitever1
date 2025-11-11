@@ -94,6 +94,7 @@
     "bcryptjs": "^3.0.2",
     "bull": "^4.16.5",
     "bullmq": "^5.60.0",
+    "bwip-js": "^4.7.0",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
