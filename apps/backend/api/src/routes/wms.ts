@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../core/db";
 import { eq, and, ilike, or, desc, asc, sql, inArray } from "drizzle-orm";
+import crypto from "crypto";
 import { 
   products,
   insertProductSchema,
@@ -10,6 +11,7 @@ import {
   productBatches
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
+import { logger } from "../core/logger";
 import { z } from "zod";
 
 const router = Router();
@@ -168,6 +170,111 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
     console.error("Error fetching WMS products:", error);
     res.status(500).json({ 
       error: "Failed to fetch products",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/products
+ * Create a new product
+ * Body: Zod-validated product data (insertProductSchema)
+ * - Auto-generates UUID for id
+ * - Validates SKU uniqueness
+ * - Sets createdBy, createdAt, updatedAt timestamps
+ * - Supports source: brand | tenant
+ */
+router.post("/products", rbacMiddleware, requirePermission('wms.product.create'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Validate request body with insertProductSchema
+    const validationResult = insertProductSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validationResult.error.format()
+      });
+    }
+
+    const productData = validationResult.data;
+
+    // Check SKU uniqueness within tenant
+    if (productData.sku) {
+      const existingSku = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(
+          and(
+            eq(products.tenantId, tenantId),
+            eq(products.sku, productData.sku)
+          )
+        )
+        .limit(1);
+
+      if (existingSku.length > 0) {
+        return res.status(409).json({ 
+          error: "SKU already exists",
+          message: `Product with SKU '${productData.sku}' already exists for this tenant`
+        });
+      }
+    }
+
+    // Generate new product ID (UUID)
+    const newProductId = crypto.randomUUID();
+
+    // Prepare product for insertion
+    const newProduct = {
+      ...productData,
+      tenantId,
+      id: newProductId,
+      createdBy: userId || null,
+      modifiedBy: userId || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Insert product
+    const [createdProduct] = await db
+      .insert(products)
+      .values(newProduct)
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product created', {
+      tenantId,
+      productId: createdProduct.id,
+      sku: createdProduct.sku,
+      name: createdProduct.name,
+      type: createdProduct.type,
+      source: createdProduct.source,
+      createdBy: userId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: createdProduct
+    });
+
+  } catch (error) {
+    console.error("Error creating WMS product:", error);
+    
+    // Handle unique constraint violation
+    if (error instanceof Error && error.message.includes('unique constraint')) {
+      return res.status(409).json({ 
+        error: "Unique constraint violation",
+        message: "A product with this SKU or EAN already exists"
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to create product",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

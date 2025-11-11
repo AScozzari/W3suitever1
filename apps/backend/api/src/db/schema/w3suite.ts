@@ -6543,11 +6543,14 @@ export const products = w3suiteSchema.table("products", {
 ]);
 
 export const insertProductSchema = createInsertSchema(products).omit({ 
-  createdAt: true, 
-  updatedAt: true,
-  archivedAt: true
+  tenantId: true,    // Auto-set from session
+  id: true,          // Auto-generated UUID
+  createdAt: true,   // Auto-set on creation
+  updatedAt: true,   // Auto-set on creation/update
+  archivedAt: true,  // Set only on soft-delete
+  createdBy: true,   // Auto-set from user session
+  modifiedBy: true   // Auto-set from user session
 }).extend({
-  id: z.string().min(1, "Product ID è obbligatorio").max(100),
   sku: z.string().min(1, "SKU è obbligatorio").max(100),
   name: z.string().min(1, "Nome prodotto è obbligatorio").max(255),
   type: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
