@@ -939,6 +939,168 @@ router.get("/product-serials", rbacMiddleware, requirePermission('wms.serial.rea
 });
 
 /**
+ * POST /api/wms/product-serials/bulk-import
+ * Bulk import product serials with atomic validation
+ * Body: { serials: Array<insertProductSerialSchema> }
+ * - Validates ALL serials before ANY inserts (2-phase validation)
+ * - Uses db.transaction() for atomicity (all or nothing)
+ * - Pre-validates productItemId FK for all serials
+ * - Checks for duplicate serialValue within tenant (existing + batch)
+ * - Max 1000 serials per import
+ * - Returns detailed error report for failed serials
+ */
+router.post("/product-serials/bulk-import", rbacMiddleware, requirePermission('wms.serial.create'), async (req, res) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Validate request body structure
+    const bulkImportSchema = z.object({
+      serials: z.array(insertProductSerialSchema)
+        .min(1, "At least one serial is required")
+        .max(1000, "Maximum 1000 serials per import")
+    });
+
+    const validationResult = bulkImportSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validationResult.error.format()
+      });
+    }
+
+    const { serials } = validationResult.data;
+    const errors: Array<{ index: number; serialValue: string; error: string }> = [];
+
+    // PHASE 1: Pre-validate ALL serials before ANY inserts
+    
+    // Extract unique productItemIds for batch FK validation
+    const uniqueProductItemIds = [...new Set(serials.map(s => s.productItemId))];
+    
+    // Batch query to validate ALL productItemIds exist in tenant
+    const existingProductItems = await db
+      .select({ id: productItems.id })
+      .from(productItems)
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          inArray(productItems.id, uniqueProductItemIds)
+        )
+      );
+
+    const validProductItemIds = new Set(existingProductItems.map(item => item.id));
+
+    // Check for invalid productItemIds
+    serials.forEach((serial, index) => {
+      if (!validProductItemIds.has(serial.productItemId)) {
+        errors.push({
+          index,
+          serialValue: serial.serialValue,
+          error: `Product item '${serial.productItemId}' not found in tenant`
+        });
+      }
+    });
+
+    // Extract all serialValues for duplicate check
+    const serialValues = serials.map(s => s.serialValue);
+    
+    // Check for duplicates within the batch itself
+    const seenInBatch = new Set<string>();
+    serials.forEach((serial, index) => {
+      if (seenInBatch.has(serial.serialValue)) {
+        errors.push({
+          index,
+          serialValue: serial.serialValue,
+          error: "Duplicate serial value within batch"
+        });
+      }
+      seenInBatch.add(serial.serialValue);
+    });
+
+    // Check for existing serials in DB (tenant-scoped)
+    const existingSerials = await db
+      .select({ serialValue: productSerials.serialValue })
+      .from(productSerials)
+      .where(
+        and(
+          eq(productSerials.tenantId, sessionTenantId),
+          inArray(productSerials.serialValue, serialValues)
+        )
+      );
+
+    const existingSerialValues = new Set(existingSerials.map(s => s.serialValue));
+    
+    serials.forEach((serial, index) => {
+      if (existingSerialValues.has(serial.serialValue)) {
+        // Only add if not already marked as error
+        if (!errors.some(e => e.index === index)) {
+          errors.push({
+            index,
+            serialValue: serial.serialValue,
+            error: "Serial value already exists in tenant"
+          });
+        }
+      }
+    });
+
+    // If ANY validation errors, abort before inserting
+    if (errors.length > 0) {
+      return res.status(400).json({
+        error: "Bulk import validation failed",
+        message: `${errors.length} of ${serials.length} serials failed validation`,
+        totalSerials: serials.length,
+        failedCount: errors.length,
+        errors
+      });
+    }
+
+    // PHASE 2: All validations passed, perform atomic batch insert
+    const createdSerials = await db.transaction(async (tx) => {
+      const serialsWithTenant = serials.map(serial => ({
+        ...serial,
+        tenantId: sessionTenantId
+      }));
+
+      const inserted = await tx
+        .insert(productSerials)
+        .values(serialsWithTenant)
+        .returning();
+
+      return inserted;
+    });
+
+    // Structured logging for audit trail
+    logger.info('WMS product serials bulk imported', {
+      tenantId: sessionTenantId,
+      totalSerials: serials.length,
+      successCount: createdSerials.length,
+      serialTypes: [...new Set(serials.map(s => s.serialType))]
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully imported ${createdSerials.length} product serials`,
+      totalSerials: serials.length,
+      successCount: createdSerials.length,
+      failedCount: 0,
+      data: createdSerials
+    });
+
+  } catch (error) {
+    console.error("Error bulk importing WMS product serials:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to bulk import product serials",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
  * POST /api/wms/product-serials/:tenantId
  * Create a new product serial
  * Params: tenantId (UUID)
