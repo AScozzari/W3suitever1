@@ -2884,6 +2884,225 @@ router.get("/warehouse-locations", rbacMiddleware, requirePermission('wms.wareho
   }
 });
 
+// ==================== ANALYTICS ENDPOINTS ====================
+
+/**
+ * GET /api/wms/analytics/stock-levels
+ * 
+ * Get stock level analytics with aggregations by store, product, and status.
+ * 
+ * @permission wms.analytics.read
+ * @query {
+ *   storeId?: string (UUID filter)
+ *   productId?: string (UUID filter)
+ *   groupBy?: 'store' | 'product' | 'status' (default: store)
+ *   minQuantity?: number (filter items with quantity >= threshold)
+ *   maxQuantity?: number (filter items with quantity <= threshold)
+ *   includeZeroStock?: boolean (default: false)
+ * }
+ * @returns {
+ *   success: boolean,
+ *   data: {
+ *     summary: {
+ *       totalProducts: number,
+ *       totalQuantity: number,
+ *       totalValue: number,
+ *       averageQuantity: number
+ *     },
+ *     stockLevels: Array<{
+ *       groupKey: string,
+ *       groupLabel: string,
+ *       totalQuantity: number,
+ *       productCount: number,
+ *       averageQuantity: number,
+ *       breakdown: Record<string, number>
+ *     }>
+ *   }
+ * }
+ */
+
+const stockLevelsQuerySchema = z.object({
+  storeId: z.string().uuid().optional(),
+  productId: z.string().uuid().optional(),
+  groupBy: z.enum(['store', 'product', 'status']).optional(),
+  minQuantity: z.string().regex(/^\d+$/).optional(),
+  maxQuantity: z.string().regex(/^\d+$/).optional(),
+  includeZeroStock: z.enum(['true', 'false']).optional(),
+});
+
+router.get("/analytics/stock-levels", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+    
+    const validationResult = stockLevelsQuerySchema.safeParse(req.query);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Invalid query parameters",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const {
+      storeId,
+      productId,
+      groupBy = 'store',
+      minQuantity,
+      maxQuantity,
+      includeZeroStock = 'false'
+    } = validationResult.data;
+    
+    // Build SQL query to aggregate stock levels from stock movements
+    // Calculate current stock by summing all movement deltas for each product+store combination
+    let query = sql`
+      SELECT 
+        store_id,
+        product_id,
+        SUM(quantity_delta) as total_quantity,
+        COUNT(DISTINCT id) as movement_count,
+        MAX(movement_type) as last_movement_type
+      FROM ${wmsStockMovements}
+      WHERE tenant_id = ${tenantId}
+    `;
+    
+    const conditions: any[] = [];
+    
+    if (storeId) {
+      conditions.push(sql`store_id = ${storeId}`);
+    }
+    if (productId) {
+      conditions.push(sql`product_id = ${productId}`);
+    }
+    
+    if (conditions.length > 0) {
+      query = sql`${query} AND ${sql.join(conditions, sql` AND `)}`;
+    }
+    
+    query = sql`${query} GROUP BY store_id, product_id`;
+    
+    // Apply quantity filters after aggregation
+    const havingConditions: any[] = [];
+    
+    if (minQuantity) {
+      havingConditions.push(sql`SUM(quantity_delta) >= ${parseInt(minQuantity)}`);
+    }
+    if (maxQuantity) {
+      havingConditions.push(sql`SUM(quantity_delta) <= ${parseInt(maxQuantity)}`);
+    }
+    if (includeZeroStock === 'false') {
+      havingConditions.push(sql`SUM(quantity_delta) > 0`);
+    }
+    
+    if (havingConditions.length > 0) {
+      query = sql`${query} HAVING ${sql.join(havingConditions, sql` AND `)}`;
+    }
+    
+    const items = await db.execute(query) as any;
+    
+    // Calculate summary stats from aggregated results
+    const rows = items.rows || items;
+    const totalQuantity = rows.reduce((sum: number, row: any) => sum + parseInt(row.total_quantity || 0), 0);
+    const totalProducts = rows.length;
+    const averageQuantity = totalProducts > 0 ? totalQuantity / totalProducts : 0;
+    
+    // Calculate total value (TODO: Join with products table for price calculation)
+    const totalValue = 0;
+    
+    // Group aggregations
+    const groupedData = new Map<string, {
+      groupKey: string;
+      groupLabel: string;
+      totalQuantity: number;
+      productCount: number;
+      items: typeof items;
+    }>();
+    
+    for (const row of rows) {
+      const qty = parseInt(row.total_quantity || 0);
+      let groupKey: string;
+      let groupLabel: string;
+      
+      if (groupBy === 'store') {
+        groupKey = row.store_id || 'unknown';
+        groupLabel = row.store_id ? `Store ${row.store_id.substring(0, 8)}...` : 'Unknown Store';
+      } else if (groupBy === 'product') {
+        groupKey = row.product_id || 'unknown';
+        groupLabel = row.product_id ? `Product ${row.product_id.substring(0, 8)}...` : 'Unknown Product';
+      } else {
+        // For status grouping, use movement_type as proxy
+        groupKey = row.last_movement_type || 'unknown';
+        groupLabel = (row.last_movement_type || 'UNKNOWN').toUpperCase();
+      }
+      
+      if (!groupedData.has(groupKey)) {
+        groupedData.set(groupKey, {
+          groupKey,
+          groupLabel,
+          totalQuantity: 0,
+          productCount: 0,
+          items: [],
+        });
+      }
+      
+      const group = groupedData.get(groupKey)!;
+      group.totalQuantity += qty;
+      group.productCount += 1;
+      group.items.push(row);
+    }
+    
+    // Build stock levels response
+    const stockLevels = Array.from(groupedData.values()).map(group => {
+      const breakdown: Record<string, number> = {};
+      
+      // Add breakdown by movement type for store/product grouping
+      if (groupBy !== 'status') {
+        for (const row of group.items) {
+          const movementType = row.last_movement_type || 'unknown';
+          if (!breakdown[movementType]) {
+            breakdown[movementType] = 0;
+          }
+          breakdown[movementType] += parseInt(row.total_quantity || 0);
+        }
+      }
+      
+      return {
+        groupKey: group.groupKey,
+        groupLabel: group.groupLabel,
+        totalQuantity: group.totalQuantity,
+        productCount: group.productCount,
+        averageQuantity: group.productCount > 0 ? group.totalQuantity / group.productCount : 0,
+        breakdown: Object.keys(breakdown).length > 0 ? breakdown : undefined,
+      };
+    });
+    
+    // Sort by total quantity descending
+    stockLevels.sort((a, b) => b.totalQuantity - a.totalQuantity);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          totalProducts,
+          totalQuantity,
+          totalValue: Math.round(totalValue * 100) / 100,
+          averageQuantity: Math.round(averageQuantity * 100) / 100,
+        },
+        stockLevels,
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error fetching stock level analytics:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch stock level analytics",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== JOB QUEUE ENDPOINTS ====================
 
 /**
