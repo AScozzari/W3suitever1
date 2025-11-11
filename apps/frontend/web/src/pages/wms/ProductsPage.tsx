@@ -28,10 +28,16 @@ interface Product {
   id: string;
   sku: string;
   name: string;
+  model?: string;
+  description?: string;
+  notes?: string;
   brand?: string;
   ean?: string;
-  type: 'PHYSICAL' | 'DIGITAL' | 'SERVICE';
+  imageUrl?: string;
+  type: 'CANVAS' | 'PHYSICAL' | 'VIRTUAL' | 'SERVICE';
   isSerializable: boolean;
+  serialType?: 'imei' | 'iccid' | 'mac_address' | 'other';
+  monthlyFee?: number;
   unitOfMeasure: string;
   quantityAvailable: number;
   quantityReserved: number;
