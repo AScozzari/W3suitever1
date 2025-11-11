@@ -6640,7 +6640,8 @@ export const productSerials = w3suiteSchema.table("product_serials", {
 ]);
 
 export const insertProductSerialSchema = createInsertSchema(productSerials).omit({ 
-  id: true, 
+  id: true,
+  tenantId: true,
   createdAt: true 
 }).extend({
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']),
