@@ -374,6 +374,37 @@ export const voipDidStatusEnum = pgEnum('voip_did_status', ['active', 'porting_i
 export const voipRouteTypeEnum = pgEnum('voip_route_type', ['inbound', 'outbound', 'emergency']);
 export const voipAssignmentTypeEnum = pgEnum('voip_assignment_type', ['store', 'extension', 'ivr', 'queue', 'conference']);
 
+// ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) ENUMS ====================
+export const productSourceEnum = pgEnum('product_source', ['brand', 'tenant']);
+export const productTypeEnum = pgEnum('product_type', ['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']);
+export const productConditionEnum = pgEnum('product_condition', ['new', 'used', 'refurbished', 'demo']);
+export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
+  'in_stock',           // In giacenza
+  'reserved',           // Prenotato
+  'preparing',          // In preparazione
+  'shipping',           // DDT/In spedizione
+  'delivered',          // Consegnato
+  'customer_return',    // Reso cliente
+  'doa_return',         // Reso DOA
+  'in_service',         // In assistenza
+  'supplier_return',    // Restituito fornitore
+  'in_transfer',        // In trasferimento
+  'lost',               // Smarrito
+  'damaged',            // Danneggiato/Dismesso
+  'internal_use'        // AD uso interno
+]);
+export const serialTypeEnum = pgEnum('serial_type', ['imei', 'iccid', 'mac_address', 'other']);
+export const productBatchStatusEnum = pgEnum('product_batch_status', ['available', 'reserved', 'damaged', 'expired']);
+export const stockMovementTypeEnum = pgEnum('stock_movement_type', [
+  'purchase_in',        // Acquisto da fornitore
+  'sale_out',           // Vendita
+  'return_in',          // Reso da cliente
+  'transfer_out',       // Trasferimento
+  'adjustment',         // Rettifica inventario
+  'damaged'             // Danneggiato
+]);
+export const priceListTypeEnum = pgEnum('price_list_type', ['b2c', 'b2b', 'wholesale']);
+
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -6447,3 +6478,239 @@ export const insertWorkflowManualExecutionSchema = createInsertSchema(workflowMa
 });
 export type InsertWorkflowManualExecution = z.infer<typeof insertWorkflowManualExecutionSchema>;
 export type WorkflowManualExecution = typeof workflowManualExecutions.$inferSelect;
+
+// ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) TABLES ====================
+
+// 1) products - Master product definition (Brand-Tenant hybrid architecture)
+export const products = w3suiteSchema.table("products", {
+  // CRITICAL: Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  id: varchar("id", { length: 100 }).notNull(), // e.g., "PROD-UUID" or Brand-generated ID
+  
+  // Brand/Tenant hybrid tracking
+  source: productSourceEnum("source").default('tenant').notNull(), // brand | tenant
+  brandProductId: varchar("brand_product_id", { length: 100 }), // Reference to Brand master product
+  isBrandSynced: boolean("is_brand_synced").default(false).notNull(), // Auto-update when Brand modifies
+  
+  // Core product info
+  sku: varchar("sku", { length: 100 }).notNull(), // Unique per tenant
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  brand: varchar("brand", { length: 100 }), // Product brand (e.g., "Apple", "Samsung")
+  ean: varchar("ean", { length: 13 }), // EAN-13 barcode
+  
+  // Product categorization
+  type: productTypeEnum("type").notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
+  isSerializable: boolean("is_serializable").default(false).notNull(), // Track at item-level if true
+  
+  // Physical properties (for PHYSICAL type)
+  weight: numeric("weight", { precision: 10, scale: 3 }), // kg
+  dimensions: jsonb("dimensions"), // { length, width, height } in cm
+  
+  // Attachments (PDF, photos, technical sheets)
+  attachments: jsonb("attachments").default([]), // Array of { id, name, url, type, size }
+  
+  // Stock management
+  quantityAvailable: integer("quantity_available").default(0).notNull(),
+  quantityReserved: integer("quantity_reserved").default(0).notNull(),
+  reorderPoint: integer("reorder_point").default(0).notNull(), // Min stock level before reorder
+  warehouseLocation: varchar("warehouse_location", { length: 100 }), // Default storage location
+  unitOfMeasure: varchar("unit_of_measure", { length: 20 }).default('pz').notNull(), // pz, kg, m, etc.
+  
+  // Status & lifecycle
+  isActive: boolean("is_active").default(true).notNull(), // Soft delete
+  archivedAt: timestamp("archived_at"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // RLS & uniqueness
+  uniqueIndex("products_tenant_id_unique").on(table.tenantId, table.id),
+  uniqueIndex("products_tenant_sku_unique").on(table.tenantId, table.sku),
+  
+  // Performance indexes (tenant_id first for RLS)
+  index("products_tenant_idx").on(table.tenantId),
+  index("products_tenant_source_idx").on(table.tenantId, table.source),
+  index("products_tenant_type_idx").on(table.tenantId, table.type),
+  index("products_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("products_ean_idx").on(table.ean),
+  index("products_brand_product_id_idx").on(table.brandProductId),
+]);
+
+export const insertProductSchema = createInsertSchema(products).omit({ 
+  createdAt: true, 
+  updatedAt: true,
+  archivedAt: true
+}).extend({
+  id: z.string().min(1, "Product ID è obbligatorio").max(100),
+  sku: z.string().min(1, "SKU è obbligatorio").max(100),
+  name: z.string().min(1, "Nome prodotto è obbligatorio").max(255),
+  type: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  source: z.enum(['brand', 'tenant']).optional(),
+  ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").optional(),
+});
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+// 2) product_items - Individual serializable product items tracking
+export const productItems = w3suiteSchema.table("product_items", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id", { length: 100 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  
+  // Item condition & status
+  condition: productConditionEnum("condition").default('new').notNull(), // new | used | refurbished | demo
+  logisticStatus: productLogisticStatusEnum("logistic_status").default('in_stock').notNull(), // 13 states
+  
+  // Lifecycle tracking
+  orderId: uuid("order_id"), // FK to orders table (future)
+  customerId: uuid("customer_id"), // FK to customers table
+  
+  // Additional info
+  notes: text("notes"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("product_items_tenant_idx").on(table.tenantId),
+  index("product_items_tenant_product_idx").on(table.tenantId, table.productId),
+  index("product_items_tenant_status_idx").on(table.tenantId, table.logisticStatus),
+  index("product_items_store_idx").on(table.storeId),
+  index("product_items_customer_idx").on(table.customerId),
+]);
+
+export const insertProductItemSchema = createInsertSchema(productItems).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+}).extend({
+  condition: z.enum(['new', 'used', 'refurbished', 'demo']).optional(),
+  logisticStatus: z.enum([
+    'in_stock', 'reserved', 'preparing', 'shipping', 'delivered',
+    'customer_return', 'doa_return', 'in_service', 'supplier_return',
+    'in_transfer', 'lost', 'damaged', 'internal_use'
+  ]).optional(),
+});
+export type InsertProductItem = z.infer<typeof insertProductItemSchema>;
+export type ProductItem = typeof productItems.$inferSelect;
+
+// 3) product_serials - IMEI/ICCID/MAC address tracking
+export const productSerials = w3suiteSchema.table("product_serials", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  productItemId: uuid("product_item_id").notNull().references(() => productItems.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Serial identification
+  serialType: serialTypeEnum("serial_type").notNull(), // imei | iccid | mac_address | other
+  serialValue: varchar("serial_value", { length: 100 }).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  // CRITICAL: Tenant-scoped serial uniqueness
+  uniqueIndex("product_serials_tenant_value_unique").on(table.tenantId, table.serialValue),
+  
+  index("product_serials_tenant_idx").on(table.tenantId),
+  index("product_serials_item_idx").on(table.productItemId),
+  index("product_serials_type_idx").on(table.serialType),
+]);
+
+export const insertProductSerialSchema = createInsertSchema(productSerials).omit({ 
+  id: true, 
+  createdAt: true 
+}).extend({
+  serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']),
+  serialValue: z.string().min(1, "Valore seriale è obbligatorio").max(100),
+});
+export type InsertProductSerial = z.infer<typeof insertProductSerialSchema>;
+export type ProductSerial = typeof productSerials.$inferSelect;
+
+// 4) product_item_status_history - Audit trail for logistic status changes
+export const productItemStatusHistory = w3suiteSchema.table("product_item_status_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  productItemId: uuid("product_item_id").notNull().references(() => productItems.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Status transition
+  fromStatus: productLogisticStatusEnum("from_status"),
+  toStatus: productLogisticStatusEnum("to_status").notNull(),
+  
+  // Change metadata
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
+  changedBy: varchar("changed_by").references(() => users.id),
+  changedByName: varchar("changed_by_name", { length: 255 }),
+  notes: text("notes"),
+  
+  // Optional order reference
+  referenceOrderId: uuid("reference_order_id"), // FK to orders table (future)
+}, (table) => [
+  index("item_history_tenant_idx").on(table.tenantId),
+  index("item_history_tenant_item_changed_idx").on(table.tenantId, table.productItemId, table.changedAt.desc()),
+  index("item_history_changed_by_idx").on(table.changedBy),
+]);
+
+export const insertProductItemStatusHistorySchema = createInsertSchema(productItemStatusHistory).omit({ 
+  id: true, 
+  changedAt: true 
+}).extend({
+  toStatus: z.enum([
+    'in_stock', 'reserved', 'preparing', 'shipping', 'delivered',
+    'customer_return', 'doa_return', 'in_service', 'supplier_return',
+    'in_transfer', 'lost', 'damaged', 'internal_use'
+  ]),
+});
+export type InsertProductItemStatusHistory = z.infer<typeof insertProductItemStatusHistorySchema>;
+export type ProductItemStatusHistory = typeof productItemStatusHistory.$inferSelect;
+
+// 5) product_batches - Non-serializable product batch tracking
+export const productBatches = w3suiteSchema.table("product_batches", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id", { length: 100 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  
+  // Batch info
+  batchNumber: varchar("batch_number", { length: 100 }).notNull(),
+  quantity: integer("quantity").default(0).notNull(),
+  warehouseLocation: varchar("warehouse_location", { length: 100 }),
+  
+  // Batch lifecycle
+  receivedDate: date("received_date"),
+  expiryDate: date("expiry_date"),
+  status: productBatchStatusEnum("status").default('available').notNull(), // available | reserved | damaged | expired
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // Unique batch per product per store
+  uniqueIndex("product_batches_tenant_product_store_batch_unique").on(
+    table.tenantId, 
+    table.productId, 
+    table.storeId, 
+    table.batchNumber
+  ),
+  
+  index("product_batches_tenant_idx").on(table.tenantId),
+  index("product_batches_tenant_product_idx").on(table.tenantId, table.productId),
+  index("product_batches_store_idx").on(table.storeId),
+  index("product_batches_status_idx").on(table.status),
+  index("product_batches_expiry_idx").on(table.expiryDate),
+]);
+
+export const insertProductBatchSchema = createInsertSchema(productBatches).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+}).extend({
+  batchNumber: z.string().min(1, "Numero lotto è obbligatorio").max(100),
+  quantity: z.number().int().min(0, "Quantità deve essere positiva"),
+  status: z.enum(['available', 'reserved', 'damaged', 'expired']).optional(),
+});
+export type InsertProductBatch = z.infer<typeof insertProductBatchSchema>;
+export type ProductBatch = typeof productBatches.$inferSelect;
