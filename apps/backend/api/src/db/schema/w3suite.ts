@@ -6729,8 +6729,12 @@ export const productBatches = w3suiteSchema.table("product_batches", {
   
   // Batch info
   batchNumber: varchar("batch_number", { length: 100 }).notNull(),
-  quantity: integer("quantity").default(0).notNull(),
+  initialQuantity: integer("initial_quantity").default(0).notNull(), // Original quantity (for KPI: usedQuantity calculation)
+  quantity: integer("quantity").default(0).notNull(), // Current quantity
+  reserved: integer("reserved").default(0).notNull(), // Reserved quantity
   warehouseLocation: varchar("warehouse_location", { length: 100 }),
+  supplier: varchar("supplier", { length: 255 }), // Supplier name
+  notes: text("notes"), // Additional batch notes
   
   // Batch lifecycle
   receivedDate: date("received_date"),
@@ -6763,8 +6767,12 @@ export const insertProductBatchSchema = createInsertSchema(productBatches).omit(
   updatedAt: true 
 }).extend({
   batchNumber: z.string().min(1, "Numero lotto è obbligatorio").max(100),
+  initialQuantity: z.number().int().min(0, "Quantità iniziale deve essere positiva").optional(), // Auto-set to quantity if omitted
   quantity: z.number().int().min(0, "Quantità deve essere positiva"),
+  reserved: z.number().int().min(0, "Quantità riservata deve essere positiva").optional(),
   status: z.enum(['available', 'reserved', 'damaged', 'expired']).optional(),
+  supplier: z.string().max(255, "Nome fornitore troppo lungo").optional(),
+  notes: z.string().optional(),
 });
 export type InsertProductBatch = z.infer<typeof insertProductBatchSchema>;
 export type ProductBatch = typeof productBatches.$inferSelect;
