@@ -2372,4 +2372,206 @@ router.post("/stock-movements", rbacMiddleware, requirePermission('wms.stock.wri
   }
 });
 
+// ==================== INVENTORY ADJUSTMENTS ====================
+
+/**
+ * POST /api/wms/inventory-adjustments
+ * 
+ * Bulk inventory adjustments for physical count reconciliation.
+ * Creates adjustment stock movements and updates quantities atomically.
+ * 
+ * @permission wms.stock.write
+ * @body {
+ *   adjustments: Array<{
+ *     productId: string,
+ *     productBatchId?: string,
+ *     storeId?: string,
+ *     expectedQuantity: number,
+ *     actualQuantity: number,
+ *     reason: string,
+ *     notes?: string
+ *   }>
+ * }
+ * @returns {
+ *   success: boolean,
+ *   message: string,
+ *   data: {
+ *     processedCount: number,
+ *     adjustmentsSummary: {
+ *       positive: number (additions),
+ *       negative: number (subtractions),
+ *       noChange: number
+ *     },
+ *     movements: Array<StockMovement>
+ *   }
+ * }
+ */
+
+const adjustmentItemSchema = z.object({
+  productId: z.string().uuid("Invalid product ID"),
+  productBatchId: z.string().uuid("Invalid batch ID").optional(),
+  storeId: z.string().uuid("Invalid store ID").optional(),
+  expectedQuantity: z.number().int().min(0, "Expected quantity must be >= 0"),
+  actualQuantity: z.number().int().min(0, "Actual quantity must be >= 0"),
+  reason: z.string().min(1, "Reason is required for inventory adjustment"),
+  notes: z.string().optional()
+});
+
+const inventoryAdjustmentsSchema = z.object({
+  adjustments: z.array(adjustmentItemSchema).min(1, "At least one adjustment is required")
+});
+
+router.post("/inventory-adjustments", rbacMiddleware, requirePermission("wms.stock.write"), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+    
+    // Validate request body
+    const validationResult = inventoryAdjustmentsSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: validationResult.error.flatten()
+      });
+    }
+    
+    const { adjustments } = validationResult.data;
+    
+    // Process adjustments in transaction
+    const result = await db.transaction(async (tx) => {
+      const createdMovements = [];
+      let positiveAdjustments = 0;
+      let negativeAdjustments = 0;
+      let noChangeCount = 0;
+      
+      // Phase 1: Validate all products exist
+      for (const adj of adjustments) {
+        const product = await tx.query.products.findFirst({
+          where: and(
+            eq(products.tenantId, tenantId),
+            eq(products.id, adj.productId)
+          )
+        });
+        
+        if (!product) {
+          throw new Error(`Product with ID '${adj.productId}' not found for this tenant`);
+        }
+        
+        // If batch specified, validate it exists
+        if (adj.productBatchId) {
+          const batch = await tx.query.productBatches.findFirst({
+            where: and(
+              eq(productBatches.tenantId, tenantId),
+              eq(productBatches.id, adj.productBatchId),
+              eq(productBatches.productId, adj.productId)
+            )
+          });
+          
+          if (!batch) {
+            throw new Error(`Batch '${adj.productBatchId}' not found for product '${adj.productId}'`);
+          }
+        }
+      }
+      
+      // Phase 2: Create adjustment movements and update quantities
+      for (const adj of adjustments) {
+        const delta = adj.actualQuantity - adj.expectedQuantity;
+        
+        // Skip if no change
+        if (delta === 0) {
+          noChangeCount++;
+          continue;
+        }
+        
+        // Determine direction
+        const direction = delta > 0 ? "inbound" : "outbound";
+        
+        // Track summary
+        if (delta > 0) {
+          positiveAdjustments++;
+        } else {
+          negativeAdjustments++;
+        }
+        
+        // Create stock movement
+        const movementId = crypto.randomUUID();
+        const [movement] = await tx.insert(wmsStockMovements).values({
+          id: movementId,
+          tenantId,
+          productId: adj.productId,
+          productBatchId: adj.productBatchId || null,
+          storeId: adj.storeId || null,
+          movementType: "adjustment",
+          movementDirection: direction,
+          quantityDelta: delta,
+          notes: `${adj.reason}${adj.notes ? ` - ${adj.notes}` : ''}\nExpected: ${adj.expectedQuantity}, Actual: ${adj.actualQuantity}`,
+          createdBy: userId || null,
+          occurredAt: new Date()
+        }).returning();
+        
+        // Update quantities
+        if (adj.productBatchId) {
+          // Update batch quantity
+          await tx.update(productBatches)
+            .set({
+              quantity: sql`${productBatches.quantity} + ${delta}`
+            })
+            .where(and(
+              eq(productBatches.tenantId, tenantId),
+              eq(productBatches.id, adj.productBatchId)
+            ));
+        } else {
+          // Update product quantity
+          await tx.update(products)
+            .set({
+              quantityAvailable: sql`${products.quantityAvailable} + ${delta}`
+            })
+            .where(and(
+              eq(products.tenantId, tenantId),
+              eq(products.id, adj.productId)
+            ));
+        }
+        
+        createdMovements.push(movement);
+      }
+      
+      return {
+        processedCount: adjustments.length,
+        adjustmentsSummary: {
+          positive: positiveAdjustments,
+          negative: negativeAdjustments,
+          noChange: noChangeCount
+        },
+        movements: createdMovements
+      };
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: `Processed ${result.processedCount} adjustments successfully`,
+      data: result
+    });
+    
+  } catch (error) {
+    console.error("Error processing inventory adjustments:", error);
+    
+    // Handle validation errors
+    if (error instanceof Error && error.message.includes("not found")) {
+      return res.status(404).json({ 
+        error: "Resource not found",
+        message: error.message
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to process inventory adjustments",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;
