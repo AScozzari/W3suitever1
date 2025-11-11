@@ -6597,7 +6597,8 @@ export const productItems = w3suiteSchema.table("product_items", {
 ]);
 
 export const insertProductItemSchema = createInsertSchema(productItems).omit({ 
-  id: true, 
+  id: true,
+  tenantId: true,   // Auto-set from session context
   createdAt: true, 
   updatedAt: true 
 }).extend({
@@ -6609,6 +6610,12 @@ export const insertProductItemSchema = createInsertSchema(productItems).omit({
   ]).optional(),
 });
 export type InsertProductItem = z.infer<typeof insertProductItemSchema>;
+
+export const updateProductItemSchema = insertProductItemSchema.partial().omit({
+  createdAt: true   // Never modifiable
+});
+export type UpdateProductItem = z.infer<typeof updateProductItemSchema>;
+
 export type ProductItem = typeof productItems.$inferSelect;
 
 // 3) product_serials - IMEI/ICCID/MAC address tracking

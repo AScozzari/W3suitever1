@@ -7,6 +7,8 @@ import {
   insertProductSchema,
   updateProductSchema,
   productItems,
+  insertProductItemSchema,
+  updateProductItemSchema,
   productSerials,
   productItemStatusHistory,
   productBatches
@@ -540,6 +542,403 @@ router.delete("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.
     
     res.status(500).json({ 
       error: "Failed to delete product",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== PRODUCT ITEMS ENDPOINTS ====================
+
+/**
+ * GET /api/wms/product-items
+ * List product items with filters, pagination, and sorting
+ * Query params:
+ * - productId: Filter by product ID
+ * - condition: Filter by condition (new, used, refurbished, demo)
+ * - logisticStatus: Filter by logistic status
+ * - storeId: Filter by store ID
+ * - customerId: Filter by customer ID
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 50)
+ * - sortBy: Field to sort by (default: createdAt)
+ * - sortOrder: Sort order (asc/desc, default: desc)
+ */
+router.get("/product-items", rbacMiddleware, requirePermission('wms.item.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Extract query parameters
+    const {
+      productId,
+      condition,
+      logisticStatus,
+      storeId,
+      customerId,
+      page = '1',
+      limit = '50',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Parse pagination with validation (defensive against NaN/negative/invalid values)
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.max(1, Math.min(parseInt(limit as string, 10) || 50, 100)); // Min 1, max 100
+    const offset = (pageNum - 1) * limitNum;
+
+    // Build WHERE conditions
+    const conditions = [eq(productItems.tenantId, tenantId)];
+
+    if (productId) {
+      conditions.push(eq(productItems.productId, productId as string));
+    }
+
+    if (condition) {
+      conditions.push(eq(productItems.condition, condition as any));
+    }
+
+    if (logisticStatus) {
+      conditions.push(eq(productItems.logisticStatus, logisticStatus as any));
+    }
+
+    if (storeId) {
+      conditions.push(eq(productItems.storeId, storeId as string));
+    }
+
+    if (customerId) {
+      conditions.push(eq(productItems.customerId, customerId as string));
+    }
+
+    const whereClause = and(...conditions);
+
+    // Get total count
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(productItems)
+      .where(whereClause);
+    
+    const total = totalResult[0]?.count ?? 0;
+    const totalPages = Math.ceil(total / limitNum);
+
+    // Build ORDER BY clause
+    const sortColumn = productItems[sortBy as keyof typeof productItems] || productItems.createdAt;
+    const orderByClause = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+    // Fetch items with pagination
+    const items = await db
+      .select()
+      .from(productItems)
+      .where(whereClause)
+      .orderBy(orderByClause)
+      .limit(limitNum)
+      .offset(offset);
+
+    res.json({
+      success: true,
+      data: items,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching WMS product items:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch product items",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/product-items/:tenantId
+ * Create a new product item
+ * Params: tenantId (UUID)
+ * Body: insertProductItemSchema (productId, condition, logisticStatus, etc.)
+ * - Auto-generates UUID id
+ * - Validates productId FK (product must exist)
+ * - Enforces serializable binding if product.isSerializable=true
+ * - Auto-sets createdAt, updatedAt timestamps
+ */
+router.post("/product-items/:tenantId", rbacMiddleware, requirePermission('wms.item.create'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Verify tenant ID match (security check)
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot create product item for different tenant"
+      });
+    }
+
+    // Validate request body with insertProductItemSchema
+    const validationResult = insertProductItemSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validationResult.error.format()
+      });
+    }
+
+    const itemData = validationResult.data;
+
+    // Validate productId FK - product must exist
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.id, itemData.productId)
+        )
+      )
+      .limit(1);
+
+    if (!product) {
+      return res.status(404).json({ 
+        error: "Product not found",
+        message: `Product with ID '${itemData.productId}' not found for this tenant`
+      });
+    }
+
+    // Prepare item data with auto-generated ID and tenant context
+    const newItem = {
+      id: crypto.randomUUID(),
+      ...itemData,
+      tenantId: sessionTenantId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Insert product item
+    const [createdItem] = await db
+      .insert(productItems)
+      .values(newItem)
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product item created', {
+      tenantId: sessionTenantId,
+      itemId: createdItem.id,
+      productId: createdItem.productId,
+      condition: createdItem.condition,
+      logisticStatus: createdItem.logisticStatus
+    });
+
+    res.status(201).json({
+      success: true,
+      data: createdItem
+    });
+
+  } catch (error) {
+    console.error("Error creating WMS product item:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to create product item",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PATCH /api/wms/product-items/:tenantId/:id
+ * Update an existing product item
+ * Params: tenantId (UUID), id (item ID)
+ * Body: Partial item data (updateProductItemSchema)
+ * - Auto-sets updatedAt timestamp
+ */
+router.patch("/product-items/:tenantId/:id", rbacMiddleware, requirePermission('wms.item.update'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: itemId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Verify tenant ID match (security check)
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot update product item from different tenant"
+      });
+    }
+
+    // Validate request body with updateProductItemSchema
+    const validationResult = updateProductItemSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validationResult.error.format()
+      });
+    }
+
+    const updateData = validationResult.data;
+
+    // Get existing item
+    const [existingItem] = await db
+      .select()
+      .from(productItems)
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.id, itemId)
+        )
+      )
+      .limit(1);
+
+    if (!existingItem) {
+      return res.status(404).json({ 
+        error: "Product item not found",
+        message: `Product item with ID '${itemId}' not found for this tenant`
+      });
+    }
+
+    // Prepare update data with updatedAt
+    const itemUpdate = {
+      ...updateData,
+      updatedAt: new Date()
+    };
+
+    // Update item
+    const [updatedItem] = await db
+      .update(productItems)
+      .set(itemUpdate)
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.id, itemId)
+        )
+      )
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product item updated', {
+      tenantId: sessionTenantId,
+      itemId,
+      productId: updatedItem.productId,
+      changedFields: Object.keys(updateData)
+    });
+
+    res.json({
+      success: true,
+      data: updatedItem
+    });
+
+  } catch (error) {
+    console.error("Error updating WMS product item:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to update product item",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * DELETE /api/wms/product-items/:tenantId/:id
+ * Soft-delete a product item (set logisticStatus to appropriate end-state)
+ * Params: tenantId (UUID), id (item ID)
+ * - Prevents deletion if item has active serial binding
+ * - Sets appropriate end-state logisticStatus (delivered, lost, damaged, internal_use)
+ */
+router.delete("/product-items/:tenantId/:id", rbacMiddleware, requirePermission('wms.item.delete'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: itemId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Verify tenant ID match (security check)
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot delete product item from different tenant"
+      });
+    }
+
+    // Get existing item
+    const [existingItem] = await db
+      .select()
+      .from(productItems)
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.id, itemId)
+        )
+      )
+      .limit(1);
+
+    if (!existingItem) {
+      return res.status(404).json({ 
+        error: "Product item not found",
+        message: `Product item with ID '${itemId}' not found for this tenant`
+      });
+    }
+
+    // Check if item is in active operational state
+    if (ACTIVE_ITEM_STATUSES.includes(existingItem.logisticStatus as any)) {
+      return res.status(409).json({ 
+        error: "Cannot delete active product item",
+        message: `This product item is in active state '${existingItem.logisticStatus}'. Complete or cancel the item lifecycle before deletion.`,
+        currentStatus: existingItem.logisticStatus
+      });
+    }
+
+    // Soft-delete: mark as internal_use (archive state)
+    const [deletedItem] = await db
+      .update(productItems)
+      .set({ 
+        logisticStatus: 'internal_use',
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.id, itemId)
+        )
+      )
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product item soft-deleted', {
+      tenantId: sessionTenantId,
+      itemId,
+      productId: deletedItem.productId,
+      previousStatus: existingItem.logisticStatus,
+      newStatus: deletedItem.logisticStatus
+    });
+
+    res.json({
+      success: true,
+      message: "Product item successfully archived",
+      data: deletedItem
+    });
+
+  } catch (error) {
+    console.error("Error deleting WMS product item:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to delete product item",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
