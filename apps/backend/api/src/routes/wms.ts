@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { 
   products,
   insertProductSchema,
+  updateProductSchema,
   productItems,
   productSerials,
   productItemStatusHistory,
@@ -275,6 +276,144 @@ router.post("/products", rbacMiddleware, requirePermission('wms.product.create')
     
     res.status(500).json({ 
       error: "Failed to create product",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PATCH /api/wms/products/:tenantId/:id
+ * Update an existing product
+ * Params: tenantId (UUID), id (product ID)
+ * Body: Partial product data (updateProductSchema)
+ * - Prevents update if source='brand' AND is_brand_synced=true (Brand-managed products)
+ * - Auto-sets modifiedBy and updatedAt
+ * - Validates SKU uniqueness if SKU is being changed
+ */
+router.patch("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.product.update'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: productId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Verify tenant ID match (security check)
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot update product from different tenant"
+      });
+    }
+
+    // Validate request body with updateProductSchema
+    const validationResult = updateProductSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validationResult.error.format()
+      });
+    }
+
+    const updateData = validationResult.data;
+
+    // Get existing product
+    const [existingProduct] = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.id, productId)
+        )
+      )
+      .limit(1);
+
+    if (!existingProduct) {
+      return res.status(404).json({ 
+        error: "Product not found",
+        message: `Product with ID '${productId}' not found for this tenant`
+      });
+    }
+
+    // Prevent update if Brand-synced product
+    if (existingProduct.source === 'brand' && existingProduct.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot update Brand-synced product",
+        message: "This product is managed by Brand HQ and cannot be modified by tenants. Contact Brand administration for updates."
+      });
+    }
+
+    // Check SKU uniqueness if SKU is being changed
+    if (updateData.sku && updateData.sku !== existingProduct.sku) {
+      const existingSku = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(
+          and(
+            eq(products.tenantId, sessionTenantId),
+            eq(products.sku, updateData.sku)
+          )
+        )
+        .limit(1);
+
+      if (existingSku.length > 0) {
+        return res.status(409).json({ 
+          error: "SKU already exists",
+          message: `Product with SKU '${updateData.sku}' already exists for this tenant`
+        });
+      }
+    }
+
+    // Prepare update data with audit fields
+    const productUpdate = {
+      ...updateData,
+      modifiedBy: userId || null,
+      updatedAt: new Date()
+    };
+
+    // Update product
+    const [updatedProduct] = await db
+      .update(products)
+      .set(productUpdate)
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.id, productId)
+        )
+      )
+      .returning();
+
+    // Structured logging for audit trail
+    logger.info('WMS product updated', {
+      tenantId: sessionTenantId,
+      productId,
+      sku: updatedProduct.sku,
+      modifiedBy: userId,
+      changedFields: Object.keys(updateData)
+    });
+
+    res.json({
+      success: true,
+      data: updatedProduct
+    });
+
+  } catch (error) {
+    console.error("Error updating WMS product:", error);
+    
+    // Handle unique constraint violation
+    if (error instanceof Error && error.message.includes('unique constraint')) {
+      return res.status(409).json({ 
+        error: "Unique constraint violation",
+        message: "A product with this SKU or EAN already exists"
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to update product",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

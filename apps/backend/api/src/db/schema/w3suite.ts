@@ -6558,6 +6558,13 @@ export const insertProductSchema = createInsertSchema(products).omit({
   ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").optional(),
 });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
+
+export const updateProductSchema = insertProductSchema.partial().omit({
+  createdAt: true,   // Never modifiable
+  createdBy: true    // Never modifiable
+});
+export type UpdateProduct = z.infer<typeof updateProductSchema>;
+
 export type Product = typeof products.$inferSelect;
 
 // 2) product_items - Individual serializable product items tracking
