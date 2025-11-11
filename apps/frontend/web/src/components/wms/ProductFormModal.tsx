@@ -326,7 +326,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="CANVAS">Canvas (Abbonamento)</SelectItem>
+                      <SelectItem value="CANVAS">Canvas</SelectItem>
                       <SelectItem value="PHYSICAL">Fisico</SelectItem>
                       <SelectItem value="VIRTUAL">Digitale</SelectItem>
                       <SelectItem value="SERVICE">Servizio</SelectItem>
@@ -569,6 +569,33 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                   </FormItem>
                 )}
               />
+
+              {/* CAMPO CONDIZIONALE: Canone Mensile (solo per CANVAS) - Posizionato dopo Unità di Misura */}
+              {watchType === 'CANVAS' && (
+                <FormField
+                  control={form.control}
+                  name="monthlyFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Canone Mensile (€/mese) <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="es. 19.99" 
+                          data-testid="input-monthly-fee"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Importo mensile pagato dal cliente
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             {/* Immagine Upload */}
@@ -664,34 +691,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
               )}
             />
 
-            {/* CAMPO CONDIZIONALE: Canone Mensile (solo per CANVAS) */}
-            {watchType === 'CANVAS' && (
-              <FormField
-                control={form.control}
-                name="monthlyFee"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Canone Mensile (€/mese) <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="es. 19.99" 
-                        data-testid="input-monthly-fee"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Importo mensile pagato dal cliente
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Serializzabile (checkbox) */}
+            {/* CAMPO CONDIZIONALE: Serializzabile (checkbox - solo per PHYSICAL) */}
+            {watchType === 'PHYSICAL' && (
             <FormField
               control={form.control}
               name="isSerializable"
@@ -715,9 +716,10 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 </FormItem>
               )}
             />
+            )}
 
-            {/* CAMPO CONDIZIONALE: Tipo Seriale (solo se serializzabile) */}
-            {watchIsSerializable && (
+            {/* CAMPO CONDIZIONALE: Tipo Seriale (solo se serializzabile e PHYSICAL) */}
+            {watchType === 'PHYSICAL' && watchIsSerializable && (
               <FormField
                 control={form.control}
                 name="serialType"
