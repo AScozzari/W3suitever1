@@ -6676,7 +6676,8 @@ export const wmsInventoryAdjustments = w3suiteSchema.table("wms_inventory_adjust
 ]);
 
 export const insertInventoryAdjustmentSchema = createInsertSchema(wmsInventoryAdjustments).omit({ 
-  id: true, 
+  id: true,
+  tenantId: true,
   createdAt: true 
 });
 export type InsertInventoryAdjustment = z.infer<typeof insertInventoryAdjustmentSchema>;
@@ -6756,7 +6757,8 @@ export const productBatches = w3suiteSchema.table("product_batches", {
 ]);
 
 export const insertProductBatchSchema = createInsertSchema(productBatches).omit({ 
-  id: true, 
+  id: true,
+  tenantId: true,
   createdAt: true, 
   updatedAt: true 
 }).extend({
