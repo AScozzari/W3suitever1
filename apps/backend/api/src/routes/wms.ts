@@ -191,15 +191,16 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
 });
 
 /**
- * POST /api/wms/products
+ * POST /api/wms/products/:tenantId
  * Create a new product
+ * Params: tenantId (UUID)
  * Body: Zod-validated product data (insertProductSchema)
  * - Auto-generates UUID for id
  * - Validates SKU uniqueness
  * - Sets createdBy, createdAt, updatedAt timestamps
  * - Supports source: brand | tenant
  */
-router.post("/products", rbacMiddleware, requirePermission('wms.product.create'), async (req, res) => {
+router.post("/products/:tenantId", rbacMiddleware, requirePermission('wms.product.create'), async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
     const userId = req.user?.id;
