@@ -11,7 +11,9 @@ import {
   updateProductItemSchema,
   productSerials,
   productItemStatusHistory,
-  productBatches
+  productBatches,
+  wmsInventoryAdjustments,
+  stores
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { logger } from "../core/logger";
@@ -653,6 +655,180 @@ router.get("/product-items", rbacMiddleware, requirePermission('wms.item.read'),
     console.error("Error fetching WMS product items:", error);
     res.status(500).json({ 
       error: "Failed to fetch product items",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/product-items/stock-reconciliation
+ * Reconcile physical inventory counts with database records
+ * Body: {
+ *   items: Array<{
+ *     productId: string,
+ *     expectedCount: number,
+ *     actualCount: number,
+ *     storeId?: string,
+ *     notes?: string
+ *   }>
+ * }
+ * - Calculates discrepancies (actualCount - expectedCount)
+ * - Creates inventory adjustment records for audit trail
+ * - Supports store-specific or global reconciliation
+ * - Returns summary with total items, discrepancies, adjustments
+ * 
+ * NOTE: This route MUST come BEFORE /product-items/:tenantId to avoid route shadowing
+ */
+router.post("/product-items/stock-reconciliation", rbacMiddleware, requirePermission('wms.inventory.reconcile'), async (req, res) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { items } = req.body;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Validate request body
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        message: "items array is required and must not be empty"
+      });
+    }
+
+    // Validate each item has required fields
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.productId || typeof item.expectedCount !== 'number' || typeof item.actualCount !== 'number') {
+        return res.status(400).json({ 
+          error: "Validation failed",
+          message: `Item at index ${i} is missing required fields (productId, expectedCount, actualCount)`
+        });
+      }
+    }
+
+    const reconciliationResults = [];
+    const adjustments = [];
+    let totalDiscrepancies = 0;
+
+    // Wrap in transaction for atomicity (all-or-nothing)
+    await db.transaction(async (tx) => {
+      // PRE-VALIDATE all items before any insertions to ensure atomicity
+      for (const item of items) {
+        const { productId, storeId } = item;
+        
+        // Validate productId FK - product must exist in same tenant
+        const [product] = await tx
+          .select()
+          .from(products)
+          .where(
+            and(
+              eq(products.tenantId, sessionTenantId),
+              eq(products.id, productId)
+            )
+          )
+          .limit(1);
+
+        if (!product) {
+          throw new Error(`Product with ID '${productId}' not found for this tenant`);
+        }
+
+        // Validate storeId if provided
+        if (storeId) {
+          const [store] = await tx.select().from(stores).where(
+            and(
+              eq(stores.tenantId, sessionTenantId),
+              eq(stores.id, storeId)
+            )
+          ).limit(1);
+
+          if (!store) {
+            throw new Error(`Store with ID '${storeId}' not found for this tenant`);
+          }
+        }
+      }
+
+      // ALL VALIDATIONS PASSED - now process insertions atomically
+      for (const item of items) {
+        const { productId, expectedCount, actualCount, storeId, notes } = item;
+        const discrepancy = actualCount - expectedCount;
+        
+        // Persist adjustment to database if discrepancy exists
+        if (discrepancy !== 0) {
+          totalDiscrepancies++;
+          
+          const adjustmentRecord = {
+            tenantId: sessionTenantId,
+            productId,
+            storeId: storeId || null,
+            expectedCount,
+            actualCount,
+            discrepancy,
+            adjustmentType: discrepancy > 0 ? 'surplus' : 'shortage',
+            notes: notes || `Stock reconciliation: ${Math.abs(discrepancy)} units ${discrepancy > 0 ? 'found' : 'missing'}`,
+            createdBy: userId
+          };
+
+          // Insert into database within transaction
+          const [persistedAdjustment] = await tx
+            .insert(wmsInventoryAdjustments)
+            .values(adjustmentRecord)
+            .returning();
+          
+          adjustments.push(persistedAdjustment);
+        }
+
+        reconciliationResults.push({
+          productId,
+          storeId: storeId || null,
+          expectedCount,
+          actualCount,
+          discrepancy,
+          status: discrepancy === 0 ? 'match' : (discrepancy > 0 ? 'surplus' : 'shortage')
+        });
+      }
+    }); // Transaction auto-commits if all succeeds, auto-rollbacks on any error
+
+    // Structured logging for audit trail
+    logger.info('WMS stock reconciliation completed', {
+      tenantId: sessionTenantId,
+      totalItems: items.length,
+      totalDiscrepancies,
+      adjustmentsCreated: adjustments.length,
+      userId
+    });
+
+    res.json({
+      success: true,
+      message: `Stock reconciliation completed. ${totalDiscrepancies} discrepancies found out of ${items.length} items.`,
+      data: {
+        summary: {
+          totalItems: items.length,
+          matchingItems: items.length - totalDiscrepancies,
+          discrepancyItems: totalDiscrepancies,
+          surplusItems: adjustments.filter(a => a.adjustmentType === 'surplus').length,
+          shortageItems: adjustments.filter(a => a.adjustmentType === 'shortage').length
+        },
+        results: reconciliationResults,
+        adjustments
+      }
+    });
+
+  } catch (error) {
+    console.error("Error processing WMS stock reconciliation:", error);
+    
+    // Transaction rollback errors from validation failures (Product/Store not found) → 404
+    if (error instanceof Error && error.message.includes('not found')) {
+      return res.status(404).json({ 
+        error: "Validation failed",
+        message: error.message
+      });
+    }
+    
+    // Generic errors → 500
+    res.status(500).json({ 
+      error: "Failed to process stock reconciliation",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

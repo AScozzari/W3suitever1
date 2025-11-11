@@ -6649,7 +6649,39 @@ export const insertProductSerialSchema = createInsertSchema(productSerials).omit
 export type InsertProductSerial = z.infer<typeof insertProductSerialSchema>;
 export type ProductSerial = typeof productSerials.$inferSelect;
 
-// 4) product_item_status_history - Audit trail for logistic status changes
+// 4) wms_inventory_adjustments - Stock reconciliation audit trail
+export const wmsInventoryAdjustments = w3suiteSchema.table("wms_inventory_adjustments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  productId: varchar("product_id", { length: 100 }).notNull(),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  
+  // Reconciliation data
+  expectedCount: integer("expected_count").notNull(),
+  actualCount: integer("actual_count").notNull(),
+  discrepancy: integer("discrepancy").notNull(), // actualCount - expectedCount
+  adjustmentType: varchar("adjustment_type", { length: 20 }).notNull(), // 'surplus' | 'shortage'
+  
+  // Metadata
+  notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("wms_inv_adj_tenant_idx").on(table.tenantId),
+  index("wms_inv_adj_product_idx").on(table.productId),
+  index("wms_inv_adj_store_idx").on(table.storeId),
+  index("wms_inv_adj_type_idx").on(table.adjustmentType),
+  index("wms_inv_adj_created_idx").on(table.createdAt),
+]);
+
+export const insertInventoryAdjustmentSchema = createInsertSchema(wmsInventoryAdjustments).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertInventoryAdjustment = z.infer<typeof insertInventoryAdjustmentSchema>;
+export type InventoryAdjustment = typeof wmsInventoryAdjustments.$inferSelect;
+
+// 5) product_item_status_history - Audit trail for logistic status changes
 export const productItemStatusHistory = w3suiteSchema.table("product_item_status_history", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   productItemId: uuid("product_item_id").notNull().references(() => productItems.id, { onDelete: 'cascade' }),
