@@ -165,6 +165,8 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
         ean: products.ean,
         imageUrl: products.imageUrl,
         type: products.type,
+        status: products.status,
+        condition: products.condition,
         isSerializable: products.isSerializable,
         serialType: products.serialType,
         monthlyFee: products.monthlyFee,

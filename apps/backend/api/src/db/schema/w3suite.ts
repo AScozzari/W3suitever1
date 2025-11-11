@@ -377,6 +377,7 @@ export const voipAssignmentTypeEnum = pgEnum('voip_assignment_type', ['store', '
 // ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) ENUMS ====================
 export const productSourceEnum = pgEnum('product_source', ['brand', 'tenant']);
 export const productTypeEnum = pgEnum('product_type', ['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']);
+export const productStatusEnum = pgEnum('product_status', ['active', 'inactive', 'discontinued', 'draft']);
 export const productConditionEnum = pgEnum('product_condition', ['new', 'used', 'refurbished', 'demo']);
 export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
   'in_stock',           // In giacenza
@@ -6506,8 +6507,10 @@ export const products = w3suiteSchema.table("products", {
   ean: varchar("ean", { length: 13 }), // EAN-13 barcode
   imageUrl: varchar("image_url", { length: 512 }), // URL immagine prodotto
   
-  // Product categorization
+  // Product categorization & status
   type: productTypeEnum("type").notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
+  status: productStatusEnum("status").default('active').notNull(), // active | inactive | discontinued | draft
+  condition: productConditionEnum("condition"), // new | used | refurbished | demo (required for PHYSICAL only)
   isSerializable: boolean("is_serializable").default(false).notNull(), // Track at item-level if true
   serialType: serialTypeEnum("serial_type"), // Tipo seriale: imei | iccid | mac_address | other (required if isSerializable=true)
   monthlyFee: numeric("monthly_fee", { precision: 10, scale: 2 }), // Canone mensile €/mese (required if type=CANVAS)
@@ -6546,6 +6549,7 @@ export const products = w3suiteSchema.table("products", {
   index("products_tenant_idx").on(table.tenantId),
   index("products_tenant_source_idx").on(table.tenantId, table.source),
   index("products_tenant_type_idx").on(table.tenantId, table.type),
+  index("products_tenant_status_idx").on(table.tenantId, table.status),
   index("products_tenant_active_idx").on(table.tenantId, table.isActive),
   index("products_ean_idx").on(table.ean),
   index("products_brand_product_id_idx").on(table.brandProductId),
@@ -6569,6 +6573,8 @@ const baseProductSchema = createInsertSchema(products).omit({
   brand: z.string().max(100).optional(),
   imageUrl: z.string().max(512).url("URL immagine non valido").or(z.literal('')).optional(),
   type: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  status: z.enum(['active', 'inactive', 'discontinued', 'draft']).optional(),
+  condition: z.enum(['new', 'used', 'refurbished', 'demo']).optional(),
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0, "Canone deve essere maggiore o uguale a 0").optional(),
   source: z.enum(['brand', 'tenant']).optional(),
@@ -6576,30 +6582,42 @@ const baseProductSchema = createInsertSchema(products).omit({
 });
 
 // Insert schema with conditional validation
-export const insertProductSchema = baseProductSchema.refine((data) => {
-  // Validation Rule: serialType is required if isSerializable is true
-  if (data.isSerializable && !data.serialType) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Tipo seriale è obbligatorio quando il prodotto è serializzabile",
-  path: ["serialType"],
-}).refine((data) => {
-  // Validation Rule: monthlyFee and description are required if type is CANVAS
-  if (data.type === 'CANVAS') {
-    if (!data.monthlyFee || data.monthlyFee <= 0) {
+export const insertProductSchema = baseProductSchema
+  .refine((data) => {
+    // Validation Rule: serialType is required if isSerializable is true
+    if (data.isSerializable && !data.serialType) {
       return false;
     }
-    if (!data.description || data.description.trim() === '') {
+    return true;
+  }, {
+    message: "Tipo seriale è obbligatorio quando il prodotto è serializzabile",
+    path: ["serialType"],
+  })
+  .refine((data) => {
+    // Validation Rule: monthlyFee and description are required if type is CANVAS
+    if (data.type === 'CANVAS') {
+      if (!data.monthlyFee || data.monthlyFee <= 0) {
+        return false;
+      }
+      if (!data.description || data.description.trim() === '') {
+        return false;
+      }
+    }
+    return true;
+  }, {
+    message: "Canone mensile e descrizione sono obbligatori per prodotti di tipo CANVAS",
+    path: ["monthlyFee"],
+  })
+  .refine((data) => {
+    // Validation Rule: condition is required if type is PHYSICAL
+    if (data.type === 'PHYSICAL' && !data.condition) {
       return false;
     }
-  }
-  return true;
-}, {
-  message: "Canone mensile e descrizione sono obbligatori per prodotti di tipo CANVAS",
-  path: ["monthlyFee"],
-});
+    return true;
+  }, {
+    message: "Condizioni prodotto sono obbligatorie per prodotti di tipo PHYSICAL",
+    path: ["condition"],
+  });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 
 // Update schema (partial of base, not refined schema)
