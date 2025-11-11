@@ -834,6 +834,109 @@ router.post("/product-items/stock-reconciliation", rbacMiddleware, requirePermis
   }
 });
 
+// Zod schema for GET /api/wms/product-serials query params validation
+const productSerialsQuerySchema = z.object({
+  page: z.string().optional().transform(val => Math.max(1, parseInt(val || '1') || 1)),
+  limit: z.string().optional().transform(val => Math.min(Math.max(1, parseInt(val || '50') || 50), 100)),
+  productItemId: z.string().uuid("Invalid UUID format for productItemId").optional(),
+  serialType: z.enum(['imei', 'iccid', 'mac_address', 'other'], {
+    errorMap: () => ({ message: "serialType must be one of: imei, iccid, mac_address, other" })
+  }).optional(),
+  serialValue: z.string().optional()
+});
+
+/**
+ * GET /api/wms/product-serials
+ * Retrieve paginated list of product serials with filtering
+ * Query params: page, limit, productItemId, serialType, serialValue
+ * - Tenant-scoped isolation (automatic via session.tenantId)
+ * - Zod validation for query params (UUID, enum)
+ * - Filters: productItemId (uuid FK), serialType (enum), serialValue (partial match)
+ * - Sorted by createdAt DESC
+ * 
+ * Schema: id (uuid), productItemId (uuid FK), serialType (imei|iccid|mac_address|other), serialValue, createdAt
+ */
+router.get("/product-serials", rbacMiddleware, requirePermission('wms.serial.read'), async (req, res) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Validate query params with Zod
+    const validationResult = productSerialsQuerySchema.safeParse(req.query);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid query parameters",
+        details: validationResult.error.format()
+      });
+    }
+
+    const { page, limit, productItemId, serialType, serialValue } = validationResult.data;
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const whereConditions = [eq(productSerials.tenantId, sessionTenantId)];
+
+    if (productItemId) {
+      whereConditions.push(eq(productSerials.productItemId, productItemId));
+    }
+
+    if (serialType) {
+      whereConditions.push(eq(productSerials.serialType, serialType));
+    }
+
+    if (serialValue) {
+      whereConditions.push(ilike(productSerials.serialValue, `%${serialValue}%`));
+    }
+
+    // Execute paginated query
+    const serials = await db
+      .select()
+      .from(productSerials)
+      .where(and(...whereConditions))
+      .orderBy(desc(productSerials.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Count total for pagination metadata
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(productSerials)
+      .where(and(...whereConditions));
+
+    // Structured logging for monitoring
+    logger.info('WMS product serials retrieved', {
+      tenantId: sessionTenantId,
+      page,
+      limit,
+      totalResults: serials.length,
+      filters: { productItemId, serialType, serialValue }
+    });
+
+    res.json({
+      success: true,
+      data: serials,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Error retrieving WMS product serials:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to retrieve product serials",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 /**
  * POST /api/wms/product-items/:tenantId
  * Create a new product item
