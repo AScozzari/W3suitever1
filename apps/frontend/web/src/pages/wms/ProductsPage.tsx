@@ -555,7 +555,7 @@ export default function ProductsPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ padding: '32px', width: '100%' }}>
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
