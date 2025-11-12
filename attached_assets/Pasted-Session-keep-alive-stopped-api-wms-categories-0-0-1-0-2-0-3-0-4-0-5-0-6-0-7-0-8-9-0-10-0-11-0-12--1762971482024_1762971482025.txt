@@ -1,0 +1,32 @@
+Session keep-alive stopped
+/api/wms/categories?0=0&1=0&2=0&3=0&4=0&5=0&6=0&7=0&8=-&9=0&10=0&11=0&12=0&13=-&14=0&15=0&16=0&17=0&18=-&19=0&20=0&21=0&22=0&23=-&24=0&25=0&26=0&27=0&28=0&29=0&30=0&31=0&32=0&33=0&34=0&35=1:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+hook.js:608 Wed Nov 12 2025 19:17:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connect timed out. Exceeded time set in configuration.connectionTimeout: 10s.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=c1a355d0:6962
+genericLog @ sip__js.js?v=c1a355d0:6941
+genericLog @ sip__js.js?v=c1a355d0:6881
+warn @ sip__js.js?v=c1a355d0:6872
+(anonymous) @ sip__js.js?v=c1a355d0:12311Understand this warning
+sip__js.js?v=c1a355d0:12312 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: WebSocket is closed before the connection is established.
+(anonymous) @ sip__js.js?v=c1a355d0:12312Understand this warning
+hook.js:608 Wed Nov 12 2025 19:17:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=c1a355d0:6959
+genericLog @ sip__js.js?v=c1a355d0:6941
+genericLog @ sip__js.js?v=c1a355d0:6881
+error @ sip__js.js?v=c1a355d0:6869
+onWebSocketError @ sip__js.js?v=c1a355d0:12427
+(anonymous) @ sip__js.js?v=c1a355d0:12293Understand this error
+hook.js:608 Wed Nov 12 2025 19:17:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=c1a355d0:6962
+genericLog @ sip__js.js?v=c1a355d0:6941
+genericLog @ sip__js.js?v=c1a355d0:6881
+warn @ sip__js.js?v=c1a355d0:6872
+onWebSocketClose @ sip__js.js?v=c1a355d0:12413
+(anonymous) @ sip__js.js?v=c1a355d0:12292Understand this warning
+sip__js.js?v=c1a355d0:6965 Wed Nov 12 2025 19:17:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+sip__js.js?v=c1a355d0:6965 Wed Nov 12 2025 19:17:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+useSIPRegistration.ts:228 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=c1a355d0:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=c1a355d0:12292:49)
