@@ -9,7 +9,7 @@ import {
 } from '../queue/wms-queue';
 import { startWMSWorker } from '../queue/wms-worker';
 import { db } from "../core/db";
-import { eq, and, ilike, or, desc, asc, sql, inArray } from "drizzle-orm";
+import { eq, and, ilike, or, desc, asc, sql, inArray, gte, isNull } from "drizzle-orm";
 import crypto from "crypto";
 import multer from "multer";
 import { Client } from "@replit/object-storage";
@@ -30,6 +30,8 @@ import {
   wmsStockMovements,
   insertStockMovementSchema,
   wmsWarehouseLocations,
+  wmsCategories,
+  wmsProductTypes,
   stores
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -112,6 +114,7 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
       source,
       brand,
       is_active,
+      include_expired,
       page = "1",
       limit = "20",
       sort_by = "created_at",
@@ -159,6 +162,17 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
       conditions.push(eq(products.isActive, activeFlag));
     }
 
+    // Filter expired products (query-time): only show products with validTo >= today or NULL
+    // Optional filter controlled by include_expired query param (default: exclude expired)
+    if (include_expired !== "true" && include_expired !== "1") {
+      conditions.push(
+        or(
+          isNull(products.validTo),
+          gte(products.validTo, sql`CURRENT_DATE`)
+        )
+      );
+    }
+
     // Determine sort column and order
     const sortColumn = {
       created_at: products.createdAt,
@@ -180,7 +194,7 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
 
     const total = countResult?.count || 0;
 
-    // Get paginated products
+    // Get paginated products with category/type info
     const productsList = await db
       .select({
         tenantId: products.tenantId,
@@ -214,12 +228,32 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
         unitOfMeasure: products.unitOfMeasure,
         isActive: products.isActive,
         archivedAt: products.archivedAt,
+        categoryId: products.categoryId,
+        typeId: products.typeId,
+        validFrom: products.validFrom,
+        validTo: products.validTo,
+        categoryName: wmsCategories.nome,
+        typeName: wmsProductTypes.nome,
         createdBy: products.createdBy,
         modifiedBy: products.modifiedBy,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt
       })
       .from(products)
+      .leftJoin(
+        wmsCategories,
+        and(
+          eq(wmsCategories.tenantId, products.tenantId),
+          eq(wmsCategories.id, products.categoryId)
+        )
+      )
+      .leftJoin(
+        wmsProductTypes,
+        and(
+          eq(wmsProductTypes.tenantId, products.tenantId),
+          eq(wmsProductTypes.id, products.typeId)
+        )
+      )
       .where(and(...conditions))
       .orderBy(sortFn(sortColumn))
       .limit(limitNum)
@@ -535,6 +569,14 @@ router.delete("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.
       return res.status(404).json({ 
         error: "Product not found",
         message: `Product with ID '${productId}' not found for this tenant`
+      });
+    }
+
+    // Prevent deletion of Brand-synced products
+    if (existingProduct.source === 'brand' && existingProduct.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot delete Brand-synced product",
+        message: "This product is managed by Brand HQ and cannot be archived by tenants. Contact Brand administration to discontinue this product."
       });
     }
 
@@ -4026,6 +4068,760 @@ router.get("/jobs/metrics", rbacMiddleware, requirePermission('wms.analytics.rea
     console.error("Error fetching WMS queue metrics:", error);
     res.status(500).json({ 
       error: "Failed to fetch queue metrics",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== WMS CATEGORIES ENDPOINTS ====================
+
+/**
+ * GET /api/wms/categories/:tenantId
+ * Get all categories for a tenant
+ * Returns Brand categories (source='brand') + Tenant categories
+ */
+router.get("/categories/:tenantId", rbacMiddleware, requirePermission('wms.category.read'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot access categories from different tenant"
+      });
+    }
+
+    const categories = await db
+      .select({
+        id: wmsCategories.id,
+        nome: wmsCategories.nome,
+        descrizione: wmsCategories.descrizione,
+        icona: wmsCategories.icona,
+        ordine: wmsCategories.ordine,
+        source: wmsCategories.source,
+        isBrandSynced: wmsCategories.isBrandSynced,
+        isActive: wmsCategories.isActive,
+        createdAt: wmsCategories.createdAt,
+        updatedAt: wmsCategories.updatedAt,
+      })
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.isActive, true)
+        )
+      )
+      .orderBy(asc(wmsCategories.ordine), asc(wmsCategories.nome));
+
+    res.json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch categories",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/categories/:tenantId
+ * Create a new category (tenant-owned only)
+ */
+router.post("/categories/:tenantId", rbacMiddleware, requirePermission('wms.category.create'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot create category for different tenant"
+      });
+    }
+
+    // Validate request body
+    const schema = z.object({
+      nome: z.string().min(1, "Nome obbligatorio").max(255),
+      descrizione: z.string().optional(),
+      icona: z.string().max(100).optional(),
+      ordine: z.coerce.number().int().default(0),
+    });
+
+    const validatedData = schema.parse(req.body);
+
+    // Generate unique ID for category
+    const categoryId = crypto.randomUUID();
+
+    const [newCategory] = await db
+      .insert(wmsCategories)
+      .values({
+        tenantId: sessionTenantId,
+        id: categoryId,
+        source: 'tenant', // Always tenant-created via this endpoint
+        isBrandSynced: false,
+        nome: validatedData.nome,
+        descrizione: validatedData.descrizione || null,
+        icona: validatedData.icona || null,
+        ordine: validatedData.ordine,
+        isActive: true,
+        createdBy: userId || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    logger.info('WMS category created', {
+      tenantId: sessionTenantId,
+      categoryId,
+      nome: newCategory.nome,
+      createdBy: userId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: newCategory
+    });
+  } catch (error) {
+    console.error("Error creating category:", error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        error: "Validation error",
+        details: error.errors
+      });
+    }
+
+    if (error instanceof Error && error.message.includes('unique constraint')) {
+      return res.status(409).json({ 
+        error: "Nome categoria già esistente",
+        message: "Una categoria con questo nome esiste già per questo tenant"
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to create category",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PATCH /api/wms/categories/:tenantId/:id
+ * Update a category (only tenant-owned, not Brand)
+ */
+router.patch("/categories/:tenantId/:id", rbacMiddleware, requirePermission('wms.category.update'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: categoryId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot update category from different tenant"
+      });
+    }
+
+    // Get existing category
+    const [existingCategory] = await db
+      .select()
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, categoryId)
+        )
+      )
+      .limit(1);
+
+    if (!existingCategory) {
+      return res.status(404).json({ 
+        error: "Category not found",
+        message: `Category with ID '${categoryId}' not found for this tenant`
+      });
+    }
+
+    // Prevent update if Brand-synced
+    if (existingCategory.source === 'brand' && existingCategory.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot update Brand-synced category",
+        message: "This category is managed by Brand HQ and cannot be modified by tenants."
+      });
+    }
+
+    // Validate request body
+    const schema = z.object({
+      nome: z.string().min(1).max(255).optional(),
+      descrizione: z.string().optional(),
+      icona: z.string().max(100).optional(),
+      ordine: z.coerce.number().int().optional(),
+    });
+
+    const validatedData = schema.parse(req.body);
+
+    const [updatedCategory] = await db
+      .update(wmsCategories)
+      .set({
+        ...validatedData,
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, categoryId)
+        )
+      )
+      .returning();
+
+    logger.info('WMS category updated', {
+      tenantId: sessionTenantId,
+      categoryId,
+      updatedBy: userId
+    });
+
+    res.json({
+      success: true,
+      data: updatedCategory
+    });
+  } catch (error) {
+    console.error("Error updating category:", error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        error: "Validation error",
+        details: error.errors
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to update category",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * DELETE /api/wms/categories/:tenantId/:id
+ * Soft-delete a category (only tenant-owned, check dependencies)
+ */
+router.delete("/categories/:tenantId/:id", rbacMiddleware, requirePermission('wms.category.delete'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: categoryId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot delete category from different tenant"
+      });
+    }
+
+    // Get existing category
+    const [existingCategory] = await db
+      .select()
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, categoryId)
+        )
+      )
+      .limit(1);
+
+    if (!existingCategory) {
+      return res.status(404).json({ 
+        error: "Category not found",
+        message: `Category with ID '${categoryId}' not found for this tenant`
+      });
+    }
+
+    // Prevent deletion if Brand-synced
+    if (existingCategory.source === 'brand' && existingCategory.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot delete Brand-synced category",
+        message: "This category is managed by Brand HQ and cannot be deleted by tenants."
+      });
+    }
+
+    // Check for active product types dependencies
+    const activeTypesCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(wmsProductTypes)
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.categoryId, categoryId),
+          eq(wmsProductTypes.isActive, true)
+        )
+      );
+
+    const count = activeTypesCount[0]?.count ?? 0;
+
+    if (count > 0) {
+      return res.status(409).json({ 
+        error: "Cannot delete category with active product types",
+        message: `This category has ${count} active product type(s). Please delete or reassign them first.`,
+        activeTypesCount: count
+      });
+    }
+
+    // Soft-delete
+    const [deletedCategory] = await db
+      .update(wmsCategories)
+      .set({ 
+        isActive: false,
+        archivedAt: new Date(),
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, categoryId)
+        )
+      )
+      .returning();
+
+    logger.info('WMS category soft-deleted', {
+      tenantId: sessionTenantId,
+      categoryId,
+      nome: deletedCategory.nome,
+      deletedBy: userId
+    });
+
+    res.json({
+      success: true,
+      message: "Category successfully archived",
+      data: deletedCategory
+    });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({ 
+      error: "Failed to delete category",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== WMS PRODUCT TYPES ENDPOINTS ====================
+
+/**
+ * GET /api/wms/product-types/:tenantId?categoryId=xxx
+ * Get all product types for a tenant (optionally filtered by category)
+ */
+router.get("/product-types/:tenantId", rbacMiddleware, requirePermission('wms.product_type.read'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId } = req.params;
+    const { categoryId } = req.query;
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot access product types from different tenant"
+      });
+    }
+
+    const whereConditions = [
+      eq(wmsProductTypes.tenantId, sessionTenantId),
+      eq(wmsProductTypes.isActive, true)
+    ];
+
+    // Filter by categoryId if provided
+    if (categoryId && typeof categoryId === 'string') {
+      whereConditions.push(eq(wmsProductTypes.categoryId, categoryId));
+    }
+
+    const productTypes = await db
+      .select({
+        id: wmsProductTypes.id,
+        categoryId: wmsProductTypes.categoryId,
+        nome: wmsProductTypes.nome,
+        descrizione: wmsProductTypes.descrizione,
+        ordine: wmsProductTypes.ordine,
+        source: wmsProductTypes.source,
+        isBrandSynced: wmsProductTypes.isBrandSynced,
+        isActive: wmsProductTypes.isActive,
+        createdAt: wmsProductTypes.createdAt,
+        updatedAt: wmsProductTypes.updatedAt,
+      })
+      .from(wmsProductTypes)
+      .where(and(...whereConditions))
+      .orderBy(asc(wmsProductTypes.ordine), asc(wmsProductTypes.nome));
+
+    res.json({
+      success: true,
+      data: productTypes
+    });
+  } catch (error) {
+    console.error("Error fetching product types:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch product types",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/product-types/:tenantId
+ * Create a new product type (tenant-owned only)
+ */
+router.post("/product-types/:tenantId", rbacMiddleware, requirePermission('wms.product_type.create'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot create product type for different tenant"
+      });
+    }
+
+    // Validate request body
+    const schema = z.object({
+      categoryId: z.string().min(1, "Category ID obbligatorio"),
+      nome: z.string().min(1, "Nome obbligatorio").max(255),
+      descrizione: z.string().optional(),
+      ordine: z.coerce.number().int().default(0),
+    });
+
+    const validatedData = schema.parse(req.body);
+
+    // Verify category exists
+    const [category] = await db
+      .select()
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, validatedData.categoryId),
+          eq(wmsCategories.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!category) {
+      return res.status(404).json({ 
+        error: "Category not found",
+        message: `Category with ID '${validatedData.categoryId}' not found or inactive`
+      });
+    }
+
+    // Generate unique ID for product type
+    const typeId = crypto.randomUUID();
+
+    const [newType] = await db
+      .insert(wmsProductTypes)
+      .values({
+        tenantId: sessionTenantId,
+        id: typeId,
+        source: 'tenant', // Always tenant-created via this endpoint
+        isBrandSynced: false,
+        categoryId: validatedData.categoryId,
+        nome: validatedData.nome,
+        descrizione: validatedData.descrizione || null,
+        ordine: validatedData.ordine,
+        isActive: true,
+        createdBy: userId || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    logger.info('WMS product type created', {
+      tenantId: sessionTenantId,
+      typeId,
+      categoryId: validatedData.categoryId,
+      nome: newType.nome,
+      createdBy: userId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: newType
+    });
+  } catch (error) {
+    console.error("Error creating product type:", error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        error: "Validation error",
+        details: error.errors
+      });
+    }
+
+    if (error instanceof Error && error.message.includes('unique constraint')) {
+      return res.status(409).json({ 
+        error: "Nome tipologia già esistente",
+        message: "Una tipologia con questo nome esiste già in questa categoria"
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to create product type",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PATCH /api/wms/product-types/:tenantId/:id
+ * Update a product type (only tenant-owned, not Brand)
+ */
+router.patch("/product-types/:tenantId/:id", rbacMiddleware, requirePermission('wms.product_type.update'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: typeId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot update product type from different tenant"
+      });
+    }
+
+    // Get existing type
+    const [existingType] = await db
+      .select()
+      .from(wmsProductTypes)
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.id, typeId)
+        )
+      )
+      .limit(1);
+
+    if (!existingType) {
+      return res.status(404).json({ 
+        error: "Product type not found",
+        message: `Product type with ID '${typeId}' not found for this tenant`
+      });
+    }
+
+    // Prevent update if Brand-synced
+    if (existingType.source === 'brand' && existingType.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot update Brand-synced product type",
+        message: "This product type is managed by Brand HQ and cannot be modified by tenants."
+      });
+    }
+
+    // Validate request body
+    const schema = z.object({
+      categoryId: z.string().min(1).optional(),
+      nome: z.string().min(1).max(255).optional(),
+      descrizione: z.string().optional(),
+      ordine: z.coerce.number().int().optional(),
+    });
+
+    const validatedData = schema.parse(req.body);
+
+    // If changing category, verify new category exists
+    if (validatedData.categoryId) {
+      const [category] = await db
+        .select()
+        .from(wmsCategories)
+        .where(
+          and(
+            eq(wmsCategories.tenantId, sessionTenantId),
+            eq(wmsCategories.id, validatedData.categoryId),
+            eq(wmsCategories.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!category) {
+        return res.status(404).json({ 
+          error: "Category not found",
+          message: `Category with ID '${validatedData.categoryId}' not found or inactive`
+        });
+      }
+    }
+
+    const [updatedType] = await db
+      .update(wmsProductTypes)
+      .set({
+        ...validatedData,
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.id, typeId)
+        )
+      )
+      .returning();
+
+    logger.info('WMS product type updated', {
+      tenantId: sessionTenantId,
+      typeId,
+      updatedBy: userId
+    });
+
+    res.json({
+      success: true,
+      data: updatedType
+    });
+  } catch (error) {
+    console.error("Error updating product type:", error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        error: "Validation error",
+        details: error.errors
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to update product type",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * DELETE /api/wms/product-types/:tenantId/:id
+ * Soft-delete a product type (only tenant-owned, check dependencies)
+ */
+router.delete("/product-types/:tenantId/:id", rbacMiddleware, requirePermission('wms.product_type.delete'), async (req, res) => {
+  try {
+    const { tenantId: paramTenantId, id: typeId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    if (paramTenantId !== sessionTenantId) {
+      return res.status(403).json({ 
+        error: "Forbidden",
+        message: "Cannot delete product type from different tenant"
+      });
+    }
+
+    // Get existing type
+    const [existingType] = await db
+      .select()
+      .from(wmsProductTypes)
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.id, typeId)
+        )
+      )
+      .limit(1);
+
+    if (!existingType) {
+      return res.status(404).json({ 
+        error: "Product type not found",
+        message: `Product type with ID '${typeId}' not found for this tenant`
+      });
+    }
+
+    // Prevent deletion if Brand-synced
+    if (existingType.source === 'brand' && existingType.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot delete Brand-synced product type",
+        message: "This product type is managed by Brand HQ and cannot be deleted by tenants."
+      });
+    }
+
+    // Check for active products dependencies
+    const activeProductsCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, sessionTenantId),
+          eq(products.typeId, typeId),
+          eq(products.isActive, true)
+        )
+      );
+
+    const count = activeProductsCount[0]?.count ?? 0;
+
+    if (count > 0) {
+      return res.status(409).json({ 
+        error: "Cannot delete product type with active products",
+        message: `This product type has ${count} active product(s). Please delete or reassign them first.`,
+        activeProductsCount: count
+      });
+    }
+
+    // Soft-delete
+    const [deletedType] = await db
+      .update(wmsProductTypes)
+      .set({ 
+        isActive: false,
+        archivedAt: new Date(),
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.id, typeId)
+        )
+      )
+      .returning();
+
+    logger.info('WMS product type soft-deleted', {
+      tenantId: sessionTenantId,
+      typeId,
+      nome: deletedType.nome,
+      deletedBy: userId
+    });
+
+    res.json({
+      success: true,
+      message: "Product type successfully archived",
+      data: deletedType
+    });
+  } catch (error) {
+    console.error("Error deleting product type:", error);
+    res.status(500).json({ 
+      error: "Failed to delete product type",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

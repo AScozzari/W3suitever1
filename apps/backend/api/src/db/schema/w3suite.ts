@@ -23,6 +23,7 @@ import {
   decimal,
   bigint,
   numeric,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -6486,7 +6487,84 @@ export type WorkflowManualExecution = typeof workflowManualExecutions.$inferSele
 
 // ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) TABLES ====================
 
-// 1) products - Master product definition (Brand-Tenant hybrid architecture)
+// 1) wmsCategories - Product categories (Brand-Tenant hybrid architecture)
+export const wmsCategories = w3suiteSchema.table("wms_categories", {
+  // Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  id: varchar("id", { length: 100 }).notNull(),
+  
+  // Brand/Tenant hybrid tracking
+  source: productSourceEnum("source").default('tenant').notNull(), // brand | tenant
+  brandCategoryId: varchar("brand_category_id", { length: 100 }), // Reference to Brand master category
+  isBrandSynced: boolean("is_brand_synced").default(false).notNull(),
+  
+  // Category info
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descrizione: text("descrizione"),
+  icona: varchar("icona", { length: 100 }), // Icon name or emoji
+  ordine: integer("ordine").default(0).notNull(), // Display order
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  archivedAt: timestamp("archived_at"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.tenantId, table.id] }),
+  uniqueIndex("wms_categories_tenant_nome_unique").on(table.tenantId, table.nome),
+  index("wms_categories_tenant_idx").on(table.tenantId),
+  index("wms_categories_source_idx").on(table.source),
+  index("wms_categories_brand_id_idx").on(table.brandCategoryId),
+]);
+
+// 2) wmsProductTypes - Product types within categories (Brand-Tenant hybrid architecture)
+export const wmsProductTypes = w3suiteSchema.table("wms_product_types", {
+  // Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  id: varchar("id", { length: 100 }).notNull(),
+  
+  // Brand/Tenant hybrid tracking
+  source: productSourceEnum("source").default('tenant').notNull(), // brand | tenant
+  brandTypeId: varchar("brand_type_id", { length: 100 }), // Reference to Brand master type
+  isBrandSynced: boolean("is_brand_synced").default(false).notNull(),
+  
+  // Foreign key to category (REQUIRED - every type must belong to a category)
+  categoryId: varchar("category_id", { length: 100 }).notNull(), // FK to wmsCategories.id
+  
+  // Type info
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descrizione: text("descrizione"),
+  ordine: integer("ordine").default(0).notNull(), // Display order within category
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  archivedAt: timestamp("archived_at"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.tenantId, table.id] }),
+  uniqueIndex("wms_types_tenant_category_nome_unique").on(table.tenantId, table.categoryId, table.nome),
+  index("wms_types_tenant_idx").on(table.tenantId),
+  index("wms_types_category_idx").on(table.categoryId),
+  index("wms_types_source_idx").on(table.source),
+  index("wms_types_brand_id_idx").on(table.brandTypeId),
+  
+  // Composite FK: wms_product_types → wms_categories
+  foreignKey({
+    columns: [table.tenantId, table.categoryId],
+    foreignColumns: [wmsCategories.tenantId, wmsCategories.id],
+  }).onDelete('restrict'),
+]);
+
+// 3) products - Master product definition (Brand-Tenant hybrid architecture)
 export const products = w3suiteSchema.table("products", {
   // CRITICAL: Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
@@ -6510,12 +6588,18 @@ export const products = w3suiteSchema.table("products", {
   imageUrl: varchar("image_url", { length: 512 }), // URL immagine prodotto
   
   // Product categorization & status
+  categoryId: varchar("category_id", { length: 100 }), // FK to wmsCategories.id (optional)
+  typeId: varchar("type_id", { length: 100 }), // FK to wmsProductTypes.id (optional)
   type: productTypeEnum("type").notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
   status: productStatusEnum("status").default('active').notNull(), // active | inactive | discontinued | draft
   condition: productConditionEnum("condition"), // new | used | refurbished | demo (required for PHYSICAL only)
   isSerializable: boolean("is_serializable").default(false).notNull(), // Track at item-level if true
   serialType: serialTypeEnum("serial_type"), // Tipo seriale: imei | iccid | mac_address | other (required if isSerializable=true)
   monthlyFee: numeric("monthly_fee", { precision: 10, scale: 2 }), // Canone mensile €/mese (required if type=CANVAS)
+  
+  // Validity period (for time-limited products, promotions, seasonal items)
+  validFrom: date("valid_from"), // Start date of validity (optional)
+  validTo: date("valid_to"), // End date of validity - auto-archive when expires (optional)
   
   // Physical properties (for PHYSICAL type)
   weight: numeric("weight", { precision: 10, scale: 3 }), // kg
@@ -6555,6 +6639,18 @@ export const products = w3suiteSchema.table("products", {
   index("products_tenant_active_idx").on(table.tenantId, table.isActive),
   index("products_ean_idx").on(table.ean),
   index("products_brand_product_id_idx").on(table.brandProductId),
+  
+  // Composite FK: products → wms_categories
+  foreignKey({
+    columns: [table.tenantId, table.categoryId],
+    foreignColumns: [wmsCategories.tenantId, wmsCategories.id],
+  }).onDelete('restrict'),
+  
+  // Composite FK: products → wms_product_types
+  foreignKey({
+    columns: [table.tenantId, table.typeId],
+    foreignColumns: [wmsProductTypes.tenantId, wmsProductTypes.id],
+  }).onDelete('restrict'),
 ]);
 
 // Base schema without refine (needed for update schema .partial())
@@ -6582,6 +6678,10 @@ const baseProductSchema = createInsertSchema(products).omit({
   ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").or(z.literal('')).optional(),
   memory: z.string().max(50, "Memoria troppo lunga").optional(),
   color: z.string().max(50, "Colore troppo lungo").optional(),
+  categoryId: z.string().max(100).optional(),
+  typeId: z.string().max(100).optional(),
+  validFrom: z.coerce.date().optional(),
+  validTo: z.coerce.date().optional(),
 });
 
 // Insert schema with conditional validation
@@ -6617,6 +6717,20 @@ export const insertProductSchema = baseProductSchema
   }, {
     message: "Condizioni prodotto sono obbligatorie per prodotti di tipo PHYSICAL",
     path: ["condition"],
+  })
+  .refine((data) => {
+    // Validation Rule: validTo must be >= validFrom if both are provided
+    if (data.validFrom && data.validTo) {
+      const from = new Date(data.validFrom);
+      const to = new Date(data.validTo);
+      if (to < from) {
+        return false;
+      }
+    }
+    return true;
+  }, {
+    message: "Data di fine validità deve essere successiva alla data di inizio",
+    path: ["validTo"],
   });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 
