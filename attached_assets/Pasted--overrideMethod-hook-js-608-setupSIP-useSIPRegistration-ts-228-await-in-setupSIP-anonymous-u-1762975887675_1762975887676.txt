@@ -1,0 +1,56 @@
+
+overrideMethod @ hook.js:608
+setupSIP @ useSIPRegistration.ts:228
+await in setupSIP
+(anonymous) @ useSIPRegistration.ts:235
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=c1a355d0:103
+flush @ @tanstack_react-query.js?v=c1a355d0:610
+batch @ @tanstack_react-query.js?v=c1a355d0:628
+dispatch_fn @ @tanstack_react-query.js?v=c1a355d0:1260
+setData @ @tanstack_react-query.js?v=c1a355d0:931
+fetch @ @tanstack_react-query.js?v=c1a355d0:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+onSubscribe @ @tanstack_react-query.js?v=c1a355d0:1335
+subscribe @ @tanstack_react-query.js?v=c1a355d0:24
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=c1a355d0:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=c1a355d0:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=c1a355d0:197
+flushWork @ chunk-ZHRYBLGQ.js?v=c1a355d0:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=c1a355d0:384Understand this error
+ProductFormModal.tsx:164 [ProductFormModal] tenantId: 00000000-0000-0000-0000-000000000001
+ProductFormModal.tsx:165 [ProductFormModal] categoriesData: (5) [{…}, {…}, {…}, {…}, {…}]
+ProductFormModal.tsx:166 [ProductFormModal] categories length: 0
+ProductFormModal.tsx:167 [ProductFormModal] categoriesLoading: false
+ProductFormModal.tsx:168 [ProductFormModal] categoriesError: null
+ProductFormModal.tsx:164 [ProductFormModal] tenantId: 00000000-0000-0000-0000-000000000001
+ProductFormModal.tsx:165 [ProductFormModal] categoriesData: (5) [{…}, {…}, {…}, {…}, {…}]
+ProductFormModal.tsx:166 [ProductFormModal] categories length: 0
+ProductFormModal.tsx:167 [ProductFormModal] categoriesLoading: false
+ProductFormModal.tsx:168 [ProductFormModal] categoriesError: null
