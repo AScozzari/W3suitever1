@@ -142,13 +142,14 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
 
   // Fetch categories (always fetch when tenantId exists, not just when modal is open)
   const tenantId = localStorage.getItem('currentTenantId');
-  const { data: categoriesData } = useQuery<{ success: boolean; data: any[] }>({
+  
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/wms/categories'],
     enabled: !!tenantId,
   });
 
   // Fetch product types (filtered by categoryId if selected)
-  const { data: typesData } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: typesData, isLoading: typesLoading, error: typesError } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: watchCategoryId 
       ? [`/api/wms/product-types?categoryId=${watchCategoryId}`]
       : ['/api/wms/product-types'],
@@ -157,6 +158,15 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
 
   const categories = categoriesData?.data || [];
   const productTypes = typesData?.data || [];
+  
+  // DEBUG - Solo quando modal è aperto
+  if (open) {
+    console.log('[ProductFormModal] tenantId:', tenantId);
+    console.log('[ProductFormModal] categoriesData:', categoriesData);
+    console.log('[ProductFormModal] categories length:', categories.length);
+    console.log('[ProductFormModal] categoriesLoading:', categoriesLoading);
+    console.log('[ProductFormModal] categoriesError:', categoriesError);
+  }
 
   // Reset typeId when categoryId changes (but NOT on initial mount/hydration)
   useEffect(() => {
