@@ -140,11 +140,11 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     }
   }, [open, product]);
 
-  // Fetch categories
+  // Fetch categories (always fetch when tenantId exists, not just when modal is open)
   const tenantId = localStorage.getItem('currentTenantId');
   const { data: categoriesData } = useQuery<{ success: boolean; data: any[] }>({
     queryKey: ['/api/wms/categories'],
-    enabled: !!tenantId && open,
+    enabled: !!tenantId,
   });
 
   // Fetch product types (filtered by categoryId if selected)
@@ -152,7 +152,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     queryKey: watchCategoryId 
       ? [`/api/wms/product-types?categoryId=${watchCategoryId}`]
       : ['/api/wms/product-types'],
-    enabled: !!tenantId && open,
+    enabled: !!tenantId,
   });
 
   const categories = categoriesData?.data || [];

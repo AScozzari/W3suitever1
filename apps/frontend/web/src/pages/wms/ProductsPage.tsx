@@ -74,8 +74,7 @@ export default function ProductsPage() {
 
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: string) => {
-      const tenantId = localStorage.getItem('currentTenantId');
-      return apiRequest(`/api/wms/products/${tenantId}/${productId}`, {
+      return apiRequest(`/api/wms/products/${productId}`, {
         method: 'DELETE',
       });
     },
@@ -379,36 +378,43 @@ export default function ProductsPage() {
     },
     {
       accessorKey: 'categoryName',
-      header: 'Categoria / Tipologia',
+      header: 'Categoria',
       cell: ({ row }) => {
-        const { categoryName, typeName, source, isBrandSynced } = row.original;
+        const { categoryName, source, isBrandSynced } = row.original;
         
-        // Show combined category/type with stacked labels
-        if (!categoryName && !typeName) {
+        if (!categoryName) {
           return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
         }
         
         return (
-          <div className="flex flex-col gap-1">
-            {categoryName && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{categoryName}</span>
-                {source === 'brand' && isBrandSynced && (
-                  <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
-                    🏢 Brand
-                  </Badge>
-                )}
-              </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{categoryName}</span>
+            {source === 'brand' && isBrandSynced && (
+              <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
+                🏢 Brand
+              </Badge>
             )}
-            {typeName && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{typeName}</span>
-                {source === 'brand' && isBrandSynced && (
-                  <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
-                    🏢 Brand
-                  </Badge>
-                )}
-              </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'typeName',
+      header: 'Tipologia',
+      cell: ({ row }) => {
+        const { typeName, source, isBrandSynced } = row.original;
+        
+        if (!typeName) {
+          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        }
+        
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{typeName}</span>
+            {source === 'brand' && isBrandSynced && (
+              <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
+                🏢 Brand
+              </Badge>
             )}
           </div>
         );
@@ -620,6 +626,7 @@ export default function ProductsPage() {
 
         {/* Table */}
         <div 
+          className="w-full"
           style={{
             background: 'rgba(255, 255, 255, 0.7)',
             backdropFilter: 'blur(20px)',
@@ -669,8 +676,8 @@ export default function ProductsPage() {
               </Button>
             </div>
           ) : (
-            <>
-              <Table>
+            <div className="w-full overflow-x-auto">
+              <Table className="w-full">
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -732,7 +739,7 @@ export default function ProductsPage() {
                   </Button>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
