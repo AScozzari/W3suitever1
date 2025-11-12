@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { ProductFormModal } from '@/components/wms/ProductFormModal';
 import { DeleteConfirmationDialog } from '@/components/crm/DeleteConfirmationDialog';
+import { format, differenceInCalendarDays } from 'date-fns';
 
 interface Product {
   id: string;
@@ -46,6 +47,14 @@ interface Product {
   reorderPoint: number;
   isActive: boolean;
   createdAt: string;
+  categoryId?: string;
+  typeId?: string;
+  validFrom?: string;
+  validTo?: string;
+  categoryName?: string | null;
+  typeName?: string | null;
+  source?: 'brand' | 'tenant';
+  isBrandSynced?: boolean;
 }
 
 export default function ProductsPage() {
@@ -367,6 +376,118 @@ export default function ProductsPage() {
           </Badge>
         )
       ),
+    },
+    {
+      accessorKey: 'categoryName',
+      header: 'Categoria / Tipologia',
+      cell: ({ row }) => {
+        const { categoryName, typeName, source, isBrandSynced } = row.original;
+        
+        // Show combined category/type with stacked labels
+        if (!categoryName && !typeName) {
+          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        }
+        
+        return (
+          <div className="flex flex-col gap-1">
+            {categoryName && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{categoryName}</span>
+                {source === 'brand' && isBrandSynced && (
+                  <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
+                    🏢 Brand
+                  </Badge>
+                )}
+              </div>
+            )}
+            {typeName && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{typeName}</span>
+                {source === 'brand' && isBrandSynced && (
+                  <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
+                    🏢 Brand
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'validTo',
+      header: 'Validità',
+      cell: ({ row }) => {
+        const { validFrom, validTo } = row.original;
+        
+        // No validity period set
+        if (!validFrom && !validTo) {
+          return <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Illimitata</span>;
+        }
+        
+        // Show validity range
+        const validFromDate = validFrom ? new Date(validFrom) : null;
+        const validToDate = validTo ? new Date(validTo) : null;
+        
+        // Calculate days until expiry
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize to start of day
+        
+        if (validToDate) {
+          const daysUntilExpiry = differenceInCalendarDays(validToDate, today);
+          
+          // Expired
+          if (daysUntilExpiry < 0) {
+            return (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
+                </span>
+                <Badge variant="destructive" className="gap-1 w-fit">
+                  ❌ Scaduto
+                </Badge>
+              </div>
+            );
+          }
+          
+          // Expiring soon (< 30 days)
+          if (daysUntilExpiry <= 30) {
+            return (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
+                </span>
+                <Badge 
+                  variant="outline" 
+                  className="gap-1 w-fit" 
+                  style={{ borderColor: 'hsl(45, 93%, 47%)', color: 'hsl(45, 93%, 47%)' }}
+                  data-testid={`badge-expiring-${row.original.id}`}
+                >
+                  ⏰ Scade tra {daysUntilExpiry} giorni
+                </Badge>
+              </div>
+            );
+          }
+          
+          // Valid (> 30 days)
+          return (
+            <span className="text-sm">
+              {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
+            </span>
+          );
+        }
+        
+        // Only validFrom set (no expiry)
+        if (validFromDate) {
+          return (
+            <span className="text-sm">
+              Dal {format(validFromDate, 'dd/MM/yyyy')}
+            </span>
+          );
+        }
+        
+        return <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+      },
     },
     {
       id: 'actions',

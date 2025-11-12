@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Calendar } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 // Schema con validazione condizionale completa
 const productSchema = z.object({
@@ -32,6 +37,10 @@ const productSchema = z.object({
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0).optional(),
   unitOfMeasure: z.string().min(1, 'Unità di misura obbligatoria'),
+  categoryId: z.string().max(100).optional(),
+  typeId: z.string().max(100).optional(),
+  validFrom: z.coerce.date().optional(), // Date object from DatePicker (formatted to YYYY-MM-DD on submit)
+  validTo: z.coerce.date().optional(),   // Date object from DatePicker (formatted to YYYY-MM-DD on submit)
 }).refine((data) => {
   // Validation Rule: serialType is required if isSerializable is true
   if (data.isSerializable && !data.serialType) {
@@ -61,6 +70,19 @@ const productSchema = z.object({
 }, {
   message: 'Condizioni prodotto sono obbligatorie per prodotti di tipo PHYSICAL',
   path: ['condition'],
+}).refine((data) => {
+  // Validation Rule: validTo must be >= validFrom if both are provided
+  if (data.validFrom && data.validTo) {
+    const from = new Date(data.validFrom);
+    const to = new Date(data.validTo);
+    if (to < from) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Data di fine validità deve essere successiva alla data di inizio',
+  path: ['validTo'],
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -96,11 +118,57 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       serialType: undefined,
       monthlyFee: undefined,
       unitOfMeasure: 'pz',
+      categoryId: undefined,
+      typeId: undefined,
+      validFrom: undefined,
+      validTo: undefined,
     },
   });
 
   const watchType = form.watch('type');
   const watchIsSerializable = form.watch('isSerializable');
+  const watchCategoryId = form.watch('categoryId'); // For cascade filter
+
+  // Track if this is the initial mount to prevent resetting typeId on hydration
+  // Reset this flag whenever modal opens or product changes
+  const isInitialMount = useRef(true);
+
+  // Reset isInitialMount when modal opens or product prop changes (new edit session)
+  useEffect(() => {
+    if (open || product) {
+      isInitialMount.current = true;
+    }
+  }, [open, product]);
+
+  // Fetch categories
+  const tenantId = localStorage.getItem('currentTenantId');
+  const { data: categoriesData } = useQuery<{ success: boolean; data: any[] }>({
+    queryKey: ['/api/wms/categories', tenantId],
+    enabled: !!tenantId && open,
+  });
+
+  // Fetch product types (filtered by categoryId if selected)
+  const { data: typesData } = useQuery<{ success: boolean; data: any[] }>({
+    queryKey: watchCategoryId 
+      ? [`/api/wms/product-types/${tenantId}?categoryId=${watchCategoryId}`]
+      : [`/api/wms/product-types/${tenantId}`],
+    enabled: !!tenantId && open,
+  });
+
+  const categories = categoriesData?.data || [];
+  const productTypes = typesData?.data || [];
+
+  // Reset typeId when categoryId changes (but NOT on initial mount/hydration)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    if (watchCategoryId) {
+      form.setValue('typeId', undefined);
+    }
+  }, [watchCategoryId, form]);
 
   // Handle image upload
   const handleImageUpload = async (file: File) => {
@@ -206,6 +274,10 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         serialType: product.serialType || undefined,
         monthlyFee: product.monthlyFee || undefined,
         unitOfMeasure: product.unitOfMeasure || 'pz',
+        categoryId: product.categoryId || undefined,
+        typeId: product.typeId || undefined,
+        validFrom: product.validFrom ? new Date(product.validFrom) : undefined,
+        validTo: product.validTo ? new Date(product.validTo) : undefined,
       });
       // Set image preview for edit mode
       if (product.imageUrl) {
@@ -229,6 +301,10 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         serialType: undefined,
         monthlyFee: undefined,
         unitOfMeasure: 'pz',
+        categoryId: undefined,
+        typeId: undefined,
+        validFrom: undefined,
+        validTo: undefined,
       });
       // Clear image preview for new product
       setImagePreview(null);
@@ -286,10 +362,17 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
   });
 
   const onSubmit = (data: ProductFormData) => {
+    // Format Date objects to YYYY-MM-DD strings for backend compatibility
+    const formattedData = {
+      ...data,
+      validFrom: data.validFrom ? format(data.validFrom, 'yyyy-MM-dd') : undefined,
+      validTo: data.validTo ? format(data.validTo, 'yyyy-MM-dd') : undefined,
+    };
+
     if (isEdit) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(formattedData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(formattedData);
     }
   };
 
@@ -596,6 +679,191 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                   )}
                 />
               )}
+            </div>
+
+            {/* ===== CATEGORIZZAZIONE ===== */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Categorizzazione</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Categoria */}
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || undefined}
+                        data-testid="select-category"
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleziona categoria" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Nessuna categoria</SelectItem>
+                          {categories.map((category: any) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.nome}
+                              {category.source === 'brand' && category.isBrandSynced && (
+                                <span className="ml-2 text-xs text-orange-600">🏢 Brand</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Tipologia (filtrata per categoria selezionata) */}
+                <FormField
+                  control={form.control}
+                  name="typeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipologia</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || undefined}
+                        disabled={!watchCategoryId}
+                        data-testid="select-type"
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              watchCategoryId 
+                                ? "Seleziona tipologia" 
+                                : "Seleziona prima una categoria"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Nessuna tipologia</SelectItem>
+                          {productTypes.map((type: any) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.nome}
+                              {type.source === 'brand' && type.isBrandSynced && (
+                                <span className="ml-2 text-xs text-orange-600">🏢 Brand</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {!watchCategoryId && "Seleziona una categoria per filtrare le tipologie"}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* ===== VALIDITÀ TEMPORALE ===== */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Validità Temporale</h3>
+              <p className="text-sm text-gray-500">
+                Imposta il periodo di validità del prodotto (opzionale). I prodotti scaduti vengono automaticamente nascosti.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Valido Dal */}
+                <FormField
+                  control={form.control}
+                  name="validFrom"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Valido Dal</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              data-testid="button-valid-from"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP", { locale: it })
+                              ) : (
+                                <span>Seleziona data inizio</span>
+                              )}
+                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                            locale={it}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Data a partire dalla quale il prodotto è valido
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Valido Fino Al */}
+                <FormField
+                  control={form.control}
+                  name="validTo"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Valido Fino Al</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              data-testid="button-valid-to"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP", { locale: it })
+                              ) : (
+                                <span>Seleziona data fine</span>
+                              )}
+                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                            locale={it}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Data fino alla quale il prodotto rimane valido
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             {/* Immagine Upload */}
