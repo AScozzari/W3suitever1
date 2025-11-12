@@ -704,7 +704,6 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nessuna categoria</SelectItem>
                           {categories.map((category: any) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.nome}
@@ -743,7 +742,6 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nessuna tipologia</SelectItem>
                           {productTypes.map((type: any) => (
                             <SelectItem key={type.id} value={type.id}>
                               {type.nome}
