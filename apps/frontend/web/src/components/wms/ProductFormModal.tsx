@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -313,8 +313,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
 
   const createMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const tenantId = localStorage.getItem('currentTenantId');
-      return apiRequest(`/api/wms/products/${tenantId}`, {
+      return apiRequest(`/api/wms/products`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -338,8 +337,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
 
   const updateMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const tenantId = localStorage.getItem('currentTenantId');
-      return apiRequest(`/api/wms/products/${tenantId}/${product.id}`, {
+      return apiRequest(`/api/wms/products/${product.id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       });
@@ -385,6 +383,9 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
           <DialogTitle data-testid="heading-product-form">
             {isEdit ? 'Modifica Prodotto' : 'Nuovo Prodotto'}
           </DialogTitle>
+          <DialogDescription>
+            {isEdit ? 'Aggiorna i dettagli del prodotto esistente' : 'Inserisci i dati per creare un nuovo prodotto nel catalogo'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

@@ -1,0 +1,53 @@
+om Disconnected to Connecting
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-7ILD7SYD.js?v=c1a355d0:335:29)
+    at chunk-7ILD7SYD.js?v=c1a355d0:239:13
+    at chunk-7ILD7SYD.js?v=c1a355d0:162:58
+    at Presence (chunk-3RPIZZKC.js?v=c1a355d0:24:11)
+    at chunk-7ILD7SYD.js?v=c1a355d0:153:64
+    at chunk-TCRT5IO7.js?v=c1a355d0:43:13
+    at chunk-TCRT5IO7.js?v=c1a355d0:20:13
+    at chunk-7JN5FQRM.js?v=c1a355d0:42:13
+    at chunk-R54IPKTL.js?v=c1a355d0:244:22
+    at Presence (chunk-3RPIZZKC.js?v=c1a355d0:24:11)
+    at Provider (chunk-3WVMON5O.js?v=c1a355d0:38:15)
+    at DialogPortal (chunk-7ILD7SYD.js?v=c1a355d0:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=c1a355d0:38:15)
+    at Dialog (chunk-7ILD7SYD.js?v=c1a355d0:56:5)
+    at ProductFormModal (ProductFormModal.tsx:96:36)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at ProductsPage (ProductsPage.tsx:61:33)
+    at AuthenticatedRoute (TenantShell.tsx:523:72)
+    at Route (wouter.js?v=c1a355d0:206:16)
+    at Switch (wouter.js?v=c1a355d0:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:230:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:85:59)
+    at Route (wouter.js?v=c1a355d0:206:16)
+    at Switch (wouter.js?v=c1a355d0:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=c1a355d0:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7ILD7SYD.js?v=c1a355d0:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

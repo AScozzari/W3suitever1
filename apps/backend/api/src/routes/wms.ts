@@ -284,16 +284,15 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
 });
 
 /**
- * POST /api/wms/products/:tenantId
+ * POST /api/wms/products
  * Create a new product
- * Params: tenantId (UUID)
  * Body: Zod-validated product data (insertProductSchema)
  * - Auto-generates UUID for id
  * - Validates SKU uniqueness
  * - Sets createdBy, createdAt, updatedAt timestamps
  * - Supports source: brand | tenant
  */
-router.post("/products/:tenantId", rbacMiddleware, requirePermission('wms.product.create'), async (req, res) => {
+router.post("/products", rbacMiddleware, requirePermission('wms.product.create'), async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
     const userId = req.user?.id;
@@ -390,30 +389,22 @@ router.post("/products/:tenantId", rbacMiddleware, requirePermission('wms.produc
 });
 
 /**
- * PATCH /api/wms/products/:tenantId/:id
+ * PATCH /api/wms/products/:id
  * Update an existing product
- * Params: tenantId (UUID), id (product ID)
+ * Params: id (product ID)
  * Body: Partial product data (updateProductSchema)
  * - Prevents update if source='brand' AND is_brand_synced=true (Brand-managed products)
  * - Auto-sets modifiedBy and updatedAt
  * - Validates SKU uniqueness if SKU is being changed
  */
-router.patch("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.product.update'), async (req, res) => {
+router.patch("/products/:id", rbacMiddleware, requirePermission('wms.product.update'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId, id: productId } = req.params;
+    const { id: productId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    // Verify tenant ID match (security check)
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot update product from different tenant"
-      });
     }
 
     // Validate request body with updateProductSchema
@@ -528,29 +519,21 @@ router.patch("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.p
 });
 
 /**
- * DELETE /api/wms/products/:tenantId/:id
+ * DELETE /api/wms/products/:id
  * Soft-delete a product (set is_active=false, archived_at=NOW)
- * Params: tenantId (UUID), id (product ID)
+ * Params: id (product ID)
  * - Checks for active product_items dependencies before deletion
  * - Prevents deletion if product has active items
  * - Marks product as inactive with archived timestamp
  */
-router.delete("/products/:tenantId/:id", rbacMiddleware, requirePermission('wms.product.delete'), async (req, res) => {
+router.delete("/products/:id", rbacMiddleware, requirePermission('wms.product.delete'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId, id: productId } = req.params;
+    const { id: productId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    // Verify tenant ID match (security check)
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot delete product from different tenant"
-      });
     }
 
     // Get existing product
