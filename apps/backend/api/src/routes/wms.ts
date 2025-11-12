@@ -4080,20 +4080,12 @@ router.get("/jobs/metrics", rbacMiddleware, requirePermission('wms.analytics.rea
  * Get all categories for a tenant
  * Returns Brand categories (source='brand') + Tenant categories
  */
-router.get("/categories/:tenantId", rbacMiddleware, requirePermission('wms.category.read'), async (req, res) => {
+router.get("/categories", rbacMiddleware, requirePermission('wms.category.read'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot access categories from different tenant"
-      });
     }
 
     const categories = await db
@@ -4135,21 +4127,13 @@ router.get("/categories/:tenantId", rbacMiddleware, requirePermission('wms.categ
  * POST /api/wms/categories/:tenantId
  * Create a new category (tenant-owned only)
  */
-router.post("/categories/:tenantId", rbacMiddleware, requirePermission('wms.category.create'), async (req, res) => {
+router.post("/categories", rbacMiddleware, requirePermission('wms.category.create'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot create category for different tenant"
-      });
     }
 
     // Validate request body
@@ -4222,21 +4206,14 @@ router.post("/categories/:tenantId", rbacMiddleware, requirePermission('wms.cate
  * PATCH /api/wms/categories/:tenantId/:id
  * Update a category (only tenant-owned, not Brand)
  */
-router.patch("/categories/:tenantId/:id", rbacMiddleware, requirePermission('wms.category.update'), async (req, res) => {
+router.patch("/categories/:id", rbacMiddleware, requirePermission('wms.category.update'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId, id: categoryId } = req.params;
+    const { id: categoryId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot update category from different tenant"
-      });
     }
 
     // Get existing category
@@ -4322,21 +4299,14 @@ router.patch("/categories/:tenantId/:id", rbacMiddleware, requirePermission('wms
  * DELETE /api/wms/categories/:tenantId/:id
  * Soft-delete a category (only tenant-owned, check dependencies)
  */
-router.delete("/categories/:tenantId/:id", rbacMiddleware, requirePermission('wms.category.delete'), async (req, res) => {
+router.delete("/categories/:id", rbacMiddleware, requirePermission('wms.category.delete'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId, id: categoryId } = req.params;
+    const { id: categoryId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot delete category from different tenant"
-      });
     }
 
     // Get existing category
@@ -4432,21 +4402,13 @@ router.delete("/categories/:tenantId/:id", rbacMiddleware, requirePermission('wm
  * GET /api/wms/product-types/:tenantId?categoryId=xxx
  * Get all product types for a tenant (optionally filtered by category)
  */
-router.get("/product-types/:tenantId", rbacMiddleware, requirePermission('wms.product_type.read'), async (req, res) => {
+router.get("/product-types", rbacMiddleware, requirePermission('wms.product_type.read'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId } = req.params;
     const { categoryId } = req.query;
     const sessionTenantId = req.user?.tenantId;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot access product types from different tenant"
-      });
     }
 
     const whereConditions = [
@@ -4493,21 +4455,13 @@ router.get("/product-types/:tenantId", rbacMiddleware, requirePermission('wms.pr
  * POST /api/wms/product-types/:tenantId
  * Create a new product type (tenant-owned only)
  */
-router.post("/product-types/:tenantId", rbacMiddleware, requirePermission('wms.product_type.create'), async (req, res) => {
+router.post("/product-types", rbacMiddleware, requirePermission('wms.product_type.create'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot create product type for different tenant"
-      });
     }
 
     // Validate request body
@@ -4601,21 +4555,14 @@ router.post("/product-types/:tenantId", rbacMiddleware, requirePermission('wms.p
  * PATCH /api/wms/product-types/:tenantId/:id
  * Update a product type (only tenant-owned, not Brand)
  */
-router.patch("/product-types/:tenantId/:id", rbacMiddleware, requirePermission('wms.product_type.update'), async (req, res) => {
+router.patch("/product-types/:id", rbacMiddleware, requirePermission('wms.product_type.update'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId, id: typeId } = req.params;
+    const { id: typeId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot update product type from different tenant"
-      });
     }
 
     // Get existing type
@@ -4723,21 +4670,14 @@ router.patch("/product-types/:tenantId/:id", rbacMiddleware, requirePermission('
  * DELETE /api/wms/product-types/:tenantId/:id
  * Soft-delete a product type (only tenant-owned, check dependencies)
  */
-router.delete("/product-types/:tenantId/:id", rbacMiddleware, requirePermission('wms.product_type.delete'), async (req, res) => {
+router.delete("/product-types/:id", rbacMiddleware, requirePermission('wms.product_type.delete'), async (req, res) => {
   try {
-    const { tenantId: paramTenantId, id: typeId } = req.params;
+    const { id: typeId } = req.params;
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
-    }
-
-    if (paramTenantId !== sessionTenantId) {
-      return res.status(403).json({ 
-        error: "Forbidden",
-        message: "Cannot delete product type from different tenant"
-      });
     }
 
     // Get existing type
