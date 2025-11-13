@@ -12,7 +12,8 @@ import {
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
-  LogOut, HelpCircle, MapPin, UserCircle, Store, ListTodo, Package
+  LogOut, HelpCircle, MapPin, UserCircle, Store, ListTodo, Package,
+  LayoutDashboard, FolderTree, Building2
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
@@ -569,11 +570,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       id: 'prodotti-listini', 
       label: 'Prodotti e Listini', 
       icon: Package, 
-      path: '/prodotti-listini/catalogo',
+      path: '/prodotti-listini',
       hasSubmenu: true,
       submenuItems: [
-        { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini/catalogo' },
-        { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini/listini-prezzi' }
+        { id: 'dashboard-prodotti', label: 'Dashboard', icon: LayoutDashboard, path: '/prodotti-listini' },
+        { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini?tab=prodotti' },
+        { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini?tab=listini' },
+        { id: 'categorie-tipologie', label: 'Categorie & Tipologie', icon: FolderTree, path: '/prodotti-listini?tab=categorie' },
+        { id: 'fornitori', label: 'Fornitori', icon: Building2, path: '/prodotti-listini?tab=fornitori' }
       ]
     },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag, path: '/cassa' },

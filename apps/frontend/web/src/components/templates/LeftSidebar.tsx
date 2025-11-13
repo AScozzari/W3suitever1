@@ -6,7 +6,8 @@ import {
   ChevronRight, Menu, Calendar, Clock, CalendarDays,
   BarChart3, UserCheck, Award, DollarSign, BookOpen,
   FileBarChart, Receipt, ChevronDown, ChevronUp,
-  Target, Clipboard, TrendingUp, Shield, Package
+  Target, Clipboard, TrendingUp, Shield, Package,
+  LayoutDashboard, FolderTree, Building2
 } from 'lucide-react';
 // CompactCalendar rimosso - calendario integrato nel workspace
 
@@ -66,11 +67,14 @@ const defaultMenuItems: MenuItem[] = [
     id: 'prodotti-listini', 
     label: 'Prodotti e Listini', 
     icon: Package, 
-    path: '/prodotti-listini/catalogo',
+    path: '/prodotti-listini',
     hasSubmenu: true,
     submenuItems: [
-      { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini/catalogo' },
-      { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini/listini-prezzi' }
+      { id: 'dashboard-prodotti', label: 'Dashboard', icon: LayoutDashboard, path: '/prodotti-listini' },
+      { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini?tab=prodotti' },
+      { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini?tab=listini' },
+      { id: 'categorie-tipologie', label: 'Categorie & Tipologie', icon: FolderTree, path: '/prodotti-listini?tab=categorie' },
+      { id: 'fornitori', label: 'Fornitori', icon: Building2, path: '/prodotti-listini?tab=fornitori' }
     ]
   },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
