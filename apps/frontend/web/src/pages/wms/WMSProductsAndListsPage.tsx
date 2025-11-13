@@ -11,25 +11,11 @@ import {
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
 import ListiniTabContent from '@/components/wms/ListiniTabContent';
+import FornitoriTabContent from '@/components/wms/FornitoriTabContent';
+import CategoriesTypologiesTabContent from '@/components/wms/CategoriesTypologiesTabContent';
 
 // Lazy load heavy components
 const ProductsPage = lazy(() => import('./ProductsPage'));
-
-const CategoriesTypologiesTabContent = () => (
-  <div className="p-8 text-center" data-testid="tab-content-categorie">
-    <FolderTree size={48} className="mx-auto mb-4 text-gray-400" data-testid="icon-categorie" />
-    <h3 className="text-xl font-semibold mb-2" data-testid="heading-categorie">Categorie & Tipologie</h3>
-    <p className="text-gray-600" data-testid="text-categorie-status">Task #11: 3-column layout in implementazione</p>
-  </div>
-);
-
-const FornitoriTabContent = () => (
-  <div className="p-8 text-center" data-testid="tab-content-fornitori">
-    <Building2 size={48} className="mx-auto mb-4 text-gray-400" data-testid="icon-fornitori" />
-    <h3 className="text-xl font-semibold mb-2" data-testid="heading-fornitori">Fornitori</h3>
-    <p className="text-gray-600" data-testid="text-fornitori-status">Task #10: In Implementazione</p>
-  </div>
-);
 
 // Loading fallback
 const TabLoadingFallback = () => (
