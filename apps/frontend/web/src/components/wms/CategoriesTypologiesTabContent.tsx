@@ -55,6 +55,13 @@ export default function CategoriesTypologiesTabContent() {
         <p className="text-gray-600" data-testid="categories-typologies-subtitle">
           Gerarchia prodotti: Tipo Prodotto → Categoria → Tipologia
         </p>
+        {/* DEBUG: Show raw data */}
+        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+          <strong>DEBUG:</strong> Loading: {categoriesLoading ? 'YES' : 'NO'} | 
+          Categories: {categories.length} | 
+          Error: {error ? String(error) : 'NO'} | 
+          Raw: {JSON.stringify(categories.slice(0, 2))}
+        </div>
       </div>
 
       {/* 3-Column Layout */}
