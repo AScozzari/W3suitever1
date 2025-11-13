@@ -9,18 +9,10 @@ import {
   FolderTree, 
   Building2 
 } from 'lucide-react';
+import DashboardTabContent from '@/components/wms/DashboardTabContent';
 
 // Lazy load heavy components
 const ProductsPage = lazy(() => import('./ProductsPage'));
-
-// Placeholder components (to be implemented in later tasks)
-const DashboardTabContent = () => (
-  <div className="p-8 text-center" data-testid="tab-content-dashboard">
-    <LayoutDashboard size={48} className="mx-auto mb-4 text-gray-400" data-testid="icon-dashboard" />
-    <h3 className="text-xl font-semibold mb-2" data-testid="heading-dashboard">Dashboard WMS</h3>
-    <p className="text-gray-600" data-testid="text-dashboard-status">Task #8: KPI cards in implementazione</p>
-  </div>
-);
 
 const ListiniTabContent = () => (
   <div className="p-8 text-center" data-testid="tab-content-listini">
@@ -145,7 +137,7 @@ export default function WMSProductsAndListsPage() {
 
           {/* Tab Contents with conditional mounting */}
           <TabsContent value="dashboard" className="mt-0">
-            <DashboardTabContent />
+            {activeTab === 'dashboard' && <DashboardTabContent />}
           </TabsContent>
 
           <TabsContent value="prodotti" className="mt-0">
