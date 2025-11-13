@@ -32,6 +32,8 @@ import {
   wmsWarehouseLocations,
   wmsCategories,
   wmsProductTypes,
+  insertCategorySchema,
+  updateCategorySchema,
   stores
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -4066,14 +4068,34 @@ router.get("/jobs/metrics", rbacMiddleware, requirePermission('wms.analytics.rea
 router.get("/categories", rbacMiddleware, requirePermission('wms.category.read'), async (req, res) => {
   try {
     const sessionTenantId = req.user?.tenantId;
+    const { productType } = req.query;
     
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Tenant ID not found in session" });
     }
 
+    // Build WHERE conditions
+    const conditions = [
+      eq(wmsCategories.tenantId, sessionTenantId),
+      eq(wmsCategories.isActive, true)
+    ];
+
+    // Optional filter by productType (validate if provided)
+    if (productType) {
+      const validTypes = ['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS'] as const;
+      if (typeof productType !== 'string' || !validTypes.includes(productType as any)) {
+        return res.status(400).json({ 
+          error: "Invalid productType parameter",
+          message: `productType must be one of: ${validTypes.join(', ')}`
+        });
+      }
+      conditions.push(eq(wmsCategories.productType, productType as any));
+    }
+
     const categories = await db
       .select({
         id: wmsCategories.id,
+        productType: wmsCategories.productType,
         nome: wmsCategories.nome,
         descrizione: wmsCategories.descrizione,
         icona: wmsCategories.icona,
@@ -4085,12 +4107,7 @@ router.get("/categories", rbacMiddleware, requirePermission('wms.category.read')
         updatedAt: wmsCategories.updatedAt,
       })
       .from(wmsCategories)
-      .where(
-        and(
-          eq(wmsCategories.tenantId, sessionTenantId),
-          eq(wmsCategories.isActive, true)
-        )
-      )
+      .where(and(...conditions))
       .orderBy(asc(wmsCategories.ordine), asc(wmsCategories.nome));
 
     res.json({
@@ -4119,15 +4136,8 @@ router.post("/categories", rbacMiddleware, requirePermission('wms.category.creat
       return res.status(401).json({ error: "Tenant ID not found in session" });
     }
 
-    // Validate request body
-    const schema = z.object({
-      nome: z.string().min(1, "Nome obbligatorio").max(255),
-      descrizione: z.string().optional(),
-      icona: z.string().max(100).optional(),
-      ordine: z.coerce.number().int().default(0),
-    });
-
-    const validatedData = schema.parse(req.body);
+    // Validate request body using shared schema
+    const validatedData = insertCategorySchema.parse(req.body);
 
     // Generate unique ID for category
     const categoryId = crypto.randomUUID();
@@ -4139,6 +4149,7 @@ router.post("/categories", rbacMiddleware, requirePermission('wms.category.creat
         id: categoryId,
         source: 'tenant', // Always tenant-created via this endpoint
         isBrandSynced: false,
+        productType: validatedData.productType,
         nome: validatedData.nome,
         descrizione: validatedData.descrizione || null,
         icona: validatedData.icona || null,
@@ -4226,15 +4237,8 @@ router.patch("/categories/:id", rbacMiddleware, requirePermission('wms.category.
       });
     }
 
-    // Validate request body
-    const schema = z.object({
-      nome: z.string().min(1).max(255).optional(),
-      descrizione: z.string().optional(),
-      icona: z.string().max(100).optional(),
-      ordine: z.coerce.number().int().optional(),
-    });
-
-    const validatedData = schema.parse(req.body);
+    // Validate request body using shared schema
+    const validatedData = updateCategorySchema.parse(req.body);
 
     const [updatedCategory] = await db
       .update(wmsCategories)

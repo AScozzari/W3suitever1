@@ -6498,6 +6498,9 @@ export const wmsCategories = w3suiteSchema.table("wms_categories", {
   brandCategoryId: varchar("brand_category_id", { length: 100 }), // Reference to Brand master category
   isBrandSynced: boolean("is_brand_synced").default(false).notNull(),
   
+  // Product type hierarchy - Links category to top-level product type
+  productType: productTypeEnum("product_type").default('PHYSICAL').notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
+  
   // Category info
   nome: varchar("nome", { length: 255 }).notNull(),
   descrizione: text("descrizione"),
@@ -6519,7 +6522,35 @@ export const wmsCategories = w3suiteSchema.table("wms_categories", {
   index("wms_categories_tenant_idx").on(table.tenantId),
   index("wms_categories_source_idx").on(table.source),
   index("wms_categories_brand_id_idx").on(table.brandCategoryId),
+  index("wms_categories_product_type_idx").on(table.tenantId, table.productType), // Filter categories by product type
 ]);
+
+// Zod schemas for wmsCategories
+export const insertCategorySchema = createInsertSchema(wmsCategories).omit({
+  tenantId: true,      // Auto-set from session
+  id: true,            // Auto-generated UUID
+  source: true,        // Always 'tenant' for user-created categories
+  isBrandSynced: true, // Always false for user-created categories
+  brandCategoryId: true, // Only set by Brand
+  isActive: true,      // Defaults to true
+  archivedAt: true,    // Set only on soft-delete
+  createdBy: true,     // Auto-set from user session
+  modifiedBy: true,    // Auto-set from user session
+  createdAt: true,     // Auto-set on creation
+  updatedAt: true,     // Auto-set on creation/update
+}).extend({
+  productType: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  nome: z.string().min(1, "Nome categoria obbligatorio").max(255),
+  descrizione: z.string().optional(),
+  icona: z.string().max(100).optional(),
+  ordine: z.coerce.number().int().default(0),
+});
+
+export const updateCategorySchema = insertCategorySchema.partial();
+
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type UpdateCategory = z.infer<typeof updateCategorySchema>;
+export type Category = typeof wmsCategories.$inferSelect;
 
 // 2) wmsProductTypes - Product types within categories (Brand-Tenant hybrid architecture)
 export const wmsProductTypes = w3suiteSchema.table("wms_product_types", {
