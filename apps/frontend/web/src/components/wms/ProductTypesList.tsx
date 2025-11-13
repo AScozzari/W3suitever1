@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
 import { Package, Server, Palette, FileCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ProductType } from './CategoriesTypologiesTabContent';
+import { ProductType, Category } from './CategoriesTypologiesTabContent';
 
 interface ProductTypesListProps {
+  categories: Category[];
+  isLoading: boolean;
   selectedProductType: ProductType | null;
   onSelectProductType: (type: ProductType) => void;
 }
@@ -41,17 +42,12 @@ const PRODUCT_TYPES: Array<{
 ];
 
 export default function ProductTypesList({
+  categories,
+  isLoading,
   selectedProductType,
   onSelectProductType,
 }: ProductTypesListProps) {
-  // Fetch category counts per product type
-  const { data: categoriesData } = useQuery<{ success: boolean; data: any[] }>({
-    queryKey: ['/api/wms/categories'],
-  });
-
-  const categories = categoriesData?.data || [];
-
-  // Calculate counts per product type
+  // Calculate counts per product type from provided categories
   const getCountForType = (type: ProductType) => {
     return categories.filter(cat => cat.productType === type).length;
   };

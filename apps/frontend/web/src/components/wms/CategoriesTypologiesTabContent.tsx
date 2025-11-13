@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import ProductTypesList from './ProductTypesList';
 import CategoriesList from './CategoriesList';
@@ -6,9 +7,30 @@ import ProductTypologiesList from './ProductTypologiesList';
 
 export type ProductType = 'PHYSICAL' | 'VIRTUAL' | 'SERVICE' | 'CANVAS';
 
+export interface Category {
+  id: string;
+  productType: ProductType;
+  nome: string;
+  descrizione?: string | null;
+  icona?: string | null;
+  ordine: number;
+  source: string;
+  isBrandSynced: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function CategoriesTypologiesTabContent() {
   const [selectedProductType, setSelectedProductType] = useState<ProductType | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+
+  // Centralized categories fetch (after TenantContext is ready)
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useQuery<{ success: boolean; data: Category[] }>({
+    queryKey: ['/api/wms/categories'],
+  });
+
+  const categories = categoriesResponse?.data || [];
 
   return (
     <div className="space-y-6" data-testid="categories-typologies-content">
@@ -42,6 +64,8 @@ export default function CategoriesTypologiesTabContent() {
           data-testid="column-product-types"
         >
           <ProductTypesList
+            categories={categories}
+            isLoading={categoriesLoading}
             selectedProductType={selectedProductType}
             onSelectProductType={(type) => {
               setSelectedProductType(type);
@@ -64,6 +88,8 @@ export default function CategoriesTypologiesTabContent() {
           data-testid="column-categories"
         >
           <CategoriesList
+            categories={categories}
+            isLoading={categoriesLoading}
             selectedProductType={selectedProductType}
             selectedCategoryId={selectedCategoryId}
             onSelectCategory={setSelectedCategoryId}

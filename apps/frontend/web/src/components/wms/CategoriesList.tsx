@@ -1,38 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { Plus, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ProductType } from './CategoriesTypologiesTabContent';
+import { ProductType, Category } from './CategoriesTypologiesTabContent';
 
 interface CategoriesListProps {
+  categories: Category[];
+  isLoading: boolean;
   selectedProductType: ProductType | null;
   selectedCategoryId: string | null;
   onSelectCategory: (categoryId: string) => void;
 }
 
-interface Category {
-  id: string;
-  nome: string;
-  descrizione?: string;
-  productType: ProductType;
-  ordine: number;
-  isActive: boolean;
-}
-
 export default function CategoriesList({
+  categories: allCategories,
+  isLoading,
   selectedProductType,
   selectedCategoryId,
   onSelectCategory,
 }: CategoriesListProps) {
-  // Fetch categories filtered by productType using query params
-  const { data: categoriesData, isLoading } = useQuery<{ success: boolean; data: Category[] }>({
-    queryKey: selectedProductType 
-      ? [`/api/wms/categories?productType=${selectedProductType}`]
-      : ['/api/wms/categories'],
-    enabled: !!selectedProductType,
-  });
-
-  const categories = categoriesData?.data || [];
+  // Filter categories by selected productType (memoized)
+  const categories = useMemo(() => {
+    if (!selectedProductType) return [];
+    return allCategories.filter(cat => cat.productType === selectedProductType);
+  }, [allCategories, selectedProductType]);
 
   if (!selectedProductType) {
     return (
