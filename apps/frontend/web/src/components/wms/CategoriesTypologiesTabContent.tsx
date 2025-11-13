@@ -26,11 +26,20 @@ export default function CategoriesTypologiesTabContent() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Centralized categories fetch (after TenantContext is ready)
-  const { data: categoriesResponse, isLoading: categoriesLoading } = useQuery<{ success: boolean; data: Category[] }>({
+  const { data: categoriesResponse, isLoading: categoriesLoading, error } = useQuery<{ success: boolean; data: Category[] }>({
     queryKey: ['/api/wms/categories'],
   });
 
   const categories = categoriesResponse?.data || [];
+
+  // Debug logging
+  console.log('[CategoriesTypologiesTabContent] Query result:', {
+    isLoading: categoriesLoading,
+    hasData: !!categoriesResponse,
+    dataLength: categories.length,
+    error,
+    raw: categoriesResponse
+  });
 
   return (
     <div className="space-y-6" data-testid="categories-typologies-content">

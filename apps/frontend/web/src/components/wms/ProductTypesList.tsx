@@ -47,9 +47,18 @@ export default function ProductTypesList({
   selectedProductType,
   onSelectProductType,
 }: ProductTypesListProps) {
+  // Debug logging
+  console.log('[ProductTypesList] Received props:', {
+    categoriesCount: categories?.length || 0,
+    isLoading,
+    categories
+  });
+
   // Calculate counts per product type from provided categories
   const getCountForType = (type: ProductType) => {
-    return categories.filter(cat => cat.productType === type).length;
+    const filtered = categories.filter(cat => cat.productType === type);
+    console.log(`[ProductTypesList] Count for ${type}:`, filtered.length, filtered);
+    return filtered.length;
   };
 
   return (
