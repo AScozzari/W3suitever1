@@ -19,6 +19,7 @@ import {
 } from '../components/Leave/forms/StandardFields';
 import AISettingsPage from '../components/AI/AISettingsPage';
 import { StoreConfigurationDialog } from '../components/settings/StoreConfigurationDialog';
+import ChannelSettingsPage from './settings/ChannelSettingsPage';
 import { z } from 'zod';
 import { 
   supplierValidationSchema, 
@@ -620,6 +621,15 @@ export default function SettingsPage() {
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
+
+  // VoIP Extensions Query - Load when user modal is open
+  const { data: voipExtensionsResponse, isLoading: loadingExtensions } = useQuery({
+    queryKey: ['/api/voip/extensions'],
+    enabled: userModal.open,
+    refetchOnMount: false,
+    staleTime: 2 * 60 * 1000
+  });
+  const voipExtensions = voipExtensionsResponse?.data || [];
   
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
@@ -1990,8 +2000,7 @@ export default function SettingsPage() {
             { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
             { id: 'punti-vendita', icon: Store, label: 'Sedi Operative', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
-            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
-            { id: 'fornitori', icon: Truck, label: 'Fornitori', color: '#10b981' }
+            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' }
           ].map((item, index) => {
             const Icon = item.icon;
             return (
@@ -3668,172 +3677,9 @@ export default function SettingsPage() {
     return <AISettingsPage />;
   };
 
-  const renderChannelSettings = () => (
-    <div>
-      <div style={{ marginBottom: '32px' }}>
-        <h2 style={{
-          fontSize: '20px',
-          fontWeight: '600',
-          color: '#111827',
-          margin: '0 0 4px 0'
-        }}>
-          Configurazione Canali
-        </h2>
-        <p style={{
-          fontSize: '14px',
-          color: '#6b7280',
-          margin: 0
-        }}>
-          Gestisci canali di comunicazione e integrazione
-        </p>
-      </div>
-
-      {/* Channel Configuration */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '24px'
-      }}>
-        {/* Email Channel */}
-        <div style={{
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          border: '1px solid hsla(255, 255, 255, 0.12)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-              borderRadius: '12px',
-              padding: '10px',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
-            }}>
-              <Mail size={20} style={{ color: 'white' }} />
-            </div>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0
-            }}>
-              Email Integration
-            </h3>
-          </div>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            marginBottom: '16px'
-          }}>
-            Configura server SMTP e template email
-          </p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <span style={{
-              background: '#10b981',
-              color: 'white',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '600'
-            }}>
-              Attivo
-            </span>
-            <button style={{
-              background: 'transparent',
-              border: '1px solid hsla(255, 255, 255, 0.12)',
-              borderRadius: '8px',
-              color: '#6b7280',
-              padding: '8px 16px',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}>
-              Gestisci
-            </button>
-          </div>
-        </div>
-
-        {/* Webhook Channel */}
-        <div style={{
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          border: '1px solid hsla(255, 255, 255, 0.12)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
-              borderRadius: '12px',
-              padding: '10px',
-              boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)'
-            }}>
-              <Globe size={20} style={{ color: 'white' }} />
-            </div>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0
-            }}>
-              Webhook Integration
-            </h3>
-          </div>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            marginBottom: '16px'
-          }}>
-            Gestisci webhook per integrazioni esterne
-          </p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <span style={{
-              background: '#f59e0b',
-              color: 'white',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '600'
-            }}>
-              Da Configurare
-            </span>
-            <button style={{
-              background: 'transparent',
-              border: '1px solid hsla(255, 255, 255, 0.12)',
-              borderRadius: '8px',
-              color: '#6b7280',
-              padding: '8px 16px',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}>
-              Configura
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const renderChannelSettings = () => {
+    return <ChannelSettingsPage />;
+  };
 
   const renderSystemSettings = () => (
     <div>
@@ -5613,6 +5459,16 @@ export default function SettingsPage() {
     notificheSMS: false,
     lingua: 'it',
     fuso: 'Europe/Rome',
+    
+    // ✅ Configurazione VoIP Extension (1:1 relationship)
+    extension: {
+      enabled: false,         // Toggle per abilitare provisioning extension
+      extNumber: '',          // Numero interno (3-6 cifre)
+      sipDomain: '',          // SIP domain (es: tenant1.pbx.w3suite.it)
+      classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
+      voicemailEnabled: true,
+      storeId: null as string | null
+    },
     
     // Informazioni contrattuali
     tipoContratto: 'Indeterminato',
@@ -8313,586 +8169,6 @@ export default function SettingsPage() {
                     }}
                   />
                 </div>
-
-
-                {/* 📱 Sezione Contatti */}
-                <div style={{ gridColumn: 'span 2', marginTop: '24px', marginBottom: '16px' }}>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: '#374151',
-                    padding: '12px 16px',
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    borderRadius: '8px',
-                    border: '2px solid #e2e8f0',
-                    textAlign: 'center',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                  }}>
-                    📱 Contatti
-                  </div>
-                </div>
-
-                {/* Telefono */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Telefono
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+39 02 1234567"
-                    value={newStore.phone}
-                    onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('phone', e.target.value)}
-                    style={getStoreFieldStyle('phone', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.phone === 'untouched') {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.phone && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.phone}
-                    </div>
-                  )}
-                  {storeValidationState.phone === 'valid' && newStore.phone && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#10b981',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ Numero di telefono valido
-                    </div>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="punto.vendita@windtre.it"
-                    value={newStore.email}
-                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('email', e.target.value)}
-                    style={getStoreFieldStyle('email', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.email === 'untouched') {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.email && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.email}
-                    </div>
-                  )}
-                  {storeValidationState.email === 'valid' && newStore.email && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#10b981',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ Email valida
-                    </div>
-                  )}
-                </div>
-
-                {/* Google Maps URL */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
-                    WhatsApp 1
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+39 333 1234567"
-                    value={newStore.whatsapp1}
-                    onChange={(e) => setNewStore({ ...newStore, whatsapp1: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('whatsapp1', e.target.value)}
-                    style={getStoreFieldStyle('whatsapp1', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.whatsapp1 === 'untouched') {
-                        e.target.style.borderColor = '#25D366';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.whatsapp1 && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.whatsapp1}
-                    </div>
-                  )}
-                  {storeValidationState.whatsapp1 === 'valid' && newStore.whatsapp1 && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#25D366',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ WhatsApp valido
-                    </div>
-                  )}
-                </div>
-
-                {/* WhatsApp 2 */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
-                    WhatsApp 2
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+39 333 7654321"
-                    value={newStore.whatsapp2}
-                    onChange={(e) => setNewStore({ ...newStore, whatsapp2: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('whatsapp2', e.target.value)}
-                    style={getStoreFieldStyle('whatsapp2', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.whatsapp2 === 'untouched') {
-                        e.target.style.borderColor = '#25D366';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.whatsapp2 && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.whatsapp2}
-                    </div>
-                  )}
-                  {storeValidationState.whatsapp2 === 'valid' && newStore.whatsapp2 && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#25D366',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ WhatsApp valido
-                    </div>
-                  )}
-                </div>
-
-                {/* Facebook */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#1877F2', fontSize: '16px' }}>👤</span>
-                    Facebook
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="facebook.com/windtrestore"
-                    value={newStore.facebook}
-                    onChange={(e) => setNewStore({ ...newStore, facebook: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('facebook', e.target.value)}
-                    style={getStoreFieldStyle('facebook', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.facebook === 'untouched') {
-                        e.target.style.borderColor = '#1877F2';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.facebook && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.facebook}
-                    </div>
-                  )}
-                  {storeValidationState.facebook === 'valid' && newStore.facebook && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#1877F2',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ URL Facebook valido
-                    </div>
-                  )}
-                </div>
-
-                {/* Instagram */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#E4405F', fontSize: '16px' }}>📷</span>
-                    Instagram
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="instagram.com/windtrestore"
-                    value={newStore.instagram}
-                    onChange={(e) => setNewStore({ ...newStore, instagram: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('instagram', e.target.value)}
-                    style={getStoreFieldStyle('instagram', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.instagram === 'untouched') {
-                        e.target.style.borderColor = '#E4405F';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(228, 64, 95, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.instagram && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.instagram}
-                    </div>
-                  )}
-                  {storeValidationState.instagram === 'valid' && newStore.instagram && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#E4405F',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ URL Instagram valido
-                    </div>
-                  )}
-                </div>
-
-                {/* TikTok */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#FF0050', fontSize: '16px' }}>🎵</span>
-                    TikTok
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="tiktok.com/@windtrestore"
-                    value={newStore.tiktok}
-                    onChange={(e) => setNewStore({ ...newStore, tiktok: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('tiktok', e.target.value)}
-                    style={getStoreFieldStyle('tiktok', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.tiktok === 'untouched') {
-                        e.target.style.borderColor = '#FF0050';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 0, 80, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.tiktok && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.tiktok}
-                    </div>
-                  )}
-                  {storeValidationState.tiktok === 'valid' && newStore.tiktok && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#FF0050',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ URL TikTok valido
-                    </div>
-                  )}
-                </div>
-
-                {/* Google Maps URL */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#4285F4', fontSize: '16px' }}>🗺️</span>
-                    Google Maps
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://maps.google.com/..."
-                    value={newStore.google_maps_url}
-                    onChange={(e) => setNewStore({ ...newStore, google_maps_url: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('google_maps_url', e.target.value)}
-                    style={getStoreFieldStyle('google_maps_url', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.google_maps_url === 'untouched') {
-                        e.target.style.borderColor = '#4285F4';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.google_maps_url && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.google_maps_url}
-                    </div>
-                  )}
-                  {storeValidationState.google_maps_url === 'valid' && newStore.google_maps_url && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#4285F4',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ URL Google Maps valido
-                    </div>
-                  )}
-                </div>
-
-                {/* Telegram */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#0088CC', fontSize: '16px' }}>✈️</span>
-                    Telegram
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="t.me/windtrestore"
-                    value={newStore.telegram}
-                    onChange={(e) => setNewStore({ ...newStore, telegram: e.target.value })}
-                    onBlur={(e) => handleStoreFieldValidation('telegram', e.target.value)}
-                    style={getStoreFieldStyle('telegram', {
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    })}
-                    onFocus={(e) => {
-                      if (storeValidationState.telegram === 'untouched') {
-                        e.target.style.borderColor = '#0088CC';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 136, 204, 0.1)';
-                      }
-                    }}
-                  />
-                  {storeValidationErrors.telegram && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#ef4444',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      {storeValidationErrors.telegram}
-                    </div>
-                  )}
-                  {storeValidationState.telegram === 'valid' && newStore.telegram && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#0088CC',
-                      marginTop: '4px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      ✓ URL Telegram valido
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Footer Modal */}
@@ -9433,6 +8709,85 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* SEZIONE CONFIGURAZIONE VoIP (ENTERPRISE APPROACH) */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Phone size={16} style={{ color: '#FF6900' }} />
+                  VoIP Extension (Opzionale)
+                </h3>
+
+                {/* Info banner */}
+                <div style={{
+                  padding: '12px',
+                  background: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <p style={{ fontSize: '13px', color: '#0369a1', margin: 0 }}>
+                    💡 <strong>Nota:</strong> Le extensions devono essere create prima in <em>Settings → Channels → Phone/VoIP</em>. 
+                    Qui puoi solo assegnare un'extension già esistente all'utente.
+                  </p>
+                </div>
+
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px'
+                  }}>
+                    Assegna Extension
+                  </label>
+                  <select
+                    value={newUser.extensionId || ''}
+                    onChange={(e) => setNewUser({ ...newUser, extensionId: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#ffffff',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    data-testid="select-user-extension"
+                    disabled={loadingExtensions}
+                  >
+                    <option value="">Nessuna extension</option>
+                    {voipExtensions
+                      .filter((ext: any) => !ext.userId || ext.userId === userModal.data?.id)
+                      .map((ext: any) => (
+                        <option key={ext.id} value={ext.id}>
+                          {ext.extNumber} - {ext.displayName || 'N/A'} (sip:{ext.extNumber}@{ext.sipDomain})
+                        </option>
+                      ))}
+                    {loadingExtensions && (
+                      <option value="" disabled>Caricamento extensions...</option>
+                    )}
+                    {!loadingExtensions && voipExtensions.length === 0 && (
+                      <option value="" disabled>Nessuna extension configurata. Crea prima le extensions in Settings → Channels.</option>
+                    )}
+                  </select>
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                    Seleziona un'extension disponibile da assegnare a questo utente. 
+                    Le extensions già assegnate ad altri utenti non compaiono nella lista.
+                  </div>
+                </div>
+              </div>
+
               {/* ✅ NUOVO SISTEMA SCOPE PIRAMIDALE - ALLA FINE */}
               <div style={{ marginBottom: '28px' }}>
                 <h3 style={{
@@ -9884,6 +9239,18 @@ export default function SettingsPage() {
                       return;
                     }
 
+                    // ✅ Validate VoIP Extension fields (if enabled)
+                    if (newUser.extension.enabled) {
+                      if (!newUser.extension.extNumber || !/^\d{3,6}$/.test(newUser.extension.extNumber)) {
+                        alert('Extension: Numero Interno deve essere 3-6 cifre (es: 100, 1001)');
+                        return;
+                      }
+                      if (!newUser.extension.sipDomain || newUser.extension.sipDomain.trim() === '') {
+                        alert('Extension: SIP Domain è obbligatorio (es: tenant1.pbx.w3suite.it)');
+                        return;
+                      }
+                    }
+
                     // Validazione scope
                     if (newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0) {
                       alert('Seleziona almeno una ragione sociale');
@@ -9909,7 +9276,17 @@ export default function SettingsPage() {
                           // ✅ SCOPE DATA - Invia dati scope piramidale al backend
                           selectAllLegalEntities: newUser.selectAllLegalEntities,
                           selectedLegalEntities: newUser.selectedLegalEntities,
-                          selectedStores: newUser.selectedStores
+                          selectedStores: newUser.selectedStores,
+                          // ✅ VOIP EXTENSION DATA (optional, only if enabled)
+                          ...(newUser.extension.enabled ? {
+                            extension: {
+                              extNumber: newUser.extension.extNumber,
+                              sipDomain: newUser.extension.sipDomain,
+                              classOfService: newUser.extension.classOfService,
+                              voicemailEnabled: newUser.extension.voicemailEnabled,
+                              storeId: newUser.extension.storeId
+                            }
+                          } : {})
                         };
 
                         console.log('📤 Sending user data to API:', userData);
@@ -9949,7 +9326,15 @@ export default function SettingsPage() {
                           selectAllLegalEntities: true,
                           selectedLegalEntities: [],
                           selectedStores: [],
-                          avatar: null
+                          avatar: null,
+                          extension: {
+                            enabled: false,
+                            extNumber: '',
+                            sipDomain: '',
+                            classOfService: 'agent' as const,
+                            voicemailEnabled: true,
+                            storeId: null
+                          }
                         });
 
                       } catch (error) {
@@ -9994,86 +9379,9 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal Nuovo Fornitore Completo */}
-      {supplierModal.open && (
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        {/* Header - Direttamente sullo sfondo */}
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '32px',
-            width: '95%',
-            maxWidth: '1200px',
-            maxHeight: '95vh',
-            overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '32px'
-            }}>
-              <div>
-                <h2 style={{
-                  fontSize: '28px',
-                  fontWeight: '700',
-                  color: '#111827',
-                  margin: '0 0 8px 0'
-                }}>
-                  {supplierModal.data ? 'Modifica Fornitore' : 'Nuovo Fornitore'}
-                </h2>
-                <p style={{
-                  fontSize: '15px',
-                  color: '#6b7280',
-                  margin: 0
-                }}>
-                  {supplierModal.data ? 'Modifica i dati del fornitore' : 'Compila tutti i dettagli per configurare il nuovo fornitore'}
-                </p>
-              </div>
-              <button
-                onClick={() => setSupplierModal({ open: false, data: null })}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px',
-                  cursor: 'pointer',
-                  color: '#6b7280',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f3f4f6';
-                  e.currentTarget.style.color = '#111827';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
-                }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Sezioni Organizzate */}
-            <div style={{ display: 'grid', gap: '32px' }}>
-              
-              {/* SEZIONE 1: Anagrafica & Identificativi */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.7)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '12px',
                 padding: '24px',
