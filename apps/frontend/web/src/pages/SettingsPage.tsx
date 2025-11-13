@@ -8920,9 +8920,6 @@ export default function SettingsPage() {
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header - Direttamente sullo sfondo */}
         <div style={{
-      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        {/* Header - Direttamente sullo sfondo */}
-        <div style={{
           marginBottom: '24px'
         }}>
           <h1 style={{
