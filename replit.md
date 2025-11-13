@@ -1,6 +1,9 @@
 # Overview
 W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. It features a WindTre glassmorphism design, robust security, and PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform aims to be a scalable, secure, and comprehensive business solution, enhancing operational efficiency and capitalizing on market opportunities.
 
+# Recent Changes
+- **2025-11-13: WMS Suppliers Refactoring Complete** - Successfully migrated complete Fornitori (Suppliers) management from Settings → Entità to dedicated WMS "Prodotti e Listini" → Tab Fornitori. Created FornitoriTabContent.tsx (1,189 lines) with full CRUD, DataTable, 5-section modal, Italian business validation, and TanStack Query integration. Removed ~1,581 lines from SettingsPage.tsx. All reference data endpoints migrated to `/api/reference/*` convention (payment-methods, payment-conditions, legal-forms, countries, italian-cities). Architect-approved with smoke tests passed.
+
 # User Preferences
 - Preferred communication style: Simple, everyday language
 - **❌ NEVER create shared/ folder - IT DOES NOT EXIST**

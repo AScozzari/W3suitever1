@@ -230,7 +230,7 @@ class ApiService {
   }
 
   async getPaymentMethods() {
-    return this.makeRequest<any[]>('/api/payment-methods');
+    return this.makeRequest<any[]>('/api/reference/payment-methods');
   }
 
   /**

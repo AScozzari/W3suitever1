@@ -1503,7 +1503,7 @@ export default function SettingsPage() {
 
   // Load payment methods reference data - Only when Entity Management tab is active
   const { data: referencePaymentMethods = [] } = useQuery({
-    queryKey: ['/api/payment-methods'],
+    queryKey: ['/api/reference/payment-methods'],
     enabled: activeTab === 'Entity Management',
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
