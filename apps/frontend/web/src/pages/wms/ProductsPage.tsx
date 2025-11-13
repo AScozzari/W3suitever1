@@ -57,14 +57,41 @@ interface Product {
   isBrandSynced?: boolean;
 }
 
-export default function ProductsPage() {
+interface ProductsPageProps {
+  /**
+   * Se true (default), wrappa il contenuto in Layout.
+   * Se false, renderizza solo il contenuto (per embedding in tabs).
+   */
+  useStandaloneLayout?: boolean;
+  /**
+   * Modulo corrente per il Layout (usato solo se useStandaloneLayout=true)
+   */
+  currentModule?: string;
+  /**
+   * Setter per il modulo corrente (usato solo se useStandaloneLayout=true)
+   */
+  setCurrentModule?: (module: string) => void;
+}
+
+export default function ProductsPage({ 
+  useStandaloneLayout = true,
+  currentModule: externalCurrentModule,
+  setCurrentModule: externalSetCurrentModule
+}: ProductsPageProps = {}) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const { toast } = useToast();
-  const [currentModule, setCurrentModule] = useState('prodotti-listini');
+  
+  // Internal state for standalone mode
+  const [internalCurrentModule, setInternalCurrentModule] = useState('prodotti-listini');
+  
+  // Use props if provided, otherwise fall back to internal state
+  // This ensures standalone usage works correctly even without explicit props
+  const currentModule = externalCurrentModule ?? internalCurrentModule;
+  const setCurrentModule = externalSetCurrentModule ?? setInternalCurrentModule;
 
   const { data: productsResponse, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/wms/products'],
@@ -553,8 +580,9 @@ export default function ProductsPage() {
     },
   });
 
-  return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+  // Content rendering (with or without Layout wrapper based on mode)
+  const content = (
+    <>
       <div style={{ padding: '32px', width: '100%' }}>
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
@@ -767,6 +795,13 @@ export default function ProductsPage() {
         description={`Sei sicuro di voler eliminare il prodotto "${deleteProduct?.name}"? Questa azione non può essere annullata.`}
         isLoading={deleteProductMutation.isPending}
       />
-    </Layout>
+    </>
   );
+
+  // Conditional Layout wrapper
+  return useStandaloneLayout ? (
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      {content}
+    </Layout>
+  ) : content;
 }

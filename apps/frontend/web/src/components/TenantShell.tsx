@@ -35,7 +35,7 @@ const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 const AIVoiceTest = lazy(() => import('../pages/AIVoiceTest'));
 
 // WMS Pages
-const ProductsPage = lazy(() => import('../pages/wms/ProductsPage'));
+const WMSProductsAndListsPage = lazy(() => import('../pages/wms/WMSProductsAndListsPage'));
 const PriceListsPage = lazy(() => import('../pages/wms/PriceListsPage'));
 
 // Loading fallback component
@@ -452,15 +452,19 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       </Route>
       
       {/* 📦 WMS ROUTES - Warehouse Management System */}
+      {/* Legacy redirects for backward compatibility */}
       <Route path={`/${tenantSlug}/prodotti-listini/catalogo`}>
-        <AuthenticatedRoute>
-          <ProductsPage />
-        </AuthenticatedRoute>
+        <Redirect to={`/${tenantSlug}/prodotti-listini?tab=prodotti`} replace />
       </Route>
       
       <Route path={`/${tenantSlug}/prodotti-listini/listini-prezzi`}>
+        <Redirect to={`/${tenantSlug}/prodotti-listini?tab=listini`} replace />
+      </Route>
+      
+      {/* 🎯 WMS UNIFIED ROUTE - Multi-tab experience (Dashboard, Prodotti, Listini, Categorie, Fornitori) */}
+      <Route path={`/${tenantSlug}/prodotti-listini`}>
         <AuthenticatedRoute>
-          <PriceListsPage />
+          <WMSProductsAndListsPage />
         </AuthenticatedRoute>
       </Route>
       
