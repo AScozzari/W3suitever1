@@ -86,6 +86,73 @@ const getObjectStorageClient = (): Client => {
 };
 
 /**
+ * GET /api/wms/dashboard/stats
+ * Get aggregate KPI statistics for WMS dashboard
+ * Returns: total products, categories, suppliers, price lists
+ */
+router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Count active products (excluding expired)
+    const [productsCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, tenantId),
+          eq(products.isActive, true),
+          or(
+            isNull(products.validTo),
+            gte(products.validTo, sql`CURRENT_DATE`)
+          )
+        )
+      );
+
+    // Count active categories
+    const [categoriesCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.tenantId, tenantId),
+          eq(wmsCategories.isActive, true)
+        )
+      );
+
+    // TODO: Replace with real counts when tables are implemented
+    // Suppliers table (wms_suppliers) - planned for future implementation
+    const suppliersCount = 0;
+    
+    // Price lists table (wms_price_lists) - planned for future implementation
+    const priceListsCount = 0;
+
+    res.json({
+      success: true,
+      data: {
+        totalProducts: productsCount?.count || 0,
+        totalCategories: categoriesCount?.count || 0,
+        totalSuppliers: suppliersCount, // TODO: Implement wms_suppliers table
+        totalPriceLists: priceListsCount // TODO: Implement wms_price_lists table
+      }
+    });
+  } catch (error: any) {
+    logger.error("Failed to fetch dashboard stats", { 
+      error: error.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({ 
+      error: "Failed to fetch dashboard statistics",
+      message: error.message 
+    });
+  }
+});
+
+/**
  * GET /api/wms/products
  * Get all products with filters, pagination, and sorting
  * Query params:
