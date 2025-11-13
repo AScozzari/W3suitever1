@@ -1,13 +1,16 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useTabRouter } from '@/hooks/useTabRouter';
 import { 
   LayoutDashboard, 
   Package, 
   FileText, 
   FolderTree, 
-  Building2 
+  Building2,
+  Plus,
+  ShoppingCart
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
 import ListiniTabContent from '@/components/wms/ListiniTabContent';
@@ -82,37 +85,55 @@ export default function WMSProductsAndListsPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6">
-        <Tabs value={activeTab} onValueChange={setTab}>
-          {/* Glassmorphism TabsList */}
-          <TabsList 
-            className="grid w-full mb-6"
-            style={{
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              background: 'rgba(255, 255, 255, 0.7)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '16px',
-              padding: '8px',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
-            }}
-          >
-            {tabConfigs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  data-testid={tab.testId}
-                  className="flex items-center gap-2"
+      <div className="h-full flex flex-col">
+        {/* 🎯 WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <ShoppingCart className="h-6 w-6 text-windtre-orange" />
+                  Prodotti e Listini
+                </h1>
+                <p className="text-gray-600 mt-1">Gestione completa prodotti, categorie e listini</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button 
+                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  data-testid="button-create-product"
+                  onClick={() => setTab('prodotti')}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuovo Prodotto
+                </Button>
+              </div>
+            </div>
+            
+            {/* 🎯 Navigation Tabs */}
+            <div className="flex gap-1 mt-4">
+              {tabConfigs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <Button
+                    key={tab.id}
+                    variant={activeTab === tab.id ? 'default' : 'ghost'}
+                    onClick={() => setTab(tab.id)}
+                    className="flex items-center gap-2"
+                    data-testid={tab.testId}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* 🎯 Main Content */}
+        <div className="flex-1 p-6">
+          <Tabs value={activeTab} onValueChange={setTab}>
 
           {/* Tab Contents with conditional mounting */}
           <TabsContent value="dashboard" className="mt-0">
@@ -143,6 +164,7 @@ export default function WMSProductsAndListsPage() {
             {activeTab === 'fornitori' && <FornitoriTabContent />}
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </Layout>
   );
