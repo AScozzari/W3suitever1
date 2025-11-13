@@ -26,20 +26,12 @@ export default function CategoriesTypologiesTabContent() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Centralized categories fetch (after TenantContext is ready)
-  const { data: categoriesResponse, isLoading: categoriesLoading, error } = useQuery<{ success: boolean; data: Category[] }>({
+  // Note: queryClient automatically unwraps {data: ...} responses
+  const { data: categories, isLoading: categoriesLoading, error } = useQuery<Category[]>({
     queryKey: ['/api/wms/categories'],
   });
 
-  const categories = categoriesResponse?.data || [];
-
-  // Debug logging
-  console.log('[CategoriesTypologiesTabContent] Query result:', {
-    isLoading: categoriesLoading,
-    hasData: !!categoriesResponse,
-    dataLength: categories.length,
-    error,
-    raw: categoriesResponse
-  });
+  const categoriesArray = categories || [];
 
   return (
     <div className="space-y-6" data-testid="categories-typologies-content">
@@ -55,13 +47,6 @@ export default function CategoriesTypologiesTabContent() {
         <p className="text-gray-600" data-testid="categories-typologies-subtitle">
           Gerarchia prodotti: Tipo Prodotto → Categoria → Tipologia
         </p>
-        {/* DEBUG: Show raw data */}
-        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-          <strong>DEBUG:</strong> Loading: {categoriesLoading ? 'YES' : 'NO'} | 
-          Categories: {categories.length} | 
-          Error: {error ? String(error) : 'NO'} | 
-          Raw: {JSON.stringify(categories.slice(0, 2))}
-        </div>
       </div>
 
       {/* 3-Column Layout */}
@@ -80,7 +65,7 @@ export default function CategoriesTypologiesTabContent() {
           data-testid="column-product-types"
         >
           <ProductTypesList
-            categories={categories}
+            categories={categoriesArray}
             isLoading={categoriesLoading}
             selectedProductType={selectedProductType}
             onSelectProductType={(type) => {
@@ -104,7 +89,7 @@ export default function CategoriesTypologiesTabContent() {
           data-testid="column-categories"
         >
           <CategoriesList
-            categories={categories}
+            categories={categoriesArray}
             isLoading={categoriesLoading}
             selectedProductType={selectedProductType}
             selectedCategoryId={selectedCategoryId}
