@@ -1,16 +1,18 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TypologyFormModal } from './TypologyFormModal';
 
 interface ProductTypologiesListProps {
   selectedCategoryId: string | null;
 }
 
-interface ProductTypology {
+export interface ProductTypology {
   id: string;
   nome: string;
-  descrizione?: string;
+  descrizione?: string | null;
   categoryId: string;
   ordine: number;
   isActive: boolean;
@@ -19,15 +21,19 @@ interface ProductTypology {
 export default function ProductTypologiesList({
   selectedCategoryId,
 }: ProductTypologiesListProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTypology, setEditingTypology] = useState<ProductTypology | null>(null);
+
   // Fetch product types filtered by categoryId using query params
-  const { data: typologiesData, isLoading } = useQuery<{ success: boolean; data: ProductTypology[] }>({
+  // Note: queryClient automatically unwraps {data: ...} responses
+  const { data: typologies, isLoading } = useQuery<ProductTypology[]>({
     queryKey: selectedCategoryId 
       ? [`/api/wms/product-types?categoryId=${selectedCategoryId}`]
       : ['/api/wms/product-types'],
     enabled: !!selectedCategoryId,
   });
 
-  const typologies = typologiesData?.data || [];
+  const typologiesArray = typologies || [];
 
   if (!selectedCategoryId) {
     return (
@@ -67,7 +73,7 @@ export default function ProductTypologiesList({
             Tipologie
           </h3>
           <p className="text-sm text-gray-600 mt-1" data-testid="typologies-subtitle">
-            {typologies.length} tipologie
+            {typologiesArray.length} tipologie
           </p>
         </div>
         <Button
@@ -75,6 +81,10 @@ export default function ProductTypologiesList({
           style={{
             background: 'hsl(var(--brand-orange))',
             color: 'white',
+          }}
+          onClick={() => {
+            setEditingTypology(null);
+            setIsModalOpen(true);
           }}
           data-testid="button-add-typology"
         >
@@ -89,7 +99,7 @@ export default function ProductTypologiesList({
             <Skeleton key={i} className="h-16" data-testid={`skeleton-typology-${i}`} />
           ))}
         </div>
-      ) : typologies.length === 0 ? (
+      ) : typologiesArray.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12" data-testid="typologies-no-results">
           <AlertCircle className="h-12 w-12 text-gray-300 mb-3" data-testid="icon-no-results" />
           <p className="text-gray-500 text-sm" data-testid="text-no-results">
@@ -98,7 +108,7 @@ export default function ProductTypologiesList({
         </div>
       ) : (
         <div className="space-y-2" data-testid="typologies-items">
-          {typologies.map((typology) => (
+          {typologiesArray.map((typology) => (
             <div
               key={typology.id}
               className="group relative p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
@@ -131,7 +141,8 @@ export default function ProductTypologiesList({
                     className="h-8 w-8 p-0"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // TODO: Open edit modal
+                      setEditingTypology(typology);
+                      setIsModalOpen(true);
                     }}
                     data-testid={`button-edit-${typology.id}`}
                   >
@@ -143,7 +154,8 @@ export default function ProductTypologiesList({
                     className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // TODO: Delete typology
+                      // TODO: Implement delete confirmation dialog
+                      console.log('Delete typology:', typology.id);
                     }}
                     data-testid={`button-delete-${typology.id}`}
                   >
@@ -155,6 +167,17 @@ export default function ProductTypologiesList({
           ))}
         </div>
       )}
+
+      {/* Typology Form Modal */}
+      <TypologyFormModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTypology(null);
+        }}
+        typology={editingTypology}
+        initialCategoryId={selectedCategoryId || undefined}
+      />
     </div>
   );
 }

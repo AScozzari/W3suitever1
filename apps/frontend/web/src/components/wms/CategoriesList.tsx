@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProductType, Category } from './CategoriesTypologiesTabContent';
+import { CategoryFormModal } from './CategoryFormModal';
 
 interface CategoriesListProps {
   categories: Category[];
@@ -19,6 +20,9 @@ export default function CategoriesList({
   selectedCategoryId,
   onSelectCategory,
 }: CategoriesListProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
   // Filter categories by selected productType (memoized)
   const categories = useMemo(() => {
     if (!selectedProductType) return [];
@@ -71,6 +75,10 @@ export default function CategoriesList({
           style={{
             background: 'hsl(var(--brand-orange))',
             color: 'white',
+          }}
+          onClick={() => {
+            setEditingCategory(null);
+            setIsModalOpen(true);
           }}
           data-testid="button-add-category"
         >
@@ -135,7 +143,8 @@ export default function CategoriesList({
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Open edit modal
+                        setEditingCategory(category);
+                        setIsModalOpen(true);
                       }}
                       data-testid={`button-edit-${category.id}`}
                     >
@@ -147,7 +156,8 @@ export default function CategoriesList({
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Delete category
+                        // TODO: Implement delete confirmation dialog
+                        console.log('Delete category:', category.id);
                       }}
                       data-testid={`button-delete-${category.id}`}
                     >
@@ -160,6 +170,17 @@ export default function CategoriesList({
           })}
         </div>
       )}
+
+      {/* Category Form Modal */}
+      <CategoryFormModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingCategory(null);
+        }}
+        category={editingCategory}
+        initialProductType={selectedProductType || undefined}
+      />
     </div>
   );
 }
