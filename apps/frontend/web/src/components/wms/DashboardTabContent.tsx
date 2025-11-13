@@ -65,10 +65,28 @@ const KPICard = ({ icon, label, value, color, testId }: KPICardProps) => (
   </Card>
 );
 
+interface Product {
+  id: string;
+  sku: string;
+  nome: string;
+  productType: string;
+  prezzoVendita: number | null;
+  quantitaDisponibile: number;
+  createdAt: string;
+}
+
 export default function DashboardTabContent() {
-  const { data: stats, isLoading } = useQuery<{ success: boolean; data: DashboardStats }>({
+  // Note: queryClient automatically unwraps {success, data} responses
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/wms/dashboard/stats'],
   });
+
+  // Fetch recent products
+  const { data: recentProducts, isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ['/api/wms/products?limit=5&sort_by=created_at&sort_order=desc'],
+  });
+
+  const isLoading = statsLoading || productsLoading;
 
   if (isLoading) {
     return (
@@ -78,17 +96,20 @@ export default function DashboardTabContent() {
             <Skeleton key={i} className="h-32" data-testid={`skeleton-card-${i}`} />
           ))}
         </div>
+        <Skeleton className="h-64" data-testid="skeleton-products" />
         <Skeleton className="h-40" data-testid="skeleton-actions" />
       </div>
     );
   }
 
-  const dashboardStats = stats?.data || {
+  const dashboardStats = stats || {
     totalProducts: 0,
     totalCategories: 0,
     totalSuppliers: 0,
     totalPriceLists: 0
   };
+
+  const products = recentProducts || [];
 
   return (
     <div className="space-y-6" data-testid="dashboard-content">
@@ -137,6 +158,90 @@ export default function DashboardTabContent() {
           testId="kpi-pricelists"
         />
       </div>
+
+      {/* Recent Products */}
+      <Card
+        className="p-6"
+        style={{
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
+        }}
+        data-testid="recent-products-card"
+      >
+        <h3
+          className="text-lg font-semibold mb-4"
+          style={{ color: 'hsl(var(--foreground))' }}
+          data-testid="recent-products-title"
+        >
+          Prodotti Recenti
+        </h3>
+        {products.length === 0 ? (
+          <p className="text-gray-500 text-sm" data-testid="no-products-message">
+            Nessun prodotto disponibile. Crea il tuo primo prodotto!
+          </p>
+        ) : (
+          <div className="overflow-x-auto" data-testid="products-table-container">
+            <table className="w-full" data-testid="products-table">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 px-3 text-sm font-medium text-gray-600" data-testid="header-sku">
+                    SKU
+                  </th>
+                  <th className="text-left py-2 px-3 text-sm font-medium text-gray-600" data-testid="header-nome">
+                    Nome
+                  </th>
+                  <th className="text-left py-2 px-3 text-sm font-medium text-gray-600" data-testid="header-type">
+                    Tipo
+                  </th>
+                  <th className="text-right py-2 px-3 text-sm font-medium text-gray-600" data-testid="header-prezzo">
+                    Prezzo
+                  </th>
+                  <th className="text-right py-2 px-3 text-sm font-medium text-gray-600" data-testid="header-stock">
+                    Stock
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr 
+                    key={product.id} 
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    data-testid={`product-row-${product.id}`}
+                  >
+                    <td className="py-3 px-3 text-sm font-mono" data-testid={`product-sku-${product.id}`}>
+                      {product.sku}
+                    </td>
+                    <td className="py-3 px-3 text-sm" data-testid={`product-nome-${product.id}`}>
+                      {product.nome}
+                    </td>
+                    <td className="py-3 px-3 text-sm" data-testid={`product-type-${product.id}`}>
+                      <span className="px-2 py-1 rounded-md text-xs bg-gray-100">
+                        {product.productType}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-sm text-right font-medium" data-testid={`product-price-${product.id}`}>
+                      {product.prezzoVendita ? `€${product.prezzoVendita.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
+                    </td>
+                    <td className="py-3 px-3 text-sm text-right" data-testid={`product-stock-${product.id}`}>
+                      <span 
+                        className={`px-2 py-1 rounded-md text-xs ${
+                          product.quantitaDisponibile > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {product.quantitaDisponibile}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* Quick Actions */}
       <Card
