@@ -65,11 +65,11 @@ export default function FornitoriTabContent() {
 
   // Load payment methods and conditions - using default queryFn
   const { data: paymentMethodsList, isLoading: paymentMethodsLoading } = useQuery({ 
-    queryKey: ['/api/payment-methods']
+    queryKey: ['/api/reference/payment-methods']
   });
 
   const { data: paymentConditionsList, isLoading: paymentConditionsLoading } = useQuery({ 
-    queryKey: ['/api/payment-conditions']
+    queryKey: ['/api/reference/payment-conditions']
   });
 
   const { data: legalForms = [] } = useQuery({ queryKey: ['/api/reference/legal-forms'] });

@@ -2245,8 +2245,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== PAYMENT METHODS API ====================
   
-  // GET /api/payment-methods - Get all active payment methods from public schema
-  app.get('/api/payment-methods', ...authWithRBAC, async (req: any, res) => {
+  // GET /api/reference/payment-methods - Get all active payment methods from public schema
+  app.get('/api/reference/payment-methods', ...authWithRBAC, async (req: any, res) => {
     try {
       // Import the paymentMethods table from the public schema
       const { paymentMethods: paymentMethodsTable } = await import("../db/schema/public");
@@ -2278,8 +2278,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET /api/payment-conditions - Get all active payment conditions from w3suite schema
-  app.get('/api/payment-conditions', ...authWithRBAC, async (req: any, res) => {
+  // GET /api/reference/payment-conditions - Get all active payment conditions from public schema
+  app.get('/api/reference/payment-conditions', ...authWithRBAC, async (req: any, res) => {
     try {
       // Import the paymentMethodsConditions table from the public schema
       const { paymentMethodsConditions } = await import("../db/schema/public");
