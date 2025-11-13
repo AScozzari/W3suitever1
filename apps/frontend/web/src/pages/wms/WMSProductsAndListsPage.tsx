@@ -10,17 +10,10 @@ import {
   Building2 
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
+import ListiniTabContent from '@/components/wms/ListiniTabContent';
 
 // Lazy load heavy components
 const ProductsPage = lazy(() => import('./ProductsPage'));
-
-const ListiniTabContent = () => (
-  <div className="p-8 text-center" data-testid="tab-content-listini">
-    <FileText size={48} className="mx-auto mb-4 text-gray-400" data-testid="icon-listini" />
-    <h3 className="text-xl font-semibold mb-2" data-testid="heading-listini">Listini</h3>
-    <p className="text-gray-600" data-testid="text-listini-status">Task #9: In Implementazione</p>
-  </div>
-);
 
 const CategoriesTypologiesTabContent = () => (
   <div className="p-8 text-center" data-testid="tab-content-categorie">
@@ -153,15 +146,15 @@ export default function WMSProductsAndListsPage() {
           </TabsContent>
 
           <TabsContent value="listini" className="mt-0">
-            <ListiniTabContent />
+            {activeTab === 'listini' && <ListiniTabContent />}
           </TabsContent>
 
           <TabsContent value="categorie" className="mt-0">
-            <CategoriesTypologiesTabContent />
+            {activeTab === 'categorie' && <CategoriesTypologiesTabContent />}
           </TabsContent>
 
           <TabsContent value="fornitori" className="mt-0">
-            <FornitoriTabContent />
+            {activeTab === 'fornitori' && <FornitoriTabContent />}
           </TabsContent>
         </Tabs>
       </div>
