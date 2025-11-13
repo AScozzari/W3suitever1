@@ -63,36 +63,18 @@ export default function FornitoriTabContent() {
   // Safe array guard
   const safeSuppliersList = Array.isArray(suppliersList) ? suppliersList : [];
 
-  // Load payment methods and conditions
+  // Load payment methods and conditions - using default queryFn
   const { data: paymentMethodsList, isLoading: paymentMethodsLoading } = useQuery({ 
-    queryKey: ['paymentMethods'],
-    queryFn: async () => {
-      const result = await apiService.getPaymentMethods();
-      if (!result.success) throw new Error(result.error || 'Failed to fetch payment methods');
-      return (result.data as any)?.paymentMethods || [];
-    }
+    queryKey: ['/api/payment-methods']
   });
 
   const { data: paymentConditionsList, isLoading: paymentConditionsLoading } = useQuery({ 
-    queryKey: ['paymentConditions'],
-    queryFn: async () => {
-      const result = await apiService.getPaymentMethods();
-      if (!result.success) throw new Error(result.error || 'Failed to fetch payment conditions');
-      return (result.data as any)?.paymentMethods || [];
-    }
+    queryKey: ['/api/payment-conditions']
   });
 
-  const { data: legalForms = [] } = useQuery({ 
-    queryKey: ['/api/legal-forms'],
-    queryFn: async () => {
-      const result = await apiService.getLegalForms();
-      if (!result.success) throw new Error(result.error || 'Failed to fetch legal forms');
-      return result.data || [];
-    }
-  });
-
-  const { data: countries = [] } = useQuery({ queryKey: ['/api/countries'] });
-  const { data: italianCities = [] } = useQuery({ queryKey: ['/api/italian-cities'] });
+  const { data: legalForms = [] } = useQuery({ queryKey: ['/api/reference/legal-forms'] });
+  const { data: countries = [] } = useQuery({ queryKey: ['/api/reference/countries'] });
+  const { data: italianCities = [] } = useQuery({ queryKey: ['/api/reference/italian-cities'] });
 
   // Delete handler
   const handleDeleteSupplier = async (supplierId: string) => {
