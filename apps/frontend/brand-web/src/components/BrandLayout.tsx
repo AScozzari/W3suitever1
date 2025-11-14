@@ -13,7 +13,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
   LogOut, HelpCircle, MapPin, UserCircle, Store, Building2,
-  Megaphone, Cog, Globe, Moon, Sun, Brain
+  Megaphone, Cog, Globe, Moon, Sun, Brain, Package
 } from 'lucide-react';
 
 // Palette colori W3 Suite - Coerente e Professionale
@@ -113,6 +113,13 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       icon: Users,
       path: '/crm',
       description: 'Gestione clienti'
+    },
+    {
+      id: 'wms-catalog',
+      name: 'Prodotti e Listini',
+      icon: Package,
+      path: '/wms/catalog',
+      description: 'Catalogo master prodotti WMS'
     },
     {
       id: 'ai-management',
