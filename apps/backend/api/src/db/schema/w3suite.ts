@@ -6501,6 +6501,9 @@ export const wmsCategories = w3suiteSchema.table("wms_categories", {
   // Product type hierarchy - Links category to top-level product type
   productType: productTypeEnum("product_type").default('PHYSICAL').notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
   
+  // Category hierarchy (self-referencing for multi-level trees)
+  parentCategoryId: varchar("parent_category_id", { length: 100 }), // FK to wmsCategories.id for hierarchical structure
+  
   // Category info
   nome: varchar("nome", { length: 255 }).notNull(),
   descrizione: text("descrizione"),
@@ -6518,11 +6521,12 @@ export const wmsCategories = w3suiteSchema.table("wms_categories", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   primaryKey({ columns: [table.tenantId, table.id] }),
-  uniqueIndex("wms_categories_tenant_nome_unique").on(table.tenantId, table.nome),
+  uniqueIndex("wms_categories_tenant_nome_parent_unique").on(table.tenantId, table.nome, table.parentCategoryId), // Prevent sibling dupes
   index("wms_categories_tenant_idx").on(table.tenantId),
   index("wms_categories_source_idx").on(table.source),
   index("wms_categories_brand_id_idx").on(table.brandCategoryId),
   index("wms_categories_product_type_idx").on(table.tenantId, table.productType), // Filter categories by product type
+  index("wms_categories_parent_idx").on(table.tenantId, table.parentCategoryId), // Tree queries
 ]);
 
 // Zod schemas for wmsCategories
@@ -6540,6 +6544,7 @@ export const insertCategorySchema = createInsertSchema(wmsCategories).omit({
   updatedAt: true,     // Auto-set on creation/update
 }).extend({
   productType: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  parentCategoryId: z.string().max(100).optional(),
   nome: z.string().min(1, "Nome categoria obbligatorio").max(255),
   descrizione: z.string().optional(),
   icona: z.string().max(100).optional(),

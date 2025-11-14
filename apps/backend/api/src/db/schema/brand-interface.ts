@@ -31,6 +31,15 @@ export const campaignStatusEnum = pgEnum('brand_campaign_status', ['draft', 'act
 export const campaignTypeEnum = pgEnum('brand_campaign_type', ['global', 'tenant_specific', 'selective']);
 export const deploymentStatusEnum = pgEnum('brand_deployment_status', ['pending', 'in_progress', 'completed', 'failed']);
 
+// WMS (Warehouse Management System) Enums
+export const wmsDeploymentStatusEnum = pgEnum('wms_deployment_status', ['draft', 'deployed', 'archived']);
+export const brandProductTypeEnum = pgEnum('brand_product_type', ['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']);
+export const brandProductStatusEnum = pgEnum('brand_product_status', ['active', 'inactive', 'discontinued', 'draft']);
+export const brandProductConditionEnum = pgEnum('brand_product_condition', ['new', 'used', 'refurbished', 'demo']);
+export const brandSerialTypeEnum = pgEnum('brand_serial_type', ['imei', 'iccid', 'mac_address', 'other']);
+export const brandSupplierTypeEnum = pgEnum('brand_supplier_type', ['distributore', 'produttore', 'servizi', 'logistica']);
+export const brandSupplierStatusEnum = pgEnum('brand_supplier_status', ['active', 'suspended', 'blocked']);
+
 // ==================== BRAND TENANTS TABLE ====================
 export const brandTenants = brandInterfaceSchema.table("brand_tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -700,6 +709,401 @@ export const insertBrandAiAgentSchema = createInsertSchema(brandAiAgents).omit({
 });
 export type InsertBrandAiAgent = z.infer<typeof insertBrandAiAgentSchema>;
 export type BrandAiAgent = typeof brandAiAgents.$inferSelect;
+
+// ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) - BRAND MASTER CATALOG ====================
+
+// 1) brand_categories - Master product categories (deployed to tenants)
+export const brandCategories = brandInterfaceSchema.table("brand_categories", {
+  id: varchar("id", { length: 100 }).primaryKey(), // Reused across tenants (VARCHAR for consistency with w3suite)
+  
+  // Deployment tracking
+  deploymentStatus: wmsDeploymentStatusEnum("deployment_status").default('draft').notNull(),
+  deployedToCount: integer("deployed_to_count").default(0).notNull(), // How many tenants have this
+  lastDeployedAt: timestamp("last_deployed_at"),
+  
+  // Product type hierarchy
+  productType: brandProductTypeEnum("product_type").default('PHYSICAL').notNull(),
+  
+  // Category hierarchy (self-referencing for multi-level trees)
+  parentCategoryId: varchar("parent_category_id", { length: 100 }).references((): any => brandCategories.id, { onDelete: 'restrict' }), // FK for hierarchical structure
+  
+  // Category info
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descrizione: text("descrizione"),
+  icona: varchar("icona", { length: 100 }),
+  ordine: integer("ordine").default(0).notNull(),
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  archivedAt: timestamp("archived_at"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").notNull(),
+  modifiedBy: varchar("modified_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("brand_categories_nome_parent_unique").on(table.nome, table.parentCategoryId), // Prevent sibling dupes
+  index("brand_categories_deployment_status_idx").on(table.deploymentStatus),
+  index("brand_categories_product_type_idx").on(table.productType),
+  index("brand_categories_parent_idx").on(table.parentCategoryId), // Tree queries
+]);
+
+export const insertBrandCategorySchema = createInsertSchema(brandCategories).omit({
+  id: true,
+  deploymentStatus: true,
+  deployedToCount: true,
+  lastDeployedAt: true,
+  isActive: true,
+  archivedAt: true,
+  createdBy: true,
+  modifiedBy: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  productType: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  parentCategoryId: z.string().max(100).optional(),
+  nome: z.string().min(1, "Nome categoria obbligatorio").max(255),
+  descrizione: z.string().optional(),
+  icona: z.string().max(100).optional(),
+  ordine: z.coerce.number().int().default(0),
+});
+
+export const updateBrandCategorySchema = insertBrandCategorySchema.partial();
+export type InsertBrandCategory = z.infer<typeof insertBrandCategorySchema>;
+export type UpdateBrandCategory = z.infer<typeof updateBrandCategorySchema>;
+export type BrandCategory = typeof brandCategories.$inferSelect;
+
+// 2) brand_product_types - Master product types (deployed to tenants)
+export const brandProductTypes = brandInterfaceSchema.table("brand_product_types", {
+  id: varchar("id", { length: 100 }).primaryKey(), // Reused across tenants (VARCHAR for consistency)
+  
+  // Deployment tracking
+  deploymentStatus: wmsDeploymentStatusEnum("deployment_status").default('draft').notNull(),
+  deployedToCount: integer("deployed_to_count").default(0).notNull(),
+  lastDeployedAt: timestamp("last_deployed_at"),
+  
+  // Foreign key to category
+  categoryId: varchar("category_id", { length: 100 }).notNull().references(() => brandCategories.id, { onDelete: 'restrict' }),
+  
+  // Type info
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descrizione: text("descrizione"),
+  ordine: integer("ordine").default(0).notNull(),
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  archivedAt: timestamp("archived_at"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").notNull(),
+  modifiedBy: varchar("modified_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("brand_types_category_nome_unique").on(table.categoryId, table.nome),
+  index("brand_types_category_idx").on(table.categoryId),
+  index("brand_types_deployment_status_idx").on(table.deploymentStatus),
+]);
+
+export const insertBrandProductTypeSchema = createInsertSchema(brandProductTypes).omit({
+  id: true,
+  deploymentStatus: true,
+  deployedToCount: true,
+  lastDeployedAt: true,
+  isActive: true,
+  archivedAt: true,
+  createdBy: true,
+  modifiedBy: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  categoryId: z.string().min(1, "ID categoria obbligatorio").max(100),
+  nome: z.string().min(1, "Nome tipologia obbligatorio").max(255),
+  descrizione: z.string().optional(),
+  ordine: z.coerce.number().int().default(0),
+});
+
+export const updateBrandProductTypeSchema = insertBrandProductTypeSchema.partial();
+export type InsertBrandProductType = z.infer<typeof insertBrandProductTypeSchema>;
+export type UpdateBrandProductType = z.infer<typeof updateBrandProductTypeSchema>;
+export type BrandProductType = typeof brandProductTypes.$inferSelect;
+
+// 3) brand_products - Master products (deployed to tenants)
+export const brandProducts = brandInterfaceSchema.table("brand_products", {
+  id: varchar("id", { length: 100 }).primaryKey(), // Reused across tenants (VARCHAR for consistency)
+  
+  // Deployment tracking
+  deploymentStatus: wmsDeploymentStatusEnum("deployment_status").default('draft').notNull(),
+  deployedToCount: integer("deployed_to_count").default(0).notNull(),
+  lastDeployedAt: timestamp("last_deployed_at"),
+  
+  // Core product info
+  sku: varchar("sku", { length: 100 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  model: varchar("model", { length: 255 }),
+  description: text("description"),
+  notes: text("notes"),
+  brand: varchar("brand", { length: 100 }),
+  ean: varchar("ean", { length: 13 }),
+  memory: varchar("memory", { length: 50 }),
+  color: varchar("color", { length: 50 }),
+  imageUrl: varchar("image_url", { length: 512 }),
+  
+  // Product categorization
+  categoryId: varchar("category_id", { length: 100 }).references(() => brandCategories.id, { onDelete: 'restrict' }),
+  typeId: varchar("type_id", { length: 100 }).references(() => brandProductTypes.id, { onDelete: 'restrict' }),
+  type: brandProductTypeEnum("type").notNull(),
+  status: brandProductStatusEnum("status").default('active').notNull(),
+  condition: brandProductConditionEnum("condition"),
+  isSerializable: boolean("is_serializable").default(false).notNull(),
+  serialType: brandSerialTypeEnum("serial_type"),
+  monthlyFee: real("monthly_fee"),
+  
+  // Validity period
+  validFrom: date("valid_from"),
+  validTo: date("valid_to"),
+  
+  // Physical properties
+  weight: real("weight"),
+  dimensions: jsonb("dimensions"),
+  
+  // Attachments
+  attachments: jsonb("attachments").default([]),
+  
+  // Stock management defaults (for tenant initialization)
+  reorderPoint: integer("reorder_point").default(0).notNull(),
+  unitOfMeasure: varchar("unit_of_measure", { length: 20 }).default('pz').notNull(),
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  archivedAt: timestamp("archived_at"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").notNull(),
+  modifiedBy: varchar("modified_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("brand_products_sku_unique").on(table.sku),
+  index("brand_products_deployment_status_idx").on(table.deploymentStatus),
+  index("brand_products_type_idx").on(table.type),
+  index("brand_products_status_idx").on(table.status),
+  index("brand_products_ean_idx").on(table.ean),
+  index("brand_products_category_idx").on(table.categoryId),
+  index("brand_products_type_id_idx").on(table.typeId),
+]);
+
+export const insertBrandProductSchema = createInsertSchema(brandProducts).omit({
+  id: true,
+  deploymentStatus: true,
+  deployedToCount: true,
+  lastDeployedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  archivedAt: true,
+  createdBy: true,
+  modifiedBy: true,
+}).extend({
+  sku: z.string().min(1, "SKU è obbligatorio").max(100),
+  name: z.string().min(1, "Descrizione è obbligatoria").max(255),
+  model: z.string().max(255).optional(),
+  notes: z.string().optional(),
+  brand: z.string().max(100).optional(),
+  imageUrl: z.string().max(512).url("URL immagine non valido").or(z.literal('')).optional(),
+  type: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  status: z.enum(['active', 'inactive', 'discontinued', 'draft']).optional(),
+  condition: z.enum(['new', 'used', 'refurbished', 'demo']).optional(),
+  serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
+  monthlyFee: z.coerce.number().min(0).optional(),
+  ean: z.string().regex(/^\d{13}$/, "EAN deve essere di 13 cifre").or(z.literal('')).optional(),
+  memory: z.string().max(50).optional(),
+  color: z.string().max(50).optional(),
+  categoryId: z.string().max(100).optional(),
+  typeId: z.string().max(100).optional(),
+  validFrom: z.coerce.date().optional(),
+  validTo: z.coerce.date().optional(),
+  weight: z.coerce.number().min(0).optional(),
+  dimensions: z.any().optional(),
+  attachments: z.any().optional(),
+  reorderPoint: z.coerce.number().int().default(0),
+  unitOfMeasure: z.string().max(20).default('pz'),
+  isSerializable: z.boolean().default(false),
+  isActive: z.boolean().optional(),
+});
+
+export const updateBrandProductSchema = insertBrandProductSchema.partial();
+export type InsertBrandProduct = z.infer<typeof insertBrandProductSchema>;
+export type UpdateBrandProduct = z.infer<typeof updateBrandProductSchema>;
+export type BrandProduct = typeof brandProducts.$inferSelect;
+
+// 4) brand_suppliers - Master suppliers (deployed to tenants)
+export const brandSuppliers = brandInterfaceSchema.table("brand_suppliers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Deployment tracking
+  deploymentStatus: wmsDeploymentStatusEnum("deployment_status").default('draft').notNull(),
+  deployedToCount: integer("deployed_to_count").default(0).notNull(),
+  lastDeployedAt: timestamp("last_deployed_at"),
+  
+  // Identity & classification
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  legalName: varchar("legal_name", { length: 255 }),
+  legalForm: varchar("legal_form", { length: 100 }),
+  supplierType: brandSupplierTypeEnum("supplier_type").notNull(),
+  
+  // Italian fiscal data
+  vatNumber: varchar("vat_number", { length: 20 }),
+  taxCode: varchar("tax_code", { length: 20 }),
+  sdiCode: varchar("sdi_code", { length: 20 }),
+  pecEmail: varchar("pec_email", { length: 255 }),
+  reaNumber: varchar("rea_number", { length: 50 }),
+  chamberOfCommerce: varchar("chamber_of_commerce", { length: 255 }),
+  
+  // Address
+  registeredAddress: jsonb("registered_address"),
+  cityId: uuid("city_id"), // Reference to public.italian_cities (will be set on deploy)
+  countryId: uuid("country_id"), // Reference to public.countries (will be set on deploy)
+  
+  // Payments
+  preferredPaymentMethodId: uuid("preferred_payment_method_id"), // Reference to public.payment_methods
+  paymentConditionId: uuid("payment_condition_id"), // Reference to public.payment_methods_conditions
+  paymentTerms: varchar("payment_terms", { length: 100 }),
+  currency: varchar("currency", { length: 3 }).default("EUR"),
+  
+  // Contacts
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  website: varchar("website", { length: 255 }),
+  contacts: jsonb("contacts").default({}),
+  
+  // Administrative
+  iban: varchar("iban", { length: 34 }),
+  bic: varchar("bic", { length: 11 }),
+  splitPayment: boolean("split_payment").default(false),
+  withholdingTax: boolean("withholding_tax").default(false),
+  taxRegime: varchar("tax_regime", { length: 100 }),
+  
+  // Status
+  status: brandSupplierStatusEnum("status").notNull().default("active"),
+  notes: text("notes"),
+  
+  // Audit fields
+  createdBy: varchar("created_by").notNull(),
+  updatedBy: varchar("updated_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("brand_suppliers_code_unique").on(table.code),
+  index("brand_suppliers_deployment_status_idx").on(table.deploymentStatus),
+  index("brand_suppliers_status_idx").on(table.status),
+  index("brand_suppliers_vat_number_idx").on(table.vatNumber),
+  index("brand_suppliers_name_idx").on(table.name),
+]);
+
+export const insertBrandSupplierSchema = createInsertSchema(brandSuppliers).omit({
+  id: true,
+  deploymentStatus: true,
+  deployedToCount: true,
+  lastDeployedAt: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  code: z.string().min(1, "Codice fornitore obbligatorio").max(50),
+  name: z.string().min(1, "Nome fornitore obbligatorio").max(255),
+  legalName: z.string().max(255).optional(),
+  legalForm: z.string().max(100).optional(),
+  supplierType: z.enum(['distributore', 'produttore', 'servizi', 'logistica']),
+  vatNumber: z.string().max(20).optional(),
+  taxCode: z.string().max(20).optional(),
+  sdiCode: z.string().max(20).optional(),
+  pecEmail: z.string().email("Email PEC non valida").max(255).optional(),
+  reaNumber: z.string().max(50).optional(),
+  chamberOfCommerce: z.string().max(255).optional(),
+  registeredAddress: z.any().optional(),
+  cityId: z.string().uuid().optional(),
+  countryId: z.string().uuid().optional(),
+  preferredPaymentMethodId: z.string().uuid().optional(),
+  paymentConditionId: z.string().uuid().optional(),
+  paymentTerms: z.string().max(100).optional(),
+  currency: z.string().length(3).default("EUR"),
+  email: z.string().email("Email non valida").max(255).optional(),
+  phone: z.string().max(50).optional(),
+  website: z.string().url("URL non valido").max(255).optional(),
+  contacts: z.any().optional(),
+  iban: z.string().max(34).optional(),
+  bic: z.string().max(11).optional(),
+  splitPayment: z.boolean().default(false),
+  withholdingTax: z.boolean().default(false),
+  taxRegime: z.string().max(100).optional(),
+  status: z.enum(['active', 'suspended', 'blocked']).optional(),
+  notes: z.string().optional(),
+  createdBy: z.string().min(1),
+  updatedBy: z.string().optional(),
+});
+
+export const updateBrandSupplierSchema = insertBrandSupplierSchema.partial();
+export type InsertBrandSupplier = z.infer<typeof insertBrandSupplierSchema>;
+export type UpdateBrandSupplier = z.infer<typeof updateBrandSupplierSchema>;
+export type BrandSupplier = typeof brandSuppliers.$inferSelect;
+
+// 5) brand_wms_deployments - Per-tenant deployment tracking (audit & rollback)
+export const brandWmsDeployments = brandInterfaceSchema.table("brand_wms_deployments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Entity identification
+  entityType: varchar("entity_type", { length: 50 }).notNull(), // 'product' | 'category' | 'product_type' | 'supplier'
+  entityId: varchar("entity_id", { length: 100 }).notNull(), // FK to brand_products (varchar), brand_categories (varchar), brand_suppliers (uuid)
+  
+  // Target tenant
+  tenantId: uuid("tenant_id").notNull(), // Reference to w3suite.tenants
+  
+  // Deployment metadata
+  version: integer("version").default(1).notNull(), // Incremental version for each entity
+  status: deploymentStatusEnum("status").notNull().default('pending'), // pending, in_progress, completed, failed
+  
+  // Payload snapshot (for rollback)
+  payload: jsonb("payload").notNull(), // Full entity data at deployment time
+  
+  // Execution details
+  deployedBy: varchar("deployed_by").notNull(), // Brand user ID
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("brand_wms_deployments_entity_idx").on(table.entityType, table.entityId),
+  index("brand_wms_deployments_tenant_idx").on(table.tenantId),
+  index("brand_wms_deployments_status_idx").on(table.status),
+  uniqueIndex("brand_wms_deployments_unique").on(table.entityType, table.entityId, table.tenantId, table.version),
+]);
+
+export const insertBrandWmsDeploymentSchema = createInsertSchema(brandWmsDeployments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  entityType: z.enum(['product', 'category', 'product_type', 'supplier']),
+  entityId: z.string().min(1).max(100), // Support both varchar and uuid entity IDs
+  tenantId: z.string().uuid(),
+  status: z.enum(['pending', 'in_progress', 'completed', 'failed']).optional(),
+  payload: z.any(),
+  deployedBy: z.string().min(1),
+  version: z.number().int().default(1),
+  retryCount: z.number().int().default(0),
+  errorMessage: z.string().optional(),
+});
+
+export type InsertBrandWmsDeployment = z.infer<typeof insertBrandWmsDeploymentSchema>;
+export type BrandWmsDeployment = typeof brandWmsDeployments.$inferSelect;
 
 // ==================== CROSS-TENANT KNOWLEDGE - USE W3SUITE SCHEMA ====================
 // 
