@@ -4,8 +4,13 @@ import { brandWmsApi } from '@/services/brandWmsApi';
 import { Button } from '@/components/ui/button';
 import { Plus, FolderTree } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { CategoryFormModal } from './CategoryFormModal';
+import { ProductTypeFormModal } from './ProductTypeFormModal';
 
 export default function BrandCategoriesTab() {
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
+
   const { data: categoriesResponse, isLoading: categoriesLoading } = useQuery({
     queryKey: ['/brand-api/wms/categories'],
     queryFn: brandWmsApi.getCategories
@@ -56,7 +61,12 @@ export default function BrandCategoriesTab() {
               <h3 className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
                 Categorie Master
               </h3>
-              <Button size="sm" style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}>
+              <Button 
+                size="sm" 
+                style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                onClick={() => setCategoryModalOpen(true)}
+                data-testid="button-create-category"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuova
               </Button>
@@ -98,7 +108,12 @@ export default function BrandCategoriesTab() {
               <h3 className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
                 Tipologie Prodotto
               </h3>
-              <Button size="sm" style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}>
+              <Button 
+                size="sm" 
+                style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}
+                onClick={() => setTypeModalOpen(true)}
+                data-testid="button-create-type"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuova
               </Button>
@@ -124,6 +139,16 @@ export default function BrandCategoriesTab() {
           </Card>
         </div>
       )}
+
+      {/* Modals */}
+      <CategoryFormModal
+        open={categoryModalOpen}
+        onOpenChange={setCategoryModalOpen}
+      />
+      <ProductTypeFormModal
+        open={typeModalOpen}
+        onOpenChange={setTypeModalOpen}
+      />
     </div>
   );
 }

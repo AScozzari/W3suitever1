@@ -1,35 +1,85 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* ==================== RESET & BASE ==================== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* W3 Suite WindTre Design System - Glassmorphism Integration */
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-/* ==================== CSS VARIABLES ==================== */
 :root {
-  /* WindTre Brand Colors */
-  --color-primary: 255, 105, 0;    /* #FF6900 */
-  --color-secondary: 123, 44, 191;  /* #7B2CBF */
+  /* WindTre Brand Colors - HSL Format */
+  --brand-orange: 24 100% 50%; /* #FF6900 */
+  --brand-purple: 268 58% 46%; /* #7B2CBF */
+  --brand-white: 0 0% 100%; /* #FFFFFF */
+  --brand-black: 0 0% 10%; /* #1A1A1A */
+  
+  /* Semantic Colors - HSL Format */
+  --primary: 24 100% 50%;
+  --primary-hover: 24 100% 45%;
+  --primary-active: 24 100% 40%;
+  --secondary: 268 58% 46%;
+  --secondary-hover: 268 58% 42%;
+  --secondary-active: 268 58% 38%;
+  --success: 162 47% 40%;
+  --warning: 35 92% 50%;
+  --error: 0 72% 61%;
+  --info: 217 91% 60%;
+  
+  /* SHADCN/UI Standard Tokens - CRITICAL FOR COMPONENT RENDERING */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary-foreground: 0 0% 100%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 24 100% 50%;
+  
+  /* Sidebar Colors */
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 10%;
+  --sidebar-primary: 24 100% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 10%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 24 100% 50%;
+  
+  /* WindTre Glassmorphism System */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-heavy: rgba(255, 255, 255, 0.15);
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-bg-white: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-brand: rgba(255, 105, 0, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-blur: blur(10px);
+  --glass-blur-heavy: blur(15px);
+  --glass-blur-light: blur(8px);
+  
+  /* Border Radius - CRITICAL for shadcn/ui */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  
+  /* Legacy RGB format (for compatibility) */
+  --color-primary: 255, 105, 0;
+  --color-secondary: 123, 44, 191;
   --color-neutral-50: 250, 250, 250;
   --color-neutral-100: 245, 245, 245;
   --color-neutral-200: 229, 229, 229;
   --color-neutral-700: 64, 64, 64;
   --color-neutral-900: 23, 23, 23;
-  
-  /* Glassmorphism Properties */
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg-white: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-blur: blur(24px) saturate(140%);
-  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
   
   /* Transitions */
   --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

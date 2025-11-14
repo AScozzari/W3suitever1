@@ -1,46 +1,59 @@
 import type { Config } from "tailwindcss";
-import preset from "../../../packages/tokens/tailwind-preset";
 
 const config: Config = {
-  presets: [preset],
   content: [
-    "./src/**/*.{ts,tsx,jsx,js}",
     "./index.html",
-    "../../../packages/ui/src/**/*.{ts,tsx,jsx,js}",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: ["class"],
-  safelist: [
-    'min-h-screen',
-    'flex',
-    'items-center',
-    'justify-center',
-    'backdrop-blur-sm',
-    'bg-white',
-    'bg-opacity-10',
-    'rounded-lg',
-    'p-4',
-    'p-8',
-    'space-y-6',
-    'text-white',
-    'text-sm',
-    'text-2xl',
-    'font-bold',
-    'font-medium',
-    'w-full',
-    'max-w-md',
-    'relative',
-    'absolute',
-    'inset-0',
-    'opacity-10',
-    'shadow-2xl',
-    'transition-all',
-    'duration-200',
-    'hover:bg-opacity-[0.15]',
-    'focus:outline-none',
-    'focus:ring-2',
-    'focus:ring-orange-500',
-    'disabled:opacity-50'
-  ],
+  theme: {
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "#FF6900",
+          foreground: "#ffffff",
+        },
+        secondary: {
+          DEFAULT: "#7B2CBF",
+          foreground: "#ffffff",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      backdropBlur: {
+        xs: '2px',
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [],
 };
 
 export default config;

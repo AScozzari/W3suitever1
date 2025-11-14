@@ -12,6 +12,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Toaster } from "./components/ui/toaster";
 
 export default function App() {
   // Brand Interface App mounting with providers
@@ -25,6 +26,7 @@ export default function App() {
               <Router base="/brandinterface">
                 <Routes />
               </Router>
+              <Toaster />
             </BrandAuthProvider>
           </BrandTenantProvider>
         </ThemeProvider>
