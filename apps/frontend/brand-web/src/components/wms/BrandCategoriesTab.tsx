@@ -2,102 +2,128 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { brandWmsApi } from '@/services/brandWmsApi';
 import { Button } from '@/components/ui/button';
-import { Plus, FolderTree, RefreshCw } from 'lucide-react';
+import { Plus, FolderTree } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 export default function BrandCategoriesTab() {
-  const { data: categoriesResponse, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useQuery({
     queryKey: ['/brand-api/wms/categories'],
     queryFn: brandWmsApi.getCategories
   });
 
-  const { data: typesResponse, isLoading: typesLoading, refetch: refetchTypes } = useQuery({
+  const { data: typesResponse, isLoading: typesLoading } = useQuery({
     queryKey: ['/brand-api/wms/product-types'],
     queryFn: brandWmsApi.getProductTypes
   });
 
   const categories = categoriesResponse?.data || [];
   const productTypes = typesResponse?.data || [];
+  const isLoading = categoriesLoading || typesLoading;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937', margin: 0 }}>
-            Categorie & Tipologie
-          </h2>
-          <p style={{ color: '#6b7280', marginTop: '4px', margin: 0 }}>
-            Gestisci la struttura gerarchica del catalogo master
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => { refetchCategories(); refetchTypes(); }}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Aggiorna
-        </Button>
+    <div className="space-y-6" data-testid="categories-typologies-content">
+      {/* Header */}
+      <div className="mb-6" data-testid="categories-typologies-header">
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'hsl(var(--foreground))' }} data-testid="categories-typologies-title">
+          Categorie & Tipologie Prodotto
+        </h2>
+        <p className="text-gray-600" data-testid="categories-typologies-subtitle">
+          Gestisci la struttura gerarchica del catalogo master: Categorie e Tipologie
+        </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        {/* Categories */}
-        <div style={{
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px)',
-          border: '1px solid hsla(255, 255, 255, 0.12)',
-          borderRadius: '12px',
-          padding: '24px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: 0 }}>
-              Categorie
-            </h3>
-            <Button size="sm" style={{ background: 'linear-gradient(135deg, #FF6900, #ff8533)', color: 'white', border: 'none' }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova
-            </Button>
-          </div>
-          {categoriesLoading ? (
-            <p style={{ color: '#6b7280' }}>Caricamento...</p>
-          ) : categories.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px' }}>
-              <FolderTree size={32} style={{ color: '#9ca3af', margin: '0 auto 12px' }} />
-              <p style={{ color: '#6b7280', fontSize: '14px' }}>Nessuna categoria</p>
-            </div>
-          ) : (
-            <div>
-              <p style={{ color: '#6b7280', fontSize: '14px' }}>Trovate {categories.length} categorie</p>
-            </div>
-          )}
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+          <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
         </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="two-column-layout">
+          {/* Column 1: Categories */}
+          <Card
+            className="p-4"
+            style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
+            }}
+            data-testid="column-categories"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+                Categorie Master
+              </h3>
+              <Button size="sm" style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova
+              </Button>
+            </div>
+            {categories.length === 0 ? (
+              <div className="text-center py-12">
+                <FolderTree className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 text-sm">Nessuna categoria</p>
+                <p className="text-gray-500 text-xs mt-2">Crea la prima categoria del catalogo master</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">{categories.length} categorie trovate</p>
+                <div className="max-h-96 overflow-y-auto space-y-1">
+                  {categories.map((cat: any, idx: number) => (
+                    <div key={idx} className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                      <p className="font-medium text-sm">{cat.name || cat.nome || `Categoria ${idx + 1}`}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
 
-        {/* Product Types */}
-        <div style={{
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px)',
-          border: '1px solid hsla(255, 255, 255, 0.12)',
-          borderRadius: '12px',
-          padding: '24px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: 0 }}>
-              Tipologie
-            </h3>
-            <Button size="sm" style={{ background: 'linear-gradient(135deg, #7B2CBF, #9747ff)', color: 'white', border: 'none' }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova
-            </Button>
-          </div>
-          {typesLoading ? (
-            <p style={{ color: '#6b7280' }}>Caricamento...</p>
-          ) : productTypes.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px' }}>
-              <FolderTree size={32} style={{ color: '#9ca3af', margin: '0 auto 12px' }} />
-              <p style={{ color: '#6b7280', fontSize: '14px' }}>Nessuna tipologia</p>
+          {/* Column 2: Product Typologies */}
+          <Card
+            className="p-4"
+            style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
+            }}
+            data-testid="column-product-typologies"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+                Tipologie Prodotto
+              </h3>
+              <Button size="sm" style={{ background: 'hsl(var(--brand-purple))', color: 'white' }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova
+              </Button>
             </div>
-          ) : (
-            <div>
-              <p style={{ color: '#6b7280', fontSize: '14px' }}>Trovate {productTypes.length} tipologie</p>
-            </div>
-          )}
+            {productTypes.length === 0 ? (
+              <div className="text-center py-12">
+                <FolderTree className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 text-sm">Nessuna tipologia</p>
+                <p className="text-gray-500 text-xs mt-2">Crea la prima tipologia prodotto</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">{productTypes.length} tipologie trovate</p>
+                <div className="max-h-96 overflow-y-auto space-y-1">
+                  {productTypes.map((type: any, idx: number) => (
+                    <div key={idx} className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                      <p className="font-medium text-sm">{type.name || type.nome || `Tipologia ${idx + 1}`}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
         </div>
-      </div>
+      )}
     </div>
   );
 }
