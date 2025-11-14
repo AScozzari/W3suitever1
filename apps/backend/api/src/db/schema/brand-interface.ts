@@ -939,7 +939,7 @@ export type BrandProduct = typeof brandProducts.$inferSelect;
 
 // 4) brand_suppliers - Master suppliers (deployed to tenants)
 export const brandSuppliers = brandInterfaceSchema.table("brand_suppliers", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id", { length: 100 }).primaryKey(), // Consistent with other WMS tables
   
   // Deployment tracking
   deploymentStatus: wmsDeploymentStatusEnum("deployment_status").default('draft').notNull(),

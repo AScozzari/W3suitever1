@@ -2,6 +2,12 @@ import {
   db, brandTenants, brandUsers, brandRoles, brandAuditLogs, aiAgentsRegistry,
   aiKnowledgeSources, aiCrossTenantEmbeddings, aiKnowledgeBases
 } from "../db/index.js";
+import {
+  brandCategories, brandProductTypes, brandProducts, brandSuppliers,
+  type BrandCategory, type BrandProductType, type BrandProduct, type BrandSupplier,
+  type InsertBrandCategory, type InsertBrandProductType, type InsertBrandProduct, type InsertBrandSupplier,
+  type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier
+} from "../../../api/src/db/schema/brand-interface.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
 import { db as w3db } from "../../../api/src/core/db.js";
 import { 
@@ -107,6 +113,36 @@ export interface IBrandStorage {
   deleteAIAgent(id: string): Promise<boolean>;
   bulkUpdateAIAgents(agentIds: string[], operation: string, values?: any): Promise<{ processedCount: number; errorCount: number }>;
   exportAIAgentsCSV(filters?: { moduleContext?: string; status?: string; search?: string }): Promise<string>;
+  
+  // ==================== WMS MASTER CATALOG ====================
+  
+  // Categories operations
+  getCategories(): Promise<BrandCategory[]>;
+  getCategory(id: string): Promise<BrandCategory | null>;
+  createCategory(data: InsertBrandCategory & { createdBy: string }): Promise<BrandCategory>;
+  updateCategory(id: string, data: UpdateBrandCategory & { modifiedBy?: string }): Promise<BrandCategory | null>;
+  deleteCategory(id: string): Promise<boolean>;
+  
+  // Product types operations
+  getProductTypes(categoryId?: string): Promise<BrandProductType[]>;
+  getProductType(id: string): Promise<BrandProductType | null>;
+  createProductType(data: InsertBrandProductType & { createdBy: string }): Promise<BrandProductType>;
+  updateProductType(id: string, data: UpdateBrandProductType & { modifiedBy?: string }): Promise<BrandProductType | null>;
+  deleteProductType(id: string): Promise<boolean>;
+  
+  // Products operations
+  getProducts(filters?: { categoryId?: string; typeId?: string; status?: string }): Promise<BrandProduct[]>;
+  getProduct(id: string): Promise<BrandProduct | null>;
+  createProduct(data: InsertBrandProduct & { createdBy: string }): Promise<BrandProduct>;
+  updateProduct(id: string, data: UpdateBrandProduct & { modifiedBy?: string }): Promise<BrandProduct | null>;
+  deleteProduct(id: string): Promise<boolean>;
+  
+  // Suppliers operations
+  getSuppliers(filters?: { status?: string; search?: string }): Promise<BrandSupplier[]>;
+  getSupplier(id: string): Promise<BrandSupplier | null>;
+  createSupplier(data: InsertBrandSupplier & { createdBy: string }): Promise<BrandSupplier>;
+  updateSupplier(id: string, data: UpdateBrandSupplier & { updatedBy?: string }): Promise<BrandSupplier | null>;
+  deleteSupplier(id: string): Promise<boolean>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -1171,6 +1207,289 @@ class BrandDrizzleStorage implements IBrandStorage {
   // Alias for backward compatibility with route handler
   async createOrganizationFromTenant(data: InsertTenant): Promise<Tenant> {
     return this.createOrganizationRecord(data);
+  }
+
+  // ==================== WMS MASTER CATALOG IMPLEMENTATION ====================
+
+  // Categories operations
+  async getCategories(): Promise<BrandCategory[]> {
+    try {
+      const results = await db.select()
+        .from(brandCategories)
+        .where(eq(brandCategories.isActive, true))
+        .orderBy(brandCategories.ordine, brandCategories.nome);
+      return results;
+    } catch (error) {
+      console.error('Error fetching brand categories:', error);
+      throw error;
+    }
+  }
+
+  async getCategory(id: string): Promise<BrandCategory | null> {
+    try {
+      const results = await db.select()
+        .from(brandCategories)
+        .where(eq(brandCategories.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching brand category ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createCategory(data: InsertBrandCategory & { createdBy: string }): Promise<BrandCategory> {
+    try {
+      const id = `cat_${nanoid(10)}`;
+      const results = await db.insert(brandCategories)
+        .values({ ...data, id, createdAt: new Date(), updatedAt: new Date() })
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating brand category:', error);
+      throw error;
+    }
+  }
+
+  async updateCategory(id: string, data: UpdateBrandCategory & { modifiedBy?: string }): Promise<BrandCategory | null> {
+    try {
+      const results = await db.update(brandCategories)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandCategories.id, id))
+        .returning();
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating brand category ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    try {
+      const results = await db.update(brandCategories)
+        .set({ isActive: false, archivedAt: new Date() })
+        .where(eq(brandCategories.id, id))
+        .returning();
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting brand category ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // Product types operations
+  async getProductTypes(categoryId?: string): Promise<BrandProductType[]> {
+    try {
+      let query = db.select().from(brandProductTypes).where(eq(brandProductTypes.isActive, true));
+      if (categoryId) {
+        query = query.where(and(eq(brandProductTypes.categoryId, categoryId), eq(brandProductTypes.isActive, true)));
+      }
+      const results = await query.orderBy(brandProductTypes.ordine, brandProductTypes.nome);
+      return results;
+    } catch (error) {
+      console.error('Error fetching brand product types:', error);
+      throw error;
+    }
+  }
+
+  async getProductType(id: string): Promise<BrandProductType | null> {
+    try {
+      const results = await db.select()
+        .from(brandProductTypes)
+        .where(eq(brandProductTypes.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching brand product type ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createProductType(data: InsertBrandProductType & { createdBy: string }): Promise<BrandProductType> {
+    try {
+      const id = `type_${nanoid(10)}`;
+      const results = await db.insert(brandProductTypes)
+        .values({ ...data, id, createdAt: new Date(), updatedAt: new Date() })
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating brand product type:', error);
+      throw error;
+    }
+  }
+
+  async updateProductType(id: string, data: UpdateBrandProductType & { modifiedBy?: string }): Promise<BrandProductType | null> {
+    try {
+      const results = await db.update(brandProductTypes)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandProductTypes.id, id))
+        .returning();
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating brand product type ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteProductType(id: string): Promise<boolean> {
+    try {
+      const results = await db.update(brandProductTypes)
+        .set({ isActive: false, archivedAt: new Date() })
+        .where(eq(brandProductTypes.id, id))
+        .returning();
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting brand product type ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // Products operations
+  async getProducts(filters?: { categoryId?: string; typeId?: string; status?: string }): Promise<BrandProduct[]> {
+    try {
+      let query = db.select().from(brandProducts);
+      
+      const conditions = [eq(brandProducts.isActive, true)];
+      if (filters?.categoryId) conditions.push(eq(brandProducts.categoryId, filters.categoryId));
+      if (filters?.typeId) conditions.push(eq(brandProducts.typeId, filters.typeId));
+      if (filters?.status) conditions.push(eq(brandProducts.status, filters.status as any));
+      
+      const results = await query.where(and(...conditions)).orderBy(brandProducts.name);
+      return results;
+    } catch (error) {
+      console.error('Error fetching brand products:', error);
+      throw error;
+    }
+  }
+
+  async getProduct(id: string): Promise<BrandProduct | null> {
+    try {
+      const results = await db.select()
+        .from(brandProducts)
+        .where(eq(brandProducts.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching brand product ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createProduct(data: InsertBrandProduct & { createdBy: string }): Promise<BrandProduct> {
+    try {
+      const id = `prod_${nanoid(10)}`;
+      const results = await db.insert(brandProducts)
+        .values({ ...data, id, createdAt: new Date(), updatedAt: new Date() })
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating brand product:', error);
+      throw error;
+    }
+  }
+
+  async updateProduct(id: string, data: UpdateBrandProduct & { modifiedBy?: string }): Promise<BrandProduct | null> {
+    try {
+      const results = await db.update(brandProducts)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandProducts.id, id))
+        .returning();
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating brand product ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    try {
+      const results = await db.update(brandProducts)
+        .set({ isActive: false, archivedAt: new Date() })
+        .where(eq(brandProducts.id, id))
+        .returning();
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting brand product ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // Suppliers operations
+  async getSuppliers(filters?: { status?: string; search?: string }): Promise<BrandSupplier[]> {
+    try {
+      let query = db.select().from(brandSuppliers);
+      
+      const conditions = [];
+      if (filters?.status) conditions.push(eq(brandSuppliers.status, filters.status as any));
+      if (filters?.search) {
+        conditions.push(
+          or(
+            like(brandSuppliers.name, `%${filters.search}%`),
+            like(brandSuppliers.code, `%${filters.search}%`)
+          )
+        );
+      }
+      
+      const results = conditions.length > 0 
+        ? await query.where(and(...conditions)).orderBy(brandSuppliers.name)
+        : await query.orderBy(brandSuppliers.name);
+      return results;
+    } catch (error) {
+      console.error('Error fetching brand suppliers:', error);
+      throw error;
+    }
+  }
+
+  async getSupplier(id: string): Promise<BrandSupplier | null> {
+    try {
+      const results = await db.select()
+        .from(brandSuppliers)
+        .where(eq(brandSuppliers.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching brand supplier ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createSupplier(data: InsertBrandSupplier & { createdBy: string }): Promise<BrandSupplier> {
+    try {
+      const id = `sup_${nanoid(10)}`;
+      const results = await db.insert(brandSuppliers)
+        .values({ ...data, id, createdAt: new Date(), updatedAt: new Date() })
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating brand supplier:', error);
+      throw error;
+    }
+  }
+
+  async updateSupplier(id: string, data: UpdateBrandSupplier & { updatedBy?: string }): Promise<BrandSupplier | null> {
+    try {
+      const results = await db.update(brandSuppliers)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandSuppliers.id, id))
+        .returning();
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating brand supplier ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteSupplier(id: string): Promise<boolean> {
+    try {
+      const results = await db.update(brandSuppliers)
+        .set({ status: 'blocked' as any, updatedAt: new Date() })
+        .where(eq(brandSuppliers.id, id))
+        .returning();
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting brand supplier ${id}:`, error);
+      throw error;
+    }
   }
 }
 

@@ -3,6 +3,12 @@ import http from "http";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
 import { insertStoreSchema } from "../../../api/src/db/schema/w3suite.js";
+import { 
+  insertBrandCategorySchema, updateBrandCategorySchema,
+  insertBrandProductTypeSchema, updateBrandProductTypeSchema,
+  insertBrandProductSchema, updateBrandProductSchema,
+  insertBrandSupplierSchema, updateBrandSupplierSchema
+} from "../../../api/src/db/schema/brand-interface.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
@@ -2157,6 +2163,414 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         error: "Failed to delete AI agent",
         details: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // ==================== WMS MASTER CATALOG ENDPOINTS ====================
+
+  // Categories endpoints
+  app.get("/brand-api/wms/categories", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const categories = await brandStorage.getCategories();
+      res.json({ success: true, data: categories });
+    } catch (error) {
+      console.error("Error fetching brand categories:", error);
+      res.status(500).json({ error: "Failed to fetch categories" });
+    }
+  });
+
+  app.post("/brand-api/wms/categories", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = insertBrandCategorySchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid category data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, createdBy: user.id };
+      const category = await brandStorage.createCategory(data);
+      res.status(201).json({ success: true, data: category });
+    } catch (error) {
+      console.error("Error creating brand category:", error);
+      res.status(500).json({ error: "Failed to create category" });
+    }
+  });
+
+  app.patch("/brand-api/wms/categories/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = updateBrandCategorySchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid category data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, modifiedBy: user.id };
+      const category = await brandStorage.updateCategory(req.params.id, data);
+      
+      if (!category) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      res.json({ success: true, data: category });
+    } catch (error) {
+      console.error("Error updating brand category:", error);
+      res.status(500).json({ error: "Failed to update category" });
+    }
+  });
+
+  app.delete("/brand-api/wms/categories/:id", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete categories" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteCategory(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      res.json({ success: true, message: "Category deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting brand category:", error);
+      res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+
+  // Product Types endpoints
+  app.get("/brand-api/wms/product-types", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const categoryId = req.query.categoryId as string | undefined;
+      const productTypes = await brandStorage.getProductTypes(categoryId);
+      res.json({ success: true, data: productTypes });
+    } catch (error) {
+      console.error("Error fetching brand product types:", error);
+      res.status(500).json({ error: "Failed to fetch product types" });
+    }
+  });
+
+  app.post("/brand-api/wms/product-types", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = insertBrandProductTypeSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid product type data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, createdBy: user.id };
+      const productType = await brandStorage.createProductType(data);
+      res.status(201).json({ success: true, data: productType });
+    } catch (error) {
+      console.error("Error creating brand product type:", error);
+      res.status(500).json({ error: "Failed to create product type" });
+    }
+  });
+
+  app.patch("/brand-api/wms/product-types/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = updateBrandProductTypeSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid product type data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, modifiedBy: user.id };
+      const productType = await brandStorage.updateProductType(req.params.id, data);
+      
+      if (!productType) {
+        return res.status(404).json({ error: "Product type not found" });
+      }
+      
+      res.json({ success: true, data: productType });
+    } catch (error) {
+      console.error("Error updating brand product type:", error);
+      res.status(500).json({ error: "Failed to update product type" });
+    }
+  });
+
+  app.delete("/brand-api/wms/product-types/:id", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete product types" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteProductType(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Product type not found" });
+      }
+      
+      res.json({ success: true, message: "Product type deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting brand product type:", error);
+      res.status(500).json({ error: "Failed to delete product type" });
+    }
+  });
+
+  // Products endpoints
+  app.get("/brand-api/wms/products", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const filters = {
+        categoryId: req.query.categoryId as string | undefined,
+        typeId: req.query.typeId as string | undefined,
+        status: req.query.status as string | undefined
+      };
+      const products = await brandStorage.getProducts(filters);
+      res.json({ success: true, data: products });
+    } catch (error) {
+      console.error("Error fetching brand products:", error);
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.post("/brand-api/wms/products", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = insertBrandProductSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid product data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, createdBy: user.id };
+      const product = await brandStorage.createProduct(data);
+      res.status(201).json({ success: true, data: product });
+    } catch (error) {
+      console.error("Error creating brand product:", error);
+      res.status(500).json({ error: "Failed to create product" });
+    }
+  });
+
+  app.patch("/brand-api/wms/products/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = updateBrandProductSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid product data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, modifiedBy: user.id };
+      const product = await brandStorage.updateProduct(req.params.id, data);
+      
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      res.json({ success: true, data: product });
+    } catch (error) {
+      console.error("Error updating brand product:", error);
+      res.status(500).json({ error: "Failed to update product" });
+    }
+  });
+
+  app.delete("/brand-api/wms/products/:id", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete products" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteProduct(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      res.json({ success: true, message: "Product deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting brand product:", error);
+      res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  // Suppliers endpoints
+  app.get("/brand-api/wms/suppliers", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const filters = {
+        status: req.query.status as string | undefined,
+        search: req.query.search as string | undefined
+      };
+      const suppliers = await brandStorage.getSuppliers(filters);
+      res.json({ success: true, data: suppliers });
+    } catch (error) {
+      console.error("Error fetching brand suppliers:", error);
+      res.status(500).json({ error: "Failed to fetch suppliers" });
+    }
+  });
+
+  app.post("/brand-api/wms/suppliers", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = insertBrandSupplierSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid supplier data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, createdBy: user.id };
+      const supplier = await brandStorage.createSupplier(data);
+      res.status(201).json({ success: true, data: supplier });
+    } catch (error) {
+      console.error("Error creating brand supplier:", error);
+      res.status(500).json({ error: "Failed to create supplier" });
+    }
+  });
+
+  app.patch("/brand-api/wms/suppliers/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const parseResult = updateBrandSupplierSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid supplier data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
+      const data = { ...parseResult.data, updatedBy: user.id };
+      const supplier = await brandStorage.updateSupplier(req.params.id, data);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: "Supplier not found" });
+      }
+      
+      res.json({ success: true, data: supplier });
+    } catch (error) {
+      console.error("Error updating brand supplier:", error);
+      res.status(500).json({ error: "Failed to update supplier" });
+    }
+  });
+
+  app.delete("/brand-api/wms/suppliers/:id", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete suppliers" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteSupplier(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Supplier not found" });
+      }
+      
+      res.json({ success: true, message: "Supplier deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting brand supplier:", error);
+      res.status(500).json({ error: "Failed to delete supplier" });
     }
   });
 
