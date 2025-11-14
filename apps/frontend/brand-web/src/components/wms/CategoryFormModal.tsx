@@ -4,52 +4,70 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { brandWmsApi } from '@/services/brandWmsApi';
 import { queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
 
 const categorySchema = z.object({
-  name: z.string().min(1, 'Nome obbligatorio'),
-  description: z.string().optional(),
+  productType: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  nome: z.string().min(1, 'Il nome è obbligatorio').max(255),
+  descrizione: z.string().optional(),
+  icona: z.string().max(10).optional(),
+  ordine: z.number().int().min(0).optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
 
+type ProductType = 'PHYSICAL' | 'VIRTUAL' | 'SERVICE' | 'CANVAS';
+
 interface CategoryFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  category?: any;
+  category?: any | null;
+  initialProductType?: ProductType;
 }
 
-export function CategoryFormModal({ open, onOpenChange, category }: CategoryFormModalProps) {
-  const isEdit = !!category;
+export function CategoryFormModal({ open, onOpenChange, category, initialProductType }: CategoryFormModalProps) {
   const { toast } = useToast();
+  const isEdit = !!category;
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
-      name: '',
-      description: '',
+      productType: initialProductType || 'PHYSICAL',
+      nome: '',
+      descrizione: '',
+      icona: '',
+      ordine: 0,
     },
   });
 
   useEffect(() => {
-    if (category) {
-      form.reset({
-        name: category.name || '',
-        description: category.description || '',
-      });
-    } else {
-      form.reset({
-        name: '',
-        description: '',
-      });
+    if (open) {
+      if (category) {
+        form.reset({
+          productType: category.productType || 'PHYSICAL',
+          nome: category.nome || category.name || '',
+          descrizione: category.descrizione || category.description || '',
+          icona: category.icona || '',
+          ordine: category.ordine || 0,
+        });
+      } else {
+        form.reset({
+          productType: initialProductType || 'PHYSICAL',
+          nome: '',
+          descrizione: '',
+          icona: '',
+          ordine: 0,
+        });
+      }
     }
-  }, [category, form]);
+  }, [open, category, initialProductType, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: CategoryFormData) => {
@@ -63,7 +81,9 @@ export function CategoryFormModal({ open, onOpenChange, category }: CategoryForm
       queryClient.invalidateQueries({ queryKey: ['/brand-api/wms/categories'] });
       toast({
         title: isEdit ? 'Categoria aggiornata' : 'Categoria creata',
-        description: isEdit ? 'Le modifiche sono state salvate con successo' : 'La nuova categoria è stata creata nel catalogo master',
+        description: isEdit 
+          ? 'La categoria master è stata aggiornata con successo' 
+          : 'La nuova categoria master è stata creata nel catalogo brand',
       });
       onOpenChange(false);
       form.reset();
@@ -71,7 +91,7 @@ export function CategoryFormModal({ open, onOpenChange, category }: CategoryForm
     onError: (error: any) => {
       toast({
         title: 'Errore',
-        description: error?.message || 'Si è verificato un errore durante il salvataggio',
+        description: error?.message || 'Impossibile salvare la categoria',
         variant: 'destructive',
       });
     },
@@ -81,49 +101,63 @@ export function CategoryFormModal({ open, onOpenChange, category }: CategoryForm
     mutation.mutate(data);
   };
 
+  const isPending = mutation.isPending;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        style={{ 
-          background: 'rgba(255, 255, 255, 0.95)', 
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.3)'
-        }}
-      >
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? 'Modifica Categoria' : 'Nuova Categoria Master'}
+            {isEdit ? 'Modifica Categoria Master' : 'Nuova Categoria Master'}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Product Type */}
             <FormField
               control={form.control}
-              name="name"
+              name="productType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome Categoria *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="es. Elettronica" {...field} data-testid="input-category-name" />
-                  </FormControl>
+                  <FormLabel>Tipo Prodotto <span className="text-red-500">*</span></FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isEdit}
+                  >
+                    <FormControl>
+                      <SelectTrigger data-testid="input-productType">
+                        <SelectValue placeholder="Seleziona tipo prodotto" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="PHYSICAL">Prodotti Fisici</SelectItem>
+                      <SelectItem value="SERVICE">Servizi</SelectItem>
+                      <SelectItem value="CANVAS">Canvas</SelectItem>
+                      <SelectItem value="VIRTUAL">Prodotti Digitali</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isEdit && (
+                    <FormMessage>Il tipo prodotto non può essere modificato dopo la creazione</FormMessage>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Nome */}
             <FormField
               control={form.control}
-              name="description"
+              name="nome"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrizione</FormLabel>
+                  <FormLabel>Nome Categoria <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Descrizione della categoria..." 
-                      rows={3}
-                      {...field} 
-                      data-testid="input-category-description" 
+                    <Input
+                      {...field}
+                      placeholder="es. Smartphone, Accessori, SIM..."
+                      data-testid="input-nome"
                     />
                   </FormControl>
                   <FormMessage />
@@ -131,23 +165,90 @@ export function CategoryFormModal({ open, onOpenChange, category }: CategoryForm
               )}
             />
 
+            {/* Descrizione */}
+            <FormField
+              control={form.control}
+              name="descrizione"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrizione</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Descrizione della categoria..."
+                      rows={3}
+                      data-testid="input-descrizione"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Icona */}
+              <FormField
+                control={form.control}
+                name="icona"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icona (emoji)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="📱"
+                        maxLength={10}
+                        data-testid="input-icona"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Ordine */}
+              <FormField
+                control={form.control}
+                name="ordine"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ordine</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        min={0}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        data-testid="input-ordine"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={mutation.isPending}
+                disabled={isPending}
                 data-testid="button-cancel"
               >
                 Annulla
               </Button>
               <Button
                 type="submit"
-                disabled={mutation.isPending}
-                style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                disabled={isPending}
+                style={{
+                  background: 'hsl(var(--brand-orange))',
+                  color: 'white',
+                }}
                 data-testid="button-submit"
               >
-                {mutation.isPending ? 'Salvataggio...' : isEdit ? 'Salva Modifiche' : 'Crea Categoria'}
+                {isPending ? 'Salvataggio...' : isEdit ? 'Aggiorna Categoria Master' : 'Crea Categoria Master'}
               </Button>
             </div>
           </form>
