@@ -7,6 +7,7 @@ import CRM from "./pages/CRM";
 import AIManagement from "./pages/AIManagement";
 import Management from "./pages/Management";
 import OrganizationDetail from "./pages/OrganizationDetail";
+import WMSCatalogPage from "./pages/wms/WMSCatalogPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
@@ -45,6 +46,9 @@ function Routes() {
       </Route>
       <Route path="/crm">
         <BrandTenantWrapper params={null}><CRM /></BrandTenantWrapper>
+      </Route>
+      <Route path="/wms/catalog">
+        <BrandTenantWrapper params={null}><WMSCatalogPage /></BrandTenantWrapper>
       </Route>
       <Route path="/ai-management">
         <BrandTenantWrapper params={null}><AIManagement /></BrandTenantWrapper>
