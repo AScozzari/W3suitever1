@@ -1,0 +1,34 @@
+{
+  "name": "@w3suite/workflow-builder-ui",
+  "version": "1.0.0",
+  "description": "Shared ReactFlow workflow builder components for Brand Interface and W3 Suite tenant apps",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "workflow",
+    "reactflow",
+    "w3suite",
+    "brand-interface"
+  ],
+  "author": "W3 Suite",
+  "license": "UNLICENSED",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@xyflow/react": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@w3suite/workflow-engine": "workspace:*",
+    "lucide-react": "^0.263.1",
+    "clsx": "^2.0.0"
+  }
+}
