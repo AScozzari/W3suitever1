@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import BrandLayout from '../components/BrandLayout';
+import { BrandCampaignWizard } from '../components/BrandCampaignWizard';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
-  FileJson, Download, Upload, Settings
+  FileJson, Download, Upload, Settings, Plus
 } from 'lucide-react';
 
 const COLORS = {
@@ -392,6 +393,9 @@ function DashboardTab() {
 }
 
 function TemplatesTab() {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [campaignTemplates, setCampaignTemplates] = useState<any[]>([]);
+
   const glassCardStyle = {
     background: COLORS.glass.white,
     backdropFilter: 'blur(24px) saturate(140%)',
@@ -402,21 +406,99 @@ function TemplatesTab() {
     padding: '24px'
   };
 
+  const handleSaveTemplate = (jsonTemplate: any) => {
+    console.log('📦 Campaign Template JSON:', jsonTemplate);
+    setCampaignTemplates(prev => [...prev, jsonTemplate]);
+    // TODO: Save to backend /api/brand/campaigns endpoint
+  };
+
   return (
-    <div style={glassCardStyle} data-testid="templates-tab-content">
-      <div style={{ textAlign: 'center', padding: '48px' }}>
-        <Database size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
-        <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '8px' }}>
-          Struttura Campagne
-        </h3>
-        <p style={{ color: COLORS.neutral.medium, fontSize: '14px', marginBottom: '24px' }}>
-          Templates DataTable with Campaigns, Pipelines, Funnels and JSON preview
-        </p>
-        <p style={{ color: COLORS.neutral.light, fontSize: '12px' }}>
-          📋 Task 6-9: To be implemented with full CRUD + JSON preview
-        </p>
+    <>
+      <div style={glassCardStyle} data-testid="templates-tab-content">
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '4px' }}>
+              Struttura Campagne
+            </h3>
+            <p style={{ color: COLORS.neutral.medium, fontSize: '14px' }}>
+              Gestisci template campagne, pipelines e funnel
+            </p>
+          </div>
+          <button 
+            onClick={() => setWizardOpen(true)}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
+            }}
+            data-testid="button-new-campaign-template"
+          >
+            <Plus size={20} strokeWidth={2.5} />
+            Nuova Campagna
+          </button>
+        </div>
+
+        {campaignTemplates.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px' }}>
+            <Database size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
+            <p style={{ color: COLORS.neutral.medium, fontSize: '14px', marginBottom: '24px' }}>
+              Nessun template campagna creato
+            </p>
+            <p style={{ color: COLORS.neutral.light, fontSize: '12px' }}>
+              📋 Clicca "Nuova Campagna" per creare il primo template
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+            {campaignTemplates.map((template, index) => (
+              <div 
+                key={index}
+                style={{
+                  ...glassCardStyle,
+                  padding: '16px',
+                  cursor: 'pointer'
+                }}
+                data-testid={`campaign-template-${index}`}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <FileJson size={20} style={{ color: COLORS.primary.orange }} />
+                  <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.name}</h4>
+                </div>
+                <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
+                  {template.description || 'Nessuna descrizione'}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+
+      <BrandCampaignWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onSave={handleSaveTemplate}
+        template={null}
+        mode="create"
+      />
+    </>
   );
 }
 
