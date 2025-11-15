@@ -1113,3 +1113,234 @@ export type BrandWmsDeployment = typeof brandWmsDeployments.$inferSelect;
 // - origin = 'tenant' (tenant-specific override)
 // 
 // Non servono tabelle duplicate - usiamo l'architettura esistente!
+
+// ==================== BRAND CRM WORKFLOWS ====================
+// Master workflow templates created in Brand Interface and deployed to tenants
+
+// Workflow Category Enum
+export const brandWorkflowCategoryEnum = pgEnum('brand_workflow_category', [
+  'crm',
+  'wms', 
+  'hr',
+  'pos',
+  'analytics',
+  'generic'
+]);
+
+// Workflow Status Enum  
+export const brandWorkflowStatusEnum = pgEnum('brand_workflow_status', [
+  'draft',
+  'active',
+  'archived',
+  'deprecated'
+]);
+
+// Workflow Execution Mode Enum
+export const brandWorkflowExecutionModeEnum = pgEnum('brand_workflow_execution_mode', [
+  'automatic',
+  'manual'
+]);
+
+// ==================== BRAND WORKFLOWS TABLE ====================
+// Core workflow templates with DSL, checksum, and metadata
+export const brandWorkflows = brandInterfaceSchema.table("brand_workflows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Identification
+  code: varchar("code", { length: 100 }).unique().notNull(), // "brand-wf-email-benvenuto"
+  name: varchar("name", { length: 255 }).notNull(), // "Email Benvenuto Lead"
+  description: text("description"),
+  
+  // Categorization
+  category: brandWorkflowCategoryEnum("category").notNull().default('crm'),
+  tags: text("tags").array().default([]), // ["email", "automation", "lead"]
+  
+  // Versioning
+  version: varchar("version", { length: 20 }).notNull().default('1.0.0'), // Semantic versioning
+  status: brandWorkflowStatusEnum("status").notNull().default('draft'),
+  
+  // Workflow DSL (ReactFlow compatible)
+  dslJson: jsonb("dsl_json").notNull(), // { nodes: [...], edges: [...] }
+  checksum: varchar("checksum", { length: 64 }).notNull(), // SHA-256 hash of dslJson for integrity
+  
+  // Executor Requirements
+  requiredExecutors: text("required_executors").array().notNull(), // ["email-action-executor", "ai-decision-executor"]
+  
+  // Placeholder Registry
+  placeholders: jsonb("placeholders").default({}), // { "{{TEAM:sales}}": { type: "team_reference" }, ... }
+  
+  // Execution Settings
+  defaultExecutionMode: brandWorkflowExecutionModeEnum("default_execution_mode").default('manual'),
+  timeoutSeconds: integer("timeout_seconds").default(3600), // Max execution time
+  maxRetries: smallint("max_retries").default(3),
+  
+  // Deployment Tracking
+  deploymentStatus: wmsDeploymentStatusEnum("deployment_status").notNull().default('draft'),
+  deployedToCount: integer("deployed_to_count").default(0),
+  lastDeployedAt: timestamp("last_deployed_at"),
+  
+  // Usage Statistics
+  usageCount: integer("usage_count").default(0), // How many times executed across all tenants
+  lastUsedAt: timestamp("last_used_at"),
+  
+  // Metadata
+  isPublic: boolean("is_public").default(true), // Can be deployed to all tenants
+  isTemplate: boolean("is_template").default(true), // Template vs instance
+  
+  // Audit fields
+  createdBy: varchar("created_by").notNull(),
+  updatedBy: varchar("updated_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  archivedAt: timestamp("archived_at"),
+}, (table) => [
+  uniqueIndex("brand_workflows_code_unique").on(table.code),
+  index("brand_workflows_category_idx").on(table.category),
+  index("brand_workflows_status_idx").on(table.status),
+  index("brand_workflows_deployment_status_idx").on(table.deploymentStatus),
+]);
+
+export const insertBrandWorkflowSchema = createInsertSchema(brandWorkflows).omit({
+  id: true,
+  deploymentStatus: true,
+  deployedToCount: true,
+  lastDeployedAt: true,
+  usageCount: true,
+  lastUsedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  archivedAt: true,
+}).extend({
+  code: z.string().min(1, "Codice workflow obbligatorio").max(100),
+  name: z.string().min(3, "Nome workflow obbligatorio (min 3 caratteri)").max(255),
+  description: z.string().optional(),
+  category: z.enum(['crm', 'wms', 'hr', 'pos', 'analytics', 'generic']),
+  tags: z.array(z.string()).optional(),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/, "Versione deve essere formato x.y.z").default('1.0.0'),
+  status: z.enum(['draft', 'active', 'archived', 'deprecated']).optional(),
+  dslJson: z.object({
+    nodes: z.array(z.any()),
+    edges: z.array(z.any()),
+  }),
+  checksum: z.string().length(64, "Checksum deve essere SHA-256 (64 caratteri)"),
+  requiredExecutors: z.array(z.string()).min(1, "Almeno un executor richiesto"),
+  placeholders: z.record(z.any()).optional(),
+  defaultExecutionMode: z.enum(['automatic', 'manual']).optional(),
+  timeoutSeconds: z.number().int().positive().optional(),
+  maxRetries: z.number().int().min(0).max(10).optional(),
+  isPublic: z.boolean().optional(),
+  isTemplate: z.boolean().optional(),
+  createdBy: z.string().min(1),
+  updatedBy: z.string().optional(),
+});
+
+export const updateBrandWorkflowSchema = insertBrandWorkflowSchema.partial();
+export type InsertBrandWorkflow = z.infer<typeof insertBrandWorkflowSchema>;
+export type UpdateBrandWorkflow = z.infer<typeof updateBrandWorkflowSchema>;
+export type BrandWorkflow = typeof brandWorkflows.$inferSelect;
+
+// ==================== BRAND WORKFLOW VERSIONS TABLE ====================
+// Version history for workflows (audit trail)
+export const brandWorkflowVersions = brandInterfaceSchema.table("brand_workflow_versions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  workflowId: uuid("workflow_id").notNull().references(() => brandWorkflows.id, { onDelete: 'cascade' }),
+  
+  // Version snapshot
+  version: varchar("version", { length: 20 }).notNull(),
+  dslJson: jsonb("dsl_json").notNull(),
+  checksum: varchar("checksum", { length: 64 }).notNull(),
+  
+  // Change metadata
+  changeDescription: text("change_description"), // What changed in this version
+  changeType: varchar("change_type", { length: 50 }), // "major", "minor", "patch", "hotfix"
+  
+  // Deployment tracking
+  wasDeployed: boolean("was_deployed").default(false),
+  deployedToTenants: text("deployed_to_tenants").array().default([]), // Array of tenant IDs
+  
+  // Audit
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("brand_workflow_versions_unique").on(table.workflowId, table.version),
+  index("brand_workflow_versions_workflow_idx").on(table.workflowId),
+]);
+
+export const insertBrandWorkflowVersionSchema = createInsertSchema(brandWorkflowVersions).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  workflowId: z.string().uuid(),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  dslJson: z.object({
+    nodes: z.array(z.any()),
+    edges: z.array(z.any()),
+  }),
+  checksum: z.string().length(64),
+  changeDescription: z.string().optional(),
+  changeType: z.enum(['major', 'minor', 'patch', 'hotfix']).optional(),
+  createdBy: z.string().min(1),
+});
+
+export type InsertBrandWorkflowVersion = z.infer<typeof insertBrandWorkflowVersionSchema>;
+export type BrandWorkflowVersion = typeof brandWorkflowVersions.$inferSelect;
+
+// ==================== BRAND WORKFLOW DEPLOYMENTS TABLE ====================
+// Track workflow deployments to tenants (similar to WMS deployments)
+export const brandWorkflowDeployments = brandInterfaceSchema.table("brand_workflow_deployments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  workflowId: uuid("workflow_id").notNull().references(() => brandWorkflows.id, { onDelete: 'cascade' }),
+  
+  // Target tenant
+  tenantId: uuid("tenant_id").notNull(), // Reference to w3suite.tenants
+  
+  // Deployment metadata
+  version: varchar("version", { length: 20 }).notNull(), // Which version was deployed
+  status: deploymentStatusEnum("status").notNull().default('pending'),
+  
+  // Execution mode override (tenant-specific)
+  executionMode: brandWorkflowExecutionModeEnum("execution_mode").default('manual'),
+  
+  // Payload snapshot (for rollback)
+  payload: jsonb("payload").notNull(), // Full workflow DSL at deployment time
+  
+  // Execution details
+  deployedBy: varchar("deployed_by").notNull(),
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("brand_workflow_deployments_workflow_idx").on(table.workflowId),
+  index("brand_workflow_deployments_tenant_idx").on(table.tenantId),
+  index("brand_workflow_deployments_status_idx").on(table.status),
+  uniqueIndex("brand_workflow_deployments_unique").on(table.workflowId, table.tenantId, table.version),
+]);
+
+export const insertBrandWorkflowDeploymentSchema = createInsertSchema(brandWorkflowDeployments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  workflowId: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  status: z.enum(['pending', 'in_progress', 'completed', 'failed']).optional(),
+  executionMode: z.enum(['automatic', 'manual']).optional(),
+  payload: z.any(),
+  deployedBy: z.string().min(1),
+  retryCount: z.number().int().default(0),
+  errorMessage: z.string().optional(),
+});
+
+export type InsertBrandWorkflowDeployment = z.infer<typeof insertBrandWorkflowDeploymentSchema>;
+export type BrandWorkflowDeployment = typeof brandWorkflowDeployments.$inferSelect;
