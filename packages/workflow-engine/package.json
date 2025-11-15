@@ -1,0 +1,23 @@
+{
+  "name": "@w3suite/workflow-engine",
+  "version": "1.0.0",
+  "description": "Shared workflow execution engine with 29+ executors for W3 Suite and Brand Interface",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "workflow",
+    "executor",
+    "automation",
+    "w3suite"
+  ],
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
