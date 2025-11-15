@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { Router, Route, Switch } from "wouter";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import CRM from "./pages/CRM";
+import BrandCRM from "./pages/BrandCRM";
 import AIManagement from "./pages/AIManagement";
 import Management from "./pages/Management";
 import OrganizationDetail from "./pages/OrganizationDetail";
@@ -47,7 +47,7 @@ function Routes() {
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>
       <Route path="/crm">
-        <BrandTenantWrapper params={null}><CRM /></BrandTenantWrapper>
+        <BrandTenantWrapper params={null}><BrandCRM /></BrandTenantWrapper>
       </Route>
       <Route path="/wms/catalog">
         <BrandTenantWrapper params={null}><WMSCatalogPage /></BrandTenantWrapper>
