@@ -31,6 +31,9 @@ import { z } from "zod";
 // Import public schema tables for FK references
 import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods, paymentMethodsConditions, utmSources, utmMediums } from './public';
 
+// Import brand_interface schema tables for FK references
+import { brandWorkflows } from './brand-interface';
+
 // ==================== CUSTOM TYPES FOR PGVECTOR ====================
 // Define custom type for pgvector columns
 const vector = customType<{ data: number[]; driverData: string }>({
@@ -74,6 +77,9 @@ export const pipelineDeletionModeEnum = pgEnum('pipeline_deletion_mode', ['admin
 export const supplierOriginEnum = pgEnum('supplier_origin', ['brand', 'tenant']);
 export const supplierTypeEnum = pgEnum('supplier_type', ['distributore', 'produttore', 'servizi', 'logistica']);
 export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'suspended', 'blocked']);
+
+// Workflow Source Enum - Track if workflow originated from Brand or Tenant
+export const workflowSourceEnum = pgEnum('workflow_source', ['brand', 'tenant']);
 
 // HR System Enums
 // Employee Demographics Enums
@@ -2761,6 +2767,13 @@ export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
   createdByBrand: boolean("created_by_brand").default(false).notNull(), // Creato da Brand Admin
   globalVersionId: uuid("global_version_id"), // ID template globale originale (per tenant customizzati)
   
+  // 🔒 BRAND WORKFLOW LOCK SYSTEM - Track brand-deployed workflows
+  source: workflowSourceEnum("source").default('tenant'), // 'brand' | 'tenant' - Origin of workflow
+  // FK to brand_interface.brand_workflows (nullable - only for brand-sourced workflows)
+  // onDelete: 'set null' - If brand deletes template, tenant keeps copy but loses brand reference
+  brandWorkflowId: uuid("brand_workflow_id").references(() => brandWorkflows.id, { onDelete: 'set null' }), 
+  lockedAt: timestamp("locked_at"), // When workflow was locked (brand workflows are locked from structural editing)
+  
   // Template settings
   isPublic: boolean("is_public").default(false), // Can be shared across tenants
   version: integer("version").default(1),
@@ -2825,6 +2838,54 @@ export const workflowSteps = w3suiteSchema.table("workflow_steps", {
   index("workflow_steps_order_idx").on(table.templateId, table.order),
   uniqueIndex("workflow_steps_node_unique").on(table.templateId, table.nodeId),
 ]);
+
+// 🔒 Tenant Workflow Node Overrides - Allow tenants to customize specific node configs in brand workflows
+// While brand workflows are locked (cannot modify structure), tenants can override specific config fields
+// like team assignments, email sender, etc. These overrides are merged at execution time.
+export const tenantWorkflowNodeOverrides = w3suiteSchema.table("tenant_workflow_node_overrides", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Workflow and node reference
+  workflowId: uuid("workflow_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  nodeId: varchar("node_id", { length: 100 }).notNull(), // Node ID from workflow DSL
+  
+  // Override configuration
+  // Only specific fields are allowed to be overridden (enforced at API level)
+  // Structure per executor type (examples):
+  // - team-routing-executor: { teamId: "uuid-here" }
+  // - email-action-executor: { from: "email@example.com", teamId: "uuid-here" }
+  // - ai-decision-executor: { teamId: "uuid-here" }
+  // - webhook-action-executor: { teamId: "uuid-here" }
+  // 
+  // Merge logic at execution: Deep merge override_config into node.config, only for allowed fields
+  // Non-allowed fields in overrideConfig are ignored for security
+  overrideConfig: jsonb("override_config").notNull(), // JSONB with executor-specific allowed fields
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by").notNull().references(() => users.id),
+}, (table) => [
+  uniqueIndex("tenant_workflow_node_overrides_unique").on(table.tenantId, table.workflowId, table.nodeId),
+  index("tenant_workflow_node_overrides_workflow_idx").on(table.workflowId),
+  index("tenant_workflow_node_overrides_tenant_idx").on(table.tenantId),
+]);
+
+export const insertTenantWorkflowNodeOverrideSchema = createInsertSchema(tenantWorkflowNodeOverrides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  tenantId: z.string().uuid(),
+  workflowId: z.string().uuid(),
+  nodeId: z.string().min(1).max(100),
+  overrideConfig: z.record(z.any()), // Validated at API level based on executor type
+  updatedBy: z.string().min(1),
+});
+
+export type InsertTenantWorkflowNodeOverride = z.infer<typeof insertTenantWorkflowNodeOverrideSchema>;
+export type TenantWorkflowNodeOverride = typeof tenantWorkflowNodeOverrides.$inferSelect;
 
 // Teams - Team ibridi con utenti e ruoli, supervisor RBAC-validated
 export const teams = w3suiteSchema.table("teams", {

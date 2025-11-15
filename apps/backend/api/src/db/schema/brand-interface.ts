@@ -1323,6 +1323,10 @@ export const brandWorkflowDeployments = brandInterfaceSchema.table("brand_workfl
   index("brand_workflow_deployments_workflow_idx").on(table.workflowId),
   index("brand_workflow_deployments_tenant_idx").on(table.tenantId),
   index("brand_workflow_deployments_status_idx").on(table.status),
+  // Composite index for efficient tenant-scoped filtering queries
+  // Example: "Show all pending deployments for tenant X" or "Show deployment history for tenant Y"
+  index("brand_workflow_deployments_tenant_status_idx").on(table.tenantId, table.status),
+  index("brand_workflow_deployments_tenant_created_idx").on(table.tenantId, table.createdAt),
   uniqueIndex("brand_workflow_deployments_unique").on(table.workflowId, table.tenantId, table.version),
 ]);
 
