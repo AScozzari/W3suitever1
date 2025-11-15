@@ -3,6 +3,7 @@ import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import BrandLayout from '../components/BrandLayout';
 import { BrandCampaignWizard } from '../components/BrandCampaignWizard';
+import { BrandPipelineWizard } from '../components/BrandPipelineWizard';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
@@ -393,8 +394,10 @@ function DashboardTab() {
 }
 
 function TemplatesTab() {
-  const [wizardOpen, setWizardOpen] = useState(false);
+  const [campaignWizardOpen, setCampaignWizardOpen] = useState(false);
+  const [pipelineWizardOpen, setPipelineWizardOpen] = useState(false);
   const [campaignTemplates, setCampaignTemplates] = useState<any[]>([]);
+  const [pipelineTemplates, setPipelineTemplates] = useState<any[]>([]);
 
   const glassCardStyle = {
     background: COLORS.glass.white,
@@ -406,11 +409,19 @@ function TemplatesTab() {
     padding: '24px'
   };
 
-  const handleSaveTemplate = (jsonTemplate: any) => {
+  const handleSaveCampaignTemplate = (jsonTemplate: any) => {
     console.log('📦 Campaign Template JSON:', jsonTemplate);
     setCampaignTemplates(prev => [...prev, jsonTemplate]);
     // TODO: Save to backend /api/brand/campaigns endpoint
   };
+
+  const handleSavePipelineTemplate = (jsonTemplate: any) => {
+    console.log('📦 Pipeline Template JSON:', jsonTemplate);
+    setPipelineTemplates(prev => [...prev, jsonTemplate]);
+    // TODO: Save to backend /api/brand/pipelines endpoint
+  };
+
+  const totalTemplates = campaignTemplates.length + pipelineTemplates.length;
 
   return (
     <>
@@ -421,81 +432,170 @@ function TemplatesTab() {
               Struttura Campagne
             </h3>
             <p style={{ color: COLORS.neutral.medium, fontSize: '14px' }}>
-              Gestisci template campagne, pipelines e funnel
+              Gestisci template campagne ({campaignTemplates.length}), pipelines ({pipelineTemplates.length}) e funnel
             </p>
           </div>
-          <button 
-            onClick={() => setWizardOpen(true)}
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
-            }}
-            data-testid="button-new-campaign-template"
-          >
-            <Plus size={20} strokeWidth={2.5} />
-            Nuova Campagna
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button 
+              onClick={() => setCampaignWizardOpen(true)}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
+              }}
+              data-testid="button-new-campaign-template"
+            >
+              <Plus size={20} strokeWidth={2.5} />
+              Nuova Campagna
+            </button>
+
+            <button 
+              onClick={() => setPipelineWizardOpen(true)}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(123, 44, 191, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(123, 44, 191, 0.3)';
+              }}
+              data-testid="button-new-pipeline-template"
+            >
+              <Plus size={20} strokeWidth={2.5} />
+              Nuova Pipeline
+            </button>
+          </div>
         </div>
 
-        {campaignTemplates.length === 0 ? (
+        {totalTemplates === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px' }}>
             <Database size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
             <p style={{ color: COLORS.neutral.medium, fontSize: '14px', marginBottom: '24px' }}>
-              Nessun template campagna creato
+              Nessun template creato
             </p>
             <p style={{ color: COLORS.neutral.light, fontSize: '12px' }}>
-              📋 Clicca "Nuova Campagna" per creare il primo template
+              📋 Clicca "Nuova Campagna" o "Nuova Pipeline" per creare il primo template
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-            {campaignTemplates.map((template, index) => (
-              <div 
-                key={index}
-                style={{
-                  ...glassCardStyle,
-                  padding: '16px',
-                  cursor: 'pointer'
-                }}
-                data-testid={`campaign-template-${index}`}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <FileJson size={20} style={{ color: COLORS.primary.orange }} />
-                  <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.name}</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {campaignTemplates.length > 0 && (
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '12px' }}>
+                  Template Campagne ({campaignTemplates.length})
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {campaignTemplates.map((template, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        ...glassCardStyle,
+                        padding: '16px',
+                        cursor: 'pointer',
+                        borderLeft: `3px solid ${COLORS.primary.orange}`
+                      }}
+                      data-testid={`campaign-template-${index}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <FileJson size={20} style={{ color: COLORS.primary.orange }} />
+                        <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.template?.name || template.name}</h4>
+                      </div>
+                      <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
+                        {template.template?.description || template.description || 'Nessuna descrizione'}
+                      </p>
+                      <div style={{ marginTop: '8px', fontSize: '10px', color: COLORS.neutral.light }}>
+                        v{template.version} • {new Date(template.timestamp).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
-                  {template.description || 'Nessuna descrizione'}
-                </p>
               </div>
-            ))}
+            )}
+
+            {pipelineTemplates.length > 0 && (
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '12px' }}>
+                  Template Pipeline ({pipelineTemplates.length})
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {pipelineTemplates.map((template, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        ...glassCardStyle,
+                        padding: '16px',
+                        cursor: 'pointer',
+                        borderLeft: `3px solid ${COLORS.primary.purple}`
+                      }}
+                      data-testid={`pipeline-template-${index}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <FileJson size={20} style={{ color: COLORS.primary.purple }} />
+                        <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.template?.name || template.name}</h4>
+                      </div>
+                      <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
+                        {template.template?.description || template.description || 'Nessuna descrizione'}
+                      </p>
+                      <div style={{ marginTop: '8px', fontSize: '10px', color: COLORS.neutral.light }}>
+                        v{template.version} • {new Date(template.timestamp).toLocaleDateString()}  • Domain: {template.template?.domain || 'N/A'}
+                      </div>
+                      <div style={{ marginTop: '4px', fontSize: '10px', color: COLORS.neutral.light }}>
+                        {template.template?.stagesConfig?.length || 0} stati configurati
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       <BrandCampaignWizard
-        open={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-        onSave={handleSaveTemplate}
+        open={campaignWizardOpen}
+        onClose={() => setCampaignWizardOpen(false)}
+        onSave={handleSaveCampaignTemplate}
         template={null}
+        mode="create"
+      />
+
+      <BrandPipelineWizard
+        open={pipelineWizardOpen}
+        onClose={() => setPipelineWizardOpen(false)}
+        onSave={handleSavePipelineTemplate}
         mode="create"
       />
     </>
