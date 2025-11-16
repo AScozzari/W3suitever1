@@ -489,7 +489,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
             <div className="p-4 space-y-4">
               {/* Triggers */}
               <div>
-                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Triggers</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                  TRIGGERS ({getNodesByCategory('trigger').length})
+                </h4>
                 <div className="space-y-2">
                   {getNodesByCategory('trigger').map((node) => (
                     <NodePaletteItem
@@ -505,7 +508,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               </div>
               {/* Actions */}
               <div>
-                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Actions</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full" />
+                  ACTIONS ({getNodesByCategory('action').length})
+                </h4>
                 <div className="space-y-2">
                   {getNodesByCategory('action').map((node) => (
                     <NodePaletteItem
@@ -521,7 +527,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               </div>
               {/* AI Nodes */}
               <div>
-                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">AI Nodes</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full" />
+                  AI ({getNodesByCategory('ai').length})
+                </h4>
                 <div className="space-y-2">
                   {getNodesByCategory('ai').map((node) => (
                     <NodePaletteItem
@@ -537,7 +546,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               </div>
               {/* Routing */}
               <div>
-                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Routing</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full" />
+                  ROUTING ({getNodesByCategory('routing').length})
+                </h4>
                 <div className="space-y-2">
                   {getNodesByCategory('routing').map((node) => (
                     <NodePaletteItem
@@ -553,7 +565,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               </div>
               {/* Integration */}
               <div>
-                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Integration</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-cyan-500 rounded-full" />
+                  INTEGRATION ({getNodesByCategory('integration').length})
+                </h4>
                 <div className="space-y-2">
                   {getNodesByCategory('integration').map((node) => (
                     <NodePaletteItem
@@ -569,7 +584,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               </div>
               {/* Flow Control */}
               <div>
-                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Flow Control</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-500 rounded-full" />
+                  FLOW CONTROL ({getNodesByCategory('flow-control').length})
+                </h4>
                 <div className="space-y-2">
                   {getNodesByCategory('flow-control').map((node) => (
                     <NodePaletteItem
@@ -703,22 +721,25 @@ interface NodePaletteItemProps {
 
 function NodePaletteItem({ nodeId, label, description, icon, onDragStart }: NodePaletteItemProps) {
   const nodeData = ALL_WORKFLOW_NODES.find(n => n.id === nodeId);
-  const styles = getCategoryStyles(nodeData?.category || 'flow-control');
+  const color = nodeData?.color || '#6B7280';
   
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, nodeId)}
-      className={`p-3 rounded-lg border-2 transition-all cursor-grab active:cursor-grabbing ${styles.bg} ${styles.border} ${styles.hoverBorder} hover:shadow-md`}
+      className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
       data-testid={`node-palette-${nodeId}`}
     >
-      <div className="flex items-start gap-2">
-        <div className={`w-7 h-7 rounded flex items-center justify-center text-base shrink-0 ${styles.icon}`}>
-          {icon}
+      <div className="flex items-start gap-3">
+        <div 
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+          style={{ backgroundColor: color }}
+        >
+          <span className="text-xs">{icon}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className={`text-sm font-semibold truncate ${styles.label}`}>{label}</div>
-          <div className="text-xs text-gray-600 truncate mt-0.5">{description}</div>
+        <div className="flex-1">
+          <h5 className="text-sm font-medium text-gray-900 leading-tight">{label}</h5>
+          <p className="text-xs text-gray-600 leading-relaxed mt-1">{description}</p>
         </div>
       </div>
     </div>
