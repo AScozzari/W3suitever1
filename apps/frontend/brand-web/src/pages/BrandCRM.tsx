@@ -12,10 +12,10 @@ import {
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
   FileJson, Download, Upload, Settings, Plus, Search,
-  Megaphone, Target, Zap
+  Megaphone, Target, Zap, CheckSquare
 } from 'lucide-react';
 
-type Tab = 'dashboard' | 'templates' | 'workflows';
+type Tab = 'dashboard' | 'templates' | 'workflows' | 'tasks';
 
 export default function BrandCRM() {
   const { isAuthenticated } = useBrandAuth();
@@ -65,7 +65,8 @@ export default function BrandCRM() {
               {[
                 { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
                 { id: 'templates' as const, label: 'Struttura Campagne', icon: Database },
-                { id: 'workflows' as const, label: 'Workflows Builder', icon: GitBranch }
+                { id: 'workflows' as const, label: 'Workflows Builder', icon: GitBranch },
+                { id: 'tasks' as const, label: 'Tasks', icon: CheckSquare }
               ].map((tab) => (
                 <Button
                   key={tab.id}
@@ -105,6 +106,7 @@ export default function BrandCRM() {
           {activeTab === 'dashboard' && <DashboardTab />}
           {activeTab === 'templates' && <TemplatesTab />}
           {activeTab === 'workflows' && <WorkflowsTab />}
+          {activeTab === 'tasks' && <TasksTab />}
         </div>
       </div>
     </BrandLayout>
@@ -119,49 +121,75 @@ function DashboardTab() {
       value: '23',
       change: '+3 questo mese',
       icon: Package,
-      testId: 'card-deployed-bundles'
+      testId: 'card-deployed-bundles',
+      borderColor: 'border-blue-200',
+      hoverBorderColor: 'hover:border-blue-400',
+      iconBgColor: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      valueColor: 'text-blue-600',
+      badgeBgColor: 'bg-blue-50'
     },
     {
       title: 'Active Tenants',
       value: '312',
       change: '98% uptime',
       icon: Users,
-      testId: 'card-active-tenants'
+      testId: 'card-active-tenants',
+      borderColor: 'border-green-200',
+      hoverBorderColor: 'hover:border-green-400',
+      iconBgColor: 'bg-green-100',
+      iconColor: 'text-green-600',
+      valueColor: 'text-green-600',
+      badgeBgColor: 'bg-green-50'
     },
     {
       title: 'Workflow Versions',
       value: '156',
       change: 'v2.4.1 latest',
       icon: Workflow,
-      testId: 'card-workflow-versions'
+      testId: 'card-workflow-versions',
+      borderColor: 'border-purple-200',
+      hoverBorderColor: 'hover:border-purple-400',
+      iconBgColor: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      valueColor: 'text-purple-600',
+      badgeBgColor: 'bg-purple-50'
     },
     {
       title: 'Templates Totali',
       value: '89',
       change: '+12 nuovi',
       icon: FileJson,
-      testId: 'card-templates-total'
+      testId: 'card-templates-total',
+      borderColor: 'border-orange-200',
+      hoverBorderColor: 'hover:border-orange-400',
+      iconBgColor: 'bg-orange-100',
+      iconColor: 'text-orange-600',
+      valueColor: 'text-orange-600',
+      badgeBgColor: 'bg-orange-50'
     }
   ];
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Stats Grid */}
+      {/* Stats Grid - Con bordi colorati come Strutture Campagne */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <div
               key={stat.testId}
-              className="windtre-glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              className={`bg-white rounded-lg border-2 ${stat.borderColor} ${stat.hoverBorderColor} p-6 hover:shadow-lg transition-all cursor-pointer`}
               data-testid={stat.testId}
             >
-              <div className="flex items-center justify-between mb-4">
-                <Icon className="h-8 w-8 text-windtre-orange" />
+              <div className="flex items-start justify-between mb-3">
+                <div className={`p-3 ${stat.iconBgColor} rounded-lg`}>
+                  <Icon className={`h-6 w-6 ${stat.iconColor}`} />
+                </div>
               </div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.title}</h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</p>
-              <p className="text-xs text-gray-500">{stat.change}</p>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.title}</h3>
+              <p className={`text-3xl font-bold ${stat.valueColor} mb-3`}>{stat.value}</p>
+              <span className={`text-xs text-gray-500 ${stat.badgeBgColor} px-2 py-1 rounded`}>{stat.change}</span>
             </div>
           );
         })}
@@ -303,4 +331,166 @@ function TemplatesTab() {
 // Workflows Tab Component - Full implementation with canvas builder
 function WorkflowsTab() {
   return <BrandWorkflowsTab />;
+}
+
+// Tasks Tab Component - Gestione attività Brand Interface
+function TasksTab() {
+  const mockTasks = [
+    {
+      id: '1',
+      title: 'Revisione template campagna Black Friday',
+      assignee: 'Marco Rossi',
+      status: 'In Progress',
+      priority: 'High',
+      dueDate: '2024-11-20',
+      category: 'Templates'
+    },
+    {
+      id: '2',
+      title: 'Deploy workflow v2.4.1 su tenant pilot',
+      assignee: 'Laura Bianchi',
+      status: 'Pending',
+      priority: 'Medium',
+      dueDate: '2024-11-22',
+      category: 'Workflows'
+    },
+    {
+      id: '3',
+      title: 'Validazione pipeline CRM Enterprise',
+      assignee: 'Giovanni Verdi',
+      status: 'Completed',
+      priority: 'High',
+      dueDate: '2024-11-15',
+      category: 'Templates'
+    },
+    {
+      id: '4',
+      title: 'Sync bundle master catalog su 50 tenant',
+      assignee: 'Sara Neri',
+      status: 'Pending',
+      priority: 'Low',
+      dueDate: '2024-11-25',
+      category: 'Deployment'
+    }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completed': return 'bg-green-100 text-green-700';
+      case 'In Progress': return 'bg-blue-100 text-blue-700';
+      case 'Pending': return 'bg-yellow-100 text-yellow-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'bg-red-100 text-red-700';
+      case 'Medium': return 'bg-orange-100 text-orange-700';
+      case 'Low': return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-6">
+      {/* Header con statistiche rapide */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-sm text-gray-600 mb-1">Totali</p>
+          <p className="text-2xl font-bold text-gray-900">{mockTasks.length}</p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-sm text-gray-600 mb-1">In Progress</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {mockTasks.filter(t => t.status === 'In Progress').length}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-sm text-gray-600 mb-1">Pending</p>
+          <p className="text-2xl font-bold text-yellow-600">
+            {mockTasks.filter(t => t.status === 'Pending').length}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-sm text-gray-600 mb-1">Completed</p>
+          <p className="text-2xl font-bold text-green-600">
+            {mockTasks.filter(t => t.status === 'Completed').length}
+          </p>
+        </div>
+      </div>
+
+      {/* Tasks DataTable */}
+      <div className="border border-gray-200 rounded-lg bg-white">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Tasks Attività</h2>
+          <Button
+            className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+            data-testid="button-create-task"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuova Task
+          </Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Titolo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Assegnato a
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Categoria
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Priorità
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Scadenza
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {mockTasks.map((task) => (
+                <tr
+                  key={task.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  data-testid={`task-row-${task.id}`}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-600">{task.assignee}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-600">{task.category}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(task.status)}`}>
+                      {task.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(task.priority)}`}>
+                      {task.priority}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {task.dueDate}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 }
