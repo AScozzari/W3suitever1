@@ -11,7 +11,8 @@ import { Input } from '../components/ui/input';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
-  FileJson, Download, Upload, Settings, Plus, Search
+  FileJson, Download, Upload, Settings, Plus, Search,
+  Megaphone, Target, Zap
 } from 'lucide-react';
 
 type Tab = 'dashboard' | 'templates' | 'workflows';
@@ -199,54 +200,81 @@ function TemplatesTab() {
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Template Types Grid */}
+      {/* Template Types Grid - Styled diversamente dal Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="windtre-glass-panel p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Campagne</h3>
-            <Button
-              onClick={() => setShowCampaignWizard(true)}
-              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-              data-testid="button-create-campaign-template"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crea Template
-            </Button>
+        {/* Campagne Card */}
+        <div className="bg-white rounded-lg border-2 border-orange-200 p-6 hover:border-orange-400 hover:shadow-lg transition-all">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <Megaphone className="h-6 w-6 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Campagne</h3>
+            </div>
           </div>
-          <p className="text-sm text-gray-600 mb-4">28 campi configurabili con validazione business italiana</p>
-          <div className="text-2xl font-bold text-gray-900">12 template</div>
+          <p className="text-sm text-gray-600 mb-3">28 campi configurabili con validazione business italiana</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-3xl font-bold text-orange-600">12</div>
+            <span className="text-xs text-gray-500 bg-orange-50 px-2 py-1 rounded">template attivi</span>
+          </div>
+          <Button
+            onClick={() => setShowCampaignWizard(true)}
+            className="w-full bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+            data-testid="button-create-campaign-template"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crea Template
+          </Button>
         </div>
 
-        <div className="windtre-glass-panel p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Pipeline</h3>
-            <Button
-              onClick={() => setShowPipelineWizard(true)}
-              className="bg-windtre-purple hover:bg-windtre-purple-dark text-white"
-              data-testid="button-create-pipeline-template"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crea Template
-            </Button>
+        {/* Pipeline Card */}
+        <div className="bg-white rounded-lg border-2 border-purple-200 p-6 hover:border-purple-400 hover:shadow-lg transition-all">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <Target className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Pipeline</h3>
+            </div>
           </div>
-          <p className="text-sm text-gray-600 mb-4">41 campi across 3 tabelle con AI orchestration</p>
-          <div className="text-2xl font-bold text-gray-900">8 template</div>
+          <p className="text-sm text-gray-600 mb-3">41 campi across 3 tabelle con AI orchestration</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-3xl font-bold text-purple-600">8</div>
+            <span className="text-xs text-gray-500 bg-purple-50 px-2 py-1 rounded">template attivi</span>
+          </div>
+          <Button
+            onClick={() => setShowPipelineWizard(true)}
+            className="w-full bg-windtre-purple hover:bg-windtre-purple-dark text-white"
+            data-testid="button-create-pipeline-template"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crea Template
+          </Button>
         </div>
 
-        <div className="windtre-glass-panel p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Funnel</h3>
-            <Button
-              onClick={() => setShowFunnelWizard(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-              data-testid="button-create-funnel-template"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crea Template
-            </Button>
+        {/* Funnel Card */}
+        <div className="bg-white rounded-lg border-2 border-green-200 p-6 hover:border-green-400 hover:shadow-lg transition-all">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <Zap className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Funnel</h3>
+            </div>
           </div>
-          <p className="text-sm text-gray-600 mb-4">15 campi con journey orchestration</p>
-          <div className="text-2xl font-bold text-gray-900">5 template</div>
+          <p className="text-sm text-gray-600 mb-3">15 campi con journey orchestration</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-3xl font-bold text-green-600">5</div>
+            <span className="text-xs text-gray-500 bg-green-50 px-2 py-1 rounded">template attivi</span>
+          </div>
+          <Button
+            onClick={() => setShowFunnelWizard(true)}
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            data-testid="button-create-funnel-template"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crea Template
+          </Button>
         </div>
       </div>
 
