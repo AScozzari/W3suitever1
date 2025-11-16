@@ -5175,6 +5175,7 @@ export const crmPipelineStagePlaybooks = w3suiteSchema.table("crm_pipeline_stage
   quietHoursStart: varchar("quiet_hours_start", { length: 5 }),
   quietHoursEnd: varchar("quiet_hours_end", { length: 5 }),
   nextBestActionJson: jsonb("next_best_action_json"),
+  escalationPattern: varchar("escalation_pattern", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   pipelineStageUniq: uniqueIndex("crm_pipeline_stage_playbooks_pipeline_stage_uniq").on(table.pipelineId, table.stageName),

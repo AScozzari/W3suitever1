@@ -57,10 +57,12 @@ const pipelineTemplateSchema = z.object({
   
   enabledChannels: z.array(z.string()).optional().default([]),
   workflowRefs: z.array(z.string()).optional().default([]),
-  
-  assignedTeamsPattern: z.string().optional().nullable().transform(val => val?.trim() || null),
-  assignedUsersPattern: z.string().optional().nullable().transform(val => val?.trim() || null),
-  pipelineAdminsPattern: z.string().optional().nullable().transform(val => val?.trim() || null),
+  assignedTeams: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
+  assignedUsers: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
   
   dealManagementMode: z.enum(permissionModes).default('all'),
   dealCreationMode: z.enum(permissionModes).default('all'),
@@ -71,6 +73,30 @@ const pipelineTemplateSchema = z.object({
   notifyOnDealRotten: z.boolean().default(true),
   notifyOnDealWon: z.boolean().default(true),
   notifyOnDealLost: z.boolean().default(true),
+
+  contactRules: z.string().optional().nullable().transform(val => {
+    if (!val?.trim()) return null;
+    try { return JSON.parse(val); } catch { return val; }
+  }),
+  customStatusNames: z.string().optional().nullable().transform(val => {
+    if (!val?.trim()) return null;
+    try { return JSON.parse(val); } catch { return val; }
+  }),
+  pipelineAdmins: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
+  dealManagementUsers: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
+  dealCreationUsers: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
+  stateModificationUsers: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
+  dealDeletionUsers: z.string().optional().transform(val => 
+    val ? val.split(',').map(s => s.trim()).filter(Boolean) : []
+  ),
   
   stagePlaybooks: z.array(z.object({
     stageName: z.string(),
@@ -138,9 +164,8 @@ export function BrandPipelineWizard({ open, onClose, onSave, mode = 'create', te
       stagesConfig: [],
       enabledChannels: [],
       workflowRefs: [],
-      assignedTeamsPattern: null,
-      assignedUsersPattern: null,
-      pipelineAdminsPattern: null,
+      assignedTeams: '',
+      assignedUsers: '',
       dealManagementMode: 'all',
       dealCreationMode: 'all',
       stateModificationMode: 'all',
@@ -149,6 +174,13 @@ export function BrandPipelineWizard({ open, onClose, onSave, mode = 'create', te
       notifyOnDealRotten: true,
       notifyOnDealWon: true,
       notifyOnDealLost: true,
+      contactRules: '',
+      customStatusNames: '',
+      pipelineAdmins: '',
+      dealManagementUsers: '',
+      dealCreationUsers: '',
+      stateModificationUsers: '',
+      dealDeletionUsers: '',
       stagePlaybooks: [],
     },
   });
@@ -190,13 +222,59 @@ export function BrandPipelineWizard({ open, onClose, onSave, mode = 'create', te
   };
 
   const handleSubmit = form.handleSubmit((data) => {
+    const normalizedTemplate = {
+      name: data.name,
+      description: data.description || null,
+      domain: data.domain,
+      driverRef: data.driverRef || null,
+      isActive: data.isActive,
+      stagesConfig: (data.stagesConfig || []).map(stage => ({
+        name: stage.name,
+        category: stage.category,
+        order: stage.order,
+        probability: stage.probability,
+        color: stage.color || null,
+      })),
+      
+      enabledChannels: data.enabledChannels || [],
+      workflowRefs: data.workflowRefs || [],
+      assignedTeams: data.assignedTeams || [],
+      assignedUsers: data.assignedUsers || [],
+      dealManagementMode: data.dealManagementMode || 'all',
+      dealCreationMode: data.dealCreationMode || 'all',
+      stateModificationMode: data.stateModificationMode || 'all',
+      dealDeletionMode: data.dealDeletionMode || 'admins',
+      
+      notifyOnStageChange: data.notifyOnStageChange ?? true,
+      notifyOnDealRotten: data.notifyOnDealRotten ?? true,
+      notifyOnDealWon: data.notifyOnDealWon ?? true,
+      notifyOnDealLost: data.notifyOnDealLost ?? true,
+      
+      contactRules: data.contactRules || null,
+      customStatusNames: data.customStatusNames || null,
+      pipelineAdmins: data.pipelineAdmins || [],
+      dealManagementUsers: data.dealManagementUsers || [],
+      dealCreationUsers: data.dealCreationUsers || [],
+      stateModificationUsers: data.stateModificationUsers || [],
+      dealDeletionUsers: data.dealDeletionUsers || [],
+      
+      stagePlaybooks: (data.stagePlaybooks || []).map(playbook => ({
+        stageName: playbook.stageName,
+        allowedChannels: playbook.allowedChannels || [],
+        maxAttemptsPerDay: playbook.maxAttemptsPerDay ?? null,
+        slaHours: playbook.slaHours ?? null,
+        quietHoursStart: playbook.quietHoursStart || null,
+        quietHoursEnd: playbook.quietHoursEnd || null,
+        nextBestActionJson: playbook.nextBestActionJson || null,
+        escalationPattern: playbook.escalationPattern || null,
+      })),
+    };
+
     const jsonTemplate = {
       type: 'pipeline_template',
       version: '1.0.0',
       timestamp: new Date().toISOString(),
-      template: {
-        ...data,
-      }
+      template: normalizedTemplate,
     };
     
     onSave(jsonTemplate);
@@ -552,10 +630,84 @@ export function BrandPipelineWizard({ open, onClose, onSave, mode = 'create', te
 
           <TabsContent value="automation" className="flex-1 overflow-y-auto space-y-6 py-6">
             <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">Impostazioni Automazione</h3>
-              <p className="text-sm text-gray-500">
-                Automazioni pipeline saranno configurabili post-deployment dai tenant
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Configurazione Avanzata (7 campi)</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Placeholder per configurazioni avanzate - saranno popolate dinamicamente durante il deployment sui tenant
               </p>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-700">Pipeline Admins (User IDs Placeholder)</Label>
+                  <Input
+                    {...form.register('pipelineAdmins')}
+                    placeholder="es. {supervisor_role}, {pipeline_manager_role}"
+                    className="bg-white border-gray-300"
+                    data-testid="input-pipeline-admins"
+                  />
+                  <p className="text-xs text-gray-500">Pattern placeholder per admin assegnati dinamicamente (comma-separated)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-700">Contact Rules (JSON)</Label>
+                  <textarea
+                    {...form.register('contactRules')}
+                    placeholder='{"max_attempts_per_day": 3, "quiet_hours": {"start": "20:00", "end": "08:00"}, "sla_hours": 24}'
+                    className="w-full h-24 px-3 py-2 rounded-md border border-gray-300 bg-white text-sm"
+                    data-testid="input-contact-rules"
+                  />
+                  <p className="text-xs text-gray-500">Regole globali di contatto (max tentativi, quiet hours, SLA)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-700">Custom Status Names (JSON)</Label>
+                  <textarea
+                    {...form.register('customStatusNames')}
+                    placeholder='{"new": "Primo Contatto", "in_progress": "Lavorazione Attiva", "qualified": "Qualificato"}'
+                    className="w-full h-24 px-3 py-2 rounded-md border border-gray-300 bg-white text-sm"
+                    data-testid="input-custom-status-names"
+                  />
+                  <p className="text-xs text-gray-500">Nomi personalizzati per stati CRM (opzionale)</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-700">Deal Management Users (quando mode=custom)</Label>
+                    <Input
+                      {...form.register('dealManagementUsers')}
+                      placeholder="{crm_team_lead}, {senior_sales}"
+                      className="bg-white border-gray-300"
+                      data-testid="input-deal-management-users"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-700">Deal Creation Users (quando mode=custom)</Label>
+                    <Input
+                      {...form.register('dealCreationUsers')}
+                      placeholder="{sales_agents}, {lead_qualifier}"
+                      className="bg-white border-gray-300"
+                      data-testid="input-deal-creation-users"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-700">State Modification Users (quando mode=custom)</Label>
+                    <Input
+                      {...form.register('stateModificationUsers')}
+                      placeholder="{pipeline_owners}, {deal_managers}"
+                      className="bg-white border-gray-300"
+                      data-testid="input-state-modification-users"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-700">Deal Deletion Users (future)</Label>
+                    <Input
+                      {...form.register('dealDeletionUsers')}
+                      placeholder="{admin_only}"
+                      className="bg-white border-gray-300"
+                      data-testid="input-deal-deletion-users"
+                    />
+                  </div>
+                </div>
+              </div>
             </Card>
           </TabsContent>
 
@@ -619,32 +771,23 @@ export function BrandPipelineWizard({ open, onClose, onSave, mode = 'create', te
                   <Label htmlFor="teams-pattern" className="text-gray-700">Assigned Teams Pattern</Label>
                   <Input
                     id="teams-pattern"
-                    {...form.register('assignedTeamsPattern')}
+                    {...form.register('assignedTeams')}
                     placeholder="es. {crm_team}, {sales_team}"
                     className="bg-white border-gray-300"
                     data-testid="input-teams-pattern"
                   />
-                  <p className="text-xs text-gray-500">Pattern placeholder per team assignment dinamico</p>
+                  <p className="text-xs text-gray-500">Pattern placeholder per team assignment dinamico (comma-separated)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="users-pattern" className="text-gray-700">Assigned Users Pattern</Label>
                   <Input
                     id="users-pattern"
-                    {...form.register('assignedUsersPattern')}
-                    placeholder="es. {pipeline_owner}"
+                    {...form.register('assignedUsers')}
+                    placeholder="es. {pipeline_owner}, {sales_manager}"
                     className="bg-white border-gray-300"
                     data-testid="input-users-pattern"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="admins-pattern" className="text-gray-700">Pipeline Admins Pattern</Label>
-                  <Input
-                    id="admins-pattern"
-                    {...form.register('pipelineAdminsPattern')}
-                    placeholder="es. {admin_role}"
-                    className="bg-white border-gray-300"
-                    data-testid="input-admins-pattern"
-                  />
+                  <p className="text-xs text-gray-500">Pattern placeholder per user assignment dinamico (opzionale, comma-separated)</p>
                 </div>
               </div>
             </Card>
