@@ -4,6 +4,7 @@ import { useBrandTenant } from '../contexts/BrandTenantContext';
 import BrandLayout from '../components/BrandLayout';
 import { BrandCampaignWizard } from '../components/BrandCampaignWizard';
 import { BrandPipelineWizard } from '../components/BrandPipelineWizard';
+import BrandFunnelWizard from '../components/BrandFunnelWizard';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
@@ -396,8 +397,10 @@ function DashboardTab() {
 function TemplatesTab() {
   const [campaignWizardOpen, setCampaignWizardOpen] = useState(false);
   const [pipelineWizardOpen, setPipelineWizardOpen] = useState(false);
+  const [funnelWizardOpen, setFunnelWizardOpen] = useState(false);
   const [campaignTemplates, setCampaignTemplates] = useState<any[]>([]);
   const [pipelineTemplates, setPipelineTemplates] = useState<any[]>([]);
+  const [funnelTemplates, setFunnelTemplates] = useState<any[]>([]);
 
   const glassCardStyle = {
     background: COLORS.glass.white,
@@ -421,7 +424,13 @@ function TemplatesTab() {
     // TODO: Save to backend /api/brand/pipelines endpoint
   };
 
-  const totalTemplates = campaignTemplates.length + pipelineTemplates.length;
+  const handleSaveFunnelTemplate = (jsonTemplate: any) => {
+    console.log('📦 Funnel Template JSON:', jsonTemplate);
+    setFunnelTemplates(prev => [...prev, jsonTemplate]);
+    // TODO: Save to backend /api/brand/funnels endpoint
+  };
+
+  const totalTemplates = campaignTemplates.length + pipelineTemplates.length + funnelTemplates.length;
 
   return (
     <>
@@ -432,7 +441,7 @@ function TemplatesTab() {
               Struttura Campagne
             </h3>
             <p style={{ color: COLORS.neutral.medium, fontSize: '14px' }}>
-              Gestisci template campagne ({campaignTemplates.length}), pipelines ({pipelineTemplates.length}) e funnel
+              Gestisci template campagne ({campaignTemplates.length}), pipelines ({pipelineTemplates.length}) e funnel ({funnelTemplates.length})
             </p>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -497,6 +506,37 @@ function TemplatesTab() {
               <Plus size={20} strokeWidth={2.5} />
               Nuova Pipeline
             </button>
+
+            <button 
+              onClick={() => setFunnelWizardOpen(true)}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.semantic.info}, #60a5fa)`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+              }}
+              data-testid="button-new-funnel-template"
+            >
+              <Plus size={20} strokeWidth={2.5} />
+              Nuovo Funnel
+            </button>
           </div>
         </div>
 
@@ -507,7 +547,7 @@ function TemplatesTab() {
               Nessun template creato
             </p>
             <p style={{ color: COLORS.neutral.light, fontSize: '12px' }}>
-              📋 Clicca "Nuova Campagna" o "Nuova Pipeline" per creare il primo template
+              📋 Clicca "Nuova Campagna", "Nuova Pipeline" o "Nuovo Funnel" per creare il primo template
             </p>
           </div>
         ) : (
@@ -580,6 +620,42 @@ function TemplatesTab() {
                 </div>
               </div>
             )}
+
+            {funnelTemplates.length > 0 && (
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '12px' }}>
+                  Template Funnel ({funnelTemplates.length})
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {funnelTemplates.map((template, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        ...glassCardStyle,
+                        padding: '16px',
+                        cursor: 'pointer',
+                        borderLeft: `3px solid ${COLORS.semantic.info}`
+                      }}
+                      data-testid={`funnel-template-${index}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <FileJson size={20} style={{ color: COLORS.semantic.info }} />
+                        <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.template?.name || template.name}</h4>
+                      </div>
+                      <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
+                        {template.template?.description || template.description || 'Nessuna descrizione'}
+                      </p>
+                      <div style={{ marginTop: '8px', fontSize: '10px', color: COLORS.neutral.light }}>
+                        v{template.version} • {new Date(template.timestamp).toLocaleDateString()}
+                      </div>
+                      <div style={{ marginTop: '4px', fontSize: '10px', color: COLORS.neutral.light }}>
+                        {template.template?.pipelineOrder?.length || 0} pipelines • AI: {template.template?.aiOrchestrationEnabled ? '✅' : '❌'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -597,6 +673,12 @@ function TemplatesTab() {
         onClose={() => setPipelineWizardOpen(false)}
         onSave={handleSavePipelineTemplate}
         mode="create"
+      />
+
+      <BrandFunnelWizard
+        open={funnelWizardOpen}
+        onClose={() => setFunnelWizardOpen(false)}
+        onSave={handleSaveFunnelTemplate}
       />
     </>
   );
