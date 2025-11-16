@@ -322,3 +322,133 @@ export const insertAIAgentRegistrySchema = createInsertSchema(aiAgentsRegistry).
 });
 
 export const selectAIAgentRegistrySchema = createSelectSchema(aiAgentsRegistry);
+
+// ==================== DEPLOY CENTER SYSTEM ====================
+// Git-like deployment tracking for 300+ tenants
+
+// Deployment status enum
+export const deploymentStatusEnum = brandInterfaceSchema.enum("deployment_status", [
+  "draft",      // Not yet ready for deploy
+  "ready",      // Ready to be deployed
+  "deploying",  // Currently pushing to tenants
+  "deployed",   // Successfully deployed
+  "failed"      // Deployment failed
+]);
+
+// Tool type enum
+export const deployToolEnum = brandInterfaceSchema.enum("deploy_tool", [
+  "crm",
+  "wms",
+  "pos",
+  "analytics"
+]);
+
+// Resource type enum  
+export const deployResourceTypeEnum = brandInterfaceSchema.enum("deploy_resource_type", [
+  "campaign",
+  "pipeline", 
+  "funnel",
+  "product",
+  "supplier",
+  "pricelist",
+  "dashboard"
+]);
+
+// Branch type enum
+export const branchTypeEnum = brandInterfaceSchema.enum("branch_type", [
+  "main",  // Tenant main branch
+  "pdv"    // PDV secondary branch
+]);
+
+// Branch deployment status enum
+export const branchDeployStatusEnum = brandInterfaceSchema.enum("branch_deploy_status", [
+  "pending",
+  "in_progress",
+  "completed",
+  "failed",
+  "conflict"
+]);
+
+// Brand Deployments - Commit/deployment tracking (like Git commits)
+export const brandDeployments = brandInterfaceSchema.table("brand_deployments", {
+  id: varchar("id", { length: 100 }).primaryKey(), // commit-crm-05
+  tool: deployToolEnum("tool").notNull(),
+  resourceType: deployResourceTypeEnum("resource_type").notNull(),
+  resourceId: uuid("resource_id"), // Original resource UUID
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  version: varchar("version", { length: 50 }).notNull(), // 1.2.3
+  status: deploymentStatusEnum("status").notNull().default("draft"),
+  jsonPath: text("json_path"), // Path to JSON file
+  payload: jsonb("payload"), // Full resource data
+  metadata: jsonb("metadata").default({}), // Additional info
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  deployedAt: timestamp("deployed_at"),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// Brand Branches - Tenant/PDV branch naming (like Git branches)
+export const brandBranches = brandInterfaceSchema.table("brand_branches", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  branchName: varchar("branch_name", { length: 255 }).notNull().unique(), // rossi-spa or rossi-spa/milano-centro
+  branchType: branchTypeEnum("branch_type").notNull(),
+  tenantId: uuid("tenant_id").notNull(), // FK to w3suite.tenants
+  pdvId: uuid("pdv_id"), // FK to w3suite.stores (null for main branch)
+  parentBranch: varchar("parent_branch", { length: 255 }), // rossi-spa for PDV branches
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// Brand Deployment Status - Track deployment status per branch
+export const brandDeploymentStatus = brandInterfaceSchema.table("brand_deployment_status", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  deploymentId: varchar("deployment_id", { length: 100 }).notNull().references(() => brandDeployments.id),
+  branchName: varchar("branch_name", { length: 255 }).notNull(),
+  status: branchDeployStatusEnum("status").notNull().default("pending"),
+  errorMessage: text("error_message"),
+  webhookResponse: jsonb("webhook_response"),
+  attemptCount: integer("attempt_count").default(0),
+  lastAttemptAt: timestamp("last_attempt_at"),
+  deployedAt: timestamp("deployed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// ==================== DEPLOY CENTER TYPES ====================
+
+export type BrandDeployment = typeof brandDeployments.$inferSelect;
+export type NewBrandDeployment = typeof brandDeployments.$inferInsert;
+export type BrandBranch = typeof brandBranches.$inferSelect;
+export type NewBrandBranch = typeof brandBranches.$inferInsert;
+export type BrandDeploymentStatus = typeof brandDeploymentStatus.$inferSelect;
+export type NewBrandDeploymentStatus = typeof brandDeploymentStatus.$inferInsert;
+
+// ==================== DEPLOY CENTER SCHEMAS ====================
+
+export const insertBrandDeploymentSchema = createInsertSchema(brandDeployments).omit({
+  createdAt: true,
+  updatedAt: true
+});
+
+export const updateBrandDeploymentSchema = insertBrandDeploymentSchema.partial();
+
+export const insertBrandBranchSchema = createInsertSchema(brandBranches).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const updateBrandBranchSchema = insertBrandBranchSchema.partial();
+
+export const insertBrandDeploymentStatusSchema = createInsertSchema(brandDeploymentStatus).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const updateBrandDeploymentStatusSchema = insertBrandDeploymentStatusSchema.partial();
