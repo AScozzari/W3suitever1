@@ -4,16 +4,14 @@ import {
 } from "../db/index.js";
 import {
   brandCategories, brandProductTypes, brandProducts, brandSuppliers, brandWorkflows, brandTasks,
+  deployCenterCommits, deployCenterBranches, deployCenterStatus,
   type BrandCategory, type BrandProductType, type BrandProduct, type BrandSupplier,
   type InsertBrandCategory, type InsertBrandProductType, type InsertBrandProduct, type InsertBrandSupplier,
-  type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier
+  type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier,
+  type DeployCenterCommit, type NewDeployCenterCommit, type DeployCenterBranch, type NewDeployCenterBranch,
+  type DeployCenterStatus, type NewDeployCenterStatus
 } from "../../../api/src/db/schema/brand-interface.js";
 import type { BrandWorkflow, InsertBrandWorkflow, BrandTask, NewBrandTask } from "../../../api/src/db/schema/brand-interface.js";
-import {
-  brandDeployments, brandBranches, brandDeploymentStatus,
-  type BrandDeployment, type NewBrandDeployment, type BrandBranch, type NewBrandBranch,
-  type BrandDeploymentStatus, type NewBrandDeploymentStatus
-} from "../db/index.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
 import { db as w3db } from "../../../api/src/core/db.js";
 import { 
@@ -171,21 +169,21 @@ export interface IBrandStorage {
   // ==================== DEPLOY CENTER ====================
   
   // Deployments operations (Git-like commits)
-  getDeployments(filters?: { tool?: string; status?: string }): Promise<any[]>;
-  getDeployment(id: string): Promise<any | null>;
-  createDeployment(data: any): Promise<any>;
-  updateDeployment(id: string, data: any): Promise<any | null>;
+  getDeployments(filters?: { tool?: string; status?: string }): Promise<DeployCenterCommit[]>;
+  getDeployment(id: string): Promise<DeployCenterCommit | null>;
+  createDeployment(data: NewDeployCenterCommit): Promise<DeployCenterCommit>;
+  updateDeployment(id: string, data: Partial<DeployCenterCommit>): Promise<DeployCenterCommit | null>;
   deleteDeployment(id: string): Promise<boolean>;
   
   // Branches operations (Tenant/PDV branch naming)
-  getBranches(tenantId?: string): Promise<any[]>;
-  getBranch(branchName: string): Promise<any | null>;
-  createBranch(data: any): Promise<any>;
+  getBranches(tenantId?: string): Promise<DeployCenterBranch[]>;
+  getBranch(branchName: string): Promise<DeployCenterBranch | null>;
+  createBranch(data: NewDeployCenterBranch): Promise<DeployCenterBranch>;
   
   // Deployment Status operations (Track push status per branch)
-  getDeploymentStatuses(deploymentId: string): Promise<any[]>;
-  createDeploymentStatus(data: any): Promise<any>;
-  updateDeploymentStatus(id: string, data: any): Promise<any | null>;
+  getDeploymentStatuses(deploymentId: string): Promise<DeployCenterStatus[]>;
+  createDeploymentStatus(data: NewDeployCenterStatus): Promise<DeployCenterStatus>;
+  updateDeploymentStatus(id: string, data: Partial<DeployCenterStatus>): Promise<DeployCenterStatus | null>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -1502,7 +1500,13 @@ class BrandDrizzleStorage implements IBrandStorage {
       const results = await db.insert(brandSuppliers)
         .values({ ...data, id, createdAt: new Date(), updatedAt: new Date() })
         .returning();
-      return results[0];
+      
+      const supplier = results[0];
+      
+      // 🚀 AUTO-COMMIT: Create Deploy Center commit automatically
+      await this.autoCommitWmsResource('supplier', supplier, data.createdBy);
+      
+      return supplier;
     } catch (error) {
       console.error('Error creating brand supplier:', error);
       throw error;
@@ -1532,6 +1536,68 @@ class BrandDrizzleStorage implements IBrandStorage {
     } catch (error) {
       console.error(`Error deleting brand supplier ${id}:`, error);
       throw error;
+    }
+  }
+
+  // ==================== AUTO-COMMIT WMS RESOURCES ====================
+  
+  /**
+   * 🚀 AUTO-COMMIT: Auto-generate Deploy Center commit for WMS resources
+   * Creates brand_deployment record with JSON payload ready for deployment
+   */
+  private async autoCommitWmsResource(
+    resourceType: 'supplier' | 'product' | 'product_type',
+    resource: any,
+    createdBy: string
+  ): Promise<DeployCenterCommit | null> {
+    try {
+      // Generate commit ID following naming convention: commit-wms-{type}-{timestamp}-{random}
+      const timestamp = Date.now();
+      const random = nanoid(6);
+      const commitId = `commit-wms-${resourceType}-${timestamp}-${random}`;
+      
+      // Create JSON payload (full resource data for WMS = FULL READ-ONLY deployment)
+      const payload = {
+        resourceType,
+        data: resource,
+        deploymentMode: 'full_replace', // WMS resources are always full replace
+        version: '1.0.0',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Get brandTenantId (hardcoded for development)
+      // TODO: In production, this should come from authenticated user context
+      const brandTenantId = '47a3e13d-1738-4a37-bdca-cbc4cedc402c'; // Brand Interface HQ
+      
+      console.log(`🚀 [AUTO-COMMIT] Starting auto-commit for ${resourceType}: ${resource.name || resource.code}`);
+      
+      // Create deployment record
+      const deployment = await this.createDeployment({
+        id: commitId,
+        tool: 'wms',
+        resourceType,
+        resourceId: resource.id,
+        name: `Auto-commit: ${resource.name || resource.code}`,
+        description: `Auto-generated commit for ${resourceType} creation/update`,
+        version: '1.0.0',
+        status: 'ready',
+        payload,
+        metadata: {
+          autoGenerated: true,
+          sourceAction: 'create',
+          timestamp: new Date().toISOString()
+        },
+        createdBy,
+        brandTenantId
+      });
+      
+      console.log(`✅ [AUTO-COMMIT] Created deployment ${commitId} for ${resourceType}: ${resource.name || resource.code}`);
+      
+      return deployment;
+    } catch (error) {
+      // Non-blocking: log error but don't fail the main operation
+      console.error(`⚠️  [AUTO-COMMIT] Failed to create deployment for ${resourceType}:`, error);
+      return null;
     }
   }
 
@@ -1706,35 +1772,35 @@ class BrandDrizzleStorage implements IBrandStorage {
 
   // ==================== DEPLOY CENTER IMPLEMENTATION ====================
 
-  async getDeployments(filters?: { tool?: string; status?: string }): Promise<BrandDeployment[]> {
+  async getDeployments(filters?: { tool?: string; status?: string }): Promise<DeployCenterCommit[]> {
     try {
-      let query = db.select().from(brandDeployments);
+      let query = db.select().from(deployCenterCommits);
       
       const conditions = [];
       if (filters?.tool) {
-        conditions.push(eq(brandDeployments.tool, filters.tool as any));
+        conditions.push(eq(deployCenterCommits.tool, filters.tool as any));
       }
       if (filters?.status) {
-        conditions.push(eq(brandDeployments.status, filters.status as any));
+        conditions.push(eq(deployCenterCommits.status, filters.status as any));
       }
       
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as any;
       }
       
-      const results = await query.orderBy(desc(brandDeployments.createdAt));
-      return results as BrandDeployment[];
+      const results = await query.orderBy(desc(deployCenterCommits.createdAt));
+      return results as DeployCenterCommit[];
     } catch (error) {
       console.error('Error fetching deployments:', error);
       throw error;
     }
   }
 
-  async getDeployment(id: string): Promise<BrandDeployment | null> {
+  async getDeployment(id: string): Promise<DeployCenterCommit | null> {
     try {
       const results = await db.select()
-        .from(brandDeployments)
-        .where(eq(brandDeployments.id, id))
+        .from(deployCenterCommits)
+        .where(eq(deployCenterCommits.id, id))
         .limit(1);
       
       return results[0] || null;
@@ -1744,9 +1810,9 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async createDeployment(data: NewBrandDeployment): Promise<BrandDeployment> {
+  async createDeployment(data: NewDeployCenterCommit): Promise<DeployCenterCommit> {
     try {
-      const results = await db.insert(brandDeployments)
+      const results = await db.insert(deployCenterCommits)
         .values({
           ...data,
           createdAt: new Date(),
@@ -1761,11 +1827,11 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async updateDeployment(id: string, data: Partial<BrandDeployment>): Promise<BrandDeployment | null> {
+  async updateDeployment(id: string, data: Partial<DeployCenterCommit>): Promise<DeployCenterCommit | null> {
     try {
-      const results = await db.update(brandDeployments)
+      const results = await db.update(deployCenterCommits)
         .set({ ...data, updatedAt: new Date() })
-        .where(eq(brandDeployments.id, id))
+        .where(eq(deployCenterCommits.id, id))
         .returning();
       
       return results[0] || null;
@@ -1777,8 +1843,8 @@ class BrandDrizzleStorage implements IBrandStorage {
 
   async deleteDeployment(id: string): Promise<boolean> {
     try {
-      const results = await db.delete(brandDeployments)
-        .where(eq(brandDeployments.id, id))
+      const results = await db.delete(deployCenterCommits)
+        .where(eq(deployCenterCommits.id, id))
         .returning();
       
       return results.length > 0;
@@ -1788,27 +1854,27 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async getBranches(tenantId?: string): Promise<BrandBranch[]> {
+  async getBranches(tenantId?: string): Promise<DeployCenterBranch[]> {
     try {
-      let query = db.select().from(brandBranches);
+      let query = db.select().from(deployCenterBranches);
       
       if (tenantId) {
-        query = query.where(eq(brandBranches.tenantId, tenantId)) as any;
+        query = query.where(eq(deployCenterBranches.tenantId, tenantId)) as any;
       }
       
-      const results = await query.orderBy(brandBranches.branchName);
-      return results as BrandBranch[];
+      const results = await query.orderBy(deployCenterBranches.branchName);
+      return results as DeployCenterBranch[];
     } catch (error) {
       console.error('Error fetching branches:', error);
       throw error;
     }
   }
 
-  async getBranch(branchName: string): Promise<BrandBranch | null> {
+  async getBranch(branchName: string): Promise<DeployCenterBranch | null> {
     try {
       const results = await db.select()
-        .from(brandBranches)
-        .where(eq(brandBranches.branchName, branchName))
+        .from(deployCenterBranches)
+        .where(eq(deployCenterBranches.branchName, branchName))
         .limit(1);
       
       return results[0] || null;
@@ -1818,9 +1884,9 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async createBranch(data: NewBrandBranch): Promise<BrandBranch> {
+  async createBranch(data: NewDeployCenterBranch): Promise<DeployCenterBranch> {
     try {
-      const results = await db.insert(brandBranches)
+      const results = await db.insert(deployCenterBranches)
         .values({
           ...data,
           createdAt: new Date(),
@@ -1835,23 +1901,23 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async getDeploymentStatuses(deploymentId: string): Promise<BrandDeploymentStatus[]> {
+  async getDeploymentStatuses(deploymentId: string): Promise<DeployCenterStatus[]> {
     try {
       const results = await db.select()
-        .from(brandDeploymentStatus)
-        .where(eq(brandDeploymentStatus.deploymentId, deploymentId))
-        .orderBy(brandDeploymentStatus.createdAt);
+        .from(deployCenterStatus)
+        .where(eq(deployCenterStatus.deploymentId, deploymentId))
+        .orderBy(deployCenterStatus.createdAt);
       
-      return results as BrandDeploymentStatus[];
+      return results as DeployCenterStatus[];
     } catch (error) {
       console.error(`Error fetching deployment statuses for ${deploymentId}:`, error);
       throw error;
     }
   }
 
-  async createDeploymentStatus(data: NewBrandDeploymentStatus): Promise<BrandDeploymentStatus> {
+  async createDeploymentStatus(data: NewDeployCenterStatus): Promise<DeployCenterStatus> {
     try {
-      const results = await db.insert(brandDeploymentStatus)
+      const results = await db.insert(deployCenterStatus)
         .values({
           ...data,
           createdAt: new Date(),
@@ -1866,11 +1932,11 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async updateDeploymentStatus(id: string, data: Partial<BrandDeploymentStatus>): Promise<BrandDeploymentStatus | null> {
+  async updateDeploymentStatus(id: string, data: Partial<DeployCenterStatus>): Promise<DeployCenterStatus | null> {
     try {
-      const results = await db.update(brandDeploymentStatus)
+      const results = await db.update(deployCenterStatus)
         .set({ ...data, updatedAt: new Date() })
-        .where(eq(brandDeploymentStatus.id, id))
+        .where(eq(deployCenterStatus.id, id))
         .returning();
       
       return results[0] || null;

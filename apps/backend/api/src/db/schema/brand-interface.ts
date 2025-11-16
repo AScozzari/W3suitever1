@@ -273,6 +273,107 @@ export const insertBrandDeploymentSchema = createInsertSchema(brandDeployments).
 export type InsertBrandDeployment = z.infer<typeof insertBrandDeploymentSchema>;
 export type BrandDeployment = typeof brandDeployments.$inferSelect;
 
+// ==================== DEPLOY CENTER TABLES ====================
+// Git-inspired deployment system for WMS/CRM master catalog
+
+export const deployToolEnum = pgEnum('deploy_tool', ['wms', 'crm', 'pos', 'analytics', 'hr']);
+export const deployResourceTypeEnum = pgEnum('deploy_resource_type', [
+  'supplier', 'product', 'product_type', 'campaign', 'pipeline', 'funnel', 'workflow', 'task'
+]);
+export const deployCommitStatusEnum = pgEnum('deploy_commit_status', ['ready', 'deployed', 'failed', 'archived']);
+
+// Deploy Center Commits (versioned deployments)
+export const deployCenterCommits = brandInterfaceSchema.table("deploy_center_commits", {
+  id: varchar("id", { length: 100 }).primaryKey(), // commit-wms-{type}-{timestamp}-{random}
+  tool: deployToolEnum("tool").notNull(),
+  resourceType: deployResourceTypeEnum("resource_type").notNull(),
+  resourceId: varchar("resource_id", { length: 100 }), // Original resource ID (can be varchar like sup_xxx)
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  version: varchar("version", { length: 20 }).notNull(),
+  status: deployCommitStatusEnum("status").notNull().default('ready'),
+  jsonPath: varchar("json_path", { length: 500 }), // Path to JSON file in Git repo
+  payload: jsonb("payload").notNull(), // Full resource data
+  metadata: jsonb("metadata").default({}),
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  deployedAt: timestamp("deployed_at"),
+  brandTenantId: uuid("brand_tenant_id").notNull(),
+}, (table) => [
+  index("deploy_commits_tool_idx").on(table.tool),
+  index("deploy_commits_resource_idx").on(table.resourceType, table.resourceId),
+  index("deploy_commits_status_idx").on(table.status),
+]);
+
+// Deploy Center Branches (tenant/PDV hierarchy)
+export const deployCenterBranches = brandInterfaceSchema.table("deploy_center_branches", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  branchName: varchar("branch_name", { length: 200 }).unique().notNull(), // tenant-slug or tenant-slug/pdv-slug
+  tenantId: uuid("tenant_id"), // Reference to w3suite.tenants
+  pdvId: uuid("pdv_id"), // Reference to w3suite.stores (if branch is PDV-level)
+  isMainBranch: boolean("is_main_branch").default(false), // true for tenant-level branches
+  lastDeployedCommitId: varchar("last_deployed_commit_id", { length: 100 }),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull(),
+}, (table) => [
+  index("deploy_branches_tenant_idx").on(table.tenantId),
+  index("deploy_branches_pdv_idx").on(table.pdvId),
+]);
+
+// Deploy Center Status Tracking (deployment execution status per branch)
+export const deployCenterStatus = brandInterfaceSchema.table("deploy_center_status", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  deploymentId: varchar("deployment_id", { length: 100 }).notNull(), // FK to deploy_center_commits.id
+  branchName: varchar("branch_name", { length: 200 }).notNull(), // FK to deploy_center_branches.branch_name
+  status: deployCommitStatusEnum("status").notNull().default('ready'),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull(),
+}, (table) => [
+  index("deploy_status_deployment_idx").on(table.deploymentId),
+  index("deploy_status_branch_idx").on(table.branchName),
+  uniqueIndex("deploy_status_unique").on(table.deploymentId, table.branchName),
+]);
+
+// Zod schemas for Deploy Center
+export const insertDeployCenterCommitSchema = createInsertSchema(deployCenterCommits).omit({
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  tool: z.enum(['wms', 'crm', 'pos', 'analytics', 'hr']),
+  resourceType: z.enum(['supplier', 'product', 'product_type', 'campaign', 'pipeline', 'funnel', 'workflow', 'task']),
+  status: z.enum(['ready', 'deployed', 'failed', 'archived']).optional(),
+  payload: z.any(),
+});
+
+export const insertDeployCenterBranchSchema = createInsertSchema(deployCenterBranches).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDeployCenterStatusSchema = createInsertSchema(deployCenterStatus).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: z.enum(['ready', 'deployed', 'failed', 'archived']).optional(),
+});
+
+export type DeployCenterCommit = typeof deployCenterCommits.$inferSelect;
+export type NewDeployCenterCommit = z.infer<typeof insertDeployCenterCommitSchema>;
+export type DeployCenterBranch = typeof deployCenterBranches.$inferSelect;
+export type NewDeployCenterBranch = z.infer<typeof insertDeployCenterBranchSchema>;
+export type DeployCenterStatus = typeof deployCenterStatus.$inferSelect;
+export type NewDeployCenterStatus = z.infer<typeof insertDeployCenterStatusSchema>;
+
 // BRAND CONFIGS - Migrated to brand_interface schema
 export const brandConfigs = brandInterfaceSchema.table("brand_configs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
