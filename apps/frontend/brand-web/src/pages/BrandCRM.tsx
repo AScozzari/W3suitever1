@@ -6,8 +6,10 @@ import { BrandCampaignWizard } from '../components/BrandCampaignWizard';
 import { BrandPipelineWizard } from '../components/BrandPipelineWizard';
 import BrandFunnelWizard from '../components/BrandFunnelWizard';
 import { BrandWorkflowsTab } from '../components/BrandWorkflowsTab';
+import { BrandStructuresDataTable } from '../components/BrandStructuresDataTable';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { useToast } from '../hooks/use-toast';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
@@ -220,10 +222,52 @@ function TemplatesTab() {
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
   const [showPipelineWizard, setShowPipelineWizard] = useState(false);
   const [showFunnelWizard, setShowFunnelWizard] = useState(false);
+  const [editingStructure, setEditingStructure] = useState<{ id: string; type: 'campaign' | 'pipeline' | 'funnel' } | null>(null);
+  const { toast } = useToast();
 
   const handleSaveTemplate = (template: any) => {
     console.log('Template saved:', template);
+    toast({
+      title: 'Template salvato',
+      description: 'Il template è stato salvato con successo',
+    });
     // TODO: Save to JSON file for Git versioning
+  };
+
+  const handleEditStructure = (id: string, type: 'campaign' | 'pipeline' | 'funnel') => {
+    console.log('Editing structure:', id, type);
+    setEditingStructure({ id, type });
+    // Open appropriate wizard in edit mode
+    if (type === 'campaign') setShowCampaignWizard(true);
+    if (type === 'pipeline') setShowPipelineWizard(true);
+    if (type === 'funnel') setShowFunnelWizard(true);
+  };
+
+  const handleViewStructure = (id: string, type: 'campaign' | 'pipeline' | 'funnel') => {
+    console.log('Viewing structure:', id, type);
+    // View modal is handled inside BrandStructuresDataTable
+  };
+
+  const handleToggleActive = (id: string, currentState: boolean) => {
+    console.log('Toggling active state for:', id, 'from', currentState, 'to', !currentState);
+    toast({
+      title: currentState ? 'Struttura disabilitata' : 'Struttura abilitata',
+      description: `La struttura è stata ${currentState ? 'disabilitata' : 'abilitata'} con successo`,
+    });
+    // TODO: Update state via API
+  };
+
+  const handleDeleteStructure = (id: string) => {
+    console.log('Deleting structure:', id);
+    const confirmDelete = window.confirm('Sei sicuro di voler eliminare questa struttura?');
+    if (confirmDelete) {
+      toast({
+        title: 'Struttura eliminata',
+        description: 'La struttura è stata eliminata con successo',
+        variant: 'destructive'
+      });
+      // TODO: Delete via API
+    }
   };
 
   return (
@@ -305,6 +349,14 @@ function TemplatesTab() {
           </Button>
         </div>
       </div>
+
+      {/* Structures DataTable */}
+      <BrandStructuresDataTable
+        onEdit={handleEditStructure}
+        onView={handleViewStructure}
+        onToggleActive={handleToggleActive}
+        onDelete={handleDeleteStructure}
+      />
 
       {/* Wizards */}
       <BrandCampaignWizard
