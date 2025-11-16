@@ -26,23 +26,23 @@ import {
   Download, Upload, PlayCircle, Brain, List, 
   LayoutGrid, ArrowLeft, Save, X, Palette
 } from 'lucide-react';
+import { BrandWorkflowsDataTable } from './BrandWorkflowsDataTable';
 
 // Types for workflows
 interface BrandWorkflow {
   id: string;
   code: string;
   name: string;
-  description?: string;
-  category: 'crm' | 'wms' | 'hr' | 'pos' | 'analytics' | 'generic';
+  description: string;
+  category: string;
   tags: string[];
   version: string;
-  status: 'draft' | 'active' | 'archived' | 'deprecated';
+  status: 'active' | 'draft' | 'archived';
   dslJson: {
     nodes: any[];
     edges: any[];
+    viewport?: any;
   };
-  deploymentStatus: 'draft' | 'deployed' | 'archived';
-  deployedToCount: number;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -68,11 +68,9 @@ export function BrandWorkflowsTab() {
       version: '1.0.0',
       status: 'active',
       dslJson: { nodes: [], edges: [] },
-      deploymentStatus: 'deployed',
-      deployedToCount: 45,
       createdBy: 'admin@brand.com',
       createdAt: '2025-01-15T10:00:00Z',
-      updatedAt: '2025-01-15T10:00:00Z'
+      updatedAt: '2025-03-20T14:22:00Z'
     },
     {
       id: '2',
@@ -84,11 +82,9 @@ export function BrandWorkflowsTab() {
       version: '2.1.0',
       status: 'active',
       dslJson: { nodes: [], edges: [] },
-      deploymentStatus: 'deployed',
-      deployedToCount: 120,
       createdBy: 'admin@brand.com',
       createdAt: '2025-02-01T14:30:00Z',
-      updatedAt: '2025-02-10T09:15:00Z'
+      updatedAt: '2025-03-18T09:15:00Z'
     },
     {
       id: '3',
@@ -100,11 +96,9 @@ export function BrandWorkflowsTab() {
       version: '1.5.0',
       status: 'draft',
       dslJson: { nodes: [], edges: [] },
-      deploymentStatus: 'draft',
-      deployedToCount: 0,
       createdBy: 'admin@brand.com',
       createdAt: '2025-03-05T11:20:00Z',
-      updatedAt: '2025-03-05T11:20:00Z'
+      updatedAt: '2025-03-05T16:45:00Z'
     }
   ];
 
@@ -130,8 +124,6 @@ export function BrandWorkflowsTab() {
       version: '1.0.0',
       status: 'draft',
       dslJson: { nodes: [], edges: [] },
-      deploymentStatus: 'draft',
-      deployedToCount: 0,
       createdBy: 'admin@brand.com',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -169,9 +161,20 @@ export function BrandWorkflowsTab() {
     // TODO: Implement API call to delete workflow
   };
 
-  const handleDuplicateWorkflow = (workflow: BrandWorkflow) => {
+  const handleDuplicateWorkflow = (workflowId: string) => {
+    const workflow = workflows.find(w => w.id === workflowId);
+    if (!workflow) return;
+    
     console.log('📋 Duplicating workflow:', workflow);
-    // TODO: Implement duplicate logic
+    // TODO: Implement duplicate logic with API mutation
+  };
+
+  const handleExportWorkflow = (workflowId: string) => {
+    const workflow = workflows.find(w => w.id === workflowId);
+    if (!workflow) return;
+    
+    console.log('📥 Exporting workflow:', workflow);
+    // TODO: Implement export as JSON file
   };
 
   if (viewMode === 'canvas') {
@@ -231,158 +234,34 @@ export function BrandWorkflowsTab() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Cerca workflow per nome, codice o tag..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-          data-testid="input-search-workflows"
-        />
-      </div>
-
-      {/* Workflows Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredWorkflows.map((workflow) => (
-          <WorkflowCard
-            key={workflow.id}
-            workflow={workflow}
-            onEdit={() => handleEditWorkflow(workflow)}
-            onDelete={() => handleDeleteWorkflow(workflow.id)}
-            onDuplicate={() => handleDuplicateWorkflow(workflow)}
+      {/* Search & Stats */}
+      <div className="flex items-center justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Cerca workflow per nome, codice o tag..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            data-testid="input-search-workflows"
           />
-        ))}
-      </div>
-
-      {filteredWorkflows.length === 0 && (
-        <div className="windtre-glass-panel p-12 text-center">
-          <GitBranch className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Nessun workflow trovato
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery 
-              ? 'Prova con un termine di ricerca diverso'
-              : 'Inizia creando il tuo primo workflow template'}
-          </p>
-          {!searchQuery && (
-            <Button
-              onClick={handleCreateWorkflow}
-              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crea Primo Workflow
-            </Button>
-          )}
         </div>
-      )}
-    </div>
-  );
-}
-
-// Workflow Card Component
-interface WorkflowCardProps {
-  workflow: BrandWorkflow;
-  onEdit: () => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
-}
-
-function WorkflowCard({ workflow, onEdit, onDelete, onDuplicate }: WorkflowCardProps) {
-  const statusColors = {
-    draft: 'bg-gray-100 text-gray-700',
-    active: 'bg-green-100 text-green-700',
-    archived: 'bg-yellow-100 text-yellow-700',
-    deprecated: 'bg-red-100 text-red-700'
-  };
-
-  const categoryColors = {
-    crm: 'bg-windtre-orange/10 text-windtre-orange',
-    wms: 'bg-blue-100 text-blue-700',
-    hr: 'bg-purple-100 text-purple-700',
-    pos: 'bg-green-100 text-green-700',
-    analytics: 'bg-pink-100 text-pink-700',
-    generic: 'bg-gray-100 text-gray-700'
-  };
-
-  return (
-    <div className="windtre-glass-panel p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${categoryColors[workflow.category]}`}>
-              {workflow.category.toUpperCase()}
-            </span>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColors[workflow.status]}`}>
-              {workflow.status}
-            </span>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-1">{workflow.name}</h3>
-          <p className="text-xs text-gray-500 mb-2">{workflow.code}</p>
+        <div className="text-sm text-gray-600">
+          {filteredWorkflows.length} workflow{filteredWorkflows.length !== 1 ? 's' : ''}
         </div>
       </div>
 
-      <p className="text-sm text-gray-600 mb-3 line-clamp-2 min-h-[2.5rem]">
-        {workflow.description || 'Nessuna descrizione'}
-      </p>
-
-      <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
-        {workflow.tags.map((tag) => (
-          <span
-            key={tag}
-            className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
-        <div>
-          <span className="font-medium">v{workflow.version}</span>
-        </div>
-        <div>
-          {workflow.deploymentStatus === 'deployed' && (
-            <span className="text-green-600 font-medium">
-              ✓ {workflow.deployedToCount} tenant
-            </span>
-          )}
-          {workflow.deploymentStatus === 'draft' && (
-            <span className="text-gray-400">Non deployato</span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={onEdit}
-          size="sm"
-          className="flex-1 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-          data-testid={`button-edit-workflow-${workflow.id}`}
-        >
-          <Edit className="h-3 w-3 mr-1" />
-          Modifica
-        </Button>
-        <Button
-          onClick={onDuplicate}
-          size="sm"
-          variant="outline"
-          data-testid={`button-duplicate-workflow-${workflow.id}`}
-        >
-          <Copy className="h-3 w-3" />
-        </Button>
-        <Button
-          onClick={onDelete}
-          size="sm"
-          variant="outline"
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          data-testid={`button-delete-workflow-${workflow.id}`}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
+      {/* Workflows DataTable */}
+      <BrandWorkflowsDataTable
+        workflows={filteredWorkflows}
+        onEdit={(id) => {
+          const workflow = workflows.find(w => w.id === id);
+          if (workflow) handleEditWorkflow(workflow);
+        }}
+        onDelete={handleDeleteWorkflow}
+        onDuplicate={handleDuplicateWorkflow}
+        onExport={handleExportWorkflow}
+      />
     </div>
   );
 }
