@@ -5,7 +5,19 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  MiniMap,
+  useNodesState, 
+  useEdgesState, 
+  addEdge,
+  type Connection,
+  type Node,
+  type Edge,
+  ReactFlowProvider 
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -137,9 +149,18 @@ export function BrandWorkflowsTab() {
     setViewMode('list');
   };
 
-  const handleSaveWorkflow = () => {
-    console.log('💾 Saving workflow:', selectedWorkflow);
-    // TODO: Implement API call to save workflow
+  const handleSaveWorkflow = (updatedDSL: { nodes: Node[]; edges: Edge[]; viewport: any }) => {
+    console.log('💾 Saving workflow with updated DSL:', updatedDSL);
+    
+    if (selectedWorkflow) {
+      // Update workflow with new DSL (in real implementation, this would persist to backend)
+      const updatedWorkflow = { ...selectedWorkflow, dslJson: updatedDSL };
+      console.log('📝 Updated workflow object:', updatedWorkflow);
+      
+      // TODO: Implement TanStack Query mutation to persist to backend
+      // updateWorkflowMutation.mutate({ id: selectedWorkflow.id, dslJson: updatedDSL });
+    }
+    
     handleBackToList();
   };
 
@@ -370,27 +391,34 @@ function WorkflowCard({ workflow, onEdit, onDelete, onDuplicate }: WorkflowCardP
 interface WorkflowCanvasViewProps {
   workflow: BrandWorkflow | null;
   onBack: () => void;
-  onSave: () => void;
+  onSave: (updatedDSL: { nodes: Node[]; edges: Edge[]; viewport: any }) => void;
   onAIAssistant: () => void;
 }
 
 function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: WorkflowCanvasViewProps) {
-  const [nodes, setNodes] = useState<any[]>(workflow?.dslJson?.nodes || []);
-  const [edges, setEdges] = useState<any[]>(workflow?.dslJson?.edges || []);
   const [isPaletteOpen, setIsPaletteOpen] = useState(true);
+  
+  // Initialize ReactFlow state from workflow DSL
+  const initialNodes: Node[] = workflow?.dslJson?.nodes || [];
+  const initialEdges: Edge[] = workflow?.dslJson?.edges || [];
+  
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const handleNodesChange = useCallback((newNodes: any[]) => {
-    setNodes(newNodes);
-  }, []);
-
-  const handleEdgesChange = useCallback((newEdges: any[]) => {
-    setEdges(newEdges);
-  }, []);
+  // Handle edge connections
+  const onConnect = useCallback(
+    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges]
+  );
 
   const handleSaveClick = () => {
-    console.log('💾 Saving workflow with nodes/edges:', { nodes, edges });
-    // TODO: Update workflow object with new dslJson
-    onSave();
+    const updatedDSL = {
+      nodes,
+      edges,
+      viewport: { x: 0, y: 0, zoom: 1 }
+    };
+    console.log('💾 Saving workflow with DSL:', updatedDSL);
+    onSave(updatedDSL);
   };
 
   return (
@@ -497,7 +525,19 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
 
         {/* ReactFlow Canvas */}
         <div className="flex-1 bg-gray-50">
-          <WorkflowCanvasPlaceholder nodeCount={nodes.length} edgeCount={edges.length} />
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            fitView
+            className="bg-gray-50"
+          >
+            <Background color="#ccc" gap={16} />
+            <Controls />
+            <MiniMap />
+          </ReactFlow>
         </div>
       </div>
     </div>
@@ -513,25 +553,6 @@ function NodePaletteItem({ label, description, icon }: { label: string; descript
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-gray-900 truncate">{label}</div>
           <div className="text-xs text-gray-500 truncate">{description}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Placeholder canvas (will be replaced with real ReactFlow when @xyflow/react is properly installed)
-function WorkflowCanvasPlaceholder({ nodeCount, edgeCount }: { nodeCount: number; edgeCount: number }) {
-  return (
-    <div className="h-full flex items-center justify-center text-gray-500">
-      <div className="text-center">
-        <GitBranch className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-semibold mb-2">Workflow Canvas</h3>
-        <p className="text-sm mb-4">
-          ReactFlow canvas sarà disponibile qui
-        </p>
-        <div className="text-xs text-gray-400 space-y-1">
-          <p>📊 Nodes: {nodeCount} | Edges: {edgeCount}</p>
-          <p>🔧 Integrazione @xyflow/react in corso</p>
         </div>
       </div>
     </div>
