@@ -4,20 +4,22 @@
  * Features: Workflow list, Canvas editor, Node palette, AI assistant
  */
 
-import { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import { 
   ReactFlow, 
   Background, 
   Controls, 
   MiniMap,
-  useNodesState, 
-  useEdgesState, 
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
   useReactFlow,
   type Connection,
   type Node,
   type Edge,
   type NodeProps,
+  type NodeChange,
+  type EdgeChange,
   ReactFlowProvider 
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -32,9 +34,18 @@ import {
 import { BrandWorkflowsDataTable } from './BrandWorkflowsDataTable';
 import { useBrandWorkflows, useCreateBrandWorkflow, useUpdateBrandWorkflow, useDeleteBrandWorkflow, type BrandWorkflow as APIBrandWorkflow } from '../hooks/useBrandWorkflows';
 import { useToast } from '../hooks/use-toast';
-import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../../../web/src/lib/workflow-node-definitions';
+import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../lib/workflow-node-definitions';
 import { AIWorkflowChatModal } from './AIWorkflowChatModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { useWorkflowStore } from '../stores/workflowStore';
+import { WorkflowActionNode } from './workflow-nodes/WorkflowActionNode';
+import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
+import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
+import { WorkflowRoutingNode } from './workflow-nodes/WorkflowRoutingNode';
+import { WorkflowFlowControlNode } from './workflow-nodes/WorkflowFlowControlNode';
+import NodeConfigPanel from './NodeConfigPanel';
+import { WorkflowTestResultDialog } from './WorkflowTestResultDialog';
+import { Undo2, Redo2, Settings } from 'lucide-react';
 
 // Types for workflows (aligned with API types)
 type WorkflowStatus = 'active' | 'draft' | 'archived' | 'deprecated';
@@ -343,26 +354,100 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
+  const [isTestResultOpen, setIsTestResultOpen] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
   const reactFlowInstance = useReactFlow();
   
-  // Initialize ReactFlow state from workflow DSL
-  const initialNodes: Node[] = workflow?.dslJson?.nodes || [];
-  const initialEdges: Edge[] = workflow?.dslJson?.edges || [];
+  // Zustand Store
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const selectedNodeId = useWorkflowStore((state) => state.selectedNodeId);
+  const canUndo = useWorkflowStore((state) => state.historyIndex > 0);
+  const canRedo = useWorkflowStore((state) => state.historyIndex < state.history.length - 1);
+  const { setNodes, setEdges, setViewport, addNode, updateNode, selectNode, undo, redo, loadTemplateDefinition, clearWorkflow, saveSnapshot, addEdge: storeAddEdge } = useWorkflowStore();
   
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  // Initialize workflow from DSL on mount
+  const isInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (workflow && !isInitialized.current) {
+      const initialNodes = workflow.dslJson?.nodes || [];
+      const initialEdges = workflow.dslJson?.edges || [];
+      const initialViewport = workflow.dslJson?.viewport || { x: 0, y: 0, zoom: 1 };
+      loadTemplateDefinition({ nodes: initialNodes, edges: initialEdges, viewport: initialViewport }, workflow.id);
+      isInitialized.current = true;
+    }
+  }, [workflow, loadTemplateDefinition]);
 
-  // Handle edge connections
+  // ReactFlow change handlers - sync to Zustand store with history
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const updatedNodes = applyNodeChanges(changes, nodes);
+    setNodes(updatedNodes);
+    
+    // Save snapshot ONLY after drag completes (not during dragging)
+    const hasNonDraggingPosition = changes.some(c => 
+      c.type === 'position' && (c as any).dragging === false
+    );
+    const hasOtherSignificant = changes.some(c => 
+      ['add', 'remove', 'reset'].includes(c.type)
+    );
+    
+    if (hasNonDraggingPosition || hasOtherSignificant) {
+      const changeTypes = changes.map(c => c.type).join(', ');
+      saveSnapshot(`Node changes: ${changeTypes}`);
+    }
+  }, [nodes, setNodes, saveSnapshot]);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const updatedEdges = applyEdgeChanges(changes, edges);
+    setEdges(updatedEdges);
+    
+    // Save snapshot for undo/redo (include all types except select)
+    const significantTypes = ['add', 'remove', 'reset'];
+    const hasSignificantChange = changes.some(c => significantTypes.includes(c.type));
+    if (hasSignificantChange) {
+      const changeTypes = changes.map(c => c.type).join(', ');
+      saveSnapshot(`Edge changes: ${changeTypes}`);
+    }
+  }, [edges, setEdges, saveSnapshot]);
+
+  // Handle edge connections - use store action for history
   const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
+    (connection: Connection) => {
+      // Create new edge from connection
+      const newEdge: Edge = {
+        id: `${connection.source}-${connection.target}-${Date.now()}`,
+        source: connection.source!,
+        target: connection.target!,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+      };
+      
+      // Use store action (includes saveSnapshot)
+      storeAddEdge(newEdge);
+    },
+    [storeAddEdge]
   );
 
   // Handle node click for config
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id);
-  }, []);
+    selectNode(node.id);
+    setIsConfigPanelOpen(true);
+  }, [selectNode]);
+  
+  // Track viewport changes (pan + zoom) - debounced to avoid too many snapshots
+  const viewportTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const onMove = useCallback((event: any, viewport: any) => {
+    setViewport(viewport);
+    
+    // Debounce snapshot to avoid too many entries
+    if (viewportTimeoutRef.current) {
+      clearTimeout(viewportTimeoutRef.current);
+    }
+    viewportTimeoutRef.current = setTimeout(() => {
+      saveSnapshot(`Viewport: zoom ${viewport.zoom.toFixed(2)}, x:${viewport.x.toFixed(0)}, y:${viewport.y.toFixed(0)}`);
+    }, 500); // 500ms debounce
+  }, [setViewport, saveSnapshot]);
 
   // Drag and drop handlers
   const onDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
@@ -406,11 +491,20 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         selectable: true,
       };
       
-      setNodes((nds) => nds.concat(newNode));
+      addNode(newNode);
       setDraggedNodeType(null);
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, addNode]
   );
+  
+  // Handle node configuration save
+  const handleNodeConfigSave = useCallback((nodeId: string, config: any) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      updateNode(nodeId, { data: { ...node.data, config } });
+      setIsConfigPanelOpen(false);
+    }
+  }, [updateNode, nodes]);
 
   const handleSaveClick = () => {
     const updatedDSL = {
@@ -421,6 +515,15 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
     console.log('💾 Saving workflow with DSL:', updatedDSL);
     onSave(updatedDSL);
   };
+  
+  // NodeTypes registry mapping categories to specialized components
+  const nodeTypes = useMemo(() => ({
+    action: WorkflowActionNode,
+    trigger: WorkflowTriggerNode,
+    ai: WorkflowAiNode,
+    routing: WorkflowRoutingNode,
+    'flow-control': WorkflowFlowControlNode,
+  }), []);
 
   return (
     <div className="flex flex-col h-screen">
@@ -444,6 +547,47 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Node Count Badge */}
+            <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded text-xs font-medium text-blue-700">
+              {nodes.length} nodi
+            </div>
+            
+            {/* Undo/Redo */}
+            <Button
+              onClick={undo}
+              disabled={!canUndo}
+              variant="outline"
+              size="sm"
+              data-testid="button-undo"
+              title="Annulla (Ctrl+Z)"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={redo}
+              disabled={!canRedo}
+              variant="outline"
+              size="sm"
+              data-testid="button-redo"
+              title="Ripeti (Ctrl+Y)"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+            
+            {/* Configure Button (visible only when node selected) */}
+            {selectedNodeId && (
+              <Button
+                onClick={() => setIsConfigPanelOpen(true)}
+                variant="outline"
+                size="sm"
+                className="border-windtre-orange text-windtre-orange hover:bg-windtre-orange/10"
+                data-testid="button-configure-node"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configura Nodo
+              </Button>
+            )}
+            
             <Button
               onClick={() => setIsPaletteOpen(!isPaletteOpen)}
               variant="outline"
@@ -466,6 +610,20 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
             <Button
               size="sm"
               variant="outline"
+              onClick={() => {
+                console.log('🧪 Test Run clicked - Mock result');
+                setTestResult({
+                  success: true,
+                  data: {
+                    status: 'success',
+                    executionTime: 234,
+                    totalSteps: 3,
+                    executedSteps: 3,
+                    executionResults: []
+                  }
+                });
+                setIsTestResultOpen(true);
+              }}
               data-testid="button-test-workflow"
             >
               <PlayCircle className="h-4 w-4 mr-2" />
@@ -724,6 +882,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onMove={onMove}
+            onViewportChange={(viewport) => {
+              setViewport(viewport);
+            }}
             nodeTypes={nodeTypes}
             fitView
             className="bg-white"
@@ -735,47 +897,31 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         </div>
 
         {/* Node Config Panel */}
-        {selectedNodeId && (
-          <div className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Configurazione Nodo</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedNodeId(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            {(() => {
-              const node = nodes.find(n => n.id === selectedNodeId);
-              if (!node) return <p className="text-sm text-gray-500">Nodo non trovato</p>;
-              
-              return (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Nome Nodo</label>
-                    <p className="text-sm text-gray-900 mt-1">{node.data.label || 'Senza nome'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Tipo</label>
-                    <p className="text-sm text-gray-900 mt-1">{node.type || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Descrizione</label>
-                    <p className="text-xs text-gray-600 mt-1">{node.data.description || 'Nessuna descrizione'}</p>
-                  </div>
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-500">
-                      💡 Click su un nodo per configurarlo. Funzionalità complete in sviluppo.
-                    </p>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+        {isConfigPanelOpen && selectedNodeId && (() => {
+          const selectedNode = nodes.find(n => n.id === selectedNodeId);
+          if (!selectedNode) return null;
+          
+          return (
+            <NodeConfigPanel
+              node={selectedNode}
+              allNodes={nodes}
+              isOpen={isConfigPanelOpen}
+              onClose={() => {
+                setIsConfigPanelOpen(false);
+                selectNode(null);
+              }}
+              onSave={handleNodeConfigSave}
+            />
+          );
+        })()}
       </div>
+      
+      {/* Workflow Test Result Dialog */}
+      <WorkflowTestResultDialog
+        result={testResult}
+        open={isTestResultOpen}
+        onOpenChange={setIsTestResultOpen}
+      />
     </div>
   );
 }
