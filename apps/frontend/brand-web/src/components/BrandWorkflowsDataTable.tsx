@@ -150,10 +150,10 @@ export function BrandWorkflowsDataTable({
   }
 
   return (
-    <div className={cn('rounded-md border border-white/20 windtre-glass-panel overflow-hidden', className)}>
+    <div className={cn('rounded-md border border-gray-200 bg-white overflow-hidden', className)}>
       <Table>
         <TableHeader>
-          <TableRow className="border-white/20">
+          <TableRow>
             <TableHead className="min-w-[280px]">
               <Button
                 variant="ghost"
@@ -235,7 +235,7 @@ export function BrandWorkflowsDataTable({
             return (
               <TableRow
                 key={workflow.id}
-                className="cursor-pointer hover:bg-white/40 dark:hover:bg-slate-800/40 border-white/20 transition-colors"
+                className="cursor-pointer hover:bg-gray-50 transition-colors"
                 data-testid={`row-workflow-${workflow.id}`}
               >
                 <TableCell className="font-medium">
@@ -308,10 +308,10 @@ export function BrandWorkflowsDataTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onEdit(workflow.id)}
-                                className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
+                                className="h-10 w-10 p-0 hover:bg-orange-100 text-orange-600"
                                 data-testid={`button-edit-workflow-${workflow.id}`}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-6 w-6" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -326,10 +326,10 @@ export function BrandWorkflowsDataTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onDuplicate(workflow.id)}
-                                className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
+                                className="h-10 w-10 p-0 hover:bg-blue-100 text-blue-600"
                                 data-testid={`button-duplicate-workflow-${workflow.id}`}
                               >
-                                <Copy className="h-4 w-4" />
+                                <Copy className="h-6 w-6" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -344,10 +344,10 @@ export function BrandWorkflowsDataTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onExport(workflow.id)}
-                                className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                                className="h-10 w-10 p-0 hover:bg-green-100 text-green-600"
                                 data-testid={`button-export-workflow-${workflow.id}`}
                               >
-                                <Download className="h-4 w-4" />
+                                <Download className="h-6 w-6" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -362,10 +362,10 @@ export function BrandWorkflowsDataTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onDelete(workflow.id)}
-                                className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                                className="h-10 w-10 p-0 hover:bg-red-100 text-red-600"
                                 data-testid={`button-delete-workflow-${workflow.id}`}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-6 w-6" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
