@@ -5,39 +5,13 @@ import BrandLayout from '../components/BrandLayout';
 import { BrandCampaignWizard } from '../components/BrandCampaignWizard';
 import { BrandPipelineWizard } from '../components/BrandPipelineWizard';
 import BrandFunnelWizard from '../components/BrandFunnelWizard';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
-  FileJson, Download, Upload, Settings, Plus
+  FileJson, Download, Upload, Settings, Plus, Search
 } from 'lucide-react';
-
-const COLORS = {
-  primary: {
-    orange: '#FF6900',
-    orangeLight: '#ff8533',
-    purple: '#7B2CBF',
-    purpleLight: '#9747ff',
-  },
-  semantic: {
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    info: '#3b82f6',
-  },
-  neutral: {
-    dark: '#1f2937',
-    medium: '#6b7280',
-    light: '#9ca3af',
-    lighter: '#e5e7eb',
-    lightest: '#f9fafb',
-  },
-  glass: {
-    white: 'hsla(255, 255, 255, 0.08)',
-    whiteLight: 'hsla(255, 255, 255, 0.03)',
-    whiteMedium: 'hsla(255, 255, 255, 0.12)',
-    whiteBorder: 'hsla(255, 255, 255, 0.18)',
-  }
-};
 
 type Tab = 'dashboard' | 'templates' | 'workflows';
 
@@ -45,243 +19,87 @@ export default function BrandCRM() {
   const { isAuthenticated } = useBrandAuth();
   const { currentTenant, isCrossTenant } = useBrandTenant();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (!isAuthenticated) {
     window.location.href = '/brandinterface/login';
     return null;
   }
 
-  const glassCardStyle = {
-    background: COLORS.glass.white,
-    backdropFilter: 'blur(24px) saturate(140%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-    border: `1px solid ${COLORS.glass.whiteBorder}`,
-    borderRadius: '16px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-    transition: 'all 0.3s ease'
-  };
-
-  const tabs = [
-    { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'templates' as const, label: 'Struttura Campagne', icon: Database },
-    { id: 'workflows' as const, label: 'Workflows Builder', icon: GitBranch }
-  ];
-
   return (
     <BrandLayout>
-      <div style={{ padding: '24px', minHeight: '100vh', background: '#ffffff' }}>
-        {/* Page Header - W3 Suite Style */}
-        <div 
-          style={{
-            background: `linear-gradient(135deg, ${COLORS.primary.orange} 0%, ${COLORS.primary.purple} 100%)`,
-            borderRadius: '24px',
-            padding: '32px',
-            marginBottom: '24px',
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-          data-testid="brand-crm-header"
-        >
-          {/* Background decorativo */}
-          <div style={{
-            position: 'absolute',
-            top: '-50%',
-            right: '-20%',
-            width: '200px',
-            height: '200px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '50%',
-            filter: 'blur(40px)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-30%',
-            left: '-10%',
-            width: '150px',
-            height: '150px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '50%',
-            filter: 'blur(30px)'
-          }} />
-          
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: '16px' 
-            }}>
+      <div className="h-full flex flex-col">
+        {/* 🎯 WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 style={{ 
-                  fontSize: '32px', 
-                  fontWeight: 'bold',
-                  margin: '0 0 8px 0',
-                  lineHeight: 1.2
-                }}>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Network className="h-6 w-6 text-windtre-orange" />
                   Master Catalog CRM
                 </h1>
-                <p style={{ 
-                  fontSize: '16px',
-                  opacity: 0.9,
-                  margin: 0,
-                  lineHeight: 1.4
-                }}>
+                <p className="text-gray-600 mt-1">
                   Governance centralizzato per {isCrossTenant ? '300+ tenant' : `tenant ${currentTenant}`}
                 </p>
-                
-                {/* Tags come negli screenshots W3 */}
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  marginTop: '12px',
-                  flexWrap: 'wrap'
-                }}>
-                  <span style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <Network size={14} />
-                    {isCrossTenant ? 'HQ Mode' : `Tenant: ${currentTenant}`}
-                  </span>
-                  <span style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 500
-                  }}>
-                    Hybrid Minimal Architecture
-                  </span>
-                </div>
               </div>
-            
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 20px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(8px)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                  data-testid="button-import-templates"
-                >
-                  <Upload size={20} strokeWidth={2.5} />
+              
+              <div className="flex items-center gap-3">
+                <Button variant="outline" data-testid="button-import-templates">
+                  <Upload className="h-4 w-4 mr-2" />
                   Import Templates
-                </button>
-                
-                <button 
-                  style={{
-                    background: 'white',
-                    color: COLORS.primary.orange,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '12px 20px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    transition: 'all 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                  }}
+                </Button>
+                <Button 
+                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
                   data-testid="button-deploy-bundle"
                 >
-                  <Download size={20} strokeWidth={2.5} />
+                  <Download className="h-4 w-4 mr-2" />
                   Deploy Bundle
-                </button>
+                </Button>
               </div>
-          </div>
-
-          {/* Tabs Navigation */}
-          <div style={{ 
-            display: 'flex',
-            gap: '8px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-            paddingBottom: '0'
-          }}>
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              
-              return (
-                <button
+            </div>
+            
+            {/* 🎯 Navigation Tabs */}
+            <div className="flex gap-1 mt-4">
+              {[
+                { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+                { id: 'templates' as const, label: 'Struttura Campagne', icon: Database },
+                { id: 'workflows' as const, label: 'Workflows Builder', icon: GitBranch }
+              ].map((tab) => (
+                <Button
                   key={tab.id}
+                  variant={activeTab === tab.id ? 'default' : 'ghost'}
                   onClick={() => setActiveTab(tab.id)}
-                  style={{
-                    padding: '12px 24px',
-                    background: isActive 
-                      ? 'rgba(255, 255, 255, 0.2)'
-                      : 'transparent',
-                    color: 'white',
-                    border: 'none',
-                    borderBottom: isActive ? '3px solid white' : '3px solid transparent',
-                    borderRadius: '8px 8px 0 0',
-                    fontSize: '14px',
-                    fontWeight: isActive ? 700 : 500,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    marginBottom: '-1px'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
+                  className="flex items-center gap-2"
                   data-testid={`tab-${tab.id}`}
                 >
-                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  <tab.icon className="h-4 w-4" />
                   {tab.label}
-                </button>
-              );
-            })}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Search & Filters */}
+        <div className="px-6 mb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex-1 min-w-[200px] max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Cerca template, workflow o configurazione..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Tab Content */}
-        <div style={{ minHeight: '600px' }}>
+        {/* Main Content */}
+        <div className="flex-1 px-6 overflow-y-auto">
           {activeTab === 'dashboard' && <DashboardTab />}
           {activeTab === 'templates' && <TemplatesTab />}
           {activeTab === 'workflows' && <WorkflowsTab />}
@@ -291,25 +109,14 @@ export default function BrandCRM() {
   );
 }
 
+// Dashboard Tab Component
 function DashboardTab() {
-  const glassCardStyle = {
-    background: COLORS.glass.white,
-    backdropFilter: 'blur(24px) saturate(140%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-    border: `1px solid ${COLORS.glass.whiteBorder}`,
-    borderRadius: '16px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-    transition: 'all 0.3s ease',
-    padding: '24px'
-  };
-
   const statCards = [
     {
       title: 'Deployed Bundles',
       value: '23',
       change: '+3 questo mese',
       icon: Package,
-      color: COLORS.primary.orange,
       testId: 'card-deployed-bundles'
     },
     {
@@ -317,7 +124,6 @@ function DashboardTab() {
       value: '312',
       change: '98% uptime',
       icon: Users,
-      color: COLORS.primary.purple,
       testId: 'card-active-tenants'
     },
     {
@@ -325,7 +131,6 @@ function DashboardTab() {
       value: '156',
       change: 'v2.4.1 latest',
       icon: Workflow,
-      color: COLORS.semantic.success,
       testId: 'card-workflow-versions'
     },
     {
@@ -333,416 +138,156 @@ function DashboardTab() {
       value: '89',
       change: '+12 nuovi',
       icon: FileJson,
-      color: COLORS.semantic.info,
-      testId: 'card-total-templates'
+      testId: 'card-templates-total'
     }
   ];
 
   return (
-    <div data-testid="dashboard-tab-content">
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px',
-        marginBottom: '24px'
-      }}>
-        {statCards.map((card) => {
-          const Icon = card.icon;
+    <div className="space-y-6 pb-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((stat) => {
+          const Icon = stat.icon;
           return (
-            <div 
-              key={card.testId}
-              style={{
-                ...glassCardStyle,
-                cursor: 'pointer',
-                borderLeft: `3px solid ${card.color}`
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
-              }}
-              data-testid={card.testId}
+            <div
+              key={stat.testId}
+              className="windtre-glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              data-testid={stat.testId}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <p style={{
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: card.color,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '12px'
-                  }}>
-                    {card.title}
-                  </p>
-                  <div style={{
-                    fontSize: '32px',
-                    fontWeight: 700,
-                    color: COLORS.neutral.dark,
-                    marginBottom: '4px'
-                  }}>{card.value}</div>
-                  <p style={{
-                    fontSize: '13px',
-                    color: COLORS.neutral.medium,
-                    fontWeight: 500
-                  }}>{card.change}</p>
-                </div>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  background: `linear-gradient(135deg, ${card.color}20, ${card.color}10)`,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Icon size={24} style={{ color: card.color }} strokeWidth={2} />
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <Icon className="h-8 w-8 text-windtre-orange" />
               </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.title}</h3>
+              <p className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</p>
+              <p className="text-xs text-gray-500">{stat.change}</p>
             </div>
           );
         })}
       </div>
 
-      {/* Activity Chart Placeholder */}
-      <div 
-        style={{
-          ...glassCardStyle,
-          marginTop: '24px',
-          textAlign: 'center',
-          padding: '48px'
-        }}
-        data-testid="activity-chart"
-      >
-        <TrendingUp size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
-        <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '8px' }}>
-          Deployment Activity
-        </h3>
-        <p style={{ color: COLORS.neutral.medium, fontSize: '14px' }}>
-          Chart placeholder - To be implemented with real analytics
-        </p>
+      {/* Recent Activity */}
+      <div className="windtre-glass-panel p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Attività Recenti</h2>
+        <div className="space-y-3">
+          {[
+            { action: 'Template campagna "Black Friday 2024" creato', time: '2 ore fa', type: 'success' },
+            { action: 'Workflow "Lead Nurturing v2" aggiornato', time: '5 ore fa', type: 'info' },
+            { action: 'Bundle deployato su 45 tenant', time: '1 giorno fa', type: 'success' }
+          ].map((activity, idx) => (
+            <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+              <p className="text-sm text-gray-700">{activity.action}</p>
+              <span className="text-xs text-gray-500">{activity.time}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
+// Templates Tab Component
 function TemplatesTab() {
-  const [campaignWizardOpen, setCampaignWizardOpen] = useState(false);
-  const [pipelineWizardOpen, setPipelineWizardOpen] = useState(false);
-  const [funnelWizardOpen, setFunnelWizardOpen] = useState(false);
-  const [campaignTemplates, setCampaignTemplates] = useState<any[]>([]);
-  const [pipelineTemplates, setPipelineTemplates] = useState<any[]>([]);
-  const [funnelTemplates, setFunnelTemplates] = useState<any[]>([]);
+  const [showCampaignWizard, setShowCampaignWizard] = useState(false);
+  const [showPipelineWizard, setShowPipelineWizard] = useState(false);
+  const [showFunnelWizard, setShowFunnelWizard] = useState(false);
 
-  const glassCardStyle = {
-    background: COLORS.glass.white,
-    backdropFilter: 'blur(24px) saturate(140%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-    border: `1px solid ${COLORS.glass.whiteBorder}`,
-    borderRadius: '16px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-    padding: '24px'
+  const handleSaveTemplate = (template: any) => {
+    console.log('Template saved:', template);
+    // TODO: Save to JSON file for Git versioning
   };
-
-  const handleSaveCampaignTemplate = (jsonTemplate: any) => {
-    console.log('📦 Campaign Template JSON:', jsonTemplate);
-    setCampaignTemplates(prev => [...prev, jsonTemplate]);
-    // TODO: Save to backend /api/brand/campaigns endpoint
-  };
-
-  const handleSavePipelineTemplate = (jsonTemplate: any) => {
-    console.log('📦 Pipeline Template JSON:', jsonTemplate);
-    setPipelineTemplates(prev => [...prev, jsonTemplate]);
-    // TODO: Save to backend /api/brand/pipelines endpoint
-  };
-
-  const handleSaveFunnelTemplate = (jsonTemplate: any) => {
-    console.log('📦 Funnel Template JSON:', jsonTemplate);
-    setFunnelTemplates(prev => [...prev, jsonTemplate]);
-    // TODO: Save to backend /api/brand/funnels endpoint
-  };
-
-  const totalTemplates = campaignTemplates.length + pipelineTemplates.length + funnelTemplates.length;
 
   return (
-    <>
-      <div style={glassCardStyle} data-testid="templates-tab-content">
-        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '4px' }}>
-              Struttura Campagne
-            </h3>
-            <p style={{ color: COLORS.neutral.medium, fontSize: '14px' }}>
-              Gestisci template campagne ({campaignTemplates.length}), pipelines ({pipelineTemplates.length}) e funnel ({funnelTemplates.length})
-            </p>
+    <div className="space-y-6 pb-6">
+      {/* Template Types Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="windtre-glass-panel p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Campagne</h3>
+            <Button
+              onClick={() => setShowCampaignWizard(true)}
+              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+              data-testid="button-create-campaign-template"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crea Template
+            </Button>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              onClick={() => setCampaignWizardOpen(true)}
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
-              }}
-              data-testid="button-new-campaign-template"
-            >
-              <Plus size={20} strokeWidth={2.5} />
-              Nuova Campagna
-            </button>
-
-            <button 
-              onClick={() => setPipelineWizardOpen(true)}
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`,
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(123, 44, 191, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(123, 44, 191, 0.3)';
-              }}
-              data-testid="button-new-pipeline-template"
-            >
-              <Plus size={20} strokeWidth={2.5} />
-              Nuova Pipeline
-            </button>
-
-            <button 
-              onClick={() => setFunnelWizardOpen(true)}
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.semantic.info}, #60a5fa)`,
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px 20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-              }}
-              data-testid="button-new-funnel-template"
-            >
-              <Plus size={20} strokeWidth={2.5} />
-              Nuovo Funnel
-            </button>
-          </div>
+          <p className="text-sm text-gray-600 mb-4">28 campi configurabili con validazione business italiana</p>
+          <div className="text-2xl font-bold text-gray-900">12 template</div>
         </div>
 
-        {totalTemplates === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px' }}>
-            <Database size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
-            <p style={{ color: COLORS.neutral.medium, fontSize: '14px', marginBottom: '24px' }}>
-              Nessun template creato
-            </p>
-            <p style={{ color: COLORS.neutral.light, fontSize: '12px' }}>
-              📋 Clicca "Nuova Campagna", "Nuova Pipeline" o "Nuovo Funnel" per creare il primo template
-            </p>
+        <div className="windtre-glass-panel p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Pipeline</h3>
+            <Button
+              onClick={() => setShowPipelineWizard(true)}
+              className="bg-windtre-purple hover:bg-windtre-purple-dark text-white"
+              data-testid="button-create-pipeline-template"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crea Template
+            </Button>
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {campaignTemplates.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '12px' }}>
-                  Template Campagne ({campaignTemplates.length})
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                  {campaignTemplates.map((template, index) => (
-                    <div 
-                      key={index}
-                      style={{
-                        ...glassCardStyle,
-                        padding: '16px',
-                        cursor: 'pointer',
-                        borderLeft: `3px solid ${COLORS.primary.orange}`
-                      }}
-                      data-testid={`campaign-template-${index}`}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <FileJson size={20} style={{ color: COLORS.primary.orange }} />
-                        <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.template?.name || template.name}</h4>
-                      </div>
-                      <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
-                        {template.template?.description || template.description || 'Nessuna descrizione'}
-                      </p>
-                      <div style={{ marginTop: '8px', fontSize: '10px', color: COLORS.neutral.light }}>
-                        v{template.version} • {new Date(template.timestamp).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <p className="text-sm text-gray-600 mb-4">41 campi across 3 tabelle con AI orchestration</p>
+          <div className="text-2xl font-bold text-gray-900">8 template</div>
+        </div>
 
-            {pipelineTemplates.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '12px' }}>
-                  Template Pipeline ({pipelineTemplates.length})
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                  {pipelineTemplates.map((template, index) => (
-                    <div 
-                      key={index}
-                      style={{
-                        ...glassCardStyle,
-                        padding: '16px',
-                        cursor: 'pointer',
-                        borderLeft: `3px solid ${COLORS.primary.purple}`
-                      }}
-                      data-testid={`pipeline-template-${index}`}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <FileJson size={20} style={{ color: COLORS.primary.purple }} />
-                        <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.template?.name || template.name}</h4>
-                      </div>
-                      <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
-                        {template.template?.description || template.description || 'Nessuna descrizione'}
-                      </p>
-                      <div style={{ marginTop: '8px', fontSize: '10px', color: COLORS.neutral.light }}>
-                        v{template.version} • {new Date(template.timestamp).toLocaleDateString()}  • Domain: {template.template?.domain || 'N/A'}
-                      </div>
-                      <div style={{ marginTop: '4px', fontSize: '10px', color: COLORS.neutral.light }}>
-                        {template.template?.stagesConfig?.length || 0} stati configurati
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {funnelTemplates.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '12px' }}>
-                  Template Funnel ({funnelTemplates.length})
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                  {funnelTemplates.map((template, index) => (
-                    <div 
-                      key={index}
-                      style={{
-                        ...glassCardStyle,
-                        padding: '16px',
-                        cursor: 'pointer',
-                        borderLeft: `3px solid ${COLORS.semantic.info}`
-                      }}
-                      data-testid={`funnel-template-${index}`}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <FileJson size={20} style={{ color: COLORS.semantic.info }} />
-                        <h4 style={{ fontSize: '14px', fontWeight: 600 }}>{template.template?.name || template.name}</h4>
-                      </div>
-                      <p style={{ fontSize: '12px', color: COLORS.neutral.medium }}>
-                        {template.template?.description || template.description || 'Nessuna descrizione'}
-                      </p>
-                      <div style={{ marginTop: '8px', fontSize: '10px', color: COLORS.neutral.light }}>
-                        v{template.version} • {new Date(template.timestamp).toLocaleDateString()}
-                      </div>
-                      <div style={{ marginTop: '4px', fontSize: '10px', color: COLORS.neutral.light }}>
-                        {template.template?.pipelineOrder?.length || 0} pipelines • AI: {template.template?.aiOrchestrationEnabled ? '✅' : '❌'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+        <div className="windtre-glass-panel p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Funnel</h3>
+            <Button
+              onClick={() => setShowFunnelWizard(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              data-testid="button-create-funnel-template"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crea Template
+            </Button>
           </div>
-        )}
+          <p className="text-sm text-gray-600 mb-4">15 campi con journey orchestration</p>
+          <div className="text-2xl font-bold text-gray-900">5 template</div>
+        </div>
       </div>
 
+      {/* Wizards */}
       <BrandCampaignWizard
-        open={campaignWizardOpen}
-        onClose={() => setCampaignWizardOpen(false)}
-        onSave={handleSaveCampaignTemplate}
-        template={null}
-        mode="create"
+        open={showCampaignWizard}
+        onClose={() => setShowCampaignWizard(false)}
+        onSave={handleSaveTemplate}
       />
 
       <BrandPipelineWizard
-        open={pipelineWizardOpen}
-        onClose={() => setPipelineWizardOpen(false)}
-        onSave={handleSavePipelineTemplate}
-        mode="create"
+        open={showPipelineWizard}
+        onClose={() => setShowPipelineWizard(false)}
+        onSave={handleSaveTemplate}
       />
 
       <BrandFunnelWizard
-        open={funnelWizardOpen}
-        onClose={() => setFunnelWizardOpen(false)}
-        onSave={handleSaveFunnelTemplate}
+        open={showFunnelWizard}
+        onClose={() => setShowFunnelWizard(false)}
+        onSave={handleSaveTemplate}
       />
-    </>
+    </div>
   );
 }
 
+// Workflows Tab Component (Placeholder - to be implemented)
 function WorkflowsTab() {
-  const glassCardStyle = {
-    background: COLORS.glass.white,
-    backdropFilter: 'blur(24px) saturate(140%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-    border: `1px solid ${COLORS.glass.whiteBorder}`,
-    borderRadius: '16px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-    padding: '24px'
-  };
-
   return (
-    <div style={glassCardStyle} data-testid="workflows-tab-content">
-      <div style={{ textAlign: 'center', padding: '48px' }}>
-        <GitBranch size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
-        <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '8px' }}>
-          Workflows Builder
-        </h3>
-        <p style={{ color: COLORS.neutral.medium, fontSize: '14px', marginBottom: '24px' }}>
-          ReactFlow workflow editor with @w3suite/workflow-builder-ui integration
+    <div className="space-y-6 pb-6">
+      <div className="windtre-glass-panel p-12 text-center">
+        <GitBranch className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Workflow Builder</h3>
+        <p className="text-gray-600 mb-6">
+          Crea e gestisci workflow con AI assistant e visual builder
         </p>
-        <p style={{ color: COLORS.neutral.light, fontSize: '12px' }}>
-          🔧 Task 10-11: To be implemented with full ReactFlow editor + API
-        </p>
+        <Button
+          className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+          data-testid="button-create-workflow"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Crea Nuovo Workflow
+        </Button>
       </div>
     </div>
   );
