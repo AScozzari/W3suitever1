@@ -24,11 +24,13 @@ import { Input } from './ui/input';
 import { 
   Plus, GitBranch, Search, Edit, Trash2, Copy, 
   Download, Upload, PlayCircle, Brain, List, 
-  LayoutGrid, ArrowLeft, Save, X, Palette
+  LayoutGrid, ArrowLeft, Save, X, Palette, Loader2
 } from 'lucide-react';
 import { BrandWorkflowsDataTable } from './BrandWorkflowsDataTable';
+import { useBrandWorkflows, useCreateBrandWorkflow, useUpdateBrandWorkflow, useDeleteBrandWorkflow, type BrandWorkflow as APIBrandWorkflow } from '../hooks/useBrandWorkflows';
+import { useToast } from '../hooks/use-toast';
 
-// Types for workflows
+// Types for workflows (aligned with API types)
 interface BrandWorkflow {
   id: string;
   code: string;
@@ -55,52 +57,33 @@ export function BrandWorkflowsTab() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<BrandWorkflow | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const { toast } = useToast();
 
-  // Mock data - will be replaced with TanStack Query API calls
-  const workflows: BrandWorkflow[] = [
-    {
-      id: '1',
-      code: 'brand-wf-email-benvenuto',
-      name: 'Email Benvenuto Lead',
-      description: 'Workflow automatico per email di benvenuto ai nuovi lead',
-      category: 'crm',
-      tags: ['email', 'automation', 'lead'],
-      version: '1.0.0',
-      status: 'active',
-      dslJson: { nodes: [], edges: [] },
-      createdBy: 'admin@brand.com',
-      createdAt: '2025-01-15T10:00:00Z',
-      updatedAt: '2025-03-20T14:22:00Z'
+  // Fetch workflows from API
+  const { data: apiWorkflows, isLoading, error } = useBrandWorkflows();
+  const createMutation = useCreateBrandWorkflow();
+  const updateMutation = useUpdateBrandWorkflow();
+  const deleteMutation = useDeleteBrandWorkflow();
+
+  // Map API workflows to component format
+  const workflows: BrandWorkflow[] = (apiWorkflows || []).map((w: APIBrandWorkflow) => ({
+    id: w.id,
+    code: w.code,
+    name: w.name,
+    description: w.description || '',
+    category: w.category,
+    tags: w.tags,
+    version: w.version,
+    status: w.status as 'active' | 'draft' | 'archived',
+    dslJson: {
+      nodes: (w.dslJson as any)?.nodes || [],
+      edges: (w.dslJson as any)?.edges || [],
+      viewport: (w.dslJson as any)?.viewport
     },
-    {
-      id: '2',
-      code: 'brand-wf-lead-scoring',
-      name: 'AI Lead Scoring',
-      description: 'Workflow con AI per scoring automatico lead',
-      category: 'crm',
-      tags: ['ai', 'lead', 'scoring'],
-      version: '2.1.0',
-      status: 'active',
-      dslJson: { nodes: [], edges: [] },
-      createdBy: 'admin@brand.com',
-      createdAt: '2025-02-01T14:30:00Z',
-      updatedAt: '2025-03-18T09:15:00Z'
-    },
-    {
-      id: '3',
-      code: 'brand-wf-pipeline-routing',
-      name: 'Pipeline Auto Routing',
-      description: 'Routing automatico deal tra pipeline basato su regole',
-      category: 'crm',
-      tags: ['pipeline', 'routing', 'automation'],
-      version: '1.5.0',
-      status: 'draft',
-      dslJson: { nodes: [], edges: [] },
-      createdBy: 'admin@brand.com',
-      createdAt: '2025-03-05T11:20:00Z',
-      updatedAt: '2025-03-05T16:45:00Z'
-    }
-  ];
+    createdBy: w.createdBy,
+    createdAt: w.createdAt,
+    updatedAt: w.updatedAt
+  }));
 
   const filteredWorkflows = useMemo(() => {
     if (!searchQuery) return workflows;
@@ -141,24 +124,67 @@ export function BrandWorkflowsTab() {
     setViewMode('list');
   };
 
-  const handleSaveWorkflow = (updatedDSL: { nodes: Node[]; edges: Edge[]; viewport: any }) => {
-    console.log('💾 Saving workflow with updated DSL:', updatedDSL);
+  const handleSaveWorkflow = async (updatedDSL: { nodes: Node[]; edges: Edge[]; viewport: any }) => {
+    if (!selectedWorkflow) return;
     
-    if (selectedWorkflow) {
-      // Update workflow with new DSL (in real implementation, this would persist to backend)
-      const updatedWorkflow = { ...selectedWorkflow, dslJson: updatedDSL };
-      console.log('📝 Updated workflow object:', updatedWorkflow);
+    try {
+      if (selectedWorkflow.id === 'new') {
+        // Create new workflow
+        await createMutation.mutateAsync({
+          code: selectedWorkflow.code || `wf-${Date.now()}`,
+          name: selectedWorkflow.name,
+          description: selectedWorkflow.description,
+          category: selectedWorkflow.category as any,
+          tags: selectedWorkflow.tags,
+          version: selectedWorkflow.version,
+          status: selectedWorkflow.status as any,
+          dslJson: updatedDSL
+        });
+        
+        toast({
+          title: 'Workflow creato',
+          description: `${selectedWorkflow.name} è stato creato con successo`,
+        });
+      } else {
+        // Update existing workflow
+        await updateMutation.mutateAsync({
+          id: selectedWorkflow.id,
+          updates: { dslJson: updatedDSL }
+        });
+        
+        toast({
+          title: 'Workflow aggiornato',
+          description: `${selectedWorkflow.name} è stato aggiornato con successo`,
+        });
+      }
       
-      // TODO: Implement TanStack Query mutation to persist to backend
-      // updateWorkflowMutation.mutate({ id: selectedWorkflow.id, dslJson: updatedDSL });
+      handleBackToList();
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Errore nel salvataggio del workflow',
+        variant: 'destructive'
+      });
     }
-    
-    handleBackToList();
   };
 
-  const handleDeleteWorkflow = (workflowId: string) => {
-    console.log('🗑️ Deleting workflow:', workflowId);
-    // TODO: Implement API call to delete workflow
+  const handleDeleteWorkflow = async (workflowId: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questo workflow?')) return;
+    
+    try {
+      await deleteMutation.mutateAsync(workflowId);
+      
+      toast({
+        title: 'Workflow eliminato',
+        description: 'Il workflow è stato eliminato con successo',
+      });
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Errore nell\'eliminazione del workflow',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleDuplicateWorkflow = (workflowId: string) => {

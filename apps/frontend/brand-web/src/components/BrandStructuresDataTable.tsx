@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { 
   Eye, Edit, Power, Trash2, 
-  ExternalLink, Filter, ArrowUpDown
+  ExternalLink, Filter, ArrowUpDown, Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -17,6 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { useAllBrandTemplates, useToggleBrandTemplate, useDeleteBrandTemplate, type BrandTemplate } from '../hooks/useBrandTemplates';
+import { useToast } from '../hooks/use-toast';
 
 // Types
 type StructureType = 'campaign' | 'pipeline' | 'funnel';
@@ -59,110 +61,25 @@ export function BrandStructuresDataTable({
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [viewDetailsId, setViewDetailsId] = useState<string | null>(null);
   const [linkedFilter, setLinkedFilter] = useState<LinkedItem | null>(null);
+  const { toast } = useToast();
 
-  // Mock data with relationships
-  const structures: BrandStructure[] = [
-    {
-      id: 'camp-1',
-      name: 'Black Friday 2024',
-      type: 'campaign',
-      status: 'active',
-      isActive: true,
-      linkedItems: [
-        { id: 'pipe-1', name: 'Sales Enterprise', type: 'pipeline' },
-        { id: 'pipe-2', name: 'SMB Quick Close', type: 'pipeline' },
-        { id: 'pipe-3', name: 'Partner Channel', type: 'pipeline' }
-      ],
-      description: 'Campagna promozionale Black Friday con sconti fino al 50%',
-      createdAt: '2024-10-15T10:00:00Z',
-      updatedAt: '2024-11-10T14:30:00Z'
-    },
-    {
-      id: 'camp-2',
-      name: 'Lead Nurturing Q4',
-      type: 'campaign',
-      status: 'active',
-      isActive: true,
-      linkedItems: [
-        { id: 'pipe-4', name: 'Email Drip Sequence', type: 'pipeline' }
-      ],
-      description: 'Campaign di nurturing automatico per Q4 2024',
-      createdAt: '2024-09-01T09:00:00Z',
-      updatedAt: '2024-11-05T11:20:00Z'
-    },
-    {
-      id: 'pipe-1',
-      name: 'Sales Enterprise',
-      type: 'pipeline',
-      status: 'active',
-      isActive: true,
-      linkedItems: [
-        { id: 'funnel-1', name: 'B2B Customer Journey', type: 'funnel' }
-      ],
-      description: 'Pipeline vendite per clienti Enterprise con ciclo lungo',
-      createdAt: '2024-08-20T10:00:00Z',
-      updatedAt: '2024-11-12T09:15:00Z'
-    },
-    {
-      id: 'pipe-2',
-      name: 'SMB Quick Close',
-      type: 'pipeline',
-      status: 'active',
-      isActive: true,
-      linkedItems: [
-        { id: 'funnel-2', name: 'SMB Fast Track', type: 'funnel' }
-      ],
-      description: 'Pipeline veloce per chiusura SMB in 14 giorni',
-      createdAt: '2024-09-10T14:00:00Z',
-      updatedAt: '2024-11-08T16:45:00Z'
-    },
-    {
-      id: 'pipe-3',
-      name: 'Partner Channel',
-      type: 'pipeline',
-      status: 'draft',
-      isActive: false,
-      linkedItems: [],
-      description: 'Pipeline per gestione lead provenienti da partner',
-      createdAt: '2024-11-01T11:00:00Z',
-      updatedAt: '2024-11-14T10:30:00Z'
-    },
-    {
-      id: 'pipe-4',
-      name: 'Email Drip Sequence',
-      type: 'pipeline',
-      status: 'active',
-      isActive: true,
-      linkedItems: [
-        { id: 'funnel-1', name: 'B2B Customer Journey', type: 'funnel' }
-      ],
-      description: 'Sequenza automatica email nurturing',
-      createdAt: '2024-09-05T13:00:00Z',
-      updatedAt: '2024-11-09T15:10:00Z'
-    },
-    {
-      id: 'funnel-1',
-      name: 'B2B Customer Journey',
-      type: 'funnel',
-      status: 'active',
-      isActive: true,
-      linkedItems: [],
-      description: 'Funnel completo per customer journey B2B con AI orchestration',
-      createdAt: '2024-07-15T10:00:00Z',
-      updatedAt: '2024-11-11T12:00:00Z'
-    },
-    {
-      id: 'funnel-2',
-      name: 'SMB Fast Track',
-      type: 'funnel',
-      status: 'active',
-      isActive: true,
-      linkedItems: [],
-      description: 'Funnel accelerato per chiusura rapida SMB',
-      createdAt: '2024-08-01T09:30:00Z',
-      updatedAt: '2024-11-07T14:20:00Z'
-    }
-  ];
+  // Fetch all templates from API
+  const { data: templates, isLoading, error } = useAllBrandTemplates();
+  const deleteMutation = useDeleteBrandTemplate('campaign'); // Type will be determined dynamically
+
+  // Map BrandTemplate to BrandStructure format
+  const structures: BrandStructure[] = (templates || []).map((template: BrandTemplate) => ({
+    id: template.id,
+    name: template.name,
+    type: template.type,
+    status: template.status,
+    isActive: template.isActive,
+    linkedItems: template.linkedItems || [],
+    description: template.description,
+    createdAt: template.createdAt,
+    updatedAt: template.updatedAt,
+    metadata: template.metadata
+  }));
 
   // Filter structures
   const filteredStructures = structures.filter(s => {
@@ -213,6 +130,26 @@ export function BrandStructuresDataTable({
   };
 
   const viewedStructure = structures.find(s => s.id === viewDetailsId);
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        <span className="ml-2 text-gray-600">Caricamento templates...</span>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">Errore nel caricamento dei templates</p>
+        <p className="text-sm text-gray-500 mt-2">{error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
