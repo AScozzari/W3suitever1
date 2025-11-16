@@ -32,6 +32,8 @@ import { BrandWorkflowsDataTable } from './BrandWorkflowsDataTable';
 import { useBrandWorkflows, useCreateBrandWorkflow, useUpdateBrandWorkflow, useDeleteBrandWorkflow, type BrandWorkflow as APIBrandWorkflow } from '../hooks/useBrandWorkflows';
 import { useToast } from '../hooks/use-toast';
 import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../../../web/src/lib/workflow-node-definitions';
+import { AIWorkflowChatModal } from './AIWorkflowChatModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 // Types for workflows (aligned with API types)
 type WorkflowStatus = 'active' | 'draft' | 'archived' | 'deprecated';
@@ -304,6 +306,25 @@ export function BrandWorkflowsTab() {
         onDuplicate={handleDuplicateWorkflow}
         onExport={handleExportWorkflow}
       />
+      
+      {/* AI Workflow Assistant Modal */}
+      <Dialog open={isAIModalOpen} onOpenChange={setIsAIModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>AI Workflow Builder</DialogTitle>
+          </DialogHeader>
+          <AIWorkflowChatModal
+            onWorkflowGenerated={(workflowJson) => {
+              console.log('🤖 AI Generated Workflow:', workflowJson);
+              toast({
+                title: "Workflow Generato",
+                description: "Apri la canvas per visualizzare il workflow generato dall'AI."
+              });
+              setIsAIModalOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -530,6 +551,22 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              {/* Integration */}
+              <div>
+                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Integration</h4>
+                <div className="space-y-2">
+                  {getNodesByCategory('integration').map((node) => (
+                    <NodePaletteItem
+                      key={node.id}
+                      nodeId={node.id}
+                      label={node.label}
+                      description={node.description}
+                      icon={node.icon}
+                      onDragStart={onDragStart}
+                    />
+                  ))}
+                </div>
+              </div>
               {/* Flow Control */}
               <div>
                 <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Flow Control</h4>
@@ -575,14 +612,14 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
 // Category color mapping
 function getCategoryStyles(category: string) {
   const styles = {
-    triggers: {
+    trigger: {
       bg: 'bg-blue-50',
       border: 'border-blue-200',
       hoverBorder: 'hover:border-blue-500',
       icon: 'bg-blue-100 text-blue-600',
       label: 'text-blue-900'
     },
-    actions: {
+    action: {
       bg: 'bg-green-50',
       border: 'border-green-200',
       hoverBorder: 'hover:border-green-500',
@@ -602,6 +639,13 @@ function getCategoryStyles(category: string) {
       hoverBorder: 'hover:border-orange-500',
       icon: 'bg-orange-100 text-orange-600',
       label: 'text-orange-900'
+    },
+    integration: {
+      bg: 'bg-cyan-50',
+      border: 'border-cyan-200',
+      hoverBorder: 'hover:border-cyan-500',
+      icon: 'bg-cyan-100 text-cyan-600',
+      label: 'text-cyan-900'
     },
     'flow-control': {
       bg: 'bg-gray-50',
