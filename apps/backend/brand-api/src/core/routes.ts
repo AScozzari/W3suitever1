@@ -3187,6 +3187,262 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== DEPLOY CENTER ENDPOINTS ====================
+
+  // Get all deployments (commits)
+  app.get("/brand-api/deploy/commits", async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const filters = {
+        tool: req.query.tool as string | undefined,
+        status: req.query.status as string | undefined
+      };
+      
+      const deployments = await brandStorage.getDeployments(filters);
+      
+      res.json({
+        success: true,
+        data: deployments
+      });
+    } catch (error) {
+      console.error("Error fetching deployments:", error);
+      res.status(500).json({ error: "Failed to fetch deployments" });
+    }
+  });
+
+  // Get single deployment
+  app.get("/brand-api/deploy/commits/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const deployment = await brandStorage.getDeployment(id);
+      
+      if (!deployment) {
+        return res.status(404).json({ error: "Deployment not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: deployment
+      });
+    } catch (error) {
+      console.error(`Error fetching deployment ${id}:`, error);
+      res.status(500).json({ error: "Failed to fetch deployment" });
+    }
+  });
+
+  // Create deployment (commit)
+  app.post("/brand-api/deploy/commits", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create deployments" });
+    }
+    
+    try {
+      const deployment = await brandStorage.createDeployment({
+        ...req.body,
+        createdBy: user.email,
+        brandTenantId: user.brandTenantId
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: deployment,
+        message: "Deployment created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating deployment:", error);
+      res.status(500).json({ error: "Failed to create deployment" });
+    }
+  });
+
+  // Update deployment
+  app.patch("/brand-api/deploy/commits/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to update deployments" });
+    }
+    
+    try {
+      const deployment = await brandStorage.updateDeployment(id, req.body);
+      
+      if (!deployment) {
+        return res.status(404).json({ error: "Deployment not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: deployment,
+        message: "Deployment updated successfully"
+      });
+    } catch (error) {
+      console.error(`Error updating deployment ${id}:`, error);
+      res.status(500).json({ error: "Failed to update deployment" });
+    }
+  });
+
+  // Delete deployment
+  app.delete("/brand-api/deploy/commits/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete deployments" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteDeployment(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Deployment not found" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Deployment deleted successfully"
+      });
+    } catch (error) {
+      console.error(`Error deleting deployment ${id}:`, error);
+      res.status(500).json({ error: "Failed to delete deployment" });
+    }
+  });
+
+  // Get all branches
+  app.get("/brand-api/deploy/branches", async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const tenantId = req.query.tenantId as string | undefined;
+      const branches = await brandStorage.getBranches(tenantId);
+      
+      res.json({
+        success: true,
+        data: branches
+      });
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+      res.status(500).json({ error: "Failed to fetch branches" });
+    }
+  });
+
+  // Get single branch
+  app.get("/brand-api/deploy/branches/:branchName", async (req, res) => {
+    const user = (req as any).user;
+    const { branchName } = req.params;
+    
+    try {
+      const branch = await brandStorage.getBranch(branchName);
+      
+      if (!branch) {
+        return res.status(404).json({ error: "Branch not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: branch
+      });
+    } catch (error) {
+      console.error(`Error fetching branch ${branchName}:`, error);
+      res.status(500).json({ error: "Failed to fetch branch" });
+    }
+  });
+
+  // Create branch
+  app.post("/brand-api/deploy/branches", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create branches" });
+    }
+    
+    try {
+      const branch = await brandStorage.createBranch({
+        ...req.body,
+        brandTenantId: user.brandTenantId
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: branch,
+        message: "Branch created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating branch:", error);
+      res.status(500).json({ error: "Failed to create branch" });
+    }
+  });
+
+  // Get deployment statuses for a deployment
+  app.get("/brand-api/deploy/status/:deploymentId", async (req, res) => {
+    const user = (req as any).user;
+    const { deploymentId } = req.params;
+    
+    try {
+      const statuses = await brandStorage.getDeploymentStatuses(deploymentId);
+      
+      res.json({
+        success: true,
+        data: statuses
+      });
+    } catch (error) {
+      console.error(`Error fetching deployment statuses for ${deploymentId}:`, error);
+      res.status(500).json({ error: "Failed to fetch deployment statuses" });
+    }
+  });
+
+  // Create deployment status
+  app.post("/brand-api/deploy/status", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const status = await brandStorage.createDeploymentStatus({
+        ...req.body,
+        brandTenantId: user.brandTenantId
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: status,
+        message: "Deployment status created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating deployment status:", error);
+      res.status(500).json({ error: "Failed to create deployment status" });
+    }
+  });
+
+  // Update deployment status
+  app.patch("/brand-api/deploy/status/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const status = await brandStorage.updateDeploymentStatus(id, req.body);
+      
+      if (!status) {
+        return res.status(404).json({ error: "Deployment status not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: status,
+        message: "Deployment status updated successfully"
+      });
+    } catch (error) {
+      console.error(`Error updating deployment status ${id}:`, error);
+      res.status(500).json({ error: "Failed to update deployment status" });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 

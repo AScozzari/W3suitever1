@@ -9,6 +9,11 @@ import {
   type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier
 } from "../../../api/src/db/schema/brand-interface.js";
 import type { BrandWorkflow, InsertBrandWorkflow, BrandTask, NewBrandTask } from "../../../api/src/db/schema/brand-interface.js";
+import {
+  brandDeployments, brandBranches, brandDeploymentStatus,
+  type BrandDeployment, type NewBrandDeployment, type BrandBranch, type NewBrandBranch,
+  type BrandDeploymentStatus, type NewBrandDeploymentStatus
+} from "../db/index.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
 import { db as w3db } from "../../../api/src/core/db.js";
 import { 
@@ -162,6 +167,25 @@ export interface IBrandStorage {
   createBrandTask(data: Omit<NewBrandTask, 'id' | 'createdAt' | 'updatedAt'>): Promise<BrandTask>;
   updateBrandTask(id: string, data: Partial<Omit<BrandTask, 'id' | 'createdAt' | 'brandTenantId'>>): Promise<BrandTask | null>;
   deleteBrandTask(id: string): Promise<boolean>;
+  
+  // ==================== DEPLOY CENTER ====================
+  
+  // Deployments operations (Git-like commits)
+  getDeployments(filters?: { tool?: string; status?: string }): Promise<any[]>;
+  getDeployment(id: string): Promise<any | null>;
+  createDeployment(data: any): Promise<any>;
+  updateDeployment(id: string, data: any): Promise<any | null>;
+  deleteDeployment(id: string): Promise<boolean>;
+  
+  // Branches operations (Tenant/PDV branch naming)
+  getBranches(tenantId?: string): Promise<any[]>;
+  getBranch(branchName: string): Promise<any | null>;
+  createBranch(data: any): Promise<any>;
+  
+  // Deployment Status operations (Track push status per branch)
+  getDeploymentStatuses(deploymentId: string): Promise<any[]>;
+  createDeploymentStatus(data: any): Promise<any>;
+  updateDeploymentStatus(id: string, data: any): Promise<any | null>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -1676,6 +1700,182 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results.length > 0;
     } catch (error) {
       console.error(`Error deleting brand task ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== DEPLOY CENTER IMPLEMENTATION ====================
+
+  async getDeployments(filters?: { tool?: string; status?: string }): Promise<BrandDeployment[]> {
+    try {
+      let query = db.select().from(brandDeployments);
+      
+      const conditions = [];
+      if (filters?.tool) {
+        conditions.push(eq(brandDeployments.tool, filters.tool as any));
+      }
+      if (filters?.status) {
+        conditions.push(eq(brandDeployments.status, filters.status as any));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      const results = await query.orderBy(desc(brandDeployments.createdAt));
+      return results as BrandDeployment[];
+    } catch (error) {
+      console.error('Error fetching deployments:', error);
+      throw error;
+    }
+  }
+
+  async getDeployment(id: string): Promise<BrandDeployment | null> {
+    try {
+      const results = await db.select()
+        .from(brandDeployments)
+        .where(eq(brandDeployments.id, id))
+        .limit(1);
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching deployment ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createDeployment(data: NewBrandDeployment): Promise<BrandDeployment> {
+    try {
+      const results = await db.insert(brandDeployments)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any)
+        .returning();
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error creating deployment:', error);
+      throw error;
+    }
+  }
+
+  async updateDeployment(id: string, data: Partial<BrandDeployment>): Promise<BrandDeployment | null> {
+    try {
+      const results = await db.update(brandDeployments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandDeployments.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating deployment ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteDeployment(id: string): Promise<boolean> {
+    try {
+      const results = await db.delete(brandDeployments)
+        .where(eq(brandDeployments.id, id))
+        .returning();
+      
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting deployment ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getBranches(tenantId?: string): Promise<BrandBranch[]> {
+    try {
+      let query = db.select().from(brandBranches);
+      
+      if (tenantId) {
+        query = query.where(eq(brandBranches.tenantId, tenantId)) as any;
+      }
+      
+      const results = await query.orderBy(brandBranches.branchName);
+      return results as BrandBranch[];
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      throw error;
+    }
+  }
+
+  async getBranch(branchName: string): Promise<BrandBranch | null> {
+    try {
+      const results = await db.select()
+        .from(brandBranches)
+        .where(eq(brandBranches.branchName, branchName))
+        .limit(1);
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching branch ${branchName}:`, error);
+      throw error;
+    }
+  }
+
+  async createBranch(data: NewBrandBranch): Promise<BrandBranch> {
+    try {
+      const results = await db.insert(brandBranches)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any)
+        .returning();
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error creating branch:', error);
+      throw error;
+    }
+  }
+
+  async getDeploymentStatuses(deploymentId: string): Promise<BrandDeploymentStatus[]> {
+    try {
+      const results = await db.select()
+        .from(brandDeploymentStatus)
+        .where(eq(brandDeploymentStatus.deploymentId, deploymentId))
+        .orderBy(brandDeploymentStatus.createdAt);
+      
+      return results as BrandDeploymentStatus[];
+    } catch (error) {
+      console.error(`Error fetching deployment statuses for ${deploymentId}:`, error);
+      throw error;
+    }
+  }
+
+  async createDeploymentStatus(data: NewBrandDeploymentStatus): Promise<BrandDeploymentStatus> {
+    try {
+      const results = await db.insert(brandDeploymentStatus)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any)
+        .returning();
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error creating deployment status:', error);
+      throw error;
+    }
+  }
+
+  async updateDeploymentStatus(id: string, data: Partial<BrandDeploymentStatus>): Promise<BrandDeploymentStatus | null> {
+    try {
+      const results = await db.update(brandDeploymentStatus)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandDeploymentStatus.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating deployment status ${id}:`, error);
       throw error;
     }
   }
