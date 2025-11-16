@@ -311,12 +311,14 @@ function TemplatesTab() {
         open={showCampaignWizard}
         onClose={() => setShowCampaignWizard(false)}
         onSave={handleSaveTemplate}
+        mode="create"
       />
 
       <BrandPipelineWizard
         open={showPipelineWizard}
         onClose={() => setShowPipelineWizard(false)}
         onSave={handleSaveTemplate}
+        mode="create"
       />
 
       <BrandFunnelWizard

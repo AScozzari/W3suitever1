@@ -207,7 +207,6 @@ export function BrandWorkflowsTab() {
             variant={viewMode === 'canvas' ? 'default' : 'outline'}
             onClick={() => setViewMode('canvas')}
             size="sm"
-            disabled
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
             Canvas
