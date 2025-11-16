@@ -3,11 +3,12 @@ import {
   aiKnowledgeSources, aiCrossTenantEmbeddings, aiKnowledgeBases
 } from "../db/index.js";
 import {
-  brandCategories, brandProductTypes, brandProducts, brandSuppliers,
+  brandCategories, brandProductTypes, brandProducts, brandSuppliers, brandWorkflows,
   type BrandCategory, type BrandProductType, type BrandProduct, type BrandSupplier,
   type InsertBrandCategory, type InsertBrandProductType, type InsertBrandProduct, type InsertBrandSupplier,
   type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier
 } from "../../../api/src/db/schema/brand-interface.js";
+import type { BrandWorkflow, InsertBrandWorkflow } from "../../../api/src/db/schema/brand-interface.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
 import { db as w3db } from "../../../api/src/core/db.js";
 import { 
@@ -143,6 +144,15 @@ export interface IBrandStorage {
   createSupplier(data: InsertBrandSupplier & { createdBy: string }): Promise<BrandSupplier>;
   updateSupplier(id: string, data: UpdateBrandSupplier & { updatedBy?: string }): Promise<BrandSupplier | null>;
   deleteSupplier(id: string): Promise<boolean>;
+  
+  // ==================== BRAND WORKFLOWS ====================
+  
+  // Workflows operations
+  getBrandWorkflows(filters?: { category?: string; status?: string }): Promise<BrandWorkflow[]>;
+  getBrandWorkflow(id: string): Promise<BrandWorkflow | null>;
+  createBrandWorkflow(data: Omit<InsertBrandWorkflow, 'id' | 'createdAt' | 'updatedAt' | 'checksum'>): Promise<BrandWorkflow>;
+  updateBrandWorkflow(id: string, data: Partial<Omit<BrandWorkflow, 'id' | 'createdAt' | 'createdBy'>>): Promise<BrandWorkflow | null>;
+  deleteBrandWorkflow(id: string): Promise<boolean>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -1488,6 +1498,106 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results.length > 0;
     } catch (error) {
       console.error(`Error deleting brand supplier ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== BRAND WORKFLOWS ====================
+
+  async getBrandWorkflows(filters?: { category?: string; status?: string }): Promise<BrandWorkflow[]> {
+    try {
+      let query = db.select().from(brandWorkflows);
+      const conditions: any[] = [];
+      
+      if (filters?.category) {
+        conditions.push(eq(brandWorkflows.category, filters.category as any));
+      }
+      
+      if (filters?.status) {
+        conditions.push(eq(brandWorkflows.status, filters.status as any));
+      }
+      
+      const results = conditions.length > 0 
+        ? await query.where(and(...conditions)).orderBy(desc(brandWorkflows.updatedAt))
+        : await query.orderBy(desc(brandWorkflows.updatedAt));
+      
+      return results;
+    } catch (error) {
+      console.error('Error fetching brand workflows:', error);
+      throw error;
+    }
+  }
+
+  async getBrandWorkflow(id: string): Promise<BrandWorkflow | null> {
+    try {
+      const results = await db.select()
+        .from(brandWorkflows)
+        .where(eq(brandWorkflows.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching brand workflow ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createBrandWorkflow(data: Omit<InsertBrandWorkflow, 'id' | 'createdAt' | 'updatedAt' | 'checksum'>): Promise<BrandWorkflow> {
+    try {
+      // Generate checksum for DSL JSON
+      const crypto = await import('crypto');
+      const checksum = crypto.createHash('sha256')
+        .update(JSON.stringify(data.dslJson))
+        .digest('hex');
+      
+      const results = await db.insert(brandWorkflows)
+        .values({
+          ...data,
+          checksum,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any)
+        .returning();
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error creating brand workflow:', error);
+      throw error;
+    }
+  }
+
+  async updateBrandWorkflow(id: string, data: Partial<Omit<BrandWorkflow, 'id' | 'createdAt' | 'createdBy'>>): Promise<BrandWorkflow | null> {
+    try {
+      let updateData: any = { ...data, updatedAt: new Date() };
+      
+      // Regenerate checksum if dslJson is being updated
+      if (data.dslJson) {
+        const crypto = await import('crypto');
+        updateData.checksum = crypto.createHash('sha256')
+          .update(JSON.stringify(data.dslJson))
+          .digest('hex');
+      }
+      
+      const results = await db.update(brandWorkflows)
+        .set(updateData)
+        .where(eq(brandWorkflows.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating brand workflow ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteBrandWorkflow(id: string): Promise<boolean> {
+    try {
+      const results = await db.delete(brandWorkflows)
+        .where(eq(brandWorkflows.id, id))
+        .returning();
+      
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting brand workflow ${id}:`, error);
       throw error;
     }
   }

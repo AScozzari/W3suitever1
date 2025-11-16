@@ -9,6 +9,7 @@ import {
   insertBrandProductSchema, updateBrandProductSchema,
   insertBrandSupplierSchema, updateBrandSupplierSchema
 } from "../../../api/src/db/schema/brand-interface.js";
+import { templateStorageService, type TemplateType } from "../services/template-storage.service.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
@@ -2588,6 +2589,378 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         error: "Failed to fetch Italian cities",
         details: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // ==================== MASTER CATALOG TEMPLATES ENDPOINTS ====================
+  // JSON-based storage for campaigns, pipelines, and funnels (Git-versioned)
+
+  // Initialize template storage
+  await templateStorageService.initialize();
+
+  // Get all templates (cross-type)
+  app.get("/brand-api/templates", async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const templates = await templateStorageService.getAllTemplates();
+      res.json({ 
+        success: true, 
+        data: templates,
+        count: templates.length
+      });
+    } catch (error) {
+      console.error("Error fetching all templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  // Get templates by type
+  app.get("/brand-api/templates/:type", async (req, res) => {
+    const user = (req as any).user;
+    const { type } = req.params as { type: TemplateType };
+    
+    // Validate type
+    if (!['campaign', 'pipeline', 'funnel'].includes(type)) {
+      return res.status(400).json({ error: "Invalid template type. Must be: campaign, pipeline, or funnel" });
+    }
+    
+    try {
+      const templates = await templateStorageService.getTemplates(type);
+      res.json({ 
+        success: true, 
+        data: templates,
+        type,
+        count: templates.length
+      });
+    } catch (error) {
+      console.error(`Error fetching ${type} templates:`, error);
+      res.status(500).json({ error: `Failed to fetch ${type} templates` });
+    }
+  });
+
+  // Get single template
+  app.get("/brand-api/templates/:type/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { type, id } = req.params as { type: TemplateType; id: string };
+    
+    // Validate type
+    if (!['campaign', 'pipeline', 'funnel'].includes(type)) {
+      return res.status(400).json({ error: "Invalid template type" });
+    }
+    
+    try {
+      const template = await templateStorageService.getTemplate(type, id);
+      
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json({ 
+        success: true, 
+        data: template
+      });
+    } catch (error) {
+      console.error(`Error fetching ${type} template ${id}:`, error);
+      res.status(500).json({ error: "Failed to fetch template" });
+    }
+  });
+
+  // Create new template
+  app.post("/brand-api/templates/:type", async (req, res) => {
+    const user = (req as any).user;
+    const { type } = req.params as { type: TemplateType };
+    
+    // Validate type
+    if (!['campaign', 'pipeline', 'funnel'].includes(type)) {
+      return res.status(400).json({ error: "Invalid template type" });
+    }
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create templates" });
+    }
+    
+    try {
+      const { code, name, description, status, isActive, version, linkedItems, metadata, templateData } = req.body;
+      
+      if (!code || !name) {
+        return res.status(400).json({ error: "Code and name are required" });
+      }
+      
+      if (!templateData) {
+        return res.status(400).json({ error: "templateData is required (wizard form data)" });
+      }
+      
+      const template = await templateStorageService.createTemplate(type, {
+        code,
+        name,
+        description,
+        status: status || 'draft',
+        isActive: isActive !== undefined ? isActive : false,
+        version: version || '1.0.0',
+        linkedItems: linkedItems || [],
+        metadata: metadata || {},
+        templateData,
+        createdBy: user.id || user.email
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: template,
+        message: `${type} template created successfully`
+      });
+    } catch (error) {
+      console.error(`Error creating ${type} template:`, error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  // Update template
+  app.patch("/brand-api/templates/:type/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { type, id } = req.params as { type: TemplateType; id: string };
+    
+    // Validate type
+    if (!['campaign', 'pipeline', 'funnel'].includes(type)) {
+      return res.status(400).json({ error: "Invalid template type" });
+    }
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to update templates" });
+    }
+    
+    try {
+      const updates = {
+        ...req.body,
+        updatedBy: user.id || user.email
+      };
+      
+      const template = await templateStorageService.updateTemplate(type, id, updates);
+      
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: template,
+        message: `${type} template updated successfully`
+      });
+    } catch (error) {
+      console.error(`Error updating ${type} template ${id}:`, error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  // Toggle template active state
+  app.post("/brand-api/templates/:type/:id/toggle", async (req, res) => {
+    const user = (req as any).user;
+    const { type, id } = req.params as { type: TemplateType; id: string };
+    
+    // Validate type
+    if (!['campaign', 'pipeline', 'funnel'].includes(type)) {
+      return res.status(400).json({ error: "Invalid template type" });
+    }
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to toggle templates" });
+    }
+    
+    try {
+      const template = await templateStorageService.toggleTemplateActive(type, id);
+      
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: template,
+        message: `${type} template ${template.isActive ? 'enabled' : 'disabled'} successfully`
+      });
+    } catch (error) {
+      console.error(`Error toggling ${type} template ${id}:`, error);
+      res.status(500).json({ error: "Failed to toggle template" });
+    }
+  });
+
+  // Delete template
+  app.delete("/brand-api/templates/:type/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { type, id } = req.params as { type: TemplateType; id: string };
+    
+    // Validate type
+    if (!['campaign', 'pipeline', 'funnel'].includes(type)) {
+      return res.status(400).json({ error: "Invalid template type" });
+    }
+    
+    // Role-based access control
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete templates" });
+    }
+    
+    try {
+      const success = await templateStorageService.deleteTemplate(type, id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json({
+        success: true,
+        message: `${type} template deleted successfully`
+      });
+    } catch (error) {
+      console.error(`Error deleting ${type} template ${id}:`, error);
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  // ==================== WORKFLOWS ENDPOINTS ====================
+  // DB-based storage for workflows (full replication to tenants)
+
+  // Get all workflows
+  app.get("/brand-api/workflows", async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const workflows = await brandStorage.getBrandWorkflows();
+      res.json({ 
+        success: true, 
+        data: workflows,
+        count: workflows.length
+      });
+    } catch (error) {
+      console.error("Error fetching workflows:", error);
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  // Get single workflow
+  app.get("/brand-api/workflows/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const workflow = await brandStorage.getBrandWorkflow(id);
+      
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      
+      res.json({ 
+        success: true, 
+        data: workflow
+      });
+    } catch (error) {
+      console.error(`Error fetching workflow ${id}:`, error);
+      res.status(500).json({ error: "Failed to fetch workflow" });
+    }
+  });
+
+  // Create new workflow
+  app.post("/brand-api/workflows", async (req, res) => {
+    const user = (req as any).user;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create workflows" });
+    }
+    
+    try {
+      const { code, name, description, category, tags, version, status, dslJson } = req.body;
+      
+      if (!code || !name) {
+        return res.status(400).json({ error: "Code and name are required" });
+      }
+      
+      if (!dslJson) {
+        return res.status(400).json({ error: "dslJson is required (workflow definition)" });
+      }
+      
+      const workflow = await brandStorage.createBrandWorkflow({
+        code,
+        name,
+        description,
+        category: category || 'crm',
+        tags: tags || [],
+        version: version || '1.0.0',
+        status: status || 'draft',
+        dslJson,
+        createdBy: user.id || user.email
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: workflow,
+        message: "Workflow created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating workflow:", error);
+      res.status(500).json({ error: "Failed to create workflow" });
+    }
+  });
+
+  // Update workflow
+  app.patch("/brand-api/workflows/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to update workflows" });
+    }
+    
+    try {
+      const updates = {
+        ...req.body,
+        updatedBy: user.id || user.email
+      };
+      
+      const workflow = await brandStorage.updateBrandWorkflow(id, updates);
+      
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: workflow,
+        message: "Workflow updated successfully"
+      });
+    } catch (error) {
+      console.error(`Error updating workflow ${id}:`, error);
+      res.status(500).json({ error: "Failed to update workflow" });
+    }
+  });
+
+  // Delete workflow
+  app.delete("/brand-api/workflows/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super admins can delete workflows" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteBrandWorkflow(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Workflow deleted successfully"
+      });
+    } catch (error) {
+      console.error(`Error deleting workflow ${id}:`, error);
+      res.status(500).json({ error: "Failed to delete workflow" });
     }
   });
 
