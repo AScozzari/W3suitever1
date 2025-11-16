@@ -23,6 +23,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { 
   Plus, GitBranch, Search, Edit, Trash2, Copy, 
   Download, Upload, PlayCircle, Brain, List, 
@@ -340,6 +341,9 @@ interface WorkflowCanvasViewProps {
 function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: WorkflowCanvasViewProps) {
   const [isPaletteOpen, setIsPaletteOpen] = useState(true);
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const reactFlowInstance = useReactFlow();
   
   // Initialize ReactFlow state from workflow DSL
@@ -354,6 +358,11 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges]
   );
+
+  // Handle node click for config
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
 
   // Drag and drop handlers
   const onDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
@@ -479,22 +488,62 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       <div className="flex-1 flex overflow-hidden">
         {/* Node Palette Sidebar */}
         {isPaletteOpen && (
-          <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+          <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-100">
               <h3 className="font-semibold text-gray-900">Node Library</h3>
               <p className="text-xs text-gray-500 mt-1">
                 Trascina i nodi nella canvas
               </p>
             </div>
-            <div className="p-4 space-y-4">
+            
+            {/* Search and Category Filter */}
+            <div className="p-4 border-b border-gray-100 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Cerca nodi..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-nodes"
+                />
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Tutte le Categorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le Categorie</SelectItem>
+                  <SelectItem value="trigger">🔵 Triggers</SelectItem>
+                  <SelectItem value="action">🟢 Actions</SelectItem>
+                  <SelectItem value="ai">🟣 AI Nodes</SelectItem>
+                  <SelectItem value="routing">🟠 Routing</SelectItem>
+                  <SelectItem value="integration">🔷 Integration</SelectItem>
+                  <SelectItem value="flow-control">⚪ Flow Control</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Triggers */}
+              {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                  TRIGGERS ({getNodesByCategory('trigger').length})
+                  TRIGGERS ({getNodesByCategory('trigger').filter(node => 
+                    !searchTerm || 
+                    node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('trigger').map((node) => (
+                  {getNodesByCategory('trigger')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <NodePaletteItem
                       key={node.id}
                       nodeId={node.id}
@@ -506,14 +555,26 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              )}
               {/* Actions */}
+              {(selectedCategory === 'all' || selectedCategory === 'action') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full" />
-                  ACTIONS ({getNodesByCategory('action').length})
+                  ACTIONS ({getNodesByCategory('action').filter(node => 
+                    !searchTerm || 
+                    node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('action').map((node) => (
+                  {getNodesByCategory('action')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <NodePaletteItem
                       key={node.id}
                       nodeId={node.id}
@@ -525,14 +586,26 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              )}
               {/* AI Nodes */}
+              {(selectedCategory === 'all' || selectedCategory === 'ai') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-purple-500 rounded-full" />
-                  AI ({getNodesByCategory('ai').length})
+                  AI ({getNodesByCategory('ai').filter(node => 
+                    !searchTerm || 
+                    node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('ai').map((node) => (
+                  {getNodesByCategory('ai')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <NodePaletteItem
                       key={node.id}
                       nodeId={node.id}
@@ -544,14 +617,26 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              )}
               {/* Routing */}
+              {(selectedCategory === 'all' || selectedCategory === 'routing') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-orange-500 rounded-full" />
-                  ROUTING ({getNodesByCategory('routing').length})
+                  ROUTING ({getNodesByCategory('routing').filter(node => 
+                    !searchTerm || 
+                    node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('routing').map((node) => (
+                  {getNodesByCategory('routing')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <NodePaletteItem
                       key={node.id}
                       nodeId={node.id}
@@ -563,14 +648,26 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              )}
               {/* Integration */}
+              {(selectedCategory === 'all' || selectedCategory === 'integration') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-cyan-500 rounded-full" />
-                  INTEGRATION ({getNodesByCategory('integration').length})
+                  INTEGRATION ({getNodesByCategory('integration').filter(node => 
+                    !searchTerm || 
+                    node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('integration').map((node) => (
+                  {getNodesByCategory('integration')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <NodePaletteItem
                       key={node.id}
                       nodeId={node.id}
@@ -582,14 +679,26 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              )}
               {/* Flow Control */}
+              {(selectedCategory === 'all' || selectedCategory === 'flow-control') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-gray-500 rounded-full" />
-                  FLOW CONTROL ({getNodesByCategory('flow-control').length})
+                  FLOW CONTROL ({getNodesByCategory('flow-control').filter(node => 
+                    !searchTerm || 
+                    node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('flow-control').map((node) => (
+                  {getNodesByCategory('flow-control')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <NodePaletteItem
                       key={node.id}
                       nodeId={node.id}
@@ -601,27 +710,71 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
+              )}
             </div>
           </div>
         )}
 
         {/* ReactFlow Canvas */}
-        <div className="flex-1 bg-gray-50" onDrop={onDrop} onDragOver={onDragOver}>
+        <div className="flex-1 bg-white" onDrop={onDrop} onDragOver={onDragOver}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onNodeClick={onNodeClick}
             nodeTypes={nodeTypes}
             fitView
-            className="bg-gray-50"
+            className="bg-white"
           >
-            <Background color="#ccc" gap={16} />
+            <Background color="#ddd" gap={16} />
             <Controls />
             <MiniMap />
           </ReactFlow>
         </div>
+
+        {/* Node Config Panel */}
+        {selectedNodeId && (
+          <div className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Configurazione Nodo</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedNodeId(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            {(() => {
+              const node = nodes.find(n => n.id === selectedNodeId);
+              if (!node) return <p className="text-sm text-gray-500">Nodo non trovato</p>;
+              
+              return (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">Nome Nodo</label>
+                    <p className="text-sm text-gray-900 mt-1">{node.data.label || 'Senza nome'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">Tipo</label>
+                    <p className="text-sm text-gray-900 mt-1">{node.type || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">Descrizione</label>
+                    <p className="text-xs text-gray-600 mt-1">{node.data.description || 'Nessuna descrizione'}</p>
+                  </div>
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-xs text-gray-500">
+                      💡 Click su un nodo per configurarlo. Funzionalità complete in sviluppo.
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -703,10 +856,11 @@ CustomWorkflowNode.displayName = 'CustomWorkflowNode';
 
 // Node types registry per ReactFlow
 const nodeTypes = {
-  triggers: CustomWorkflowNode,
-  actions: CustomWorkflowNode,
+  trigger: CustomWorkflowNode,
+  action: CustomWorkflowNode,
   ai: CustomWorkflowNode,
   routing: CustomWorkflowNode,
+  integration: CustomWorkflowNode,
   'flow-control': CustomWorkflowNode,
 };
 
