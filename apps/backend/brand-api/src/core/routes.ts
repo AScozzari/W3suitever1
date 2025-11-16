@@ -2964,6 +2964,121 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== TASKS ENDPOINTS ====================
+  
+  // Get all tasks
+  app.get("/brand-api/tasks", async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const tasks = await brandStorage.getAllBrandTasks();
+      
+      res.json({
+        success: true,
+        data: tasks,
+        count: tasks.length
+      });
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ error: "Failed to fetch tasks" });
+    }
+  });
+
+  // Get single task
+  app.get("/brand-api/tasks/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const task = await brandStorage.getBrandTaskById(id);
+      
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: task
+      });
+    } catch (error) {
+      console.error(`Error fetching task ${id}:`, error);
+      res.status(500).json({ error: "Failed to fetch task" });
+    }
+  });
+
+  // Create new task
+  app.post("/brand-api/tasks", async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const taskData = {
+        ...req.body,
+        brandTenantId: BRAND_TENANT_ID
+      };
+      
+      const task = await brandStorage.createBrandTask(taskData);
+      
+      res.status(201).json({
+        success: true,
+        data: task,
+        message: "Task created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ error: "Failed to create task" });
+    }
+  });
+
+  // Update task
+  app.patch("/brand-api/tasks/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const task = await brandStorage.updateBrandTask(id, req.body);
+      
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: task,
+        message: "Task updated successfully"
+      });
+    } catch (error) {
+      console.error(`Error updating task ${id}:`, error);
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
+  // Delete task
+  app.delete("/brand-api/tasks/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to delete tasks" });
+    }
+    
+    try {
+      const success = await brandStorage.deleteBrandTask(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Task deleted successfully"
+      });
+    } catch (error) {
+      console.error(`Error deleting task ${id}:`, error);
+      res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 

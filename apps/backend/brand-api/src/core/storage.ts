@@ -3,12 +3,12 @@ import {
   aiKnowledgeSources, aiCrossTenantEmbeddings, aiKnowledgeBases
 } from "../db/index.js";
 import {
-  brandCategories, brandProductTypes, brandProducts, brandSuppliers, brandWorkflows,
+  brandCategories, brandProductTypes, brandProducts, brandSuppliers, brandWorkflows, brandTasks,
   type BrandCategory, type BrandProductType, type BrandProduct, type BrandSupplier,
   type InsertBrandCategory, type InsertBrandProductType, type InsertBrandProduct, type InsertBrandSupplier,
   type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier
 } from "../../../api/src/db/schema/brand-interface.js";
-import type { BrandWorkflow, InsertBrandWorkflow } from "../../../api/src/db/schema/brand-interface.js";
+import type { BrandWorkflow, InsertBrandWorkflow, BrandTask, NewBrandTask } from "../../../api/src/db/schema/brand-interface.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
 import { db as w3db } from "../../../api/src/core/db.js";
 import { 
@@ -153,6 +153,15 @@ export interface IBrandStorage {
   createBrandWorkflow(data: Omit<InsertBrandWorkflow, 'id' | 'createdAt' | 'updatedAt' | 'checksum'>): Promise<BrandWorkflow>;
   updateBrandWorkflow(id: string, data: Partial<Omit<BrandWorkflow, 'id' | 'createdAt' | 'createdBy'>>): Promise<BrandWorkflow | null>;
   deleteBrandWorkflow(id: string): Promise<boolean>;
+
+  // ==================== BRAND TASKS ====================
+  
+  // Tasks operations
+  getAllBrandTasks(): Promise<BrandTask[]>;
+  getBrandTaskById(id: string): Promise<BrandTask | null>;
+  createBrandTask(data: Omit<NewBrandTask, 'id' | 'createdAt' | 'updatedAt'>): Promise<BrandTask>;
+  updateBrandTask(id: string, data: Partial<Omit<BrandTask, 'id' | 'createdAt' | 'brandTenantId'>>): Promise<BrandTask | null>;
+  deleteBrandTask(id: string): Promise<boolean>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -1598,6 +1607,75 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results.length > 0;
     } catch (error) {
       console.error(`Error deleting brand workflow ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== BRAND TASKS IMPLEMENTATION ====================
+
+  async getAllBrandTasks(): Promise<BrandTask[]> {
+    try {
+      return await db.select().from(brandTasks).orderBy(brandTasks.createdAt);
+    } catch (error) {
+      console.error('Error fetching all brand tasks:', error);
+      throw error;
+    }
+  }
+
+  async getBrandTaskById(id: string): Promise<BrandTask | null> {
+    try {
+      const results = await db.select()
+        .from(brandTasks)
+        .where(eq(brandTasks.id, id))
+        .limit(1);
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching brand task ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createBrandTask(data: Omit<NewBrandTask, 'id' | 'createdAt' | 'updatedAt'>): Promise<BrandTask> {
+    try {
+      const results = await db.insert(brandTasks)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any)
+        .returning();
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error creating brand task:', error);
+      throw error;
+    }
+  }
+
+  async updateBrandTask(id: string, data: Partial<Omit<BrandTask, 'id' | 'createdAt' | 'brandTenantId'>>): Promise<BrandTask | null> {
+    try {
+      const results = await db.update(brandTasks)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brandTasks.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating brand task ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteBrandTask(id: string): Promise<boolean> {
+    try {
+      const results = await db.delete(brandTasks)
+        .where(eq(brandTasks.id, id))
+        .returning();
+      
+      return results.length > 0;
+    } catch (error) {
+      console.error(`Error deleting brand task ${id}:`, error);
       throw error;
     }
   }

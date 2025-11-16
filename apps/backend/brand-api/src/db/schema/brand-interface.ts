@@ -84,6 +84,35 @@ export const brandAuditLogs = brandInterfaceSchema.table("brand_audit_logs", {
   tenantId: uuid("tenant_id").notNull().references(() => brandTenants.id)
 });
 
+// Enums for Brand Tasks
+export const taskStatusEnum = brandInterfaceSchema.enum("task_status", [
+  "pending",
+  "in_progress", 
+  "completed"
+]);
+
+export const taskPriorityEnum = brandInterfaceSchema.enum("task_priority", [
+  "low",
+  "medium",
+  "high"
+]);
+
+// Brand Tasks table - Task management for Brand Interface
+export const brandTasks = brandInterfaceSchema.table("brand_tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  assignee: varchar("assignee", { length: 255 }).notNull(),
+  status: taskStatusEnum("status").notNull().default("pending"),
+  priority: taskPriorityEnum("priority").notNull().default("medium"),
+  dueDate: date("due_date"),
+  category: varchar("category", { length: 100 }).notNull(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
 // Export types
 export type BrandTenant = typeof brandTenants.$inferSelect;
 export type NewBrandTenant = typeof brandTenants.$inferInsert;
@@ -93,6 +122,29 @@ export type BrandRole = typeof brandRoles.$inferSelect;
 export type NewBrandRole = typeof brandRoles.$inferInsert;
 export type BrandAuditLog = typeof brandAuditLogs.$inferSelect;
 export type NewBrandAuditLog = typeof brandAuditLogs.$inferInsert;
+export type BrandTask = typeof brandTasks.$inferSelect;
+export type NewBrandTask = typeof brandTasks.$inferInsert;
+
+// Zod schemas for validation
+export const insertBrandTaskSchema = createInsertSchema(brandTasks, {
+  title: z.string().min(1, "Il titolo è obbligatorio").max(255),
+  description: z.string().optional(),
+  assignee: z.string().email("Email non valida"),
+  status: z.enum(["pending", "in_progress", "completed"]).default("pending"),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  dueDate: z.string().optional(),
+  category: z.string().min(1, "La categoria è obbligatoria"),
+  metadata: z.record(z.any()).optional()
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  brandTenantId: true
+});
+
+export const selectBrandTaskSchema = createSelectSchema(brandTasks);
+export type InsertBrandTask = z.infer<typeof insertBrandTaskSchema>;
+export type SelectBrandTask = z.infer<typeof selectBrandTaskSchema>;
 
 // ==================== MANAGEMENT DTOs ====================
 
