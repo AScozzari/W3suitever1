@@ -9,8 +9,10 @@ import { BrandWorkflowsTab } from '../components/BrandWorkflowsTab';
 import { BrandStructuresDataTable } from '../components/BrandStructuresDataTable';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { useToast } from '../hooks/use-toast';
 import { useCreateBrandTemplate, useUpdateBrandTemplate } from '../hooks/useBrandTemplates';
+import { useAllBrandTasks, useCreateBrandTask, useUpdateBrandTask, useDeleteBrandTask } from '../hooks/useBrandTasks';
 import { 
   LayoutDashboard, Network, GitBranch, Database, 
   TrendingUp, Users, Workflow, Package, 
@@ -25,11 +27,75 @@ export default function BrandCRM() {
   const { currentTenant, isCrossTenant } = useBrandTenant();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const { toast } = useToast();
 
   if (!isAuthenticated) {
     window.location.href = '/brandinterface/login';
     return null;
   }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === 'application/json') {
+      setImportFile(file);
+    } else {
+      toast({
+        title: "Errore",
+        description: "Seleziona un file JSON valido",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importFile) {
+      toast({
+        title: "Errore",
+        description: "Seleziona un file da importare",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const fileContent = await importFile.text();
+      const templates = JSON.parse(fileContent);
+
+      const response = await fetch('/brand-api/templates/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ templates: Array.isArray(templates) ? templates : [templates] })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Import completato",
+          description: result.message || "Templates importati con successo"
+        });
+        setShowImportDialog(false);
+        setImportFile(null);
+      } else {
+        toast({
+          title: "Errore",
+          description: result.error || "Import fallito",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Errore durante l'import dei templates",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <BrandLayout>
@@ -49,7 +115,11 @@ export default function BrandCRM() {
               </div>
               
               <div className="flex items-center gap-3">
-                <Button variant="outline" data-testid="button-import-templates">
+                <Button 
+                  variant="outline" 
+                  data-testid="button-import-templates"
+                  onClick={() => setShowImportDialog(true)}
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Import Templates
                 </Button>
@@ -438,6 +508,64 @@ function TemplatesTab() {
         }}
         onSave={handleSaveFunnel}
       />
+
+      {/* Import Templates Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Templates</DialogTitle>
+            <DialogDescription>
+              Carica un file JSON contenente campagne, pipeline o funnel da importare nel Master Catalog.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Seleziona File JSON
+              </label>
+              <Input
+                type="file"
+                accept=".json,application/json"
+                onChange={handleFileSelect}
+                data-testid="input-import-file"
+              />
+            </div>
+            
+            {importFile && (
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">File selezionato:</span> {importFile.name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Dimensione: {(importFile.size / 1024).toFixed(2)} KB
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowImportDialog(false);
+                setImportFile(null);
+              }}
+              data-testid="button-cancel-import"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={!importFile}
+              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+              data-testid="button-confirm-import"
+            >
+              Importa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -449,62 +577,51 @@ function WorkflowsTab() {
 
 // Tasks Tab Component - Gestione attività Brand Interface
 function TasksTab() {
-  const mockTasks = [
-    {
-      id: '1',
-      title: 'Revisione template campagna Black Friday',
-      assignee: 'Marco Rossi',
-      status: 'In Progress',
-      priority: 'High',
-      dueDate: '2024-11-20',
-      category: 'Templates'
-    },
-    {
-      id: '2',
-      title: 'Deploy workflow v2.4.1 su tenant pilot',
-      assignee: 'Laura Bianchi',
-      status: 'Pending',
-      priority: 'Medium',
-      dueDate: '2024-11-22',
-      category: 'Workflows'
-    },
-    {
-      id: '3',
-      title: 'Validazione pipeline CRM Enterprise',
-      assignee: 'Giovanni Verdi',
-      status: 'Completed',
-      priority: 'High',
-      dueDate: '2024-11-15',
-      category: 'Templates'
-    },
-    {
-      id: '4',
-      title: 'Sync bundle master catalog su 50 tenant',
-      assignee: 'Sara Neri',
-      status: 'Pending',
-      priority: 'Low',
-      dueDate: '2024-11-25',
-      category: 'Deployment'
-    }
-  ];
+  const { data: tasks = [], isLoading } = useAllBrandTasks();
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Completed': return 'bg-green-100 text-green-700';
-      case 'In Progress': return 'bg-blue-100 text-blue-700';
-      case 'Pending': return 'bg-yellow-100 text-yellow-700';
+      case 'completed': return 'bg-green-100 text-green-700';
+      case 'in_progress': return 'bg-blue-100 text-blue-700';
+      case 'pending': return 'bg-yellow-100 text-yellow-700';
       default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Completato';
+      case 'in_progress': return 'In Corso';
+      case 'pending': return 'In Attesa';
+      default: return status;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'bg-red-100 text-red-700';
-      case 'Medium': return 'bg-orange-100 text-orange-700';
-      case 'Low': return 'bg-gray-100 text-gray-700';
+      case 'high': return 'bg-red-100 text-red-700';
+      case 'medium': return 'bg-orange-100 text-orange-700';
+      case 'low': return 'bg-gray-100 text-gray-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'Alta';
+      case 'medium': return 'Media';
+      case 'low': return 'Bassa';
+      default: return priority;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Caricamento tasks...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-6">
@@ -512,24 +629,24 @@ function TasksTab() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Totali</p>
-          <p className="text-2xl font-bold text-gray-900">{mockTasks.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">In Progress</p>
           <p className="text-2xl font-bold text-blue-600">
-            {mockTasks.filter(t => t.status === 'In Progress').length}
+            {tasks.filter(t => t.status === 'in_progress').length}
           </p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Pending</p>
           <p className="text-2xl font-bold text-yellow-600">
-            {mockTasks.filter(t => t.status === 'Pending').length}
+            {tasks.filter(t => t.status === 'pending').length}
           </p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Completed</p>
           <p className="text-2xl font-bold text-green-600">
-            {mockTasks.filter(t => t.status === 'Completed').length}
+            {tasks.filter(t => t.status === 'completed').length}
           </p>
         </div>
       </div>
@@ -571,36 +688,47 @@ function TasksTab() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {mockTasks.map((task) => (
-                <tr
-                  key={task.id}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  data-testid={`task-row-${task.id}`}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{task.title}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{task.assignee}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{task.category}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(task.status)}`}>
-                      {task.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {task.dueDate}
+              {tasks.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    Nessuna task disponibile. Crea la prima task!
                   </td>
                 </tr>
-              ))}
+              ) : (
+                tasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    data-testid={`task-row-${task.id}`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                      {task.description && (
+                        <div className="text-xs text-gray-500 truncate max-w-xs">{task.description}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600">{task.assignee}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600">{task.category}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(task.status)}`}>
+                        {getStatusLabel(task.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(task.priority)}`}>
+                        {getPriorityLabel(task.priority)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {task.dueDate ? new Date(task.dueDate).toLocaleDateString('it-IT') : '-'}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

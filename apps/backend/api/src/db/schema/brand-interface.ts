@@ -1239,6 +1239,66 @@ export type InsertBrandWorkflow = z.infer<typeof insertBrandWorkflowSchema>;
 export type UpdateBrandWorkflow = z.infer<typeof updateBrandWorkflowSchema>;
 export type BrandWorkflow = typeof brandWorkflows.$inferSelect;
 
+// ==================== BRAND TASKS ====================
+// Task management for Brand Interface operations
+
+// Task Status Enum
+export const brandTaskStatusEnum = pgEnum('brand_task_status', [
+  'pending',
+  'in_progress',
+  'completed'
+]);
+
+// Task Priority Enum
+export const brandTaskPriorityEnum = pgEnum('brand_task_priority', [
+  'low',
+  'medium',
+  'high'
+]);
+
+// Brand Tasks Table
+export const brandTasks = brandInterfaceSchema.table("brand_tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  assignee: varchar("assignee", { length: 255 }).notNull(),
+  status: brandTaskStatusEnum("status").notNull().default("pending"),
+  priority: brandTaskPriorityEnum("priority").notNull().default("medium"),
+  dueDate: date("due_date"),
+  category: varchar("category", { length: 100 }).notNull(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+}, (table) => [
+  index("brand_tasks_status_idx").on(table.status),
+  index("brand_tasks_priority_idx").on(table.priority),
+  index("brand_tasks_assignee_idx").on(table.assignee),
+  index("brand_tasks_tenant_idx").on(table.brandTenantId),
+]);
+
+export const insertBrandTaskSchema = createInsertSchema(brandTasks, {
+  title: z.string().min(1, "Il titolo è obbligatorio").max(255),
+  description: z.string().optional(),
+  assignee: z.string().min(1, "L'assegnatario è obbligatorio"),
+  status: z.enum(["pending", "in_progress", "completed"]).default("pending"),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  dueDate: z.string().optional().nullable(),
+  category: z.string().min(1, "La categoria è obbligatoria"),
+  metadata: z.record(z.any()).optional()
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  brandTenantId: true
+});
+
+export const updateBrandTaskSchema = insertBrandTaskSchema.partial();
+export type InsertBrandTask = z.infer<typeof insertBrandTaskSchema>;
+export type UpdateBrandTask = z.infer<typeof updateBrandTaskSchema>;
+export type BrandTask = typeof brandTasks.$inferSelect;
+export type NewBrandTask = typeof brandTasks.$inferInsert;
+
 // ==================== BRAND WORKFLOW VERSIONS TABLE ====================
 // Version history for workflows (audit trail)
 export const brandWorkflowVersions = brandInterfaceSchema.table("brand_workflow_versions", {

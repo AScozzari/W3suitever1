@@ -2819,6 +2819,114 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Import templates (bulk create/update from JSON)
+  app.post("/brand-api/templates/import", async (req, res) => {
+    const user = (req as any).user;
+    const { templates } = req.body as { templates: any[] };
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to import templates" });
+    }
+    
+    if (!Array.isArray(templates) || templates.length === 0) {
+      return res.status(400).json({ error: "Invalid import data - expecting array of templates" });
+    }
+    
+    try {
+      // Fetch all existing templates once (optimization: avoid O(n²))
+      const [existingCampaigns, existingPipelines, existingFunnels] = await Promise.all([
+        templateStorageService.getTemplates('campaign'),
+        templateStorageService.getTemplates('pipeline'),
+        templateStorageService.getTemplates('funnel')
+      ]);
+      
+      const existingTemplates = new Map<string, any>();
+      [...existingCampaigns, ...existingPipelines, ...existingFunnels].forEach(t => {
+        existingTemplates.set(`${t.type}:${t.code}`, t);
+      });
+      
+      const results = {
+        imported: [] as any[],
+        updated: [] as any[],
+        errors: [] as any[]
+      };
+      
+      for (const template of templates) {
+        try {
+          // Validate required fields
+          if (!template.type || !['campaign', 'pipeline', 'funnel'].includes(template.type)) {
+            results.errors.push({
+              template: template.name || 'Unknown',
+              error: 'Invalid or missing template type'
+            });
+            continue;
+          }
+          
+          if (!template.name || !template.code) {
+            results.errors.push({
+              template: template.name || 'Unknown',
+              error: 'Missing required fields (name, code)'
+            });
+            continue;
+          }
+          
+          // Check if template already exists
+          const existing = existingTemplates.get(`${template.type}:${template.code}`);
+          
+          if (existing) {
+            // Update existing template
+            const updated = await templateStorageService.updateTemplate(
+              template.type as TemplateType,
+              existing.id,
+              {
+                ...template,
+                updatedBy: user.email
+              }
+            );
+            
+            if (updated) {
+              results.updated.push(updated);
+            }
+          } else {
+            // Create new template
+            const created = await templateStorageService.createTemplate(
+              template.type as TemplateType,
+              {
+                code: template.code,
+                name: template.name,
+                description: template.description || '',
+                status: template.status || 'draft',
+                isActive: template.isActive ?? false,
+                version: template.version || '1.0.0',
+                linkedItems: template.linkedItems || [],
+                metadata: template.metadata || {},
+                templateData: template.templateData || {},
+                createdBy: user.email
+              }
+            );
+            
+            results.imported.push(created);
+          }
+        } catch (error: any) {
+          results.errors.push({
+            template: template.name || 'Unknown',
+            error: error.message || 'Failed to process template'
+          });
+        }
+      }
+      
+      res.json({
+        success: true,
+        data: results,
+        message: `Import completed: ${results.imported.length} created, ${results.updated.length} updated, ${results.errors.length} errors`
+      });
+    } catch (error) {
+      console.error("Error importing templates:", error);
+      res.status(500).json({ error: "Failed to import templates" });
+    }
+  });
+
   // ==================== WORKFLOWS ENDPOINTS ====================
   // DB-based storage for workflows (full replication to tenants)
 
