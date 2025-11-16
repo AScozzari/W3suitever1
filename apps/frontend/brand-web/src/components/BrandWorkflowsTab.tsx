@@ -4,7 +4,7 @@
  * Features: Workflow list, Canvas editor, Node palette, AI assistant
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { 
   ReactFlow, 
   Background, 
@@ -17,6 +17,7 @@ import {
   type Connection,
   type Node,
   type Edge,
+  type NodeProps,
   ReactFlowProvider 
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -557,6 +558,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            nodeTypes={nodeTypes}
             fitView
             className="bg-gray-50"
           >
@@ -570,7 +572,83 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
   );
 }
 
-// Simple node palette item
+// Category color mapping
+function getCategoryStyles(category: string) {
+  const styles = {
+    triggers: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      hoverBorder: 'hover:border-blue-500',
+      icon: 'bg-blue-100 text-blue-600',
+      label: 'text-blue-900'
+    },
+    actions: {
+      bg: 'bg-green-50',
+      border: 'border-green-200',
+      hoverBorder: 'hover:border-green-500',
+      icon: 'bg-green-100 text-green-600',
+      label: 'text-green-900'
+    },
+    ai: {
+      bg: 'bg-purple-50',
+      border: 'border-purple-200',
+      hoverBorder: 'hover:border-purple-500',
+      icon: 'bg-purple-100 text-purple-600',
+      label: 'text-purple-900'
+    },
+    routing: {
+      bg: 'bg-orange-50',
+      border: 'border-orange-200',
+      hoverBorder: 'hover:border-orange-500',
+      icon: 'bg-orange-100 text-orange-600',
+      label: 'text-orange-900'
+    },
+    'flow-control': {
+      bg: 'bg-gray-50',
+      border: 'border-gray-300',
+      hoverBorder: 'hover:border-gray-500',
+      icon: 'bg-gray-100 text-gray-700',
+      label: 'text-gray-900'
+    }
+  };
+  return styles[category as keyof typeof styles] || styles['flow-control'];
+}
+
+// Custom Node Component per ReactFlow Canvas
+const CustomWorkflowNode = memo(({ data }: NodeProps) => {
+  const styles = getCategoryStyles(data.category);
+  
+  return (
+    <div className={`px-4 py-3 rounded-lg border-2 shadow-md min-w-[180px] ${styles.bg} ${styles.border}`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-md flex items-center justify-center text-lg ${styles.icon}`}>
+          {data.icon || '⚙️'}
+        </div>
+        <div className="flex-1">
+          <div className={`text-sm font-semibold ${styles.label}`}>
+            {data.label || 'Node'}
+          </div>
+          <div className="text-xs text-gray-500 mt-0.5">
+            {data.executorType || data.category}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+CustomWorkflowNode.displayName = 'CustomWorkflowNode';
+
+// Node types registry per ReactFlow
+const nodeTypes = {
+  triggers: CustomWorkflowNode,
+  actions: CustomWorkflowNode,
+  ai: CustomWorkflowNode,
+  routing: CustomWorkflowNode,
+  'flow-control': CustomWorkflowNode,
+};
+
+// Node palette item with category styling
 interface NodePaletteItemProps {
   nodeId: string;
   label: string;
@@ -580,18 +658,23 @@ interface NodePaletteItemProps {
 }
 
 function NodePaletteItem({ nodeId, label, description, icon, onDragStart }: NodePaletteItemProps) {
+  const nodeData = ALL_WORKFLOW_NODES.find(n => n.id === nodeId);
+  const styles = getCategoryStyles(nodeData?.category || 'flow-control');
+  
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, nodeId)}
-      className="p-3 bg-white border border-gray-200 rounded-lg hover:border-windtre-orange hover:shadow-sm transition-all cursor-grab active:cursor-grabbing"
+      className={`p-3 rounded-lg border-2 transition-all cursor-grab active:cursor-grabbing ${styles.bg} ${styles.border} ${styles.hoverBorder} hover:shadow-md`}
       data-testid={`node-palette-${nodeId}`}
     >
       <div className="flex items-start gap-2">
-        <div className="text-xl">{icon}</div>
+        <div className={`w-7 h-7 rounded flex items-center justify-center text-base shrink-0 ${styles.icon}`}>
+          {icon}
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900 truncate">{label}</div>
-          <div className="text-xs text-gray-500 truncate">{description}</div>
+          <div className={`text-sm font-semibold truncate ${styles.label}`}>{label}</div>
+          <div className="text-xs text-gray-600 truncate mt-0.5">{description}</div>
         </div>
       </div>
     </div>
