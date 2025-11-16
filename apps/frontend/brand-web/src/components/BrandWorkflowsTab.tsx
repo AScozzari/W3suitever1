@@ -13,6 +13,7 @@ import {
   useNodesState, 
   useEdgesState, 
   addEdge,
+  useReactFlow,
   type Connection,
   type Node,
   type Edge,
@@ -29,6 +30,7 @@ import {
 import { BrandWorkflowsDataTable } from './BrandWorkflowsDataTable';
 import { useBrandWorkflows, useCreateBrandWorkflow, useUpdateBrandWorkflow, useDeleteBrandWorkflow, type BrandWorkflow as APIBrandWorkflow } from '../hooks/useBrandWorkflows';
 import { useToast } from '../hooks/use-toast';
+import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../../../web/src/lib/workflow-node-definitions';
 
 // Types for workflows (aligned with API types)
 type WorkflowStatus = 'active' | 'draft' | 'archived' | 'deprecated';
@@ -315,6 +317,8 @@ interface WorkflowCanvasViewProps {
 
 function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: WorkflowCanvasViewProps) {
   const [isPaletteOpen, setIsPaletteOpen] = useState(true);
+  const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
+  const reactFlowInstance = useReactFlow();
   
   // Initialize ReactFlow state from workflow DSL
   const initialNodes: Node[] = workflow?.dslJson?.nodes || [];
@@ -327,6 +331,54 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges]
+  );
+
+  // Drag and drop handlers
+  const onDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
+    setDraggedNodeType(nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('application/reactflow', nodeType);
+  }, []);
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      
+      const type = event.dataTransfer.getData('application/reactflow');
+      
+      if (!type) return;
+      
+      const nodeDefinition = ALL_WORKFLOW_NODES.find(n => n.id === type);
+      if (!nodeDefinition) return;
+      
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      
+      const newNode: Node = {
+        id: `${nodeDefinition.id}-${Date.now()}`,
+        type: nodeDefinition.category,
+        position,
+        data: {
+          ...nodeDefinition,
+          config: { ...nodeDefinition.defaultConfig },
+        },
+        draggable: true,
+        connectable: true,
+        deletable: true,
+        selectable: true,
+      };
+      
+      setNodes((nds) => nds.concat(newNode));
+      setDraggedNodeType(null);
+    },
+    [reactFlowInstance, setNodes]
   );
 
   const handleSaveClick = () => {
@@ -417,24 +469,80 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               <div>
                 <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Triggers</h4>
                 <div className="space-y-2">
-                  <NodePaletteItem label="Form Trigger" description="Attiva workflow su form submit" icon="📝" />
-                  <NodePaletteItem label="Task Trigger" description="Attiva workflow su eventi task" icon="✅" />
+                  {getNodesByCategory('trigger').map((node) => (
+                    <NodePaletteItem
+                      key={node.id}
+                      nodeId={node.id}
+                      label={node.label}
+                      description={node.description}
+                      icon={node.icon}
+                      onDragStart={onDragStart}
+                    />
+                  ))}
                 </div>
               </div>
               {/* Actions */}
               <div>
                 <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Actions</h4>
                 <div className="space-y-2">
-                  <NodePaletteItem label="Send Email" description="Invia email notification" icon="📧" />
-                  <NodePaletteItem label="Approval Request" description="Richiedi approvazione" icon="✓" />
+                  {getNodesByCategory('action').map((node) => (
+                    <NodePaletteItem
+                      key={node.id}
+                      nodeId={node.id}
+                      label={node.label}
+                      description={node.description}
+                      icon={node.icon}
+                      onDragStart={onDragStart}
+                    />
+                  ))}
                 </div>
               </div>
               {/* AI Nodes */}
               <div>
                 <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">AI Nodes</h4>
                 <div className="space-y-2">
-                  <NodePaletteItem label="AI Decision" description="Decisione intelligente AI" icon="🤖" />
-                  <NodePaletteItem label="AI Lead Scoring" description="Score automatico lead" icon="🎯" />
+                  {getNodesByCategory('ai').map((node) => (
+                    <NodePaletteItem
+                      key={node.id}
+                      nodeId={node.id}
+                      label={node.label}
+                      description={node.description}
+                      icon={node.icon}
+                      onDragStart={onDragStart}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Routing */}
+              <div>
+                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Routing</h4>
+                <div className="space-y-2">
+                  {getNodesByCategory('routing').map((node) => (
+                    <NodePaletteItem
+                      key={node.id}
+                      nodeId={node.id}
+                      label={node.label}
+                      description={node.description}
+                      icon={node.icon}
+                      onDragStart={onDragStart}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Flow Control */}
+              <div>
+                <h4 className="text-xs font-medium text-gray-700 uppercase mb-2">Flow Control</h4>
+                <div className="space-y-2">
+                  {getNodesByCategory('flow-control').map((node) => (
+                    <NodePaletteItem
+                      key={node.id}
+                      nodeId={node.id}
+                      label={node.label}
+                      description={node.description}
+                      icon={node.icon}
+                      onDragStart={onDragStart}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -442,7 +550,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         )}
 
         {/* ReactFlow Canvas */}
-        <div className="flex-1 bg-gray-50">
+        <div className="flex-1 bg-gray-50" onDrop={onDrop} onDragOver={onDragOver}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -463,9 +571,22 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
 }
 
 // Simple node palette item
-function NodePaletteItem({ label, description, icon }: { label: string; description: string; icon: string }) {
+interface NodePaletteItemProps {
+  nodeId: string;
+  label: string;
+  description: string;
+  icon: string;
+  onDragStart: (event: React.DragEvent, nodeType: string) => void;
+}
+
+function NodePaletteItem({ nodeId, label, description, icon, onDragStart }: NodePaletteItemProps) {
   return (
-    <div className="p-3 bg-white border border-gray-200 rounded-lg hover:border-windtre-orange hover:shadow-sm transition-all cursor-grab">
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, nodeId)}
+      className="p-3 bg-white border border-gray-200 rounded-lg hover:border-windtre-orange hover:shadow-sm transition-all cursor-grab active:cursor-grabbing"
+      data-testid={`node-palette-${nodeId}`}
+    >
       <div className="flex items-start gap-2">
         <div className="text-xl">{icon}</div>
         <div className="flex-1 min-w-0">
