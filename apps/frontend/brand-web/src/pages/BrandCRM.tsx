@@ -70,130 +70,166 @@ export default function BrandCRM() {
   return (
     <BrandLayout>
       <div style={{ padding: '24px', minHeight: '100vh', background: '#ffffff' }}>
-        {/* Page Header */}
+        {/* Page Header - W3 Suite Style */}
         <div 
           style={{
-            ...glassCardStyle,
+            background: `linear-gradient(135deg, ${COLORS.primary.orange} 0%, ${COLORS.primary.purple} 100%)`,
+            borderRadius: '24px',
             padding: '32px',
             marginBottom: '24px',
-            background: `linear-gradient(135deg, ${COLORS.glass.white}, ${COLORS.glass.whiteLight})`
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden'
           }}
           data-testid="brand-crm-header"
         >
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '24px' 
-          }}>
-            <div>
-              <h1 style={{ 
-                fontSize: '32px', 
-                fontWeight: 700,
-                background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                marginBottom: '8px'
-              }}>
-                Master Catalog CRM
-              </h1>
-              <p style={{ 
-                fontSize: '14px',
-                color: COLORS.neutral.medium,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Network size={18} style={{ color: COLORS.primary.orange }} strokeWidth={2} />
-                <span style={{ fontWeight: 500 }}>
+          {/* Background decorativo */}
+          <div style={{
+            position: 'absolute',
+            top: '-50%',
+            right: '-20%',
+            width: '200px',
+            height: '200px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '50%',
+            filter: 'blur(40px)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-30%',
+            left: '-10%',
+            width: '150px',
+            height: '150px',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '50%',
+            filter: 'blur(30px)'
+          }} />
+          
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '16px' 
+            }}>
+              <div>
+                <h1 style={{ 
+                  fontSize: '32px', 
+                  fontWeight: 'bold',
+                  margin: '0 0 8px 0',
+                  lineHeight: 1.2
+                }}>
+                  Master Catalog CRM
+                </h1>
+                <p style={{ 
+                  fontSize: '16px',
+                  opacity: 0.9,
+                  margin: 0,
+                  lineHeight: 1.4
+                }}>
                   Governance centralizzato per {isCrossTenant ? '300+ tenant' : `tenant ${currentTenant}`}
-                </span>
-                {isCrossTenant && (
+                </p>
+                
+                {/* Tags come negli screenshots W3 */}
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  marginTop: '12px',
+                  flexWrap: 'wrap'
+                }}>
                   <span style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary.orange}20, ${COLORS.primary.orange}10)`,
-                    color: COLORS.primary.orange,
-                    padding: '4px 12px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    letterSpacing: '0.5px',
-                    marginLeft: '8px',
-                    border: `1px solid ${COLORS.primary.orange}30`
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}>
-                    HQ MODE
+                    <Network size={14} />
+                    {isCrossTenant ? 'HQ Mode' : `Tenant: ${currentTenant}`}
                   </span>
-                )}
-              </p>
-            </div>
+                  <span style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 500
+                  }}>
+                    Hybrid Minimal Architecture
+                  </span>
+                </div>
+              </div>
             
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                style={{
-                  background: `linear-gradient(135deg, ${COLORS.glass.white}, ${COLORS.glass.whiteLight})`,
-                  color: COLORS.neutral.dark,
-                  border: `1px solid ${COLORS.glass.whiteBorder}`,
-                  borderRadius: '12px',
-                  padding: '12px 20px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                data-testid="button-import-templates"
-              >
-                <Upload size={20} strokeWidth={2.5} />
-                Import Templates
-              </button>
-              
-              <button 
-                style={{
-                  background: `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 20px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(123, 44, 191, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(123, 44, 191, 0.3)';
-                }}
-                data-testid="button-deploy-bundle"
-              >
-                <Download size={20} strokeWidth={2.5} />
-                Deploy Bundle
-              </button>
-            </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  data-testid="button-import-templates"
+                >
+                  <Upload size={20} strokeWidth={2.5} />
+                  Import Templates
+                </button>
+                
+                <button 
+                  style={{
+                    background: 'white',
+                    color: COLORS.primary.orange,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                  }}
+                  data-testid="button-deploy-bundle"
+                >
+                  <Download size={20} strokeWidth={2.5} />
+                  Deploy Bundle
+                </button>
+              </div>
           </div>
 
           {/* Tabs Navigation */}
           <div style={{ 
             display: 'flex',
             gap: '8px',
-            borderBottom: `1px solid ${COLORS.glass.whiteBorder}`,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
             paddingBottom: '0'
           }}>
             {tabs.map((tab) => {
@@ -207,11 +243,11 @@ export default function BrandCRM() {
                   style={{
                     padding: '12px 24px',
                     background: isActive 
-                      ? `linear-gradient(135deg, ${COLORS.primary.orange}15, ${COLORS.primary.orange}10)`
+                      ? 'rgba(255, 255, 255, 0.2)'
                       : 'transparent',
-                    color: isActive ? COLORS.primary.orange : COLORS.neutral.medium,
+                    color: 'white',
                     border: 'none',
-                    borderBottom: isActive ? `3px solid ${COLORS.primary.orange}` : '3px solid transparent',
+                    borderBottom: isActive ? '3px solid white' : '3px solid transparent',
                     borderRadius: '8px 8px 0 0',
                     fontSize: '14px',
                     fontWeight: isActive ? 700 : 500,
@@ -225,14 +261,12 @@ export default function BrandCRM() {
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.background = `${COLORS.glass.whiteLight}`;
-                      e.currentTarget.style.color = COLORS.neutral.dark;
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
                       e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = COLORS.neutral.medium;
                     }
                   }}
                   data-testid={`tab-${tab.id}`}
@@ -243,6 +277,7 @@ export default function BrandCRM() {
               );
             })}
           </div>
+        </div>
         </div>
 
         {/* Tab Content */}
