@@ -3381,6 +3381,30 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Sync branches from W3Suite tenants/stores
+  app.post("/brand-api/deploy/branches/sync", async (req, res) => {
+    const user = (req as any).user;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to sync branches" });
+    }
+    
+    try {
+      console.log(`🔄 [SYNC-BRANCHES] User ${user.email} initiated branch sync`);
+      const result = await brandStorage.syncBranchesFromTenants();
+      
+      res.json({ 
+        success: true, 
+        data: result,
+        message: `Branch synchronization complete. Created: ${result.created}, Updated: ${result.updated}, Total: ${result.total}` 
+      });
+    } catch (error) {
+      console.error("❌ [SYNC-BRANCHES] Error syncing branches:", error);
+      res.status(500).json({ error: "Failed to sync branches" });
+    }
+  });
+
   // Get deployment statuses for a deployment
   app.get("/brand-api/deploy/status/:deploymentId", async (req, res) => {
     const user = (req as any).user;
