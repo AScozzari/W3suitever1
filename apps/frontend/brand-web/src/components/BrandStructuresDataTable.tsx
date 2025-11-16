@@ -46,17 +46,13 @@ interface BrandStructure {
 interface BrandStructuresDataTableProps {
   onEdit: (id: string, type: StructureType) => void;
   onView: (id: string, type: StructureType) => void;
-  onToggleActive: (id: string, currentState: boolean) => void;
-  onDelete: (id: string) => void;
 }
 
 type TabFilter = 'all' | 'campaign' | 'pipeline' | 'funnel';
 
 export function BrandStructuresDataTable({
   onEdit,
-  onView,
-  onToggleActive,
-  onDelete
+  onView
 }: BrandStructuresDataTableProps) {
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [viewDetailsId, setViewDetailsId] = useState<string | null>(null);
@@ -65,7 +61,12 @@ export function BrandStructuresDataTable({
 
   // Fetch all templates from API
   const { data: templates, isLoading, error } = useAllBrandTemplates();
-  const deleteMutation = useDeleteBrandTemplate('campaign'); // Type will be determined dynamically
+  const toggleCampaignMutation = useToggleBrandTemplate('campaign');
+  const togglePipelineMutation = useToggleBrandTemplate('pipeline');
+  const toggleFunnelMutation = useToggleBrandTemplate('funnel');
+  const deleteCampaignMutation = useDeleteBrandTemplate('campaign');
+  const deletePipelineMutation = useDeleteBrandTemplate('pipeline');
+  const deleteFunnelMutation = useDeleteBrandTemplate('funnel');
 
   // Map BrandTemplate to BrandStructure format
   const structures: BrandStructure[] = (templates || []).map((template: BrandTemplate) => ({
@@ -127,6 +128,62 @@ export function BrandStructuresDataTable({
 
   const clearLinkedFilter = () => {
     setLinkedFilter(null);
+  };
+
+  // Handle toggle active with correct mutation based on type
+  const handleToggleActive = async (id: string, currentState: boolean) => {
+    const structure = structures.find(s => s.id === id);
+    if (!structure) return;
+
+    try {
+      if (structure.type === 'campaign') {
+        await toggleCampaignMutation.mutateAsync(id);
+      } else if (structure.type === 'pipeline') {
+        await togglePipelineMutation.mutateAsync(id);
+      } else if (structure.type === 'funnel') {
+        await toggleFunnelMutation.mutateAsync(id);
+      }
+
+      toast({
+        title: currentState ? 'Template disabilitato' : 'Template abilitato',
+        description: `${structure.name} è stato ${currentState ? 'disabilitato' : 'abilitato'} con successo`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Errore nell\'aggiornamento del template',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Handle delete with correct mutation based on type
+  const handleDelete = async (id: string) => {
+    const structure = structures.find(s => s.id === id);
+    if (!structure) return;
+
+    if (!confirm(`Sei sicuro di voler eliminare "${structure.name}"?`)) return;
+
+    try {
+      if (structure.type === 'campaign') {
+        await deleteCampaignMutation.mutateAsync(id);
+      } else if (structure.type === 'pipeline') {
+        await deletePipelineMutation.mutateAsync(id);
+      } else if (structure.type === 'funnel') {
+        await deleteFunnelMutation.mutateAsync(id);
+      }
+
+      toast({
+        title: 'Template eliminato',
+        description: `${structure.name} è stato eliminato con successo`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Errore nell\'eliminazione del template',
+        variant: 'destructive'
+      });
+    }
   };
 
   const viewedStructure = structures.find(s => s.id === viewDetailsId);
@@ -309,7 +366,7 @@ export function BrandStructuresDataTable({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onToggleActive(structure.id, structure.isActive)}
+                          onClick={() => handleToggleActive(structure.id, structure.isActive)}
                           className="h-10 w-10 p-0"
                           title={structure.isActive ? 'Disabilita' : 'Abilita'}
                           data-testid={`button-toggle-${structure.id}`}
@@ -321,7 +378,7 @@ export function BrandStructuresDataTable({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onDelete(structure.id)}
+                          onClick={() => handleDelete(structure.id)}
                           className="h-10 w-10 p-0"
                           title="Elimina"
                           data-testid={`button-delete-${structure.id}`}

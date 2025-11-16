@@ -7,6 +7,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 // Base directory for template storage (Git-tracked)
 const TEMPLATES_DIR = path.join(process.cwd(), 'brand-templates');
@@ -42,7 +46,7 @@ export interface BrandTemplate {
 
 class TemplateStorageService {
   /**
-   * Initialize directories if they don't exist
+   * Initialize directories if they don't exist and setup Git
    */
   async initialize(): Promise<void> {
     for (const dir of Object.values(TEMPLATE_PATHS)) {
@@ -50,6 +54,62 @@ class TemplateStorageService {
         await fs.mkdir(dir, { recursive: true });
       } catch (error) {
         console.error(`Error creating directory ${dir}:`, error);
+      }
+    }
+    
+    // Initialize Git repository if not already initialized
+    await this.initGitRepo();
+  }
+
+  /**
+   * Initialize Git repository
+   */
+  private async initGitRepo(): Promise<void> {
+    try {
+      const gitDir = path.join(TEMPLATES_DIR, '.git');
+      
+      try {
+        await fs.access(gitDir);
+        console.log('✅ [GIT] Repository already initialized');
+        return;
+      } catch {
+        // Git not initialized, create it
+        await execAsync('git init', { cwd: TEMPLATES_DIR });
+        await execAsync('git config user.name "Brand Master Catalog"', { cwd: TEMPLATES_DIR });
+        await execAsync('git config user.email "brand-catalog@w3suite.com"', { cwd: TEMPLATES_DIR });
+        
+        // Create initial .gitignore
+        const gitignore = 'node_modules/\n.DS_Store\n';
+        await fs.writeFile(path.join(TEMPLATES_DIR, '.gitignore'), gitignore, 'utf-8');
+        
+        console.log('✅ [GIT] Repository initialized');
+      }
+    } catch (error) {
+      console.error('[GIT] Failed to initialize repository:', error);
+      // Don't throw - Git is optional enhancement
+    }
+  }
+
+  /**
+   * Commit changes to Git with metadata
+   */
+  private async gitCommit(
+    message: string,
+    author: string = 'system'
+  ): Promise<void> {
+    try {
+      // Stage all changes in templates directory
+      await execAsync('git add .', { cwd: TEMPLATES_DIR });
+      
+      // Commit with author metadata
+      const commitMsg = `${message}\n\nAuthor: ${author}\nTimestamp: ${new Date().toISOString()}`;
+      await execAsync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: TEMPLATES_DIR });
+      
+      console.log(`✅ [GIT] Committed: ${message}`);
+    } catch (error: any) {
+      // Ignore "nothing to commit" errors
+      if (!error.message?.includes('nothing to commit')) {
+        console.error('[GIT] Commit failed:', error.message);
       }
     }
   }
@@ -138,6 +198,12 @@ class TemplateStorageService {
     const filePath = path.join(TEMPLATE_PATHS[type], `${id}.json`);
     await fs.writeFile(filePath, JSON.stringify(template, null, 2), 'utf-8');
     
+    // Git commit
+    await this.gitCommit(
+      `Create ${type} template: ${data.name} (${id})`,
+      data.createdBy
+    );
+    
     console.log(`✅ [TEMPLATE-STORAGE] Created ${type} template: ${id}`);
     return template;
   }
@@ -169,6 +235,12 @@ class TemplateStorageService {
     const filePath = path.join(TEMPLATE_PATHS[type], `${id}.json`);
     await fs.writeFile(filePath, JSON.stringify(updated, null, 2), 'utf-8');
     
+    // Git commit
+    await this.gitCommit(
+      `Update ${type} template: ${updated.name} (${id})`,
+      updates.updatedBy || 'system'
+    );
+    
     console.log(`✅ [TEMPLATE-STORAGE] Updated ${type} template: ${id}`);
     return updated;
   }
@@ -179,8 +251,19 @@ class TemplateStorageService {
   async deleteTemplate(type: TemplateType, id: string): Promise<boolean> {
     const filePath = path.join(TEMPLATE_PATHS[type], `${id}.json`);
     
+    // Get template info before deleting for commit message
+    const template = await this.getTemplate(type, id);
+    const templateName = template?.name || id;
+    
     try {
       await fs.unlink(filePath);
+      
+      // Git commit
+      await this.gitCommit(
+        `Delete ${type} template: ${templateName} (${id})`,
+        'system'
+      );
+      
       console.log(`✅ [TEMPLATE-STORAGE] Deleted ${type} template: ${id}`);
       return true;
     } catch (error: any) {

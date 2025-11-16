@@ -354,8 +354,6 @@ function TemplatesTab() {
       <BrandStructuresDataTable
         onEdit={handleEditStructure}
         onView={handleViewStructure}
-        onToggleActive={handleToggleActive}
-        onDelete={handleDeleteStructure}
       />
 
       {/* Wizards */}

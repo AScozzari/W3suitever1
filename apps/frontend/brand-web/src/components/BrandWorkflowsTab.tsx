@@ -31,6 +31,8 @@ import { useBrandWorkflows, useCreateBrandWorkflow, useUpdateBrandWorkflow, useD
 import { useToast } from '../hooks/use-toast';
 
 // Types for workflows (aligned with API types)
+type WorkflowStatus = 'active' | 'draft' | 'archived' | 'deprecated';
+
 interface BrandWorkflow {
   id: string;
   code: string;
@@ -39,7 +41,7 @@ interface BrandWorkflow {
   category: string;
   tags: string[];
   version: string;
-  status: 'active' | 'draft' | 'archived';
+  status: WorkflowStatus;
   dslJson: {
     nodes: any[];
     edges: any[];
@@ -66,24 +68,36 @@ export function BrandWorkflowsTab() {
   const deleteMutation = useDeleteBrandWorkflow();
 
   // Map API workflows to component format
-  const workflows: BrandWorkflow[] = (apiWorkflows || []).map((w: APIBrandWorkflow) => ({
-    id: w.id,
-    code: w.code,
-    name: w.name,
-    description: w.description || '',
-    category: w.category,
-    tags: w.tags,
-    version: w.version,
-    status: w.status as 'active' | 'draft' | 'archived',
-    dslJson: {
-      nodes: (w.dslJson as any)?.nodes || [],
-      edges: (w.dslJson as any)?.edges || [],
-      viewport: (w.dslJson as any)?.viewport
-    },
-    createdBy: w.createdBy,
-    createdAt: w.createdAt,
-    updatedAt: w.updatedAt
-  }));
+  const workflows: BrandWorkflow[] = (apiWorkflows || []).map((w: APIBrandWorkflow) => {
+    // Validate status - default to 'draft' if unsupported
+    const validStatuses: WorkflowStatus[] = ['active', 'draft', 'archived', 'deprecated'];
+    const status: WorkflowStatus = validStatuses.includes(w.status as WorkflowStatus) 
+      ? (w.status as WorkflowStatus) 
+      : 'draft';
+    
+    if (w.status !== status) {
+      console.warn(`[WORKFLOW] Unsupported status "${w.status}" for workflow ${w.id}, defaulting to "${status}"`);
+    }
+    
+    return {
+      id: w.id,
+      code: w.code,
+      name: w.name,
+      description: w.description || '',
+      category: w.category,
+      tags: w.tags,
+      version: w.version,
+      status,
+      dslJson: {
+        nodes: (w.dslJson as any)?.nodes || [],
+        edges: (w.dslJson as any)?.edges || [],
+        viewport: (w.dslJson as any)?.viewport
+      },
+      createdBy: w.createdBy,
+      createdAt: w.createdAt,
+      updatedAt: w.updatedAt
+    };
+  });
 
   const filteredWorkflows = useMemo(() => {
     if (!searchQuery) return workflows;
