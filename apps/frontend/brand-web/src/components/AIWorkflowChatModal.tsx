@@ -1,10 +1,10 @@
 /* AI Workflow Chat Modal - Imported from W3 Suite */
 import { useState } from 'react';
-import { Button } from './components/ui/button';
-import { Textarea } from './components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, Sparkles, CheckCircle2, XCircle, FileText, Zap } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from './lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 
 interface AIWorkflowChatModalProps {
   onWorkflowGenerated: (workflowJson: any) => void;
