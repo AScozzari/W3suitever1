@@ -182,6 +182,64 @@ export default function BrandCRM() {
           {activeTab === 'tasks' && <TasksTab />}
         </div>
       </div>
+
+      {/* Import Templates Dialog - Shared across tabs */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Templates</DialogTitle>
+            <DialogDescription>
+              Carica un file JSON contenente campagne, pipeline o funnel da importare nel Master Catalog.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Seleziona File JSON
+              </label>
+              <Input
+                type="file"
+                accept=".json,application/json"
+                onChange={handleFileSelect}
+                data-testid="input-import-file"
+              />
+            </div>
+            
+            {importFile && (
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">File selezionato:</span> {importFile.name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Dimensione: {(importFile.size / 1024).toFixed(2)} KB
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowImportDialog(false);
+                setImportFile(null);
+              }}
+              data-testid="button-cancel-import"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={!importFile}
+              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+              data-testid="button-confirm-import"
+            >
+              Importa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </BrandLayout>
   );
 }
@@ -508,64 +566,6 @@ function TemplatesTab() {
         }}
         onSave={handleSaveFunnel}
       />
-
-      {/* Import Templates Dialog */}
-      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Import Templates</DialogTitle>
-            <DialogDescription>
-              Carica un file JSON contenente campagne, pipeline o funnel da importare nel Master Catalog.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Seleziona File JSON
-              </label>
-              <Input
-                type="file"
-                accept=".json,application/json"
-                onChange={handleFileSelect}
-                data-testid="input-import-file"
-              />
-            </div>
-            
-            {importFile && (
-              <div className="p-3 bg-gray-50 rounded-md">
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium">File selezionato:</span> {importFile.name}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Dimensione: {(importFile.size / 1024).toFixed(2)} KB
-                </p>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowImportDialog(false);
-                setImportFile(null);
-              }}
-              data-testid="button-cancel-import"
-            >
-              Annulla
-            </Button>
-            <Button
-              onClick={handleImport}
-              disabled={!importFile}
-              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-              data-testid="button-confirm-import"
-            >
-              Importa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
