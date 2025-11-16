@@ -5,6 +5,7 @@ import BrandLayout from '../components/BrandLayout';
 import { BrandCampaignWizard } from '../components/BrandCampaignWizard';
 import { BrandPipelineWizard } from '../components/BrandPipelineWizard';
 import BrandFunnelWizard from '../components/BrandFunnelWizard';
+import { BrandWorkflowsTab } from '../components/BrandWorkflowsTab';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { 
@@ -271,24 +272,7 @@ function TemplatesTab() {
   );
 }
 
-// Workflows Tab Component (Placeholder - to be implemented)
+// Workflows Tab Component - Full implementation with canvas builder
 function WorkflowsTab() {
-  return (
-    <div className="space-y-6 pb-6">
-      <div className="windtre-glass-panel p-12 text-center">
-        <GitBranch className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Workflow Builder</h3>
-        <p className="text-gray-600 mb-6">
-          Crea e gestisci workflow con AI assistant e visual builder
-        </p>
-        <Button
-          className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-          data-testid="button-create-workflow"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Crea Nuovo Workflow
-        </Button>
-      </div>
-    </div>
-  );
+  return <BrandWorkflowsTab />;
 }
