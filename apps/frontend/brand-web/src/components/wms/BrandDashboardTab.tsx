@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Package, FolderTree, Building2, FileText, TrendingUp, Plus } from 'lucide-react';
+import { Package, FolderTree, Building2, FileText, TrendingUp, Plus, GitBranch, Rocket } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { brandWmsApi } from '@/services/brandWmsApi';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +13,15 @@ interface KPICardProps {
   color: string;
   testId: string;
 }
+
+const withAlpha = (hslColor: string, alpha: number) => {
+  if (hslColor.includes('var(')) {
+    const lastParenIndex = hslColor.lastIndexOf(')');
+    return hslColor.slice(0, lastParenIndex) + ` / ${alpha})`;
+  } else {
+    return hslColor.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`);
+  }
+};
 
 const KPICard = ({ icon, label, value, color, testId }: KPICardProps) => (
   <Card
@@ -29,7 +39,7 @@ const KPICard = ({ icon, label, value, color, testId }: KPICardProps) => (
     <div className="flex items-center gap-4">
       <div
         className="p-3 rounded-xl"
-        style={{ background: `${color}15` }}
+        style={{ background: withAlpha(color, 0.15) }}
         data-testid={`${testId}-icon-container`}
       >
         <div style={{ color }} data-testid={`${testId}-icon`}>
@@ -50,6 +60,8 @@ const KPICard = ({ icon, label, value, color, testId }: KPICardProps) => (
 );
 
 export default function BrandDashboardTab() {
+  const [, navigate] = useLocation();
+
   const { data: productsRes, isLoading: productsLoading } = useQuery({
     queryKey: ['/brand-api/wms/products'],
     queryFn: brandWmsApi.getProducts
@@ -68,6 +80,10 @@ export default function BrandDashboardTab() {
   const { data: typesRes, isLoading: typesLoading } = useQuery({
     queryKey: ['/brand-api/wms/product-types'],
     queryFn: brandWmsApi.getProductTypes
+  });
+
+  const { data: commitsRes, isLoading: commitsLoading } = useQuery<{ data: any[] }>({
+    queryKey: ['/brand-api/deploy/commits']
   });
 
   const isLoading = productsLoading || categoriesLoading || suppliersLoading || typesLoading;
@@ -89,6 +105,9 @@ export default function BrandDashboardTab() {
   const categories = categoriesRes?.data || [];
   const suppliers = suppliersRes?.data || [];
   const productTypes = typesRes?.data || [];
+  const commits = commitsRes?.data || [];
+
+  const wmsPendingCommits = commits.filter(c => c.tool === 'wms' && c.status === 'pending').length;
 
   const stats = {
     totalProducts: products.length,
@@ -140,6 +159,62 @@ export default function BrandDashboardTab() {
           testId="kpi-pricelists"
         />
       </div>
+
+      {/* WMS Deploy Mini-Dashboard */}
+      <Card
+        className="p-6"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.05), rgba(123, 44, 191, 0.05))',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 105, 0, 0.2)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(255, 105, 0, 0.1)'
+        }}
+        data-testid="wms-deploy-mini-dash"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div
+              className="p-3 rounded-xl"
+              style={{ background: 'rgba(255, 105, 0, 0.15)' }}
+            >
+              <GitBranch className="h-6 w-6" style={{ color: 'hsl(25, 95%, 53%)' }} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--foreground))' }}>
+                Deploy Center
+              </h3>
+              <p className="text-sm text-gray-600">
+                {commitsLoading ? (
+                  'Caricamento commits...'
+                ) : wmsPendingCommits > 0 ? (
+                  <>
+                    <span className="font-bold" style={{ color: 'hsl(25, 95%, 53%)' }}>
+                      {wmsPendingCommits} commit{wmsPendingCommits !== 1 ? 's' : ''}
+                    </span>
+                    {' '}WMS pront{wmsPendingCommits === 1 ? 'o' : 'i'} per il deployment
+                  </>
+                ) : (
+                  'Nessun commit WMS in attesa di deployment'
+                )}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => navigate('/deploy-center')}
+            style={{
+              background: 'linear-gradient(135deg, hsl(25, 95%, 53%), hsl(25, 100%, 60%))',
+              color: 'white',
+              border: 'none'
+            }}
+            data-testid="button-navigate-deploy-center"
+          >
+            <Rocket className="h-4 w-4 mr-2" />
+            Vai a Deploy Center
+          </Button>
+        </div>
+      </Card>
 
       {/* Quick Actions */}
       <Card
