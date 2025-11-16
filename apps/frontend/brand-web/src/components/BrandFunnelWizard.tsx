@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Download, Sparkles, BarChart3, Settings } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const funnelWizardSchema = z.object({
   // Funnel Identity (5 fields)
@@ -65,6 +65,7 @@ interface BrandFunnelWizardProps {
 
 export default function BrandFunnelWizard({ open, onClose, onSave }: BrandFunnelWizardProps) {
   const [activeTab, setActiveTab] = useState('info');
+  const { toast } = useToast();
 
   const form = useForm<FunnelWizardForm>({
     resolver: zodResolver(funnelWizardSchema),
