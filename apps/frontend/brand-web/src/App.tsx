@@ -8,7 +8,7 @@ import AIManagement from "./pages/AIManagement";
 import Management from "./pages/Management";
 import OrganizationDetail from "./pages/OrganizationDetail";
 import WMSCatalogPage from "./pages/wms/WMSCatalogPage";
-import DeployCenter from "./pages/DeployCenter";
+import DeployCenterPage from "./pages/DeployCenterPage";
 import CommitBrowser from "./pages/CommitBrowser";
 import DeployStatus from "./pages/DeployStatus";
 import ReadyQueue from "./pages/ReadyQueue";
@@ -57,7 +57,7 @@ function Routes() {
         <BrandTenantWrapper params={null}><WMSCatalogPage /></BrandTenantWrapper>
       </Route>
       <Route path="/deploy-center">
-        <BrandTenantWrapper params={null}><DeployCenter /></BrandTenantWrapper>
+        <BrandTenantWrapper params={null}><DeployCenterPage /></BrandTenantWrapper>
       </Route>
       <Route path="/deploy-center/commits">
         <BrandTenantWrapper params={null}><CommitBrowser /></BrandTenantWrapper>
