@@ -635,340 +635,146 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
 
       {/* Unified Layout: Sidebar + Canvas */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Node Library Sidebar - Always Visible */}
+        {/* Node Library Sidebar - Compact Icons Only */}
         <div style={{
-          width: '280px',
+          width: '90px',
           background: '#fafafa',
           borderRight: '1px solid hsl(var(--border))',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          padding: '0.75rem 0'
         }}>
-          {/* Sidebar Header */}
-          <div style={{
-            padding: '1.25rem',
-            borderBottom: '1px solid hsl(var(--border))',
-            background: '#ffffff'
-          }}>
-            <h3 style={{
-              fontSize: '0.95rem',
-              fontWeight: '700',
-              color: 'hsl(var(--foreground))',
-              marginBottom: '0.5rem',
-              letterSpacing: '0.02em'
-            }}>
-              Node Library
-            </h3>
-            <p style={{
-              fontSize: '0.75rem',
-              color: 'hsl(var(--muted-foreground))'
-            }}>
-              Trascina i nodi nel canvas
-            </p>
-          </div>
-          
-          {/* Search Bar */}
-          <div style={{ padding: '1rem' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'hsl(var(--muted-foreground))'
-              }} />
-              <Input
-                placeholder="Cerca nodi..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  paddingLeft: '2.5rem',
-                  fontSize: '0.875rem'
-                }}
-                data-testid="input-search-nodes"
-              />
-            </div>
-          </div>
 
           {/* Nodes List - Scrollable */}
           <div style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '0 1rem 1rem 1rem'
+            padding: '0.5rem'
           }}>
             {/* Triggers Category */}
             {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: 'hsl(220, 90%, 56%)',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'hsl(220, 90%, 56%)'
-                  }} />
-                  TRIGGERS ({getNodesByCategory('trigger').filter(node => 
+              <div style={{ marginBottom: '1rem' }}>
+                {getNodesByCategory('trigger')
+                  .filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {getNodesByCategory('trigger')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <NodePaletteItem
-                      key={node.id}
-                      nodeId={node.id}
-                      label={node.label}
-                      description={node.description}
-                      icon={node.icon}
-                      onDragStart={onDragStart}
-                    />
-                  ))}
-                </div>
+                  )
+                  .map((node) => (
+                  <NodePaletteItem
+                    key={node.id}
+                    nodeId={node.id}
+                    label={node.label}
+                    description={node.description}
+                    icon={node.icon}
+                    onDragStart={onDragStart}
+                  />
+                ))}
               </div>
             )}
             {/* Actions Category */}
             {(selectedCategory === 'all' || selectedCategory === 'action') && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: 'hsl(142, 76%, 36%)',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'hsl(142, 76%, 36%)'
-                  }} />
-                  ACTIONS ({getNodesByCategory('action').filter(node => 
+              <div style={{ marginBottom: '1rem' }}>
+                {getNodesByCategory('action')
+                  .filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {getNodesByCategory('action')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <NodePaletteItem
-                      key={node.id}
-                      nodeId={node.id}
-                      label={node.label}
-                      description={node.description}
-                      icon={node.icon}
-                      onDragStart={onDragStart}
-                    />
-                  ))}
-                </div>
+                  )
+                  .map((node) => (
+                  <NodePaletteItem
+                    key={node.id}
+                    nodeId={node.id}
+                    label={node.label}
+                    description={node.description}
+                    icon={node.icon}
+                    onDragStart={onDragStart}
+                  />
+                ))}
               </div>
             )}
             {/* AI Nodes Category */}
             {(selectedCategory === 'all' || selectedCategory === 'ai') && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: 'hsl(274, 65%, 46%)',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'hsl(274, 65%, 46%)'
-                  }} />
-                  AI ({getNodesByCategory('ai').filter(node => 
+              <div style={{ marginBottom: '1rem' }}>
+                {getNodesByCategory('ai')
+                  .filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {getNodesByCategory('ai')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <NodePaletteItem
-                      key={node.id}
-                      nodeId={node.id}
-                      label={node.label}
-                      description={node.description}
-                      icon={node.icon}
-                      onDragStart={onDragStart}
-                    />
-                  ))}
-                </div>
+                  )
+                  .map((node) => (
+                  <NodePaletteItem
+                    key={node.id}
+                    nodeId={node.id}
+                    label={node.label}
+                    description={node.description}
+                    icon={node.icon}
+                    onDragStart={onDragStart}
+                  />
+                ))}
               </div>
             )}
             {/* Routing Category */}
             {(selectedCategory === 'all' || selectedCategory === 'routing') && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: 'hsl(25, 95%, 53%)',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'hsl(25, 95%, 53%)'
-                  }} />
-                  ROUTING ({getNodesByCategory('routing').filter(node => 
+              <div style={{ marginBottom: '1rem' }}>
+                {getNodesByCategory('routing')
+                  .filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {getNodesByCategory('routing')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <NodePaletteItem
-                      key={node.id}
-                      nodeId={node.id}
-                      label={node.label}
-                      description={node.description}
-                      icon={node.icon}
-                      onDragStart={onDragStart}
-                    />
-                  ))}
-                </div>
+                  )
+                  .map((node) => (
+                  <NodePaletteItem
+                    key={node.id}
+                    nodeId={node.id}
+                    label={node.label}
+                    description={node.description}
+                    icon={node.icon}
+                    onDragStart={onDragStart}
+                  />
+                ))}
               </div>
             )}
             {/* Integration Category */}
             {(selectedCategory === 'all' || selectedCategory === 'integration') && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: 'hsl(220, 90%, 56%)',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'hsl(220, 90%, 56%)'
-                  }} />
-                  INTEGRATION ({getNodesByCategory('integration').filter(node => 
+              <div style={{ marginBottom: '1rem' }}>
+                {getNodesByCategory('integration')
+                  .filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {getNodesByCategory('integration')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <NodePaletteItem
-                      key={node.id}
-                      nodeId={node.id}
-                      label={node.label}
-                      description={node.description}
-                      icon={node.icon}
-                      onDragStart={onDragStart}
-                    />
-                  ))}
-                </div>
+                  )
+                  .map((node) => (
+                  <NodePaletteItem
+                    key={node.id}
+                    nodeId={node.id}
+                    label={node.label}
+                    description={node.description}
+                    icon={node.icon}
+                    onDragStart={onDragStart}
+                  />
+                ))}
               </div>
             )}
             {/* Flow Control Category */}
             {(selectedCategory === 'all' || selectedCategory === 'flow-control') && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: 'hsl(var(--muted-foreground))',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'hsl(var(--muted-foreground))'
-                  }} />
-                  FLOW CONTROL ({getNodesByCategory('flow-control').filter(node => 
+              <div style={{ marginBottom: '1rem' }}>
+                {getNodesByCategory('flow-control')
+                  .filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {getNodesByCategory('flow-control')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <NodePaletteItem
-                      key={node.id}
-                      nodeId={node.id}
-                      label={node.label}
-                      description={node.description}
-                      icon={node.icon}
-                      onDragStart={onDragStart}
-                    />
-                  ))}
-                </div>
+                  )
+                  .map((node) => (
+                  <NodePaletteItem
+                    key={node.id}
+                    nodeId={node.id}
+                    label={node.label}
+                    description={node.description}
+                    icon={node.icon}
+                    onDragStart={onDragStart}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -1254,21 +1060,25 @@ function NodePaletteItem({ nodeId, label, description, icon, onDragStart }: Node
     <div
       draggable
       onDragStart={(e) => onDragStart(e, nodeId)}
-      className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+      title={`${label} - ${description}`}
+      style={{
+        width: '60px',
+        height: '60px',
+        margin: '0 auto 0.5rem auto',
+        borderRadius: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: `${color}15`,
+        border: `2px solid ${color}`,
+        cursor: 'grab',
+        transition: 'all 0.2s',
+        fontSize: '1.5rem'
+      }}
+      className="hover:shadow-lg hover:scale-105"
       data-testid={`node-palette-${nodeId}`}
     >
-      <div className="flex items-start gap-3">
-        <div 
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white"
-          style={{ backgroundColor: color }}
-        >
-          <span className="text-sm">{icon}</span>
-        </div>
-        <div className="flex-1">
-          <h5 className="text-sm font-medium text-gray-900 leading-tight">{label}</h5>
-          <p className="text-xs text-gray-600 leading-relaxed mt-1">{description}</p>
-        </div>
-      </div>
+      {icon}
     </div>
   );
 }

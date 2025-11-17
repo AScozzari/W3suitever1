@@ -113,6 +113,31 @@ export const brandTasks = brandInterfaceSchema.table("brand_tasks", {
   brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
 });
 
+// Enums for Brand Workflows
+export const workflowCategoryEnum = brandInterfaceSchema.enum("workflow_category", [
+  "crm", "wms", "hr", "finance", "operations", "general"
+]);
+
+export const workflowStatusEnum = brandInterfaceSchema.enum("workflow_status", [
+  "draft", "active", "archived", "deprecated"
+]);
+
+// Brand Workflows table
+export const brandWorkflows = brandInterfaceSchema.table("brand_workflows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  category: workflowCategoryEnum("category").notNull().default("general"),
+  status: workflowStatusEnum("status").notNull().default("draft"),
+  dslJson: jsonb("dsl_json").notNull().default({}),
+  checksum: varchar("checksum", { length: 64 }),
+  createdBy: varchar("created_by", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
 // Export types
 export type BrandTenant = typeof brandTenants.$inferSelect;
 export type NewBrandTenant = typeof brandTenants.$inferInsert;
@@ -124,6 +149,9 @@ export type BrandAuditLog = typeof brandAuditLogs.$inferSelect;
 export type NewBrandAuditLog = typeof brandAuditLogs.$inferInsert;
 export type BrandTask = typeof brandTasks.$inferSelect;
 export type NewBrandTask = typeof brandTasks.$inferInsert;
+export type BrandWorkflow = typeof brandWorkflows.$inferSelect;
+export type InsertBrandWorkflow = typeof brandWorkflows.$inferInsert;
+export type NewBrandWorkflow = Omit<InsertBrandWorkflow, 'id' | 'createdAt' | 'updatedAt'>;
 
 // Zod schemas for validation
 export const insertBrandTaskSchema = createInsertSchema(brandTasks, {
@@ -145,6 +173,15 @@ export const insertBrandTaskSchema = createInsertSchema(brandTasks, {
 export const selectBrandTaskSchema = createSelectSchema(brandTasks);
 export type InsertBrandTask = z.infer<typeof insertBrandTaskSchema>;
 export type SelectBrandTask = z.infer<typeof selectBrandTaskSchema>;
+
+export const insertBrandWorkflowSchema = createInsertSchema(brandWorkflows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  checksum: true
+});
+
+export const selectBrandWorkflowSchema = createSelectSchema(brandWorkflows);
 
 // ==================== MANAGEMENT DTOs ====================
 
