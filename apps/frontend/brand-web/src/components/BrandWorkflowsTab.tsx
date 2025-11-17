@@ -1021,6 +1021,73 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         </div>
       </div>
       
+      {/* Node Configuration Drawer - Slide Up from Bottom */}
+      {selectedNodeId && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            maxHeight: '60vh',
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            borderTop: '2px solid hsl(25, 95%, 53%)',
+            boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.12)',
+            transform: selectedNodeId ? 'translateY(0)' : 'translateY(100%)',
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: 50,
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto'
+          }}
+        >
+          {/* Drawer Header */}
+          <div style={{
+            padding: '1.25rem 1.5rem',
+            borderBottom: '1px solid hsl(var(--border))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'linear-gradient(135deg, hsla(25, 95%, 53%, 0.05), hsla(25, 95%, 53%, 0.02))'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Settings size={20} style={{ color: 'hsl(25, 95%, 53%)' }} />
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '700',
+                color: 'hsl(var(--foreground))'
+              }}>
+                Configurazione Nodo
+              </h3>
+            </div>
+            <Button
+              onClick={() => useWorkflowStore.getState().selectNode(null)}
+              variant="ghost"
+              size="sm"
+              data-testid="button-close-config-drawer"
+            >
+              <X size={18} />
+            </Button>
+          </div>
+
+          {/* Drawer Content */}
+          <div style={{ padding: '1.5rem', flex: 1 }}>
+            <NodeConfigPanel
+              nodeId={selectedNodeId}
+              onSave={(config) => {
+                const node = nodes.find(n => n.id === selectedNodeId);
+                if (node) {
+                  updateNode(selectedNodeId, { data: { ...node.data, config } });
+                  useWorkflowStore.getState().selectNode(null);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+      
       {/* Workflow Test Result Dialog */}
       <WorkflowTestResultDialog
         result={testResult}
