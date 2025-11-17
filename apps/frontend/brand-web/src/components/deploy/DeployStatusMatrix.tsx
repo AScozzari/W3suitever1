@@ -44,7 +44,13 @@ interface DeployStatusMatrixProps {
 
 type StatusFilter = 'all' | 'pending' | 'in_progress' | 'completed' | 'failed' | 'partial';
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; icon: any; color: string; bg: string }> = {
+  ready: {
+    label: 'Pronto',
+    icon: Clock,
+    color: 'text-gray-600',
+    bg: 'bg-gray-50 border-gray-200'
+  },
   pending: {
     label: 'In Attesa',
     icon: Clock,
@@ -57,6 +63,12 @@ const statusConfig = {
     color: 'text-blue-600',
     bg: 'bg-blue-50 border-blue-200'
   },
+  deployed: {
+    label: 'Deployato',
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bg: 'bg-green-50 border-green-200'
+  },
   completed: {
     label: 'Completato',
     icon: CheckCircle2,
@@ -68,6 +80,12 @@ const statusConfig = {
     icon: XCircle,
     color: 'text-red-600',
     bg: 'bg-red-50 border-red-200'
+  },
+  archived: {
+    label: 'Archiviato',
+    icon: AlertTriangle,
+    color: 'text-gray-500',
+    bg: 'bg-gray-50 border-gray-300'
   },
   partial: {
     label: 'Parziale',
@@ -218,7 +236,7 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
             </TableHeader>
             <TableBody>
               {filteredStatuses.map((status) => {
-                const config = statusConfig[status.status];
+                const config = statusConfig[status.status] || statusConfig.pending;
                 const StatusIcon = config.icon;
                 
                 return (
