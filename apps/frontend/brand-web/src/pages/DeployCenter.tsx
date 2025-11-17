@@ -6,6 +6,7 @@ import {
   GitBranch, Package, Users, ShoppingCart, BarChart3, 
   Clock, CheckCircle, AlertCircle, Rocket
 } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 interface DeployCommit {
   id: string;
@@ -29,6 +30,7 @@ const withAlpha = (hslColor: string, alpha: number) => {
 };
 
 export default function DeployCenter() {
+  const [, setLocation] = useLocation();
   const { data: commits, isLoading } = useQuery<{ data: DeployCommit[] }>({
     queryKey: ['/brand-api/deploy/commits']
   });
@@ -140,6 +142,7 @@ export default function DeployCenter() {
             </p>
           </div>
           <Button
+            onClick={() => setLocation('/deploy-center/commits')}
             data-testid="button-browse-commits"
             style={{
               background: 'linear-gradient(135deg, hsl(25, 95%, 53%), hsl(25, 100%, 60%))',

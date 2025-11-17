@@ -9,6 +9,7 @@ import Management from "./pages/Management";
 import OrganizationDetail from "./pages/OrganizationDetail";
 import WMSCatalogPage from "./pages/wms/WMSCatalogPage";
 import DeployCenter from "./pages/DeployCenter";
+import CommitBrowser from "./pages/CommitBrowser";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
@@ -55,6 +56,9 @@ function Routes() {
       </Route>
       <Route path="/deploy-center">
         <BrandTenantWrapper params={null}><DeployCenter /></BrandTenantWrapper>
+      </Route>
+      <Route path="/deploy-center/commits">
+        <BrandTenantWrapper params={null}><CommitBrowser /></BrandTenantWrapper>
       </Route>
       <Route path="/ai-management">
         <BrandTenantWrapper params={null}><AIManagement /></BrandTenantWrapper>
