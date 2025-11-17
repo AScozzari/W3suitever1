@@ -874,7 +874,16 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         )}
 
         {/* ReactFlow Canvas */}
-        <div className="flex-1 bg-white" onDrop={onDrop} onDragOver={onDragOver}>
+        <div 
+          className="flex-1 bg-white" 
+          style={{
+            maxWidth: 'calc(100% - 190px)',
+            maxHeight: 'calc(100% - 190px)',
+            margin: '0 auto'
+          }}
+          onDrop={onDrop} 
+          onDragOver={onDragOver}
+        >
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -887,7 +896,9 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               setViewport(viewport);
             }}
             nodeTypes={nodeTypes}
-            fitView
+            defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+            minZoom={0.1}
+            maxZoom={2}
             className="bg-white"
           >
             <Background color="#ddd" gap={16} />
