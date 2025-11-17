@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import BrandLayout from '../components/BrandLayout';
+import DeployModal from '../components/deploy/DeployModal';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -19,13 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
 import {
   GitBranch, CheckCircle, Clock, AlertCircle, Search,
   Filter, ArrowLeft, Package, Users, ShoppingCart, BarChart3
@@ -441,93 +435,12 @@ export default function CommitBrowser() {
           )}
         </Card>
 
-        {/* Deploy Modal Placeholder - Full implementation in Task 9 */}
-        <Dialog open={!!selectedCommit} onOpenChange={(open) => !open && setSelectedCommit(null)}>
-          <DialogContent 
-            className="max-w-2xl"
-            data-testid="modal-deploy-placeholder"
-          >
-            <DialogHeader>
-              <DialogTitle data-testid="heading-modal-title">
-                Deploy Modal (Coming Soon - Task 9)
-              </DialogTitle>
-              <DialogDescription data-testid="text-modal-description">
-                This modal will contain the full deployment interface with branch selection tree and impact preview.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div style={{ padding: '1rem' }}>
-              <div style={{
-                padding: '1rem',
-                background: withAlpha('hsl(var(--brand-orange))', 0.1),
-                borderRadius: '8px',
-                marginBottom: '1rem'
-              }}
-              data-testid="section-commit-details">
-                <h4 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  marginBottom: '0.5rem',
-                  color: 'hsl(var(--foreground))'
-                }}>
-                  Selected Commit
-                </h4>
-                {selectedCommit && (
-                  <div style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))' }}>
-                    <p data-testid="text-commit-id">
-                      <strong>ID:</strong> {selectedCommit.id}
-                    </p>
-                    <p data-testid="text-commit-tool">
-                      <strong>Tool:</strong> {selectedCommit.tool.toUpperCase()}
-                    </p>
-                    <p data-testid="text-commit-type">
-                      <strong>Type:</strong> {selectedCommit.resourceType}
-                    </p>
-                    <p data-testid="text-commit-version">
-                      <strong>Version:</strong> {selectedCommit.version}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(0, 0, 0, 0.02)',
-                borderRadius: '8px',
-                fontSize: '0.875rem',
-                color: 'hsl(var(--muted-foreground))'
-              }}
-              data-testid="section-coming-features">
-                <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
-                  Coming in Task 9:
-                </p>
-                <ul style={{ paddingLeft: '1.5rem', listStyle: 'disc' }}>
-                  <li>Branch selector tree (tenant → PDV hierarchy)</li>
-                  <li>Multi-select branches for deployment</li>
-                  <li>Impact preview (how many tenants/stores affected)</li>
-                  <li>Deployment confirmation and execution</li>
-                </ul>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedCommit(null)}
-                data-testid="button-cancel-modal"
-              >
-                Cancel
-              </Button>
-              <Button
-                disabled
-                data-testid="button-deploy-commit"
-                style={{ opacity: 0.5, cursor: 'not-allowed' }}
-              >
-                Deploy (Coming Soon)
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Deploy Modal - Full Implementation */}
+        <DeployModal
+          commit={selectedCommit}
+          open={!!selectedCommit}
+          onClose={() => setSelectedCommit(null)}
+        />
       </div>
     </BrandLayout>
   );
