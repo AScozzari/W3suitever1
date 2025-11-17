@@ -1147,21 +1147,88 @@ function getCategoryStyles(category: string) {
   return styles[category as keyof typeof styles] || styles['flow-control'];
 }
 
-// Custom Node Component per ReactFlow Canvas
+// Get gradient colors based on category
+function getCategoryGradient(category: string) {
+  const gradients = {
+    trigger: 'linear-gradient(135deg, hsla(220, 90%, 56%, 0.15), hsla(220, 90%, 56%, 0.05))',
+    action: 'linear-gradient(135deg, hsla(142, 76%, 36%, 0.15), hsla(142, 76%, 36%, 0.05))',
+    ai: 'linear-gradient(135deg, hsla(274, 65%, 46%, 0.15), hsla(274, 65%, 46%, 0.05))',
+    routing: 'linear-gradient(135deg, hsla(25, 95%, 53%, 0.15), hsla(25, 95%, 53%, 0.05))',
+    integration: 'linear-gradient(135deg, hsla(220, 90%, 56%, 0.15), hsla(220, 90%, 56%, 0.05))',
+    'flow-control': 'linear-gradient(135deg, hsla(0, 0%, 50%, 0.08), hsla(0, 0%, 50%, 0.02))',
+  };
+  return gradients[category as keyof typeof gradients] || gradients['flow-control'];
+}
+
+function getCategoryBorderColor(category: string) {
+  const colors = {
+    trigger: 'hsl(220, 90%, 56%)',
+    action: 'hsl(142, 76%, 36%)',
+    ai: 'hsl(274, 65%, 46%)',
+    routing: 'hsl(25, 95%, 53%)',
+    integration: 'hsl(220, 90%, 56%)',
+    'flow-control': 'hsl(0, 0%, 60%)',
+  };
+  return colors[category as keyof typeof colors] || colors['flow-control'];
+}
+
+// Custom Node Component per ReactFlow Canvas with WindTre Glassmorphism
 const CustomWorkflowNode = memo(({ data }: NodeProps) => {
-  const styles = getCategoryStyles(data.category);
+  const gradient = getCategoryGradient(data.category);
+  const borderColor = getCategoryBorderColor(data.category);
   
   return (
-    <div className={`px-4 py-3 rounded-lg border-2 shadow-md min-w-[180px] ${styles.bg} ${styles.border}`}>
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-md flex items-center justify-center text-lg ${styles.icon}`}>
+    <div
+      style={{
+        minWidth: '200px',
+        padding: '1rem 1.25rem',
+        background: gradient,
+        backdropFilter: 'blur(12px) saturate(120%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(120%)',
+        border: `2px solid ${borderColor}`,
+        borderRadius: '12px',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        cursor: 'pointer'
+      }}
+      className="hover:shadow-xl hover:scale-105"
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.25rem',
+            background: `${borderColor}20`,
+            border: `1.5px solid ${borderColor}40`,
+            color: borderColor
+          }}
+        >
           {data.icon || '⚙️'}
         </div>
-        <div className="flex-1">
-          <div className={`text-sm font-semibold ${styles.label}`}>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: '700',
+              color: 'hsl(var(--foreground))',
+              lineHeight: '1.3',
+              marginBottom: '0.25rem'
+            }}
+          >
             {data.label || 'Node'}
           </div>
-          <div className="text-xs text-gray-500 mt-0.5">
+          <div
+            style={{
+              fontSize: '0.75rem',
+              color: 'hsl(var(--muted-foreground))',
+              fontWeight: '500'
+            }}
+          >
             {data.executorType || data.category}
           </div>
         </div>
