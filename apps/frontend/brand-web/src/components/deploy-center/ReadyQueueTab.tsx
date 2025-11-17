@@ -78,21 +78,37 @@ export default function ReadyQueueTab() {
         marginBottom: '2rem',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem'
       }}>
-        <p style={{
-          fontSize: '1rem',
-          color: 'hsl(var(--muted-foreground))'
-        }}
-        data-testid="text-queue-subtitle">
-          {readyCommits.length} commit pronti per il deployment
-        </p>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div>
+          <p style={{
+            fontSize: '1rem',
+            color: 'hsl(var(--foreground))',
+            fontWeight: '600',
+            marginBottom: '0.25rem'
+          }}
+          data-testid="text-queue-subtitle">
+            {readyCommits.length} commit pronti per il deployment
+          </p>
+          <p style={{
+            fontSize: '0.875rem',
+            color: 'hsl(var(--muted-foreground))'
+          }}>
+            Seleziona commit e scegli target: tutti i tenant, tenant specifici o singoli store
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Button
             variant="outline"
             onClick={handleSelectAll}
             disabled={readyCommits.length === 0}
             data-testid="button-select-all"
+            style={{
+              borderColor: 'hsl(var(--border))',
+              color: 'hsl(var(--foreground))'
+            }}
           >
             {selectedCommits.size === readyCommits.length ? 'Deseleziona Tutto' : 'Seleziona Tutto'}
           </Button>
@@ -111,12 +127,15 @@ export default function ReadyQueueTab() {
               alignItems: 'center',
               gap: '0.5rem',
               border: 'none',
-              cursor: selectedCommits.size > 0 ? 'pointer' : 'not-allowed'
+              cursor: selectedCommits.size > 0 ? 'pointer' : 'not-allowed',
+              boxShadow: selectedCommits.size > 0 ? '0 4px 12px hsla(25, 95%, 53%, 0.3)' : 'none'
             }}
             data-testid="button-deploy-selected"
           >
             <Rocket size={20} />
-            Deploy {selectedCommits.size > 0 ? `(${selectedCommits.size})` : ''}
+            {selectedCommits.size > 0 
+              ? `Deploy Selezionati (${selectedCommits.size})` 
+              : 'Seleziona Commit per Deploy'}
           </Button>
         </div>
       </div>

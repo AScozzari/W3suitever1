@@ -3241,6 +3241,69 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
   // ==================== DEPLOY CENTER ENDPOINTS ====================
 
+  // Gap Analysis endpoint - shows version distribution per tool
+  app.get("/brand-api/deploy/gap-analysis", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      // Get all commits grouped by tool and version
+      const commits = await brandStorage.getDeployments({});
+      
+      // Group commits by tool
+      const toolGroups: Record<string, any[]> = {};
+      commits.forEach(commit => {
+        if (!toolGroups[commit.tool]) {
+          toolGroups[commit.tool] = [];
+        }
+        toolGroups[commit.tool].push(commit);
+      });
+      
+      // For each tool, calculate version distribution
+      const gapAnalysis = Object.entries(toolGroups).map(([tool, toolCommits]) => {
+        // Find latest version for this tool
+        const versions = toolCommits.map(c => c.version).sort((a, b) => b.localeCompare(a));
+        const latestVersion = versions[0];
+        
+        // Count deployments per version
+        const versionCounts: Record<string, { tenantCount: Set<string>; storeCount: number }> = {};
+        toolCommits.forEach(commit => {
+          if (!versionCounts[commit.version]) {
+            versionCounts[commit.version] = {
+              tenantCount: new Set(),
+              storeCount: 0
+            };
+          }
+          // Count unique tenants and stores (mock data for now)
+          versionCounts[commit.version].tenantCount.add(commit.id);
+          versionCounts[commit.version].storeCount += 1;
+        });
+        
+        // Format as array
+        const deployedVersions = Object.entries(versionCounts).map(([version, counts]) => ({
+          version,
+          tenantCount: counts.tenantCount.size,
+          storeCount: counts.storeCount,
+          isLatest: version === latestVersion
+        })).sort((a, b) => b.version.localeCompare(a.version));
+        
+        return {
+          tool,
+          latestVersion,
+          deployedVersions
+        };
+      });
+      
+      res.json({ success: true, data: gapAnalysis });
+    } catch (error) {
+      console.error("Error fetching gap analysis:", error);
+      res.status(500).json({ error: "Failed to fetch gap analysis" });
+    }
+  });
+
   // Get all deployments (commits)
   app.get("/brand-api/deploy/commits", async (req, res) => {
     const user = (req as any).user;
