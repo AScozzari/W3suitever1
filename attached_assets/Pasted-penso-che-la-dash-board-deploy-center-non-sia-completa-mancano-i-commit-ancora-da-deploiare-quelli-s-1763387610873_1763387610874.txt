@@ -1,0 +1,63 @@
+penso che la dash board deploy center non sia completa mancano i commit ancora da deploiare quelli sono in stato push dai tool, ma ancora da deployare, manca la fase di deploy con scelta branch main o figlio , poi lo stato di avanzamento di ogni tennat o ogni negozio stato commit e deploy per ogni tool
+
+20 minutes ago
+
+Show less
+
+Chose architectural review for dashboard (9 seconds)
+Hai ragione! La dashboard Deploy Center attualmente mostra solo le statistiche e i commit recenti, ma manca tutta la parte operativa di gestione dei deployment. Lascia che analizzi meglio l'architettura attuale per progettare le funzionalità mancanti:
+
+
+Designed Deploy Center enhancements
+
+Decided on deployment planning features (5 seconds)
+Perfetto! Hai identificato esattamente le funzionalità mancanti. L'architetto ha analizzato il sistema e confermato che servono nuove componenti per completare il Deploy Center. Ecco cosa manca:
+
+📊 Analisi Situazione Attuale
+✅ Cosa funziona già:
+
+Database commit (deploy_center_commits) e status per branch (deploy_center_status)
+Endpoint per listare commit e vedere status aggregato
+Sistema di deployment per WMS suppliers (esempio specifico)
+❌ Cosa manca:
+
+1. Queue Commit "Ready to Deploy"
+I commit sono creati ma non c'è una vista dei commit in stato "ready" (pushati dai tool ma non ancora deployati). Serve:
+
+Lista commit pronti per ogni tool (CRM, WMS, POS, Analytics)
+Selezione multipla per deployare insieme più commit
+2. Wizard di Deployment con Selezione Branch
+Manca l'interfaccia per lanciare un deployment:
+
+Step 1: Seleziona commit per tool (CRM v2.1, WMS v3.5, etc.)
+Step 2: Scegli branch target:
+🏢 Branch main (acme) → deploy a tutto il tenant
+🏪 Branch store (acme/pdv-milano) → deploy solo a quel negozio
+Step 3: Conferma e monitora avanzamento
+3. Dashboard Stato Avanzamento
+Serve una vista che mostri per ogni tenant/store:
+
+Quale versione di ogni tool è attualmente attiva
+Stato del deployment in corso (se presente)
+Ultimo deployment timestamp
+Commit pending da deployare
+🏗️ Soluzione Proposta
+Dobbiamo aggiungere 2 nuove tabelle e relativa logica:
+
+Nuove Tabelle:
+
+deploy_center_deployments - Sessioni di deployment (chi, quando, quali branch, quali commit)
+deploy_center_branch_releases - Versioni attive per branch (ogni branch/tool ha una versione corrente)
+Nuovi Endpoint Backend:
+
+GET /brand-api/deploy/commits?status=ready - lista commit pronti
+POST /brand-api/deploy/sessions - crea deployment session
+PATCH /brand-api/deploy/sessions/:id/launch - avvia deployment
+GET /brand-api/deploy/sessions/:id/progress - stato avanzamento
+POST /brand-api/deploy/sessions/:id/rollback - rollback a versione precedente
+Nuove Pagine Frontend:
+
+Ready Queue - Tab nel Deploy Center con lista commit pronti e bottone "Deploy"
+Deployment Wizard - Modal 3-step per configurare e lanciare deployment
+Enhanced Status Dashboard - Matrice tenant × tool con versioni attive e stati
+Vuoi che proceda con l'implementazione completa? Posso creare una task list dettagliata per costruire tutto il sistema.

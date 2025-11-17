@@ -254,3 +254,48 @@ export {
   type AiPdcServiceMapping,
   type InsertAiPdcServiceMapping
 };
+
+// ==================== DEPLOY CENTER SYSTEM (BRAND INTERFACE) ====================
+import {
+  deployCenterCommits,
+  deployCenterBranches,
+  deployCenterStatus,
+  deployCenterDeployments,
+  deployCenterBranchReleases,
+  deployToolEnum,
+  deployResourceTypeEnum,
+  deployCommitStatusEnum,
+  deploySessionStatusEnum,
+  type DeployCenterCommit,
+  type NewDeployCenterCommit,
+  type DeployCenterBranch,
+  type NewDeployCenterBranch,
+  type DeployCenterStatus,
+  type NewDeployCenterStatus,
+  type DeployCenterDeployment,
+  type NewDeployCenterDeployment,
+  type DeployCenterBranchRelease,
+  type NewDeployCenterBranchRelease
+} from './brand-interface';
+
+export {
+  deployCenterCommits,
+  deployCenterBranches,
+  deployCenterStatus,
+  deployCenterDeployments,
+  deployCenterBranchReleases,
+  deployToolEnum,
+  deployResourceTypeEnum,
+  deployCommitStatusEnum,
+  deploySessionStatusEnum,
+  type DeployCenterCommit,
+  type NewDeployCenterCommit,
+  type DeployCenterBranch,
+  type NewDeployCenterBranch,
+  type DeployCenterStatus,
+  type NewDeployCenterStatus,
+  type DeployCenterDeployment,
+  type NewDeployCenterDeployment,
+  type DeployCenterBranchRelease,
+  type NewDeployCenterBranchRelease
+};

@@ -374,6 +374,75 @@ export type NewDeployCenterBranch = z.infer<typeof insertDeployCenterBranchSchem
 export type DeployCenterStatus = typeof deployCenterStatus.$inferSelect;
 export type NewDeployCenterStatus = z.infer<typeof insertDeployCenterStatusSchema>;
 
+// Deploy Center Deployment Sessions (group commits into deployment batches)
+export const deploySessionStatusEnum = pgEnum('deploy_session_status', ['pending', 'in_progress', 'completed', 'failed', 'cancelled']);
+
+export const deployCenterDeployments = brandInterfaceSchema.table("deploy_center_deployments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionName: varchar("session_name", { length: 255 }).notNull(), // User-defined name
+  description: text("description"),
+  commitIds: jsonb("commit_ids").notNull(), // Array of commit IDs to deploy together
+  targetBranches: jsonb("target_branches").notNull(), // Array of branch names to deploy to
+  status: deploySessionStatusEnum("status").notNull().default('pending'),
+  totalBranches: smallint("total_branches").notNull().default(0),
+  completedBranches: smallint("completed_branches").notNull().default(0),
+  failedBranches: smallint("failed_branches").notNull().default(0),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  launchedBy: varchar("launched_by", { length: 255 }).notNull(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull(),
+}, (table) => [
+  index("deploy_sessions_status_idx").on(table.status),
+  index("deploy_sessions_launched_by_idx").on(table.launchedBy),
+]);
+
+// Deploy Center Branch Releases (track active version per branch/tool)
+export const deployCenterBranchReleases = brandInterfaceSchema.table("deploy_center_branch_releases", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  branchName: varchar("branch_name", { length: 200 }).notNull(),
+  tool: deployToolEnum("tool").notNull(),
+  commitId: varchar("commit_id", { length: 100 }).notNull(), // Currently active commit
+  version: varchar("version", { length: 20 }).notNull(),
+  deploymentSessionId: uuid("deployment_session_id"), // Which session deployed this
+  activatedAt: timestamp("activated_at").defaultNow(),
+  previousCommitId: varchar("previous_commit_id", { length: 100 }), // For rollback reference
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull(),
+}, (table) => [
+  index("deploy_releases_branch_idx").on(table.branchName),
+  index("deploy_releases_tool_idx").on(table.tool),
+  uniqueIndex("deploy_releases_branch_tool_unique").on(table.branchName, table.tool),
+]);
+
+// Zod schemas for new Deploy Center tables
+export const insertDeployCenterDeploymentSchema = createInsertSchema(deployCenterDeployments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: z.enum(['pending', 'in_progress', 'completed', 'failed', 'cancelled']).optional(),
+  commitIds: z.array(z.string()),
+  targetBranches: z.array(z.string()),
+});
+
+export const insertDeployCenterBranchReleaseSchema = createInsertSchema(deployCenterBranchReleases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  tool: z.enum(['wms', 'crm', 'pos', 'analytics', 'hr']),
+});
+
+export type DeployCenterDeployment = typeof deployCenterDeployments.$inferSelect;
+export type NewDeployCenterDeployment = z.infer<typeof insertDeployCenterDeploymentSchema>;
+export type DeployCenterBranchRelease = typeof deployCenterBranchReleases.$inferSelect;
+export type NewDeployCenterBranchRelease = z.infer<typeof insertDeployCenterBranchReleaseSchema>;
+
 // BRAND CONFIGS - Migrated to brand_interface schema
 export const brandConfigs = brandInterfaceSchema.table("brand_configs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
