@@ -1097,9 +1097,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         onOpenChange={setIsTestResultOpen}
       />
       </div>
-      {/* Chiusura Container Principale 95vw x 95vh */}
     </div>
-    {/* Chiusura Wrapper Esterno */}
   );
 }
 
