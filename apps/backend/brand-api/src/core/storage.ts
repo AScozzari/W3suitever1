@@ -2035,8 +2035,9 @@ class BrandDrizzleStorage implements IBrandStorage {
         const mainBranchName = tenant.slug;
         const existingMainBranch = await this.getBranch(mainBranchName);
         
+        let mainBranch;
         if (!existingMainBranch) {
-          await this.createBranch({
+          mainBranch = await this.createBranch({
             branchName: mainBranchName,
             tenantId: tenant.id,
             brandTenantId,
@@ -2050,8 +2051,15 @@ class BrandDrizzleStorage implements IBrandStorage {
           created++;
           console.log(`✅ [SYNC-BRANCHES] Created main branch: ${mainBranchName}`);
         } else {
+          mainBranch = existingMainBranch;
           updated++;
         }
+        
+        // Update tenant with branchId (bidirectional sync)
+        await w3db.update(w3Tenants)
+          .set({ branchId: mainBranch.id })
+          .where(eq(w3Tenants.id, tenant.id));
+        console.log(`🔗 [SYNC-BRANCHES] Linked tenant ${tenant.slug} to branch ${mainBranch.id}`);
         
         // Get all active stores for this tenant
         const stores = await w3db.select({
@@ -2073,11 +2081,12 @@ class BrandDrizzleStorage implements IBrandStorage {
           const storeBranchName = `${tenant.slug}/${store.code}`;
           const existingStoreBranch = await this.getBranch(storeBranchName);
           
+          let storeBranch;
           if (!existingStoreBranch) {
-            await this.createBranch({
+            storeBranch = await this.createBranch({
               branchName: storeBranchName,
               tenantId: tenant.id,
-              storeId: store.id,
+              pdvId: store.id, // Fixed: use pdvId instead of storeId
               brandTenantId,
               description: `Branch for ${store.nome} (${store.code})`,
               metadata: {
@@ -2090,8 +2099,15 @@ class BrandDrizzleStorage implements IBrandStorage {
             created++;
             console.log(`✅ [SYNC-BRANCHES] Created store branch: ${storeBranchName}`);
           } else {
+            storeBranch = existingStoreBranch;
             updated++;
           }
+          
+          // Update store with branchId (bidirectional sync)
+          await w3db.update(w3Stores)
+            .set({ branchId: storeBranch.id })
+            .where(eq(w3Stores.id, store.id));
+          console.log(`🔗 [SYNC-BRANCHES] Linked store ${store.code} to branch ${storeBranch.id}`);
         }
       }
       
