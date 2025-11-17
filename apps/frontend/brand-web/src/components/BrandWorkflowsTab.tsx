@@ -520,7 +520,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       justifyContent: 'center',
       alignItems: 'center',
       background: '#f5f5f5',
-      padding: '2vh',
+      padding: '0.5vh',
       overflow: 'hidden'
     }}>
       {/* Main Workflow Builder Container - Responsive con dimensioni ridotte */}
@@ -687,7 +687,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
           
           {/* Search Bar */}
           <div style={{ padding: '1rem' }}>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
               <Search size={16} style={{
                 position: 'absolute',
                 left: '12px',
@@ -706,6 +706,28 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                 data-testid="input-search-nodes"
               />
             </div>
+            
+            {/* Category Filter */}
+            <Select 
+              value={selectedCategory} 
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger 
+                className="w-full text-sm"
+                data-testid="select-category-filter"
+              >
+                <SelectValue placeholder="Filtra per categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="trigger">🎯 Trigger</SelectItem>
+                <SelectItem value="action">⚡ Action</SelectItem>
+                <SelectItem value="ai">🤖 AI</SelectItem>
+                <SelectItem value="routing">🔀 Routing</SelectItem>
+                <SelectItem value="integration">🔌 Integration</SelectItem>
+                <SelectItem value="flow-control">🔄 Flow Control</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Nodes List - Scrollable */}
