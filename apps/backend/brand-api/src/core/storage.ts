@@ -2295,9 +2295,9 @@ class BrandDrizzleStorage implements IBrandStorage {
           deploymentId: deployCenterSessionCommits.deploymentSessionId,
           branchId: deployCenterBranches.id,
           branchName: deployCenterBranches.branchName,
-          tenantName: deployCenterBranches.tenantSlug,
-          tenantSlug: deployCenterBranches.tenantSlug,
-          storeCode: deployCenterBranches.storeCode,
+          tenantName: deployCenterBranches.branchName, // Use branch name as fallback
+          tenantSlug: deployCenterBranches.branchName,
+          storeCode: deployCenterBranches.branchName,
           status: deployCenterSessionCommits.status,
           startedAt: deployCenterSessionCommits.startedAt,
           completedAt: deployCenterSessionCommits.completedAt,
@@ -2327,9 +2327,9 @@ class BrandDrizzleStorage implements IBrandStorage {
         deploymentId: deployCenterSessionCommits.deploymentSessionId,
         branchId: deployCenterBranches.id,
         branchName: deployCenterBranches.branchName,
-        tenantName: deployCenterBranches.tenantSlug,
-        tenantSlug: deployCenterBranches.tenantSlug,
-        storeCode: deployCenterBranches.storeCode,
+        tenantName: deployCenterBranches.branchName, // Use branch name as fallback
+        tenantSlug: deployCenterBranches.branchName,
+        storeCode: deployCenterBranches.branchName,
         status: deployCenterSessionCommits.status,
         startedAt: deployCenterSessionCommits.startedAt,
         completedAt: deployCenterSessionCommits.completedAt,
@@ -2361,12 +2361,13 @@ class BrandDrizzleStorage implements IBrandStorage {
       if (filters.tool) {
         conditions.push(eq(deployCenterCommits.tool, filters.tool as any));
       }
-      if (filters.tenantSlug) {
-        conditions.push(eq(deployCenterBranches.tenantSlug, filters.tenantSlug));
-      }
-      if (filters.storeCode) {
-        conditions.push(eq(deployCenterBranches.storeCode, filters.storeCode));
-      }
+      // Note: tenantSlug/storeCode filters disabled - deploy_center_branches uses UUIDs, not slugs
+      // if (filters.tenantSlug) {
+      //   conditions.push(eq(deployCenterBranches.tenantSlug, filters.tenantSlug));
+      // }
+      // if (filters.storeCode) {
+      //   conditions.push(eq(deployCenterBranches.storeCode, filters.storeCode));
+      // }
       
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as any;
@@ -2382,11 +2383,92 @@ class BrandDrizzleStorage implements IBrandStorage {
       }
       
       const results = await query;
-      return results;
+      
+      // Enrich results with gap information (latest commit vs current)
+      const enrichedResults = await this.enrichWithGapInfo(results);
+      return enrichedResults;
     } catch (error) {
       console.error('Error fetching deployment statuses:', error);
       throw error;
     }
+  }
+
+  async enrichWithGapInfo(statuses: any[]): Promise<any[]> {
+    try {
+      // Get latest commits per tool
+      const latestCommitsByTool: Record<string, any> = {};
+      const tools = [...new Set(statuses.map(s => s.tool))];
+      
+      for (const tool of tools) {
+        const latestCommits = await db.select()
+          .from(deployCenterCommits)
+          .where(eq(deployCenterCommits.tool, tool as any))
+          .orderBy(desc(deployCenterCommits.createdAt))
+          .limit(1);
+        
+        if (latestCommits.length > 0) {
+          latestCommitsByTool[tool] = latestCommits[0];
+        }
+      }
+      
+      // Calculate gap for each status
+      const enriched = statuses.map(status => {
+        const latestCommit = latestCommitsByTool[status.tool];
+        
+        if (!latestCommit) {
+          return {
+            ...status,
+            latestVersion: status.commitVersion,
+            commitsGap: 0,
+            isUpToDate: true
+          };
+        }
+        
+        const isUpToDate = status.commitId === latestCommit.id;
+        
+        // Simple gap calculation based on created timestamps
+        // In production, you'd use proper commit tree traversal
+        const gap = isUpToDate ? 0 : this.calculateCommitGap(status.commitVersion, latestCommit.version);
+        
+        return {
+          ...status,
+          latestVersion: latestCommit.version,
+          latestCommitId: latestCommit.id,
+          latestCommitName: latestCommit.name,
+          commitsGap: gap,
+          isUpToDate
+        };
+      });
+      
+      return enriched;
+    } catch (error) {
+      console.error('Error enriching with gap info:', error);
+      // Return original results if enrichment fails
+      return statuses;
+    }
+  }
+
+  calculateCommitGap(currentVersion: string, latestVersion: string): number {
+    // Extract numeric parts from version strings (e.g., "1.2.3" -> [1, 2, 3])
+    const parseVersion = (v: string): number[] => {
+      const match = v.match(/\d+/g);
+      return match ? match.map(Number) : [0];
+    };
+    
+    const current = parseVersion(currentVersion);
+    const latest = parseVersion(latestVersion);
+    
+    // Simple heuristic: sum of differences in version parts
+    let gap = 0;
+    const maxLen = Math.max(current.length, latest.length);
+    
+    for (let i = 0; i < maxLen; i++) {
+      const c = current[i] || 0;
+      const l = latest[i] || 0;
+      gap += Math.abs(l - c);
+    }
+    
+    return gap;
   }
 
   async createDeploymentStatus(data: NewDeployCenterStatus): Promise<DeployCenterStatus> {

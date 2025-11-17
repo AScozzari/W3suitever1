@@ -259,13 +259,14 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[12%]">Tool</TableHead>
-                <TableHead className="w-[23%]">Commit</TableHead>
-                <TableHead className="w-[20%]">Branch</TableHead>
-                <TableHead className="w-[15%]">Tenant</TableHead>
-                <TableHead className="w-[12%]">Status</TableHead>
-                <TableHead className="w-[10%]">Iniziato</TableHead>
-                <TableHead className="w-[8%]">Completato</TableHead>
+                <TableHead className="w-[10%]">Tool</TableHead>
+                <TableHead className="w-[18%]">Commit</TableHead>
+                <TableHead className="w-[16%]">Branch</TableHead>
+                <TableHead className="w-[12%]">Tenant</TableHead>
+                <TableHead className="w-[16%]">Gap</TableHead>
+                <TableHead className="w-[10%]">Status</TableHead>
+                <TableHead className="w-[9%]">Iniziato</TableHead>
+                <TableHead className="w-[9%]">Completato</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -300,6 +301,31 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
                           <p className="text-gray-500 text-xs mt-0.5">{status.storeCode}</p>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {status.isUpToDate ? (
+                        <Badge variant="outline" className="gap-1.5 text-xs border-green-200 bg-green-50 text-green-700">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Aggiornato
+                        </Badge>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <div className="text-xs text-gray-600">
+                            v{status.commitVersion} → v{status.latestVersion}
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              'text-xs border w-fit',
+                              status.commitsGap <= 1 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 
+                              status.commitsGap <= 3 ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                              'bg-red-50 border-red-200 text-red-700'
+                            )}
+                          >
+                            {status.commitsGap} commit indietro
+                          </Badge>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge 

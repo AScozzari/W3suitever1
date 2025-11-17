@@ -28,6 +28,12 @@ export interface DeploymentStatus {
   commitVersion: string;
   tool: 'wms' | 'crm' | 'pos' | 'analytics' | 'hr';
   resourceType: 'supplier' | 'product' | 'product_type' | 'campaign' | 'pipeline' | 'funnel' | 'workflow' | 'task';
+  // Gap information
+  latestVersion: string;
+  latestCommitId?: string;
+  latestCommitName?: string;
+  commitsGap: number;
+  isUpToDate: boolean;
 }
 
 export interface DeploymentStatusFilters {
