@@ -4,7 +4,7 @@ import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { 
   GitBranch, Package, Users, ShoppingCart, BarChart3, 
-  Clock, CheckCircle, AlertCircle, Rocket
+  Clock, CheckCircle, AlertCircle, Rocket, Activity
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -141,25 +141,46 @@ export default function DeployCenter() {
               Gestione centralizzata deployment CRM, WMS, POS e Analytics
             </p>
           </div>
-          <Button
-            onClick={() => setLocation('/deploy-center/commits')}
-            data-testid="button-browse-commits"
-            style={{
-              background: 'linear-gradient(135deg, hsl(25, 95%, 53%), hsl(25, 100%, 60%))',
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '8px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <Rocket size={20} />
-            Browse All Commits
-          </Button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <Button
+              onClick={() => setLocation('/deploy-center/status')}
+              data-testid="button-deploy-status"
+              style={{
+                background: 'linear-gradient(135deg, hsl(220, 90%, 56%), hsl(220, 90%, 63%))',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Activity size={20} />
+              Status Real-Time
+            </Button>
+            <Button
+              onClick={() => setLocation('/deploy-center/commits')}
+              data-testid="button-browse-commits"
+              style={{
+                background: 'linear-gradient(135deg, hsl(25, 95%, 53%), hsl(25, 100%, 60%))',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Rocket size={20} />
+              Browse All Commits
+            </Button>
+          </div>
         </div>
 
         {/* 2x2 Grid - Tool Stats */}
