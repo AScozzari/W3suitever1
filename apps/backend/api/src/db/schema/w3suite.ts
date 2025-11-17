@@ -426,6 +426,7 @@ export const tenants = w3suiteSchema.table("tenants", {
   notes: text("notes"), // Added notes field for Management Center
   settings: jsonb("settings").default({}),
   features: jsonb("features").default({}),
+  branchId: uuid("branch_id"), // FK to brand_interface.brand_branches for Deploy Center
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   archivedAt: timestamp("archived_at"),
@@ -614,6 +615,7 @@ export const stores = w3suiteSchema.table("stores", {
   openedAt: date("opened_at"),
   closedAt: date("closed_at"),
   billingOverrideId: uuid("billing_override_id"),
+  branchId: uuid("branch_id"), // FK to brand_interface.brand_branches for Deploy Center (child branch: tenant-slug/store-slug)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   archivedAt: timestamp("archived_at"),
