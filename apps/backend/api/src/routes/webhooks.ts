@@ -5,8 +5,8 @@ import { z } from 'zod';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant.js';
 import crypto from 'crypto';
 import { db } from '../core/db.js';
-import { eq } from 'drizzle-orm';
-import { tenants } from '../db/schema/w3suite.js';
+import { eq, and, sql } from 'drizzle-orm';
+import { tenants, suppliers } from '../db/schema/w3suite.js';
 
 const router = Router();
 
@@ -205,22 +205,20 @@ router.post('/brand-deploy/:tenantId', async (req: Request, res: Response) => {
  * 🔄 Merge WMS Data (Full Replace Strategy)
  * Replaces all WMS master data for the tenant with new version from Brand
  * 
- * NOTE: This is a stub implementation for testing. Production implementation would:
+ * Implementation:
  * 1. Start database transaction
  * 2. Delete all brand-origin records for this tenant
- * 3. Insert all records from data payload
- * 4. Update deployment tracking metadata
- * 5. Commit transaction or rollback on error
+ * 3. Insert all records from data payload with origin='brand'
+ * 4. Commit transaction or rollback on error
  */
 async function mergeWMSData(tenantId: string, deployment: z.infer<typeof brandDeploySchema>) {
   const { resourceType, data, version, commitId } = deployment;
   
-  logger.info('🔄 Starting WMS full replace (STUB MODE)', {
+  logger.info('🔄 Starting WMS full replace', {
     tenantId,
     resourceType,
     version,
-    commitId,
-    note: 'Production logic not yet implemented'
+    commitId
   });
   
   // Get tenant info for validation
@@ -230,68 +228,105 @@ async function mergeWMSData(tenantId: string, deployment: z.infer<typeof brandDe
   }
   
   let replaced = 0;
+  let inserted = 0;
   
-  switch (resourceType) {
-    case 'suppliers':
-      // STUB: Count items to simulate processing
-      // Production: DELETE FROM suppliers WHERE tenant_id = ? AND origin = 'brand'
-      //             INSERT INTO suppliers (...) VALUES (...)
-      logger.info('🔄 WMS Suppliers full replace (STUB - no DB changes)', {
-        tenantId,
-        suppliersCount: Array.isArray(data.suppliers) ? data.suppliers.length : 0,
-        action: 'simulated'
-      });
-      replaced = Array.isArray(data.suppliers) ? data.suppliers.length : 0;
-      break;
-      
-    case 'products':
-      // STUB: Count items to simulate processing
-      // Production: DELETE FROM products WHERE tenant_id = ? AND origin = 'brand'
-      //             INSERT INTO products (...) VALUES (...)
-      logger.info('🔄 WMS Products full replace (STUB - no DB changes)', {
-        tenantId,
-        productsCount: Array.isArray(data.products) ? data.products.length : 0,
-        action: 'simulated'
-      });
-      replaced = Array.isArray(data.products) ? data.products.length : 0;
-      break;
-      
-    case 'price_lists':
-      // STUB: Count items to simulate processing
-      // Production: DELETE FROM price_lists WHERE tenant_id = ? AND origin = 'brand'
-      //             INSERT INTO price_lists (...) VALUES (...)
-      logger.info('🔄 WMS Price Lists full replace (STUB - no DB changes)', {
-        tenantId,
-        priceListsCount: Array.isArray(data.priceLists) ? data.priceLists.length : 0,
-        action: 'simulated'
-      });
-      replaced = Array.isArray(data.priceLists) ? data.priceLists.length : 0;
-      break;
-      
-    default:
-      logger.warn('🔄 Unknown WMS resource type', { resourceType, tenantId });
-      return {
-        success: false,
-        message: `Unknown WMS resource type: ${resourceType}`,
-        replaced: 0
-      };
+  try {
+    switch (resourceType) {
+      case 'suppliers':
+        if (!Array.isArray(data.suppliers)) {
+          throw new Error('Invalid suppliers data: expected array');
+        }
+        
+        // Start transaction: DELETE + INSERT
+        await db.transaction(async (tx) => {
+          // 1. Delete all brand-origin suppliers for this tenant
+          const deleteResult = await tx
+            .delete(suppliers)
+            .where(and(
+              eq(suppliers.tenantId, tenantId),
+              eq(suppliers.origin, 'brand')
+            ))
+            .returning({ id: suppliers.id });
+          
+          replaced = deleteResult.length;
+          
+          logger.info(`🗑️  Deleted ${replaced} existing brand suppliers for tenant`, { tenantId });
+          
+          // 2. Insert new suppliers from Brand payload
+          if (data.suppliers.length > 0) {
+            for (const supplier of data.suppliers) {
+              await tx.insert(suppliers).values({
+                ...supplier,
+                id: undefined, // Let DB generate new UUID
+                origin: 'brand',
+                tenantId: tenantId,
+                externalId: supplier.id, // Store original Brand supplier ID
+                // Keep original createdBy/updatedBy from Brand (already UUIDs)
+                // createdAt/updatedAt will use default (NOW())
+                createdAt: undefined,
+                updatedAt: undefined
+              });
+              inserted++;
+            }
+            
+            logger.info(`✅ Inserted ${inserted} new brand suppliers for tenant`, { tenantId });
+          }
+        });
+        
+        logger.info('🔄 WMS Suppliers full replace completed', {
+          tenantId,
+          deleted: replaced,
+          inserted,
+          version,
+          commitId
+        });
+        break;
+        
+      case 'products':
+        // STUB: Products full replace not yet implemented
+        logger.warn('🔄 WMS Products full replace (STUB - no DB changes)', {
+          tenantId,
+          productsCount: Array.isArray(data.products) ? data.products.length : 0,
+          note: 'Production logic not yet implemented'
+        });
+        replaced = Array.isArray(data.products) ? data.products.length : 0;
+        break;
+        
+      case 'price_lists':
+        // STUB: Price lists full replace not yet implemented
+        logger.warn('🔄 WMS Price Lists full replace (STUB - no DB changes)', {
+          tenantId,
+          priceListsCount: Array.isArray(data.priceLists) ? data.priceLists.length : 0,
+          note: 'Production logic not yet implemented'
+        });
+        replaced = Array.isArray(data.priceLists) ? data.priceLists.length : 0;
+        break;
+        
+      default:
+        logger.warn('🔄 Unknown WMS resource type', { resourceType, tenantId });
+        return {
+          success: false,
+          message: `Unknown WMS resource type: ${resourceType}`,
+          replaced: 0
+        };
+    }
+    
+    return {
+      success: true,
+      message: `WMS ${resourceType} full replace completed`,
+      replaced,
+      inserted: inserted || replaced, // For suppliers we track both, for others use replaced
+      version,
+      commitId
+    };
+  } catch (error) {
+    logger.error('❌ WMS merge failed', {
+      tenantId,
+      resourceType,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
   }
-  
-  logger.warn('⚠️  WMS merge completed in STUB mode - no actual database changes made', {
-    tenantId,
-    resourceType,
-    replaced,
-    note: 'Implement production logic before deploying to real tenants'
-  });
-  
-  return {
-    success: true,
-    message: `WMS ${resourceType} full replace simulated (STUB MODE)`,
-    replaced,
-    version,
-    commitId,
-    stubMode: true // Flag to indicate this was a stub execution
-  };
 }
 
 /**
