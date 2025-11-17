@@ -4,12 +4,14 @@ import {
 } from "../db/index.js";
 import {
   brandCategories, brandProductTypes, brandProducts, brandSuppliers, brandWorkflows, brandTasks,
-  deployCenterCommits, deployCenterBranches, deployCenterStatus,
+  deployCenterCommits, deployCenterBranches, deployCenterStatus, deployCenterDeployments, deployCenterBranchReleases,
   type BrandCategory, type BrandProductType, type BrandProduct, type BrandSupplier,
   type InsertBrandCategory, type InsertBrandProductType, type InsertBrandProduct, type InsertBrandSupplier,
   type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier,
   type DeployCenterCommit, type NewDeployCenterCommit, type DeployCenterBranch, type NewDeployCenterBranch,
-  type DeployCenterStatus, type NewDeployCenterStatus
+  type DeployCenterStatus, type NewDeployCenterStatus,
+  type DeployCenterDeployment, type NewDeployCenterDeployment,
+  type DeployCenterBranchRelease, type NewDeployCenterBranchRelease
 } from "../../../api/src/db/schema/brand-interface.js";
 import type { BrandWorkflow, InsertBrandWorkflow, BrandTask, NewBrandTask } from "../../../api/src/db/schema/brand-interface.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
@@ -202,6 +204,18 @@ export interface IBrandStorage {
   getDeploymentStatuses(filters: string | { deploymentId?: string; branchId?: string; status?: string; limit?: number; offset?: number }): Promise<DeployCenterStatus[]>;
   createDeploymentStatus(data: NewDeployCenterStatus): Promise<DeployCenterStatus>;
   updateDeploymentStatus(id: string, data: Partial<DeployCenterStatus>): Promise<DeployCenterStatus | null>;
+  
+  // Deployment Sessions operations (Batch deployment management)
+  getDeploymentSessions(filters?: { status?: string; launchedBy?: string }): Promise<DeployCenterDeployment[]>;
+  getDeploymentSession(id: string): Promise<DeployCenterDeployment | null>;
+  createDeploymentSession(data: NewDeployCenterDeployment): Promise<DeployCenterDeployment>;
+  launchDeploymentSession(id: string): Promise<DeployCenterDeployment | null>;
+  updateDeploymentSession(id: string, data: Partial<DeployCenterDeployment>): Promise<DeployCenterDeployment | null>;
+  
+  // Branch Releases operations (Track active versions per branch/tool)
+  getBranchReleases(branchName?: string): Promise<DeployCenterBranchRelease[]>;
+  getBranchRelease(branchName: string, tool: string): Promise<DeployCenterBranchRelease | null>;
+  updateBranchRelease(data: NewDeployCenterBranchRelease): Promise<DeployCenterBranchRelease>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -2326,6 +2340,173 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results[0] || null;
     } catch (error) {
       console.error(`Error updating deployment status ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== DEPLOYMENT SESSIONS OPERATIONS ====================
+
+  async getDeploymentSessions(filters?: { status?: string; launchedBy?: string }): Promise<DeployCenterDeployment[]> {
+    try {
+      let query = db.select().from(deployCenterDeployments);
+      
+      const conditions = [];
+      if (filters?.status) {
+        conditions.push(eq(deployCenterDeployments.status, filters.status as any));
+      }
+      if (filters?.launchedBy) {
+        conditions.push(eq(deployCenterDeployments.launchedBy, filters.launchedBy));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      const results = await query.orderBy(desc(deployCenterDeployments.createdAt));
+      return results as DeployCenterDeployment[];
+    } catch (error) {
+      console.error('Error fetching deployment sessions:', error);
+      throw error;
+    }
+  }
+
+  async getDeploymentSession(id: string): Promise<DeployCenterDeployment | null> {
+    try {
+      const results = await db.select()
+        .from(deployCenterDeployments)
+        .where(eq(deployCenterDeployments.id, id))
+        .limit(1);
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching deployment session ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createDeploymentSession(data: NewDeployCenterDeployment): Promise<DeployCenterDeployment> {
+    try {
+      const results = await db.insert(deployCenterDeployments)
+        .values({
+          ...data,
+          totalBranches: (data.targetBranches as any[]).length,
+          completedBranches: 0,
+          failedBranches: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any)
+        .returning();
+      
+      return results[0];
+    } catch (error) {
+      console.error('Error creating deployment session:', error);
+      throw error;
+    }
+  }
+
+  async launchDeploymentSession(id: string): Promise<DeployCenterDeployment | null> {
+    try {
+      const session = await this.getDeploymentSession(id);
+      if (!session) return null;
+      
+      const results = await db.update(deployCenterDeployments)
+        .set({ 
+          status: 'in_progress' as any,
+          startedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(deployCenterDeployments.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error launching deployment session ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async updateDeploymentSession(id: string, data: Partial<DeployCenterDeployment>): Promise<DeployCenterDeployment | null> {
+    try {
+      const results = await db.update(deployCenterDeployments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(deployCenterDeployments.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating deployment session ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== BRANCH RELEASES OPERATIONS ====================
+
+  async getBranchReleases(branchName?: string): Promise<DeployCenterBranchRelease[]> {
+    try {
+      let query = db.select().from(deployCenterBranchReleases);
+      
+      if (branchName) {
+        query = query.where(eq(deployCenterBranchReleases.branchName, branchName)) as any;
+      }
+      
+      const results = await query.orderBy(deployCenterBranchReleases.activatedAt);
+      return results as DeployCenterBranchRelease[];
+    } catch (error) {
+      console.error('Error fetching branch releases:', error);
+      throw error;
+    }
+  }
+
+  async getBranchRelease(branchName: string, tool: string): Promise<DeployCenterBranchRelease | null> {
+    try {
+      const results = await db.select()
+        .from(deployCenterBranchReleases)
+        .where(and(
+          eq(deployCenterBranchReleases.branchName, branchName),
+          eq(deployCenterBranchReleases.tool, tool as any)
+        ))
+        .limit(1);
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error fetching branch release ${branchName}/${tool}:`, error);
+      throw error;
+    }
+  }
+
+  async updateBranchRelease(data: NewDeployCenterBranchRelease): Promise<DeployCenterBranchRelease> {
+    try {
+      const existing = await this.getBranchRelease(data.branchName, data.tool);
+      
+      if (existing) {
+        const results = await db.update(deployCenterBranchReleases)
+          .set({
+            commitId: data.commitId,
+            version: data.version,
+            deploymentSessionId: data.deploymentSessionId,
+            previousCommitId: existing.commitId,
+            activatedAt: new Date(),
+            updatedAt: new Date(),
+            metadata: data.metadata || {}
+          })
+          .where(eq(deployCenterBranchReleases.id, existing.id))
+          .returning();
+        
+        return results[0];
+      } else {
+        const results = await db.insert(deployCenterBranchReleases)
+          .values({
+            ...data,
+            activatedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } as any)
+          .returning();
+        
+        return results[0];
+      }
+    } catch (error) {
+      console.error('Error updating branch release:', error);
       throw error;
     }
   }
