@@ -183,7 +183,7 @@ export interface IBrandStorage {
   syncBranchesFromTenants(): Promise<{ created: number; updated: number; total: number }>;
   
   // Deployment Status operations (Track push status per branch)
-  getDeploymentStatuses(deploymentId: string): Promise<DeployCenterStatus[]>;
+  getDeploymentStatuses(filters: string | { deploymentId?: string; branchId?: string; status?: string; limit?: number; offset?: number }): Promise<DeployCenterStatus[]>;
   createDeploymentStatus(data: NewDeployCenterStatus): Promise<DeployCenterStatus>;
   updateDeploymentStatus(id: string, data: Partial<DeployCenterStatus>): Promise<DeployCenterStatus | null>;
 }
@@ -1926,16 +1926,50 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async getDeploymentStatuses(deploymentId: string): Promise<DeployCenterStatus[]> {
+  async getDeploymentStatuses(filters: string | { deploymentId?: string; branchId?: string; status?: string; limit?: number; offset?: number }): Promise<DeployCenterStatus[]> {
     try {
-      const results = await db.select()
-        .from(deployCenterStatus)
-        .where(eq(deployCenterStatus.deploymentId, deploymentId))
-        .orderBy(deployCenterStatus.createdAt);
+      // Backward compatibility: if string, treat as deploymentId
+      if (typeof filters === 'string') {
+        const results = await db.select()
+          .from(deployCenterStatus)
+          .where(eq(deployCenterStatus.deploymentId, filters))
+          .orderBy(deployCenterStatus.createdAt);
+        
+        return results as DeployCenterStatus[];
+      }
       
+      // New behavior: filters object
+      let query = db.select().from(deployCenterStatus);
+      
+      const conditions = [];
+      if (filters.deploymentId) {
+        conditions.push(eq(deployCenterStatus.deploymentId, filters.deploymentId));
+      }
+      if (filters.branchId) {
+        conditions.push(eq(deployCenterStatus.branchId, filters.branchId));
+      }
+      if (filters.status) {
+        conditions.push(eq(deployCenterStatus.status, filters.status as any));
+      }
+      
+      if (conditions.length > 0) {
+        const { and } = await import('drizzle-orm');
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      query = query.orderBy(deployCenterStatus.createdAt) as any;
+      
+      if (filters.limit) {
+        query = query.limit(filters.limit) as any;
+      }
+      if (filters.offset) {
+        query = query.offset(filters.offset) as any;
+      }
+      
+      const results = await query;
       return results as DeployCenterStatus[];
     } catch (error) {
-      console.error(`Error fetching deployment statuses for ${deploymentId}:`, error);
+      console.error('Error fetching deployment statuses:', error);
       throw error;
     }
   }

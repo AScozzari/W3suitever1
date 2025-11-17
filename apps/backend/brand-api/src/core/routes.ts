@@ -3585,7 +3585,35 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Get deployment statuses for a deployment
+  // Get all deployment statuses with optional filters
+  app.get("/brand-api/deploy/status", async (req, res) => {
+    const user = (req as any).user;
+    const { deploymentId, branchId, status, limit, offset } = req.query;
+    
+    try {
+      const filters: any = {};
+      if (deploymentId) filters.deploymentId = deploymentId as string;
+      if (branchId) filters.branchId = branchId as string;
+      if (status) filters.status = status as string;
+      if (limit) filters.limit = parseInt(limit as string);
+      if (offset) filters.offset = parseInt(offset as string);
+      
+      const statuses = await brandStorage.getDeploymentStatuses(filters);
+      
+      res.json({
+        success: true,
+        data: statuses
+      });
+    } catch (error) {
+      console.error("Error fetching deployment statuses:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch deployment statuses" 
+      });
+    }
+  });
+
+  // Get deployment statuses for a specific deployment
   app.get("/brand-api/deploy/status/:deploymentId", async (req, res) => {
     const user = (req as any).user;
     const { deploymentId } = req.params;
