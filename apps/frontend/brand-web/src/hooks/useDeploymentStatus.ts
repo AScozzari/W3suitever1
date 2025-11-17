@@ -46,11 +46,12 @@ export function useDeploymentStatuses(filters: DeploymentStatusFilters = {}) {
   const queryString = queryParams.toString();
   const endpoint = `/brand-api/deploy/status${queryString ? `?${queryString}` : ''}`;
   
-  return useQuery<DeploymentStatus[]>({
+  return useQuery<{ data: DeploymentStatus[] }, Error, DeploymentStatus[]>({
     queryKey: [endpoint], // Use full endpoint as queryKey for default fetcher
     refetchInterval: 5000, // Poll every 5 seconds for real-time updates
     refetchIntervalInBackground: true,
     staleTime: 0, // Always consider data stale to enable refetch
+    select: (response) => response.data, // Extract data array from API response
   });
 }
 
