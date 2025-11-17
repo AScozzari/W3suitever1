@@ -514,16 +514,35 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
   }), []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#ffffff' }}>
-      {/* Glassmorphism Header */}
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      background: '#f5f5f5',
+      padding: '2vh',
+      overflow: 'hidden'
+    }}>
+      {/* Main Workflow Builder Container - 95vw x 95vh */}
       <div style={{
-        background: 'hsla(0, 0%, 100%, 0.7)',
-        backdropFilter: 'blur(24px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
-        padding: '1rem 1.5rem',
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.05)'
+        width: '95vw',
+        height: '95vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+        overflow: 'hidden'
       }}>
+        {/* Glassmorphism Header */}
+        <div style={{
+          background: 'hsla(0, 0%, 100%, 0.7)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+          padding: '1rem 1.5rem',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.05)'
+        }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Button
@@ -974,14 +993,9 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
           </div>
         </div>
 
-        {/* ReactFlow Canvas */}
+        {/* ReactFlow Canvas - Flex 1 per occupare tutto lo spazio */}
         <div 
-          className="flex-1 bg-white" 
-          style={{
-            maxWidth: 'calc(100% - 190px)',
-            maxHeight: 'calc(100% - 190px)',
-            margin: '0 auto'
-          }}
+          style={{ flex: 1, background: '#ffffff', position: 'relative' }}
           onDrop={onDrop} 
           onDragOver={onDragOver}
         >
@@ -1082,7 +1096,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         open={isTestResultOpen}
         onOpenChange={setIsTestResultOpen}
       />
+      </div>
+      {/* Chiusura Container Principale 95vw x 95vh */}
     </div>
+    {/* Chiusura Wrapper Esterno */}
   );
 }
 
