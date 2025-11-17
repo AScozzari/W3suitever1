@@ -2575,6 +2575,58 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  app.post("/brand-api/wms/suppliers/:id/deploy", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const { branchNames } = req.body;
+      
+      if (!Array.isArray(branchNames) || branchNames.length === 0) {
+        return res.status(400).json({ 
+          error: "Invalid request", 
+          details: "branchNames must be a non-empty array" 
+        });
+      }
+      
+      const result = await brandStorage.deploySupplier(
+        req.params.id,
+        branchNames,
+        user.id
+      );
+      
+      res.json({ 
+        success: result.success,
+        data: result
+      });
+    } catch (error: any) {
+      console.error("Error deploying supplier:", error);
+      res.status(500).json({ 
+        error: "Failed to deploy supplier",
+        message: error.message 
+      });
+    }
+  });
+
+  app.get("/brand-api/wms/suppliers/:id/deployment-history", async (req, res) => {
+    const user = (req as any).user;
+    
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    try {
+      const history = await brandStorage.getSupplierDeploymentHistory(req.params.id);
+      res.json({ success: true, data: history });
+    } catch (error) {
+      console.error("Error fetching supplier deployment history:", error);
+      res.status(500).json({ error: "Failed to fetch deployment history" });
+    }
+  });
+
   // ==================== REFERENCE DATA ENDPOINTS ====================
   
   // Get Italian cities from public schema - NO auth required (reference data)

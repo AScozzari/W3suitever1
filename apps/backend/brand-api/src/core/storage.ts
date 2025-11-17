@@ -19,6 +19,7 @@ import {
   legalEntities as w3LegalEntities,
   stores as w3Stores,
   users as w3Users,
+  suppliers as w3Suppliers,
   insertTenantSchema, 
   insertLegalEntitySchema,
   insertStoreSchema,
@@ -27,7 +28,9 @@ import {
   type LegalEntity,
   type InsertLegalEntity,
   type Store,
-  type InsertStore
+  type InsertStore,
+  type Supplier,
+  type InsertSupplier
 } from "../../../api/src/db/schema/w3suite.js";
 import { 
   italianCities,
@@ -1537,6 +1540,246 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results.length > 0;
     } catch (error) {
       console.error(`Error deleting brand supplier ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deploySupplier(supplierId: string, branchNames: string[], deployedBy: string): Promise<{
+    success: boolean;
+    deploymentId: string;
+    successfulBranches: string[];
+    failedBranches: Array<{ branchName: string; error: string }>;
+  }> {
+    try {
+      const supplier = await this.getSupplier(supplierId);
+      if (!supplier) {
+        throw new Error(`Supplier ${supplierId} not found`);
+      }
+
+      const branches = await w3db.select().from(deployCenterBranches)
+        .where(inArray(deployCenterBranches.branchName, branchNames));
+
+      const brandTenantId = '47a3e13d-1738-4a37-bdca-cbc4cedc402c';
+      const timestamp = Date.now();
+      const deploymentId = `deploy-supplier-${timestamp}-${nanoid(6)}`;
+
+      const payload = {
+        resourceType: 'supplier',
+        data: supplier,
+        deploymentMode: 'full_replace',
+        version: '1.0.0',
+        timestamp: new Date().toISOString()
+      };
+
+      await this.createDeployment({
+        id: deploymentId,
+        tool: 'wms',
+        resourceType: 'supplier',
+        resourceId: supplier.id,
+        name: `Deploy: ${supplier.name}`,
+        description: `Deploy supplier ${supplier.code} to ${branchNames.length} branches`,
+        version: '1.0.0',
+        status: 'ready',
+        payload,
+        metadata: {
+          branches: branchNames,
+          deployedBy,
+          timestamp: new Date().toISOString()
+        },
+        createdBy: deployedBy,
+        brandTenantId
+      });
+
+      const successfulBranches: string[] = [];
+      const failedBranches: Array<{ branchName: string; error: string }> = [];
+
+      const foundBranchNames = new Set(branches.map(b => b.branchName));
+      const missingBranches = branchNames.filter(name => !foundBranchNames.has(name));
+      
+      for (const missingBranch of missingBranches) {
+        failedBranches.push({
+          branchName: missingBranch,
+          error: 'Branch not found in deploy center'
+        });
+        
+        await w3db.insert(deployCenterStatus).values({
+          deploymentId,
+          branchName: missingBranch,
+          status: 'failed',
+          errorMessage: 'Branch not found in deploy center',
+          attemptCount: 1,
+          lastAttemptAt: new Date(),
+          brandTenantId
+        }).catch(() => {});
+      }
+
+      for (const branch of branches) {
+        try {
+          if (!branch.tenantId) {
+            failedBranches.push({
+              branchName: branch.branchName,
+              error: 'Branch has no associated tenant'
+            });
+            continue;
+          }
+
+          const italyCountryResult = await w3db.execute(
+            sql`SELECT id::text FROM public.countries WHERE code = 'IT' LIMIT 1`
+          );
+          const defaultCountryId = (italyCountryResult.rows[0]?.id as string) || supplier.countryId;
+
+          const tenantUserResult = await w3db.execute(
+            sql`SELECT id::text FROM w3suite.users WHERE tenant_id = ${branch.tenantId} LIMIT 1`
+          );
+          const validUserId = (tenantUserResult.rows[0]?.id as string) || 'brand-service-account';
+
+          const existingSupplier = await w3db.execute(
+            sql`SELECT id FROM w3suite.suppliers WHERE code = ${supplier.code} AND tenant_id = ${branch.tenantId} LIMIT 1`
+          );
+
+          if (existingSupplier.rows.length > 0) {
+            await w3db.update(w3Suppliers)
+              .set({
+                name: supplier.name,
+                legalName: supplier.legalName,
+                supplierType: supplier.supplierType,
+                vatNumber: supplier.vatNumber,
+                taxCode: supplier.taxCode,
+                sdiCode: supplier.sdiCode,
+                pecEmail: supplier.pecEmail,
+                reaNumber: supplier.reaNumber,
+                chamberOfCommerce: supplier.chamberOfCommerce,
+                registeredAddress: supplier.registeredAddress,
+                cityId: supplier.cityId,
+                countryId: supplier.countryId || defaultCountryId,
+                preferredPaymentMethodId: supplier.preferredPaymentMethodId,
+                paymentConditionId: supplier.paymentConditionId,
+                paymentTerms: supplier.paymentTerms,
+                currency: supplier.currency,
+                email: supplier.email,
+                phone: supplier.phone,
+                website: supplier.website,
+                contacts: supplier.contacts,
+                iban: supplier.iban,
+                bic: supplier.bic,
+                splitPayment: supplier.splitPayment,
+                withholdingTax: supplier.withholdingTax,
+                taxRegime: supplier.taxRegime,
+                status: supplier.status,
+                notes: supplier.notes,
+                updatedBy: validUserId,
+                updatedAt: new Date()
+              })
+              .where(eq(w3Suppliers.id, existingSupplier.rows[0].id));
+          } else {
+            await w3db.insert(w3Suppliers).values({
+              origin: 'brand',
+              tenantId: branch.tenantId,
+              externalId: supplier.id,
+              code: supplier.code,
+              name: supplier.name,
+              legalName: supplier.legalName,
+              supplierType: supplier.supplierType,
+              vatNumber: supplier.vatNumber,
+              taxCode: supplier.taxCode,
+              sdiCode: supplier.sdiCode,
+              pecEmail: supplier.pecEmail,
+              reaNumber: supplier.reaNumber,
+              chamberOfCommerce: supplier.chamberOfCommerce,
+              registeredAddress: supplier.registeredAddress,
+              cityId: supplier.cityId,
+              countryId: supplier.countryId || defaultCountryId,
+              preferredPaymentMethodId: supplier.preferredPaymentMethodId,
+              paymentConditionId: supplier.paymentConditionId,
+              paymentTerms: supplier.paymentTerms,
+              currency: supplier.currency,
+              email: supplier.email,
+              phone: supplier.phone,
+              website: supplier.website,
+              contacts: supplier.contacts,
+              iban: supplier.iban,
+              bic: supplier.bic,
+              splitPayment: supplier.splitPayment,
+              withholdingTax: supplier.withholdingTax,
+              taxRegime: supplier.taxRegime,
+              status: supplier.status,
+              notes: supplier.notes,
+              createdBy: validUserId,
+              lockedFields: []
+            });
+          }
+
+          await w3db.insert(deployCenterStatus).values({
+            deploymentId,
+            branchName: branch.branchName,
+            status: 'deployed',
+            completedAt: new Date(),
+            brandTenantId
+          });
+
+          successfulBranches.push(branch.branchName);
+        } catch (error: any) {
+          console.error(`Failed to deploy to branch ${branch.branchName}:`, error);
+          failedBranches.push({
+            branchName: branch.branchName,
+            error: error.message || 'Unknown error'
+          });
+
+          await w3db.insert(deployCenterStatus).values({
+            deploymentId,
+            branchName: branch.branchName,
+            status: 'failed',
+            errorMessage: error.message || 'Unknown error',
+            attemptCount: 1,
+            lastAttemptAt: new Date(),
+            brandTenantId
+          }).catch(() => {});
+        }
+      }
+
+      await db.update(brandSuppliers)
+        .set({
+          deploymentStatus: successfulBranches.length > 0 ? 'active' : 'draft',
+          deployedToCount: successfulBranches.length,
+          lastDeployedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(brandSuppliers.id, supplierId));
+
+      return {
+        success: successfulBranches.length > 0,
+        deploymentId,
+        successfulBranches,
+        failedBranches
+      };
+    } catch (error) {
+      console.error('Error deploying supplier:', error);
+      throw error;
+    }
+  }
+
+  async getSupplierDeploymentHistory(supplierId: string): Promise<any[]> {
+    try {
+      const results = await w3db.execute(
+        sql`
+          SELECT 
+            dcs.deployment_id as "deploymentId",
+            dcs.branch_name as "branchName",
+            dcs.status,
+            dcs.error_message as "errorMessage",
+            dcs.completed_at as "completedAt",
+            dcs.created_at as "createdAt",
+            dcc.name as "deploymentName"
+          FROM brand_interface.deploy_center_status dcs
+          INNER JOIN brand_interface.deploy_center_commits dcc ON dcs.deployment_id = dcc.id
+          WHERE dcc.resource_id::text = ${supplierId}
+          ORDER BY dcs.created_at DESC
+        `
+      );
+
+      return results.rows;
+    } catch (error) {
+      console.error('Error fetching supplier deployment history:', error);
       throw error;
     }
   }
