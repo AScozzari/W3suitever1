@@ -3727,6 +3727,187 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== DEPLOYMENT SESSIONS ENDPOINTS ====================
+
+  // Get all deployment sessions with optional filters
+  app.get("/brand-api/deploy/sessions", async (req, res) => {
+    const user = (req as any).user;
+    const { status, launchedBy } = req.query;
+    
+    try {
+      const filters: any = {};
+      if (status) filters.status = status;
+      if (launchedBy) filters.launchedBy = launchedBy;
+      
+      const sessions = await brandStorage.getDeploymentSessions(filters);
+      
+      res.json({
+        success: true,
+        data: sessions,
+        message: "Deployment sessions fetched successfully"
+      });
+    } catch (error) {
+      console.error("Error fetching deployment sessions:", error);
+      res.status(500).json({ error: "Failed to fetch deployment sessions" });
+    }
+  });
+
+  // Get single deployment session
+  app.get("/brand-api/deploy/sessions/:id", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const session = await brandStorage.getDeploymentSession(id);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Deployment session not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: session,
+        message: "Deployment session fetched successfully"
+      });
+    } catch (error) {
+      console.error(`Error fetching deployment session ${id}:`, error);
+      res.status(500).json({ error: "Failed to fetch deployment session" });
+    }
+  });
+
+  // Create deployment session
+  app.post("/brand-api/deploy/sessions", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const session = await brandStorage.createDeploymentSession({
+        ...req.body,
+        launchedBy: user.email,
+        brandTenantId: user.brandTenantId
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: session,
+        message: "Deployment session created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating deployment session:", error);
+      res.status(500).json({ error: "Failed to create deployment session" });
+    }
+  });
+
+  // Launch deployment session
+  app.post("/brand-api/deploy/sessions/:id/launch", async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const session = await brandStorage.launchDeploymentSession(id);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Deployment session not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: session,
+        message: "Deployment session launched successfully"
+      });
+    } catch (error) {
+      console.error(`Error launching deployment session ${id}:`, error);
+      res.status(500).json({ error: "Failed to launch deployment session" });
+    }
+  });
+
+  // Update deployment session
+  app.patch("/brand-api/deploy/sessions/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      const session = await brandStorage.updateDeploymentSession(id, req.body);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Deployment session not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: session,
+        message: "Deployment session updated successfully"
+      });
+    } catch (error) {
+      console.error(`Error updating deployment session ${id}:`, error);
+      res.status(500).json({ error: "Failed to update deployment session" });
+    }
+  });
+
+  // ==================== BRANCH RELEASES ENDPOINTS ====================
+
+  // Get all branch releases or for a specific branch
+  app.get("/brand-api/deploy/releases", async (req, res) => {
+    const user = (req as any).user;
+    const { branchName } = req.query;
+    
+    try {
+      const releases = await brandStorage.getBranchReleases(branchName as string | undefined);
+      
+      res.json({
+        success: true,
+        data: releases,
+        message: "Branch releases fetched successfully"
+      });
+    } catch (error) {
+      console.error("Error fetching branch releases:", error);
+      res.status(500).json({ error: "Failed to fetch branch releases" });
+    }
+  });
+
+  // Get single branch release for specific branch and tool
+  app.get("/brand-api/deploy/releases/:branchName/:tool", async (req, res) => {
+    const user = (req as any).user;
+    const { branchName, tool } = req.params;
+    
+    try {
+      const release = await brandStorage.getBranchRelease(branchName, tool);
+      
+      if (!release) {
+        return res.status(404).json({ error: "Branch release not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: release,
+        message: "Branch release fetched successfully"
+      });
+    } catch (error) {
+      console.error(`Error fetching branch release ${branchName}/${tool}:`, error);
+      res.status(500).json({ error: "Failed to fetch branch release" });
+    }
+  });
+
+  // Update or create branch release
+  app.put("/brand-api/deploy/releases", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    try {
+      const release = await brandStorage.updateBranchRelease({
+        ...req.body,
+        brandTenantId: user.brandTenantId
+      });
+      
+      res.json({
+        success: true,
+        data: release,
+        message: "Branch release updated successfully"
+      });
+    } catch (error) {
+      console.error("Error updating branch release:", error);
+      res.status(500).json({ error: "Failed to update branch release" });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 
