@@ -30,7 +30,7 @@ try {
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
   
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' })); // Increased to 50MB to support large payloads (price lists, products)
 
   // Crea il server HTTP per Brand API
   const httpServer = await registerBrandRoutes(app);

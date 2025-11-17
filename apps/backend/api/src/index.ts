@@ -371,7 +371,7 @@ async function startBackendOnly() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Demo-User', 'X-Auth-Session']
   }));
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' })); // Increased to 50MB to support large payloads (price lists, products)
 
   // Serve static files from public directory
   const publicPath = path.join(__dirname, "../../../../public");
@@ -498,7 +498,7 @@ async function startBackend() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Demo-User', 'X-Auth-Session']
   }));
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' })); // Increased to 50MB to support large payloads (price lists, products)
 
   // Serve static files from public directory
   const publicPath = path.join(__dirname, "../../../../public");

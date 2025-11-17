@@ -910,7 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Apply JSON body parser with raw body capture for webhook signature validation
   app.use(express.json({ 
-    limit: '10mb',
+    limit: '50mb', // Increased to 50MB to support large payloads (price lists, products)
     verify: (req: any, res, buf, encoding) => {
       // Capture raw body ONLY for webhook routes for HMAC signature validation
       if (req.originalUrl.startsWith('/api/webhooks')) {
@@ -918,7 +918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // SECURITY: Critical production configuration validation
   if (process.env.NODE_ENV === 'production' && config.AUTH_MODE !== 'oauth2') {

@@ -25,7 +25,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
 
   // Middleware per parsing cookies
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' })); // Increased to 50MB to support large payloads (price lists, products)
 
   // ==================== AUTH ENDPOINTS ====================
   // Login endpoint - non richiede autenticazione
