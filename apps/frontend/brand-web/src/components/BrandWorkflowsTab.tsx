@@ -350,11 +350,9 @@ interface WorkflowCanvasViewProps {
 }
 
 function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: WorkflowCanvasViewProps) {
-  const [isPaletteOpen, setIsPaletteOpen] = useState(true);
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
   const [isTestResultOpen, setIsTestResultOpen] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const reactFlowInstance = useReactFlow();
@@ -429,10 +427,9 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
     [storeAddEdge]
   );
 
-  // Handle node click for config
+  // Handle node click - select node (drawer will appear automatically)
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     selectNode(node.id);
-    setIsConfigPanelOpen(true);
   }, [selectNode]);
   
   // Track viewport changes (pan + zoom) - debounced to avoid too many snapshots
@@ -496,15 +493,6 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
     },
     [reactFlowInstance, addNode]
   );
-  
-  // Handle node configuration save
-  const handleNodeConfigSave = useCallback((nodeId: string, config: any) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (node) {
-      updateNode(nodeId, { data: { ...node.data, config } });
-      setIsConfigPanelOpen(false);
-    }
-  }, [updateNode, nodes]);
 
   const handleSaveClick = () => {
     const updatedDSL = {
