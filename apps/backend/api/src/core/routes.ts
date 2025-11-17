@@ -1241,6 +1241,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CRITICAL: Specific webhook routes MUST be registered BEFORE generic routes
   // Otherwise, generic /:tenantId/:source pattern will match everything
   
+  // Import and apply raw body middleware for webhook signature validation
+  const { rawBodyMiddleware } = await import("../middleware/raw-body.js");
+  app.use('/api/webhooks', rawBodyMiddleware); // Apply BEFORE routes for signature validation
+  
   // VoIP Webhooks (edgvoip integration) - MUST be first
   app.use('/api/webhooks/voip', voipWebhookRoutes);
   

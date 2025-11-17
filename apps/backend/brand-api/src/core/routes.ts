@@ -3333,10 +3333,190 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Execute deployment to selected branches
+  app.post("/brand-api/deploy/execute", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to execute deployments" });
+    }
+    
+    try {
+      const { commitId, branchIds } = req.body;
+      
+      if (!commitId || !Array.isArray(branchIds) || branchIds.length === 0) {
+        return res.status(400).json({ 
+          error: "Missing required fields: commitId and branchIds (array)" 
+        });
+      }
+      
+      // Get commit/deployment details
+      const deployment = await brandStorage.getDeployment(commitId);
+      if (!deployment) {
+        return res.status(404).json({ error: "Deployment not found" });
+      }
+      
+      // Get selected branches
+      const allBranches = await brandStorage.getBranches();
+      const selectedBranches = allBranches.filter(b => branchIds.includes(b.id));
+      
+      if (selectedBranches.length === 0) {
+        return res.status(404).json({ error: "No valid branches found" });
+      }
+      
+      console.log(`🚀 Executing deployment ${commitId} to ${selectedBranches.length} branches`);
+      
+      // Update deployment status to 'in_progress'
+      await brandStorage.updateDeployment(commitId, { status: 'in_progress' });
+      
+      // Execute deployment to each branch
+      const results = [];
+      const webhookSecret = process.env.BRAND_WEBHOOK_SECRET || 'dev-webhook-secret-change-in-production';
+      
+      for (const branch of selectedBranches) {
+        try {
+          console.log(`📤 Pushing to branch: ${branch.branchName} (tenant: ${branch.tenantId})`);
+          
+          // Prepare webhook payload
+          const payload = {
+            commitId: deployment.id,
+            tool: deployment.tool,
+            resourceType: deployment.resourceType,
+            version: deployment.version,
+            data: deployment.payloadData // JSON data to merge
+          };
+          
+          // Generate HMAC signature
+          const timestamp = Math.floor(Date.now() / 1000).toString();
+          const payloadString = JSON.stringify(payload);
+          const signaturePayload = `${timestamp}.${payloadString}`;
+          const crypto = await import('crypto');
+          const signature = crypto.createHmac('sha256', webhookSecret)
+            .update(signaturePayload)
+            .digest('hex');
+          
+          // Determine webhook URL based on environment
+          const tenantWebhookUrl = process.env.TENANT_WEBHOOK_BASE_URL 
+            || `http://localhost:3004`; // Default to W3 Suite backend
+          const webhookUrl = `${tenantWebhookUrl}/api/webhooks/brand-deploy/${branch.tenantId}`;
+          
+          console.log(`🔗 Calling webhook: ${webhookUrl}`);
+          
+          // Call tenant webhook
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-webhook-signature': signature,
+              'x-webhook-timestamp': timestamp
+            },
+            body: payloadString
+          });
+          
+          const responseData = await response.json();
+          
+          if (response.ok && responseData.received) {
+            console.log(`✅ Deployment successful for branch: ${branch.branchName}`);
+            
+            // Update branch deployment status
+            await brandStorage.updateBranch(branch.id, {
+              deploymentStatus: 'deployed',
+              lastDeployedCommitId: commitId,
+              lastDeployedAt: new Date()
+            });
+            
+            // Track status in deployment_status table
+            await brandStorage.createDeploymentStatus({
+              deploymentId: commitId,
+              branchId: branch.id,
+              status: 'success',
+              deployedAt: new Date(),
+              metadata: responseData.result
+            });
+            
+            results.push({
+              branchId: branch.id,
+              branchName: branch.branchName,
+              tenantId: branch.tenantId,
+              status: 'success',
+              message: responseData.result?.message || 'Deployed successfully'
+            });
+          } else {
+            console.error(`❌ Deployment failed for branch: ${branch.branchName}`, responseData);
+            
+            // Track failure
+            await brandStorage.createDeploymentStatus({
+              deploymentId: commitId,
+              branchId: branch.id,
+              status: 'failed',
+              errorMessage: responseData.error || 'Webhook call failed',
+              metadata: responseData
+            });
+            
+            results.push({
+              branchId: branch.id,
+              branchName: branch.branchName,
+              tenantId: branch.tenantId,
+              status: 'failed',
+              error: responseData.error || 'Webhook call failed'
+            });
+          }
+        } catch (error) {
+          console.error(`❌ Error deploying to branch ${branch.branchName}:`, error);
+          
+          // Track error
+          await brandStorage.createDeploymentStatus({
+            deploymentId: commitId,
+            branchId: branch.id,
+            status: 'failed',
+            errorMessage: error instanceof Error ? error.message : String(error)
+          });
+          
+          results.push({
+            branchId: branch.id,
+            branchName: branch.branchName,
+            tenantId: branch.tenantId,
+            status: 'failed',
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+      
+      // Update deployment status based on results
+      const allSuccess = results.every(r => r.status === 'success');
+      const someSuccess = results.some(r => r.status === 'success');
+      const finalStatus = allSuccess ? 'completed' : (someSuccess ? 'partial' : 'failed');
+      
+      await brandStorage.updateDeployment(commitId, { 
+        status: finalStatus,
+        completedAt: new Date()
+      });
+      
+      console.log(`🏁 Deployment ${commitId} finished with status: ${finalStatus}`);
+      console.log(`   Success: ${results.filter(r => r.status === 'success').length}/${results.length}`);
+      
+      res.json({
+        success: true,
+        deploymentId: commitId,
+        status: finalStatus,
+        results,
+        summary: {
+          total: results.length,
+          success: results.filter(r => r.status === 'success').length,
+          failed: results.filter(r => r.status === 'failed').length
+        }
+      });
+    } catch (error) {
+      console.error("Error executing deployment:", error);
+      res.status(500).json({ error: "Failed to execute deployment" });
+    }
+  });
+
   // Get single branch
   app.get("/brand-api/deploy/branches/:branchName", async (req, res) => {
     const user = (req as any).user;
-    const { branchName } = req.params;
+    const { branchName} = req.params;
     
     try {
       const branch = await brandStorage.getBranch(branchName);

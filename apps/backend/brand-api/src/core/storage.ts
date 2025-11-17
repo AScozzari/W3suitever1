@@ -179,6 +179,7 @@ export interface IBrandStorage {
   getBranches(tenantId?: string): Promise<DeployCenterBranch[]>;
   getBranch(branchName: string): Promise<DeployCenterBranch | null>;
   createBranch(data: NewDeployCenterBranch): Promise<DeployCenterBranch>;
+  updateBranch(id: string, data: Partial<DeployCenterBranch>): Promise<DeployCenterBranch | null>;
   syncBranchesFromTenants(): Promise<{ created: number; updated: number; total: number }>;
   
   // Deployment Status operations (Track push status per branch)
@@ -1898,6 +1899,29 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results[0];
     } catch (error) {
       console.error('Error creating branch:', error);
+      throw error;
+    }
+  }
+
+  async updateBranch(id: string, data: Partial<DeployCenterBranch>): Promise<DeployCenterBranch | null> {
+    try {
+      const results = await db.update(deployCenterBranches)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(deployCenterBranches.id, id))
+        .returning();
+      
+      if (results.length === 0) {
+        console.log(`⚠️  Branch ${id} not found for update`);
+        return null;
+      }
+      
+      console.log(`✅ Updated branch: ${results[0].branchName}`);
+      return results[0];
+    } catch (error) {
+      console.error(`❌ Error updating branch ${id}:`, error);
       throw error;
     }
   }
