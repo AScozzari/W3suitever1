@@ -262,6 +262,7 @@ import {
   deployCenterStatus,
   deployCenterDeployments,
   deployCenterBranchReleases,
+  deployCenterSessionCommits,
   deployToolEnum,
   deployResourceTypeEnum,
   deployCommitStatusEnum,
@@ -275,7 +276,9 @@ import {
   type DeployCenterDeployment,
   type NewDeployCenterDeployment,
   type DeployCenterBranchRelease,
-  type NewDeployCenterBranchRelease
+  type NewDeployCenterBranchRelease,
+  type DeployCenterSessionCommit,
+  type NewDeployCenterSessionCommit
 } from './brand-interface';
 
 export {
@@ -284,6 +287,7 @@ export {
   deployCenterStatus,
   deployCenterDeployments,
   deployCenterBranchReleases,
+  deployCenterSessionCommits,
   deployToolEnum,
   deployResourceTypeEnum,
   deployCommitStatusEnum,
@@ -297,5 +301,7 @@ export {
   type DeployCenterDeployment,
   type NewDeployCenterDeployment,
   type DeployCenterBranchRelease,
-  type NewDeployCenterBranchRelease
+  type NewDeployCenterBranchRelease,
+  type DeployCenterSessionCommit,
+  type NewDeployCenterSessionCommit
 };

@@ -142,6 +142,25 @@ export default function DeployCenter() {
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <Button
+              onClick={() => setLocation('/deploy-center/ready-queue')}
+              data-testid="button-ready-queue"
+              style={{
+                background: 'linear-gradient(135deg, hsl(142, 76%, 36%), hsl(142, 76%, 43%))',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Rocket size={20} />
+              Ready Queue
+            </Button>
+            <Button
               onClick={() => setLocation('/deploy-center/status')}
               data-testid="button-deploy-status"
               style={{

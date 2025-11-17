@@ -3843,6 +3843,42 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== SESSION COMMITS ENDPOINTS ====================
+
+  // Update session commit (for tracking per-commit deployment progress)
+  app.patch("/brand-api/deploy/session-commits/:id", express.json(), async (req, res) => {
+    const user = (req as any).user;
+    const { id } = req.params;
+    
+    try {
+      console.log(`[SESSION-COMMIT-UPDATE] ID: ${id}, Body:`, JSON.stringify(req.body, null, 2));
+      
+      // Sanitize timestamp fields if they're strings
+      const sanitizedData: any = { ...req.body };
+      if (sanitizedData.startedAt && typeof sanitizedData.startedAt === 'string') {
+        sanitizedData.startedAt = new Date(sanitizedData.startedAt);
+      }
+      if (sanitizedData.completedAt && typeof sanitizedData.completedAt === 'string') {
+        sanitizedData.completedAt = new Date(sanitizedData.completedAt);
+      }
+      
+      const sessionCommit = await brandStorage.updateSessionCommit(id, sanitizedData);
+      
+      if (!sessionCommit) {
+        return res.status(404).json({ error: "Session commit not found" });
+      }
+      
+      res.json({
+        success: true,
+        data: sessionCommit,
+        message: "Session commit updated successfully"
+      });
+    } catch (error) {
+      console.error(`Error updating session commit ${id}:`, error);
+      res.status(500).json({ error: "Failed to update session commit" });
+    }
+  });
+
   // ==================== BRANCH RELEASES ENDPOINTS ====================
 
   // Get all branch releases or for a specific branch

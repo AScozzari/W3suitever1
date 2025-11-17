@@ -280,7 +280,7 @@ export const deployToolEnum = pgEnum('deploy_tool', ['wms', 'crm', 'pos', 'analy
 export const deployResourceTypeEnum = pgEnum('deploy_resource_type', [
   'supplier', 'product', 'product_type', 'campaign', 'pipeline', 'funnel', 'workflow', 'task'
 ]);
-export const deployCommitStatusEnum = pgEnum('deploy_commit_status', ['ready', 'deployed', 'failed', 'archived']);
+export const deployCommitStatusEnum = pgEnum('deploy_commit_status', ['ready', 'in_progress', 'deployed', 'failed', 'archived']);
 
 // Deploy Center Commits (versioned deployments)
 export const deployCenterCommits = brandInterfaceSchema.table("deploy_center_commits", {
@@ -419,6 +419,26 @@ export const deployCenterBranchReleases = brandInterfaceSchema.table("deploy_cen
   uniqueIndex("deploy_releases_branch_tool_unique").on(table.branchName, table.tool),
 ]);
 
+// Deploy Center Session Commits (join table for session-commit relationship with per-branch tracking)
+export const deployCenterSessionCommits = brandInterfaceSchema.table("deploy_center_session_commits", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  deploymentSessionId: uuid("deployment_session_id").notNull(),
+  commitId: varchar("commit_id", { length: 100 }).notNull(),
+  targetBranch: varchar("target_branch", { length: 200 }).notNull(),
+  status: deployCommitStatusEnum("status").notNull().default('ready'),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("deploy_session_commits_session_idx").on(table.deploymentSessionId),
+  index("deploy_session_commits_commit_idx").on(table.commitId),
+  index("deploy_session_commits_branch_idx").on(table.targetBranch),
+  uniqueIndex("deploy_session_commits_unique").on(table.deploymentSessionId, table.commitId, table.targetBranch),
+]);
+
 // Zod schemas for new Deploy Center tables
 export const insertDeployCenterDeploymentSchema = createInsertSchema(deployCenterDeployments).omit({
   id: true,
@@ -438,10 +458,20 @@ export const insertDeployCenterBranchReleaseSchema = createInsertSchema(deployCe
   tool: z.enum(['wms', 'crm', 'pos', 'analytics', 'hr']),
 });
 
+export const insertDeployCenterSessionCommitSchema = createInsertSchema(deployCenterSessionCommits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: z.enum(['ready', 'in_progress', 'deployed', 'failed', 'archived']).optional(),
+});
+
 export type DeployCenterDeployment = typeof deployCenterDeployments.$inferSelect;
 export type NewDeployCenterDeployment = z.infer<typeof insertDeployCenterDeploymentSchema>;
 export type DeployCenterBranchRelease = typeof deployCenterBranchReleases.$inferSelect;
 export type NewDeployCenterBranchRelease = z.infer<typeof insertDeployCenterBranchReleaseSchema>;
+export type DeployCenterSessionCommit = typeof deployCenterSessionCommits.$inferSelect;
+export type NewDeployCenterSessionCommit = z.infer<typeof insertDeployCenterSessionCommitSchema>;
 
 // BRAND CONFIGS - Migrated to brand_interface schema
 export const brandConfigs = brandInterfaceSchema.table("brand_configs", {

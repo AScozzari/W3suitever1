@@ -4,14 +4,15 @@ import {
 } from "../db/index.js";
 import {
   brandCategories, brandProductTypes, brandProducts, brandSuppliers, brandWorkflows, brandTasks,
-  deployCenterCommits, deployCenterBranches, deployCenterStatus, deployCenterDeployments, deployCenterBranchReleases,
+  deployCenterCommits, deployCenterBranches, deployCenterStatus, deployCenterDeployments, deployCenterBranchReleases, deployCenterSessionCommits,
   type BrandCategory, type BrandProductType, type BrandProduct, type BrandSupplier,
   type InsertBrandCategory, type InsertBrandProductType, type InsertBrandProduct, type InsertBrandSupplier,
   type UpdateBrandCategory, type UpdateBrandProductType, type UpdateBrandProduct, type UpdateBrandSupplier,
   type DeployCenterCommit, type NewDeployCenterCommit, type DeployCenterBranch, type NewDeployCenterBranch,
   type DeployCenterStatus, type NewDeployCenterStatus,
   type DeployCenterDeployment, type NewDeployCenterDeployment,
-  type DeployCenterBranchRelease, type NewDeployCenterBranchRelease
+  type DeployCenterBranchRelease, type NewDeployCenterBranchRelease,
+  type DeployCenterSessionCommit, type NewDeployCenterSessionCommit
 } from "../../../api/src/db/schema/brand-interface.js";
 import type { BrandWorkflow, InsertBrandWorkflow, BrandTask, NewBrandTask } from "../../../api/src/db/schema/brand-interface.js";
 // Import W3Suite database connection and tables for organizations and legal entities management
@@ -60,6 +61,11 @@ export interface SupplierWithMetadata extends BrandSupplier {
   templateId?: string | null;
   externalId?: string | null;
   origin?: 'brand' | 'tenant';
+}
+
+// Extended deployment session type with commits
+export interface DeploymentSessionWithCommits extends DeployCenterDeployment {
+  commits?: DeployCenterSessionCommit[];
 }
 
 export interface IBrandStorage {
@@ -207,10 +213,13 @@ export interface IBrandStorage {
   
   // Deployment Sessions operations (Batch deployment management)
   getDeploymentSessions(filters?: { status?: string; launchedBy?: string }): Promise<DeployCenterDeployment[]>;
-  getDeploymentSession(id: string): Promise<DeployCenterDeployment | null>;
+  getDeploymentSession(id: string): Promise<DeploymentSessionWithCommits | null>;
   createDeploymentSession(data: NewDeployCenterDeployment): Promise<DeployCenterDeployment>;
   launchDeploymentSession(id: string): Promise<DeployCenterDeployment | null>;
   updateDeploymentSession(id: string, data: Partial<DeployCenterDeployment>): Promise<DeployCenterDeployment | null>;
+  
+  // Session Commits operations (Track per-commit deployment status)
+  updateSessionCommit(id: string, data: Partial<DeployCenterSessionCommit>): Promise<DeployCenterSessionCommit | null>;
   
   // Branch Releases operations (Track active versions per branch/tool)
   getBranchReleases(branchName?: string): Promise<DeployCenterBranchRelease[]>;
@@ -2370,14 +2379,26 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async getDeploymentSession(id: string): Promise<DeployCenterDeployment | null> {
+  async getDeploymentSession(id: string): Promise<DeploymentSessionWithCommits | null> {
     try {
       const results = await db.select()
         .from(deployCenterDeployments)
         .where(eq(deployCenterDeployments.id, id))
         .limit(1);
       
-      return results[0] || null;
+      if (!results[0]) return null;
+      
+      const session = results[0];
+      
+      const commits = await db.select()
+        .from(deployCenterSessionCommits)
+        .where(eq(deployCenterSessionCommits.deploymentSessionId, id))
+        .orderBy(deployCenterSessionCommits.createdAt);
+      
+      return {
+        ...session,
+        commits: commits as DeployCenterSessionCommit[]
+      };
     } catch (error) {
       console.error(`Error fetching deployment session ${id}:`, error);
       throw error;
@@ -2386,10 +2407,13 @@ class BrandDrizzleStorage implements IBrandStorage {
 
   async createDeploymentSession(data: NewDeployCenterDeployment): Promise<DeployCenterDeployment> {
     try {
+      const commitIds = data.commitIds as any[];
+      const targetBranches = data.targetBranches as any[];
+      
       const results = await db.insert(deployCenterDeployments)
         .values({
           ...data,
-          totalBranches: (data.targetBranches as any[]).length,
+          totalBranches: commitIds.length * targetBranches.length,
           completedBranches: 0,
           failedBranches: 0,
           createdAt: new Date(),
@@ -2397,7 +2421,29 @@ class BrandDrizzleStorage implements IBrandStorage {
         } as any)
         .returning();
       
-      return results[0];
+      const session = results[0];
+      
+      const sessionCommits = [];
+      for (const commitId of commitIds) {
+        for (const branchName of targetBranches) {
+          sessionCommits.push({
+            deploymentSessionId: session.id,
+            commitId: commitId,
+            targetBranch: branchName,
+            status: 'ready' as any,
+            metadata: {},
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        }
+      }
+      
+      if (sessionCommits.length > 0) {
+        await db.insert(deployCenterSessionCommits)
+          .values(sessionCommits as any);
+      }
+      
+      return session;
     } catch (error) {
       console.error('Error creating deployment session:', error);
       throw error;
@@ -2435,6 +2481,22 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results[0] || null;
     } catch (error) {
       console.error(`Error updating deployment session ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== SESSION COMMITS OPERATIONS ====================
+
+  async updateSessionCommit(id: string, data: Partial<DeployCenterSessionCommit>): Promise<DeployCenterSessionCommit | null> {
+    try {
+      const results = await db.update(deployCenterSessionCommits)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(deployCenterSessionCommits.id, id))
+        .returning();
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error(`Error updating session commit ${id}:`, error);
       throw error;
     }
   }
