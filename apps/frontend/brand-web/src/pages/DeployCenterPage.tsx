@@ -4,16 +4,24 @@ import {
   Rocket, 
   Activity, 
   GitBranch,
-  Clock
+  Clock,
+  LayoutDashboard
 } from 'lucide-react';
+import DashboardTab from '@/components/deploy-center/DashboardTab';
 import ReadyQueueTab from '@/components/deploy-center/ReadyQueueTab';
 import StatusRealTimeTab from '@/components/deploy-center/StatusRealTimeTab';
 import BrowseCommitsTab from '@/components/deploy-center/BrowseCommitsTab';
 
 export default function DeployCenterPage() {
-  const [activeTab, setActiveTab] = useState('ready-queue');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const tabConfigs = useMemo(() => [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      testId: 'tab-dashboard'
+    },
     {
       id: 'ready-queue',
       label: 'Ready Queue',
@@ -116,6 +124,7 @@ export default function DeployCenterPage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, overflow: 'auto' }}>
+          {activeTab === 'dashboard' && <DashboardTab />}
           {activeTab === 'ready-queue' && <ReadyQueueTab />}
           {activeTab === 'status' && <StatusRealTimeTab />}
           {activeTab === 'browse' && <BrowseCommitsTab />}
