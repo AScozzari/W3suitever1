@@ -523,10 +523,10 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       padding: '2vh',
       overflow: 'hidden'
     }}>
-      {/* Main Workflow Builder Container - 95vw x 95vh */}
+      {/* Main Workflow Builder Container - Responsive con dimensioni ridotte */}
       <div style={{
-        width: '95vw',
-        height: '95vh',
+        width: 'calc(95vw - 8cm)',
+        height: 'calc(95vh - 6cm)',
         display: 'flex',
         flexDirection: 'column',
         background: '#ffffff',
