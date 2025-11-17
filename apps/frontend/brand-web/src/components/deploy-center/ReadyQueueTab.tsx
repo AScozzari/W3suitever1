@@ -186,7 +186,11 @@ export default function ReadyQueueTab() {
               >
                 <Checkbox
                   checked={isSelected}
-                  onCheckedChange={() => handleToggleCommit(commit.id)}
+                  onCheckedChange={(e) => {
+                    e?.stopPropagation?.();
+                    handleToggleCommit(commit.id);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
                   data-testid={`checkbox-${commit.id}`}
                 />
                 

@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import BrandLayout from '@/components/BrandLayout';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { 
   Rocket, 
   Activity, 
@@ -117,19 +116,9 @@ export default function DeployCenterPage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, overflow: 'auto' }}>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsContent value="ready-queue" className="mt-0">
-              {activeTab === 'ready-queue' && <ReadyQueueTab />}
-            </TabsContent>
-
-            <TabsContent value="status" className="mt-0">
-              {activeTab === 'status' && <StatusRealTimeTab />}
-            </TabsContent>
-
-            <TabsContent value="browse" className="mt-0">
-              {activeTab === 'browse' && <BrowseCommitsTab />}
-            </TabsContent>
-          </Tabs>
+          {activeTab === 'ready-queue' && <ReadyQueueTab />}
+          {activeTab === 'status' && <StatusRealTimeTab />}
+          {activeTab === 'browse' && <BrowseCommitsTab />}
         </div>
       </div>
     </BrandLayout>
