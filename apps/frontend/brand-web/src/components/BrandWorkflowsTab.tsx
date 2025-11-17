@@ -526,11 +526,18 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
   }), []);
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Canvas Header */}
-      <div className="windtre-glass-panel p-4 border-b border-white/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#ffffff' }}>
+      {/* Glassmorphism Header */}
+      <div style={{
+        background: 'hsla(0, 0%, 100%, 0.7)',
+        backdropFilter: 'blur(24px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+        padding: '1rem 1.5rem',
+        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Button
               onClick={onBack}
               variant="outline"
@@ -541,14 +548,26 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               Torna alla Lista
             </Button>
             <div>
-              <h2 className="font-semibold text-gray-900">{workflow?.name || 'Nuovo Workflow'}</h2>
-              <p className="text-xs text-gray-500">{workflow?.code || 'Codice non assegnato'}</p>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'hsl(var(--foreground))', marginBottom: '0.25rem' }}>
+                {workflow?.name || 'Nuovo Workflow'}
+              </h2>
+              <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>
+                {workflow?.code || 'Codice non assegnato'}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {/* Node Count Badge */}
-            <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded text-xs font-medium text-blue-700">
+            <div style={{
+              padding: '0.5rem 1rem',
+              background: 'hsla(220, 90%, 56%, 0.1)',
+              border: '1px solid hsla(220, 90%, 56%, 0.3)',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: 'hsl(220, 90%, 56%)'
+            }}>
               {nodes.length} nodi
             </div>
             
@@ -561,7 +580,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               data-testid="button-undo"
               title="Annulla (Ctrl+Z)"
             >
-              <Undo2 className="h-4 w-4" />
+              <Undo2 size={16} />
             </Button>
             <Button
               onClick={redo}
@@ -571,40 +590,20 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               data-testid="button-redo"
               title="Ripeti (Ctrl+Y)"
             >
-              <Redo2 className="h-4 w-4" />
+              <Redo2 size={16} />
             </Button>
             
-            {/* Configure Button (visible only when node selected) */}
-            {selectedNodeId && (
-              <Button
-                onClick={() => setIsConfigPanelOpen(true)}
-                variant="outline"
-                size="sm"
-                className="border-windtre-orange text-windtre-orange hover:bg-windtre-orange/10"
-                data-testid="button-configure-node"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configura Nodo
-              </Button>
-            )}
-            
-            <Button
-              onClick={() => setIsPaletteOpen(!isPaletteOpen)}
-              variant="outline"
-              size="sm"
-              data-testid="button-toggle-palette"
-            >
-              <Palette className="h-4 w-4 mr-2" />
-              {isPaletteOpen ? 'Nascondi' : 'Mostra'} Palette
-            </Button>
             <Button
               onClick={onAIAssistant}
               variant="outline"
               size="sm"
-              className="border-windtre-purple text-windtre-purple hover:bg-windtre-purple/10"
+              style={{
+                borderColor: 'hsl(274, 65%, 46%)',
+                color: 'hsl(274, 65%, 46%)'
+              }}
               data-testid="button-ai-assistant"
             >
-              <Brain className="h-4 w-4 mr-2" />
+              <Brain size={16} style={{ marginRight: '0.5rem' }} />
               AI Assistant
             </Button>
             <Button
@@ -626,75 +625,115 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               }}
               data-testid="button-test-workflow"
             >
-              <PlayCircle className="h-4 w-4 mr-2" />
+              <PlayCircle size={16} style={{ marginRight: '0.5rem' }} />
               Test Run
             </Button>
             <Button
               onClick={handleSaveClick}
               size="sm"
-              className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+              style={{
+                background: 'linear-gradient(135deg, hsl(25, 95%, 53%), hsl(25, 100%, 60%))',
+                color: 'white',
+                border: 'none'
+              }}
               data-testid="button-save-workflow"
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save size={16} style={{ marginRight: '0.5rem' }} />
               Salva Workflow
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Canvas + Palette Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Node Palette Sidebar */}
-        {isPaletteOpen && (
-          <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-            <div className="p-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900">Node Library</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Trascina i nodi nella canvas
-              </p>
+      {/* Unified Layout: Sidebar + Canvas */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Node Library Sidebar - Always Visible */}
+        <div style={{
+          width: '280px',
+          background: '#fafafa',
+          borderRight: '1px solid hsl(var(--border))',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Sidebar Header */}
+          <div style={{
+            padding: '1.25rem',
+            borderBottom: '1px solid hsl(var(--border))',
+            background: '#ffffff'
+          }}>
+            <h3 style={{
+              fontSize: '0.95rem',
+              fontWeight: '700',
+              color: 'hsl(var(--foreground))',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.02em'
+            }}>
+              Node Library
+            </h3>
+            <p style={{
+              fontSize: '0.75rem',
+              color: 'hsl(var(--muted-foreground))'
+            }}>
+              Trascina i nodi nel canvas
+            </p>
+          </div>
+          
+          {/* Search Bar */}
+          <div style={{ padding: '1rem' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={16} style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'hsl(var(--muted-foreground))'
+              }} />
+              <Input
+                placeholder="Cerca nodi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  paddingLeft: '2.5rem',
+                  fontSize: '0.875rem'
+                }}
+                data-testid="input-search-nodes"
+              />
             </div>
-            
-            {/* Search and Category Filter */}
-            <div className="p-4 border-b border-gray-100 space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Cerca nodi..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-nodes"
-                />
-              </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Tutte le Categorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le Categorie</SelectItem>
-                  <SelectItem value="trigger">🔵 Triggers</SelectItem>
-                  <SelectItem value="action">🟢 Actions</SelectItem>
-                  <SelectItem value="ai">🟣 AI Nodes</SelectItem>
-                  <SelectItem value="routing">🟠 Routing</SelectItem>
-                  <SelectItem value="integration">🔷 Integration</SelectItem>
-                  <SelectItem value="flow-control">⚪ Flow Control</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Triggers */}
-              {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
+          {/* Nodes List - Scrollable */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '0 1rem 1rem 1rem'
+          }}>
+            {/* Triggers Category */}
+            {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: 'hsl(220, 90%, 56%)',
+                  marginBottom: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'hsl(220, 90%, 56%)'
+                  }} />
                   TRIGGERS ({getNodesByCategory('trigger').filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
                   ).length})
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {getNodesByCategory('trigger')
                     .filter(node => 
                       !searchTerm || 
@@ -713,19 +752,34 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
-              )}
-              {/* Actions */}
-              {(selectedCategory === 'all' || selectedCategory === 'action') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full" />
+            )}
+            {/* Actions Category */}
+            {(selectedCategory === 'all' || selectedCategory === 'action') && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: 'hsl(142, 76%, 36%)',
+                  marginBottom: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'hsl(142, 76%, 36%)'
+                  }} />
                   ACTIONS ({getNodesByCategory('action').filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
                   ).length})
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {getNodesByCategory('action')
                     .filter(node => 
                       !searchTerm || 
@@ -744,19 +798,34 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
-              )}
-              {/* AI Nodes */}
-              {(selectedCategory === 'all' || selectedCategory === 'ai') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full" />
+            )}
+            {/* AI Nodes Category */}
+            {(selectedCategory === 'all' || selectedCategory === 'ai') && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: 'hsl(274, 65%, 46%)',
+                  marginBottom: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'hsl(274, 65%, 46%)'
+                  }} />
                   AI ({getNodesByCategory('ai').filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
                   ).length})
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {getNodesByCategory('ai')
                     .filter(node => 
                       !searchTerm || 
@@ -775,19 +844,34 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
-              )}
-              {/* Routing */}
-              {(selectedCategory === 'all' || selectedCategory === 'routing') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full" />
+            )}
+            {/* Routing Category */}
+            {(selectedCategory === 'all' || selectedCategory === 'routing') && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: 'hsl(25, 95%, 53%)',
+                  marginBottom: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'hsl(25, 95%, 53%)'
+                  }} />
                   ROUTING ({getNodesByCategory('routing').filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
                   ).length})
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {getNodesByCategory('routing')
                     .filter(node => 
                       !searchTerm || 
@@ -806,19 +890,34 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
-              )}
-              {/* Integration */}
-              {(selectedCategory === 'all' || selectedCategory === 'integration') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-cyan-500 rounded-full" />
+            )}
+            {/* Integration Category */}
+            {(selectedCategory === 'all' || selectedCategory === 'integration') && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: 'hsl(220, 90%, 56%)',
+                  marginBottom: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'hsl(220, 90%, 56%)'
+                  }} />
                   INTEGRATION ({getNodesByCategory('integration').filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
                   ).length})
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {getNodesByCategory('integration')
                     .filter(node => 
                       !searchTerm || 
@@ -837,19 +936,34 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
-              )}
-              {/* Flow Control */}
-              {(selectedCategory === 'all' || selectedCategory === 'flow-control') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-500 rounded-full" />
+            )}
+            {/* Flow Control Category */}
+            {(selectedCategory === 'all' || selectedCategory === 'flow-control') && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: 'hsl(var(--muted-foreground))',
+                  marginBottom: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'hsl(var(--muted-foreground))'
+                  }} />
                   FLOW CONTROL ({getNodesByCategory('flow-control').filter(node => 
                     !searchTerm || 
                     node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     node.description.toLowerCase().includes(searchTerm.toLowerCase())
                   ).length})
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {getNodesByCategory('flow-control')
                     .filter(node => 
                       !searchTerm || 
@@ -868,10 +982,9 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
                   ))}
                 </div>
               </div>
-              )}
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* ReactFlow Canvas */}
         <div 
@@ -906,25 +1019,6 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
             <MiniMap />
           </ReactFlow>
         </div>
-
-        {/* Node Config Panel */}
-        {isConfigPanelOpen && selectedNodeId && (() => {
-          const selectedNode = nodes.find(n => n.id === selectedNodeId);
-          if (!selectedNode) return null;
-          
-          return (
-            <NodeConfigPanel
-              node={selectedNode}
-              allNodes={nodes}
-              isOpen={isConfigPanelOpen}
-              onClose={() => {
-                setIsConfigPanelOpen(false);
-                selectNode(null);
-              }}
-              onSave={handleNodeConfigSave}
-            />
-          );
-        })()}
       </div>
       
       {/* Workflow Test Result Dialog */}
@@ -1043,10 +1137,10 @@ function NodePaletteItem({ nodeId, label, description, icon, onDragStart }: Node
     >
       <div className="flex items-start gap-3">
         <div 
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white"
           style={{ backgroundColor: color }}
         >
-          <span className="text-xs">{icon}</span>
+          <span className="text-sm">{icon}</span>
         </div>
         <div className="flex-1">
           <h5 className="text-sm font-medium text-gray-900 leading-tight">{label}</h5>
