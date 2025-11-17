@@ -109,8 +109,7 @@ export default function DeployCenter() {
     <BrandLayout>
       <div style={{
         padding: '2rem',
-        maxWidth: '1600px',
-        margin: '0 auto'
+        width: '100%'
       }}>
         {/* Header */}
         <div style={{

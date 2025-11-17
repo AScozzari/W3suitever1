@@ -111,7 +111,7 @@ export default function CommitBrowser() {
 
   return (
     <BrandLayout>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ width: '100%', padding: '0 2rem' }}>
         {/* Header */}
         <div style={{
           display: 'flex',
