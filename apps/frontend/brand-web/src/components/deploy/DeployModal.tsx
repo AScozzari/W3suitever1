@@ -560,17 +560,16 @@ export default function DeployModal({ commit, open, onClose }: DeployModalProps)
               )}
             </ScrollArea>
           </div>
-        </div>
 
-        {/* Footer Actions */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '1.5rem',
-          paddingTop: '1rem',
-          borderTop: '1px solid hsl(var(--border))'
-        }}>
+          {/* Footer Actions */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '1.5rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid hsl(var(--border))'
+          }}>
           <div style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))' }}>
             {selectedBranches.size > 0 && (
               <span data-testid="text-footer-count">
@@ -607,8 +606,8 @@ export default function DeployModal({ commit, open, onClose }: DeployModalProps)
               )}
             </Button>
           </div>
-        </div>
           </div>
+        </div>
         )}
       </DialogContent>
     </Dialog>
