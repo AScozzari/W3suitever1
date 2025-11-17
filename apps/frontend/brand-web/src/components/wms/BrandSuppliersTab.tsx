@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
-  Search, Plus, Building2, MoreHorizontal, Pencil, Trash2, RefreshCw
+  Search, Plus, Building2, MoreHorizontal, Pencil, Trash2, RefreshCw, FileCode, Rocket, Users
 } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { SupplierFormModal } from './SupplierFormModal';
@@ -33,6 +33,13 @@ interface BrandSupplier {
   email?: string;
   phone?: string;
   status: 'active' | 'inactive';
+  isTemplate?: boolean;
+  isDeployed?: boolean;
+  deploymentCount?: number;
+  tenantId?: string;
+  tenantName?: string;
+  tenantSlug?: string;
+  templateId?: string;
 }
 
 export default function BrandSuppliersTab() {
@@ -60,6 +67,62 @@ export default function BrandSuppliersTab() {
   });
 
   const columns: ColumnDef<BrandSupplier>[] = [
+    {
+      id: 'type',
+      header: 'Tipo',
+      cell: ({ row }) => {
+        const { isTemplate, isDeployed, deploymentCount, tenantName } = row.original;
+        if (isTemplate) {
+          return (
+            <div className="flex flex-col gap-1">
+              <Badge 
+                variant="outline" 
+                style={{ 
+                  borderColor: 'hsl(var(--brand-orange))', 
+                  color: 'hsl(var(--brand-orange))',
+                  width: 'fit-content'
+                }}
+                data-testid={`badge-template-${row.original.id}`}
+              >
+                <FileCode className="h-3 w-3 mr-1" />
+                Template
+              </Badge>
+              {deploymentCount! > 0 && (
+                <span className="text-xs text-gray-500" data-testid={`text-deployments-${row.original.id}`}>
+                  <Rocket className="h-3 w-3 inline mr-1" />
+                  {deploymentCount} deployment
+                </span>
+              )}
+            </div>
+          );
+        }
+        if (isDeployed) {
+          return (
+            <div className="flex flex-col gap-1">
+              <Badge 
+                variant="outline" 
+                style={{ 
+                  borderColor: 'hsl(142, 76%, 36%)', 
+                  color: 'hsl(142, 76%, 36%)',
+                  width: 'fit-content'
+                }}
+                data-testid={`badge-deployed-${row.original.id}`}
+              >
+                <Rocket className="h-3 w-3 mr-1" />
+                Deployed
+              </Badge>
+              {tenantName && (
+                <span className="text-xs text-gray-500" data-testid={`text-tenant-${row.original.id}`}>
+                  <Users className="h-3 w-3 inline mr-1" />
+                  {tenantName}
+                </span>
+              )}
+            </div>
+          );
+        }
+        return <span className="text-gray-400">-</span>;
+      },
+    },
     {
       accessorKey: 'code',
       header: 'Codice',

@@ -47,6 +47,19 @@ import type {
 } from "../db/index.js";
 import { nanoid } from "nanoid";
 
+// Extended supplier type with deployment metadata
+export interface SupplierWithMetadata extends BrandSupplier {
+  isTemplate?: boolean;
+  isDeployed?: boolean;
+  deploymentCount?: number;
+  tenantId?: string;
+  tenantName?: string | null;
+  tenantSlug?: string | null;
+  templateId?: string | null;
+  externalId?: string | null;
+  origin?: 'brand' | 'tenant';
+}
+
 export interface IBrandStorage {
   // Tenant operations
   getTenants(): Promise<BrandTenant[]>;
@@ -145,7 +158,7 @@ export interface IBrandStorage {
   deleteProduct(id: string): Promise<boolean>;
   
   // Suppliers operations
-  getSuppliers(filters?: { status?: string; search?: string }): Promise<BrandSupplier[]>;
+  getSuppliers(filters?: { status?: string; search?: string }): Promise<SupplierWithMetadata[]>;
   getSupplier(id: string): Promise<BrandSupplier | null>;
   createSupplier(data: InsertBrandSupplier & { createdBy: string }): Promise<BrandSupplier>;
   updateSupplier(id: string, data: UpdateBrandSupplier & { updatedBy?: string }): Promise<BrandSupplier | null>;
@@ -1461,14 +1474,15 @@ class BrandDrizzleStorage implements IBrandStorage {
   }
 
   // Suppliers operations
-  async getSuppliers(filters?: { status?: string; search?: string }): Promise<BrandSupplier[]> {
+  async getSuppliers(filters?: { status?: string; search?: string }): Promise<SupplierWithMetadata[]> {
     try {
-      let query = db.select().from(brandSuppliers);
+      // 1. Get templates from brand_interface.brand_suppliers
+      let templateQuery = db.select().from(brandSuppliers);
       
-      const conditions = [];
-      if (filters?.status) conditions.push(eq(brandSuppliers.status, filters.status as any));
+      const templateConditions = [];
+      if (filters?.status) templateConditions.push(eq(brandSuppliers.status, filters.status as any));
       if (filters?.search) {
-        conditions.push(
+        templateConditions.push(
           or(
             like(brandSuppliers.name, `%${filters.search}%`),
             like(brandSuppliers.code, `%${filters.search}%`)
@@ -1476,10 +1490,78 @@ class BrandDrizzleStorage implements IBrandStorage {
         );
       }
       
-      const results = conditions.length > 0 
-        ? await query.where(and(...conditions)).orderBy(brandSuppliers.name)
-        : await query.orderBy(brandSuppliers.name);
-      return results;
+      const templates = templateConditions.length > 0 
+        ? await templateQuery.where(and(...templateConditions)).orderBy(brandSuppliers.name)
+        : await templateQuery.orderBy(brandSuppliers.name);
+
+      // 2. Get deployed suppliers from w3suite.suppliers WHERE origin='brand' with tenant info
+      const deployedConditions = [eq(w3Suppliers.origin, 'brand')];
+      
+      if (filters?.status) {
+        deployedConditions.push(eq(w3Suppliers.status, filters.status as any));
+      }
+      if (filters?.search) {
+        deployedConditions.push(
+          or(
+            like(w3Suppliers.name, `%${filters.search}%`),
+            like(w3Suppliers.code, `%${filters.search}%`)
+          )
+        );
+      }
+      
+      const deployed = await w3db.select({
+        id: w3Suppliers.id,
+        name: w3Suppliers.name,
+        code: w3Suppliers.code,
+        email: w3Suppliers.email,
+        phone: w3Suppliers.phone,
+        website: w3Suppliers.website,
+        vatNumber: w3Suppliers.vatNumber,
+        taxCode: w3Suppliers.taxCode,
+        origin: w3Suppliers.origin,
+        tenantId: w3Suppliers.tenantId,
+        tenantName: w3Tenants.name,
+        tenantSlug: w3Tenants.slug,
+        externalId: w3Suppliers.externalId,
+        status: w3Suppliers.status,
+        createdAt: w3Suppliers.createdAt,
+        updatedAt: w3Suppliers.updatedAt
+      })
+      .from(w3Suppliers)
+      .leftJoin(w3Tenants, eq(w3Suppliers.tenantId, w3Tenants.id))
+      .where(and(...deployedConditions))
+      .orderBy(w3Suppliers.name);
+
+      // 3. Count deployments per template
+      const deploymentCounts = deployed.reduce((acc, supplier) => {
+        const templateId = supplier.externalId || supplier.id;
+        acc[templateId] = (acc[templateId] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // 4. Enrich templates with deployment metadata
+      const enrichedTemplates = templates.map(template => ({
+        ...template,
+        isTemplate: true,
+        isDeployed: false,
+        deploymentCount: deploymentCounts[template.id] || 0,
+        tenants: [] // Template non ha tenant specifico
+      }));
+
+      // 5. Format deployed suppliers with metadata
+      const formattedDeployed = deployed.map(supplier => ({
+        ...supplier,
+        isTemplate: false,
+        isDeployed: true,
+        deploymentCount: 0, // Deployed supplier non ha sotto-deployment
+        templateId: supplier.externalId,
+        tenantId: supplier.tenantId,
+        tenantName: supplier.tenantName,
+        tenantSlug: supplier.tenantSlug
+      }));
+
+      // 6. Combine and return unified view
+      return [...enrichedTemplates, ...formattedDeployed];
     } catch (error) {
       console.error('Error fetching brand suppliers:', error);
       throw error;
