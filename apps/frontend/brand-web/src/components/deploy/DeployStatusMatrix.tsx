@@ -42,7 +42,8 @@ interface DeployStatusMatrixProps {
   className?: string;
 }
 
-type StatusFilter = 'all' | 'pending' | 'in_progress' | 'completed' | 'failed' | 'partial';
+type StatusFilter = 'all' | 'ready' | 'in_progress' | 'deployed' | 'failed' | 'archived';
+type ToolFilter = 'all' | 'wms' | 'crm' | 'pos' | 'analytics' | 'hr';
 
 const statusConfig: Record<string, { label: string; icon: any; color: string; bg: string }> = {
   ready: {
@@ -97,10 +98,16 @@ const statusConfig: Record<string, { label: string; icon: any; color: string; bg
 
 export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatrixProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [toolFilter, setToolFilter] = useState<ToolFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [tenantFilter, setTenantFilter] = useState('');
+  const [storeFilter, setStoreFilter] = useState('');
   
   const { data: statuses, isLoading, error, dataUpdatedAt } = useDeploymentStatuses({ 
     deploymentId,
+    tool: toolFilter !== 'all' ? toolFilter : undefined,
+    tenantSlug: tenantFilter || undefined,
+    storeCode: storeFilter || undefined,
     limit: 500 
   });
   
@@ -115,18 +122,19 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
     const term = searchTerm.toLowerCase();
     filteredStatuses = filteredStatuses.filter(s => 
       s.branchName.toLowerCase().includes(term) ||
-      s.tenantName.toLowerCase().includes(term)
+      s.tenantName.toLowerCase().includes(term) ||
+      s.commitName.toLowerCase().includes(term)
     );
   }
   
   // Calculate summary
   const summary = {
     total: statuses?.length || 0,
-    pending: statuses?.filter(s => s.status === 'pending').length || 0,
+    ready: statuses?.filter(s => s.status === 'ready').length || 0,
     inProgress: statuses?.filter(s => s.status === 'in_progress').length || 0,
-    completed: statuses?.filter(s => s.status === 'completed').length || 0,
+    deployed: statuses?.filter(s => s.status === 'deployed').length || 0,
     failed: statuses?.filter(s => s.status === 'failed').length || 0,
-    partial: statuses?.filter(s => s.status === 'partial').length || 0,
+    archived: statuses?.filter(s => s.status === 'archived').length || 0,
   };
   
   const lastUpdate = dataUpdatedAt ? formatDistanceToNow(new Date(dataUpdatedAt), { 
@@ -147,58 +155,82 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
   return (
     <div className={cn('space-y-6', className)}>
       {/* Summary Cards */}
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-200 backdrop-blur-sm bg-white/80">
           <p className="text-sm text-gray-600 mb-1">Totale</p>
           <p className="text-2xl font-bold text-gray-900">{summary.total}</p>
         </div>
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">In Attesa</p>
-          <p className="text-2xl font-bold text-gray-600">{summary.pending}</p>
+          <p className="text-sm text-gray-600 mb-1">Pronti</p>
+          <p className="text-2xl font-bold text-gray-600">{summary.ready}</p>
         </div>
         <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
           <p className="text-sm text-blue-600 mb-1">In Corso</p>
           <p className="text-2xl font-bold text-blue-600">{summary.inProgress}</p>
         </div>
         <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-          <p className="text-sm text-green-600 mb-1">Completati</p>
-          <p className="text-2xl font-bold text-green-600">{summary.completed}</p>
+          <p className="text-sm text-green-600 mb-1">Deployati</p>
+          <p className="text-2xl font-bold text-green-600">{summary.deployed}</p>
         </div>
         <div className="bg-red-50 rounded-xl p-4 border border-red-200">
           <p className="text-sm text-red-600 mb-1">Falliti</p>
           <p className="text-2xl font-bold text-red-600">{summary.failed}</p>
         </div>
-        <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-          <p className="text-sm text-orange-600 mb-1">Parziali</p>
-          <p className="text-2xl font-bold text-orange-600">{summary.partial}</p>
-        </div>
       </div>
       
       {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="flex-1">
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex-1 min-w-[200px]">
           <Input
-            placeholder="Cerca tenant o branch..."
+            placeholder="Cerca commit, tenant o branch..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="bg-white/80 backdrop-blur-sm"
             data-testid="input-search-status"
           />
         </div>
+        <Select value={toolFilter} onValueChange={(v) => setToolFilter(v as ToolFilter)}>
+          <SelectTrigger className="w-36 bg-white/80 backdrop-blur-sm" data-testid="select-tool-filter">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i tool</SelectItem>
+            <SelectItem value="wms">WMS</SelectItem>
+            <SelectItem value="crm">CRM</SelectItem>
+            <SelectItem value="pos">POS</SelectItem>
+            <SelectItem value="analytics">Analytics</SelectItem>
+            <SelectItem value="hr">HR</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="w-48 bg-white/80 backdrop-blur-sm" data-testid="select-status-filter">
+          <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm" data-testid="select-status-filter">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tutti gli status</SelectItem>
-            <SelectItem value="pending">In Attesa</SelectItem>
+            <SelectItem value="ready">Pronti</SelectItem>
             <SelectItem value="in_progress">In Corso</SelectItem>
-            <SelectItem value="completed">Completati</SelectItem>
+            <SelectItem value="deployed">Deployati</SelectItem>
             <SelectItem value="failed">Falliti</SelectItem>
-            <SelectItem value="partial">Parziali</SelectItem>
+            <SelectItem value="archived">Archiviati</SelectItem>
           </SelectContent>
         </Select>
+        <Input
+          placeholder="Tenant..."
+          value={tenantFilter}
+          onChange={(e) => setTenantFilter(e.target.value)}
+          className="w-36 bg-white/80 backdrop-blur-sm"
+          data-testid="input-tenant-filter"
+        />
+        <Input
+          placeholder="Store..."
+          value={storeFilter}
+          onChange={(e) => setStoreFilter(e.target.value)}
+          className="w-32 bg-white/80 backdrop-blur-sm"
+          data-testid="input-store-filter"
+        />
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <RefreshCw className="w-4 h-4 animate-spin" />
           <span>Aggiornato {lastUpdate || 'ora'}</span>
@@ -227,11 +259,13 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[30%]">Branch</TableHead>
-                <TableHead className="w-[25%]">Tenant</TableHead>
-                <TableHead className="w-[15%]">Status</TableHead>
-                <TableHead className="w-[15%]">Iniziato</TableHead>
-                <TableHead className="w-[15%]">Completato</TableHead>
+                <TableHead className="w-[12%]">Tool</TableHead>
+                <TableHead className="w-[23%]">Commit</TableHead>
+                <TableHead className="w-[20%]">Branch</TableHead>
+                <TableHead className="w-[15%]">Tenant</TableHead>
+                <TableHead className="w-[12%]">Status</TableHead>
+                <TableHead className="w-[10%]">Iniziato</TableHead>
+                <TableHead className="w-[8%]">Completato</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -245,16 +279,32 @@ export function DeployStatusMatrix({ deploymentId, className }: DeployStatusMatr
                     className="hover:bg-gray-50/50"
                     data-testid={`row-status-${status.id}`}
                   >
+                    <TableCell>
+                      <Badge variant="secondary" className="uppercase text-xs font-semibold">
+                        {status.tool}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-medium">
-                      <span className="text-gray-900">{status.branchName}</span>
+                      <div>
+                        <p className="text-gray-900 text-sm">{status.commitName}</p>
+                        <p className="text-gray-500 text-xs mt-0.5">v{status.commitVersion}</p>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-gray-700">{status.tenantName}</span>
+                      <span className="text-gray-700 text-sm">{status.branchName}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-gray-700 text-sm">{status.tenantSlug}</p>
+                        {status.storeCode && (
+                          <p className="text-gray-500 text-xs mt-0.5">{status.storeCode}</p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge 
                         variant="outline" 
-                        className={cn('gap-1.5 font-medium border', config.bg, config.color)}
+                        className={cn('gap-1.5 font-medium border text-xs', config.bg, config.color)}
                         data-testid={`badge-status-${status.status}`}
                       >
                         <StatusIcon className="w-3.5 h-3.5" />

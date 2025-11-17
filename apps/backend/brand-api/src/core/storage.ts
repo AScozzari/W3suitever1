@@ -2274,38 +2274,105 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  async getDeploymentStatuses(filters: string | { deploymentId?: string; branchId?: string; status?: string; limit?: number; offset?: number }): Promise<DeployCenterStatus[]> {
+  async getDeploymentStatuses(filters: string | { 
+    deploymentId?: string; 
+    branchId?: string; 
+    status?: string; 
+    tool?: string;
+    tenantSlug?: string;
+    storeCode?: string;
+    limit?: number; 
+    offset?: number;
+  }): Promise<any[]> {
     try {
+      const { and } = await import('drizzle-orm');
+      
       // Backward compatibility: if string, treat as deploymentId
       if (typeof filters === 'string') {
-        const results = await db.select()
-          .from(deployCenterStatus)
-          .where(eq(deployCenterStatus.deploymentId, filters))
-          .orderBy(deployCenterStatus.createdAt);
+        // Use new JOIN query but filter by session
+        const results = await db.select({
+          id: deployCenterSessionCommits.id,
+          deploymentId: deployCenterSessionCommits.deploymentSessionId,
+          branchId: deployCenterBranches.id,
+          branchName: deployCenterBranches.branchName,
+          tenantName: deployCenterBranches.tenantSlug,
+          tenantSlug: deployCenterBranches.tenantSlug,
+          storeCode: deployCenterBranches.storeCode,
+          status: deployCenterSessionCommits.status,
+          startedAt: deployCenterSessionCommits.startedAt,
+          completedAt: deployCenterSessionCommits.completedAt,
+          errorMessage: deployCenterSessionCommits.errorMessage,
+          metadata: deployCenterSessionCommits.metadata,
+          createdAt: deployCenterSessionCommits.createdAt,
+          updatedAt: deployCenterSessionCommits.updatedAt,
+          // Commit data
+          commitId: deployCenterCommits.id,
+          commitName: deployCenterCommits.name,
+          commitVersion: deployCenterCommits.version,
+          tool: deployCenterCommits.tool,
+          resourceType: deployCenterCommits.resourceType,
+        })
+        .from(deployCenterSessionCommits)
+        .innerJoin(deployCenterCommits, eq(deployCenterSessionCommits.commitId, deployCenterCommits.id))
+        .innerJoin(deployCenterBranches, eq(deployCenterSessionCommits.targetBranch, deployCenterBranches.branchName))
+        .where(eq(deployCenterSessionCommits.deploymentSessionId, filters))
+        .orderBy(deployCenterSessionCommits.createdAt);
         
-        return results as DeployCenterStatus[];
+        return results;
       }
       
-      // New behavior: filters object
-      let query = db.select().from(deployCenterStatus);
+      // New behavior: filters object with JOIN
+      let query = db.select({
+        id: deployCenterSessionCommits.id,
+        deploymentId: deployCenterSessionCommits.deploymentSessionId,
+        branchId: deployCenterBranches.id,
+        branchName: deployCenterBranches.branchName,
+        tenantName: deployCenterBranches.tenantSlug,
+        tenantSlug: deployCenterBranches.tenantSlug,
+        storeCode: deployCenterBranches.storeCode,
+        status: deployCenterSessionCommits.status,
+        startedAt: deployCenterSessionCommits.startedAt,
+        completedAt: deployCenterSessionCommits.completedAt,
+        errorMessage: deployCenterSessionCommits.errorMessage,
+        metadata: deployCenterSessionCommits.metadata,
+        createdAt: deployCenterSessionCommits.createdAt,
+        updatedAt: deployCenterSessionCommits.updatedAt,
+        // Commit data
+        commitId: deployCenterCommits.id,
+        commitName: deployCenterCommits.name,
+        commitVersion: deployCenterCommits.version,
+        tool: deployCenterCommits.tool,
+        resourceType: deployCenterCommits.resourceType,
+      })
+      .from(deployCenterSessionCommits)
+      .innerJoin(deployCenterCommits, eq(deployCenterSessionCommits.commitId, deployCenterCommits.id))
+      .innerJoin(deployCenterBranches, eq(deployCenterSessionCommits.targetBranch, deployCenterBranches.branchName));
       
       const conditions = [];
       if (filters.deploymentId) {
-        conditions.push(eq(deployCenterStatus.deploymentId, filters.deploymentId));
+        conditions.push(eq(deployCenterSessionCommits.deploymentSessionId, filters.deploymentId));
       }
       if (filters.branchId) {
-        conditions.push(eq(deployCenterStatus.branchId, filters.branchId));
+        conditions.push(eq(deployCenterBranches.id, filters.branchId));
       }
       if (filters.status) {
-        conditions.push(eq(deployCenterStatus.status, filters.status as any));
+        conditions.push(eq(deployCenterSessionCommits.status, filters.status as any));
+      }
+      if (filters.tool) {
+        conditions.push(eq(deployCenterCommits.tool, filters.tool as any));
+      }
+      if (filters.tenantSlug) {
+        conditions.push(eq(deployCenterBranches.tenantSlug, filters.tenantSlug));
+      }
+      if (filters.storeCode) {
+        conditions.push(eq(deployCenterBranches.storeCode, filters.storeCode));
       }
       
       if (conditions.length > 0) {
-        const { and } = await import('drizzle-orm');
         query = query.where(and(...conditions)) as any;
       }
       
-      query = query.orderBy(deployCenterStatus.createdAt) as any;
+      query = query.orderBy(deployCenterSessionCommits.createdAt) as any;
       
       if (filters.limit) {
         query = query.limit(filters.limit) as any;
@@ -2315,7 +2382,7 @@ class BrandDrizzleStorage implements IBrandStorage {
       }
       
       const results = await query;
-      return results as DeployCenterStatus[];
+      return results;
     } catch (error) {
       console.error('Error fetching deployment statuses:', error);
       throw error;

@@ -3637,16 +3637,19 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Get all deployment statuses with optional filters
+  // Get all deployment statuses with optional filters (enhanced with tool, tenant, store)
   app.get("/brand-api/deploy/status", async (req, res) => {
     const user = (req as any).user;
-    const { deploymentId, branchId, status, limit, offset } = req.query;
+    const { deploymentId, branchId, status, tool, tenantSlug, storeCode, limit, offset } = req.query;
     
     try {
       const filters: any = {};
       if (deploymentId) filters.deploymentId = deploymentId as string;
       if (branchId) filters.branchId = branchId as string;
       if (status) filters.status = status as string;
+      if (tool) filters.tool = tool as string;
+      if (tenantSlug) filters.tenantSlug = tenantSlug as string;
+      if (storeCode) filters.storeCode = storeCode as string;
       if (limit) filters.limit = parseInt(limit as string);
       if (offset) filters.offset = parseInt(offset as string);
       

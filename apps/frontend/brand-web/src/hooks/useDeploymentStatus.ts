@@ -13,19 +13,30 @@ export interface DeploymentStatus {
   branchId: string;
   branchName: string;
   tenantName: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'partial';
+  tenantSlug: string;
+  storeCode: string | null;
+  status: 'ready' | 'in_progress' | 'deployed' | 'failed' | 'archived';
   startedAt: string | null;
   completedAt: string | null;
   errorMessage: string | null;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  // Commit data
+  commitId: string;
+  commitName: string;
+  commitVersion: string;
+  tool: 'wms' | 'crm' | 'pos' | 'analytics' | 'hr';
+  resourceType: 'supplier' | 'product' | 'product_type' | 'campaign' | 'pipeline' | 'funnel' | 'workflow' | 'task';
 }
 
 export interface DeploymentStatusFilters {
   deploymentId?: string;
   branchId?: string;
   status?: string;
+  tool?: string;
+  tenantSlug?: string;
+  storeCode?: string;
   limit?: number;
   offset?: number;
 }
@@ -40,6 +51,9 @@ export function useDeploymentStatuses(filters: DeploymentStatusFilters = {}) {
   if (filters.deploymentId) queryParams.append('deploymentId', filters.deploymentId);
   if (filters.branchId) queryParams.append('branchId', filters.branchId);
   if (filters.status) queryParams.append('status', filters.status);
+  if (filters.tool) queryParams.append('tool', filters.tool);
+  if (filters.tenantSlug) queryParams.append('tenantSlug', filters.tenantSlug);
+  if (filters.storeCode) queryParams.append('storeCode', filters.storeCode);
   if (filters.limit) queryParams.append('limit', filters.limit.toString());
   if (filters.offset) queryParams.append('offset', filters.offset.toString());
   
@@ -74,11 +88,11 @@ export function useDeploymentStatusSummary(deploymentId?: string) {
   
   const summary = {
     total: statuses?.length || 0,
-    pending: statuses?.filter(s => s.status === 'pending').length || 0,
+    ready: statuses?.filter(s => s.status === 'ready').length || 0,
     inProgress: statuses?.filter(s => s.status === 'in_progress').length || 0,
-    completed: statuses?.filter(s => s.status === 'completed').length || 0,
+    deployed: statuses?.filter(s => s.status === 'deployed').length || 0,
     failed: statuses?.filter(s => s.status === 'failed').length || 0,
-    partial: statuses?.filter(s => s.status === 'partial').length || 0,
+    archived: statuses?.filter(s => s.status === 'archived').length || 0,
   };
   
   return {
