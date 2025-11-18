@@ -275,47 +275,6 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           )}
         </div>
 
-        {/* Barra di ricerca centrale - Hidden on mobile */}
-        {!isMobile && (
-          <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ 
-                position: 'absolute', 
-                left: '12px', 
-                top: '50%', 
-                transform: 'translateY(-50%)', 
-                color: '#6b7280' 
-              }} />
-              <input
-                placeholder="Cerca tenant, store, utenti..."
-                style={{
-                  width: '100%',
-                  padding: '8px 12px 8px 40px',
-                  background: 'hsla(0, 0%, 100%, 0.25)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  outline: 'none'
-                }}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Mobile search button */}
-        {isMobile && (
-          <button style={{
-            background: 'transparent',
-            border: 'none',
-            padding: '8px',
-            cursor: 'pointer',
-            borderRadius: '8px'
-          }}>
-            <Search size={20} />
-          </button>
-        )}
-
         {/* Sezione destra - Responsive */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
           {/* Notifiche */}

@@ -554,6 +554,28 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
               <ArrowLeft className="h-4 w-4 mr-2" />
               Torna alla Lista
             </Button>
+            
+            {/* View Mode Toggle - Lista/Canvas */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem' }}>
+              <Button
+                variant="outline"
+                onClick={onBack}
+                size="sm"
+                data-testid="button-view-list"
+              >
+                <List className="h-4 w-4 mr-2" />
+                Lista
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                data-testid="button-view-canvas"
+              >
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Canvas
+              </Button>
+            </div>
+            
             <div>
               <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'hsl(var(--foreground))', marginBottom: '0.25rem' }}>
                 {workflow?.name || 'Nuovo Workflow'}
