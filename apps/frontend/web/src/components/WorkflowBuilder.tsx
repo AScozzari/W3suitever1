@@ -535,9 +535,23 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   }, [setNodes, setEdges, handleConfigClick]);
 
   return (
-    <div className="flex h-full w-full bg-gray-50">
-      {/* Node Palette Sidebar */}
-      <div className={`${isNodePaletteOpen ? 'w-96' : 'w-16'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
+      padding: '1.5rem',
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'center'
+    }}>
+      {/* Main Workflow Builder Container - Brand-style chrome with full responsive width */}
+      <div className="flex h-full w-full" style={{
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+        minHeight: 'calc(100vh - 3rem)'
+      }}>
+        {/* Node Palette Sidebar */}
+        <div className={`${isNodePaletteOpen ? 'w-96' : 'w-16'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
         {/* Header - Always Visible */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {isNodePaletteOpen && <h3 className="font-semibold text-gray-900">Node Library</h3>}
@@ -1641,6 +1655,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             />
           </div>
         </div>
+      </div>
       </div>
 
       {/* ✅ NODE CONFIGURATION PANEL - Fixed hook order violations */}
