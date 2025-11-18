@@ -1687,7 +1687,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               onWorkflowGenerated={handleAIWorkflowGenerated}
             />
           </div>
-        </div>
+      </div>
 
       {/* ✅ NODE CONFIGURATION PANEL - Fixed hook order violations */}
       <NodeConfigPanel 
