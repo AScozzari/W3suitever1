@@ -534,6 +534,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     });
   }, [setNodes, setEdges, handleConfigClick]);
 
+  // AI Assistant Drawer state
+  const [showAIDrawer, setShowAIDrawer] = useState(false);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -541,17 +544,20 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       padding: '1.5rem',
       display: 'flex',
       alignItems: 'flex-start',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      position: 'relative'
     }}>
-      {/* Main Workflow Builder Container - Brand-style chrome with full responsive width */}
-      <div className="flex h-full w-full" style={{
+      {/* Main Workflow Builder Container - Reduced height by 5cm */}
+      <div className="flex" style={{
         background: '#ffffff',
         borderRadius: '16px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-        minHeight: 'calc(100vh - 3rem)'
+        width: '100%',
+        height: 'calc(88vh - 2rem)',
+        overflow: 'hidden'
       }}>
-        {/* Node Palette Sidebar */}
-        <div className={`${isNodePaletteOpen ? 'w-96' : 'w-16'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
+        {/* Node Palette Sidebar - Full height */}
+        <div className={`${isNodePaletteOpen ? 'w-96' : 'w-16'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col h-full`}>
         {/* Header - Always Visible */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {isNodePaletteOpen && <h3 className="font-semibold text-gray-900">Node Library</h3>}
@@ -1606,17 +1612,13 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
 
-        {/* Canvas + AI Chat Row */}
-        <div className="flex flex-row">
-          {/* Canvas Zone - Fixed Size */}
+        {/* Canvas Zone - Full Size with Flex */}
+        <div className="flex-1 flex flex-col h-full">
           <div 
             ref={reactFlowWrapper}
+            className="flex-1 relative"
             style={{ 
-              width: '800px',
-              height: '600px',
-              border: '2px solid #E5E7EB',
-              backgroundColor: '#F9FAFB',
-              margin: '1cm 0 0 2cm'
+              backgroundColor: '#F9FAFB'
             }}
           >
             <ReactFlow
@@ -1632,31 +1634,60 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               onDrop={onDrop}
               onDragOver={onDragOver}
               nodeTypes={nodeTypes}
-              style={{ width: '800px', height: '600px' }}
+              style={{ width: '100%', height: '100%' }}
               data-testid="reactflow-canvas"
             >
               <Controls />
               <Background variant={BackgroundVariant.Dots} color="#E5E7EB" gap={20} />
             </ReactFlow>
           </div>
+        </div>
+      </div>
 
-          {/* AI Chat Panel - Always Visible */}
-          <div 
-            className="flex flex-col bg-white border-2 border-gray-200 rounded-lg"
-            style={{ 
-              width: '400px',
-              height: '600px',
-              marginTop: '1cm',
-              marginLeft: '1cm'
-            }}
-          >
+      {/* 🤖 AI Assistant Floating Button */}
+      <Button
+        onClick={() => setShowAIDrawer(!showAIDrawer)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+        style={{
+          boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)'
+        }}
+        data-testid="button-ai-assistant"
+      >
+        <Brain className="h-6 w-6" />
+      </Button>
+
+      {/* 🤖 AI Assistant Bottom Drawer */}
+      <div 
+        className={`fixed left-0 right-0 z-40 bg-white border-t-2 border-gray-200 shadow-2xl transition-all duration-300 ${showAIDrawer ? 'bottom-0' : '-bottom-full'}`}
+        style={{
+          height: '40vh',
+          maxHeight: '500px'
+        }}
+      >
+          {/* Drawer Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-600" />
+              <h3 className="font-semibold text-gray-900">AI Workflow Assistant</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAIDrawer(false)}
+              className="hover:bg-gray-100"
+              data-testid="button-close-ai-drawer"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Drawer Content */}
+          <div className="h-full overflow-y-auto">
             <AIWorkflowChatModal
               onWorkflowGenerated={handleAIWorkflowGenerated}
             />
           </div>
         </div>
-      </div>
-      </div>
 
       {/* ✅ NODE CONFIGURATION PANEL - Fixed hook order violations */}
       <NodeConfigPanel 
