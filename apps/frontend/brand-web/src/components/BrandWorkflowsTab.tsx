@@ -519,8 +519,8 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      background: '#f5f5f5',
-      padding: '0.5vh',
+      background: '#ffffff',
+      padding: '0.1vh',
       overflow: 'hidden'
     }}>
       {/* Main Workflow Builder Container - Responsive con dimensioni ridotte */}
