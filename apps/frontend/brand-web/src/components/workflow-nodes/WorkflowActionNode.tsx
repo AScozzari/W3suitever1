@@ -5,21 +5,13 @@
 
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Play } from 'lucide-react';
+import { BaseNodeDefinition } from '../../types/workflow-nodes';
 
-interface ActionNodeData {
-  id: string;
-  label: string;
-  description: string;
-  category: string;
-  icon: string;
-  config?: Record<string, any>;
-}
-
-export function WorkflowActionNode({ data, selected, id }: NodeProps<ActionNodeData>) {
+export function WorkflowActionNode({ data, selected, id }: NodeProps<BaseNodeDefinition>) {
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
       <Handle 
@@ -38,7 +30,7 @@ export function WorkflowActionNode({ data, selected, id }: NodeProps<ActionNodeD
               <Play className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.label}</h4>
+              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.name}</h4>
               <p className="text-xs text-gray-600 truncate">{data.description}</p>
             </div>
           </div>

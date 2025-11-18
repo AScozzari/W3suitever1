@@ -4,20 +4,12 @@
  */
 
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { Users, UserCheck } from 'lucide-react';
+import { BaseNodeDefinition } from '../../types/workflow-nodes';
 
-interface RoutingNodeData {
-  id: string;
-  label: string;
-  description: string;
-  category: string;
-  icon: string;
-  config?: Record<string, any>;
-}
-
-export function WorkflowRoutingNode({ data, selected }: NodeProps<RoutingNodeData>) {
+export function WorkflowRoutingNode({ data, selected }: NodeProps<BaseNodeDefinition>) {
   const isTeamAssignment = data.id === 'team-assignment';
   const Icon = isTeamAssignment ? Users : UserCheck;
   
@@ -39,7 +31,7 @@ export function WorkflowRoutingNode({ data, selected }: NodeProps<RoutingNodeDat
               <Icon className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.label}</h4>
+              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.name}</h4>
               <p className="text-xs text-gray-600 truncate">{data.description}</p>
             </div>
           </div>

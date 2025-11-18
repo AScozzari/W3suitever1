@@ -4,18 +4,10 @@
  */
 
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { GitBranch, Split, RotateCw, GitMerge, Merge } from 'lucide-react';
-
-interface FlowControlNodeData {
-  id: string;
-  label: string;
-  description: string;
-  category: string;
-  icon: string;
-  config?: Record<string, any>;
-}
+import { BaseNodeDefinition } from '../../types/workflow-nodes';
 
 const FLOW_ICONS: Record<string, any> = {
   'if-condition': GitBranch,
@@ -25,7 +17,7 @@ const FLOW_ICONS: Record<string, any> = {
   'join-sync': Merge
 };
 
-export function WorkflowFlowControlNode({ data, selected }: NodeProps<FlowControlNodeData>) {
+export function WorkflowFlowControlNode({ data, selected }: NodeProps<BaseNodeDefinition>) {
   const Icon = FLOW_ICONS[data.id] || GitBranch;
   const color = '#6b7280';
   
@@ -177,7 +169,7 @@ export function WorkflowFlowControlNode({ data, selected }: NodeProps<FlowContro
               <Icon className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.label}</h4>
+              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.name}</h4>
               <p className="text-xs text-gray-600 truncate">{data.description}</p>
             </div>
           </div>
