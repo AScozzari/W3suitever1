@@ -518,8 +518,8 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       minHeight: '100vh',
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'center',
-      background: '#ffffff',
+      alignItems: 'flex-start',
+      background: '#f5f5f5',
       padding: '0.1vh',
       overflow: 'hidden'
     }}>
