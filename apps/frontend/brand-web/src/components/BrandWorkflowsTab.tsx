@@ -519,14 +519,14 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'flex-start',
-      background: '#f5f5f5',
+      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
       padding: '0.1vh',
       overflow: 'hidden'
     }}>
       {/* Main Workflow Builder Container - Responsive con dimensioni ridotte */}
       <div style={{
-        width: 'calc(95vw - 8cm)',
-        height: 'calc(95vh - 6cm)',
+        width: 'calc(95vw - 9cm)',
+        height: 'calc(95vh - 8cm)',
         display: 'flex',
         flexDirection: 'column',
         background: '#ffffff',
