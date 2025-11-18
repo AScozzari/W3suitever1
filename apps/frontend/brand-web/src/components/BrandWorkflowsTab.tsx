@@ -510,6 +510,7 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
     trigger: WorkflowTriggerNode,
     ai: WorkflowAiNode,
     routing: WorkflowRoutingNode,
+    integration: CustomWorkflowNode,
     'flow-control': WorkflowFlowControlNode,
   }), []);
 
@@ -517,12 +518,39 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
     <div style={{
       minHeight: '100vh',
       display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
+      flexDirection: 'column',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
       background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
-      padding: '0.1vh',
+      padding: '1rem',
       overflow: 'hidden'
     }}>
+      {/* View Mode Toggle - Lista/Canvas - Posizionato sopra come nella vista lista */}
+      <div style={{ 
+        width: 'calc(95vw - 9cm)', 
+        marginBottom: '1rem',
+        display: 'flex',
+        gap: '0.5rem'
+      }}>
+        <Button
+          variant="outline"
+          onClick={onBack}
+          size="sm"
+          data-testid="button-view-list"
+        >
+          <List className="h-4 w-4 mr-2" />
+          Lista
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          data-testid="button-view-canvas"
+        >
+          <LayoutGrid className="h-4 w-4 mr-2" />
+          Canvas
+        </Button>
+      </div>
+
       {/* Main Workflow Builder Container - Responsive con dimensioni ridotte */}
       <div style={{
         width: 'calc(95vw - 9cm)',
@@ -545,37 +573,6 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
         }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Button
-              onClick={onBack}
-              variant="outline"
-              size="sm"
-              data-testid="button-back-to-list"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna alla Lista
-            </Button>
-            
-            {/* View Mode Toggle - Lista/Canvas */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem' }}>
-              <Button
-                variant="outline"
-                onClick={onBack}
-                size="sm"
-                data-testid="button-view-list"
-              >
-                <List className="h-4 w-4 mr-2" />
-                Lista
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                data-testid="button-view-canvas"
-              >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Canvas
-              </Button>
-            </div>
-            
             <div>
               <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'hsl(var(--foreground))', marginBottom: '0.25rem' }}>
                 {workflow?.name || 'Nuovo Workflow'}
@@ -1250,16 +1247,6 @@ const CustomWorkflowNode = memo(({ data }: NodeProps) => {
 });
 
 CustomWorkflowNode.displayName = 'CustomWorkflowNode';
-
-// Node types registry per ReactFlow
-const nodeTypes = {
-  trigger: CustomWorkflowNode,
-  action: CustomWorkflowNode,
-  ai: CustomWorkflowNode,
-  routing: CustomWorkflowNode,
-  integration: CustomWorkflowNode,
-  'flow-control': CustomWorkflowNode,
-};
 
 // Node palette item with category styling
 interface NodePaletteItemProps {
