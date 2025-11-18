@@ -10,6 +10,8 @@ import {
   Background, 
   Controls, 
   MiniMap,
+  Handle,
+  Position,
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
@@ -1065,36 +1067,19 @@ function WorkflowCanvasView({ workflow, onBack, onSave, onAIAssistant }: Workflo
       </div>
       
       {/* Node Configuration Modal Dialog */}
-      <Dialog 
-        open={selectedNodeId !== null} 
-        onOpenChange={(open) => {
-          if (!open) useWorkflowStore.getState().selectNode(null);
+      <NodeConfigPanel
+        node={selectedNodeId ? nodes.find(n => n.id === selectedNodeId) || null : null}
+        allNodes={nodes}
+        isOpen={selectedNodeId !== null}
+        onClose={() => useWorkflowStore.getState().selectNode(null)}
+        onSave={(nodeId, config) => {
+          const node = nodes.find(n => n.id === nodeId);
+          if (node) {
+            updateNode(nodeId, { data: { ...node.data, config } });
+            useWorkflowStore.getState().selectNode(null);
+          }
         }}
-      >
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings size={20} className="text-windtre-orange" />
-              Configurazione Nodo
-            </DialogTitle>
-            <DialogDescription>
-              Configura i parametri del nodo selezionato per personalizzare il comportamento nel workflow.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedNodeId && (
-            <NodeConfigPanel
-              nodeId={selectedNodeId}
-              onSave={(config) => {
-                const node = nodes.find(n => n.id === selectedNodeId);
-                if (node) {
-                  updateNode(selectedNodeId, { data: { ...node.data, config } });
-                  useWorkflowStore.getState().selectNode(null);
-                }
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      />
       
       {/* Workflow Test Result Dialog */}
       <WorkflowTestResultDialog
@@ -1202,6 +1187,19 @@ const CustomWorkflowNode = memo(({ data }: NodeProps) => {
       }}
       className="hover:shadow-xl hover:scale-105"
     >
+      {/* Input Handle - Left side */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{
+          width: '12px',
+          height: '12px',
+          background: borderColor,
+          border: '2px solid white',
+          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)'
+        }}
+      />
+      
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
         <div
           style={{
@@ -1242,6 +1240,19 @@ const CustomWorkflowNode = memo(({ data }: NodeProps) => {
           </div>
         </div>
       </div>
+      
+      {/* Output Handle - Right side */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          width: '12px',
+          height: '12px',
+          background: borderColor,
+          border: '2px solid white',
+          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)'
+        }}
+      />
     </div>
   );
 });
