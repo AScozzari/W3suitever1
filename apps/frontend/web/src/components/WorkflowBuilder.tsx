@@ -538,24 +538,26 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const [showAIDrawer, setShowAIDrawer] = useState(false);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
-      padding: '1.5rem',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      position: 'relative'
-    }}>
-      {/* Main Workflow Builder Container - Reduced height by 5cm */}
-      <div className="flex" style={{
-        background: '#ffffff',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-        width: '100%',
-        height: 'calc(88vh - 2rem)',
-        overflow: 'hidden'
+    <>
+      {/* Outer Container */}
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
+        padding: '1.5rem',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        position: 'relative'
       }}>
+        {/* Main Workflow Builder Container - Reduced height by 5cm */}
+        <div className="flex" style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+          width: '100%',
+          height: 'calc(88vh - 2rem)',
+          overflow: 'hidden'
+        }}>
         {/* Node Palette Sidebar - Full height */}
         <div className={`${isNodePaletteOpen ? 'w-96' : 'w-16'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col h-full`}>
         {/* Header - Always Visible */}
@@ -1516,16 +1518,15 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                 </div>
                 </>
                 )}
-
                 </div>
               </div>
             </div>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Main Canvas Area */}
-      <div className="flex-1 flex flex-col">
+        {/* Main Canvas Area */}
+        <div className="flex-1 flex flex-col h-full">
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
