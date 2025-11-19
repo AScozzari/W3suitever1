@@ -1718,7 +1718,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         onOpenChange={(open) => !open && setTestRunResult(null)}
       />
 
-    </div>
+        </div> {/* End Main Workflow Builder Container */}
+      </div> {/* End Outer Container */}
+    </>
   );
 }
 
