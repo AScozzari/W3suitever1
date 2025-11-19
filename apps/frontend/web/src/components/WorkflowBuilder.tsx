@@ -1603,6 +1603,20 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setShowAIDrawer(!showAIDrawer)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0"
+                title="AI Workflow Assistant"
+                data-testid="button-ai-assistant"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                AI Assistant
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleSaveWorkflow}
                 data-testid="button-save"
               >
@@ -1644,18 +1658,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
       </div>
-
-      {/* 🤖 AI Assistant Floating Button */}
-      <Button
-        onClick={() => setShowAIDrawer(!showAIDrawer)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-        style={{
-          boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)'
-        }}
-        data-testid="button-ai-assistant"
-      >
-        <Brain className="h-6 w-6" />
-      </Button>
 
       {/* 🤖 AI Assistant Bottom Drawer */}
       <div 
