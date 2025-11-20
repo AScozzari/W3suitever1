@@ -248,6 +248,62 @@ export const crmSourceTypeEnum = pgEnum('crm_source_type', ['meta_page', 'google
 export const crmIdentifierTypeEnum = pgEnum('crm_identifier_type', ['email', 'phone', 'social']);
 export const customerTypeEnum = pgEnum('customer_type', ['b2c', 'b2b']);
 
+// ==================== OMNICHANNEL INTERACTION ENUMS ====================
+export const omnichannelChannelEnum = pgEnum('omnichannel_channel', [
+  'email',
+  'sms', 
+  'whatsapp',
+  'telegram',
+  'instagram_dm',
+  'instagram_comment',
+  'facebook_messenger',
+  'facebook_comment',
+  'tiktok_comment',
+  'linkedin_message',
+  'voice_call',
+  'video_call',
+  'web_chat',
+  'in_person',
+  'workflow_automation'
+]);
+
+export const interactionStatusEnum = pgEnum('interaction_status', [
+  'pending',
+  'sent',
+  'delivered',
+  'read',
+  'replied',
+  'failed',
+  'bounced'
+]);
+
+// ==================== IDENTITY RESOLUTION ENUMS ====================
+export const identityMatchTypeEnum = pgEnum('identity_match_type', [
+  'email_exact',
+  'phone_exact',
+  'social_exact',
+  'email_fuzzy',
+  'phone_fuzzy',
+  'name_similarity',
+  'ip_address',
+  'device_fingerprint'
+]);
+
+export const identityMatchStatusEnum = pgEnum('identity_match_status', [
+  'pending',
+  'accepted',
+  'rejected',
+  'auto_merged'
+]);
+
+export const identityEventTypeEnum = pgEnum('identity_event_type', [
+  'merge',
+  'split',
+  'manual_link',
+  'auto_dedupe',
+  'conflict_resolved'
+]);
+
 // ✅ CRITICAL ENUM FIX: Add missing calendar_event_category enum
 export const calendarEventCategoryEnum = pgEnum('calendar_event_category', [
   'sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing'
@@ -5253,7 +5309,7 @@ export const crmDeals = w3suiteSchema.table("crm_deals", {
   tenantIdIdx: index("crm_deals_tenant_id_idx").on(table.tenantId),
 }));
 
-// CRM Interactions - Contact logs audit trail
+// CRM Interactions - Contact logs audit trail (LEGACY - kept for backward compatibility)
 export const crmInteractions = w3suiteSchema.table("crm_interactions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull(),
@@ -5271,6 +5327,223 @@ export const crmInteractions = w3suiteSchema.table("crm_interactions", {
 }, (table) => ({
   entityTypeEntityIdOccurredIdx: index("crm_interactions_entity_type_entity_id_occurred_idx").on(table.entityType, table.entityId, table.occurredAt),
   tenantIdIdx: index("crm_interactions_tenant_id_idx").on(table.tenantId),
+}));
+
+// ==================== OMNICHANNEL INTERACTIONS SYSTEM ====================
+// CRM Omnichannel Interactions - Unified interaction tracking
+export const crmOmnichannelInteractions = w3suiteSchema.table("crm_omnichannel_interactions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  
+  // Person-centric tracking (unified identity)
+  personId: uuid("person_id").notNull(),
+  
+  // Optional entity links (lead/deal/customer)
+  entityType: varchar("entity_type", { length: 50 }), // 'lead', 'deal', 'customer', null
+  entityId: uuid("entity_id"),
+  
+  // Channel information
+  channel: omnichannelChannelEnum("channel").notNull(),
+  direction: crmInteractionDirectionEnum("direction").notNull(),
+  
+  // Content
+  subject: text("subject"),
+  body: text("body"),
+  summary: text("summary"), // AI-generated summary
+  
+  // Status and outcome
+  status: interactionStatusEnum("status").default('sent'),
+  outcome: text("outcome"),
+  outcomeCategory: varchar("outcome_category", { length: 50 }), // 'positive', 'negative', 'neutral', 'follow_up_required'
+  
+  // Timing
+  durationSeconds: integer("duration_seconds"),
+  occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  scheduledAt: timestamp("scheduled_at"),
+  
+  // User/agent who performed interaction
+  performedByUserId: uuid("performed_by_user_id"),
+  performedByAgentType: varchar("performed_by_agent_type", { length: 50 }), // 'human', 'ai_assistant', 'workflow_automation'
+  
+  // Integration links
+  workflowInstanceId: uuid("workflow_instance_id"),
+  workflowTemplateId: uuid("workflow_template_id"),
+  campaignId: uuid("campaign_id"),
+  taskId: uuid("task_id"),
+  
+  // Channel-specific metadata (JSON)
+  metadata: jsonb("metadata"), // { email_thread_id, message_id, social_post_id, call_recording_url, etc. }
+  
+  // Engagement metrics
+  sentimentScore: real("sentiment_score"), // -1.0 to 1.0 (AI-analyzed)
+  engagementScore: smallint("engagement_score"), // 0-100
+  
+  // Attachments count
+  attachmentCount: smallint("attachment_count").default(0),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Performance indexes
+  personOccurredIdx: index("omni_int_person_occurred_idx").on(table.personId, table.occurredAt),
+  tenantPersonChannelIdx: index("omni_int_tenant_person_channel_idx").on(table.tenantId, table.personId, table.channel),
+  workflowInstanceIdx: index("omni_int_workflow_instance_idx").on(table.workflowInstanceId),
+  tenantOccurredIdx: index("omni_int_tenant_occurred_idx").on(table.tenantId, table.occurredAt),
+  entityTypeEntityIdIdx: index("omni_int_entity_type_entity_id_idx").on(table.entityType, table.entityId),
+}));
+
+// CRM Interaction Attachments
+export const crmInteractionAttachments = w3suiteSchema.table("crm_interaction_attachments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  interactionId: uuid("interaction_id").notNull().references(() => crmOmnichannelInteractions.id, { onDelete: 'cascade' }),
+  
+  // File information
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileType: varchar("file_type", { length: 100 }),
+  fileSize: integer("file_size"), // bytes
+  mimeType: varchar("mime_type", { length: 100 }),
+  
+  // Storage (Object Storage or external URL)
+  storagePath: text("storage_path"),
+  externalUrl: text("external_url"),
+  
+  // Metadata
+  metadata: jsonb("metadata"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  interactionIdIdx: index("int_attach_interaction_id_idx").on(table.interactionId),
+  tenantIdIdx: index("int_attach_tenant_id_idx").on(table.tenantId),
+}));
+
+// CRM Interaction Participants (for group conversations)
+export const crmInteractionParticipants = w3suiteSchema.table("crm_interaction_participants", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  interactionId: uuid("interaction_id").notNull().references(() => crmOmnichannelInteractions.id, { onDelete: 'cascade' }),
+  
+  // Participant info
+  personId: uuid("person_id"),
+  userId: uuid("user_id"), // Internal user (agent/employee)
+  participantType: varchar("participant_type", { length: 50 }).notNull(), // 'sender', 'recipient', 'cc', 'bcc', 'mentioned'
+  
+  // Contact info (if not linked to person)
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  displayName: varchar("display_name", { length: 255 }),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  interactionIdIdx: index("int_part_interaction_id_idx").on(table.interactionId),
+  personIdIdx: index("int_part_person_id_idx").on(table.personId),
+  tenantIdIdx: index("int_part_tenant_id_idx").on(table.tenantId),
+}));
+
+// ==================== IDENTITY RESOLUTION SYSTEM ====================
+// CRM Identity Matches - Candidate matches with confidence scoring
+export const crmIdentityMatches = w3suiteSchema.table("crm_identity_matches", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  
+  // Match candidates
+  personIdA: uuid("person_id_a").notNull(),
+  personIdB: uuid("person_id_b").notNull(),
+  
+  // Match information
+  matchType: identityMatchTypeEnum("match_type").notNull(),
+  confidenceScore: decimal("confidence_score", { precision: 5, scale: 2 }).notNull(), // 0.00 - 100.00
+  matchingFields: jsonb("matching_fields"), // { email: true, phone: true, name: 0.85 }
+  
+  // Status
+  status: identityMatchStatusEnum("status").default('pending'),
+  
+  // Review information
+  reviewedBy: varchar("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  
+  // Metadata
+  detectedAt: timestamp("detected_at").defaultNow(),
+  metadata: jsonb("metadata"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  tenantPendingIdx: index("id_match_tenant_pending_idx").on(table.tenantId, table.status),
+  personAIdx: index("id_match_person_a_idx").on(table.personIdA),
+  personBIdx: index("id_match_person_b_idx").on(table.personIdB),
+  confidenceIdx: index("id_match_confidence_idx").on(table.confidenceScore),
+  // Prevent duplicate matches (A-B same as B-A)
+  uniqueMatchIdx: uniqueIndex("id_match_unique_idx").on(table.tenantId, table.personIdA, table.personIdB),
+}));
+
+// CRM Identity Events - Audit trail for merge/split operations
+export const crmIdentityEvents = w3suiteSchema.table("crm_identity_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  
+  // Event type and participants
+  eventType: identityEventTypeEnum("event_type").notNull(),
+  sourcePersonId: uuid("source_person_id"), // Person being merged/split
+  targetPersonId: uuid("target_person_id"), // Target person (for merge)
+  
+  // Event details
+  affectedIdentifiers: jsonb("affected_identifiers"), // Array of { type, value }
+  affectedRecords: jsonb("affected_records"), // { leads: [ids], deals: [ids], customers: [ids] }
+  
+  // Audit
+  performedBy: varchar("performed_by").notNull(),
+  performedAt: timestamp("performed_at").defaultNow(),
+  reason: text("reason"),
+  metadata: jsonb("metadata"),
+  
+  // Rollback support
+  canRollback: boolean("can_rollback").default(true),
+  rolledBackAt: timestamp("rolled_back_at"),
+  rolledBackBy: varchar("rolled_back_by"),
+}, (table) => ({
+  tenantEventTypeIdx: index("id_event_tenant_type_idx").on(table.tenantId, table.eventType),
+  sourcePersonIdx: index("id_event_source_person_idx").on(table.sourcePersonId),
+  targetPersonIdx: index("id_event_target_person_idx").on(table.targetPersonId),
+  performedAtIdx: index("id_event_performed_at_idx").on(table.performedAt),
+}));
+
+// CRM Identity Conflicts - Unresolved conflicts requiring manual review
+export const crmIdentityConflicts = w3suiteSchema.table("crm_identity_conflicts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  
+  // Conflicting persons
+  personIdA: uuid("person_id_a").notNull(),
+  personIdB: uuid("person_id_b").notNull(),
+  
+  // Conflict details
+  conflictType: varchar("conflict_type", { length: 100 }).notNull(), // 'consent_mismatch', 'data_inconsistency', 'ambiguous_merge'
+  conflictDescription: text("conflict_description"),
+  conflictingFields: jsonb("conflicting_fields"), // { field: { valueA, valueB, source } }
+  
+  // Resolution
+  status: varchar("status", { length: 50 }).default('pending'), // 'pending', 'resolved', 'escalated'
+  resolvedBy: varchar("resolved_by"),
+  resolvedAt: timestamp("resolved_at"),
+  resolutionAction: varchar("resolution_action", { length: 100 }), // 'keep_a', 'keep_b', 'merge_manual', 'split'
+  resolutionNotes: text("resolution_notes"),
+  
+  // Priority
+  priority: varchar("priority", { length: 20 }).default('medium'), // 'low', 'medium', 'high', 'critical'
+  
+  // Metadata
+  detectedAt: timestamp("detected_at").defaultNow(),
+  metadata: jsonb("metadata"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tenantStatusIdx: index("id_conflict_tenant_status_idx").on(table.tenantId, table.status),
+  priorityIdx: index("id_conflict_priority_idx").on(table.priority),
+  personAIdx: index("id_conflict_person_a_idx").on(table.personIdA),
+  personBIdx: index("id_conflict_person_b_idx").on(table.personIdB),
 }));
 
 // CRM Tasks - Activities e to-do
@@ -5836,6 +6109,51 @@ export const insertCrmInteractionSchema = createInsertSchema(crmInteractions).om
 });
 export type InsertCrmInteraction = z.infer<typeof insertCrmInteractionSchema>;
 export type CrmInteraction = typeof crmInteractions.$inferSelect;
+
+// ==================== OMNICHANNEL INTERACTIONS INSERT SCHEMAS ====================
+export const insertCrmOmnichannelInteractionSchema = createInsertSchema(crmOmnichannelInteractions).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmOmnichannelInteraction = z.infer<typeof insertCrmOmnichannelInteractionSchema>;
+export type CrmOmnichannelInteraction = typeof crmOmnichannelInteractions.$inferSelect;
+
+export const insertCrmInteractionAttachmentSchema = createInsertSchema(crmInteractionAttachments).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmInteractionAttachment = z.infer<typeof insertCrmInteractionAttachmentSchema>;
+export type CrmInteractionAttachment = typeof crmInteractionAttachments.$inferSelect;
+
+export const insertCrmInteractionParticipantSchema = createInsertSchema(crmInteractionParticipants).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmInteractionParticipant = z.infer<typeof insertCrmInteractionParticipantSchema>;
+export type CrmInteractionParticipant = typeof crmInteractionParticipants.$inferSelect;
+
+// ==================== IDENTITY RESOLUTION INSERT SCHEMAS ====================
+export const insertCrmIdentityMatchSchema = createInsertSchema(crmIdentityMatches).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCrmIdentityMatch = z.infer<typeof insertCrmIdentityMatchSchema>;
+export type CrmIdentityMatch = typeof crmIdentityMatches.$inferSelect;
+
+export const insertCrmIdentityEventSchema = createInsertSchema(crmIdentityEvents).omit({ 
+  id: true
+});
+export type InsertCrmIdentityEvent = z.infer<typeof insertCrmIdentityEventSchema>;
+export type CrmIdentityEvent = typeof crmIdentityEvents.$inferSelect;
+
+export const insertCrmIdentityConflictSchema = createInsertSchema(crmIdentityConflicts).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCrmIdentityConflict = z.infer<typeof insertCrmIdentityConflictSchema>;
+export type CrmIdentityConflict = typeof crmIdentityConflicts.$inferSelect;
 
 export const insertCrmTaskSchema = createInsertSchema(crmTasks).omit({ 
   id: true, 

@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { db, setTenantContext, withTenantTransaction } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant';
-import { eq, and, sql, desc, or, ilike, getTableColumns, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, getTableColumns, inArray, count, gte, lte } from 'drizzle-orm';
 import {
   users,
   stores,
@@ -35,6 +35,12 @@ import {
   crmCustomerNotes,
   crmOrders,
   crmInteractions,
+  crmOmnichannelInteractions,
+  crmInteractionAttachments,
+  crmInteractionParticipants,
+  crmIdentityMatches,
+  crmIdentityEvents,
+  crmIdentityConflicts,
   crmTasks,
   crmPersonIdentities,
   workflowTemplates,
@@ -60,7 +66,11 @@ import {
   insertCrmCustomerNoteSchema,
   insertLeadStatusSchema,
   insertLeadStatusHistorySchema,
-  insertStoreTrackingConfigSchema
+  insertStoreTrackingConfigSchema,
+  insertCrmOmnichannelInteractionSchema,
+  insertCrmIdentityMatchSchema,
+  insertCrmIdentityEventSchema,
+  insertCrmIdentityConflictSchema
 } from '../db/schema/w3suite';
 import { drivers, marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
@@ -11503,5 +11513,405 @@ async function emitWorkflowEvent(tenantId: string, event: string, data: any) {
   logger.info('Emitting workflow event', { tenantId, event, data });
   return true;
 }
+
+// ==================== OMNICHANNEL INTERACTIONS & IDENTITY RESOLUTION ====================
+
+/**
+ * GET /api/crm/person/:personId/omnichannel-timeline
+ * Get unified omnichannel timeline for a person (all interactions across channels)
+ */
+router.get('/person/:personId/omnichannel-timeline', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { personId } = req.params;
+    const { channel, startDate, endDate, limit = 100 } = req.query;
+
+    // Build query with filters
+    let query = db
+      .select()
+      .from(crmOmnichannelInteractions)
+      .where(
+        and(
+          eq(crmOmnichannelInteractions.tenantId, tenantId),
+          eq(crmOmnichannelInteractions.personId, personId)
+        )
+      )
+      .orderBy(desc(crmOmnichannelInteractions.occurredAt))
+      .limit(Number(limit));
+
+    // Apply optional filters
+    if (channel) {
+      query = query.where(eq(crmOmnichannelInteractions.channel, channel as any));
+    }
+    if (startDate) {
+      query = query.where(gte(crmOmnichannelInteractions.occurredAt, new Date(startDate as string)));
+    }
+    if (endDate) {
+      query = query.where(lte(crmOmnichannelInteractions.occurredAt, new Date(endDate as string)));
+    }
+
+    const interactions = await query;
+
+    // Load attachments count for each interaction
+    const interactionIds = interactions.map(i => i.id);
+    const attachments = await db
+      .select({
+        interactionId: crmInteractionAttachments.interactionId,
+        count: count()
+      })
+      .from(crmInteractionAttachments)
+      .where(inArray(crmInteractionAttachments.interactionId, interactionIds))
+      .groupBy(crmInteractionAttachments.interactionId);
+
+    const attachmentMap = new Map(attachments.map(a => [a.interactionId, a.count]));
+
+    const enrichedInteractions = interactions.map(i => ({
+      ...i,
+      attachmentCount: attachmentMap.get(i.id) || 0
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: enrichedInteractions,
+      message: 'Omnichannel timeline retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving omnichannel timeline', { 
+      errorMessage: error?.message,
+      personId: req.params.personId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve omnichannel timeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/omnichannel-interactions
+ * Create a new omnichannel interaction
+ */
+router.post('/omnichannel-interactions', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const validatedData = insertCrmOmnichannelInteractionSchema.parse({
+      ...req.body,
+      tenantId,
+      performedByUserId: req.user?.id
+    });
+
+    const [interaction] = await db
+      .insert(crmOmnichannelInteractions)
+      .values(validatedData)
+      .returning();
+
+    logger.info('Omnichannel interaction created', {
+      tenantId,
+      interactionId: interaction.id,
+      channel: interaction.channel,
+      personId: interaction.personId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: interaction,
+      message: 'Omnichannel interaction created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating omnichannel interaction', { 
+      errorMessage: error?.message,
+      body: req.body
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create omnichannel interaction',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/identity-matches
+ * Get list of identity match candidates for review
+ */
+router.get('/identity-matches', rbacMiddleware, requirePermission('crm.manage_identities'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { status = 'pending', minConfidence = 70 } = req.query;
+
+    const matches = await db
+      .select()
+      .from(crmIdentityMatches)
+      .where(
+        and(
+          eq(crmIdentityMatches.tenantId, tenantId),
+          eq(crmIdentityMatches.status, status as any),
+          gte(crmIdentityMatches.confidenceScore, Number(minConfidence))
+        )
+      )
+      .orderBy(desc(crmIdentityMatches.confidenceScore))
+      .limit(100);
+
+    res.status(200).json({
+      success: true,
+      data: matches,
+      message: 'Identity matches retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving identity matches', { 
+      errorMessage: error?.message
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve identity matches',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/identity-matches/:id/accept
+ * Accept identity match and merge persons
+ */
+router.post('/identity-matches/:id/accept', rbacMiddleware, requirePermission('crm.manage_identities'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    // Get match details
+    const [match] = await db
+      .select()
+      .from(crmIdentityMatches)
+      .where(
+        and(
+          eq(crmIdentityMatches.id, id),
+          eq(crmIdentityMatches.tenantId, tenantId)
+        )
+      );
+
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        error: 'Identity match not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Update match status
+    await db
+      .update(crmIdentityMatches)
+      .set({
+        status: 'accepted',
+        reviewedBy: req.user?.id,
+        reviewedAt: new Date(),
+        reviewNotes: reason
+      })
+      .where(eq(crmIdentityMatches.id, id));
+
+    // Create identity event for audit trail
+    await db.insert(crmIdentityEvents).values({
+      tenantId,
+      eventType: 'merge',
+      sourcePersonId: match.personIdB,
+      targetPersonId: match.personIdA,
+      performedBy: req.user?.id || 'system',
+      reason,
+      metadata: {
+        matchId: match.id,
+        confidenceScore: match.confidenceScore,
+        matchType: match.matchType
+      }
+    });
+
+    logger.info('Identity match accepted', {
+      tenantId,
+      matchId: id,
+      personIdA: match.personIdA,
+      personIdB: match.personIdB,
+      acceptedBy: req.user?.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { matchId: id, status: 'accepted' },
+      message: 'Identity match accepted and persons merged',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error accepting identity match', { 
+      errorMessage: error?.message,
+      matchId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to accept identity match',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/crm/identity-matches/:id/reject
+ * Reject identity match
+ */
+router.post('/identity-matches/:id/reject', rbacMiddleware, requirePermission('crm.manage_identities'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    // Update match status
+    await db
+      .update(crmIdentityMatches)
+      .set({
+        status: 'rejected',
+        reviewedBy: req.user?.id,
+        reviewedAt: new Date(),
+        reviewNotes: reason
+      })
+      .where(
+        and(
+          eq(crmIdentityMatches.id, id),
+          eq(crmIdentityMatches.tenantId, tenantId)
+        )
+      );
+
+    logger.info('Identity match rejected', {
+      tenantId,
+      matchId: id,
+      rejectedBy: req.user?.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { matchId: id, status: 'rejected' },
+      message: 'Identity match rejected',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error rejecting identity match', { 
+      errorMessage: error?.message,
+      matchId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to reject identity match',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/crm/identity-conflicts
+ * Get list of identity conflicts requiring manual resolution
+ */
+router.get('/identity-conflicts', rbacMiddleware, requirePermission('crm.manage_identities'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { status = 'pending', priority } = req.query;
+
+    let query = db
+      .select()
+      .from(crmIdentityConflicts)
+      .where(
+        and(
+          eq(crmIdentityConflicts.tenantId, tenantId),
+          eq(crmIdentityConflicts.status, status as string)
+        )
+      );
+
+    if (priority) {
+      query = query.where(eq(crmIdentityConflicts.priority, priority as string));
+    }
+
+    const conflicts = await query
+      .orderBy(
+        desc(crmIdentityConflicts.priority),
+        desc(crmIdentityConflicts.detectedAt)
+      )
+      .limit(100);
+
+    res.status(200).json({
+      success: true,
+      data: conflicts,
+      message: 'Identity conflicts retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving identity conflicts', { 
+      errorMessage: error?.message
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve identity conflicts',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
 
 export default router;
