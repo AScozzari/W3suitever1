@@ -36,6 +36,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
+// TypeScript interfaces for API responses
+interface Store {
+  id: string;
+  name: string;
+  code: string;
+}
+
 // Lead source enum (matches backend)
 const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
 
@@ -47,6 +54,7 @@ const leadFormSchema = z.object({
   companyName: z.string().optional(),
   productInterest: z.string().optional(),
   campaignId: z.string().optional(),
+  storeId: z.string().min(1, 'Store richiesto'),
   leadSource: z.enum(leadSources).optional(),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   notes: z.string().optional(),
@@ -105,6 +113,7 @@ export function CreateLeadDialog({
       companyName: '',
       productInterest: '',
       campaignId: '',
+      storeId: inheritedStoreId || '',
       leadSource: 'manual',
       landingPageUrl: '',
       notes: '',
@@ -121,13 +130,24 @@ export function CreateLeadDialog({
   });
   
   const campaigns = useMemo(() => campaignsResponse?.data || [], [campaignsResponse?.data]);
+
+  // Fetch stores
+  const { data: storesResponse } = useQuery<any>({
+    queryKey: ['/api/stores'],
+    enabled: open,
+  });
   
-  // Auto-populate campaign from parent view context
+  const stores = useMemo(() => storesResponse?.data || [], [storesResponse?.data]);
+  
+  // Auto-populate campaign and store from parent view context
   useEffect(() => {
     if (preselectedCampaignId) {
       form.setValue('campaignId', preselectedCampaignId);
     }
-  }, [preselectedCampaignId, form]);
+    if (inheritedStoreId) {
+      form.setValue('storeId', inheritedStoreId);
+    }
+  }, [preselectedCampaignId, inheritedStoreId, form]);
   
   // Watch for campaign selection changes to inherit UTM parameters
   const selectedCampaignId = form.watch('campaignId');
@@ -320,6 +340,32 @@ export function CreateLeadDialog({
                 )}
               />
             </div>
+
+            {/* Store Selection */}
+            <FormField
+              control={form.control}
+              name="storeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Store *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-store">
+                        <SelectValue placeholder="Seleziona store" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(stores || [])?.map((store: Store) => (
+                        <SelectItem key={store.id} value={store.id}>
+                          {store.name} ({store.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Campaign & Source */}
             <div className="grid grid-cols-2 gap-4">

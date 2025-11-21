@@ -56,6 +56,19 @@ interface Driver {
   name: string;
 }
 
+interface Store {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -65,6 +78,8 @@ interface ApiResponse<T> {
 const dealFormSchema = z.object({
   pipelineId: z.string().min(1, 'Pipeline richiesta'),
   stage: z.string().min(1, 'Stage richiesto'),
+  storeId: z.string().min(1, 'Store richiesto'),
+  ownerUserId: z.string().min(1, 'Owner richiesto'),
   leadId: z.string().optional(),
   personId: z.string().optional(),
   estimatedValue: z.string().min(1, 'Valore stimato richiesto'),
@@ -99,6 +114,8 @@ export function CreateDealDialog({
     defaultValues: {
       pipelineId: '',
       stage: '',
+      storeId: inheritedStoreId || '',
+      ownerUserId: defaultOwnerId || '',
       leadId: preselectedLeadId || '',
       personId: '',
       estimatedValue: '',
@@ -125,6 +142,18 @@ export function CreateDealDialog({
     enabled: open,
   });
 
+  // Fetch stores
+  const { data: stores } = useQuery<ApiResponse<Store[]>>({
+    queryKey: ['/api/stores'],
+    enabled: open,
+  });
+
+  // Fetch users for owner selection
+  const { data: users } = useQuery<ApiResponse<User[]>>({
+    queryKey: ['/api/users'],
+    enabled: open,
+  });
+
   // Get stages for selected pipeline
   const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
   const stages = selectedPipeline?.stages || [];
@@ -138,7 +167,13 @@ export function CreateDealDialog({
       form.setValue('pipelineId', preselectedPipelineId);
       setSelectedPipelineId(preselectedPipelineId);
     }
-  }, [preselectedLeadId, preselectedPipelineId, form]);
+    if (inheritedStoreId) {
+      form.setValue('storeId', inheritedStoreId);
+    }
+    if (defaultOwnerId) {
+      form.setValue('ownerUserId', defaultOwnerId);
+    }
+  }, [preselectedLeadId, preselectedPipelineId, inheritedStoreId, defaultOwnerId, form]);
 
   // Create deal mutation
   const createDealMutation = useMutation({
@@ -246,6 +281,58 @@ export function CreateDealDialog({
                       {stages.map((stage: string) => (
                         <SelectItem key={stage} value={stage}>
                           {stage}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Store Selection */}
+            <FormField
+              control={form.control}
+              name="storeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Store *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-store">
+                        <SelectValue placeholder="Seleziona store" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {stores?.data?.map(store => (
+                        <SelectItem key={store.id} value={store.id}>
+                          {store.name} ({store.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Owner Selection */}
+            <FormField
+              control={form.control}
+              name="ownerUserId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-owner">
+                        <SelectValue placeholder="Seleziona owner" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {users?.data?.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.firstName} {user.lastName} - {user.email}
                         </SelectItem>
                       ))}
                     </SelectContent>
