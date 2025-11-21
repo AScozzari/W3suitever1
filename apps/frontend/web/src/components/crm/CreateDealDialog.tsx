@@ -178,9 +178,15 @@ export function CreateDealDialog({
   // Create deal mutation
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
+      // Convert "none" to null for optional fields
+      const leadId = data.leadId === 'none' ? null : data.leadId;
+      const driverId = data.driverId === 'none' ? null : data.driverId;
+      
       // If personId is provided, use it; otherwise backend will get it from lead
       const payload: any = {
         ...data,
+        leadId,
+        driverId,
         estimatedValue: parseFloat(data.estimatedValue),
         probability: parseInt(data.probability),
         status: 'open',
@@ -435,7 +441,7 @@ export function CreateDealDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nessun driver</SelectItem>
+                      <SelectItem value="none">Nessun driver</SelectItem>
                       {drivers?.data?.map(driver => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.name}

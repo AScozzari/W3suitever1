@@ -195,10 +195,16 @@ export function CreateLeadDialog({
       // Get UTM data from localStorage
       const storedUTM = getStoredUTM();
       
+      // Convert "none" to null for optional fields
+      const driverId = data.driverId === 'none' ? null : data.driverId;
+      const campaignId = data.campaignId === 'none' ? null : data.campaignId;
+      
       return await apiRequest('/api/crm/leads', {
         method: 'POST',
         body: JSON.stringify({
           ...data,
+          driverId,
+          campaignId,
           status: 'new',
           leadScore: 50,
           consentTimestamp: new Date().toISOString(),
@@ -397,7 +403,7 @@ export function CreateLeadDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nessun driver</SelectItem>
+                      <SelectItem value="none">Nessun driver</SelectItem>
                       {(drivers || [])?.map((driver: Driver) => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.name}
