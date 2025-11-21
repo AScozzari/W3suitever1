@@ -155,7 +155,7 @@ export function CreateDealDialog({
   });
 
   // Get stages for selected pipeline
-  const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
+  const selectedPipeline = pipelines?.find(p => p.id === selectedPipelineId);
   const stages = selectedPipeline?.stages || [];
 
   // Auto-populate context values from parent view
@@ -262,7 +262,7 @@ export function CreateDealDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent position="popper">
-                      {pipelines?.data?.map(pipeline => (
+                      {pipelines?.map(pipeline => (
                         <SelectItem key={pipeline.id} value={pipeline.id}>
                           {pipeline.name} ({pipeline.driver})
                         </SelectItem>
@@ -318,7 +318,7 @@ export function CreateDealDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent position="popper">
-                      {stores?.data?.map(store => (
+                      {stores?.map(store => (
                         <SelectItem key={store.id} value={store.id}>
                           {store.name} ({store.code})
                         </SelectItem>
@@ -344,7 +344,7 @@ export function CreateDealDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent position="popper">
-                      {users?.data?.map(user => (
+                      {users?.map(user => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.firstName} {user.lastName} - {user.email}
                         </SelectItem>
@@ -442,7 +442,7 @@ export function CreateDealDialog({
                     </FormControl>
                     <SelectContent position="popper">
                       <SelectItem value="none">Nessun driver</SelectItem>
-                      {drivers?.data?.map(driver => (
+                      {drivers?.map(driver => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.name}
                         </SelectItem>
