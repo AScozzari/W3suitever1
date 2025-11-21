@@ -43,6 +43,12 @@ interface Store {
   code: string;
 }
 
+interface Driver {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
 // Lead source enum (matches backend)
 const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
 
@@ -55,6 +61,7 @@ const leadFormSchema = z.object({
   productInterest: z.string().optional(),
   campaignId: z.string().optional(),
   storeId: z.string().min(1, 'Store richiesto'),
+  driverId: z.string().optional(),
   leadSource: z.enum(leadSources).optional(),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   notes: z.string().optional(),
@@ -114,6 +121,7 @@ export function CreateLeadDialog({
       productInterest: '',
       campaignId: '',
       storeId: inheritedStoreId || '',
+      driverId: '',
       leadSource: 'manual',
       landingPageUrl: '',
       notes: '',
@@ -138,6 +146,14 @@ export function CreateLeadDialog({
   });
   
   const stores = useMemo(() => storesResponse?.data || [], [storesResponse?.data]);
+
+  // Fetch drivers
+  const { data: driversResponse } = useQuery<any>({
+    queryKey: ['/api/drivers'],
+    enabled: open,
+  });
+  
+  const drivers = useMemo(() => driversResponse?.data || [], [driversResponse?.data]);
   
   // Auto-populate campaign and store from parent view context
   useEffect(() => {
@@ -358,6 +374,33 @@ export function CreateLeadDialog({
                       {(stores || [])?.map((store: Store) => (
                         <SelectItem key={store.id} value={store.id}>
                           {store.name} ({store.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Driver Selection (Optional) */}
+            <FormField
+              control={form.control}
+              name="driverId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Driver (Opzionale)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-driver">
+                        <SelectValue placeholder="Seleziona driver" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nessun driver</SelectItem>
+                      {(drivers || [])?.map((driver: Driver) => (
+                        <SelectItem key={driver.id} value={driver.id}>
+                          {driver.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
