@@ -154,17 +154,6 @@ export function CreateDealDialog({
     enabled: open,
   });
 
-  // Debug: Log data to check if queries are working
-  useEffect(() => {
-    if (open) {
-      console.log('[CreateDealDialog] Pipelines:', pipelines);
-      console.log('[CreateDealDialog] Stores:', stores);
-      console.log('[CreateDealDialog] Users:', users);
-      console.log('[CreateDealDialog] Leads:', leads);
-      console.log('[CreateDealDialog] Drivers:', drivers);
-    }
-  }, [open, pipelines, stores, users, leads, drivers]);
-
   // Get stages for selected pipeline
   const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
   const stages = selectedPipeline?.stages || [];

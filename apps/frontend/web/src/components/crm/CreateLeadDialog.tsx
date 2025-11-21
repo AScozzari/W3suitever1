@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { LEAD_SOURCES, LEAD_SOURCE_LABELS } from '@/lib/constants/crm';
 
 // TypeScript interfaces for API responses
 interface Store {
@@ -49,9 +50,6 @@ interface Driver {
   description: string | null;
 }
 
-// Lead source enum (matches backend)
-const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
-
 const leadFormSchema = z.object({
   firstName: z.string().min(2, 'Nome richiesto (min 2 caratteri)'),
   lastName: z.string().min(2, 'Cognome richiesto (min 2 caratteri)'),
@@ -62,7 +60,7 @@ const leadFormSchema = z.object({
   campaignId: z.string().optional(),
   storeId: z.string().min(1, 'Store richiesto'),
   driverId: z.string().optional(),
-  leadSource: z.enum(leadSources).optional(),
+  leadSource: z.enum(LEAD_SOURCES).optional(),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   notes: z.string().optional(),
   privacyPolicyAccepted: z.boolean().refine((val) => val === true, {
@@ -457,11 +455,11 @@ export function CreateLeadDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent position="popper">
-                        <SelectItem value="manual">Manuale</SelectItem>
-                        <SelectItem value="web_form">Form Web</SelectItem>
-                        <SelectItem value="landing_page">Landing Page</SelectItem>
-                        <SelectItem value="powerful_api">Powerful API</SelectItem>
-                        <SelectItem value="csv_import">Import CSV</SelectItem>
+                        {LEAD_SOURCES.map((source) => (
+                          <SelectItem key={source} value={source}>
+                            {LEAD_SOURCE_LABELS[source]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { LEAD_SOURCES, LEAD_SOURCE_LABELS } from '@/lib/constants/crm';
 
 interface CampaignWizardProps {
   open: boolean;
@@ -49,9 +50,6 @@ interface CampaignWizardProps {
 // Form schema matching CampaignSettingsDialog
 const routingModes = ['automatic', 'manual'] as const;
 type RoutingMode = typeof routingModes[number];
-
-const leadSources = ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import'] as const;
-type LeadSource = typeof leadSources[number];
 
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Nome campagna obbligatorio").max(255),
@@ -77,7 +75,7 @@ const campaignFormSchema = z.object({
   notifyUserIds: z.array(z.string().uuid()).optional().default([]),
   
   // Lead Source & Marketing Channels
-  defaultLeadSource: z.enum(leadSources).optional().nullable(),
+  defaultLeadSource: z.enum(LEAD_SOURCES).optional().nullable(),
   landingPageUrl: z.string().url().optional().nullable().or(z.literal('')),
   marketingChannels: z.array(z.string()).optional().default([]),
   
@@ -922,11 +920,11 @@ export function CampaignWizard({ open, onClose, campaignId, mode }: CampaignWiza
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="manual">Manuale</SelectItem>
-                            <SelectItem value="web_form">Form Web</SelectItem>
-                            <SelectItem value="powerful_api">API Powerful</SelectItem>
-                            <SelectItem value="landing_page">Landing Page</SelectItem>
-                            <SelectItem value="csv_import">Importazione CSV</SelectItem>
+                            {LEAD_SOURCES.map((source) => (
+                              <SelectItem key={source} value={source}>
+                                {LEAD_SOURCE_LABELS[source]}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
