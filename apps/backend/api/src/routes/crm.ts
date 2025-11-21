@@ -7126,7 +7126,7 @@ router.post('/deals', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // Get personId from lead if leadId is provided
+    // Get personId from lead if leadId is provided, otherwise personId must be in request body
     let personId: string | undefined;
     if (validation.data.leadId) {
       const [lead] = await db
@@ -7151,10 +7151,17 @@ router.post('/deals', async (req, res) => {
           timestamp: new Date().toISOString()
         } as ApiErrorResponse);
       }
+    } else if (req.body.personId) {
+      // Manual deal creation: personId provided directly
+      personId = req.body.personId;
+      logger.info('Manual deal creation with direct personId', {
+        personId,
+        tenantId
+      });
     } else {
       return res.status(400).json({
         success: false,
-        error: 'leadId is required to create a deal',
+        error: 'Either leadId or personId is required to create a deal',
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }

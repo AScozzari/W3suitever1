@@ -178,17 +178,25 @@ export function CreateDealDialog({
   // Create deal mutation
   const createDealMutation = useMutation({
     mutationFn: async (data: DealFormData) => {
+      // If personId is provided, use it; otherwise backend will get it from lead
+      const payload: any = {
+        ...data,
+        estimatedValue: parseFloat(data.estimatedValue),
+        probability: parseInt(data.probability),
+        status: 'open',
+        dealCreationSource: 'manual',
+        storeId: inheritedStoreId || data.storeId,
+        ownerUserId: defaultOwnerId || data.ownerUserId,
+      };
+      
+      // Include personId if provided (for manual creation without lead)
+      if (data.personId) {
+        payload.personId = data.personId;
+      }
+      
       return await apiRequest('/api/crm/deals', {
         method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          estimatedValue: parseFloat(data.estimatedValue),
-          probability: parseInt(data.probability),
-          status: 'open',
-          dealCreationSource: 'manual',
-          storeId: inheritedStoreId,
-          ownerUserId: defaultOwnerId,
-        }),
+        body: JSON.stringify(payload),
       });
     },
     onSuccess: () => {
