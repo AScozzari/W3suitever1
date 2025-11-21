@@ -4,30 +4,47 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import LeadsDataTable from '@/components/crm/LeadsDataTable';
+import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { 
   ArrowLeft,
   Target,
   Users,
   CheckCircle2,
   TrendingUp,
-  Megaphone
+  Megaphone,
+  Plus
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@w3suite/frontend-kit/components/blocks';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 
+interface Campaign {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+}
+
+interface CampaignStats {
+  totalLeads: number;
+  workedLeads: number;
+  conversionRate: number;
+}
+
 export default function CampaignLeadsPage() {
   const { id } = useParams<{ id: string }>();
   const [currentModule, setCurrentModule] = useState('crm');
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
   const { navigate } = useTenantNavigation();
 
   // Fetch campaign details
-  const { data: campaign, isLoading: loadingCampaign, error: errorCampaign } = useQuery({
+  const { data: campaign, isLoading: loadingCampaign, error: errorCampaign } = useQuery<Campaign>({
     queryKey: [`/api/crm/campaigns/${id}`],
   });
 
   // Fetch campaign statistics
-  const { data: stats, isLoading: loadingStats } = useQuery({
+  const { data: stats, isLoading: loadingStats } = useQuery<CampaignStats>({
     queryKey: [`/api/crm/campaigns/${id}/stats`],
     enabled: !!id,
   });
@@ -109,6 +126,15 @@ export default function CampaignLeadsPage() {
                 )}
               </div>
             </div>
+            
+            <Button
+              onClick={() => setCreateLeadOpen(true)}
+              className="glass-button"
+              data-testid="button-create-lead"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Lead
+            </Button>
           </div>
 
           {/* Campaign Statistics Cards */}
@@ -207,6 +233,13 @@ export default function CampaignLeadsPage() {
           <LeadsDataTable campaignId={id} />
         </div>
       </div>
+      
+      {/* Create Lead Dialog with pre-selected campaign */}
+      <CreateLeadDialog 
+        open={createLeadOpen} 
+        onOpenChange={setCreateLeadOpen}
+        preselectedCampaignId={id}
+      />
     </Layout>
   );
 }

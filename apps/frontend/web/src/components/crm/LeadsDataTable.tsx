@@ -137,7 +137,7 @@ const getLeadScoreConfig = (score?: number | null): { color: string; category: s
 };
 
 export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'leadScore', desc: true }]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -356,8 +356,8 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
           </button>
         ),
         cell: ({ row }) => {
-          const owner = row.ownerFirstName && row.ownerLastName 
-            ? `${row.ownerFirstName} ${row.ownerLastName}`
+          const owner = row.original.ownerFirstName && row.original.ownerLastName 
+            ? `${row.original.ownerFirstName} ${row.original.ownerLastName}`
             : 'Non assegnato';
           return (
             <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
