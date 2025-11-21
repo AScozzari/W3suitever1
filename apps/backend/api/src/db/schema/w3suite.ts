@@ -184,6 +184,7 @@ export const workflowExecutionModeEnum = pgEnum('workflow_execution_mode', ['aut
 export const crmLeadStatusEnum = pgEnum('crm_lead_status', ['new', 'contacted', 'in_progress', 'qualified', 'converted', 'disqualified']);
 export const leadStatusCategoryEnum = pgEnum('lead_status_category', ['new', 'working', 'qualified', 'converted', 'disqualified', 'on_hold']);
 export const leadSourceEnum = pgEnum('lead_source', ['manual', 'web_form', 'powerful_api', 'landing_page', 'csv_import']);
+export const dealCreationSourceEnum = pgEnum('deal_creation_source', ['manual', 'converted_from_lead', 'imported', 'workflow_automation']);
 export const crmPipelineDomainEnum = pgEnum('crm_pipeline_domain', ['sales', 'service', 'retention']);
 export const crmPipelineStageCategoryEnum = pgEnum('crm_pipeline_stage_category', [
   'starter',    // Fase iniziale contatto
@@ -5285,6 +5286,7 @@ export const crmDeals = w3suiteSchema.table("crm_deals", {
   leadId: uuid("lead_id").references(() => crmLeads.id),
   campaignId: uuid("campaign_id"),
   sourceChannel: crmInboundChannelEnum("source_channel"), // INBOUND: Inherited from lead
+  dealCreationSource: dealCreationSourceEnum("deal_creation_source").default('manual'), // Track how deal was created
   personId: uuid("person_id").notNull(), // Propagated from lead for identity tracking
   customerId: uuid("customer_id"),
   

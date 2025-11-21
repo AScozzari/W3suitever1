@@ -32,6 +32,36 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
+// TypeScript interfaces for API responses
+interface Pipeline {
+  id: string;
+  name: string;
+  driver: string;
+  stages: Array<{ id: string; name: string; order: number }>;
+  storeId?: string;
+}
+
+interface Lead {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  personId: string;
+}
+
+interface Driver {
+  id: string;
+  name: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
 const dealFormSchema = z.object({
   pipelineId: z.string().min(1, 'Pipeline richiesta'),
   stage: z.string().min(1, 'Stage richiesto'),
@@ -68,25 +98,25 @@ export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: Crea
   });
 
   // Fetch pipelines
-  const { data: pipelines } = useQuery({
+  const { data: pipelines } = useQuery<ApiResponse<Pipeline[]>>({
     queryKey: ['/api/crm/pipelines'],
     enabled: open,
   });
 
   // Fetch leads for selection
-  const { data: leads } = useQuery({
+  const { data: leads } = useQuery<ApiResponse<Lead[]>>({
     queryKey: ['/api/crm/leads'],
     enabled: open,
   });
 
   // Fetch drivers
-  const { data: drivers } = useQuery({
+  const { data: drivers } = useQuery<ApiResponse<Driver[]>>({
     queryKey: ['/api/drivers'],
     enabled: open,
   });
 
   // Get stages for selected pipeline
-  const selectedPipeline = pipelines?.data?.find((p: any) => p.id === selectedPipelineId);
+  const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
   const stages = selectedPipeline?.stages || [];
 
   useEffect(() => {
@@ -165,7 +195,7 @@ export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: Crea
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {pipelines?.data?.map((pipeline: any) => (
+                      {pipelines?.data?.map(pipeline => (
                         <SelectItem key={pipeline.id} value={pipeline.id}>
                           {pipeline.name} ({pipeline.driver})
                         </SelectItem>
@@ -222,7 +252,7 @@ export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: Crea
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">Nessun lead</SelectItem>
-                      {leads?.data?.map((lead: any) => (
+                      {leads?.data?.map(lead => (
                         <SelectItem key={lead.id} value={lead.id}>
                           {lead.firstName} {lead.lastName} - {lead.companyName || 'Privato'}
                         </SelectItem>
@@ -292,7 +322,7 @@ export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: Crea
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {drivers?.data?.map((driver: any) => (
+                      {drivers?.data?.map(driver => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.name}
                         </SelectItem>
