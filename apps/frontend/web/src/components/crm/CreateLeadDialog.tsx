@@ -71,9 +71,16 @@ type LeadFormData = z.infer<typeof leadFormSchema>;
 interface CreateLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedCampaignId?: string;
+  inheritedStoreId?: string;
 }
 
-export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) {
+export function CreateLeadDialog({ 
+  open, 
+  onOpenChange, 
+  preselectedCampaignId,
+  inheritedStoreId
+}: CreateLeadDialogProps) {
   const { toast } = useToast();
   const { getStoredUTM } = useUTMTracking();
   
@@ -115,6 +122,13 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
   
   const campaigns = useMemo(() => campaignsResponse?.data || [], [campaignsResponse?.data]);
   
+  // Auto-populate campaign from parent view context
+  useEffect(() => {
+    if (preselectedCampaignId) {
+      form.setValue('campaignId', preselectedCampaignId);
+    }
+  }, [preselectedCampaignId, form]);
+  
   // Watch for campaign selection changes to inherit UTM parameters
   const selectedCampaignId = form.watch('campaignId');
   
@@ -153,6 +167,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
           leadScore: 50,
           consentTimestamp: new Date().toISOString(),
           consentSource: 'crm_manual_entry',
+          storeId: inheritedStoreId,
           // Send UTM parameters (prioritize stored UTM from URL over campaign UTM)
           utmSource: storedUTM?.utm_source || undefined,
           utmMedium: storedUTM?.utm_medium || undefined,

@@ -78,9 +78,19 @@ interface CreateDealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preselectedLeadId?: string;
+  preselectedPipelineId?: string;
+  inheritedStoreId?: string;
+  defaultOwnerId?: string;
 }
 
-export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: CreateDealDialogProps) {
+export function CreateDealDialog({ 
+  open, 
+  onOpenChange, 
+  preselectedLeadId,
+  preselectedPipelineId,
+  inheritedStoreId,
+  defaultOwnerId
+}: CreateDealDialogProps) {
   const { toast } = useToast();
   const [selectedPipelineId, setSelectedPipelineId] = useState<string>('');
 
@@ -119,11 +129,16 @@ export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: Crea
   const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
   const stages = selectedPipeline?.stages || [];
 
+  // Auto-populate context values from parent view
   useEffect(() => {
     if (preselectedLeadId) {
       form.setValue('leadId', preselectedLeadId);
     }
-  }, [preselectedLeadId, form]);
+    if (preselectedPipelineId) {
+      form.setValue('pipelineId', preselectedPipelineId);
+      setSelectedPipelineId(preselectedPipelineId);
+    }
+  }, [preselectedLeadId, preselectedPipelineId, form]);
 
   // Create deal mutation
   const createDealMutation = useMutation({
@@ -135,6 +150,9 @@ export function CreateDealDialog({ open, onOpenChange, preselectedLeadId }: Crea
           estimatedValue: parseFloat(data.estimatedValue),
           probability: parseInt(data.probability),
           status: 'open',
+          dealCreationSource: 'manual',
+          storeId: inheritedStoreId,
+          ownerUserId: defaultOwnerId,
         }),
       });
     },
