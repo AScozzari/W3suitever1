@@ -261,7 +261,7 @@ export function CreateDealDialog({
                         <SelectValue placeholder="Seleziona pipeline" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {pipelines?.data?.map(pipeline => (
                         <SelectItem key={pipeline.id} value={pipeline.id}>
                           {pipeline.name} ({pipeline.driver})
@@ -291,7 +291,7 @@ export function CreateDealDialog({
                         <SelectValue placeholder="Seleziona stage" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {stages.map((stage) => (
                         <SelectItem key={stage.id} value={stage.id}>
                           {stage.name}
@@ -317,7 +317,7 @@ export function CreateDealDialog({
                         <SelectValue placeholder="Seleziona store" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {stores?.data?.map(store => (
                         <SelectItem key={store.id} value={store.id}>
                           {store.name} ({store.code})
@@ -343,7 +343,7 @@ export function CreateDealDialog({
                         <SelectValue placeholder="Seleziona owner" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {users?.data?.map(user => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.firstName} {user.lastName} - {user.email}
@@ -369,7 +369,7 @@ export function CreateDealDialog({
                         <SelectValue placeholder="Seleziona lead (opzionale)" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       <SelectItem value="none">Nessun lead</SelectItem>
                       {leads?.data?.map(lead => (
                         <SelectItem key={lead.id} value={lead.id}>
@@ -440,7 +440,7 @@ export function CreateDealDialog({
                         <SelectValue placeholder="Seleziona driver" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       <SelectItem value="none">Nessun driver</SelectItem>
                       {drivers?.data?.map(driver => (
                         <SelectItem key={driver.id} value={driver.id}>

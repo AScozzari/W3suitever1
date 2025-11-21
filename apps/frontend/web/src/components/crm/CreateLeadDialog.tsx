@@ -376,7 +376,7 @@ export function CreateLeadDialog({
                         <SelectValue placeholder="Seleziona store" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {(stores || [])?.map((store: Store) => (
                         <SelectItem key={store.id} value={store.id}>
                           {store.name} ({store.code})
@@ -402,7 +402,7 @@ export function CreateLeadDialog({
                         <SelectValue placeholder="Seleziona driver" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       <SelectItem value="none">Nessun driver</SelectItem>
                       {(drivers || [])?.map((driver: Driver) => (
                         <SelectItem key={driver.id} value={driver.id}>
@@ -430,7 +430,7 @@ export function CreateLeadDialog({
                           <SelectValue placeholder="Seleziona campagna" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent position="popper">
                         <SelectItem value="none">Nessuna campagna</SelectItem>
                         {(campaigns || [])?.map((campaign: any) => (
                           <SelectItem key={campaign.id} value={campaign.id}>
@@ -456,7 +456,7 @@ export function CreateLeadDialog({
                           <SelectValue placeholder="Seleziona origine" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent position="popper">
                         <SelectItem value="manual">Manuale</SelectItem>
                         <SelectItem value="web_form">Form Web</SelectItem>
                         <SelectItem value="landing_page">Landing Page</SelectItem>
