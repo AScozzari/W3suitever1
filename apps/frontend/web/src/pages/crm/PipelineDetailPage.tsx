@@ -3,6 +3,7 @@ import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
+import { CreateDealDialog } from '@/components/crm/CreateDealDialog';
 import { Button } from '@/components/ui/button';
 import DealsDataTable from '@/components/crm/DealsDataTable';
 import DealsKanban from '@/components/crm/DealsKanban';
@@ -28,6 +29,7 @@ const STORAGE_KEY = 'pipeline-view-mode';
 export default function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [currentModule, setCurrentModule] = useState('crm');
+  const [showCreateDealDialog, setShowCreateDealDialog] = useState(false);
   const { navigate } = useTenantNavigation();
   
   // Initialize view mode from localStorage
@@ -192,6 +194,7 @@ export default function PipelineDetailPage() {
                 Impostazioni
               </Button>
               <Button
+                onClick={() => setShowCreateDealDialog(true)}
                 style={{ 
                   background: 'hsl(var(--brand-orange))',
                   color: 'white'
@@ -211,6 +214,15 @@ export default function PipelineDetailPage() {
           {viewMode === 'analytics' && <PipelineAnalyticsTab pipelineId={id} />}
         </div>
       </div>
+      
+      {/* Create Deal Dialog with Pipeline Context */}
+      <CreateDealDialog
+        open={showCreateDealDialog}
+        onOpenChange={setShowCreateDealDialog}
+        preselectedPipelineId={id}
+        inheritedStoreId={undefined}
+        defaultOwnerId={undefined}
+      />
     </Layout>
   );
 }

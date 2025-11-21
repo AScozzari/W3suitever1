@@ -3,6 +3,7 @@ import { useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { CRMCommandPalette } from '@/components/crm/CRMCommandPalette';
+import { CreateLeadDialog } from '@/components/crm/CreateLeadDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -41,6 +42,7 @@ interface Campaign {
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [currentModule, setCurrentModule] = useState('crm');
+  const [showCreateLeadDialog, setShowCreateLeadDialog] = useState(false);
   const { navigate } = useTenantNavigation();
 
   // Fetch campaign details
@@ -177,6 +179,7 @@ export default function CampaignDetailPage() {
                 Impostazioni
               </Button>
               <Button
+                onClick={() => setShowCreateLeadDialog(true)}
                 style={{ 
                   background: 'hsl(var(--brand-orange))',
                   color: 'white'
@@ -272,6 +275,14 @@ export default function CampaignDetailPage() {
           </Tabs>
         </div>
       </div>
+      
+      {/* Create Lead Dialog with Campaign Context */}
+      <CreateLeadDialog
+        open={showCreateLeadDialog}
+        onOpenChange={setShowCreateLeadDialog}
+        preselectedCampaignId={id}
+        inheritedStoreId={undefined}
+      />
     </Layout>
   );
 }
