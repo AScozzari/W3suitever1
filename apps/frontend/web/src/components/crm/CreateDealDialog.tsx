@@ -427,7 +427,7 @@ export function CreateDealDialog({
               name="driverId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Driver</FormLabel>
+                  <FormLabel>Driver (Opzionale)</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-driver">
@@ -435,6 +435,7 @@ export function CreateDealDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="">Nessun driver</SelectItem>
                       {drivers?.data?.map(driver => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.name}
