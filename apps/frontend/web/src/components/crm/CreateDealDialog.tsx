@@ -79,7 +79,7 @@ const dealFormSchema = z.object({
   pipelineId: z.string().min(1, 'Pipeline richiesta'),
   stage: z.string().min(1, 'Stage richiesto'),
   storeId: z.string().min(1, 'Store richiesto'),
-  ownerUserId: z.string().min(1, 'Owner richiesto'),
+  ownerUserId: z.string().min(1, 'Assegnato richiesto'),
   leadId: z.string().optional(),
   personId: z.string().optional(),
   estimatedValue: z.string().min(1, 'Valore stimato richiesto'),
@@ -153,6 +153,17 @@ export function CreateDealDialog({
     queryKey: ['/api/users'],
     enabled: open,
   });
+
+  // Debug: Log data to check if queries are working
+  useEffect(() => {
+    if (open) {
+      console.log('[CreateDealDialog] Pipelines:', pipelines);
+      console.log('[CreateDealDialog] Stores:', stores);
+      console.log('[CreateDealDialog] Users:', users);
+      console.log('[CreateDealDialog] Leads:', leads);
+      console.log('[CreateDealDialog] Drivers:', drivers);
+    }
+  }, [open, pipelines, stores, users, leads, drivers]);
 
   // Get stages for selected pipeline
   const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
@@ -336,11 +347,11 @@ export function CreateDealDialog({
               name="ownerUserId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Owner *</FormLabel>
+                  <FormLabel>Assegnato *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-owner">
-                        <SelectValue placeholder="Seleziona owner" />
+                        <SelectValue placeholder="Seleziona assegnato" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent position="popper">

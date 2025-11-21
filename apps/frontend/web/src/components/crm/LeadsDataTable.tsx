@@ -351,7 +351,7 @@ export default function LeadsDataTable({ campaignId }: LeadsDataTableProps) {
             data-testid="sort-owner"
           >
             <User className="h-4 w-4" />
-            Owner
+            Assegnato
             <ArrowUpDown className="h-3 w-3" />
           </button>
         ),
