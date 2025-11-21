@@ -286,9 +286,9 @@ export function CreateDealDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {stages.map((stage: string) => (
-                        <SelectItem key={stage} value={stage}>
-                          {stage}
+                      {stages.map((stage) => (
+                        <SelectItem key={stage.id} value={stage.id}>
+                          {stage.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
