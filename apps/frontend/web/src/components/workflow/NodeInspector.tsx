@@ -500,13 +500,13 @@ function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
           </Button>
           <Button
             variant="default"
-            size="sm"
+            size="default"
             onClick={handleExecute}
             disabled={executeMutation.isPending}
-            className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white"
+            className="bg-[#c43e00] hover:bg-[#a33500] text-white font-semibold shadow-md"
             data-testid="button-execute-node"
           >
-            <Play className="h-3 w-3 mr-1" />
+            <Play className="h-4 w-4 mr-2" />
             {executeMutation.isPending ? 'Esecuzione...' : 'Esegui Nodo'}
           </Button>
         </div>
