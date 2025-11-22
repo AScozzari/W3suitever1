@@ -24,7 +24,8 @@ import {
   ScheduleTriggerConfigSchema,
   WebhookInboundTriggerConfigSchema,
   ErrorTriggerConfigSchema,
-  ManualTriggerConfigSchema
+  ManualTriggerConfigSchema,
+  DatabaseOperationConfigSchema
 } from '../types/workflow-nodes';
 import { ALL_MCP_NODES } from './mcp-node-definitions';
 
@@ -827,6 +828,31 @@ export const FLOW_CONTROL_NODES: BaseNodeDefinition[] = [
   }
 ];
 
+// ==================== W3 DATA NODES DEFINITIONS ====================
+
+export const W3_DATA_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'w3-database-operation',
+    name: 'Database Operation',
+    description: 'Query or modify w3suite database tables with RLS enforcement (SELECT, INSERT, UPDATE, DELETE)',
+    category: 'w3-data',
+    ecosystem: 'w3suite',
+    icon: 'Database',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: DatabaseOperationConfigSchema,
+    defaultConfig: {
+      operation: 'SELECT',
+      table: '',
+      columns: [],
+      filters: [],
+      limit: 100,
+      returnId: true,
+      requireConfirmation: true
+    }
+  }
+];
+
 // ==================== COMBINED CATALOG ====================
 
 export const ALL_WORKFLOW_NODES: BaseNodeDefinition[] = [
@@ -836,6 +862,7 @@ export const ALL_WORKFLOW_NODES: BaseNodeDefinition[] = [
   ...ROUTING_NODES,
   ...INTEGRATION_NODES,
   ...FLOW_CONTROL_NODES,
+  ...W3_DATA_NODES,
   ...ALL_MCP_NODES
 ];
 
@@ -854,6 +881,7 @@ export const getAiNodes = (): BaseNodeDefinition[] => AI_NODES;
 export const getRoutingNodes = (): BaseNodeDefinition[] => ROUTING_NODES;
 export const getIntegrationNodes = (): BaseNodeDefinition[] => INTEGRATION_NODES;
 export const getFlowControlNodes = (): BaseNodeDefinition[] => FLOW_CONTROL_NODES;
+export const getW3DataNodes = (): BaseNodeDefinition[] => W3_DATA_NODES;
 
 // ==================== EXECUTOR MAPPING ====================
 
@@ -892,7 +920,9 @@ export const NODE_TO_EXECUTOR_MAPPING = {
   // Integration nodes
   'mcp-connector': 'mcp-connector-executor',
   // MCP nodes (all use mcp-connector-executor)
-  'mcp-google-gmail-send': 'mcp-connector-executor'
+  'mcp-google-gmail-send': 'mcp-connector-executor',
+  // W3 Data nodes
+  'w3-database-operation': 'database-operation-executor'
 } as const;
 
 export type NodeId = keyof typeof NODE_TO_EXECUTOR_MAPPING;

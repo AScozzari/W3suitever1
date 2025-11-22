@@ -695,6 +695,22 @@ export const DealStageWebhookTriggerConfigSchema = z.object({
   triggerOn: z.array(z.enum(['stage_change', 'pipeline_change', 'deal_won', 'deal_lost'])).default(['stage_change'])
 });
 
+// Database Operation Configuration (w3suite schema only, RLS-enforced)
+export const DatabaseOperationConfigSchema = z.object({
+  operation: z.enum(['SELECT', 'INSERT', 'UPDATE', 'DELETE']).default('SELECT'),
+  table: z.string().min(1, 'Table name required'),
+  columns: z.array(z.string()).optional(), // For SELECT
+  filters: z.array(z.object({
+    column: z.string(),
+    operator: z.enum(['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL']),
+    value: z.any().optional()
+  })).optional(), // For SELECT, UPDATE, DELETE
+  values: z.record(z.string(), z.any()).optional(), // For INSERT, UPDATE
+  limit: z.number().min(1).max(1000).default(100), // For SELECT
+  returnId: z.boolean().default(true), // For INSERT - return inserted ID
+  requireConfirmation: z.boolean().default(true) // For DELETE - safety check
+});
+
 // ==================== TYPE EXPORTS ====================
 
 export type EmailActionConfig = z.infer<typeof EmailActionConfigSchema>;
@@ -728,6 +744,7 @@ export type FunnelPipelineTransitionConfig = z.infer<typeof FunnelPipelineTransi
 export type AIFunnelOrchestratorConfig = z.infer<typeof AIFunnelOrchestratorConfigSchema>;
 export type FunnelExitConfig = z.infer<typeof FunnelExitConfigSchema>;
 export type DealStageWebhookTriggerConfig = z.infer<typeof DealStageWebhookTriggerConfigSchema>;
+export type DatabaseOperationConfig = z.infer<typeof DatabaseOperationConfigSchema>;
 
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
@@ -735,5 +752,6 @@ export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTrig
 export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig | AILeadRoutingConfig;
 export type IntegrationConfig = MCPConnectorConfig;
 export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig | PipelineAssignmentConfig | FunnelStageTransitionConfig | FunnelPipelineTransitionConfig | AIFunnelOrchestratorConfig | FunnelExitConfig | DealStageWebhookTriggerConfig;
+export type W3DataConfig = DatabaseOperationConfig;
 
-export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig | RoutingConfig;
+export type NodeConfig = ActionConfig | TriggerConfig | AiConfig | IntegrationConfig | RoutingConfig | W3DataConfig;

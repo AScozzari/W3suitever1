@@ -77,6 +77,7 @@ const nodeTypes = {
   'flow-control': WorkflowFlowControlNode,
   'mcp-outbound': WorkflowActionNode, // MCP Outbound nodes use action component
   'mcp-inbound': WorkflowTriggerNode, // MCP Inbound nodes use trigger component
+  'w3-data': WorkflowActionNode, // W3 Data nodes use action component
   condition: WorkflowActionNode, // Reuse action node for conditions (legacy)
   flow: WorkflowActionNode, // Reuse action node for flow control (legacy)
 } as const;
@@ -972,6 +973,54 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             style={{ backgroundColor: node.color }}
                           >
                             <span className="text-xs">FC</span>
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed mt-1">{node.description}</p>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {/* W3 Data Nodes */}
+                {(selectedCategory === 'all' || selectedCategory === 'w3-data') && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-3 h-3 bg-windtre-orange rounded-full" />
+                    W3 Data ({getNodesByCategory('w3-data').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getNodesByCategory('w3-data')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-4 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing w-full"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-xs">DB</span>
                           </div>
                           <div className="flex-1">
                             <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
