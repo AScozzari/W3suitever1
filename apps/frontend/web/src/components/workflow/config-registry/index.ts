@@ -17,6 +17,7 @@
 
 import { ComponentType } from 'react';
 import { Node, Edge } from '@xyflow/react';
+import DatabaseOperationConfig from '../config-components/DatabaseOperationConfig';
 
 /**
  * Standard props signature for all node configuration components
@@ -44,6 +45,9 @@ export const WORKFLOW_NODE_CONFIG_REGISTRY: Record<string, NodeConfigRenderer> =
   // 'create-task': TaskCreateConfig,
   // 'approve-request': ApprovalRequestConfig,
   // 'if-condition': IfConditionConfig,
+  
+  // W3Suite Data Operations
+  'w3-database-operation': DatabaseOperationConfig,
   
   // Phase 2: Remaining nodes (TBD)
 };

@@ -5,6 +5,7 @@ import { storage } from "./storage";
 // OAuth legacy system removed - using only OAuth2 enterprise
 import { setupOAuth2Server } from "./oauth2-server";
 import { workflowRoutes } from "../routes/workflows";
+import { workflowDataSourceRoutes } from "../routes/workflow-data-sources";
 import hrRoutes from "../routes/hr";
 import webhookRoutes from "../routes/webhooks";
 import mcpWebhookRoutes from "../routes/mcp-webhooks";
@@ -1257,6 +1258,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== WORKFLOW MANAGEMENT ROUTES ====================
   // Register workflow management API routes with authentication and tenant middleware
   app.use('/api/workflows', workflowRoutes);
+  
+  // ==================== WORKFLOW DATA SOURCES ROUTES ====================
+  // Database operations for workflows with RLS enforcement (w3suite schema only)
+  app.use('/api/workflows/data-sources', workflowDataSourceRoutes);
   
   // ==================== TASK MANAGEMENT ROUTES ====================
   // Register task management API routes with authentication and tenant middleware

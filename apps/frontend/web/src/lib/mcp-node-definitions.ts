@@ -1812,6 +1812,46 @@ export const TWILIO_OUTBOUND_NODES: BaseNodeDefinition[] = [
   }
 ];
 
+// 🗄️ W3SUITE DATA OPERATIONS (Database nodes with RLS)
+export const W3SUITE_DATA_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'w3-database-operation',
+    name: '[W3] Database Operation',
+    description: 'Read or write data from w3suite schema with RLS enforcement',
+    category: 'data-operations',
+    ecosystem: 'w3suite',
+    icon: 'Database',
+    color: '#FF6900', // WindTre orange
+    version: '1.0.0',
+    configSchema: z.object({
+      operation: z.enum(['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'EXECUTE_QUERY']),
+      table: z.string().min(1, 'Table required'),
+      // Dynamic fields based on operation type
+      columns: z.array(z.string()).optional(), // For SELECT
+      filters: z.array(z.object({
+        column: z.string(),
+        operator: z.enum(['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL']),
+        value: z.any().optional(),
+      })).optional(), // For SELECT, UPDATE, DELETE
+      values: z.record(z.any()).optional(), // For INSERT, UPDATE
+      limit: z.number().int().positive().max(1000).default(100).optional(), // For SELECT
+      returnId: z.boolean().default(true).optional(), // For INSERT
+      requireConfirmation: z.boolean().default(true).optional(), // For DELETE
+      query: z.string().optional(), // For EXECUTE_QUERY
+      params: z.array(z.any()).optional(), // For EXECUTE_QUERY
+      readOnly: z.boolean().default(false).optional(), // For EXECUTE_QUERY
+    }),
+    defaultConfig: {
+      operation: 'SELECT',
+      table: '',
+      limit: 100,
+      returnId: true,
+      requireConfirmation: true,
+      readOnly: false,
+    }
+  }
+];
+
 // 🔄 Export all MCP nodes
 export const MCP_OUTBOUND_NODES = [
   ...GOOGLE_OUTBOUND_NODES,
@@ -1838,7 +1878,8 @@ export const MCP_INBOUND_NODES = [
 
 export const ALL_MCP_NODES = [
   ...MCP_OUTBOUND_NODES,
-  ...MCP_INBOUND_NODES
+  ...MCP_INBOUND_NODES,
+  ...W3SUITE_DATA_NODES
 ];
 
 // 🎯 Helper functions

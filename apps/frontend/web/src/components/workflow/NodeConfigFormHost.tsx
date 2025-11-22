@@ -1,15 +1,10 @@
 /**
  * 🎛️ NODE CONFIG FORM HOST
  * 
- * SIMPLIFIED VERSION (v1.0):
- * Fornisce un JSON editor per configurare rapidamente i nodi.
- * Questo approccio funzionale sblocca il workflow mentre pianifichiamo
- * il refactoring completo del NodeConfigPanel.
- * 
- * FUTURE (v2.0):
- * - Estrarre config components dal NodeConfigPanel in registry condiviso
- * - Renderizzare form specifici per ogni tipo di nodo
- * - Registry-based architecture: nodeId → Component
+ * Registry-based configuration renderer:
+ * - Checks config registry for custom components
+ * - Falls back to JSON editor if no custom component registered
+ * - Supports drag & drop for all config types
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -21,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Check, Settings, Target } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import type { DraggedFieldData } from './NodeInspector';
+import { getNodeConfigComponent } from './config-registry';
 
 interface NodeConfigFormHostProps {
   node: Node;
@@ -80,10 +76,7 @@ function DroppableTextarea({ value, onChange, className, placeholder }: Droppabl
 }
 
 /**
- * Simplified JSON-based config editor
- * 
- * v1.0: JSON editor per tutti i nodi
- * v2.0: Type-specific forms estratti dal NodeConfigPanel
+ * Smart config renderer - uses registry or falls back to JSON editor
  */
 export default function NodeConfigFormHost({ 
   node,
@@ -92,6 +85,23 @@ export default function NodeConfigFormHost({
   onSave,
   onClose 
 }: NodeConfigFormHostProps) {
+  // Check for custom config component in registry
+  const CustomConfigComponent = getNodeConfigComponent(node.data.id as string);
+
+  // If custom component exists, render it
+  if (CustomConfigComponent) {
+    return (
+      <CustomConfigComponent
+        node={node}
+        allNodes={allNodes}
+        edges={edges}
+        onSave={onSave}
+        onClose={onClose}
+      />
+    );
+  }
+
+  // Otherwise, fall back to JSON editor
   const [configJson, setConfigJson] = useState(() => 
     JSON.stringify(node.data.config || {}, null, 2)
   );
