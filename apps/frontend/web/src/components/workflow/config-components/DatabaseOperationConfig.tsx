@@ -253,7 +253,11 @@ export default function DatabaseOperationConfig({
             Table *
             <Badge variant="outline" className="font-mono text-xs">w3suite</Badge>
           </Label>
-          <Select value={table} onValueChange={setTable} disabled={isLoading}>
+          <Select 
+            value={table && tables.find(t => t.table === table) ? table : ''} 
+            onValueChange={setTable} 
+            disabled={isLoading}
+          >
             <SelectTrigger id="table" data-testid="select-table">
               <SelectValue placeholder={isLoading ? "Loading tables..." : "Select table"} />
             </SelectTrigger>
