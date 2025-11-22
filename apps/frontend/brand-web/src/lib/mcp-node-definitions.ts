@@ -49,7 +49,8 @@ export const MCP_ECOSYSTEMS = {
   postgresql: { badge: '[PG]', color: '#336791', name: 'PostgreSQL' },
   telegram: { badge: '[TG]', color: '#0088CC', name: 'Telegram' },
   whatsapp: { badge: '[WA]', color: '#25D366', name: 'WhatsApp Business' },
-  twilio: { badge: '[TWILIO]', color: '#F22F46', name: 'Twilio' }
+  twilio: { badge: '[TWILIO]', color: '#F22F46', name: 'Twilio' },
+  w3suite: { badge: '[W3]', color: '#FF6900', name: 'W3Suite Data' }
 } as const;
 
 // 🔵 GOOGLE WORKSPACE OUTBOUND (12 nodes)
@@ -1812,6 +1813,41 @@ export const TWILIO_OUTBOUND_NODES: BaseNodeDefinition[] = [
   }
 ];
 
+// 🗄️ W3SUITE DATA OPERATIONS (Database nodes with RLS)
+export const W3SUITE_DATA_NODES: BaseNodeDefinition[] = [
+  {
+    id: 'w3-database-operation',
+    name: '[W3] Database Operation',
+    description: 'Read or write data from w3suite schema with RLS enforcement',
+    category: 'w3-data',
+    ecosystem: 'w3suite',
+    icon: 'Database',
+    color: '#FF6900',
+    version: '1.0.0',
+    configSchema: z.object({
+      operation: z.enum(['SELECT', 'INSERT', 'UPDATE', 'DELETE']),
+      table: z.string().min(1, 'Table required'),
+      columns: z.array(z.string()).optional(),
+      filters: z.array(z.object({
+        column: z.string(),
+        operator: z.enum(['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL']),
+        value: z.any().optional(),
+      })).optional(),
+      values: z.record(z.any()).optional(),
+      limit: z.number().int().positive().max(1000).default(100).optional(),
+      returnId: z.boolean().default(true).optional(),
+      requireConfirmation: z.boolean().default(true).optional()
+    }),
+    defaultConfig: {
+      operation: 'SELECT',
+      table: '',
+      limit: 100,
+      returnId: true,
+      requireConfirmation: true
+    }
+  }
+];
+
 // 🔄 Export all MCP nodes
 export const MCP_OUTBOUND_NODES = [
   ...GOOGLE_OUTBOUND_NODES,
@@ -1838,7 +1874,8 @@ export const MCP_INBOUND_NODES = [
 
 export const ALL_MCP_NODES = [
   ...MCP_OUTBOUND_NODES,
-  ...MCP_INBOUND_NODES
+  ...MCP_INBOUND_NODES,
+  ...W3SUITE_DATA_NODES
 ];
 
 // 🎯 Helper functions

@@ -20,7 +20,8 @@ import {
   FunnelPipelineTransitionConfigSchema,
   AIFunnelOrchestratorConfigSchema,
   FunnelExitConfigSchema,
-  DealStageWebhookTriggerConfigSchema
+  DealStageWebhookTriggerConfigSchema,
+  DatabaseOperationConfigSchema
 } from '../types/workflow-nodes';
 import { ALL_MCP_NODES } from './mcp-node-definitions';
 

@@ -8,14 +8,14 @@ import { z } from 'zod';
 
 // ==================== BASE NODE TYPES ====================
 
-export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'routing' | 'integration' | 'mcp-outbound' | 'mcp-inbound' | 'flow-control';
+export type NodeCategory = 'action' | 'trigger' | 'ai' | 'condition' | 'flow' | 'routing' | 'integration' | 'mcp-outbound' | 'mcp-inbound' | 'flow-control' | 'w3-data';
 
 export interface BaseNodeDefinition {
   id: string;
   name: string;
   description: string;
   category: NodeCategory;
-  ecosystem?: 'google' | 'aws' | 'meta' | 'microsoft' | 'stripe' | 'gtm' | 'postgresql' | 'telegram' | 'whatsapp' | 'twilio'; // MCP ecosystem identifier
+  ecosystem?: 'google' | 'aws' | 'meta' | 'microsoft' | 'stripe' | 'gtm' | 'postgresql' | 'telegram' | 'whatsapp' | 'twilio' | 'w3suite'; // MCP ecosystem identifier
   icon: string; // Lucide icon name
   color: string; // CSS color
   version: string;
@@ -517,6 +517,22 @@ export const FunnelExitConfigSchema = z.object({
   webhookTrigger: z.boolean().default(false) // Trigger external webhooks
 });
 
+// Database Operation Configuration
+export const DatabaseOperationConfigSchema = z.object({
+  operation: z.enum(['SELECT', 'INSERT', 'UPDATE', 'DELETE']),
+  table: z.string().min(1, 'Table required'),
+  columns: z.array(z.string()).optional(),
+  filters: z.array(z.object({
+    column: z.string(),
+    operator: z.enum(['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL']),
+    value: z.any().optional(),
+  })).optional(),
+  values: z.record(z.any()).optional(),
+  limit: z.number().int().positive().max(1000).default(100).optional(),
+  returnId: z.boolean().default(true).optional(),
+  requireConfirmation: z.boolean().default(true).optional()
+});
+
 // Deal Stage Webhook Trigger Configuration
 export const DealStageWebhookTriggerConfigSchema = z.object({
   webhookUrl: z.string().optional(), // Required at runtime, optional for initial config (will validate URL format when provided)
@@ -567,6 +583,7 @@ export type FunnelPipelineTransitionConfig = z.infer<typeof FunnelPipelineTransi
 export type AIFunnelOrchestratorConfig = z.infer<typeof AIFunnelOrchestratorConfigSchema>;
 export type FunnelExitConfig = z.infer<typeof FunnelExitConfigSchema>;
 export type DealStageWebhookTriggerConfig = z.infer<typeof DealStageWebhookTriggerConfigSchema>;
+export type DatabaseOperationConfig = z.infer<typeof DatabaseOperationConfigSchema>;
 
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
