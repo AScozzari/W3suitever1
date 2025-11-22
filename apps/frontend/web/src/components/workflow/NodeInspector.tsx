@@ -235,7 +235,7 @@ function SchemaView({ data }: { data: WorkflowItem }) {
 }
 
 /**
- * Table View: visualizzazione tabellare responsive
+ * Table View: visualizzazione tabellare responsive con scroll orizzontale
  */
 function TableView({ data }: { data: WorkflowItem[] }) {
   if (data.length === 0) return null;
@@ -244,8 +244,8 @@ function TableView({ data }: { data: WorkflowItem[] }) {
   const columns = Object.keys(data[0].json);
 
   return (
-    <div className="w-full overflow-auto p-4">
-      <table className="w-full text-sm border-collapse table-auto">
+    <div className="w-full overflow-x-auto -mx-4 px-4">
+      <table className="min-w-max w-full text-sm border-collapse">
         <thead className="bg-gray-100 sticky top-0 z-10">
           <tr>
             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b whitespace-nowrap">
