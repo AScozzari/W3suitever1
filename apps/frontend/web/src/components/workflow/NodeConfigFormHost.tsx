@@ -12,13 +12,15 @@
  * - Registry-based architecture: nodeId → Component
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Check, Settings } from 'lucide-react';
+import { AlertCircle, Check, Settings, Target } from 'lucide-react';
+import { useDroppable } from '@dnd-kit/core';
+import type { DraggedFieldData } from './NodeInspector';
 
 interface NodeConfigFormHostProps {
   node: Node;
@@ -26,6 +28,55 @@ interface NodeConfigFormHostProps {
   edges: Edge[];
   onSave: (nodeId: string, config: unknown) => void;
   onClose: () => void;
+}
+
+/**
+ * Droppable Textarea - Riceve campi trascinati dall'Input Panel
+ */
+interface DroppableTextareaProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  placeholder?: string;
+}
+
+function DroppableTextarea({ value, onChange, className, placeholder }: DroppableTextareaProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'config-json-editor',
+    data: {
+      accept: ['input'] // Accetta drop solo dall'Input panel
+    }
+  });
+
+  return (
+    <div className="relative">
+      <Textarea 
+        ref={setNodeRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`
+          ${className}
+          transition-all duration-200
+          ${isOver 
+            ? 'ring-4 ring-[#c43e00]/40 border-[#c43e00] bg-[#c43e00]/5 scale-[1.02]' 
+            : ''
+          }
+        `}
+        placeholder={placeholder}
+        data-testid="droppable-config-json"
+      />
+      {isOver && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-[#c43e00]/10 rounded-md border-2 border-dashed border-[#c43e00]">
+          <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+            <Target className="h-5 w-5 text-[#c43e00] animate-pulse" />
+            <span className="text-sm font-semibold text-gray-900">
+              Rilascia qui per inserire campo
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -100,11 +151,11 @@ export default function NodeConfigFormHost({
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           📝 Configurazione JSON
-          <span className="text-xs text-gray-500 font-normal">(editabile)</span>
+          <span className="text-xs text-gray-500 font-normal">(editabile - trascina campi dall'Input Panel)</span>
         </label>
-        <Textarea 
+        <DroppableTextarea 
           value={configJson}
-          onChange={(e) => handleJsonChange(e.target.value)}
+          onChange={handleJsonChange}
           className="font-mono text-xs min-h-[300px] bg-white/70 backdrop-blur-sm border-white/30"
           placeholder="{}"
         />

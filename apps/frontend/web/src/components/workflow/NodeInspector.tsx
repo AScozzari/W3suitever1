@@ -753,19 +753,41 @@ export default function NodeInspector({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (!over) return;
+    if (!over || !active.data.current) return;
     
     const draggedData = active.data.current as DraggedFieldData;
-    const targetFieldId = over.id as string;
+    const targetId = over.id as string;
     
     console.log('🎯 Drag & Drop:', {
       field: draggedData.fieldName,
       type: draggedData.fieldType,
       path: draggedData.fieldPath,
-      target: targetFieldId
+      target: targetId
     });
     
-    // TODO: Implementare auto-popolazione del campo target con fieldPath
+    // Se droppato sul JSON editor, aggiungere campo al config
+    if (targetId === 'config-json-editor') {
+      try {
+        const currentConfig = node.data.config || {};
+        const n8nExpression = `{{$${draggedData.fieldPath}}}`;
+        
+        // Aggiungere il campo al config con chiave basata sul nome del campo
+        const updatedConfig = {
+          ...currentConfig,
+          [draggedData.fieldName]: n8nExpression
+        };
+        
+        // Aggiornare il nodo (questo triggera re-render di NodeConfigFormHost)
+        onSave(node.id, updatedConfig);
+        
+        console.log('✅ Campo inserito nel config:', {
+          key: draggedData.fieldName,
+          value: n8nExpression
+        });
+      } catch (error) {
+        console.error('❌ Errore inserimento campo:', error);
+      }
+    }
   };
 
   return (
