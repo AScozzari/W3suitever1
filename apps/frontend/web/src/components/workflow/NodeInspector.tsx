@@ -104,44 +104,74 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
   const firstItem = data[0];
 
   return (
-    <div className="space-y-3">
-      {/* Header con conteggio item e view switcher */}
+    <div className="space-y-4">
+      {/* Header con conteggio item */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs bg-gradient-to-r from-windtre-orange to-windtre-purple text-white">
             {itemCount} {itemCount === 1 ? 'item' : 'items'}
           </Badge>
         </div>
-        
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as DataViewMode)} className="w-auto">
-          <TabsList className="h-8 bg-white/50 backdrop-blur-sm border border-gray-200">
-            <TabsTrigger value="schema" className="text-xs px-3 h-7 data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white">
-              <Database className="h-3 w-3 mr-1" />
-              Schema
-            </TabsTrigger>
-            <TabsTrigger value="table" className="text-xs px-3 h-7 data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white">
-              <Table2 className="h-3 w-3 mr-1" />
-              Table
-            </TabsTrigger>
-            <TabsTrigger value="json" className="text-xs px-3 h-7 data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white">
-              <Braces className="h-3 w-3 mr-1" />
-              JSON
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
-      {/* Content area */}
-      <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
-        <ScrollArea className="h-[400px] w-full">
-          <div className="p-4">
-            {viewMode === 'schema' && <SchemaView data={firstItem} />}
-            {viewMode === 'table' && <TableView data={data} />}
-            {viewMode === 'json' && <JsonView data={data} />}
-          </div>
-        </ScrollArea>
-      </Card>
+      {/* View Switcher Tabs - Visibile e Cliccabile */}
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as DataViewMode)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 h-10 bg-gray-100 p-1 rounded-lg">
+          <TabsTrigger 
+            value="schema" 
+            className="text-xs font-medium px-4 h-8 rounded-md transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            <Database className="h-3.5 w-3.5 mr-1.5" />
+            Schema
+          </TabsTrigger>
+          <TabsTrigger 
+            value="table" 
+            className="text-xs font-medium px-4 h-8 rounded-md transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            <Table2 className="h-3.5 w-3.5 mr-1.5" />
+            Table
+          </TabsTrigger>
+          <TabsTrigger 
+            value="json" 
+            className="text-xs font-medium px-4 h-8 rounded-md transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            <Braces className="h-3.5 w-3.5 mr-1.5" />
+            JSON
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Content area per ogni tab */}
+        <TabsContent value="schema" className="mt-4">
+          <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
+            <ScrollArea className="h-[400px] w-full">
+              <div className="p-4">
+                <SchemaView data={firstItem} />
+              </div>
+            </ScrollArea>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="table" className="mt-4">
+          <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
+            <ScrollArea className="h-[400px] w-full">
+              <div className="p-4">
+                <TableView data={data} />
+              </div>
+            </ScrollArea>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="json" className="mt-4">
+          <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
+            <ScrollArea className="h-[400px] w-full">
+              <div className="p-4">
+                <JsonView data={data} />
+              </div>
+            </ScrollArea>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Action buttons */}
       <div className="flex gap-2">
