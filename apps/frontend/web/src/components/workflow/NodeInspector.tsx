@@ -111,7 +111,7 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-            <Badge variant="secondary" className="text-xs bg-gradient-to-r from-windtre-orange to-windtre-purple text-white">
+            <Badge className="text-xs bg-[#c43e00] text-white font-semibold px-2.5 py-1">
               {itemCount} {itemCount === 1 ? 'item' : 'items'}
             </Badge>
           </div>
