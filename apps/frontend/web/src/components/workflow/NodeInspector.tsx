@@ -235,7 +235,7 @@ function SchemaView({ data }: { data: WorkflowItem }) {
 }
 
 /**
- * Table View: visualizzazione tabellare
+ * Table View: visualizzazione tabellare responsive
  */
 function TableView({ data }: { data: WorkflowItem[] }) {
   if (data.length === 0) return null;
@@ -244,35 +244,44 @@ function TableView({ data }: { data: WorkflowItem[] }) {
   const columns = Object.keys(data[0].json);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 sticky top-0">
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b">
-              #
-            </th>
-            {columns.map(col => (
-              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b">
-                {col}
+    <div className="overflow-x-auto -mx-4">
+      <div className="inline-block min-w-full align-middle px-4">
+        <table className="min-w-full text-sm border-collapse">
+          <thead className="bg-gray-100 sticky top-0 z-10">
+            <tr>
+              <th className="sticky left-0 z-20 bg-gray-100 px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b min-w-[50px] max-w-[50px]">
+                #
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, idx) => (
-            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-3 py-2 text-xs text-gray-500 border-b font-mono">
-                {idx + 1}
-              </td>
               {columns.map(col => (
-                <td key={col} className="px-3 py-2 text-xs text-gray-900 border-b font-mono max-w-xs truncate">
-                  {formatValue(item.json[col])}
-                </td>
+                <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b min-w-[150px] max-w-[300px]">
+                  <div className="truncate" title={col}>{col}</div>
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((item, idx) => (
+              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                <td className="sticky left-0 z-10 bg-white hover:bg-gray-50 px-3 py-2 text-xs text-gray-500 border-b font-mono min-w-[50px] max-w-[50px]">
+                  {idx + 1}
+                </td>
+                {columns.map(col => {
+                  const value = formatValue(item.json[col]);
+                  return (
+                    <td 
+                      key={col} 
+                      className="px-3 py-2 text-xs text-gray-900 border-b font-mono min-w-[150px] max-w-[300px]"
+                      title={typeof value === 'string' ? value : JSON.stringify(value)}
+                    >
+                      <div className="truncate">{value}</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

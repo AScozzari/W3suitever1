@@ -141,7 +141,8 @@ export default function NodeConfigFormHost({
         </Button>
         <Button
           onClick={handleSave}
-          className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white"
+          size="default"
+          className="bg-[#c43e00] hover:bg-[#a33500] text-white font-semibold shadow-md"
           disabled={!!jsonError}
           data-testid="button-save-config"
         >
