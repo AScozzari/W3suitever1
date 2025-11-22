@@ -184,7 +184,7 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
         </div>
         
         <ScrollArea className="h-[400px] w-full">
-          <div className={viewMode === 'table' ? 'p-0' : 'p-4'}>
+          <div className="p-4">
             {viewMode === 'schema' && <SchemaView data={firstItem} />}
             {viewMode === 'table' && <TableView data={data} />}
             {viewMode === 'json' && <JsonView data={data} />}
