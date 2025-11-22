@@ -367,9 +367,9 @@ function InputPreviewPanel({ node, edges, allNodes }: InputPreviewPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 pb-3 border-b border-white/20">
         <ChevronRight className="h-4 w-4 text-gray-400" />
-        <h2 className="text-sm font-bold text-gray-700">Input Data</h2>
+        <h2 className="text-sm font-bold text-gray-700">📥 Input Data</h2>
       </div>
 
       {upstreamEdges.length === 0 ? (
@@ -495,10 +495,10 @@ function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-3 border-b border-white/20">
         <div className="flex items-center gap-2">
           <ChevronLeft className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-bold text-gray-700">Output Data</h2>
+          <h2 className="text-sm font-bold text-gray-700">📤 Output Data</h2>
         </div>
 
         <div className="flex gap-2">
@@ -623,7 +623,7 @@ export default function NodeInspector({
           <div className="overflow-y-auto bg-white/30 backdrop-blur-sm">
             <ScrollArea className="h-full">
               <div className="p-6">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 pb-3 mb-4 border-b border-white/20">
                   <h2 className="text-sm font-bold text-gray-700">⚙️ Configuration</h2>
                 </div>
                 
