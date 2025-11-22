@@ -57,14 +57,17 @@ export function useExecuteNode(nodeId: string) {
   return useMutation({
     mutationKey: ['execute-node', nodeId],
     mutationFn: async (input: NodeExecutionInput): Promise<NodeExecutionResult> => {
-      const response = await apiRequest<NodeExecutionResult>(
+      const response = await apiRequest<any>(
         `/api/workflows/nodes/${nodeId}/test-execute`,
         {
           method: 'POST',
           body: input
         }
       );
-      return response;
+      
+      // Unwrap .data from API envelope {success, data, message}
+      // Backend returns: { success: true, data: { execution, items, metadata }, message: '...' }
+      return response.data || response;
     }
   });
 }

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import NodeConfigFormHost from './NodeConfigFormHost';
 import { useExecuteNode, type NodeExecutionResult as BackendExecutionResult } from './hooks/useExecuteNode';
+import { useToast } from '@/hooks/use-toast';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -344,18 +345,36 @@ interface OutputExecutionPanelProps {
  */
 function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
   const [isPinned, setIsPinned] = useState(false);
+  const { toast } = useToast();
   const executeMutation = useExecuteNode(node.id);
 
   const handleExecute = async () => {
-    executeMutation.mutate({
-      nodeData: {
-        id: node.data.id || node.id,
-        type: node.type || 'action',
-        category: node.data.category as string,
-        config: node.data.config as Record<string, unknown> | undefined
+    executeMutation.mutate(
+      {
+        nodeData: {
+          id: node.data.id || node.id,
+          type: node.type || 'action',
+          category: node.data.category as string,
+          config: node.data.config as Record<string, unknown> | undefined
+        },
+        inputData: {} // TODO: populate from upstream nodes
       },
-      inputData: {} // TODO: populate from upstream nodes
-    });
+      {
+        onError: (error: any) => {
+          toast({
+            title: 'Errore Esecuzione Nodo',
+            description: error.message || 'Si è verificato un errore durante l\'esecuzione del nodo',
+            variant: 'destructive'
+          });
+        },
+        onSuccess: () => {
+          toast({
+            title: '✅ Esecuzione Completata',
+            description: 'Il nodo è stato eseguito con successo',
+          });
+        }
+      }
+    );
   };
 
   // Convert backend format to local format for display
