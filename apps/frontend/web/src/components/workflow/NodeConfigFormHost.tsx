@@ -12,7 +12,7 @@
  * - Registry-based architecture: nodeId → Component
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,15 @@ export default function NodeConfigFormHost({
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  // Sync configJson when node.data.config changes (e.g., from drag & drop)
+  useEffect(() => {
+    const newConfigJson = JSON.stringify(node.data.config || {}, null, 2);
+    if (newConfigJson !== configJson) {
+      setConfigJson(newConfigJson);
+      setSaved(false);
+    }
+  }, [node.data.config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     try {
