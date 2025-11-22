@@ -722,6 +722,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                     <SelectItem value="ai">AI Nodes</SelectItem>
                     <SelectItem value="routing">Routing</SelectItem>
                     <SelectItem value="flow-control">Flow Control</SelectItem>
+                    <SelectItem value="w3-data">🗄️ W3 Data</SelectItem>
                     <SelectItem value="mcp-outbound">🔌 MCP Outbound</SelectItem>
                     <SelectItem value="mcp-inbound">📥 MCP Inbound</SelectItem>
                     <SelectItem value="mcp-google">🔵 Google Workspace</SelectItem>
