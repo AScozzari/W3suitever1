@@ -1,16 +1,24 @@
 /**
  * 🎛️ NODE CONFIG FORM HOST
  * 
- * Wrapper component che riusa tutti i form di configurazione esistenti
- * dal NodeConfigPanel.tsx senza duplicazione di codice.
+ * SIMPLIFIED VERSION (v1.0):
+ * Fornisce un JSON editor per configurare rapidamente i nodi.
+ * Questo approccio funzionale sblocca il workflow mentre pianifichiamo
+ * il refactoring completo del NodeConfigPanel.
  * 
- * Questo componente viene embedato nel pannello centrale del NodeInspector.
+ * FUTURE (v2.0):
+ * - Estrarre config components dal NodeConfigPanel in registry condiviso
+ * - Renderizzare form specifici per ogni tipo di nodo
+ * - Registry-based architecture: nodeId → Component
  */
 
+import { useState } from 'react';
 import { Node, Edge } from '@xyflow/react';
-
-// TODO: Import specific config components from NodeConfigPanel
-// For now, we'll use a placeholder that will be replaced with actual forms
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Check, Settings } from 'lucide-react';
 
 interface NodeConfigFormHostProps {
   node: Node;
@@ -21,60 +29,133 @@ interface NodeConfigFormHostProps {
 }
 
 /**
- * Component che renderizza il form di configurazione appropriato per il nodo
+ * Simplified JSON-based config editor
+ * 
+ * v1.0: JSON editor per tutti i nodi
+ * v2.0: Type-specific forms estratti dal NodeConfigPanel
  */
 export default function NodeConfigFormHost({ 
-  node, 
-  allNodes, 
+  node,
+  allNodes,
   edges,
   onSave,
   onClose 
 }: NodeConfigFormHostProps) {
-  
-  // Placeholder - sarà sostituito con la logica effettiva dei form
+  const [configJson, setConfigJson] = useState(() => 
+    JSON.stringify(node.data.config || {}, null, 2)
+  );
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    try {
+      const parsedConfig = JSON.parse(configJson);
+      onSave(node.id, parsedConfig);
+      setSaved(true);
+      setJsonError(null);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : 'JSON non valido');
+    }
+  };
+
+  const handleJsonChange = (value: string) => {
+    setConfigJson(value);
+    setSaved(false);
+    
+    // Validate JSON in real-time
+    try {
+      JSON.parse(value);
+      setJsonError(null);
+    } catch {
+      // Silent validation - error shown on save
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm font-medium text-blue-900 mb-2">
-          ⚙️ Configurazione Nodo: {String(node.data.name || node.data.title || node.data.id)}
-        </p>
-        <p className="text-xs text-blue-700">
-          <strong>Tipo:</strong> {String(node.data.category || 'N/A')}
-        </p>
-        <p className="text-xs text-blue-700">
-          <strong>ID:</strong> {node.id}
-        </p>
-      </div>
-      
-      <div className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <p className="font-medium mb-2">📝 Configurazione</p>
-        <p className="text-xs">
-          I form di configurazione specifici per ogni tipo di nodo verranno integrati qui.
-          Al momento stiamo visualizzando il layout a 3 pannelli.
-        </p>
-        <pre className="text-xs mt-3 bg-white p-2 rounded border overflow-auto">
-          {JSON.stringify(node.data.config || {}, null, 2)}
-        </pre>
+      {/* Node Info */}
+      <Card className="p-4 bg-gradient-to-br from-windtre-orange/5 to-windtre-purple/5 border-white/30">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-white/70 backdrop-blur-sm">
+            <Settings className="h-5 w-5 text-windtre-orange" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900">
+              {String(node.data.name || node.data.title || node.data.id)}
+            </h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-white/70 text-gray-600">
+                {String(node.data.category || 'node')}
+              </span>
+              <span className="text-xs text-gray-500 font-mono">
+                {node.id}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* JSON Editor */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          📝 Configurazione JSON
+          <span className="text-xs text-gray-500 font-normal">(editabile)</span>
+        </label>
+        <Textarea 
+          value={configJson}
+          onChange={(e) => handleJsonChange(e.target.value)}
+          className="font-mono text-xs min-h-[300px] bg-white/70 backdrop-blur-sm border-white/30"
+          placeholder="{}"
+        />
       </div>
 
-      <div className="flex gap-2 justify-end">
-        <button
+      {/* Error Alert */}
+      {jsonError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            Errore JSON: {jsonError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success Message */}
+      {saved && (
+        <Alert className="border-green-200 bg-green-50 text-green-800">
+          <Check className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            ✅ Configurazione salvata con successo
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2 justify-end pt-2">
+        <Button
+          variant="outline"
           onClick={onClose}
-          className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          data-testid="button-cancel-config"
         >
           Annulla
-        </button>
-        <button
-          onClick={() => {
-            // Salva la configurazione corrente
-            onSave(node.id, node.data.config || {});
-            onClose();
-          }}
-          className="px-4 py-2 text-sm text-white bg-gradient-to-r from-windtre-orange to-windtre-purple rounded-lg hover:opacity-90 transition-opacity"
+        </Button>
+        <Button
+          onClick={handleSave}
+          className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white"
+          disabled={!!jsonError}
+          data-testid="button-save-config"
         >
-          Salva
-        </button>
+          💾 Salva Configurazione
+        </Button>
       </div>
+
+      {/* Future Enhancement Notice */}
+      <Card className="p-3 bg-blue-50/50 border-blue-200/50">
+        <p className="text-xs text-blue-700">
+          <strong>🚧 Prossimamente (v2.0):</strong> Form specifici per ogni tipo di nodo 
+          con validazione automatica e interfaccia guidata.
+        </p>
+      </Card>
     </div>
   );
 }
