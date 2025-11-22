@@ -231,19 +231,19 @@ export const ScheduleTriggerConfigSchema = z.object({
   mode: z.enum(['simple', 'cron']).default('simple').describe('Trigger mode: simple intervals or advanced cron'),
   
   simple: z.object({
-    interval: z.enum(['seconds', 'minutes', 'hours', 'days', 'weeks', 'months']).describe('Time unit for the interval'),
-    value: z.number().positive().min(1).describe('Interval value (e.g., 5 for "every 5 minutes")'),
+    interval: z.enum(['seconds', 'minutes', 'hours', 'days', 'weeks', 'months']).default('hours').describe('Time unit for the interval'),
+    value: z.number().positive().min(1).default(24).describe('Interval value (e.g., 5 for "every 5 minutes")'),
     minute: z.number().min(0).max(59).optional().describe('Minute of the hour (for hours+)'),
     hour: z.number().min(0).max(23).optional().describe('Hour of the day (for days+)'),
     weekdays: z.array(z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])).optional().describe('component:weekday-selector'),
     dayOfMonth: z.number().min(1).max(31).optional().describe('Day of the month (for months)'),
+    timezone: z.string().default('Europe/Rome').describe('Timezone for schedule execution (IANA timezone)'),
   }).optional(),
   
   cron: z.object({
     expression: z.string()
-      .regex(/^(\*|([0-9]|[1-5][0-9])|\*\/([0-9]|[1-5][0-9]))( (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3]))( (\*|([1-9]|[12][0-9]|3[01])|\*\/([1-9]|[12][0-9]|3[01]))( (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2]))( (\*|[0-6]|\*\/[0-6])( (\*|([0-9]|[1-5][0-9])|\*\/([0-9]|[1-5][0-9])))?)?)?)?)?$/, {
-        message: 'Invalid cron expression format'
-      })
+      .min(9)
+      .default('0 9 * * *')
       .describe('component:cron-expression-builder'),
     timezone: z.string().default('Europe/Rome').describe('Timezone for cron execution (IANA timezone)'),
   }).optional(),

@@ -9,6 +9,8 @@ import { workflowDataSourceRoutes } from "../routes/workflow-data-sources";
 import hrRoutes from "../routes/hr";
 import webhookRoutes from "../routes/webhooks";
 import mcpWebhookRoutes from "../routes/mcp-webhooks";
+import triggerWebhookRoutes from "../routes/trigger-webhooks";
+import triggerManualRoutes from "../routes/trigger-manual";
 import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
 import mcpRoutes from "../routes/mcp";
@@ -1262,6 +1264,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== WORKFLOW DATA SOURCES ROUTES ====================
   // Database operations for workflows with RLS enforcement (w3suite schema only)
   app.use('/api/workflows/data-sources', workflowDataSourceRoutes);
+  
+  // ==================== TRIGGER ROUTES ====================
+  // Webhook inbound triggers (dynamic routes for workflow webhook triggers)
+  app.use('/api/triggers/webhooks', triggerWebhookRoutes);
+  
+  // Manual triggers (authenticated API endpoints for one-time workflow execution)
+  app.use('/api/triggers/manual', triggerManualRoutes);
   
   // ==================== TASK MANAGEMENT ROUTES ====================
   // Register task management API routes with authentication and tenant middleware

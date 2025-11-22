@@ -24,6 +24,11 @@ export { ArrayField } from './complex/ArrayField';
 export { ObjectField } from './complex/ObjectField';
 export { RecordField } from './complex/RecordField';
 
+// === CUSTOM COMPONENTS (Workflow-specific) ===
+export { CronExpressionBuilder } from './custom/CronExpressionBuilder';
+export { WebhookAuthConfig } from './custom/WebhookAuthConfig';
+export { IPWhitelistBuilder } from './custom/IPWhitelistBuilder';
+
 // === RESOURCE COMPONENTS (coming soon) ===
 // export { ResourceField } from './resource/ResourceField';
 
@@ -39,7 +44,10 @@ import { ToggleField } from './selection/ToggleField';
 import { ArrayField } from './complex/ArrayField';
 import { ObjectField } from './complex/ObjectField';
 import { RecordField } from './complex/RecordField';
-import { FieldComponentRegistry, FieldComponent } from './types';
+import { CronExpressionBuilder } from './custom/CronExpressionBuilder';
+import { WebhookAuthConfig } from './custom/WebhookAuthConfig';
+import { IPWhitelistBuilder } from './custom/IPWhitelistBuilder';
+import { FieldComponentRegistry, FieldComponent, CustomComponentRegistry } from './types';
 
 /**
  * Default Field Component Registry
@@ -69,10 +77,33 @@ export const DEFAULT_FIELD_REGISTRY: Partial<FieldComponentRegistry> = {
 };
 
 /**
+ * Custom Component Registry for component hints
+ * Maps .describe('component:xxx') hints to specialized components
+ */
+export const CUSTOM_COMPONENT_REGISTRY: Partial<CustomComponentRegistry> = {
+  'cron-expression-builder': CronExpressionBuilder,
+  'webhook-auth-config': WebhookAuthConfig,
+  'ip-whitelist-builder': IPWhitelistBuilder,
+  'response-headers-builder': RecordField, // Reuse RecordField for key-value pairs
+  'weekday-selector': ArrayField, // Reuse ArrayField with enum for weekdays
+  'workflow-multi-selector': ArrayField, // Reuse ArrayField for workflow IDs
+  'json-editor': RecordField, // Reuse RecordField for free-form JSON
+};
+
+/**
  * Get field component from registry based on field type
  */
 export function getFieldComponent(
   fieldType: keyof FieldComponentRegistry
 ): FieldComponent | null {
   return (DEFAULT_FIELD_REGISTRY as any)[fieldType] || null;
+}
+
+/**
+ * Get custom component by hint name
+ */
+export function getCustomComponent(
+  componentHint: string
+): FieldComponent | null {
+  return (CUSTOM_COMPONENT_REGISTRY as any)[componentHint] || null;
 }

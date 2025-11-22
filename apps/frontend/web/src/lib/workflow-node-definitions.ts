@@ -279,7 +279,8 @@ export const TRIGGER_NODES: BaseNodeDefinition[] = [
         interval: 'hours',
         value: 24,
         hour: 9,
-        minute: 0
+        minute: 0,
+        timezone: 'Europe/Rome'
       },
       enabled: true,
       executeOnce: false,

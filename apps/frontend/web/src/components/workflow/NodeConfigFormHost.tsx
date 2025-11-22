@@ -23,6 +23,7 @@ import type { DraggedFieldData } from './NodeInspector';
 import { getNodeConfigComponent } from './config-registry';
 import { getNodeConfigSchema, getNodeDefaultConfig } from '@/lib/get-node-definition';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
+import { CUSTOM_COMPONENT_REGISTRY } from './field-components';
 
 interface NodeConfigFormHostProps {
   node: Node;
@@ -241,6 +242,7 @@ export default function NodeConfigFormHost({
                   configSchema={configSchema}
                   control={form.control}
                   disabled={false}
+                  customComponents={CUSTOM_COMPONENT_REGISTRY as any}
                 />
               </form>
             </Form>
