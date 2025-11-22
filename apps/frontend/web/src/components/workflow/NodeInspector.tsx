@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { Node, Edge } from '@xyflow/react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -516,21 +516,20 @@ export default function NodeInspector({
   if (!node) return null;
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <SheetContent 
-        side="right" 
-        className="w-full max-w-[95vw] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-l-2 border-white/30 shadow-2xl"
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent 
+        className="max-w-7xl w-[90vw] h-[85vh] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-2 border-white/30 shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b border-white/20 bg-white/50 backdrop-blur-sm">
+        <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/50 backdrop-blur-sm">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <SheetTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
                 🎛️ Node Inspector
-              </SheetTitle>
-              <SheetDescription className="text-sm text-gray-600 mt-1">
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 mt-1">
                 {String(node.data.name || node.data.title || node.data.id)}
-              </SheetDescription>
+              </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs font-mono bg-white/70 px-2 py-1">
@@ -541,50 +540,56 @@ export default function NodeInspector({
               </Badge>
             </div>
           </div>
-        </SheetHeader>
+        </DialogHeader>
 
-        {/* Three-Panel Layout */}
-        <div className="grid grid-cols-3 h-[calc(100vh-80px)] divide-x divide-white/20">
+        {/* Three-Panel Layout - Responsive Grid */}
+        <div className="grid lg:grid-cols-[minmax(300px,1fr)_minmax(400px,1.5fr)_minmax(300px,1fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-white/20">
           {/* LEFT PANEL - Input Preview */}
-          <div className="overflow-y-auto">
-            <div className="p-6">
-              <InputPreviewPanel 
-                node={node} 
-                edges={edges} 
-                allNodes={allNodes} 
-              />
-            </div>
+          <div className="overflow-y-auto lg:block hidden">
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <InputPreviewPanel 
+                  node={node} 
+                  edges={edges} 
+                  allNodes={allNodes} 
+                />
+              </div>
+            </ScrollArea>
           </div>
 
-          {/* CENTER PANEL - Node Configuration */}
+          {/* CENTER PANEL - Node Configuration (Always Visible) */}
           <div className="overflow-y-auto bg-white/30 backdrop-blur-sm">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-sm font-bold text-gray-700">⚙️ Configuration</h2>
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="text-sm font-bold text-gray-700">⚙️ Configuration</h2>
+                </div>
+                
+                <NodeConfigFormHost 
+                  node={node}
+                  allNodes={allNodes}
+                  edges={edges}
+                  onSave={onSave}
+                  onClose={onClose}
+                />
               </div>
-              
-              <NodeConfigFormHost 
-                node={node}
-                allNodes={allNodes}
-                edges={edges}
-                onSave={onSave}
-                onClose={onClose}
-              />
-            </div>
+            </ScrollArea>
           </div>
 
           {/* RIGHT PANEL - Output Execution */}
-          <div className="overflow-y-auto">
-            <div className="p-6">
-              <OutputExecutionPanel 
-                node={node} 
-                workflowId={workflowId} 
-              />
-            </div>
+          <div className="overflow-y-auto lg:block hidden">
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <OutputExecutionPanel 
+                  node={node} 
+                  workflowId={workflowId} 
+                />
+              </div>
+            </ScrollArea>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
