@@ -1824,7 +1824,7 @@ export const W3SUITE_DATA_NODES: BaseNodeDefinition[] = [
     color: '#FF6900', // WindTre orange
     version: '1.0.0',
     configSchema: z.object({
-      operation: z.enum(['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'EXECUTE_QUERY']),
+      operation: z.enum(['SELECT', 'INSERT', 'UPDATE', 'DELETE']), // EXECUTE_QUERY disabled for security (see replit.md)
       table: z.string().min(1, 'Table required'),
       // Dynamic fields based on operation type
       columns: z.array(z.string()).optional(), // For SELECT

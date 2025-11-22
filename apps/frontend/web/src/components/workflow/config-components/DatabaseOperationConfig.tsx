@@ -95,6 +95,9 @@ export default function DatabaseOperationConfig({
   const currentTable = tables.find(t => t.table === table);
   const columns = currentTable?.columns || [];
 
+  // Check if this is a legacy EXECUTE_QUERY config
+  const isLegacyConfig = initialConfig.operation === 'EXECUTE_QUERY';
+
   // Handle save
   const handleSave = () => {
     const config: any = {
@@ -162,6 +165,16 @@ export default function DatabaseOperationConfig({
         </AlertDescription>
       </Alert>
 
+      {/* Legacy EXECUTE_QUERY Warning */}
+      {isLegacyConfig && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-sm text-orange-800">
+            <strong>⚠️  Configuration Update Required:</strong> EXECUTE_QUERY operation is no longer supported for security reasons. Please reconfigure this node using one of the 4 structured operations (SELECT, INSERT, UPDATE, DELETE).
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Operation Selector */}
       <div className="space-y-2">
         <Label htmlFor="operation" className="text-sm font-medium">
@@ -176,7 +189,7 @@ export default function DatabaseOperationConfig({
             <SelectItem value="INSERT">INSERT (Create Records)</SelectItem>
             <SelectItem value="UPDATE">UPDATE (Modify Records)</SelectItem>
             <SelectItem value="DELETE">DELETE (Remove Records)</SelectItem>
-            <SelectItem value="EXECUTE_QUERY">EXECUTE QUERY (Custom SQL)</SelectItem>
+            {/* EXECUTE_QUERY disabled for MVP - security review required */}
           </SelectContent>
         </Select>
       </div>

@@ -71,19 +71,19 @@ const deleteOperationSchema = z.object({
   requireConfirmation: z.boolean().default(true),
 });
 
-const executeQuerySchema = z.object({
-  operation: z.literal('EXECUTE_QUERY'),
-  query: z.string().min(1),
-  params: z.array(z.any()).optional(),
-  readOnly: z.boolean().default(false),
-});
-
+// EXECUTE_QUERY schema removed - operation disabled for MVP (see replit.md)
+// const executeQuerySchema = z.object({
+//   operation: z.literal('EXECUTE_QUERY'),
+//   query: z.string().min(1),
+//   params: z.array(z.any()).optional(),
+//   readOnly: z.boolean().default(false),
+// });
 const dbOperationSchema = z.discriminatedUnion('operation', [
   selectOperationSchema,
   insertOperationSchema,
   updateOperationSchema,
   deleteOperationSchema,
-  executeQuerySchema,
+  // executeQuerySchema, // Disabled - will re-enable with pg-query-parser in future
 ]);
 
 // ==================== METADATA API ====================
@@ -189,8 +189,12 @@ router.get('/metadata', rbacMiddleware, requirePermission('workflow.execute'), a
 /**
  * POST /api/workflows/execute-db-operation
  * Execute database operation with RLS enforcement
- * Supports: SELECT, INSERT, UPDATE, DELETE, EXECUTE_QUERY
+ * 
+ * Supported operations: SELECT, INSERT, UPDATE, DELETE (w3suite schema only)
+ * ⚠️  EXECUTE_QUERY is disabled - returns 400 (see replit.md for security rationale)
+ * 
  * 🔐 RBAC: Requires workflow.execute permission
+ * 🔒 Security: All operations enforce tenant isolation via RLS
  */
 router.post('/execute-db-operation', rbacMiddleware, requirePermission('workflow.execute'), async (req, res) => {
   try {
@@ -233,9 +237,6 @@ router.post('/execute-db-operation', rbacMiddleware, requirePermission('workflow
         break;
       case 'DELETE':
         result = await executeDelete(operation, tenantId);
-        break;
-      case 'EXECUTE_QUERY':
-        result = await executeCustomQuery(operation, tenantId);
         break;
       default:
         throw new Error('Unsupported operation');
@@ -492,80 +493,13 @@ async function executeDelete(
   };
 }
 
-async function executeCustomQuery(
-  operation: z.infer<typeof executeQuerySchema>,
-  tenantId: string
-) {
-  const { query, params, readOnly } = operation;
-
-  // 🔒 SECURITY: Comprehensive query validation
-  
-  // 1. Block multi-statement queries
-  if ((query.match(/;/g) || []).length > 1 || query.trim().endsWith(';') === false) {
-    // Allow single statement ending with ; OR no ; at all
-    // But block multiple statements
-    const statements = query.split(';').filter(s => s.trim());
-    if (statements.length > 1) {
-      throw new Error('Multiple SQL statements are not allowed');
-    }
-  }
-  
-  // 2. Block SQL comments
-  if (/--/.test(query) || /\/\*/.test(query)) {
-    throw new Error('SQL comments are not allowed');
-  }
-  
-  // 3. Block dangerous keywords
-  const dangerousKeywords = [
-    'DROP', 'CREATE', 'ALTER', 'TRUNCATE', 'GRANT', 'REVOKE', 
-    'EXEC', 'EXECUTE', 'CALL', 'DECLARE', 'CURSOR'
-  ];
-  const upperQuery = query.toUpperCase();
-  if (dangerousKeywords.some(kw => upperQuery.includes(kw))) {
-    throw new Error(`Forbidden keyword detected: ${dangerousKeywords.find(kw => upperQuery.includes(kw))}`);
-  }
-  
-  // 4. Enforce read-only mode
-  if (readOnly) {
-    const mutatingKeywords = ['INSERT', 'UPDATE', 'DELETE'];
-    if (mutatingKeywords.some(kw => upperQuery.includes(kw))) {
-      throw new Error('Read-only mode: mutating operations not allowed');
-    }
-  }
-  
-  // 5. 🔒 CRITICAL: Validate ALL schema references are w3suite only
-  // Extract all potential schema.table patterns (including quoted identifiers)
-  const schemaTablePatterns = [
-    // Unquoted: schema.table
-    /\b([a-z_][a-z0-9_]*)\s*\.\s*([a-z_][a-z0-9_]*)/gi,
-    // Quoted schema: "schema".table or "schema"."table"
-    /"([^"]+)"\s*\.\s*"?([a-z_][a-z0-9_]*)"?/gi,
-    // Mixed: schema."table"
-    /\b([a-z_][a-z0-9_]*)\s*\.\s*"([^"]+)"/gi
-  ];
-  
-  for (const pattern of schemaTablePatterns) {
-    let match;
-    while ((match = pattern.exec(query)) !== null) {
-      const schemaName = match[1].toLowerCase();
-      if (schemaName !== 'w3suite') {
-        throw new Error(`Schema '${match[1]}' is not allowed. Only w3suite schema is permitted.`);
-      }
-    }
-  }
-  
-  // 6. Verify query contains at least one w3suite reference
-  if (!query.toLowerCase().includes('w3suite.')) {
-    throw new Error('Query must explicitly reference w3suite schema (e.g., FROM w3suite.table_name)');
-  }
-
-  const result = await db.execute(sql.raw(query, params || []));
-
-  return {
-    data: result.rows,
-    rowCount: result.rows.length || result.rowCount || 0,
-    operation: 'EXECUTE_QUERY'
-  };
-}
+// ==================== EXECUTE_QUERY - DISABLED FOR MVP ====================
+// This function has been removed due to security vulnerabilities:
+// - search_path manipulation via set_config() in CTEs
+// - Schema escaping through quoted identifiers
+// - False positives on column aliases
+// 
+// To re-enable in future: implement pg-query-parser for AST-based validation
+// See replit.md "Known Issues & Future Work" section for details
 
 export const workflowDataSourceRoutes = router;

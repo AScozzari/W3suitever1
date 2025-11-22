@@ -71,6 +71,17 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning), Deploy Center Bidirectional Branch Linking (linking tenants/stores to branches).
 - **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance, JSON files with Git versioning, tasks system).
 - **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, call actions integrated with CRM, CDR analytics, policy-based routing, edgvoip PBX Integration.
+- **Workflow Database Operations (NEW)**: [W3] Database Operation node with 4 secure operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema only. RLS enforcement, prepared statements, column/table validation. EXECUTE_QUERY disabled for MVP pending SQL parser integration (search_path bypass risk).
+
+# Known Issues & Future Work
+## Workflow Database Operations - EXECUTE_QUERY Security
+**Status**: Disabled in MVP (2025-11-22)
+**Reason**: Custom SQL queries vulnerable to:
+- search_path manipulation via set_config() in CTEs
+- Schema escaping through quoted identifiers bypass
+- False positives on column aliases blocking legitimate JOINs
+**Solution Required**: Implement pg-query-parser for AST-based validation before re-enabling
+**Impact**: Users can use structured operations (SELECT/INSERT/UPDATE/DELETE) only - covers 95% of use cases
 
 # External Dependencies
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
