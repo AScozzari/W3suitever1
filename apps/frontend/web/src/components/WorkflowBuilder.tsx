@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   Save, 
@@ -1659,38 +1660,16 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         </div>
       </div>
 
-      {/* 🤖 AI Assistant Bottom Drawer */}
-      <div 
-        className={`fixed left-0 right-0 z-40 bg-white border-t-2 border-gray-200 shadow-2xl transition-all duration-300 ${showAIDrawer ? 'bottom-0' : '-bottom-full'}`}
-        style={{
-          height: '40vh',
-          maxHeight: '500px'
-        }}
-      >
-          {/* Drawer Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
-            <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-purple-600" />
-              <h3 className="font-semibold text-gray-900">AI Workflow Assistant</h3>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAIDrawer(false)}
-              className="hover:bg-gray-100"
-              data-testid="button-close-ai-drawer"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Drawer Content */}
-          <div className="h-full overflow-y-auto">
-            <AIWorkflowChatModal
-              onWorkflowGenerated={handleAIWorkflowGenerated}
-            />
-          </div>
-      </div>
+      {/* 🤖 AI Assistant Dialog Modal - Redesigned for better UX */}
+      <Dialog open={showAIDrawer} onOpenChange={setShowAIDrawer}>
+        <DialogContent 
+          className="max-w-4xl w-[90vw] h-[85vh] min-h-[600px] max-h-[900px] p-0 flex flex-col overflow-hidden"
+        >
+          <AIWorkflowChatModal
+            onWorkflowGenerated={handleAIWorkflowGenerated}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* ✅ NODE INSPECTOR - N8N-STYLE THREE-PANEL LAYOUT */}
       <NodeInspector 
