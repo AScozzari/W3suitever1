@@ -84,6 +84,9 @@ export default function DatabaseOperationConfig({
   const [params, setParams] = useState<any[]>(initialConfig.params || []);
   const [readOnly, setReadOnly] = useState<boolean>(initialConfig.readOnly || false);
   const [saved, setSaved] = useState(false);
+  const [previewResults, setPreviewResults] = useState<any>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   // Fetch database metadata
   const { data: metadata, isLoading } = useQuery<{ data: DatabaseMetadata }>({
@@ -97,6 +100,47 @@ export default function DatabaseOperationConfig({
 
   // Check if this is a legacy EXECUTE_QUERY config
   const isLegacyConfig = initialConfig.operation === 'EXECUTE_QUERY';
+
+  // Handle preview
+  const handlePreview = async () => {
+    if (!table) {
+      setPreviewError('Please select a table first');
+      return;
+    }
+
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setPreviewResults(null);
+
+    try {
+      // Clean filters: only include complete filters with column, operator, and value
+      const validFilters = filters.filter(f => 
+        f.column && 
+        f.operator && 
+        (f.value !== undefined && f.value !== null && f.value !== '' || f.operator.startsWith('IS'))
+      );
+
+      // Build preview config (always SELECT with limit 5 for preview)
+      const previewConfig: any = {
+        operation: 'SELECT',
+        table,
+        columns: selectedColumns.length > 0 ? selectedColumns : undefined,
+        filters: validFilters.length > 0 ? validFilters : undefined,
+        limit: 5, // Preview limited to 5 rows
+      };
+
+      const response = await apiRequest('/api/workflows/data-sources/execute-db-operation', {
+        method: 'POST',
+        data: previewConfig,
+      });
+
+      setPreviewResults(response);
+    } catch (error: any) {
+      setPreviewError(error.message || 'Failed to fetch preview');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   // Handle save
   const handleSave = () => {
@@ -403,6 +447,70 @@ export default function DatabaseOperationConfig({
             </Label>
           </div>
         </>
+      )}
+
+      {/* Preview Results Section */}
+      {(operation === 'SELECT' && table) && (
+        <div className="space-y-2">
+          <Button 
+            onClick={handlePreview} 
+            variant="outline" 
+            disabled={previewLoading}
+            className="w-full"
+            data-testid="btn-preview-query"
+          >
+            {previewLoading ? (
+              <>Loading...</>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-2" /> Preview (5 rows)
+              </>
+            )}
+          </Button>
+
+          {previewError && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-sm text-red-800">
+                {previewError}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {previewResults && (
+            <Card className="p-4 bg-slate-50">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-slate-700">Preview Results</div>
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    {previewResults.data?.rowCount || 0} rows
+                  </Badge>
+                </div>
+                
+                {/* Tenant ID transparency */}
+                <div className="flex items-center gap-2 text-xs text-slate-600 bg-white p-2 rounded border">
+                  <Shield className="h-3 w-3" />
+                  <span>Tenant Context: <code className="font-mono bg-slate-100 px-1 rounded">{previewResults.data?.data?.[0]?.tenant_id || 'RLS Active'}</code></span>
+                </div>
+
+                {/* Results table */}
+                <ScrollArea className="h-[200px] border rounded bg-white">
+                  <div className="p-2">
+                    {previewResults.data?.data && previewResults.data.data.length > 0 ? (
+                      <pre className="text-xs font-mono whitespace-pre-wrap">
+                        {JSON.stringify(previewResults.data.data, null, 2)}
+                      </pre>
+                    ) : (
+                      <div className="text-sm text-slate-500 text-center py-8">
+                        No data found
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Save Button */}
