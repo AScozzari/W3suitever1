@@ -188,7 +188,7 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
       <div className="flex-1 min-h-0">
         <Card className="h-full border-2 border-white/30 bg-white/10 backdrop-blur-sm flex flex-col">
           {/* View Indicator */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-white/20 bg-white/30 flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-white/30 flex-shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 font-medium">Currently viewing:</span>
               <Badge className="bg-[#c43e00] text-white text-xs font-bold">
@@ -539,7 +539,7 @@ function InputPreviewPanel({ node, edges, allNodes }: InputPreviewPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 pb-3 border-b border-white/20">
+      <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
         <ChevronRight className="h-4 w-4 text-gray-400" />
         <h2 className="text-sm font-bold text-gray-700">📥 Input Data</h2>
       </div>
@@ -667,7 +667,7 @@ function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-white/20">
+      <div className="flex items-center justify-between pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <ChevronLeft className="h-4 w-4 text-gray-400" />
           <h2 className="text-sm font-bold text-gray-700">📤 Output Data</h2>
@@ -818,8 +818,8 @@ export default function NodeInspector({
           </div>
         </DialogHeader>
 
-        {/* Three-Panel Layout - Responsive Grid - Input e Output stessa larghezza */}
-        <div className="grid lg:grid-cols-[minmax(340px,1.4fr)_minmax(380px,1.2fr)_minmax(340px,1.4fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-gray-300">
+        {/* Three-Panel Layout - Responsive Grid - Configuration panel più largo */}
+        <div className="grid lg:grid-cols-[minmax(320px,1.25fr)_minmax(420px,1.5fr)_minmax(320px,1.25fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-gray-100">
           {/* LEFT PANEL - Input Preview */}
           <div className="overflow-y-auto lg:block hidden">
             <ScrollArea className="h-full">
@@ -837,7 +837,7 @@ export default function NodeInspector({
           <div className="overflow-y-auto bg-white/30 backdrop-blur-sm">
             <ScrollArea className="h-full">
               <div className="p-6">
-                <div className="flex items-center gap-2 pb-3 mb-4 border-b border-white/20">
+                <div className="flex items-center gap-2 pb-3 mb-4 border-b border-gray-100">
                   <h2 className="text-sm font-bold text-gray-700">⚙️ Configuration</h2>
                 </div>
                 
