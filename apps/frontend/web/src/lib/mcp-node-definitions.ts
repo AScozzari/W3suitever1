@@ -49,7 +49,8 @@ export const MCP_ECOSYSTEMS = {
   postgresql: { badge: '[PG]', color: '#336791', name: 'PostgreSQL' },
   telegram: { badge: '[TG]', color: '#0088CC', name: 'Telegram' },
   whatsapp: { badge: '[WA]', color: '#25D366', name: 'WhatsApp Business' },
-  twilio: { badge: '[TWILIO]', color: '#F22F46', name: 'Twilio' }
+  twilio: { badge: '[TWILIO]', color: '#F22F46', name: 'Twilio' },
+  w3suite: { badge: '[W3]', color: '#FF6900', name: 'W3Suite Data' }
 } as const;
 
 // 🔵 GOOGLE WORKSPACE OUTBOUND (12 nodes)
@@ -1818,7 +1819,7 @@ export const W3SUITE_DATA_NODES: BaseNodeDefinition[] = [
     id: 'w3-database-operation',
     name: '[W3] Database Operation',
     description: 'Read or write data from w3suite schema with RLS enforcement',
-    category: 'data-operations',
+    category: 'w3-data',
     ecosystem: 'w3suite',
     icon: 'Database',
     color: '#FF6900', // WindTre orange
