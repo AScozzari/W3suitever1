@@ -62,7 +62,7 @@ import { WorkflowRoutingNode } from './workflow-nodes/WorkflowRoutingNode';
 import { WorkflowFlowControlNode } from './workflow-nodes/WorkflowFlowControlNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../hooks/useWorkflowTemplates';
-import NodeConfigPanel from './NodeConfigPanel';
+import NodeInspector from './workflow/NodeInspector';
 import { AIWorkflowChatModal } from './AIWorkflowChatModal';
 import { WorkflowTestResultDialog } from './WorkflowTestResultDialog';
 import { useTenant } from '../contexts/TenantContext';
@@ -1692,8 +1692,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
       </div>
 
-      {/* ✅ NODE CONFIGURATION PANEL - Fixed hook order violations */}
-      <NodeConfigPanel 
+      {/* ✅ NODE INSPECTOR - N8N-STYLE THREE-PANEL LAYOUT */}
+      <NodeInspector 
         node={showConfigPanel && configNodeId ? nodes.find(n => n.id === configNodeId) || null : null}
         allNodes={nodes}
         edges={edges}
@@ -1711,6 +1711,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           
           console.log('🎛️ Node config saved:', { nodeId, config });
         }}
+        workflowId={templateId}
       />
 
       {/* 🧪 TEST RUN RESULTS POPUP - Advanced Debug View */}

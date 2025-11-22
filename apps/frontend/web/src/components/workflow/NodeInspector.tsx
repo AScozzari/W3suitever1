@@ -1,0 +1,571 @@
+/**
+ * 🎛️ NODE INSPECTOR - N8N-STYLE THREE-PANEL LAYOUT
+ * 
+ * Componente ispirato a n8n per configurazione e debugging visuale dei nodi workflow.
+ * Layout a 3 pannelli: Input (sinistra) | Configuration (centro) | Output (destra)
+ * 
+ * @features
+ * - Input Preview: visualizza dati in arrivo dagli edge upstream
+ * - Node Configuration: form di configurazione del nodo (riusa componenti esistenti)
+ * - Output Execution: esegue singolo nodo e mostra risultato
+ * - Data Views: Schema/Table/JSON per ispezione dettagliata
+ * - WindTre Glassmorphism Design
+ */
+
+import { useState } from 'react';
+import { Node, Edge } from '@xyflow/react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card } from '@/components/ui/card';
+import { 
+  Play, 
+  Pin, 
+  Copy, 
+  Table2, 
+  Braces, 
+  Database,
+  ChevronLeft,
+  ChevronRight,
+  Download
+} from 'lucide-react';
+import NodeConfigFormHost from './NodeConfigFormHost';
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+/**
+ * Formato standard per item di workflow (compatibile n8n)
+ */
+export interface WorkflowItem {
+  id: string;
+  json: Record<string, unknown>;
+  binary?: Record<string, unknown>;
+}
+
+/**
+ * Execution result di un nodo
+ */
+export interface NodeExecutionResult {
+  nodeId: string;
+  success: boolean;
+  items: WorkflowItem[];
+  executedAt: string;
+  executionTime: number;
+  error?: string;
+}
+
+interface NodeInspectorProps {
+  node: Node | null;
+  allNodes: Node[];
+  edges: Edge[];
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (nodeId: string, config: unknown) => void;
+  workflowId?: string;
+}
+
+// ============================================================================
+// DATA VIEW TABS COMPONENT
+// ============================================================================
+
+type DataViewMode = 'schema' | 'table' | 'json';
+
+interface DataViewTabsProps {
+  data: WorkflowItem[];
+  title: string;
+  emptyMessage?: string;
+}
+
+/**
+ * 📊 Componente per visualizzare dati in 3 modalità (Schema/Table/JSON)
+ */
+function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }: DataViewTabsProps) {
+  const [viewMode, setViewMode] = useState<DataViewMode>('table');
+
+  // Se non ci sono dati, mostra placeholder
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <Database className="h-12 w-12 mb-3 opacity-50" />
+        <p className="text-sm font-medium">{emptyMessage}</p>
+        <p className="text-xs mt-1">Esegui il nodo per vedere i risultati</p>
+      </div>
+    );
+  }
+
+  const itemCount = data.length;
+  const firstItem = data[0];
+
+  return (
+    <div className="space-y-3">
+      {/* Header con conteggio item e view switcher */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+          <Badge variant="secondary" className="text-xs">
+            {itemCount} {itemCount === 1 ? 'item' : 'items'}
+          </Badge>
+        </div>
+        
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as DataViewMode)} className="w-auto">
+          <TabsList className="h-8 bg-white/50 backdrop-blur-sm border border-gray-200">
+            <TabsTrigger value="schema" className="text-xs px-3 h-7 data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white">
+              <Database className="h-3 w-3 mr-1" />
+              Schema
+            </TabsTrigger>
+            <TabsTrigger value="table" className="text-xs px-3 h-7 data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white">
+              <Table2 className="h-3 w-3 mr-1" />
+              Table
+            </TabsTrigger>
+            <TabsTrigger value="json" className="text-xs px-3 h-7 data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white">
+              <Braces className="h-3 w-3 mr-1" />
+              JSON
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Content area */}
+      <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
+        <ScrollArea className="h-[400px] w-full">
+          <div className="p-4">
+            {viewMode === 'schema' && <SchemaView data={firstItem} />}
+            {viewMode === 'table' && <TableView data={data} />}
+            {viewMode === 'json' && <JsonView data={data} />}
+          </div>
+        </ScrollArea>
+      </Card>
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" className="text-xs">
+          <Copy className="h-3 w-3 mr-1" />
+          Copy Data
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs">
+          <Download className="h-3 w-3 mr-1" />
+          Export
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// VIEW RENDERERS
+// ============================================================================
+
+/**
+ * Schema View: mostra struttura dati con tipi
+ */
+function SchemaView({ data }: { data: WorkflowItem }) {
+  const schema = extractSchema(data.json);
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-semibold text-gray-700 mb-3 bg-gray-100 px-3 py-2 rounded">
+        Data Structure
+      </div>
+      {Object.entries(schema).map(([key, type]) => (
+        <div key={key} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded transition-colors">
+          <span className="font-mono text-sm text-gray-900">{key}</span>
+          <Badge variant="outline" className="text-xs font-mono">
+            {type}
+          </Badge>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Table View: visualizzazione tabellare
+ */
+function TableView({ data }: { data: WorkflowItem[] }) {
+  if (data.length === 0) return null;
+
+  // Estrai colonne dal primo item
+  const columns = Object.keys(data[0].json);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-100 sticky top-0">
+          <tr>
+            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b">
+              #
+            </th>
+            {columns.map(col => (
+              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b">
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, idx) => (
+            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-3 py-2 text-xs text-gray-500 border-b font-mono">
+                {idx + 1}
+              </td>
+              {columns.map(col => (
+                <td key={col} className="px-3 py-2 text-xs text-gray-900 border-b font-mono max-w-xs truncate">
+                  {formatValue(item.json[col])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * JSON View: visualizzazione JSON formattata con syntax highlighting
+ */
+function JsonView({ data }: { data: WorkflowItem[] }) {
+  const jsonString = JSON.stringify(data, null, 2);
+
+  return (
+    <div className="relative">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="absolute top-2 right-2 text-xs z-10"
+        onClick={() => navigator.clipboard.writeText(jsonString)}
+      >
+        <Copy className="h-3 w-3 mr-1" />
+        Copy
+      </Button>
+      <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs font-mono leading-relaxed">
+        <code>{jsonString}</code>
+      </pre>
+    </div>
+  );
+}
+
+// ============================================================================
+// INPUT PREVIEW PANEL
+// ============================================================================
+
+interface InputPreviewPanelProps {
+  node: Node;
+  edges: Edge[];
+  allNodes: Node[];
+}
+
+/**
+ * 📥 Input Preview Panel - Mostra dati in arrivo dagli edge upstream
+ */
+function InputPreviewPanel({ node, edges, allNodes }: InputPreviewPanelProps) {
+  // Trova edge upstream connesso a questo nodo
+  const upstreamEdges = edges.filter(edge => edge.target === node.id);
+  
+  // Mock data per ora (TODO: recuperare da execution history)
+  const mockInputData: WorkflowItem[] = upstreamEdges.length > 0 ? [
+    {
+      id: '1',
+      json: {
+        leadId: 'lead_123',
+        personName: 'Mario Rossi',
+        email: 'mario.rossi@example.com',
+        phone: '+39 333 1234567',
+        score: 85,
+        status: 'qualified'
+      }
+    },
+    {
+      id: '2',
+      json: {
+        leadId: 'lead_456',
+        personName: 'Laura Bianchi',
+        email: 'laura.bianchi@example.com',
+        phone: '+39 340 9876543',
+        score: 92,
+        status: 'qualified'
+      }
+    }
+  ] : [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <ChevronRight className="h-4 w-4 text-gray-400" />
+        <h2 className="text-sm font-bold text-gray-700">Input Data</h2>
+      </div>
+
+      {upstreamEdges.length === 0 ? (
+        <Card className="p-6 text-center border-2 border-dashed border-gray-300 bg-gray-50">
+          <p className="text-sm text-gray-500">
+            Nessun nodo connesso in input
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Collega un nodo per vedere i dati in arrivo
+          </p>
+        </Card>
+      ) : (
+        <>
+          <div className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <strong>Connesso a:</strong>{' '}
+            {upstreamEdges.map(edge => {
+              const sourceNode = allNodes.find(n => n.id === edge.source);
+              return sourceNode?.data.name || edge.source;
+            }).join(', ')}
+          </div>
+          
+          <DataViewTabs 
+            data={mockInputData} 
+            title="Dati in Ingresso"
+            emptyMessage="In attesa di esecuzione del nodo precedente"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// OUTPUT EXECUTION PANEL
+// ============================================================================
+
+interface OutputExecutionPanelProps {
+  node: Node;
+  workflowId?: string;
+}
+
+/**
+ * 📤 Output Execution Panel - Esegue nodo singolo e mostra output
+ */
+function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<NodeExecutionResult | null>(null);
+  const [isPinned, setIsPinned] = useState(false);
+
+  const handleExecute = async () => {
+    setIsExecuting(true);
+    
+    // TODO: chiamare API backend per single-node execution
+    // Simulazione per ora
+    setTimeout(() => {
+      const mockResult: NodeExecutionResult = {
+        nodeId: node.id,
+        success: true,
+        items: [
+          {
+            id: 'result_1',
+            json: {
+              approved: true,
+              assignedTo: 'sales-team',
+              priority: 'high',
+              nextAction: 'contact_customer',
+              aiDecision: 'Approvato automaticamente - score alto',
+              timestamp: new Date().toISOString()
+            }
+          }
+        ],
+        executedAt: new Date().toISOString(),
+        executionTime: 245
+      };
+      
+      setExecutionResult(mockResult);
+      setIsExecuting(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ChevronLeft className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-bold text-gray-700">Output Data</h2>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPinned(!isPinned)}
+            className={isPinned ? 'bg-blue-50 border-blue-300' : ''}
+            data-testid="button-pin-output"
+          >
+            <Pin className={`h-3 w-3 ${isPinned ? 'fill-blue-500 text-blue-500' : ''}`} />
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleExecute}
+            disabled={isExecuting}
+            className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white"
+            data-testid="button-execute-node"
+          >
+            <Play className="h-3 w-3 mr-1" />
+            {isExecuting ? 'Esecuzione...' : 'Esegui Nodo'}
+          </Button>
+        </div>
+      </div>
+
+      {executionResult && (
+        <div className="text-xs bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-green-800">✅ Esecuzione completata</span>
+            <Badge variant="secondary" className="text-xs">
+              {executionResult.executionTime}ms
+            </Badge>
+          </div>
+          <p className="text-green-700">
+            {executionResult.items.length} {executionResult.items.length === 1 ? 'item' : 'items'} generato
+          </p>
+        </div>
+      )}
+
+      {executionResult ? (
+        <DataViewTabs 
+          data={executionResult.items} 
+          title="Risultato Esecuzione"
+        />
+      ) : (
+        <Card className="p-12 text-center border-2 border-dashed border-gray-300 bg-gray-50">
+          <Play className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+          <p className="text-sm text-gray-500 font-medium">
+            Clicca "Esegui Nodo" per vedere l'output
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Verrà eseguito solo questo nodo con i dati di input correnti
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN NODE INSPECTOR SHELL
+// ============================================================================
+
+/**
+ * 🎛️ Node Inspector Shell - Layout principale a 3 pannelli
+ */
+export default function NodeInspector({ 
+  node, 
+  allNodes, 
+  edges, 
+  isOpen, 
+  onClose, 
+  onSave,
+  workflowId 
+}: NodeInspectorProps) {
+  if (!node) return null;
+
+  return (
+    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <SheetContent 
+        side="right" 
+        className="w-full max-w-[95vw] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-l-2 border-white/30 shadow-2xl"
+      >
+        {/* Header */}
+        <SheetHeader className="px-6 py-4 border-b border-white/20 bg-white/50 backdrop-blur-sm">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <SheetTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
+                🎛️ Node Inspector
+              </SheetTitle>
+              <SheetDescription className="text-sm text-gray-600 mt-1">
+                {String(node.data.name || node.data.title || node.data.id)}
+              </SheetDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs font-mono bg-white/70 px-2 py-1">
+                ID: {node.id}
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                {String(node.data.category || 'node')}
+              </Badge>
+            </div>
+          </div>
+        </SheetHeader>
+
+        {/* Three-Panel Layout */}
+        <div className="grid grid-cols-3 h-[calc(100vh-80px)] divide-x divide-white/20">
+          {/* LEFT PANEL - Input Preview */}
+          <div className="overflow-y-auto">
+            <div className="p-6">
+              <InputPreviewPanel 
+                node={node} 
+                edges={edges} 
+                allNodes={allNodes} 
+              />
+            </div>
+          </div>
+
+          {/* CENTER PANEL - Node Configuration */}
+          <div className="overflow-y-auto bg-white/30 backdrop-blur-sm">
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-sm font-bold text-gray-700">⚙️ Configuration</h2>
+              </div>
+              
+              <NodeConfigFormHost 
+                node={node}
+                allNodes={allNodes}
+                edges={edges}
+                onSave={onSave}
+                onClose={onClose}
+              />
+            </div>
+          </div>
+
+          {/* RIGHT PANEL - Output Execution */}
+          <div className="overflow-y-auto">
+            <div className="p-6">
+              <OutputExecutionPanel 
+                node={node} 
+                workflowId={workflowId} 
+              />
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Estrae schema da oggetto JSON
+ */
+function extractSchema(obj: Record<string, unknown>): Record<string, string> {
+  const schema: Record<string, string> = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null) {
+      schema[key] = 'null';
+    } else if (Array.isArray(value)) {
+      schema[key] = `array[${value.length}]`;
+    } else {
+      schema[key] = typeof value;
+    }
+  }
+  
+  return schema;
+}
+
+/**
+ * Formatta valore per visualizzazione in tabella
+ */
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
