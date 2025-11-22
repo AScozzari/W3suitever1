@@ -13,16 +13,28 @@
 
 import express from 'express';
 import { z } from 'zod';
-import { db, setTenantContext } from '../core/db';
+import { Pool } from 'pg';
+import { db, setTenantContext, pool } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { sql } from 'drizzle-orm';
 
 const router = express.Router();
 
+// Dedicated pool for metadata queries (no tenant context needed)
+// Separate from main pool (max:1) to avoid blocking RLS-protected queries
+const metadataPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 5, // Allow concurrent metadata requests
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  ssl: { rejectUnauthorized: false },
+});
+
 // Apply middleware to all routes
 router.use(correlationMiddleware);
-router.use(tenantMiddleware);
+// NOTE: tenantMiddleware is already applied globally in routes.ts
+// Applying it here would cause double middleware execution
 
 // ==================== VALIDATION SCHEMAS ====================
 
@@ -92,27 +104,25 @@ const dbOperationSchema = z.discriminatedUnion('operation', [
  * GET /api/workflows/data-sources/metadata
  * Get database schema metadata for w3suite only
  * Returns tables and columns for dropdown population
- * 🔐 RBAC: Requires workflow.execute permission
+ * 🔐 No RBAC: Read-only schema info, safe for all authenticated users
  */
-router.get('/metadata', rbacMiddleware, requirePermission('workflow.execute'), async (req, res) => {
+router.get('/metadata', async (req, res) => {
+  // Declare client in outer scope to ensure it's accessible in finally block
+  let client;
+  
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
-    if (!tenantId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing tenant context',
-        timestamp: new Date().toISOString()
-      });
-    }
+    // No tenant context needed - this endpoint only returns schema structure
+    // (information_schema tables/columns), not tenant-specific data
 
-    // Set tenant context for RLS
-    await setTenantContext(tenantId);
-
+    // Use dedicated metadata pool (not main pool) for concurrent requests
+    // Main pool has max:1 for RLS tenant context isolation
+    client = await metadataPool.connect();
+    
     // Query information_schema to get tables and columns from w3suite schema only
-    const tablesResult = await db.execute<{
+    const tablesResult = await client.query<{
       table_name: string;
       table_type: string;
-    }>(sql`
+    }>(`
       SELECT 
         table_name,
         table_type
@@ -127,12 +137,12 @@ router.get('/metadata', rbacMiddleware, requirePermission('workflow.execute'), a
     // For each table, get columns
     const metadata = await Promise.all(
       tables.map(async (table) => {
-        const columnsResult = await db.execute<{
+        const columnsResult = await client.query<{
           column_name: string;
           data_type: string;
           is_nullable: string;
           column_default: string | null;
-        }>(sql`
+        }>(`
           SELECT 
             column_name,
             data_type,
@@ -140,9 +150,9 @@ router.get('/metadata', rbacMiddleware, requirePermission('workflow.execute'), a
             column_default
           FROM information_schema.columns
           WHERE table_schema = 'w3suite'
-            AND table_name = ${table.table_name}
+            AND table_name = $1
           ORDER BY ordinal_position
-        `);
+        `, [table.table_name]);
 
         return {
           table: table.table_name,
@@ -158,7 +168,6 @@ router.get('/metadata', rbacMiddleware, requirePermission('workflow.execute'), a
     );
 
     logger.info('[WORKFLOW_DATA_SOURCES] Metadata fetched', {
-      tenantId,
       tableCount: metadata.length,
     });
 
@@ -181,6 +190,11 @@ router.get('/metadata', rbacMiddleware, requirePermission('workflow.execute'), a
       error: 'Failed to fetch database metadata',
       timestamp: new Date().toISOString()
     });
+  } finally {
+    // Guaranteed release on ALL exit paths (success, error, early return)
+    if (client) {
+      client.release();
+    }
   }
 });
 

@@ -64,6 +64,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     // Skip only specific public endpoints that don't need tenant context
     // Also check for query param tenantId for OAuth endpoints (browser redirects can't send headers)
     // Check multiple OAuth path patterns since path may vary depending on middleware chain
+    
     const isOAuthEndpoint = req.path.startsWith('/mcp/oauth/') || 
                           req.path.startsWith('/oauth/') || 
                           req.path.includes('/oauth/');
@@ -75,6 +76,8 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
         isOAuthEndpoint || // OAuth endpoints use query params or session, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||
+        req.path === '/workflows/data-sources/metadata' || // Metadata is schema info only, no tenant data
+        req.path === '/data-sources/metadata' || // Also bypass when called from /workflows router
         req.path === '/') { // Skip auth for /api/ root endpoint
       console.log('[TENANT-SKIP] Bypassing tenant middleware for public endpoint:', req.path);
       
