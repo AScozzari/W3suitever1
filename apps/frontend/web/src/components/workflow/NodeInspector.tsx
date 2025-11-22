@@ -32,6 +32,7 @@ import {
   Download
 } from 'lucide-react';
 import NodeConfigFormHost from './NodeConfigFormHost';
+import { useExecuteNode, type NodeExecutionResult as BackendExecutionResult } from './hooks/useExecuteNode';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -342,40 +343,34 @@ interface OutputExecutionPanelProps {
  * 📤 Output Execution Panel - Esegue nodo singolo e mostra output
  */
 function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<NodeExecutionResult | null>(null);
   const [isPinned, setIsPinned] = useState(false);
+  const executeMutation = useExecuteNode(node.id);
 
   const handleExecute = async () => {
-    setIsExecuting(true);
-    
-    // TODO: chiamare API backend per single-node execution
-    // Simulazione per ora
-    setTimeout(() => {
-      const mockResult: NodeExecutionResult = {
-        nodeId: node.id,
-        success: true,
-        items: [
-          {
-            id: 'result_1',
-            json: {
-              approved: true,
-              assignedTo: 'sales-team',
-              priority: 'high',
-              nextAction: 'contact_customer',
-              aiDecision: 'Approvato automaticamente - score alto',
-              timestamp: new Date().toISOString()
-            }
-          }
-        ],
-        executedAt: new Date().toISOString(),
-        executionTime: 245
-      };
-      
-      setExecutionResult(mockResult);
-      setIsExecuting(false);
-    }, 1500);
+    executeMutation.mutate({
+      nodeData: {
+        id: node.data.id || node.id,
+        type: node.type || 'action',
+        category: node.data.category as string,
+        config: node.data.config as Record<string, unknown> | undefined
+      },
+      inputData: {} // TODO: populate from upstream nodes
+    });
   };
+
+  // Convert backend format to local format for display
+  const executionResult = executeMutation.data
+    ? {
+        nodeId: executeMutation.data.execution.nodeId,
+        success: executeMutation.data.execution.status === 'success',
+        items: executeMutation.data.items.map((item, idx) => ({
+          id: `item_${idx}`,
+          json: item
+        })),
+        executedAt: executeMutation.data.execution.completedAt,
+        executionTime: executeMutation.data.metadata.executionTime
+      }
+    : null;
 
   return (
     <div className="space-y-4">
@@ -399,12 +394,12 @@ function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
             variant="default"
             size="sm"
             onClick={handleExecute}
-            disabled={isExecuting}
+            disabled={executeMutation.isPending}
             className="bg-gradient-to-r from-windtre-orange to-windtre-purple text-white"
             data-testid="button-execute-node"
           >
             <Play className="h-3 w-3 mr-1" />
-            {isExecuting ? 'Esecuzione...' : 'Esegui Nodo'}
+            {executeMutation.isPending ? 'Esecuzione...' : 'Esegui Nodo'}
           </Button>
         </div>
       </div>
