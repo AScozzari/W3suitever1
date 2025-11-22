@@ -15,7 +15,6 @@
 import { useState } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,7 +28,8 @@ import {
   Database,
   ChevronLeft,
   ChevronRight,
-  Download
+  Download,
+  Check
 } from 'lucide-react';
 import NodeConfigFormHost from './NodeConfigFormHost';
 import { useExecuteNode, type NodeExecutionResult as BackendExecutionResult } from './hooks/useExecuteNode';
@@ -115,63 +115,82 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
         </div>
       </div>
 
-      {/* View Switcher Tabs - Visibile e Cliccabile */}
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as DataViewMode)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-11 bg-gray-200/80 p-1.5 rounded-lg gap-1">
-          <TabsTrigger 
-            value="schema" 
-            className="text-xs px-4 h-8 rounded-md transition-all text-gray-600 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-windtre-orange/50 hover:bg-white/50"
-          >
-            <Database className="h-4 w-4 mr-1.5" />
-            Schema
-          </TabsTrigger>
-          <TabsTrigger 
-            value="table" 
-            className="text-xs px-4 h-8 rounded-md transition-all text-gray-600 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-windtre-orange/50 hover:bg-white/50"
-          >
-            <Table2 className="h-4 w-4 mr-1.5" />
-            Table
-          </TabsTrigger>
-          <TabsTrigger 
-            value="json" 
-            className="text-xs px-4 h-8 rounded-md transition-all text-gray-600 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-windtre-orange/50 hover:bg-white/50"
-          >
-            <Braces className="h-4 w-4 mr-1.5" />
-            JSON
-          </TabsTrigger>
-        </TabsList>
+      {/* Custom Button Group - Alto Contrasto */}
+      <div className="grid grid-cols-3 gap-2 p-1.5 bg-gray-100 rounded-lg">
+        <Button
+          onClick={() => setViewMode('schema')}
+          variant={viewMode === 'schema' ? 'default' : 'ghost'}
+          size="sm"
+          className={`
+            relative h-10 text-xs font-semibold transition-all
+            ${viewMode === 'schema' 
+              ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
+              : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
+            }
+          `}
+        >
+          <Database className="h-4 w-4 mr-2" />
+          Schema
+          {viewMode === 'schema' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
+        </Button>
 
-        {/* Content area per ogni tab */}
-        <TabsContent value="schema" className="mt-4">
-          <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
-            <ScrollArea className="h-[400px] w-full">
-              <div className="p-4">
-                <SchemaView data={firstItem} />
-              </div>
-            </ScrollArea>
-          </Card>
-        </TabsContent>
+        <Button
+          onClick={() => setViewMode('table')}
+          variant={viewMode === 'table' ? 'default' : 'ghost'}
+          size="sm"
+          className={`
+            relative h-10 text-xs font-semibold transition-all
+            ${viewMode === 'table' 
+              ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
+              : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
+            }
+          `}
+        >
+          <Table2 className="h-4 w-4 mr-2" />
+          Table
+          {viewMode === 'table' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
+        </Button>
 
-        <TabsContent value="table" className="mt-4">
-          <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
-            <ScrollArea className="h-[400px] w-full">
-              <div className="p-4">
-                <TableView data={data} />
-              </div>
-            </ScrollArea>
-          </Card>
-        </TabsContent>
+        <Button
+          onClick={() => setViewMode('json')}
+          variant={viewMode === 'json' ? 'default' : 'ghost'}
+          size="sm"
+          className={`
+            relative h-10 text-xs font-semibold transition-all
+            ${viewMode === 'json' 
+              ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
+              : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
+            }
+          `}
+        >
+          <Braces className="h-4 w-4 mr-2" />
+          JSON
+          {viewMode === 'json' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
+        </Button>
+      </div>
 
-        <TabsContent value="json" className="mt-4">
-          <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
-            <ScrollArea className="h-[400px] w-full">
-              <div className="p-4">
-                <JsonView data={data} />
-              </div>
-            </ScrollArea>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Content area - Conditional Rendering with View Indicator */}
+      <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
+        {/* Permanent View Indicator - Always visible */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-white/20 bg-white/30">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600 font-medium">Currently viewing:</span>
+            <Badge className="bg-[#c43e00] text-white text-xs font-bold">
+              {viewMode === 'schema' && <><Database className="h-3 w-3 mr-1" /> Schema</>}
+              {viewMode === 'table' && <><Table2 className="h-3 w-3 mr-1" /> Table</>}
+              {viewMode === 'json' && <><Braces className="h-3 w-3 mr-1" /> JSON</>}
+            </Badge>
+          </div>
+        </div>
+        
+        <ScrollArea className="h-[400px] w-full">
+          <div className="p-4">
+            {viewMode === 'schema' && <SchemaView data={firstItem} />}
+            {viewMode === 'table' && <TableView data={data} />}
+            {viewMode === 'json' && <JsonView data={data} />}
+          </div>
+        </ScrollArea>
+      </Card>
 
       {/* Action buttons */}
       <div className="flex gap-2">
