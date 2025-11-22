@@ -74,9 +74,12 @@ export default function DatabaseOperationConfig({
 }: DatabaseOperationConfigProps) {
   const initialConfig = node.data.config || {};
   
+  // Clean the initial config to remove invalid values like 'white'
+  const cleanedInitialTable = initialConfig.table === 'white' ? '' : (initialConfig.table || '');
+  
   const [operation, setOperation] = useState<string>(initialConfig.operation || 'SELECT');
-  // Filter out invalid table values like 'white' - only use if exists in metadata
-  const [table, setTable] = useState<string>('');  // Start with empty, will validate on metadata load
+  // Start with cleaned value, never use 'white'
+  const [table, setTable] = useState<string>(cleanedInitialTable);
   const [selectedColumns, setSelectedColumns] = useState<string[]>(initialConfig.columns || []);
   const [filters, setFilters] = useState<FilterCondition[]>(initialConfig.filters || []);
   const [values, setValues] = useState<Record<string, any>>(initialConfig.values || {});
@@ -104,15 +107,13 @@ export default function DatabaseOperationConfig({
 
   // Initialize table value only if it's valid when metadata loads
   useEffect(() => {
-    if (tables.length > 0) {
-      // Check if saved table exists in metadata
-      const savedTable = initialConfig.table;
-      if (savedTable && tables.find(t => t.table === savedTable)) {
-        // Valid saved table, use it
-        setTable(savedTable);
-      } else if (savedTable) {
-        // Invalid saved table (like 'white'), clear it
-        console.warn(`[DatabaseOperation] Invalid saved table "${savedTable}" detected, clearing...`);
+    if (tables.length > 0 && cleanedInitialTable) {
+      // Only set if the cleaned initial table exists in metadata
+      if (tables.find(t => t.table === cleanedInitialTable)) {
+        setTable(cleanedInitialTable);
+      } else {
+        // Invalid saved table, clear it
+        console.warn(`[DatabaseOperation] Invalid saved table "${cleanedInitialTable}" detected, clearing...`);
         setTable('');
       }
     }
@@ -263,12 +264,21 @@ export default function DatabaseOperationConfig({
             <Badge variant="outline" className="font-mono text-xs">w3suite</Badge>
           </Label>
           <Select 
-            value={table && tables.find(t => t.table === table) ? table : ''} 
-            onValueChange={setTable} 
+            value={table} 
+            onValueChange={(newValue) => {
+              // Only set valid table names
+              if (tables.find(t => t.table === newValue)) {
+                setTable(newValue);
+              }
+            }}
             disabled={isLoading}
           >
             <SelectTrigger id="table" data-testid="select-table">
-              <SelectValue placeholder={isLoading ? "Loading tables..." : "Select table"} />
+              <SelectValue>
+                {table && tables.find(t => t.table === table) 
+                  ? table 
+                  : (isLoading ? "Loading tables..." : "Select table")}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <ScrollArea className="h-[300px]">
