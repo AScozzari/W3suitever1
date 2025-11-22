@@ -29,8 +29,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Check
+  Check,
+  GripVertical
 } from 'lucide-react';
+import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from '@dnd-kit/core';
 import NodeConfigFormHost from './NodeConfigFormHost';
 import { useExecuteNode, type NodeExecutionResult as BackendExecutionResult } from './hooks/useExecuteNode';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +61,16 @@ export interface NodeExecutionResult {
   executedAt: string;
   executionTime: number;
   error?: string;
+}
+
+/**
+ * Dati trascinati durante drag & drop (Input → Configuration)
+ */
+export interface DraggedFieldData {
+  fieldName: string;
+  fieldType: string;
+  fieldPath: string;
+  sourcePanel: 'input' | 'output';
 }
 
 interface NodeInspectorProps {
@@ -577,13 +589,33 @@ export default function NodeInspector({
 }: NodeInspectorProps) {
   if (!node) return null;
 
+  // Handle drag end event (Input → Configuration mapping)
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+    
+    const draggedData = active.data.current as DraggedFieldData;
+    const targetFieldId = over.id as string;
+    
+    console.log('🎯 Drag & Drop:', {
+      field: draggedData.fieldName,
+      type: draggedData.fieldType,
+      path: draggedData.fieldPath,
+      target: targetFieldId
+    });
+    
+    // TODO: Implementare auto-popolazione del campo target con fieldPath
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent 
-        className="max-w-[1600px] w-[95vw] h-[90vh] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-2 border-white/30 shadow-2xl overflow-hidden"
-      >
-        {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/50 backdrop-blur-sm">
+      <DndContext onDragEnd={handleDragEnd}>
+        <DialogContent 
+          className="max-w-[1600px] w-[95vw] h-[90vh] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-2 border-white/30 shadow-2xl overflow-hidden"
+        >
+          {/* Header */}
+          <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/50 backdrop-blur-sm">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <DialogTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-windtre-orange to-windtre-purple bg-clip-text text-transparent">
@@ -650,7 +682,8 @@ export default function NodeInspector({
             </ScrollArea>
           </div>
         </div>
-      </DialogContent>
+        </DialogContent>
+      </DndContext>
     </Dialog>
   );
 }
