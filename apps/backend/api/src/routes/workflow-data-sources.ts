@@ -273,7 +273,7 @@ router.post('/execute-db-operation', rbacMiddleware, requirePermission('workflow
  * Validate table name (no schema qualifier, no special characters)
  * Prevents SQL injection and schema escaping
  */
-function validateTableName(table: string): void {
+export function validateTableName(table: string): void {
   // Block schema qualifiers (e.g., "public.users")
   if (table.includes('.')) {
     throw new Error('Table name cannot contain schema qualifier');
@@ -295,7 +295,7 @@ function validateTableName(table: string): void {
  * Validate column names exist in table schema
  * Prevents column injection attacks
  */
-async function validateColumns(table: string, columns: string[]): Promise<void> {
+export async function validateColumns(table: string, columns: string[]): Promise<void> {
   // Get table metadata from information_schema
   const columnsResult = await db.execute<{ column_name: string }>(sql`
     SELECT column_name
@@ -318,7 +318,7 @@ async function validateColumns(table: string, columns: string[]): Promise<void> 
  * Sanitize SQL identifier (table/column name)
  * Returns double-quoted identifier for safety
  */
-function sanitizeIdentifier(identifier: string): string {
+export function sanitizeIdentifier(identifier: string): string {
   // Validate identifier format
   if (!/^[a-zA-Z0-9_]+$/.test(identifier)) {
     throw new Error(`Invalid identifier: ${identifier}`);
@@ -330,7 +330,7 @@ function sanitizeIdentifier(identifier: string): string {
 
 // ==================== OPERATION EXECUTORS ====================
 
-async function executeSelect(
+export async function executeSelect(
   operation: z.infer<typeof selectOperationSchema>,
   tenantId: string
 ) {
@@ -380,7 +380,7 @@ async function executeSelect(
   };
 }
 
-async function executeInsert(
+export async function executeInsert(
   operation: z.infer<typeof insertOperationSchema>,
   tenantId: string
 ) {
@@ -411,7 +411,7 @@ async function executeInsert(
   };
 }
 
-async function executeUpdate(
+export async function executeUpdate(
   operation: z.infer<typeof updateOperationSchema>,
   tenantId: string
 ) {
@@ -453,7 +453,7 @@ async function executeUpdate(
   };
 }
 
-async function executeDelete(
+export async function executeDelete(
   operation: z.infer<typeof deleteOperationSchema>,
   tenantId: string
 ) {

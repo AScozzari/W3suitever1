@@ -211,6 +211,11 @@ export class ReactFlowBridgeParser {
         return { type: 'ai', executorId: 'ai-mcp-executor' };
       }
       
+      // 🗄️ Database Operations
+      if (node.type === 'w3-database-operation') {
+        return { type: 'action', executorId: 'database-operation-executor' };
+      }
+      
       // ✅ PRIORITY 2: Generic types (backward compatibility)
       switch (node.type) {
         case 'trigger':

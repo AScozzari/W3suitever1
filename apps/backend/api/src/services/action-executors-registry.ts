@@ -3406,6 +3406,99 @@ export class DealStageWebhookTriggerExecutor implements ActionExecutor {
   }
 }
 
+// ==================== DATABASE OPERATION EXECUTOR ====================
+
+/**
+ * 🗄️ DATABASE OPERATION EXECUTOR
+ * Executes database operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema
+ * with strict RLS enforcement and security validation
+ * 
+ * 🔒 SECURITY: Delegates to validated workflow-data-sources helpers that enforce:
+ * - Table/column validation via validateTableName/validateColumns
+ * - SQL injection prevention via sanitizeIdentifier
+ * - Prepared statements with proper parameter binding
+ * - w3suite schema restriction
+ */
+export class DatabaseOperationExecutor implements ActionExecutor {
+  executorId = 'database-operation-executor';
+  description = 'Executes secure database operations on w3suite schema with RLS enforcement';
+
+  async execute(step: any, inputData?: any, context?: ExecutionContext): Promise<ActionExecutionResult> {
+    try {
+      if (!context?.tenantId) {
+        throw new Error('Tenant context required for database operations');
+      }
+
+      const { config } = step;
+      if (!config || !config.operation) {
+        throw new Error('Database operation config is required');
+      }
+
+      // Set tenant context for RLS enforcement
+      const { setTenantContext } = await import('../core/db');
+      await setTenantContext(context.tenantId);
+
+      // Import validated execution functions from workflow-data-sources
+      const {
+        executeSelect,
+        executeInsert,
+        executeUpdate,
+        executeDelete
+      } = await import('../routes/workflow-data-sources');
+      
+      // Execute operation using validated helpers (all security checks applied)
+      let result;
+      switch (config.operation) {
+        case 'SELECT':
+          result = await executeSelect(config, context.tenantId);
+          break;
+        case 'INSERT':
+          result = await executeInsert(config, context.tenantId);
+          break;
+        case 'UPDATE':
+          result = await executeUpdate(config, context.tenantId);
+          break;
+        case 'DELETE':
+          result = await executeDelete(config, context.tenantId);
+          break;
+        default:
+          throw new Error(`Unsupported database operation: ${config.operation}`);
+      }
+
+      logger.info('✅ [DATABASE-EXECUTOR] Operation executed successfully', {
+        tenantId: context.tenantId,
+        operation: config.operation,
+        table: config.table,
+        rowCount: result.rowCount
+      });
+
+      return {
+        success: true,
+        message: `${config.operation} operation completed successfully`,
+        data: {
+          operation: config.operation,
+          rowCount: result.rowCount,
+          rows: result.data,
+          table: config.table
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [DATABASE-EXECUTOR] Operation failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId,
+        config: step.config
+      });
+
+      return {
+        success: false,
+        message: 'Database operation failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
 // ==================== REGISTRY CLASS ====================
 
 /**
@@ -3463,6 +3556,9 @@ export class ActionExecutorsRegistry {
     // Integration executors
     this.register(new MCPConnectorExecutor());
     this.register(new AIMCPExecutor());
+    
+    // Database operation executor
+    this.register(new DatabaseOperationExecutor());
 
     logger.info('🎯 [REGISTRY] Registered default action executors', {
       count: this.executors.size,
