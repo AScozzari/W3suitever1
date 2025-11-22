@@ -117,26 +117,26 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
 
       {/* View Switcher Tabs - Visibile e Cliccabile */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as DataViewMode)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-10 bg-gray-100 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-3 h-11 bg-gray-200/80 p-1.5 rounded-lg gap-1">
           <TabsTrigger 
             value="schema" 
-            className="text-xs font-medium px-4 h-8 rounded-md transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:shadow-md"
+            className="text-xs px-4 h-8 rounded-md transition-all text-gray-600 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-windtre-orange/50 hover:bg-white/50"
           >
-            <Database className="h-3.5 w-3.5 mr-1.5" />
+            <Database className="h-4 w-4 mr-1.5" />
             Schema
           </TabsTrigger>
           <TabsTrigger 
             value="table" 
-            className="text-xs font-medium px-4 h-8 rounded-md transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:shadow-md"
+            className="text-xs px-4 h-8 rounded-md transition-all text-gray-600 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-windtre-orange/50 hover:bg-white/50"
           >
-            <Table2 className="h-3.5 w-3.5 mr-1.5" />
+            <Table2 className="h-4 w-4 mr-1.5" />
             Table
           </TabsTrigger>
           <TabsTrigger 
             value="json" 
-            className="text-xs font-medium px-4 h-8 rounded-md transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:shadow-md"
+            className="text-xs px-4 h-8 rounded-md transition-all text-gray-600 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-windtre-orange data-[state=active]:to-windtre-purple data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-windtre-orange/50 hover:bg-white/50"
           >
-            <Braces className="h-3.5 w-3.5 mr-1.5" />
+            <Braces className="h-4 w-4 mr-1.5" />
             JSON
           </TabsTrigger>
         </TabsList>
@@ -548,7 +548,7 @@ export default function NodeInspector({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent 
-        className="max-w-7xl w-[90vw] h-[85vh] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-2 border-white/30 shadow-2xl overflow-hidden"
+        className="max-w-[1600px] w-[95vw] h-[90vh] p-0 backdrop-blur-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 border-2 border-white/30 shadow-2xl overflow-hidden"
       >
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/50 backdrop-blur-sm">
