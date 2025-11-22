@@ -9,14 +9,20 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Check, Settings, Target } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Form } from '@/components/ui/form';
+import { AlertCircle, Check, Settings, Target, FileCode2, FormInput } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import type { DraggedFieldData } from './NodeInspector';
 import { getNodeConfigComponent } from './config-registry';
+import { getNodeConfigSchema, getNodeDefaultConfig } from '@/lib/get-node-definition';
+import { DynamicFormRenderer } from './DynamicFormRenderer';
 
 interface NodeConfigFormHostProps {
   node: Node;
@@ -101,44 +107,82 @@ export default function NodeConfigFormHost({
     );
   }
 
-  // Otherwise, fall back to JSON editor
+  // Get node config schema for validation
+  const configSchema = getNodeConfigSchema(node.data.id as string);
+  const defaultConfig = getNodeDefaultConfig(node.data.id as string);
+  const hasConfigSchema = !!configSchema;
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'form' | 'json'>(hasConfigSchema ? 'form' : 'json');
+  
+  // JSON editor state (fallback)
   const [configJson, setConfigJson] = useState(() => 
-    JSON.stringify(node.data.config || {}, null, 2)
+    JSON.stringify(node.data.config || defaultConfig || {}, null, 2)
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  // Sync configJson when node.data.config changes (e.g., from drag & drop)
-  useEffect(() => {
-    const newConfigJson = JSON.stringify(node.data.config || {}, null, 2);
-    if (newConfigJson !== configJson) {
-      setConfigJson(newConfigJson);
-      setSaved(false);
-    }
-  }, [node.data.config]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Form state with react-hook-form + zodResolver
+  const form = useForm({
+    resolver: configSchema ? zodResolver(configSchema) : undefined,
+    defaultValues: node.data.config || defaultConfig || {},
+  });
 
-  const handleSave = () => {
+  // === CRITICAL FIX: Reset form when node changes ===
+  useEffect(() => {
+    const newConfig = node.data.config || defaultConfig || {};
+    form.reset(newConfig);
+    setConfigJson(JSON.stringify(newConfig, null, 2));
+    setJsonError(null);
+  }, [node.id, node.data.config]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // === BIDIRECTIONAL SYNC: Form ↔ JSON ===
+  
+  // Watch form changes and sync to JSON
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const formJson = JSON.stringify(value, null, 2);
+      if (formJson !== configJson) {
+        setConfigJson(formJson);
+        setJsonError(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, configJson]);
+
+  // Parse JSON changes and sync to form
+  const handleJsonChange = (value: string) => {
+    setConfigJson(value);
+    setSaved(false);
+    
+    // Try to parse and update form
     try {
-      const parsedConfig = JSON.parse(configJson);
-      onSave(node.id, parsedConfig);
-      setSaved(true);
+      const parsedConfig = JSON.parse(value);
+      form.reset(parsedConfig); // Update form with parsed JSON
       setJsonError(null);
-      setTimeout(() => setSaved(false), 2000);
     } catch (error) {
       setJsonError(error instanceof Error ? error.message : 'JSON non valido');
     }
   };
 
-  const handleJsonChange = (value: string) => {
-    setConfigJson(value);
-    setSaved(false);
-    
-    // Validate JSON in real-time
+  // Handle form submit
+  const handleFormSubmit = form.handleSubmit((data) => {
+    onSave(node.id, data);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  });
+
+  // Handle JSON save (bypass form validation)
+  const handleJsonSave = () => {
     try {
-      JSON.parse(value);
+      const parsedConfig = JSON.parse(configJson);
+      onSave(node.id, parsedConfig);
+      form.reset(parsedConfig); // Sync form with saved JSON
+      setSaved(true);
       setJsonError(null);
-    } catch {
-      // Silent validation - error shown on save
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : 'JSON non valido');
     }
   };
 
@@ -166,22 +210,70 @@ export default function NodeConfigFormHost({
         </div>
       </Card>
 
-      {/* JSON Editor */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          📝 Configurazione JSON
-          <span className="text-xs text-gray-500 font-normal">(editabile - trascina campi dall'Input Panel)</span>
-        </label>
-        <DroppableTextarea 
-          value={configJson}
-          onChange={handleJsonChange}
-          className="font-mono text-xs min-h-[300px] bg-white/70 backdrop-blur-sm border-white/30"
-          placeholder="{}"
-        />
-      </div>
+      {/* Tabs: Form View | JSON View */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'form' | 'json')}>
+        <TabsList className="grid w-full grid-cols-2 bg-white/70 backdrop-blur-sm">
+          <TabsTrigger 
+            value="form" 
+            disabled={!hasConfigSchema}
+            data-testid="tab-form-view"
+            className="data-[state=active]:bg-windtre-orange data-[state=active]:text-white"
+          >
+            <FormInput className="h-4 w-4 mr-2" />
+            Form View
+          </TabsTrigger>
+          <TabsTrigger 
+            value="json"
+            data-testid="tab-json-view"
+            className="data-[state=active]:bg-windtre-purple data-[state=active]:text-white"
+          >
+            <FileCode2 className="h-4 w-4 mr-2" />
+            JSON View
+          </TabsTrigger>
+        </TabsList>
+
+        {/* FORM VIEW */}
+        <TabsContent value="form" className="mt-4">
+          {hasConfigSchema && configSchema ? (
+            <Form {...form}>
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <DynamicFormRenderer
+                  configSchema={configSchema}
+                  control={form.control}
+                  disabled={false}
+                />
+              </form>
+            </Form>
+          ) : (
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-sm text-yellow-800">
+                ⚠️ Questo nodo non ha uno schema di configurazione definito. 
+                Usa la vista JSON per configurarlo manualmente.
+              </AlertDescription>
+            </Alert>
+          )}
+        </TabsContent>
+
+        {/* JSON VIEW */}
+        <TabsContent value="json" className="mt-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              📝 Configurazione JSON
+              <span className="text-xs text-gray-500 font-normal">(editabile - trascina campi dall'Input Panel)</span>
+            </label>
+            <DroppableTextarea 
+              value={configJson}
+              onChange={handleJsonChange}
+              className="font-mono text-xs min-h-[300px] bg-white/70 backdrop-blur-sm border-white/30"
+              placeholder="{}"
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Error Alert */}
-      {jsonError && (
+      {jsonError && activeTab === 'json' && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-sm">
@@ -210,23 +302,15 @@ export default function NodeConfigFormHost({
           Annulla
         </Button>
         <Button
-          onClick={handleSave}
+          onClick={activeTab === 'form' ? handleFormSubmit : handleJsonSave}
           size="default"
           className="bg-[#c43e00] hover:bg-[#a33500] text-white font-semibold shadow-md"
-          disabled={!!jsonError}
+          disabled={activeTab === 'json' && !!jsonError}
           data-testid="button-save-config"
         >
           💾 Salva Configurazione
         </Button>
       </div>
-
-      {/* Future Enhancement Notice */}
-      <Card className="p-3 bg-blue-50/50 border-blue-200/50">
-        <p className="text-xs text-blue-700">
-          <strong>🚧 Prossimamente (v2.0):</strong> Form specifici per ogni tipo di nodo 
-          con validazione automatica e interfaccia guidata.
-        </p>
-      </Card>
     </div>
   );
 }
