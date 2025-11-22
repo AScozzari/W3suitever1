@@ -224,6 +224,163 @@ export const ThresholdTriggerConfigSchema = z.object({
   }).optional()
 });
 
+// ==================== CORE TRIGGER NODES (Enhanced n8n-style) ====================
+
+// Schedule/Cron Trigger Configuration (Professional n8n-compatible)
+export const ScheduleTriggerConfigSchema = z.object({
+  mode: z.enum(['simple', 'cron']).default('simple').describe('Trigger mode: simple intervals or advanced cron'),
+  
+  simple: z.object({
+    interval: z.enum(['seconds', 'minutes', 'hours', 'days', 'weeks', 'months']).describe('Time unit for the interval'),
+    value: z.number().positive().min(1).describe('Interval value (e.g., 5 for "every 5 minutes")'),
+    minute: z.number().min(0).max(59).optional().describe('Minute of the hour (for hours+)'),
+    hour: z.number().min(0).max(23).optional().describe('Hour of the day (for days+)'),
+    weekdays: z.array(z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])).optional().describe('component:weekday-selector'),
+    dayOfMonth: z.number().min(1).max(31).optional().describe('Day of the month (for months)'),
+  }).optional(),
+  
+  cron: z.object({
+    expression: z.string()
+      .regex(/^(\*|([0-9]|[1-5][0-9])|\*\/([0-9]|[1-5][0-9]))( (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3]))( (\*|([1-9]|[12][0-9]|3[01])|\*\/([1-9]|[12][0-9]|3[01]))( (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2]))( (\*|[0-6]|\*\/[0-6])( (\*|([0-9]|[1-5][0-9])|\*\/([0-9]|[1-5][0-9])))?)?)?)?)?$/, {
+        message: 'Invalid cron expression format'
+      })
+      .describe('component:cron-expression-builder'),
+    timezone: z.string().default('Europe/Rome').describe('Timezone for cron execution (IANA timezone)'),
+  }).optional(),
+  
+  enabled: z.boolean().default(true).describe('Enable/disable this trigger'),
+  executeOnce: z.boolean().default(false).describe('Execute immediately when workflow is activated'),
+  
+  retryPolicy: z.object({
+    maxRetries: z.number().min(0).max(10).default(3).describe('Maximum retry attempts on failure'),
+    retryDelayMinutes: z.number().min(1).default(5).describe('Delay between retries (minutes)')
+  }).optional(),
+}).refine(
+  (data) => (data.mode === 'simple' && data.simple) || (data.mode === 'cron' && data.cron),
+  { message: 'Simple or Cron configuration required based on selected mode' }
+);
+
+// Webhook Inbound Trigger Configuration (Receive HTTP requests)
+export const WebhookInboundTriggerConfigSchema = z.object({
+  path: z.string()
+    .min(1)
+    .regex(/^\/[a-zA-Z0-9\-_/:]*$/, 'Path must start with / and contain only alphanumeric, -, _, /, :')
+    .describe('URL path (e.g., /webhook/order-created or /:orderId/status)'),
+  
+  httpMethod: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'])
+    .default('POST')
+    .describe('HTTP method to accept'),
+  
+  authentication: z.object({
+    type: z.enum(['none', 'basic', 'header', 'jwt']).default('none').describe('Authentication method'),
+    
+    basicAuth: z.object({
+      username: z.string().min(1),
+      password: z.string().min(1)
+    }).optional().describe('Basic authentication credentials'),
+    
+    headerAuth: z.object({
+      headerName: z.string().default('X-API-Key').describe('Header name to check'),
+      expectedValue: z.string().min(1).describe('Expected header value')
+    }).optional().describe('Header-based authentication'),
+    
+    jwtAuth: z.object({
+      jwtSecret: z.string().min(1).describe('JWT signing secret'),
+      jwtAlgorithm: z.enum(['HS256', 'HS384', 'HS512', 'RS256']).default('HS256'),
+      headerName: z.string().default('Authorization').describe('Header containing JWT token')
+    }).optional().describe('JWT authentication'),
+  }).describe('component:webhook-auth-config'),
+  
+  respondMode: z.enum(['immediately', 'when_last_node_finishes', 'custom_node', 'streaming'])
+    .default('immediately')
+    .describe('When to send HTTP response'),
+  
+  responseCode: z.number().min(100).max(599).default(200).describe('HTTP response status code'),
+  
+  responseData: z.enum(['all_entries', 'first_entry_json', 'first_entry_binary', 'no_body'])
+    .default('all_entries')
+    .describe('What data to include in response body'),
+  
+  options: z.object({
+    allowedOrigins: z.string().default('*').describe('CORS: comma-separated URLs or * for all'),
+    
+    binaryData: z.boolean().default(false).describe('Accept binary file uploads'),
+    binaryPropertyName: z.string().default('data').optional(),
+    
+    ignoreBots: z.boolean().default(true).describe('Ignore requests from bots and crawlers'),
+    ipWhitelist: z.array(z.string().ip()).optional().describe('component:ip-whitelist-builder'),
+    
+    rawBody: z.boolean().default(false).describe('Receive raw request body (not parsed)'),
+    maxPayloadSizeMB: z.number().min(1).max(50).default(16).describe('Maximum payload size in MB'),
+    
+    responseContentType: z.enum(['application/json', 'text/html', 'text/plain', 'application/xml'])
+      .default('application/json')
+      .describe('Response Content-Type header'),
+    
+    responseHeaders: z.record(z.string(), z.string()).optional().describe('component:response-headers-builder'),
+  }).optional(),
+});
+
+// Error Trigger Configuration (Workflow error monitoring)
+export const ErrorTriggerConfigSchema = z.object({
+  scope: z.enum(['all_workflows', 'specific_workflows', 'workflow_tag'])
+    .default('all_workflows')
+    .describe('Which workflows to monitor for errors'),
+  
+  workflowIds: z.array(z.string().uuid()).optional().describe('component:workflow-multi-selector'),
+  workflowTags: z.array(z.string()).optional().describe('Workflow tags to monitor'),
+  
+  errorTypes: z.array(z.enum([
+    'execution_error',
+    'timeout_error',
+    'validation_error',
+    'authentication_error',
+    'rate_limit_error',
+    'network_error',
+    'unknown_error'
+  ])).default(['execution_error']).describe('Which error types to catch'),
+  
+  triggerOn: z.enum(['first_error', 'after_retries_exhausted', 'every_error'])
+    .default('after_retries_exhausted')
+    .describe('When to trigger this error handler workflow'),
+  
+  debounce: z.object({
+    enabled: z.boolean().default(true).describe('Prevent trigger spam'),
+    windowMinutes: z.number().min(1).max(60).default(5).describe('Time window for debouncing'),
+    maxTriggersPerWindow: z.number().min(1).max(100).default(10).describe('Max triggers within window')
+  }).optional(),
+  
+  notificationChannels: z.array(z.enum(['email', 'slack', 'sms', 'webhook'])).optional().describe('Alert channels'),
+  
+  autoRecover: z.object({
+    enabled: z.boolean().default(false).describe('Attempt automatic recovery'),
+    maxAttempts: z.number().min(1).max(5).default(3),
+    strategyType: z.enum(['retry', 'fallback', 'rollback']).default('retry')
+  }).optional(),
+});
+
+// Manual Trigger Configuration (Testing & development)
+export const ManualTriggerConfigSchema = z.object({
+  testPayload: z.record(z.string(), z.any()).optional().describe('component:json-editor'),
+  
+  mockContext: z.object({
+    userId: z.string().uuid().optional().describe('Mock user ID for testing'),
+    tenantId: z.string().uuid().optional().describe('Mock tenant ID for testing'),
+    timestamp: z.string().optional().describe('ISO timestamp for testing')
+  }).optional(),
+  
+  description: z.string().optional().describe('Explain what this manual trigger does (for documentation)'),
+  
+  requiredInputs: z.array(z.object({
+    name: z.string().min(1).describe('Input field name'),
+    type: z.enum(['string', 'number', 'boolean', 'object', 'array']).describe('Expected data type'),
+    description: z.string().optional().describe('Field description for documentation'),
+    required: z.boolean().default(false)
+  })).optional().describe('Document expected input structure'),
+  
+  executionMode: z.enum(['sync', 'async']).default('async').describe('Synchronous or asynchronous execution'),
+});
+
 // ==================== AI NODES ====================
 
 // AI Decision Node Configuration
@@ -551,6 +708,10 @@ export type TimeTriggerConfig = z.infer<typeof TimeTriggerConfigSchema>;
 export type EventTriggerConfig = z.infer<typeof EventTriggerConfigSchema>;
 export type WebhookTriggerConfig = z.infer<typeof WebhookTriggerConfigSchema>;
 export type ThresholdTriggerConfig = z.infer<typeof ThresholdTriggerConfigSchema>;
+export type ScheduleTriggerConfig = z.infer<typeof ScheduleTriggerConfigSchema>;
+export type WebhookInboundTriggerConfig = z.infer<typeof WebhookInboundTriggerConfigSchema>;
+export type ErrorTriggerConfig = z.infer<typeof ErrorTriggerConfigSchema>;
+export type ManualTriggerConfig = z.infer<typeof ManualTriggerConfigSchema>;
 
 export type AiDecisionConfig = z.infer<typeof AiDecisionConfigSchema>;
 export type AiClassificationConfig = z.infer<typeof AiClassificationConfigSchema>;
@@ -570,7 +731,7 @@ export type DealStageWebhookTriggerConfig = z.infer<typeof DealStageWebhookTrigg
 
 // Union types for all configurations
 export type ActionConfig = EmailActionConfig | ApprovalActionConfig | PaymentActionConfig | TicketActionConfig | SmsActionConfig;
-export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig;
+export type TriggerConfig = TimeTriggerConfig | EventTriggerConfig | WebhookTriggerConfig | ThresholdTriggerConfig | ScheduleTriggerConfig | WebhookInboundTriggerConfig | ErrorTriggerConfig | ManualTriggerConfig;
 export type AiConfig = AiDecisionConfig | AiClassificationConfig | AiContentConfig | AIMCPNodeConfig | AILeadRoutingConfig;
 export type IntegrationConfig = MCPConnectorConfig;
 export type RoutingConfig = LeadRoutingConfig | DealRoutingConfig | CustomerRoutingConfig | PipelineAssignmentConfig | FunnelStageTransitionConfig | FunnelPipelineTransitionConfig | AIFunnelOrchestratorConfig | FunnelExitConfig | DealStageWebhookTriggerConfig;
