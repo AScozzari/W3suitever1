@@ -34,6 +34,7 @@ import {
 import NodeConfigFormHost from './NodeConfigFormHost';
 import { useExecuteNode, type NodeExecutionResult as BackendExecutionResult } from './hooks/useExecuteNode';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkflowStore } from '@/stores/workflowStore';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -267,32 +268,40 @@ interface InputPreviewPanelProps {
 function InputPreviewPanel({ node, edges, allNodes }: InputPreviewPanelProps) {
   // Trova edge upstream connesso a questo nodo
   const upstreamEdges = edges.filter(edge => edge.target === node.id);
+  const nodeExecutionResults = useWorkflowStore(state => state.nodeExecutionResults);
   
-  // Mock data per ora (TODO: recuperare da execution history)
-  const mockInputData: WorkflowItem[] = upstreamEdges.length > 0 ? [
-    {
-      id: '1',
-      json: {
-        leadId: 'lead_123',
-        personName: 'Mario Rossi',
-        email: 'mario.rossi@example.com',
-        phone: '+39 333 1234567',
-        score: 85,
-        status: 'qualified'
-      }
-    },
-    {
-      id: '2',
-      json: {
-        leadId: 'lead_456',
-        personName: 'Laura Bianchi',
-        email: 'laura.bianchi@example.com',
-        phone: '+39 340 9876543',
-        score: 92,
-        status: 'qualified'
-      }
-    }
-  ] : [];
+  // Recupera e aggrega execution results da TUTTI i nodi upstream (fan-in support)
+  const { inputData, missingUpstreamNodes } = upstreamEdges.length > 0
+    ? (() => {
+        const aggregatedItems: WorkflowItem[] = [];
+        const missing: string[] = [];
+        
+        upstreamEdges.forEach(edge => {
+          const sourceNodeId = edge.source;
+          const sourceNode = allNodes.find(n => n.id === sourceNodeId);
+          const sourceNodeName = (typeof sourceNode?.data.name === 'string' ? sourceNode.data.name : sourceNodeId);
+          const upstreamResults = nodeExecutionResults[sourceNodeId];
+          
+          if (upstreamResults && upstreamResults.length > 0) {
+            // Add provenance metadata to items
+            upstreamResults.forEach((item, idx) => {
+              aggregatedItems.push({
+                id: `${sourceNodeId}_${idx}`,
+                json: {
+                  ...item.json,
+                  __sourceNode: sourceNodeName,
+                  __sourceNodeId: sourceNodeId
+                }
+              });
+            });
+          } else {
+            missing.push(sourceNodeName);
+          }
+        });
+        
+        return { inputData: aggregatedItems, missingUpstreamNodes: missing };
+      })()
+    : { inputData: [], missingUpstreamNodes: [] };
 
   return (
     <div className="space-y-4">
@@ -320,11 +329,34 @@ function InputPreviewPanel({ node, edges, allNodes }: InputPreviewPanelProps) {
             }).join(', ')}
           </div>
           
-          <DataViewTabs 
-            data={mockInputData} 
-            title="Dati in Ingresso"
-            emptyMessage="In attesa di esecuzione del nodo precedente"
-          />
+          {inputData.length > 0 && (
+            <>
+              {missingUpstreamNodes.length > 0 && (
+                <div className="text-xs bg-yellow-50 border border-yellow-300 rounded-lg p-3">
+                  <p className="text-yellow-800">
+                    ⚠️ <strong>Dati parziali:</strong> Mancano risultati da: {missingUpstreamNodes.join(', ')}
+                  </p>
+                </div>
+              )}
+              <DataViewTabs 
+                data={inputData} 
+                title="Dati in Ingresso"
+                emptyMessage="In attesa di esecuzione del nodo precedente"
+              />
+            </>
+          )}
+          
+          {inputData.length === 0 && missingUpstreamNodes.length > 0 && (
+            <Card className="p-6 text-center border-2 border-dashed border-orange-300 bg-orange-50">
+              <Play className="h-8 w-8 mx-auto mb-2 text-orange-400" />
+              <p className="text-sm text-orange-700 font-medium">
+                Dati non disponibili
+              </p>
+              <p className="text-xs text-orange-600 mt-1">
+                Esegui {missingUpstreamNodes.length === 1 ? 'il nodo' : 'i nodi'} upstream: {missingUpstreamNodes.join(', ')}
+              </p>
+            </Card>
+          )}
         </>
       )}
     </div>
@@ -347,12 +379,13 @@ function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
   const [isPinned, setIsPinned] = useState(false);
   const { toast } = useToast();
   const executeMutation = useExecuteNode(node.id);
+  const setNodeExecutionResult = useWorkflowStore(state => state.setNodeExecutionResult);
 
   const handleExecute = async () => {
     executeMutation.mutate(
       {
         nodeData: {
-          id: node.data.id || node.id,
+          id: (typeof node.data.id === 'string' ? node.data.id : node.id),
           type: node.type || 'action',
           category: node.data.category as string,
           config: node.data.config as Record<string, unknown> | undefined
@@ -367,7 +400,14 @@ function OutputExecutionPanel({ node }: OutputExecutionPanelProps) {
             variant: 'destructive'
           });
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
+          // Save execution results to store for InputPreviewPanel
+          const items = data.items.map((item, idx) => ({
+            id: `item_${idx}`,
+            json: item
+          }));
+          setNodeExecutionResult(node.id, items);
+          
           toast({
             title: '✅ Esecuzione Completata',
             description: 'Il nodo è stato eseguito con successo',

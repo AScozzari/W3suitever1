@@ -15,6 +15,13 @@ export const generateNodeId = () => `node-${nanoid()}`;
 export const generateEdgeId = () => `edge-${nanoid()}`;
 export const generateInstanceId = () => `instance-${nanoid()}`;
 
+// 🎯 WORKFLOW ITEM (n8n-compatible format)
+export interface WorkflowItem {
+  id: string;
+  json: Record<string, unknown>;
+  binary?: Record<string, unknown>;
+}
+
 // 🎯 WORKFLOW STATE INTERFACE (Local Editor State Only)
 interface WorkflowState {
   // Core workflow data (current editing session)
@@ -31,6 +38,9 @@ interface WorkflowState {
   isRunning: boolean;
   searchTerm: string; // For filtering actions/templates in UI
   selectedCategory: string | null; // For department filtering
+  
+  // Node execution results (for Node Inspector preview)
+  nodeExecutionResults: Record<string, WorkflowItem[]>;
   
   // History for undo/redo (local session only)
   history: WorkflowSnapshot[];
@@ -77,6 +87,11 @@ interface WorkflowActions {
   setSearchTerm: (searchTerm: string) => void;
   setSelectedCategory: (category: string | null) => void;
   
+  // Node execution results management
+  setNodeExecutionResult: (nodeId: string, items: WorkflowItem[]) => void;
+  clearNodeExecutionResult: (nodeId: string) => void;
+  getNodeExecutionResult: (nodeId: string) => WorkflowItem[] | undefined;
+  
   // History management
   saveSnapshot: (action: string) => void;
   undo: () => boolean;
@@ -103,6 +118,7 @@ const INITIAL_STATE: WorkflowState = {
   isRunning: false,
   searchTerm: '', // Initialize empty search
   selectedCategory: null, // Initialize no category filter
+  nodeExecutionResults: {}, // Node Inspector execution results
   history: [],
   historyIndex: -1,
   maxHistorySize: 50,
@@ -240,6 +256,23 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
           set((state) => {
             state.selectedCategory = category;
           });
+        },
+
+        // 🎯 NODE EXECUTION RESULTS MANAGEMENT
+        setNodeExecutionResult: (nodeId: string, items: WorkflowItem[]) => {
+          set((state) => {
+            state.nodeExecutionResults[nodeId] = items;
+          });
+        },
+
+        clearNodeExecutionResult: (nodeId: string) => {
+          set((state) => {
+            delete state.nodeExecutionResults[nodeId];
+          });
+        },
+
+        getNodeExecutionResult: (nodeId: string) => {
+          return get().nodeExecutionResults[nodeId];
         },
 
         // 📚 HISTORY MANAGEMENT
