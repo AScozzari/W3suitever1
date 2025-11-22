@@ -87,7 +87,7 @@ interface DataViewTabsProps {
  * 📊 Componente per visualizzare dati in 3 modalità (Schema/Table/JSON)
  */
 function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }: DataViewTabsProps) {
-  const [viewMode, setViewMode] = useState<DataViewMode>('table');
+  const [viewMode, setViewMode] = useState<DataViewMode>('schema');
 
   // Se non ci sono dati, mostra placeholder
   if (!data || data.length === 0) {
