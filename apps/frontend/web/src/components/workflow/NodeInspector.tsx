@@ -604,8 +604,8 @@ export default function NodeInspector({
           </div>
         </DialogHeader>
 
-        {/* Three-Panel Layout - Responsive Grid - Pannello destro più largo */}
-        <div className="grid lg:grid-cols-[minmax(280px,0.9fr)_minmax(380px,1.3fr)_minmax(400px,1.4fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-gray-300">
+        {/* Three-Panel Layout - Responsive Grid - Input e Output stessa larghezza */}
+        <div className="grid lg:grid-cols-[minmax(340px,1.4fr)_minmax(380px,1.2fr)_minmax(340px,1.4fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-gray-300">
           {/* LEFT PANEL - Input Preview */}
           <div className="overflow-y-auto lg:block hidden">
             <ScrollArea className="h-full">
