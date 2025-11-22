@@ -292,6 +292,43 @@ function SchemaView({ data }: { data: WorkflowItem }) {
 }
 
 /**
+ * Draggable Table Header Component
+ */
+function DraggableTableHeader({ columnName }: { columnName: string }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `table-col-${columnName}`,
+    data: {
+      fieldName: columnName,
+      fieldType: 'unknown', // TableView non mostra tipi
+      fieldPath: `json.${columnName}`,
+      sourcePanel: 'input'
+    } as DraggedFieldData
+  });
+
+  return (
+    <th 
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`
+        px-3 py-2 text-left text-xs font-semibold border-b whitespace-nowrap
+        cursor-grab active:cursor-grabbing transition-all
+        ${isDragging 
+          ? 'bg-[#c43e00]/20 text-[#c43e00] scale-105' 
+          : 'text-gray-700 hover:bg-gray-200'
+        }
+      `}
+      data-testid={`draggable-header-${columnName}`}
+    >
+      <div className="flex items-center gap-1">
+        <GripVertical className="h-3 w-3 opacity-50" />
+        {columnName}
+      </div>
+    </th>
+  );
+}
+
+/**
  * Table View: visualizzazione tabellare responsive con scroll orizzontale
  */
 function TableView({ data }: { data: WorkflowItem[] }) {
@@ -309,9 +346,7 @@ function TableView({ data }: { data: WorkflowItem[] }) {
               #
             </th>
             {columns.map(col => (
-              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b whitespace-nowrap">
-                {col}
-              </th>
+              <DraggableTableHeader key={col} columnName={col} />
             ))}
           </tr>
         </thead>
@@ -342,7 +377,93 @@ function TableView({ data }: { data: WorkflowItem[] }) {
 }
 
 /**
- * JSON View: visualizzazione JSON formattata con syntax highlighting
+ * Draggable JSON Key Component
+ */
+function DraggableJsonKey({ keyPath, value }: { keyPath: string; value: unknown }) {
+  const keyName = keyPath.split('.').pop() || keyPath;
+  
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `json-key-${keyPath}`,
+    data: {
+      fieldName: keyName,
+      fieldType: Array.isArray(value) ? 'array' : typeof value,
+      fieldPath: keyPath,
+      sourcePanel: 'input'
+    } as DraggedFieldData
+  });
+
+  return (
+    <span 
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`
+        inline-flex items-center gap-1 px-1 rounded cursor-grab active:cursor-grabbing transition-all
+        ${isDragging 
+          ? 'bg-[#c43e00]/30 text-[#c43e00] shadow-lg scale-110' 
+          : 'hover:bg-yellow-200/50'
+        }
+      `}
+      data-testid={`draggable-json-key-${keyName}`}
+    >
+      <GripVertical className="h-3 w-3 opacity-40 inline" />
+      <span className="text-blue-400">"{keyName}"</span>
+    </span>
+  );
+}
+
+/**
+ * Renderizza JSON con chiavi draggabili
+ */
+function renderDraggableJson(data: WorkflowItem[], indent = 0): JSX.Element[] {
+  if (!data || data.length === 0) return [];
+  
+  const firstItem = data[0];
+  const lines: JSX.Element[] = [];
+  
+  const renderValue = (value: unknown, key?: string, path?: string): string => {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'string') return `"${value}"`;
+    if (typeof value === 'boolean' || typeof value === 'number') return String(value);
+    if (Array.isArray(value)) return `[...${value.length} items]`;
+    if (typeof value === 'object') return '{...}';
+    return String(value);
+  };
+
+  lines.push(
+    <div key="array-open" className="text-gray-400">[</div>
+  );
+  
+  lines.push(
+    <div key="item-open" className="ml-4 text-gray-400">{'{'}</div>
+  );
+
+  Object.entries(firstItem.json).forEach(([key, value], idx, arr) => {
+    const isLast = idx === arr.length - 1;
+    lines.push(
+      <div key={`field-${key}`} className="ml-8">
+        <DraggableJsonKey keyPath={`json.${key}`} value={value} />
+        <span className="text-gray-400">: </span>
+        <span className="text-green-400">{renderValue(value)}</span>
+        {!isLast && <span className="text-gray-400">,</span>}
+      </div>
+    );
+  });
+
+  lines.push(
+    <div key="item-close" className="ml-4 text-gray-400">{'}'}</div>
+  );
+  
+  lines.push(
+    <div key="array-close" className="text-gray-400">]</div>
+  );
+
+  return lines;
+}
+
+/**
+ * JSON View: visualizzazione JSON formattata con syntax highlighting e chiavi draggabili
  */
 function JsonView({ data }: { data: WorkflowItem[] }) {
   const jsonString = JSON.stringify(data, null, 2);
@@ -359,7 +480,7 @@ function JsonView({ data }: { data: WorkflowItem[] }) {
         Copy
       </Button>
       <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs font-mono leading-relaxed">
-        <code>{jsonString}</code>
+        <code>{renderDraggableJson(data)}</code>
       </pre>
     </div>
   );
