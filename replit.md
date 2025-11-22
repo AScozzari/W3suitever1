@@ -71,17 +71,30 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning), Deploy Center Bidirectional Branch Linking (linking tenants/stores to branches).
 - **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance, JSON files with Git versioning, tasks system).
 - **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, call actions integrated with CRM, CDR analytics, policy-based routing, edgvoip PBX Integration.
-- **Workflow Database Operations (NEW)**: [W3] Database Operation node with 4 secure operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema only. RLS enforcement, prepared statements, column/table validation. EXECUTE_QUERY disabled for MVP pending SQL parser integration (search_path bypass risk).
+- **Workflow Database Operations (PRODUCTION-READY MVP)**: [W3] Database Operation node with 4 secure operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema only. Visual query builder for non-technical users, RLS enforcement via `setTenantContext()`, prepared statements with proper parameter binding, table/column validation via `validateTableName/validateColumns/sanitizeIdentifier`. Preview functionality shows RLS-filtered sample data with tenant_id transparency. EXECUTE_QUERY permanently disabled for MVP (requires pg-query-parser for AST-based validation - see Known Issues section).
 
 # Known Issues & Future Work
-## Workflow Database Operations - EXECUTE_QUERY Security
-**Status**: Disabled in MVP (2025-11-22)
+
+## Workflow Database Operations - Phase 1 MVP Complete ✅
+**Status**: Production-ready MVP shipped (2025-11-22)
+**What's included**:
+- ✅ 4 secure database operations: SELECT, INSERT, UPDATE, DELETE
+- ✅ Visual query builder with table/column dropdowns (w3suite schema only)
+- ✅ RLS enforcement via `setTenantContext()` before all queries
+- ✅ Security hardening: `validateTableName()`, `validateColumns()`, `sanitizeIdentifier()`
+- ✅ Prepared statements with proper parameter binding (SQL injection proof)
+- ✅ Preview functionality with RLS-filtered sample data
+- ✅ Workflow executor plugin registered in ActionExecutorsRegistry
+- ✅ ReactFlow integration with node mapping
+
+**EXECUTE_QUERY - Disabled for MVP**:
 **Reason**: Custom SQL queries vulnerable to:
-- search_path manipulation via set_config() in CTEs
+- search_path manipulation via `set_config()` in CTEs
 - Schema escaping through quoted identifiers bypass
 - False positives on column aliases blocking legitimate JOINs
-**Solution Required**: Implement pg-query-parser for AST-based validation before re-enabling
-**Impact**: Users can use structured operations (SELECT/INSERT/UPDATE/DELETE) only - covers 95% of use cases
+**Solution Required**: Implement pg-query-parser for AST-based SQL validation before re-enabling
+**Impact**: Users can use 4 structured operations only - covers 95% of enterprise use cases
+**Decision**: Architect-approved security posture prioritizes safety over flexibility for MVP
 
 # External Dependencies
 - **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
