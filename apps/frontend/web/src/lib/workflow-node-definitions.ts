@@ -20,7 +20,11 @@ import {
   FunnelPipelineTransitionConfigSchema,
   AIFunnelOrchestratorConfigSchema,
   FunnelExitConfigSchema,
-  DealStageWebhookTriggerConfigSchema
+  DealStageWebhookTriggerConfigSchema,
+  ScheduleTriggerConfigSchema,
+  WebhookInboundTriggerConfigSchema,
+  ErrorTriggerConfigSchema,
+  ManualTriggerConfigSchema
 } from '../types/workflow-nodes';
 import { ALL_MCP_NODES } from './mcp-node-definitions';
 
@@ -258,6 +262,101 @@ export const TRIGGER_NODES: BaseNodeDefinition[] = [
         role: 'assignee',
         department: null
       }
+    }
+  },
+  {
+    id: 'schedule-trigger',
+    name: 'Schedule',
+    description: 'Execute workflow on a schedule (intervals or cron expressions)',
+    category: 'trigger',
+    icon: 'Clock',
+    color: '#FF6900', // WindTre Orange
+    version: '1.0.0',
+    configSchema: ScheduleTriggerConfigSchema,
+    defaultConfig: {
+      mode: 'simple',
+      simple: {
+        interval: 'hours',
+        value: 24,
+        hour: 9,
+        minute: 0
+      },
+      enabled: true,
+      executeOnce: false,
+      retryPolicy: {
+        maxRetries: 3,
+        retryDelayMinutes: 5
+      }
+    }
+  },
+  {
+    id: 'webhook-inbound-trigger',
+    name: 'Webhook',
+    description: 'Receive HTTP requests from external systems and trigger workflows',
+    category: 'trigger',
+    icon: 'Webhook',
+    color: '#7B2CBF', // WindTre Purple
+    version: '1.0.0',
+    configSchema: WebhookInboundTriggerConfigSchema,
+    defaultConfig: {
+      path: `/webhook/${Math.random().toString(36).substring(2, 15)}`,
+      httpMethod: 'POST',
+      authentication: {
+        type: 'none'
+      },
+      respondMode: 'immediately',
+      responseCode: 200,
+      responseData: 'all_entries',
+      options: {
+        allowedOrigins: '*',
+        binaryData: false,
+        ignoreBots: true,
+        rawBody: false,
+        maxPayloadSizeMB: 16,
+        responseContentType: 'application/json'
+      }
+    }
+  },
+  {
+    id: 'error-trigger',
+    name: 'Error Trigger',
+    description: 'Catch and handle errors from other workflows for monitoring and recovery',
+    category: 'trigger',
+    icon: 'AlertTriangle',
+    color: '#DC2626', // Red for errors
+    version: '1.0.0',
+    configSchema: ErrorTriggerConfigSchema,
+    defaultConfig: {
+      scope: 'all_workflows',
+      errorTypes: ['execution_error'],
+      triggerOn: 'after_retries_exhausted',
+      debounce: {
+        enabled: true,
+        windowMinutes: 5,
+        maxTriggersPerWindow: 10
+      },
+      notificationChannels: ['email'],
+      autoRecover: {
+        enabled: false,
+        maxAttempts: 3,
+        strategyType: 'retry'
+      }
+    }
+  },
+  {
+    id: 'manual-trigger',
+    name: 'Manual Trigger',
+    description: 'Manually execute workflow for testing and development purposes',
+    category: 'trigger',
+    icon: 'Play',
+    color: '#10B981', // Green for manual execution
+    version: '1.0.0',
+    configSchema: ManualTriggerConfigSchema,
+    defaultConfig: {
+      testPayload: {},
+      mockContext: {},
+      description: 'Click Execute to run this workflow manually',
+      executionMode: 'async'
     }
   }
 ];
