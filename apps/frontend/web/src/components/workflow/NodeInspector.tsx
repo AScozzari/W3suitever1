@@ -184,7 +184,7 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
         </div>
         
         <ScrollArea className="h-[400px] w-full">
-          <div className="p-4">
+          <div className={viewMode === 'table' ? 'p-0' : 'p-4'}>
             {viewMode === 'schema' && <SchemaView data={firstItem} />}
             {viewMode === 'table' && <TableView data={data} />}
             {viewMode === 'json' && <JsonView data={data} />}
@@ -244,16 +244,16 @@ function TableView({ data }: { data: WorkflowItem[] }) {
   const columns = Object.keys(data[0].json);
 
   return (
-    <div className="w-full overflow-auto">
-      <table className="min-w-max w-full text-sm border-collapse">
+    <div className="w-full overflow-auto p-4">
+      <table className="w-full text-sm border-collapse table-auto">
         <thead className="bg-gray-100 sticky top-0 z-10">
           <tr>
             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b whitespace-nowrap">
               #
             </th>
             {columns.map(col => (
-              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b whitespace-nowrap min-w-[150px] max-w-[300px]">
-                <div className="truncate" title={col}>{col}</div>
+              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-gray-700 border-b whitespace-nowrap">
+                {col}
               </th>
             ))}
           </tr>
@@ -269,10 +269,10 @@ function TableView({ data }: { data: WorkflowItem[] }) {
                 return (
                   <td 
                     key={col} 
-                    className="px-3 py-2 text-xs text-gray-900 border-b font-mono min-w-[150px] max-w-[300px]"
+                    className="px-3 py-2 text-xs text-gray-900 border-b font-mono whitespace-nowrap"
                     title={typeof value === 'string' ? value : JSON.stringify(value)}
                   >
-                    <div className="truncate">{value}</div>
+                    {value}
                   </td>
                 );
               })}
