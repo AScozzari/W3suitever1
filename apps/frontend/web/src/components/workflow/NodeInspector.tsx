@@ -104,96 +104,102 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
   const firstItem = data[0];
 
   return (
-    <div className="space-y-4">
-      {/* Header con conteggio item */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          <Badge variant="secondary" className="text-xs bg-gradient-to-r from-windtre-orange to-windtre-purple text-white">
-            {itemCount} {itemCount === 1 ? 'item' : 'items'}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Custom Button Group - Alto Contrasto */}
-      <div className="grid grid-cols-3 gap-2 p-1.5 bg-gray-100 rounded-lg">
-        <Button
-          onClick={() => setViewMode('schema')}
-          variant={viewMode === 'schema' ? 'default' : 'ghost'}
-          size="sm"
-          className={`
-            relative h-10 text-xs font-semibold transition-all
-            ${viewMode === 'schema' 
-              ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
-              : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
-            }
-          `}
-        >
-          <Database className="h-4 w-4 mr-2" />
-          Schema
-          {viewMode === 'schema' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
-        </Button>
-
-        <Button
-          onClick={() => setViewMode('table')}
-          variant={viewMode === 'table' ? 'default' : 'ghost'}
-          size="sm"
-          className={`
-            relative h-10 text-xs font-semibold transition-all
-            ${viewMode === 'table' 
-              ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
-              : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
-            }
-          `}
-        >
-          <Table2 className="h-4 w-4 mr-2" />
-          Table
-          {viewMode === 'table' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
-        </Button>
-
-        <Button
-          onClick={() => setViewMode('json')}
-          variant={viewMode === 'json' ? 'default' : 'ghost'}
-          size="sm"
-          className={`
-            relative h-10 text-xs font-semibold transition-all
-            ${viewMode === 'json' 
-              ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
-              : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
-            }
-          `}
-        >
-          <Braces className="h-4 w-4 mr-2" />
-          JSON
-          {viewMode === 'json' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
-        </Button>
-      </div>
-
-      {/* Content area - Conditional Rendering with View Indicator */}
-      <Card className="border-2 border-white/30 bg-white/10 backdrop-blur-sm">
-        {/* Permanent View Indicator - Always visible */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-white/20 bg-white/30">
+    <div className="flex flex-col h-full">
+      {/* Fixed Header Section - Non influenzato dal contenuto */}
+      <div className="flex-shrink-0 pb-4 space-y-3">
+        {/* Titolo con conteggio item */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600 font-medium">Currently viewing:</span>
-            <Badge className="bg-[#c43e00] text-white text-xs font-bold">
-              {viewMode === 'schema' && <><Database className="h-3 w-3 mr-1" /> Schema</>}
-              {viewMode === 'table' && <><Table2 className="h-3 w-3 mr-1" /> Table</>}
-              {viewMode === 'json' && <><Braces className="h-3 w-3 mr-1" /> JSON</>}
+            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+            <Badge variant="secondary" className="text-xs bg-gradient-to-r from-windtre-orange to-windtre-purple text-white">
+              {itemCount} {itemCount === 1 ? 'item' : 'items'}
             </Badge>
           </div>
         </div>
-        
-        <ScrollArea className="h-[400px] w-full">
-          <div className="p-4">
-            {viewMode === 'schema' && <SchemaView data={firstItem} />}
-            {viewMode === 'table' && <TableView data={data} />}
-            {viewMode === 'json' && <JsonView data={data} />}
+
+        {/* Tab Header Fisso - Layout Grid Robusto */}
+        <div className="grid grid-cols-3 gap-2 p-1.5 bg-gray-100 rounded-lg min-h-[48px]">
+          <Button
+            onClick={() => setViewMode('schema')}
+            variant={viewMode === 'schema' ? 'default' : 'ghost'}
+            size="sm"
+            className={`
+              relative h-10 text-xs font-semibold transition-all flex-shrink-0
+              ${viewMode === 'schema' 
+                ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
+                : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
+              }
+            `}
+          >
+            <Database className="h-4 w-4 mr-2" />
+            Schema
+            {viewMode === 'schema' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
+          </Button>
+
+          <Button
+            onClick={() => setViewMode('table')}
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            className={`
+              relative h-10 text-xs font-semibold transition-all flex-shrink-0
+              ${viewMode === 'table' 
+                ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
+                : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
+              }
+            `}
+          >
+            <Table2 className="h-4 w-4 mr-2" />
+            Table
+            {viewMode === 'table' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
+          </Button>
+
+          <Button
+            onClick={() => setViewMode('json')}
+            variant={viewMode === 'json' ? 'default' : 'ghost'}
+            size="sm"
+            className={`
+              relative h-10 text-xs font-semibold transition-all flex-shrink-0
+              ${viewMode === 'json' 
+                ? 'bg-[#c43e00] hover:bg-[#c43e00]/90 text-white shadow-lg ring-2 ring-[#c43e00]/40 font-bold' 
+                : 'bg-transparent text-gray-800 hover:bg-white/70 font-medium'
+              }
+            `}
+          >
+            <Braces className="h-4 w-4 mr-2" />
+            JSON
+            {viewMode === 'json' && <Check className="h-3.5 w-3.5 ml-2 absolute right-2" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Content Area - Separata e indipendente */}
+      <div className="flex-1 min-h-0">
+        <Card className="h-full border-2 border-white/30 bg-white/10 backdrop-blur-sm flex flex-col">
+          {/* View Indicator */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-white/20 bg-white/30 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 font-medium">Currently viewing:</span>
+              <Badge className="bg-[#c43e00] text-white text-xs font-bold">
+                {viewMode === 'schema' && <><Database className="h-3 w-3 mr-1" /> Schema</>}
+                {viewMode === 'table' && <><Table2 className="h-3 w-3 mr-1" /> Table</>}
+                {viewMode === 'json' && <><Braces className="h-3 w-3 mr-1" /> JSON</>}
+              </Badge>
+            </div>
           </div>
-        </ScrollArea>
-      </Card>
+          
+          {/* Scrollable Content */}
+          <ScrollArea className="flex-1">
+            <div className="p-4">
+              {viewMode === 'schema' && <SchemaView data={firstItem} />}
+              {viewMode === 'table' && <TableView data={data} />}
+              {viewMode === 'json' && <JsonView data={data} />}
+            </div>
+          </ScrollArea>
+        </Card>
+      </div>
 
       {/* Action buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-4 flex-shrink-0">
         <Button variant="outline" size="sm" className="text-xs">
           <Copy className="h-3 w-3 mr-1" />
           Copy Data
@@ -598,8 +604,8 @@ export default function NodeInspector({
           </div>
         </DialogHeader>
 
-        {/* Three-Panel Layout - Responsive Grid */}
-        <div className="grid lg:grid-cols-[minmax(300px,1fr)_minmax(400px,1.5fr)_minmax(300px,1fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-white/20">
+        {/* Three-Panel Layout - Responsive Grid - Pannello destro più largo */}
+        <div className="grid lg:grid-cols-[minmax(280px,0.9fr)_minmax(380px,1.3fr)_minmax(400px,1.4fr)] grid-cols-1 h-[calc(85vh-120px)] lg:divide-x divide-white/20">
           {/* LEFT PANEL - Input Preview */}
           <div className="overflow-y-auto lg:block hidden">
             <ScrollArea className="h-full">
