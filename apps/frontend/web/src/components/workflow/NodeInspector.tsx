@@ -230,6 +230,45 @@ function DataViewTabs({ data, title, emptyMessage = "Nessun dato disponibile" }:
 // ============================================================================
 
 /**
+ * Draggable Field Row Component
+ */
+function DraggableFieldRow({ fieldName, fieldType, fieldPath }: { fieldName: string; fieldType: string; fieldPath: string }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `field-${fieldPath}`,
+    data: {
+      fieldName,
+      fieldType,
+      fieldPath,
+      sourcePanel: 'input'
+    } as DraggedFieldData
+  });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`
+        flex items-center justify-between py-2 px-3 rounded transition-all cursor-grab active:cursor-grabbing
+        ${isDragging 
+          ? 'opacity-50 bg-[#c43e00]/10 shadow-lg scale-105 border-2 border-[#c43e00]/40' 
+          : 'hover:bg-gray-50 hover:shadow-md'
+        }
+      `}
+      data-testid={`draggable-field-${fieldName}`}
+    >
+      <div className="flex items-center gap-2 flex-1">
+        <GripVertical className="h-4 w-4 text-gray-400 flex-shrink-0" />
+        <span className="font-mono text-sm text-gray-900">{fieldName}</span>
+      </div>
+      <Badge variant="outline" className="text-xs font-mono">
+        {fieldType}
+      </Badge>
+    </div>
+  );
+}
+
+/**
  * Schema View: mostra struttura dati con tipi
  */
 function SchemaView({ data }: { data: WorkflowItem }) {
@@ -241,12 +280,12 @@ function SchemaView({ data }: { data: WorkflowItem }) {
         Data Structure
       </div>
       {Object.entries(schema).map(([key, type]) => (
-        <div key={key} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded transition-colors">
-          <span className="font-mono text-sm text-gray-900">{key}</span>
-          <Badge variant="outline" className="text-xs font-mono">
-            {type}
-          </Badge>
-        </div>
+        <DraggableFieldRow
+          key={key}
+          fieldName={key}
+          fieldType={type}
+          fieldPath={`json.${key}`}
+        />
       ))}
     </div>
   );
