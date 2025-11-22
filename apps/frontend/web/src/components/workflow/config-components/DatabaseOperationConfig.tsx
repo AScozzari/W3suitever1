@@ -101,6 +101,14 @@ export default function DatabaseOperationConfig({
   // Check if this is a legacy EXECUTE_QUERY config
   const isLegacyConfig = initialConfig.operation === 'EXECUTE_QUERY';
 
+  // Auto-reset invalid table selection when metadata loads
+  useEffect(() => {
+    if (table && tables.length > 0 && !tables.find(t => t.table === table)) {
+      console.warn(`[DatabaseOperation] Invalid table "${table}" detected, resetting...`);
+      setTable('');
+    }
+  }, [tables, table]);
+
   // Handle preview
   const handlePreview = async () => {
     if (!table) {
