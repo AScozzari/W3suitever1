@@ -74,12 +74,9 @@ export default function DatabaseOperationConfig({
 }: DatabaseOperationConfigProps) {
   const initialConfig = node.data.config || {};
   
-  // Clean the initial config to remove invalid values like 'white'
-  const cleanedInitialTable = initialConfig.table === 'white' ? '' : (initialConfig.table || '');
-  
   const [operation, setOperation] = useState<string>(initialConfig.operation || 'SELECT');
-  // Start with cleaned value, never use 'white'
-  const [table, setTable] = useState<string>(cleanedInitialTable);
+  // Initialize table state with empty string - will validate against metadata
+  const [table, setTable] = useState<string>('');
   const [selectedColumns, setSelectedColumns] = useState<string[]>(initialConfig.columns || []);
   const [filters, setFilters] = useState<FilterCondition[]>(initialConfig.filters || []);
   const [values, setValues] = useState<Record<string, any>>(initialConfig.values || {});
@@ -107,17 +104,18 @@ export default function DatabaseOperationConfig({
 
   // Initialize table value only if it's valid when metadata loads
   useEffect(() => {
-    if (tables.length > 0 && cleanedInitialTable) {
-      // Only set if the cleaned initial table exists in metadata
-      if (tables.find(t => t.table === cleanedInitialTable)) {
-        setTable(cleanedInitialTable);
-      } else {
-        // Invalid saved table, clear it
-        console.warn(`[DatabaseOperation] Invalid saved table "${cleanedInitialTable}" detected, clearing...`);
+    if (tables.length > 0) {
+      const savedTable = initialConfig.table;
+      // Check if saved table is valid (not 'white' and exists in metadata)
+      if (savedTable && savedTable !== 'white' && tables.find(t => t.table === savedTable)) {
+        setTable(savedTable);
+      } else if (savedTable && savedTable !== '') {
+        // Invalid saved table (including 'white'), clear it
+        console.warn(`[DatabaseOperation] Invalid saved table "${savedTable}" detected, clearing...`);
         setTable('');
       }
     }
-  }, [tables.length]); // Only run when tables load, not on every table change
+  }, [tables.length, initialConfig.table]); // Run when tables load
 
   // Handle preview
   const handlePreview = async () => {
@@ -274,11 +272,7 @@ export default function DatabaseOperationConfig({
             disabled={isLoading}
           >
             <SelectTrigger id="table" data-testid="select-table">
-              <SelectValue>
-                {table && tables.find(t => t.table === table) 
-                  ? table 
-                  : (isLoading ? "Loading tables..." : "Select table")}
-              </SelectValue>
+              <SelectValue placeholder={isLoading ? "Loading tables..." : "Select table"} />
             </SelectTrigger>
             <SelectContent>
               <ScrollArea className="h-[300px]">
