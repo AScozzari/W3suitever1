@@ -75,7 +75,8 @@ export default function DatabaseOperationConfig({
   const initialConfig = node.data.config || {};
   
   const [operation, setOperation] = useState<string>(initialConfig.operation || 'SELECT');
-  const [table, setTable] = useState<string>(initialConfig.table || '');
+  // Filter out invalid table values like 'white' - only use if exists in metadata
+  const [table, setTable] = useState<string>('');  // Start with empty, will validate on metadata load
   const [selectedColumns, setSelectedColumns] = useState<string[]>(initialConfig.columns || []);
   const [filters, setFilters] = useState<FilterCondition[]>(initialConfig.filters || []);
   const [values, setValues] = useState<Record<string, any>>(initialConfig.values || {});
@@ -101,13 +102,21 @@ export default function DatabaseOperationConfig({
   // Check if this is a legacy EXECUTE_QUERY config
   const isLegacyConfig = initialConfig.operation === 'EXECUTE_QUERY';
 
-  // Auto-reset invalid table selection when metadata loads
+  // Initialize table value only if it's valid when metadata loads
   useEffect(() => {
-    if (table && tables.length > 0 && !tables.find(t => t.table === table)) {
-      console.warn(`[DatabaseOperation] Invalid table "${table}" detected, resetting...`);
-      setTable('');
+    if (tables.length > 0) {
+      // Check if saved table exists in metadata
+      const savedTable = initialConfig.table;
+      if (savedTable && tables.find(t => t.table === savedTable)) {
+        // Valid saved table, use it
+        setTable(savedTable);
+      } else if (savedTable) {
+        // Invalid saved table (like 'white'), clear it
+        console.warn(`[DatabaseOperation] Invalid saved table "${savedTable}" detected, clearing...`);
+        setTable('');
+      }
     }
-  }, [tables, table]);
+  }, [tables.length]); // Only run when tables load, not on every table change
 
   // Handle preview
   const handlePreview = async () => {
