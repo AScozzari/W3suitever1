@@ -1424,9 +1424,9 @@ export default function SettingsPage() {
 
   // ✅ REAL ROLES from backend API - Only when Entity Management tab is active
   const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<{ success: boolean; data: any[] }>({
-    queryKey: ['/api/roles'],
+    queryKey: ['/api/roles', 'v2'], // v2 to invalidate old cache with English roles
     enabled: activeTab === 'Entity Management',
-    refetchOnMount: false,
+    refetchOnMount: true, // Always refetch fresh data on mount
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
