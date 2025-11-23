@@ -96,7 +96,7 @@ export function DealCard({ deal }: DealCardProps) {
   const agingColor = getAgingColor(deal.agingDays);
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} data-testid={`kanban-deal-${deal.id}`}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-testid={`kanban-deal-${deal.id}`}>
       <Card
         className="p-3 cursor-move hover:shadow-md transition-shadow glass-card border-l-4"
         style={{ borderLeftColor: agingColor }}
@@ -170,7 +170,7 @@ export function DealCard({ deal }: DealCardProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <div {...listeners} className="cursor-grab active:cursor-grabbing">
+            <div className="cursor-grab active:cursor-grabbing">
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
