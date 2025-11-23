@@ -16,6 +16,7 @@ import {
   Controls,
   Background,
   BackgroundVariant,
+  MiniMap,
   NodeTypes,
   ReactFlowProvider,
   ReactFlowInstance,
@@ -1704,7 +1705,30 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               data-testid="reactflow-canvas"
             >
               <Controls />
-              <Background variant={BackgroundVariant.Dots} color="#E5E7EB" gap={20} />
+              <Background variant={BackgroundVariant.Dots} color="#94A3B8" gap={16} size={1} />
+              <MiniMap 
+                nodeColor={(node) => {
+                  // WindTre color scheme for different node types
+                  switch (node.type) {
+                    case 'trigger': return '#10B981'; // green
+                    case 'action': return '#FF6900'; // WindTre orange
+                    case 'ai': return '#8B5CF6'; // purple
+                    case 'routing': return '#3B82F6'; // blue
+                    case 'flow-control': return '#F59E0B'; // amber
+                    case 'mcp-outbound': return '#EC4899'; // pink
+                    case 'mcp-inbound': return '#06B6D4'; // cyan
+                    case 'w3-data': return '#14B8A6'; // teal
+                    default: return '#6B7280'; // gray
+                  }
+                }}
+                style={{
+                  backgroundColor: '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                }}
+                maskColor="rgba(249, 250, 251, 0.6)"
+                data-testid="workflow-minimap"
+              />
             </ReactFlow>
           </div>
         </div>
