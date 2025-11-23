@@ -1,0 +1,216 @@
+Uncaught TypeError: (rbacRolesData.roles || []).map is not a function
+    at renderEntityManagement (SettingsPage.tsx:2983:45)
+    at renderContent (SettingsPage.tsx:4936:16)
+    at SettingsPage (SettingsPage.tsx:9192:12)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=f4a34e1b:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=f4a34e1b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=f4a34e1b:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=f4a34e1b:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19765:15)
+renderEntityManagement @ SettingsPage.tsx:2983
+renderContent @ SettingsPage.tsx:4936
+SettingsPage @ SettingsPage.tsx:9192
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=f4a34e1b:103
+flush @ @tanstack_react-query.js?v=f4a34e1b:610
+batch @ @tanstack_react-query.js?v=f4a34e1b:628
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+setData @ @tanstack_react-query.js?v=f4a34e1b:931
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this error
+SettingsPage.tsx:2983 Uncaught TypeError: (rbacRolesData.roles || []).map is not a function
+    at renderEntityManagement (SettingsPage.tsx:2983:45)
+    at renderContent (SettingsPage.tsx:4936:16)
+    at SettingsPage (SettingsPage.tsx:9192:12)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=f4a34e1b:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=f4a34e1b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=f4a34e1b:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=f4a34e1b:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19765:15)
+renderEntityManagement @ SettingsPage.tsx:2983
+renderContent @ SettingsPage.tsx:4936
+SettingsPage @ SettingsPage.tsx:9192
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=f4a34e1b:103
+flush @ @tanstack_react-query.js?v=f4a34e1b:610
+batch @ @tanstack_react-query.js?v=f4a34e1b:628
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+setData @ @tanstack_react-query.js?v=f4a34e1b:931
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this error
+installHook.js:1 The above error occurred in the <SettingsPage> component:
+
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:339:27)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:870:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:254:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:112:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=f4a34e1b:103
+flush @ @tanstack_react-query.js?v=f4a34e1b:610
+batch @ @tanstack_react-query.js?v=f4a34e1b:628
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+setData @ @tanstack_react-query.js?v=f4a34e1b:931
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this error
+chunk-ZHRYBLGQ.js?v=f4a34e1b:9129 Uncaught TypeError: (rbacRolesData.roles || []).map is not a function
+    at renderEntityManagement (SettingsPage.tsx:2983:45)
+    at renderContent (SettingsPage.tsx:4936:16)
+    at SettingsPage (SettingsPage.tsx:9192:12)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=f4a34e1b:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=f4a34e1b:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=f4a34e1b:19116:15)
+renderEntityManagement @ SettingsPage.tsx:2983
+renderContent @ SettingsPage.tsx:4936
+SettingsPage @ SettingsPage.tsx:9192
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=f4a34e1b:103
+flush @ @tanstack_react-query.js?v=f4a34e1b:610
+batch @ @tanstack_react-query.js?v=f4a34e1b:628
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+setData @ @tanstack_react-query.js?v=f4a34e1b:931
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+SettingsPage.tsx:682 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:695 📝 Setting state with data: {legalEntities: 20, users: 26, stores: 23}
+SettingsPage.tsx:682 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:695 📝 Setting state with data: {legalEntities: 20, users: 26, stores: 23}

@@ -1424,7 +1424,7 @@ export default function SettingsPage() {
   });
 
   // ✅ REAL ROLES from backend API - Only when Entity Management tab is active
-  const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<any[]>({
+  const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<{roles: any[], total: number}>({
     queryKey: ['/api/rbac/roles', 'v3'], // v3 to use RBAC endpoint with userCount
     enabled: activeTab === 'Entity Management',
     refetchOnMount: true, // Always refetch fresh data on mount
@@ -1432,7 +1432,7 @@ export default function SettingsPage() {
   });
   
   const rbacRolesData = {
-    roles: rolesApiResponse || [],
+    roles: rolesApiResponse?.roles || [],
     success: !!rolesApiResponse
   };
 
