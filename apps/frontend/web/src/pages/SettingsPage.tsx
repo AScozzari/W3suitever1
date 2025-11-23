@@ -1587,17 +1587,30 @@ export default function SettingsPage() {
   };
 
   // Organize permissions by category for UI display
-  const organizePermissionsByCategory = (permissions: string[]) => {
-    const categories: { [key: string]: string[] } = {};
+  // Accepts array of objects: { permission: string, description: string, category: string }
+  const organizePermissionsByCategory = (permissions: Array<{ permission: string; description: string; category: string }> | string[]) => {
+    const categories: { [key: string]: Array<{ permission: string; description: string }> } = {};
+    
+    // Normalize permissions to objects (backward compatible with old string[] format)
+    const normalizedPermissions = (permissions || []).map(p => 
+      typeof p === 'string' 
+        ? { permission: p, description: 'Permesso di sistema', category: p.split('.')[0] || 'other' }
+        : p
+    );
     
     // Add workflow actions and triggers to permissions if available
-    let allPermissions = [...(permissions || [])];
+    let allPermissions = [...normalizedPermissions];
     
     // Add workflow actions as permissions
     if (workflowActionsData && Array.isArray(workflowActionsData)) {
       workflowActionsData.forEach((action: any) => {
-        if (action.requiredPermission && !allPermissions.includes(action.requiredPermission)) {
-          allPermissions.push(action.requiredPermission);
+        const permString = action.requiredPermission || `workflow.action.${action.category}.${action.actionId}`;
+        if (!allPermissions.find(p => p.permission === permString)) {
+          allPermissions.push({
+            permission: permString,
+            description: action.description || `Azione workflow: ${action.name || permString}`,
+            category: 'workflow'
+          });
         }
       });
     }
@@ -1606,13 +1619,19 @@ export default function SettingsPage() {
     if (workflowTriggersData && Array.isArray(workflowTriggersData)) {
       workflowTriggersData.forEach((trigger: any) => {
         const triggerPermission = `workflow.trigger.${trigger.category}.${trigger.triggerId}`;
-        if (!allPermissions.includes(triggerPermission)) {
-          allPermissions.push(triggerPermission);
+        if (!allPermissions.find(p => p.permission === triggerPermission)) {
+          allPermissions.push({
+            permission: triggerPermission,
+            description: trigger.description || `Trigger workflow: ${trigger.name || triggerPermission}`,
+            category: 'workflow'
+          });
         }
       });
     }
     
-    allPermissions.forEach(permission => {
+    allPermissions.forEach(permObj => {
+      const { permission, description } = permObj;
+      
       // Special handling for workflow permissions
       if (permission.startsWith('workflow.action.')) {
         const parts = permission.split('.');
@@ -1620,14 +1639,14 @@ export default function SettingsPage() {
         if (!categories[categoryKey]) {
           categories[categoryKey] = [];
         }
-        categories[categoryKey].push(permission);
+        categories[categoryKey].push({ permission, description });
       } else if (permission.startsWith('workflow.trigger.')) {
         const parts = permission.split('.');
         const categoryKey = `workflow-triggers-${parts[2]}`; // workflow.trigger.hr.xxx -> workflow-triggers-hr
         if (!categories[categoryKey]) {
           categories[categoryKey] = [];
         }
-        categories[categoryKey].push(permission);
+        categories[categoryKey].push({ permission, description });
       } else {
         // Standard permissions
         const parts = permission.split('.');
@@ -1636,7 +1655,7 @@ export default function SettingsPage() {
         if (!categories[category]) {
           categories[category] = [];
         }
-        categories[category].push(permission);
+        categories[category].push({ permission, description });
       }
     });
 
@@ -1713,7 +1732,7 @@ export default function SettingsPage() {
       .find(cat => cat.category === category)?.permissions || [];
     // Switch is ON if at least ONE permission is enabled, not ALL
     // This prevents the switch from turning OFF when user manually disables a single microservice
-    return categoryPermissions.length > 0 && categoryPermissions.some(perm => isPermissionEnabled(perm));
+    return categoryPermissions.length > 0 && categoryPermissions.some(permObj => isPermissionEnabled(permObj.permission));
   };
 
   // Toggle individual permission
@@ -1736,8 +1755,11 @@ export default function SettingsPage() {
   const toggleCategoryPermissions = (category: string, enabled: boolean) => {
     if (!selectedRole) return;
     
-    const categoryPermissions = organizePermissionsByCategory(rbacPermissionsData?.permissions || [])
+    const categoryPermissionsObjs = organizePermissionsByCategory(rbacPermissionsData?.permissions || [])
       .find(cat => cat.category === category)?.permissions || [];
+    
+    // Extract permission strings from objects
+    const categoryPermissions = categoryPermissionsObjs.map(p => p.permission);
     
     const currentPermissions = getCurrentRolePermissions();
     let newPermissions = [...currentPermissions];
@@ -3293,22 +3315,20 @@ export default function SettingsPage() {
                       </label>
                     </h5>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {cat.permissions.map((perm) => {
+                      {cat.permissions.map((permObj) => {
                         const categoryEnabled = isCategoryEnabled(cat.category);
+                        const { permission, description } = permObj;
                         return (
-                          <label
-                            key={perm}
+                          <div
+                            key={permission}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               gap: '10px',
                               padding: '6px 8px',
-                              fontSize: '13px',
-                              color: categoryEnabled ? '#6b7280' : '#9ca3af',
-                              cursor: categoryEnabled ? 'pointer' : 'not-allowed',
                               borderRadius: '4px',
                               transition: 'all 0.2s ease',
-                              opacity: categoryEnabled ? 1 : 0.5
+                              background: 'transparent'
                             }}
                             onMouseOver={(e) => {
                               if (categoryEnabled) {
@@ -3319,25 +3339,122 @@ export default function SettingsPage() {
                               e.currentTarget.style.background = 'transparent';
                             }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isPermissionEnabled(perm)}
-                              disabled={!categoryEnabled}
-                              onChange={() => {
-                                // 🔧 FIX Bug #3: Block individual permission toggle when category is disabled
-                                if (categoryEnabled) {
-                                  togglePermission(perm);
+                            <label
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                fontSize: '13px',
+                                color: categoryEnabled ? '#6b7280' : '#9ca3af',
+                                cursor: categoryEnabled ? 'pointer' : 'not-allowed',
+                                opacity: categoryEnabled ? 1 : 0.5,
+                                flex: 1
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isPermissionEnabled(permission)}
+                                disabled={!categoryEnabled}
+                                onChange={() => {
+                                  // 🔧 FIX Bug #3: Block individual permission toggle when category is disabled
+                                  if (categoryEnabled) {
+                                    togglePermission(permission);
+                                  }
+                                }}
+                                style={{ 
+                                  cursor: categoryEnabled ? 'pointer' : 'not-allowed',
+                                  width: '16px',
+                                  height: '16px',
+                                  accentColor: '#FF6900',
+                                  flexShrink: 0
+                                }}
+                              />
+                              <span style={{ flex: 1 }}>{permission}</span>
+                            </label>
+                            {/* Info Tooltip Icon */}
+                            <div
+                              style={{
+                                position: 'relative',
+                                display: 'inline-block',
+                                flexShrink: 0
+                              }}
+                              onMouseEnter={(e) => {
+                                const tooltip = e.currentTarget.querySelector('.permission-tooltip') as HTMLElement;
+                                if (tooltip) {
+                                  tooltip.style.opacity = '1';
+                                  tooltip.style.visibility = 'visible';
                                 }
                               }}
-                              style={{ 
-                                cursor: categoryEnabled ? 'pointer' : 'not-allowed',
-                                width: '16px',
-                                height: '16px',
-                                accentColor: '#FF6900'
+                              onMouseLeave={(e) => {
+                                const tooltip = e.currentTarget.querySelector('.permission-tooltip') as HTMLElement;
+                                if (tooltip) {
+                                  tooltip.style.opacity = '0';
+                                  tooltip.style.visibility = 'hidden';
+                                }
                               }}
-                            />
-                            {perm}
-                          </label>
+                            >
+                              <Info
+                                size={16}
+                                style={{
+                                  color: '#9ca3af',
+                                  cursor: 'help',
+                                  transition: 'color 0.2s ease'
+                                }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.color = '#FF6900';
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.color = '#9ca3af';
+                                }}
+                              />
+                              {/* Tooltip Content - WindTre Glassmorphism */}
+                              <div
+                                className="permission-tooltip"
+                                style={{
+                                  position: 'absolute',
+                                  bottom: '100%',
+                                  left: '50%',
+                                  transform: 'translateX(-50%) translateY(-8px)',
+                                  marginBottom: '4px',
+                                  padding: '12px 16px',
+                                  minWidth: '280px',
+                                  maxWidth: '400px',
+                                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
+                                  backdropFilter: 'blur(20px)',
+                                  WebkitBackdropFilter: 'blur(20px)',
+                                  border: '1px solid rgba(255, 105, 0, 0.2)',
+                                  borderRadius: '12px',
+                                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(255, 105, 0, 0.15)',
+                                  fontSize: '12px',
+                                  lineHeight: '1.5',
+                                  color: '#374151',
+                                  fontWeight: '500',
+                                  opacity: 0,
+                                  visibility: 'hidden',
+                                  transition: 'opacity 0.2s ease, visibility 0.2s ease',
+                                  zIndex: 1000,
+                                  pointerEvents: 'none',
+                                  whiteSpace: 'normal'
+                                }}
+                              >
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '-6px',
+                                  left: '50%',
+                                  transform: 'translateX(-50%)',
+                                  width: '12px',
+                                  height: '12px',
+                                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
+                                  border: '1px solid rgba(255, 105, 0, 0.2)',
+                                  borderTop: 'none',
+                                  borderLeft: 'none',
+                                  transform: 'translateX(-50%) rotate(45deg)',
+                                  zIndex: -1
+                                }} />
+                                {description}
+                              </div>
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
