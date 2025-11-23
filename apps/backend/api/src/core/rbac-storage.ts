@@ -1,4 +1,4 @@
-import { eq, and, or, inArray, isNull, isNotNull, gt } from "drizzle-orm";
+import { eq, and, or, inArray, isNull, isNotNull, gt, sql, count } from "drizzle-orm";
 import { db } from "./db.js";
 import { 
   roles, 
@@ -33,10 +33,22 @@ export class RBACStorage {
   }
 
   async getRolesByTenant(tenantId: string) {
-    return db
-      .select()
+    const rolesWithUserCount = await db
+      .select({
+        id: roles.id,
+        tenantId: roles.tenantId,
+        name: roles.name,
+        description: roles.description,
+        isSystem: roles.isSystem,
+        createdAt: roles.createdAt,
+        userCount: sql<number>`CAST(COUNT(DISTINCT ${userAssignments.userId}) AS INTEGER)`
+      })
       .from(roles)
-      .where(eq(roles.tenantId, tenantId));
+      .leftJoin(userAssignments, eq(roles.id, userAssignments.roleId))
+      .where(eq(roles.tenantId, tenantId))
+      .groupBy(roles.id);
+    
+    return rolesWithUserCount;
   }
 
   async updateRole(roleId: string, data: Partial<InsertRole>) {
