@@ -1425,7 +1425,7 @@ export default function SettingsPage() {
 
   // ✅ REAL ROLES from backend API - Only when Entity Management tab is active
   const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<any[]>({
-    queryKey: ['/api/roles', 'v2'], // v2 to invalidate old cache with English roles
+    queryKey: ['/api/rbac/roles', 'v3'], // v3 to use RBAC endpoint with userCount
     enabled: activeTab === 'Entity Management',
     refetchOnMount: true, // Always refetch fresh data on mount
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -2905,7 +2905,11 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button
-                onClick={() => setCreateRoleModalOpen(true)}
+                onClick={() => {
+                  console.log('🔘 Bottone "Crea Ruolo Custom" cliccato');
+                  setCreateRoleModalOpen(true);
+                  console.log('🔘 createRoleModalOpen impostato a true');
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -2919,7 +2923,8 @@ export default function SettingsPage() {
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)'
+                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)',
+                  zIndex: 10
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
@@ -4714,7 +4719,9 @@ export default function SettingsPage() {
         )}
 
         {/* Create Custom Role Modal */}
-        {createRoleModalOpen && (
+        {createRoleModalOpen && (() => {
+          console.log('🎯 Modal "Crea Ruolo Custom" RENDERIZZATO - createRoleModalOpen:', createRoleModalOpen);
+          return (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -4871,7 +4878,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Notification Toast */}
         {notification && (
