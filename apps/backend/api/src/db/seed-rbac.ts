@@ -4,108 +4,98 @@ import { eq, and } from 'drizzle-orm';
 import { rbacStorage } from '../core/rbac-storage';
 import { PERMISSIONS, getAllPermissions } from '../core/permissions/registry';
 
-// Define default roles with their permissions
+// Define default Italian roles template (identical across all tenants)
 const DEFAULT_ROLES = [
   {
-    name: 'admin',
-    description: 'Full system administrator with all permissions',
+    name: 'Amministratore',
+    description: 'Accesso completo a tutte le funzionalità',
     isSystem: true,
-    level: 1,
-    permissions: getAllPermissions() // All permissions from registry
+    permissions: getAllPermissions() // All 223 permissions from registry
   },
   {
-    name: 'store_manager',
-    description: 'Store manager with full store management capabilities',
+    name: 'Store Manager',
+    description: 'Gestione completa del punto vendita',
     isSystem: true,
-    level: 10,
     permissions: [
-      'stores.*',
-      'inventory.*',
-      'pos.*',
-      'crm.leads.view',
-      'crm.leads.create',
-      'crm.leads.update',
-      'crm.customers.view',
-      'crm.customers.create',
-      'crm.customers.update',
-      'reports.store.*',
-      'dashboard.view'
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
     ]
   },
   {
-    name: 'finance',
-    description: 'Financial operations and reporting access',
+    name: 'Area Manager',
+    description: 'Supervisione di più punti vendita',
     isSystem: true,
-    level: 20,
     permissions: [
-      'finance.*',
-      'reports.financial.*',
-      'pos.transactions.view',
-      'stores.view',
-      'dashboard.view'
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
     ]
   },
   {
-    name: 'marketing',
-    description: 'Marketing and CRM full access',
+    name: 'Finance',
+    description: 'Gestione finanziaria e reportistica',
     isSystem: true,
-    level: 30,
     permissions: [
-      'crm.*',
-      'marketing.*',
-      'reports.marketing.*',
-      'stores.view',
-      'dashboard.view'
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
     ]
   },
   {
-    name: 'operations',
-    description: 'Operations and inventory management',
+    name: 'HR Manager',
+    description: 'Gestione risorse umane',
     isSystem: true,
-    level: 40,
     permissions: [
-      'inventory.*',
-      'procurement.*',
-      'stores.view',
-      'stores.update',
-      'reports.operations.*',
-      'dashboard.view'
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
     ]
   },
   {
-    name: 'sales',
-    description: 'Sales and POS operations',
+    name: 'Marketing',
+    description: 'Gestione campagne e promozioni',
     isSystem: true,
-    level: 50,
     permissions: [
-      'pos.*',
-      'crm.customers.view',
-      'crm.customers.create',
-      'crm.customers.update',
-      'inventory.view',
-      'reports.sales.*',
-      'dashboard.view'
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
     ]
   },
   {
-    name: 'hr',
-    description: 'Human resources management',
+    name: 'Sales Agent',
+    description: 'Agente di vendita',
     isSystem: true,
-    level: 60,
     permissions: [
-      'hr.*',
-      'users.view',
-      'users.create',
-      'users.update',
-      'reports.hr.*',
-      'dashboard.view'
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
     ]
   },
   {
-    name: 'viewer',
-    description: 'Read-only access to all data',
-    isSystem: true,
-    level: 100,
+    name: 'Cassiere',
+    description: 'Gestione cassa e vendite',
+    isSystem: false,
+    permissions: [
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
+    ]
+  },
+  {
+    name: 'Magazziniere',
+    description: 'Gestione magazzino e inventario',
+    isSystem: false,
+    permissions: [
+      '*.view',
+      'dashboard.view',
+      'reports.*.view'
+    ]
+  },
+  {
+    name: 'Operatore',
+    description: 'Accesso limitato alle operazioni base',
+    isSystem: false,
     permissions: [
       '*.view',
       'dashboard.view',
@@ -184,21 +174,33 @@ export async function seedRBACForAllTenants() {
   }
 }
 
-// Function to assign admin role to a user
+// Function to assign admin role to a user (prefers "Amministratore", fallback to "admin")
 export async function assignAdminRole(userId: string, tenantId: string) {
   try {
-    // Find the admin role for this tenant
-    const adminRoles = await db
+    // Try to find "Amministratore" role first (new Italian standard)
+    let adminRoles = await db
       .select()
       .from(roles)
       .where(and(
         eq(roles.tenantId, tenantId),
-        eq(roles.name, 'admin')
+        eq(roles.name, 'Amministratore')
       ))
       .limit(1);
     
+    // Fallback to legacy "admin" role if Amministratore not found
     if (adminRoles.length === 0) {
-      console.error('Admin role not found for tenant');
+      adminRoles = await db
+        .select()
+        .from(roles)
+        .where(and(
+          eq(roles.tenantId, tenantId),
+          eq(roles.name, 'admin')
+        ))
+        .limit(1);
+    }
+    
+    if (adminRoles.length === 0) {
+      console.error('Admin/Amministratore role not found for tenant');
       return false;
     }
     
@@ -210,7 +212,7 @@ export async function assignAdminRole(userId: string, tenantId: string) {
       scopeId: tenantId
     });
     
-    console.log(`✅ Assigned admin role to user ${userId} for tenant ${tenantId}`);
+    console.log(`✅ Assigned ${adminRoles[0].name} role to user ${userId} for tenant ${tenantId}`);
     return true;
   } catch (error) {
     console.error('Error assigning admin role:', error);
@@ -218,32 +220,40 @@ export async function assignAdminRole(userId: string, tenantId: string) {
   }
 }
 
-// Function to update admin roles with all permissions
+// Function to update admin roles with all permissions (handles both legacy "admin" and new "Amministratore")
 export async function updateAdminRolesWithAllPermissions() {
   console.log('🔄 Updating admin roles with all permissions...');
   
   try {
-    // Get all admin roles from all tenants
+    const allPermissions = getAllPermissions();
+    console.log(`  📋 Found ${allPermissions.length} permissions in registry`);
+    
+    // Get all "Amministratore" roles (new Italian standard)
+    const amministratoreRoles = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.name, 'Amministratore'));
+    
+    // Get all legacy "admin" roles (for backward compatibility during transition)
     const adminRoles = await db
       .select()
       .from(roles)
       .where(eq(roles.name, 'admin'));
     
-    if (adminRoles.length === 0) {
-      console.log('  ⚠️  No admin roles found');
+    const allAdminRoles = [...amministratoreRoles, ...adminRoles];
+    
+    if (allAdminRoles.length === 0) {
+      console.log('  ⚠️  No admin/Amministratore roles found');
       return;
     }
     
-    const allPermissions = getAllPermissions();
-    console.log(`  📋 Found ${allPermissions.length} permissions in registry`);
-    
     // Update each admin role with all permissions
-    for (const role of adminRoles) {
+    for (const role of allAdminRoles) {
       await rbacStorage.setRolePermissions(role.id, allPermissions);
-      console.log(`  ✅ Updated admin role for tenant ${role.tenantId} with ${allPermissions.length} permissions`);
+      console.log(`  ✅ Updated ${role.name} role for tenant ${role.tenantId} with ${allPermissions.length} permissions`);
     }
     
-    console.log(`✅ Updated ${adminRoles.length} admin role(s) with all permissions`);
+    console.log(`✅ Updated ${allAdminRoles.length} admin role(s) with all permissions`);
     return true;
   } catch (error) {
     console.error('❌ Error updating admin roles:', error);
