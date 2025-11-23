@@ -2962,15 +2962,16 @@ export default function SettingsPage() {
                   // Add default colors and fallback data
                   const roleWithDefaults = {
                     ...role,
-                    color: role.color || getDefaultRoleColor(role.code),
+                    code: role.code || role.name, // Use name as code fallback
+                    color: role.color || getDefaultRoleColor(role.code || role.name),
                     users: role.userCount || 0,
-                    description: role.description || getDefaultRoleDescription(role.code)
+                    description: role.description || getDefaultRoleDescription(role.code || role.name)
                   };
                   return roleWithDefaults;
                 })
               ).map((role: any) => (
                 <div
-                  key={role.code}
+                  key={role.id}
                   onClick={() => setSelectedRole(role.id)}
                   style={{
                     background: selectedRole === role.id 
