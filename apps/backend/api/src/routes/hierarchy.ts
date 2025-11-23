@@ -902,60 +902,11 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // Static base permissions
-    const staticPermissions = [
-      'dashboard.view',
-      'dashboard.manage',
-      'users.view',
-      'users.manage',
-      'stores.view',
-      'stores.manage',
-      'store.manage',
-      'inventory.view',
-      'inventory.manage',
-      'pos.use',
-      'customers.view',
-      'customers.manage',
-      'finance.view',
-      'finance.manage',
-      'reports.view',
-      'reports.manage',
-      'analytics.view',
-      'analytics.manage',
-      'hr.view',
-      'hr.manage',
-      'training.view',
-      'training.manage',
-      'sales.view',
-      'sales.manage',
-      'transactions.view',
-      'transactions.manage',
-      'cash.manage',
-      'warehouse.view',
-      'warehouse.manage',
-      'products.view',
-      'products.manage',
-      'marketing.view',
-      'marketing.manage',
-      'campaigns.view',
-      'campaigns.manage',
-      // Workflow management permissions
-      'workflow.read',
-      'workflow.create',
-      'workflow.update',
-      'workflow.delete',
-      // Hierarchy permissions
-      'hierarchy.read',
-      'hierarchy.create',
-      'hierarchy.update',
-      'hierarchy.delete',
-      // RBAC permissions
-      'rbac.permissions.read',
-      'rbac.permissions.manage',
-      // Other permissions
-      'permissions.read',
-      'permissions.write'
-    ];
+    // Import from registry to get ALL system permissions (centinaia)
+    const { getAllPermissions, getPermissionDescription } = await import('../core/permissions/registry');
+    
+    // Get all static permissions from registry (sostituisce lista hardcoded obsoleta)
+    const staticPermissions = getAllPermissions();
 
     // Fetch dynamic workflow actions from database
     const actions = await db
@@ -994,15 +945,28 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
     );
 
     // Combine all permissions and remove duplicates
-    const allPermissions = [...new Set([
+    const allPermissionsSet = [...new Set([
       ...staticPermissions,
       ...actionPermissions,
       ...triggerPermissions
     ])];
 
+    // Helper to extract category from permission string
+    const extractCategory = (permission: string): string => {
+      const parts = permission.split('.');
+      return parts[0] || 'system';
+    };
+
+    // Transform permissions to objects with description and category
+    const permissionsWithMetadata = allPermissionsSet.map(permission => ({
+      permission,
+      description: getPermissionDescription(permission),
+      category: extractCategory(permission)
+    }));
+
     res.json({
       success: true,
-      permissions: allPermissions
+      permissions: permissionsWithMetadata
     });
   } catch (error) {
     console.error('Error fetching RBAC permissions:', error);
