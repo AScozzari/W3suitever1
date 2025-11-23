@@ -1525,6 +1525,18 @@ export default function SettingsPage() {
   // Helper functions for role defaults
   const getDefaultRoleColor = (roleCode: string): string => {
     const colorMap: { [key: string]: string } = {
+      // Italian role templates
+      'Amministratore': '#ef4444',  // Red - admin
+      'Store Manager': '#f59e0b',    // Amber
+      'Area Manager': '#3b82f6',     // Blue  
+      'Finance': '#10b981',          // Green
+      'HR Manager': '#14b8a6',       // Teal
+      'Marketing': '#ec4899',        // Pink
+      'Sales Agent': '#8b5cf6',      // Purple
+      'Cassiere': '#06b6d4',         // Cyan
+      'Magazziniere': '#f97316',     // Orange
+      'Operatore': '#6b7280',        // Gray
+      // Legacy English roles (backward compatibility)
       'admin': '#ef4444',
       'finance': '#10b981',
       'direttore': '#3b82f6',
@@ -1539,18 +1551,8 @@ export default function SettingsPage() {
   };
 
   const getDefaultRoleDescription = (roleCode: string): string => {
-    const descriptionMap: { [key: string]: string } = {
-      'admin': 'Accesso completo al sistema',
-      'finance': 'Gestione finanziaria e contabile',
-      'direttore': 'Supervisione strategica e decisionale',
-      'store_manager': 'Gestione completa punto vendita',
-      'store_specialist': 'Operazioni quotidiane del negozio',
-      'student': 'Accesso limitato per formazione',
-      'marketing': 'Campagne e comunicazione aziendale',
-      'hr_management': 'Gestione risorse umane',
-      'custom': 'Ruolo personalizzato'
-    };
-    return descriptionMap[roleCode] || 'Ruolo personalizzato';
+    // Descriptions already come from database, just return fallback
+    return 'Ruolo personalizzato';
   };
 
   // Get role color based on role name/code
