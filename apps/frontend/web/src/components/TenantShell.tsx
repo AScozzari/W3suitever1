@@ -33,6 +33,7 @@ const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettings
 const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 const AIVoiceTest = lazy(() => import('../pages/AIVoiceTest'));
+const TestDatabaseOperation = lazy(() => import('../pages/TestDatabaseOperation'));
 
 // WMS Pages
 const WMSProductsAndListsPage = lazy(() => import('../pages/wms/WMSProductsAndListsPage'));
@@ -341,6 +342,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/workflows`}>
         <AuthenticatedRoute>
           <WorkflowManagementPage defaultView="dashboard" />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* Test page for DatabaseOperation component */}
+      <Route path={`/${tenantSlug}/test-database-operation`}>
+        <AuthenticatedRoute>
+          <TestDatabaseOperation />
         </AuthenticatedRoute>
       </Route>
       

@@ -278,11 +278,7 @@ export default function DatabaseOperationConfig({
               <ScrollArea className="h-[300px]">
                 {tables.map((t) => (
                   <SelectItem key={t.table} value={t.table}>
-                    <div className="flex items-center gap-2">
-                      <Database className="h-3 w-3" />
-                      <span>{t.table}</span>
-                      <Badge variant="secondary" className="ml-2 text-xs">{t.tableType}</Badge>
-                    </div>
+                    {t.table}
                   </SelectItem>
                 ))}
               </ScrollArea>
