@@ -75,8 +75,8 @@ export default function DatabaseOperationConfig({
   const initialConfig = node.data.config || {};
   
   const [operation, setOperation] = useState<string>(initialConfig.operation || 'SELECT');
-  // Initialize table state with empty string - will validate against metadata
-  const [table, setTable] = useState<string>('');
+  // Initialize table state with undefined - will validate against metadata
+  const [table, setTable] = useState<string | undefined>(undefined);
   const [selectedColumns, setSelectedColumns] = useState<string[]>(initialConfig.columns || []);
   const [filters, setFilters] = useState<FilterCondition[]>(initialConfig.filters || []);
   const [values, setValues] = useState<Record<string, any>>(initialConfig.values || {});
@@ -106,13 +106,13 @@ export default function DatabaseOperationConfig({
   useEffect(() => {
     if (tables.length > 0) {
       const savedTable = initialConfig.table;
-      // Check if saved table is valid (not 'white' and exists in metadata)
-      if (savedTable && savedTable !== 'white' && tables.find(t => t.table === savedTable)) {
+      // Check if saved table is valid and exists in metadata
+      if (savedTable && tables.find(t => t.table === savedTable)) {
         setTable(savedTable);
-      } else if (savedTable && savedTable !== '') {
-        // Invalid saved table (including 'white'), clear it
+      } else if (savedTable) {
+        // Invalid saved table, clear it
         console.warn(`[DatabaseOperation] Invalid saved table "${savedTable}" detected, clearing...`);
-        setTable('');
+        setTable(undefined);
       }
     }
   }, [tables.length, initialConfig.table]); // Run when tables load
