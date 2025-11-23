@@ -2827,11 +2827,12 @@ export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
   globalVersionId: uuid("global_version_id"), // ID template globale originale (per tenant customizzati)
   
   // 🔒 BRAND WORKFLOW LOCK SYSTEM - Track brand-deployed workflows
-  source: workflowSourceEnum("source").default('tenant'), // 'brand' | 'tenant' - Origin of workflow
+  // ⚠️ COMMENTED OUT: Columns not yet created in database - uncomment after migration
+  // source: workflowSourceEnum("source").default('tenant'), // 'brand' | 'tenant' - Origin of workflow
   // FK to brand_interface.brand_workflows (nullable - only for brand-sourced workflows)
   // onDelete: 'set null' - If brand deletes template, tenant keeps copy but loses brand reference
-  brandWorkflowId: uuid("brand_workflow_id").references(() => brandWorkflows.id, { onDelete: 'set null' }), 
-  lockedAt: timestamp("locked_at"), // When workflow was locked (brand workflows are locked from structural editing)
+  // brandWorkflowId: uuid("brand_workflow_id").references(() => brandWorkflows.id, { onDelete: 'set null' }), 
+  // lockedAt: timestamp("locked_at"), // When workflow was locked (brand workflows are locked from structural editing)
   
   // Template settings
   isPublic: boolean("is_public").default(false), // Can be shared across tenants
