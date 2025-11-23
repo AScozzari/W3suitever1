@@ -62,7 +62,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **UI/UX Decisions**: WindTre Glassmorphism Design System, utilizing `shadcn/ui` and `@w3suite/frontend-kit` with CSS variables and Tailwind CSS. All pages maintain a consistent app structure with header, sidebar, and a white background.
 - **Monorepo Structure**: Centralized code organization.
 - **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
-- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
+- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
 - **Multitenancy**: PostgreSQL RLS, `TenantProvider`, and global unique constraints.
 - **Core Systems**: Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management System, and Multi-Provider OAuth System (MCP).
 - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (using OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem with PDC Analyzer (GPT-4 for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), AI Funnel Orchestration System (`funnel-orchestrator-assistant` AI agent).
@@ -71,6 +71,18 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning), Deploy Center Bidirectional Branch Linking (linking tenants/stores to branches).
 - **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance, JSON files with Git versioning, tasks system).
 - **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, call actions integrated with CRM, CDR analytics, policy-based routing, edgvoip PBX Integration.
+- **RBAC System (PRODUCTION-READY)**: 10 Italian role templates with granular permission system (215 total permissions). Default permission assignments:
+  - **Amministratore** (215 perms): Full access to all platform features
+  - **Store Manager** (59 perms): Complete store operations (CRM, POS, Inventory, Analytics)
+  - **Area Manager** (50 perms): Multi-store supervision and analytics
+  - **Finance** (24 perms): Financial operations, invoicing, billing, reports
+  - **HR Manager** (30 perms): Employee management, contracts, payroll, attendance
+  - **Marketing** (29 perms): Campaign management, CMS, customer analytics
+  - **Sales Agent** (19 perms): CRM operations, deals, customer management
+  - **Cassiere** (14 perms): POS operations, transactions, cash drawer
+  - **Magazziniere** (19 perms): Warehouse operations, stock management, receiving/shipping
+  - **Operatore** (7 perms): Basic view-only access
+  Permission templates defined in `italian-role-templates.ts`, auto-applied via `apply-default-permissions.ts` script.
 - **Workflow Database Operations (PRODUCTION-READY MVP)**: [W3] Database Operation node with 4 secure operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema only. Visual query builder for non-technical users, RLS enforcement via `setTenantContext()`, prepared statements with proper parameter binding, table/column validation via `validateTableName/validateColumns/sanitizeIdentifier`. Preview functionality shows RLS-filtered sample data with tenant_id transparency. EXECUTE_QUERY permanently disabled for MVP (requires pg-query-parser for AST-based validation - see Known Issues section).
 
 # Known Issues & Future Work

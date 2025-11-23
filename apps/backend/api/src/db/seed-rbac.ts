@@ -3,106 +3,10 @@ import { roles, rolePerms, userAssignments, tenants } from './schema/w3suite';
 import { eq, and } from 'drizzle-orm';
 import { rbacStorage } from '../core/rbac-storage';
 import { PERMISSIONS, getAllPermissions } from '../core/permissions/registry';
+import { getAllRoleTemplates } from './italian-role-templates';
 
-// Define default Italian roles template (identical across all tenants)
-const DEFAULT_ROLES = [
-  {
-    name: 'Amministratore',
-    description: 'Accesso completo a tutte le funzionalità',
-    isSystem: true,
-    permissions: getAllPermissions() // All 223 permissions from registry
-  },
-  {
-    name: 'Store Manager',
-    description: 'Gestione completa del punto vendita',
-    isSystem: true,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Area Manager',
-    description: 'Supervisione di più punti vendita',
-    isSystem: true,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Finance',
-    description: 'Gestione finanziaria e reportistica',
-    isSystem: true,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'HR Manager',
-    description: 'Gestione risorse umane',
-    isSystem: true,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Marketing',
-    description: 'Gestione campagne e promozioni',
-    isSystem: true,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Sales Agent',
-    description: 'Agente di vendita',
-    isSystem: true,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Cassiere',
-    description: 'Gestione cassa e vendite',
-    isSystem: false,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Magazziniere',
-    description: 'Gestione magazzino e inventario',
-    isSystem: false,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  },
-  {
-    name: 'Operatore',
-    description: 'Accesso limitato alle operazioni base',
-    isSystem: false,
-    permissions: [
-      '*.view',
-      'dashboard.view',
-      'reports.*.view'
-    ]
-  }
-];
+// Get Italian role templates with detailed permissions
+const DEFAULT_ROLES = getAllRoleTemplates();
 
 export async function seedRBACForTenant(tenantId: string) {
   console.log(`🔐 Seeding RBAC roles for tenant ${tenantId}...`);
