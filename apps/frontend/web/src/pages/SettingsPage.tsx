@@ -2967,20 +2967,20 @@ export default function SettingsPage() {
                     code: role.code || role.name, // Use name as code fallback
                     color: role.color || getDefaultRoleColor(role.code || role.name),
                     users: role.userCount || 0,
-                    description: role.description || getDefaultRoleDescription(role.code || role.name)
+                    description: role.description || 'Ruolo personalizzato'
                   };
-                  return roleWithDefaults;
-                })
-              ).map((role: any) => (
+                  
+                  const r = roleWithDefaults; // Short alias
+                  return (
                 <div
-                  key={role.id}
-                  onClick={() => setSelectedRole(role.id)}
+                  key={r.id}
+                  onClick={() => setSelectedRole(r.id)}
                   style={{
-                    background: selectedRole === role.id 
-                      ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
+                    background: selectedRole === r.id 
+                      ? `linear-gradient(135deg, ${r.color}15, ${r.color}08)`
                       : 'hsla(255, 255, 255, 0.05)',
-                    border: selectedRole === role.id
-                      ? `2px solid ${role.color}40`
+                    border: selectedRole === r.id
+                      ? `2px solid ${r.color}40`
                       : '1px solid hsla(255, 255, 255, 0.08)',
                     borderRadius: '12px',
                     padding: '16px',
@@ -2991,8 +2991,8 @@ export default function SettingsPage() {
                     transform: 'translateY(0) scale(1) rotateX(0deg)',
                     transformStyle: 'preserve-3d',
                     perspective: '1000px',
-                    boxShadow: selectedRole === role.id
-                      ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
+                    boxShadow: selectedRole === r.id
+                      ? `0 8px 24px ${r.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
                       : '0 2px 8px rgba(0, 0, 0, 0.05)'
                   }}
                   onMouseEnter={(e) => {
@@ -3002,28 +3002,28 @@ export default function SettingsPage() {
                     const users = card.querySelector('.users-count') as HTMLElement;
                     
                     // Card animations
-                    card.style.background = `linear-gradient(135deg, ${role.color}18, ${role.color}10)`;
-                    card.style.borderColor = `${role.color}40`;
+                    card.style.background = `linear-gradient(135deg, ${r.color}18, ${r.color}10)`;
+                    card.style.borderColor = `${r.color}40`;
                     card.style.transform = 'translateY(-8px) scale(1.03) rotateX(-2deg)';
-                    card.style.boxShadow = `0 16px 32px ${role.color}25, 0 8px 16px rgba(0, 0, 0, 0.15)`;
+                    card.style.boxShadow = `0 16px 32px ${r.color}25, 0 8px 16px rgba(0, 0, 0, 0.15)`;
                     
                     // Color bar animation
                     if (colorBar) {
                       colorBar.style.height = '5px';
-                      colorBar.style.background = `linear-gradient(90deg, ${role.color}, ${role.color}dd, ${role.color})`;
-                      colorBar.style.boxShadow = `0 2px 8px ${role.color}60`;
+                      colorBar.style.background = `linear-gradient(90deg, ${r.color}, ${r.color}dd, ${r.color})`;
+                      colorBar.style.boxShadow = `0 2px 8px ${r.color}60`;
                     }
                     
                     // Icon animation
                     if (icon) {
                       icon.style.transform = 'rotate(360deg) scale(1.2)';
-                      icon.style.color = role.color;
+                      icon.style.color = r.color;
                     }
                     
                     // Users count animation
                     if (users) {
                       users.style.transform = 'translateX(4px)';
-                      users.style.color = role.color;
+                      users.style.color = r.color;
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -3033,28 +3033,28 @@ export default function SettingsPage() {
                     const users = card.querySelector('.users-count') as HTMLElement;
                     
                     // Reset card
-                    card.style.background = selectedRole === role.id 
-                      ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
+                    card.style.background = selectedRole === r.id 
+                      ? `linear-gradient(135deg, ${r.color}15, ${r.color}08)`
                       : 'hsla(255, 255, 255, 0.05)';
-                    card.style.borderColor = selectedRole === role.id
-                      ? `${role.color}40`
+                    card.style.borderColor = selectedRole === r.id
+                      ? `${r.color}40`
                       : 'hsla(255, 255, 255, 0.08)';
                     card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
-                    card.style.boxShadow = selectedRole === role.id
-                      ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
+                    card.style.boxShadow = selectedRole === r.id
+                      ? `0 8px 24px ${r.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
                       : '0 2px 8px rgba(0, 0, 0, 0.05)';
                     
                     // Reset color bar
                     if (colorBar) {
                       colorBar.style.height = '3px';
-                      colorBar.style.background = role.color;
+                      colorBar.style.background = r.color;
                       colorBar.style.boxShadow = 'none';
                     }
                     
                     // Reset icon
                     if (icon) {
                       icon.style.transform = 'rotate(0deg) scale(1)';
-                      icon.style.color = role.color;
+                      icon.style.color = r.color;
                     }
                     
                     // Reset users count
@@ -3071,7 +3071,7 @@ export default function SettingsPage() {
                     left: '-100%',
                     width: '300%',
                     height: '300%',
-                    background: `radial-gradient(circle at center, ${role.color}10 0%, transparent 70%)`,
+                    background: `radial-gradient(circle at center, ${r.color}10 0%, transparent 70%)`,
                     opacity: 0,
                     transition: 'opacity 0.5s ease',
                     pointerEvents: 'none',
@@ -3090,7 +3090,7 @@ export default function SettingsPage() {
                       left: 0,
                       right: 0,
                       height: '3px',
-                      background: role.color,
+                      background: r.color,
                       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
                   
@@ -3109,33 +3109,33 @@ export default function SettingsPage() {
                         color: '#111827',
                         margin: '0 0 4px 0'
                       }}>
-                        {role.name}
+                        {r.name}
                       </h4>
                       <p style={{
                         fontSize: '12px',
                         color: '#6b7280',
                         margin: 0
                       }}>
-                        {role.description}
+                        {r.description}
                       </p>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {role.code === 'admin' && (
+                      {r.name === 'Amministratore' && (
                         <Star 
                           size={16} 
                           className="role-icon"
                           style={{ 
-                            color: role.color,
+                            color: r.color,
                             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                             transform: 'rotate(0deg) scale(1)'
                           }} 
                         />
                       )}
-                      {!role.isSystemRole && (
+                      {!r.isSystem && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteRole(role.id || role.code, role.name, role.isSystemRole || false);
+                            deleteRole(r.id, r.name, r.isSystem);
                           }}
                           style={{
                             background: 'none',
@@ -3183,7 +3183,7 @@ export default function SettingsPage() {
                       }}
                     >
                       <Users size={12} />
-                      {role.users} utenti
+                      {r.users} utenti
                     </span>
                     <ChevronRight 
                       size={14} 
@@ -3194,7 +3194,7 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           </div>
           
