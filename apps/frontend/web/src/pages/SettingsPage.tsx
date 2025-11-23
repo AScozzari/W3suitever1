@@ -1434,6 +1434,16 @@ export default function SettingsPage() {
     roles: rolesApiResponse?.data || [],
     success: rolesApiResponse?.success || false
   };
+  
+  // 🔍 DEBUG: Log roles data
+  console.log('🎯 [ROLES DEBUG]', {
+    activeTab,
+    rolesLoading,
+    rolesError,
+    rolesApiResponse,
+    rolesCount: rolesApiResponse?.data?.length || 0,
+    rbacRolesDataCount: rbacRolesData.roles.length
+  });
 
   // REAL permissions from backend API - Only when Entity Management tab is active
   const { data: rbacPermissionsData, isLoading: permissionsLoading } = useQuery<RBACPermissionsResponse>({
