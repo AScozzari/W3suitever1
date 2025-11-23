@@ -106,13 +106,21 @@ export default function DatabaseOperationConfig({
   useEffect(() => {
     if (tables.length > 0) {
       const savedTable = initialConfig.table;
+      console.log('[DatabaseOperation] 🔍 Table validation:', {
+        savedTable,
+        tablesCount: tables.length,
+        isValid: savedTable ? !!tables.find(t => t.table === savedTable) : null
+      });
       // Check if saved table is valid and exists in metadata
       if (savedTable && tables.find(t => t.table === savedTable)) {
+        console.log('[DatabaseOperation] ✅ Setting valid table:', savedTable);
         setTable(savedTable);
       } else if (savedTable) {
         // Invalid saved table, clear it
-        console.warn(`[DatabaseOperation] Invalid saved table "${savedTable}" detected, clearing...`);
+        console.warn(`[DatabaseOperation] ❌ Invalid saved table "${savedTable}" detected, clearing...`);
         setTable(undefined);
+      } else {
+        console.log('[DatabaseOperation] ℹ️ No saved table, keeping undefined');
       }
     }
   }, [tables.length, initialConfig.table]); // Run when tables load
@@ -262,11 +270,13 @@ export default function DatabaseOperationConfig({
             <Badge variant="outline" className="font-mono text-xs">w3suite</Badge>
           </Label>
           <Select 
-            value={table} 
+            value={table || ""} 
             onValueChange={(newValue) => {
+              // Prevent empty string, use undefined instead
+              const validValue = newValue === "" ? undefined : newValue;
               // Only set valid table names
-              if (tables.find(t => t.table === newValue)) {
-                setTable(newValue);
+              if (validValue && tables.find(t => t.table === validValue)) {
+                setTable(validValue);
               }
             }}
             disabled={isLoading}
