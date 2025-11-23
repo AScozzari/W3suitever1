@@ -498,7 +498,7 @@ interface RBACRolesResponse {
 
 interface RBACPermissionsResponse {
   permissions: string[];
-  success: boolean;
+  total: number;
 }
 
 interface RolePermissionsResponse {
