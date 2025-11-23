@@ -1699,10 +1699,20 @@ export default function SettingsPage() {
 
   // Initialize temp permissions when role permissions are loaded or role changes
   useEffect(() => {
+    console.log('[RBAC] 🔄 Permission initialization effect triggered', {
+      hasSelectedRole: !!selectedRole,
+      selectedRole,
+      hasRolePermissions: !!selectedRolePermissions?.permissions,
+      rolePermissions: selectedRolePermissions?.permissions,
+      hasRbacData: !!rbacPermissionsData?.permissions,
+      rbacDataCount: rbacPermissionsData?.permissions?.length,
+      isAlreadyInMap: !!rolePermissionsMap[selectedRole || '']
+    });
+
     if (selectedRolePermissions?.permissions && selectedRole) {
       // 🔧 CRITICAL: If role has wildcard '*', wait for RBAC permissions API to load
       if (selectedRolePermissions.permissions.includes('*') && !rbacPermissionsData?.permissions) {
-        // Early return - wildcard expansion needs API data
+        console.warn('[RBAC] ⏸️ Wildcard detected but RBAC data not ready - waiting...');
         return;
       }
       
@@ -1712,8 +1722,19 @@ export default function SettingsPage() {
         let permissions = selectedRolePermissions.permissions;
         if (permissions.includes('*')) {
           // Expand wildcard '*' to all 223 permissions from API instead of hardcoded array
-          permissions = (rbacPermissionsData?.permissions || []).map(p => p.permission);
+          const expandedPermissions = (rbacPermissionsData?.permissions || []).map(p => p.permission);
+          console.log('[RBAC] ✨ Expanding wildcard * to all permissions', {
+            originalCount: permissions.length,
+            expandedCount: expandedPermissions.length,
+            first5: expandedPermissions.slice(0, 5)
+          });
+          permissions = expandedPermissions;
         }
+        
+        console.log('[RBAC] ✅ Setting permissions in map', {
+          role: selectedRole,
+          permissionCount: permissions.length
+        });
         
         setRolePermissionsMap(prev => ({
           ...prev,
@@ -1721,6 +1742,8 @@ export default function SettingsPage() {
         }));
         // Only reset dirty flag when INITIALIZING a role, not on every map change
         setIsPermissionsDirty(false);
+      } else {
+        console.log('[RBAC] ℹ️ Role already in map, skipping initialization');
       }
     }
     // NOTE: rbacPermissionsData added to dependencies to trigger re-run when API data loads
