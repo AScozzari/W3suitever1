@@ -921,34 +921,15 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
         eq(workflowActions.isActive, true)
       ));
 
-    // Fetch dynamic workflow triggers from database
-    const triggers = await db
-      .select({
-        category: workflowTriggers.category,
-        triggerId: workflowTriggers.triggerId,
-        requiredPermission: workflowTriggers.requiredPermission
-      })
-      .from(workflowTriggers)
-      .where(and(
-        eq(workflowTriggers.tenantId, tenantId),
-        eq(workflowTriggers.isActive, true)
-      ));
-
     // Convert workflow actions to permissions
     const actionPermissions = actions.map(action => 
       action.requiredPermission || `workflow.action.${action.category}.${action.actionId}`
     );
 
-    // Convert workflow triggers to permissions
-    const triggerPermissions = triggers.map(trigger => 
-      trigger.requiredPermission || `workflow.trigger.${trigger.category}.${trigger.triggerId}`
-    );
-
     // Combine all permissions and remove duplicates
     const allPermissionsSet = [...new Set([
       ...staticPermissions,
-      ...actionPermissions,
-      ...triggerPermissions
+      ...actionPermissions
     ])];
 
     // Helper to extract category from permission string
