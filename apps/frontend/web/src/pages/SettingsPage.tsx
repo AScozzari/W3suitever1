@@ -502,8 +502,9 @@ interface RBACPermissionsResponse {
 }
 
 interface RolePermissionsResponse {
+  roleId: string;
   permissions: string[];
-  success: boolean;
+  total: number;
 }
 
 // Dati caricati dal database
