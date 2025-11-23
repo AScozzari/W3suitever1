@@ -1444,12 +1444,24 @@ export default function SettingsPage() {
   });
 
   // REAL permissions for selected role from backend API - Only when Entity Management tab is active
-  const { data: selectedRolePermissions, isLoading: rolePermissionsLoading } = useQuery<RolePermissionsResponse>({
-    queryKey: ['/api/rbac/roles', selectedRole, 'permissions'],
+  const { data: selectedRolePermissions, isLoading: rolePermissionsLoading, error: rolePermissionsError } = useQuery<RolePermissionsResponse>({
+    queryKey: [`/api/rbac/roles/${selectedRole}/permissions`],
     enabled: activeTab === 'Entity Management' && !!selectedRole,
     refetchOnMount: false,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
+  
+  // Debug logging for role permissions query
+  useEffect(() => {
+    console.log('[RBAC-DEBUG] Role Permissions Query State:', {
+      selectedRole,
+      enabled: activeTab === 'Entity Management' && !!selectedRole,
+      isLoading: rolePermissionsLoading,
+      hasData: !!selectedRolePermissions,
+      data: selectedRolePermissions,
+      error: rolePermissionsError
+    });
+  }, [selectedRole, rolePermissionsLoading, selectedRolePermissions, rolePermissionsError, activeTab]);
   
   // ✅ ENTERPRISE AUDIT: Load real data from unified audit trail API
   const enterpriseQueryParams = buildEnterpriseAuditQueryParams();
@@ -1709,9 +1721,11 @@ export default function SettingsPage() {
       selectedRole,
       hasRolePermissions: !!selectedRolePermissions?.permissions,
       rolePermissions: selectedRolePermissions?.permissions,
+      rolePermissionsCount: selectedRolePermissions?.permissions?.length,
       hasRbacData: !!rbacPermissionsData?.permissions,
       rbacDataCount: rbacPermissionsData?.permissions?.length,
-      isAlreadyInMap: !!rolePermissionsMap[selectedRole || '']
+      isAlreadyInMap: !!rolePermissionsMap[selectedRole || ''],
+      fullSelectedRolePermsData: selectedRolePermissions
     });
 
     if (selectedRolePermissions?.permissions && selectedRole) {
