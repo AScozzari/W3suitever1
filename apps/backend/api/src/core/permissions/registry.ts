@@ -697,3 +697,342 @@ export function getTemplatePermissions(templateCode: string): Permission[] {
 export function isValidPermission(permission: string): boolean {
   return getAllPermissions().includes(permission);
 }
+
+// ==================== PERMISSION DESCRIPTIONS ====================
+// Descrizioni in italiano per ogni permesso (usate dalla UI RBAC con tooltip)
+
+export const PERMISSION_DESCRIPTIONS: Record<string, string> = {
+  // Dashboard
+  'dashboard.view': 'Visualizza la dashboard principale con panoramica delle metriche',
+  'dashboard.analytics': 'Accedi ai report analitici e grafici della dashboard',
+  'dashboard.export': 'Esporta i dati della dashboard in formato Excel/PDF',
+  
+  // CRM - Leads
+  'crm.leads.view': 'Visualizza la lista dei lead nel CRM',
+  'crm.leads.create': 'Crea nuovi lead nel sistema CRM',
+  'crm.leads.edit': 'Modifica le informazioni dei lead esistenti',
+  'crm.leads.delete': 'Elimina lead dal sistema',
+  'crm.leads.assign': 'Assegna lead ad altri utenti o team',
+  'crm.leads.export': 'Esporta la lista dei lead in formato Excel/CSV',
+  
+  // CRM - Customers
+  'crm.customers.view': 'Visualizza la lista dei clienti',
+  'crm.customers.create': 'Crea nuovi clienti nel CRM',
+  'crm.customers.edit': 'Modifica le informazioni dei clienti',
+  'crm.customers.delete': 'Elimina clienti dal sistema',
+  'crm.customers.export': 'Esporta la lista dei clienti in formato Excel/CSV',
+  
+  // CRM - Deals
+  'crm.deals.view': 'Visualizza le opportunità di vendita (deals)',
+  'crm.deals.create': 'Crea nuove opportunità di vendita',
+  'crm.deals.edit': 'Modifica le opportunità di vendita esistenti',
+  'crm.deals.delete': 'Elimina opportunità dal sistema',
+  'crm.deals.approve': 'Approva opportunità di vendita',
+  
+  // Cassa - Transactions
+  'cassa.transactions.view': 'Visualizza le transazioni di cassa',
+  'cassa.transactions.create': 'Crea nuove transazioni di vendita',
+  'cassa.transactions.void': 'Annulla transazioni di cassa',
+  'cassa.transactions.refund': 'Effettua rimborsi ai clienti',
+  
+  // Cassa - Shifts
+  'cassa.shifts.open': 'Apri turni di cassa',
+  'cassa.shifts.close': 'Chiudi turni di cassa',
+  'cassa.shifts.reconcile': 'Riconcilia i turni di cassa con contanti fisici',
+  'cassa.shifts.report': 'Genera report dei turni di cassa',
+  
+  // Cassa - Drawer
+  'cassa.drawer.manage': 'Gestisci il cassetto della cassa',
+  'cassa.drawer.adjust': 'Aggiusta il saldo del cassetto della cassa',
+  
+  // Magazzino - Products
+  'magazzino.products.view': 'Visualizza il catalogo prodotti',
+  'magazzino.products.create': 'Crea nuovi prodotti nel magazzino',
+  'magazzino.products.edit': 'Modifica le informazioni dei prodotti',
+  'magazzino.products.delete': 'Elimina prodotti dal catalogo',
+  
+  // Magazzino - Stock
+  'magazzino.stock.view': 'Visualizza le giacenze di magazzino',
+  'magazzino.stock.adjust': 'Aggiusta le quantità di magazzino',
+  'magazzino.stock.transfer': 'Trasferisci scorte tra magazzini',
+  'magazzino.stock.count': 'Esegui inventario fisico',
+  
+  // Magazzino - Orders
+  'magazzino.orders.view': 'Visualizza gli ordini di magazzino',
+  'magazzino.orders.create': 'Crea nuovi ordini di riapprovvigionamento',
+  'magazzino.orders.approve': 'Approva ordini di magazzino',
+  'magazzino.orders.receive': 'Ricevi merce dagli ordini',
+  
+  // Gare - Bids
+  'gare.bids.view': 'Visualizza le gare d\'appalto',
+  'gare.bids.create': 'Crea nuove gare d\'appalto',
+  'gare.bids.edit': 'Modifica le gare esistenti',
+  'gare.bids.submit': 'Invia offerte per le gare',
+  'gare.bids.approve': 'Approva gare d\'appalto',
+  'gare.bids.delete': 'Elimina gare dal sistema',
+  
+  // Gare - Documents
+  'gare.documents.upload': 'Carica documenti per le gare',
+  'gare.documents.view': 'Visualizza i documenti delle gare',
+  'gare.documents.sign': 'Firma digitalmente i documenti di gara',
+  'gare.documents.validate': 'Valida i documenti caricati',
+  
+  // Gare - Scoring
+  'gare.scoring.evaluate': 'Valuta le offerte ricevute',
+  'gare.scoring.override': 'Sovrascrivi le valutazioni automatiche',
+  
+  // HR - Employees
+  'hr.employees.view': 'Visualizza la lista dei dipendenti',
+  'hr.employees.create': 'Crea nuovi dipendenti nel sistema HR',
+  'hr.employees.edit': 'Modifica le informazioni dei dipendenti',
+  'hr.employees.onboard': 'Gestisci l\'onboarding dei nuovi dipendenti',
+  'hr.employees.offboard': 'Gestisci l\'offboarding dei dipendenti in uscita',
+  
+  // HR - Payroll
+  'hr.payroll.view': 'Visualizza i cedolini paga',
+  'hr.payroll.process': 'Elabora i pagamenti degli stipendi',
+  'hr.payroll.approve': 'Approva i cedolini paga',
+  'hr.payroll.export': 'Esporta i dati delle buste paga',
+  
+  // HR - Timesheet
+  'hr.timesheet.view': 'Visualizza i fogli ore dei dipendenti',
+  'hr.timesheet.edit': 'Modifica i fogli ore',
+  'hr.timesheet.approve': 'Approva i fogli ore dei dipendenti',
+  'hr.timesheet.report': 'Genera report sulle ore lavorate',
+  
+  // HR - Leave
+  'hr.leave.view': 'Visualizza le richieste di ferie e permessi',
+  'hr.leave.request': 'Richiedi ferie o permessi',
+  'hr.leave.approve': 'Approva richieste di ferie e permessi',
+  
+  // HR - Requests
+  'hr.requests.create': 'Crea nuove richieste HR (ferie, rimborsi, etc.)',
+  'hr.requests.view.self': 'Visualizza le proprie richieste HR',
+  'hr.requests.view.all': 'Visualizza tutte le richieste HR del team',
+  'hr.requests.approve': 'Approva richieste HR dei dipendenti',
+  'hr.requests.comment': 'Commenta sulle richieste HR',
+  'hr.requests.delete': 'Elimina richieste HR',
+  
+  // Task Management
+  'task.read': 'Visualizza le attività assegnate',
+  'task.create': 'Crea nuove attività',
+  'task.update': 'Modifica le attività esistenti',
+  'task.delete': 'Elimina attività',
+  'task.assign': 'Assegna attività ad altri utenti',
+  'task.comment': 'Commenta sulle attività',
+  'task.time-log': 'Registra il tempo speso sulle attività',
+  
+  // Task Templates
+  'task-template.read': 'Visualizza i template di attività',
+  'task-template.create': 'Crea nuovi template di attività',
+  'task-template.update': 'Modifica i template esistenti',
+  'task-template.delete': 'Elimina template di attività',
+  
+  // Finance - Invoices
+  'finance.invoices.view': 'Visualizza le fatture',
+  'finance.invoices.create': 'Crea nuove fatture',
+  'finance.invoices.edit': 'Modifica le fatture esistenti',
+  'finance.invoices.approve': 'Approva le fatture',
+  'finance.invoices.void': 'Annulla fatture emesse',
+  
+  // Finance - Payments
+  'finance.payments.view': 'Visualizza i pagamenti',
+  'finance.payments.process': 'Elabora pagamenti in entrata e uscita',
+  'finance.payments.reconcile': 'Riconcilia i pagamenti con gli estratti conto',
+  
+  // Finance - Reports
+  'finance.reports.view': 'Visualizza i report finanziari',
+  'finance.reports.generate': 'Genera nuovi report finanziari',
+  'finance.reports.export': 'Esporta i report finanziari',
+  
+  // Finance - Budget
+  'finance.budget.view': 'Visualizza i budget aziendali',
+  'finance.budget.manage': 'Gestisci i budget dei dipartimenti',
+  'finance.budget.approve': 'Approva i budget proposti',
+  
+  // Marketing - Campaigns
+  'marketing.campaigns.view': 'Visualizza le campagne marketing',
+  'marketing.campaigns.create': 'Crea nuove campagne marketing',
+  'marketing.campaigns.edit': 'Modifica le campagne esistenti',
+  'marketing.campaigns.launch': 'Lancia campagne marketing',
+  'marketing.campaigns.analyze': 'Analizza le performance delle campagne',
+  
+  // Marketing - Content
+  'marketing.content.view': 'Visualizza i contenuti marketing',
+  'marketing.content.create': 'Crea nuovi contenuti',
+  'marketing.content.edit': 'Modifica i contenuti esistenti',
+  'marketing.content.publish': 'Pubblica contenuti marketing',
+  
+  // Marketing - Social
+  'marketing.social.view': 'Visualizza i post social media',
+  'marketing.social.post': 'Pubblica sui social media',
+  'marketing.social.schedule': 'Programma post social',
+  'marketing.social.analyze': 'Analizza le performance sui social',
+  
+  // CMS - Pages
+  'cms.pages.view': 'Visualizza le pagine del sito web',
+  'cms.pages.create': 'Crea nuove pagine web',
+  'cms.pages.edit': 'Modifica le pagine esistenti',
+  'cms.pages.publish': 'Pubblica pagine sul sito',
+  'cms.pages.delete': 'Elimina pagine dal sito',
+  
+  // CMS - Media
+  'cms.media.view': 'Visualizza la libreria media',
+  'cms.media.upload': 'Carica nuovi file media (immagini, video)',
+  'cms.media.manage': 'Gestisci i file media esistenti',
+  
+  // Settings - General
+  'settings.view': 'Accedi alla sezione impostazioni',
+  
+  // Settings - Organization
+  'settings.organization.view': 'Visualizza le impostazioni aziendali',
+  'settings.organization.edit': 'Modifica le informazioni aziendali',
+  'settings.organization.manage': 'Gestisci la configurazione organizzativa',
+  
+  // Settings - Users
+  'settings.users.view': 'Visualizza la lista degli utenti',
+  'settings.users.create': 'Crea nuovi utenti nel sistema',
+  'settings.users.edit': 'Modifica le informazioni degli utenti',
+  'settings.users.delete': 'Elimina utenti dal sistema',
+  'settings.users.suspend': 'Sospendi temporaneamente gli utenti',
+  
+  // Settings - Roles
+  'settings.roles.view': 'Visualizza i ruoli RBAC',
+  'settings.roles.create': 'Crea nuovi ruoli personalizzati',
+  'settings.roles.edit': 'Modifica i permessi dei ruoli',
+  'settings.roles.delete': 'Elimina ruoli dal sistema',
+  'settings.roles.assign': 'Assegna ruoli agli utenti',
+  
+  // Settings - Integrations
+  'settings.integrations.view': 'Visualizza le integrazioni configurate',
+  'settings.integrations.manage': 'Configura integrazioni esterne (Stripe, Twilio, etc.)',
+  
+  // Settings - Billing
+  'settings.billing.view': 'Visualizza le informazioni di fatturazione',
+  'settings.billing.manage': 'Gestisci il piano di abbonamento e i pagamenti',
+  
+  // Reports
+  'reports.view': 'Visualizza i report aziendali',
+  'reports.generate': 'Genera nuovi report',
+  'reports.export': 'Esporta i report in Excel/PDF',
+  'reports.schedule': 'Programma l\'invio automatico dei report',
+  
+  // System - Audit
+  'system.audit.view': 'Visualizza i log di audit del sistema',
+  'system.audit.export': 'Esporta i log di audit',
+  
+  // System - Debug
+  'system.debug.view': 'Accedi alle informazioni di debug',
+  'system.debug.execute': 'Esegui comandi di debug avanzati',
+  
+  // Logs
+  'logs.read': 'Leggi i log di sistema',
+  'logs.write': 'Scrivi nei log di sistema',
+  
+  // Notifications
+  'notifications.read': 'Visualizza le notifiche',
+  'notifications.manage': 'Gestisci le impostazioni di notifica',
+  'notifications.create': 'Crea nuove notifiche',
+  'notifications.markRead': 'Segna le notifiche come lette',
+  'notifications.bulkActions': 'Esegui azioni di massa sulle notifiche',
+  'notifications.delete': 'Elimina notifiche',
+  
+  // AI - Settings
+  'ai.settings.view': 'Visualizza le impostazioni AI',
+  'ai.settings.manage': 'Gestisci la configurazione AI',
+  'ai.settings.configure': 'Configura i parametri avanzati AI',
+  
+  // AI - Usage
+  'ai.usage.view': 'Visualizza l\'utilizzo dei servizi AI',
+  'ai.usage.analytics': 'Analizza le metriche di utilizzo AI',
+  'ai.usage.export': 'Esporta i report di utilizzo AI',
+  
+  // AI - Chat
+  'ai.chat.use': 'Usa l\'assistente AI per la chat',
+  'ai.chat.create': 'Crea nuove conversazioni AI',
+  'ai.chat.history': 'Visualizza la cronologia delle chat AI',
+  
+  // AI - Conversations
+  'ai.conversations.view': 'Visualizza le conversazioni AI',
+  'ai.conversations.create': 'Crea nuove conversazioni AI',
+  'ai.conversations.delete': 'Elimina conversazioni AI',
+  'ai.conversations.manage': 'Gestisci le conversazioni AI del team',
+  
+  // AI - Documents
+  'ai.documents.analyze': 'Analizza documenti con AI (estrazione dati)',
+  'ai.documents.process': 'Elabora documenti con AI',
+  
+  // AI - Financial
+  'ai.financial.forecast': 'Genera previsioni finanziarie con AI',
+  'ai.financial.analyze': 'Analizza dati finanziari con AI',
+  
+  // AI - Search
+  'ai.search.web': 'Usa la ricerca web potenziata da AI',
+  'ai.search.internal': 'Cerca nei documenti interni con AI',
+  
+  // AI - Training
+  'ai.training.view': 'Visualizza i dati di training AI',
+  'ai.training.create': 'Crea nuovi dataset di training',
+  'ai.training.validate': 'Valida i dati di training',
+  'ai.training.url': 'Importa dati da URL per training',
+  'ai.training.media': 'Carica media per training AI',
+  
+  // AI - Admin
+  'ai.admin.keys': 'Gestisci le chiavi API dei servizi AI',
+  'ai.admin.monitor': 'Monitora le performance dei servizi AI',
+  'ai.admin.configure': 'Configura i provider AI (OpenAI, etc.)',
+  
+  // MCP - General
+  'mcp.read': 'Visualizza le configurazioni MCP',
+  'mcp.write': 'Modifica le configurazioni MCP',
+  'mcp.delete': 'Elimina configurazioni MCP',
+  'mcp.execute': 'Esegui operazioni MCP',
+  
+  // MCP - Servers
+  'mcp.servers.view': 'Visualizza i server MCP configurati',
+  'mcp.servers.create': 'Crea nuovi server MCP',
+  'mcp.servers.update': 'Aggiorna server MCP esistenti',
+  'mcp.servers.delete': 'Elimina server MCP',
+  'mcp.servers.configure': 'Configura i parametri dei server MCP',
+  
+  // MCP - Credentials
+  'mcp.credentials.view': 'Visualizza le credenziali MCP',
+  'mcp.credentials.create': 'Crea nuove credenziali MCP',
+  'mcp.credentials.update': 'Aggiorna credenziali esistenti',
+  'mcp.credentials.revoke': 'Revoca credenziali MCP',
+  
+  // MCP - Tools
+  'mcp.tools.view': 'Visualizza gli strumenti MCP disponibili',
+  'mcp.tools.execute': 'Esegui strumenti MCP',
+  'mcp.tools.test': 'Testa gli strumenti MCP',
+  
+  // Webhooks - Receive
+  'webhooks.receive.*': 'Ricevi webhook da tutti i provider',
+  'webhooks.receive.stripe': 'Ricevi webhook da Stripe',
+  'webhooks.receive.twilio': 'Ricevi webhook da Twilio',
+  'webhooks.receive.github': 'Ricevi webhook da GitHub',
+  'webhooks.receive.custom': 'Ricevi webhook personalizzati',
+  
+  // Webhooks - Manage
+  'webhooks.manage.view': 'Visualizza i webhook configurati',
+  'webhooks.manage.create': 'Crea nuovi webhook',
+  'webhooks.manage.edit': 'Modifica webhook esistenti',
+  'webhooks.manage.delete': 'Elimina webhook',
+  'webhooks.manage.configure': 'Configura i parametri dei webhook',
+  
+  // Webhooks - Events
+  'webhooks.events.view': 'Visualizza gli eventi webhook ricevuti',
+  'webhooks.events.retry': 'Riprova l\'elaborazione di eventi falliti',
+  'webhooks.events.delete': 'Elimina eventi webhook',
+  
+  // Webhooks - Signatures
+  'webhooks.signatures.view': 'Visualizza le firme di validazione webhook',
+  'webhooks.signatures.create': 'Crea nuove firme di validazione',
+  'webhooks.signatures.edit': 'Modifica le firme esistenti',
+  'webhooks.signatures.delete': 'Elimina firme di validazione'
+};
+
+// Helper per ottenere la descrizione di un permesso
+export function getPermissionDescription(permission: string): string {
+  return PERMISSION_DESCRIPTIONS[permission] || 'Permesso di sistema';
+}
