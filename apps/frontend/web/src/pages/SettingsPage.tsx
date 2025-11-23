@@ -4718,169 +4718,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Create Custom Role Modal */}
-        {createRoleModalOpen && (() => {
-          console.log('🎯 Modal "Crea Ruolo Custom" RENDERIZZATO - createRoleModalOpen:', createRoleModalOpen);
-          return (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '500px',
-              width: '90%',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '24px'
-              }}>
-                <h3 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  color: '#111827',
-                  margin: 0
-                }}>
-                  Crea Ruolo Personalizzato
-                </h3>
-                <button
-                  onClick={() => setCreateRoleModalOpen(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '20px',
-                    cursor: 'pointer',
-                    color: '#6b7280'
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                  Codice Ruolo
-                </label>
-                <input
-                  type="text"
-                  value={newRoleData.code}
-                  onChange={(e) => setNewRoleData({ ...newRoleData, code: e.target.value })}
-                  placeholder="es. custom_role"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                  Nome Ruolo
-                </label>
-                <input
-                  type="text"
-                  value={newRoleData.name}
-                  onChange={(e) => setNewRoleData({ ...newRoleData, name: e.target.value })}
-                  placeholder="es. Custom Role"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                  Descrizione
-                </label>
-                <textarea
-                  value={newRoleData.description}
-                  onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
-                  placeholder="Descrizione del ruolo personalizzato..."
-                  rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    resize: 'vertical'
-                  }}
-                />
-              </div>
-
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                justifyContent: 'flex-end'
-              }}>
-                <button
-                  onClick={() => setCreateRoleModalOpen(false)}
-                  style={{
-                    padding: '10px 20px',
-                    background: '#f3f4f6',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={createCustomRole}
-                  disabled={!newRoleData.code || !newRoleData.name}
-                  style={{
-                    padding: '10px 20px',
-                    background: newRoleData.code && newRoleData.name 
-                      ? 'linear-gradient(135deg, #8339ff, #6b2cbf)' 
-                      : '#e5e7eb',
-                    color: newRoleData.code && newRoleData.name ? 'white' : '#6b7280',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: newRoleData.code && newRoleData.name ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  Crea Ruolo
-                </button>
-              </div>
-            </div>
-          </div>
-          );
-        })()}
-
         {/* Notification Toast */}
         {notification && (
           <div style={{
@@ -9200,6 +9037,166 @@ export default function SettingsPage() {
           open={!!selectedStoreId}
           onOpenChange={() => setSelectedStoreId(null)}
         />
+      )}
+
+      {/* Create Custom Role Modal - MOVED TO ROOT LEVEL */}
+      {createRoleModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '24px'
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0
+              }}>
+                Crea Ruolo Personalizzato
+              </h3>
+              <button
+                onClick={() => setCreateRoleModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                Codice Ruolo
+              </label>
+              <input
+                type="text"
+                value={newRoleData.code}
+                onChange={(e) => setNewRoleData({ ...newRoleData, code: e.target.value })}
+                placeholder="es. custom_role"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                Nome Ruolo
+              </label>
+              <input
+                type="text"
+                value={newRoleData.name}
+                onChange={(e) => setNewRoleData({ ...newRoleData, name: e.target.value })}
+                placeholder="es. Custom Role"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                Descrizione
+              </label>
+              <textarea
+                value={newRoleData.description}
+                onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
+                placeholder="Descrizione del ruolo personalizzato..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={() => setCreateRoleModalOpen(false)}
+                style={{
+                  padding: '10px 20px',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={createCustomRole}
+                disabled={!newRoleData.code || !newRoleData.name}
+                style={{
+                  padding: '10px 20px',
+                  background: newRoleData.code && newRoleData.name 
+                    ? 'linear-gradient(135deg, #8339ff, #6b2cbf)' 
+                    : '#e5e7eb',
+                  color: newRoleData.code && newRoleData.name ? 'white' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: newRoleData.code && newRoleData.name ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                Crea Ruolo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
