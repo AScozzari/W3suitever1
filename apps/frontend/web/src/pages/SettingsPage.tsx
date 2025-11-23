@@ -1422,15 +1422,18 @@ export default function SettingsPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // HYBRID SYSTEM: Show 10 specific roles but use REAL backend permissions 
-  const allRoles = [...HARDCODED_ROLES, ...customRoles];
+  // ✅ REAL ROLES from backend API - Only when Entity Management tab is active
+  const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<{ success: boolean; data: any[] }>({
+    queryKey: ['/api/roles'],
+    enabled: activeTab === 'Entity Management',
+    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
   const rbacRolesData = {
-    roles: allRoles,
-    success: true
+    roles: rolesApiResponse?.data || [],
+    success: rolesApiResponse?.success || false
   };
-  const rolesLoading = false;
-  const rolesError = null;
-  const refetchRoles = () => Promise.resolve();
 
   // REAL permissions from backend API - Only when Entity Management tab is active
   const { data: rbacPermissionsData, isLoading: permissionsLoading } = useQuery<RBACPermissionsResponse>({
