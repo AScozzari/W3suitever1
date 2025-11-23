@@ -2968,12 +2968,12 @@ export default function SettingsPage() {
               ).map((role: any) => (
                 <div
                   key={role.code}
-                  onClick={() => setSelectedRole(role.code)}
+                  onClick={() => setSelectedRole(role.id)}
                   style={{
-                    background: selectedRole === role.code 
+                    background: selectedRole === role.id 
                       ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
                       : 'hsla(255, 255, 255, 0.05)',
-                    border: selectedRole === role.code
+                    border: selectedRole === role.id
                       ? `2px solid ${role.color}40`
                       : '1px solid hsla(255, 255, 255, 0.08)',
                     borderRadius: '12px',
@@ -2985,7 +2985,7 @@ export default function SettingsPage() {
                     transform: 'translateY(0) scale(1) rotateX(0deg)',
                     transformStyle: 'preserve-3d',
                     perspective: '1000px',
-                    boxShadow: selectedRole === role.code
+                    boxShadow: selectedRole === role.id
                       ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
                       : '0 2px 8px rgba(0, 0, 0, 0.05)'
                   }}
@@ -3027,14 +3027,14 @@ export default function SettingsPage() {
                     const users = card.querySelector('.users-count') as HTMLElement;
                     
                     // Reset card
-                    card.style.background = selectedRole === role.code 
+                    card.style.background = selectedRole === role.id 
                       ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
                       : 'hsla(255, 255, 255, 0.05)';
-                    card.style.borderColor = selectedRole === role.code
+                    card.style.borderColor = selectedRole === role.id
                       ? `${role.color}40`
                       : 'hsla(255, 255, 255, 0.08)';
                     card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
-                    card.style.boxShadow = selectedRole === role.code
+                    card.style.boxShadow = selectedRole === role.id
                       ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
                       : '0 2px 8px rgba(0, 0, 0, 0.05)';
                     
