@@ -1700,13 +1700,19 @@ export default function SettingsPage() {
   // Initialize temp permissions when role permissions are loaded or role changes
   useEffect(() => {
     if (selectedRolePermissions?.permissions && selectedRole) {
+      // 🔧 CRITICAL: If role has wildcard '*', wait for RBAC permissions API to load
+      if (selectedRolePermissions.permissions.includes('*') && !rbacPermissionsData?.permissions) {
+        // Early return - wildcard expansion needs API data
+        return;
+      }
+      
       // Only initialize if this role's permissions aren't already in the map
       if (!rolePermissionsMap[selectedRole]) {
         // 🔧 FIX Bug #4: Expand wildcard '*' to all permissions for Amministratore
         let permissions = selectedRolePermissions.permissions;
         if (permissions.includes('*')) {
-          // Replace '*' with ALL_PERMISSIONS
-          permissions = [...ALL_PERMISSIONS];
+          // Expand wildcard '*' to all 223 permissions from API instead of hardcoded array
+          permissions = (rbacPermissionsData?.permissions || []).map(p => p.permission);
         }
         
         setRolePermissionsMap(prev => ({
@@ -1717,9 +1723,10 @@ export default function SettingsPage() {
         setIsPermissionsDirty(false);
       }
     }
+    // NOTE: rbacPermissionsData added to dependencies to trigger re-run when API data loads
     // NOTE: rolePermissionsMap is NOT in dependencies to avoid resetting dirty flag on toggle
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRolePermissions, selectedRole]);
+  }, [selectedRolePermissions, selectedRole, rbacPermissionsData]);
 
   // Check if a permission is currently enabled
   const isPermissionEnabled = (permission: string): boolean => {
