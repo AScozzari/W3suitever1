@@ -20,7 +20,7 @@ export function KanbanColumn({ id, title, category, count, color, children }: Ka
     <div
       ref={setNodeRef}
       className={cn(
-        'flex-shrink-0 w-[420px] transition-all duration-200',
+        'flex-shrink-0 w-[300px] transition-all duration-200',
         isOver && 'scale-105'
       )}
       data-testid={`kanban-column-${id}`}
