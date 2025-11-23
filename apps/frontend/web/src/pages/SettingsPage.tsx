@@ -3494,7 +3494,6 @@ export default function SettingsPage() {
                                   position: 'absolute',
                                   bottom: '-6px',
                                   left: '50%',
-                                  transform: 'translateX(-50%)',
                                   width: '12px',
                                   height: '12px',
                                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
