@@ -1423,7 +1423,7 @@ export default function SettingsPage() {
   });
 
   // ✅ REAL ROLES from backend API - Only when Entity Management tab is active
-  const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<{ success: boolean; data: any[] }>({
+  const { data: rolesApiResponse, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<any[]>({
     queryKey: ['/api/roles', 'v2'], // v2 to invalidate old cache with English roles
     enabled: activeTab === 'Entity Management',
     refetchOnMount: true, // Always refetch fresh data on mount
@@ -1431,8 +1431,8 @@ export default function SettingsPage() {
   });
   
   const rbacRolesData = {
-    roles: rolesApiResponse?.data || [],
-    success: rolesApiResponse?.success || false
+    roles: rolesApiResponse || [],
+    success: !!rolesApiResponse
   };
   
   // 🔍 DEBUG: Log roles data
@@ -1441,7 +1441,7 @@ export default function SettingsPage() {
     rolesLoading,
     rolesError,
     rolesApiResponse,
-    rolesCount: rolesApiResponse?.data?.length || 0,
+    rolesCount: rolesApiResponse?.length || 0,
     rbacRolesDataCount: rbacRolesData.roles.length
   });
 
