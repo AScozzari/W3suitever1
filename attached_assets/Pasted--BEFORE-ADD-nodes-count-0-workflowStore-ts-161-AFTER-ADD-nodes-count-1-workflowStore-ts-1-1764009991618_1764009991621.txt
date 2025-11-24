@@ -1,0 +1,1154 @@
+🏪 BEFORE ADD: nodes count = 0
+workflowStore.ts:161 🏪 AFTER ADD: nodes count = 1
+workflowStore.ts:164 🏪 FINAL STATE: nodes = [{…}]
+WorkflowBuilder.tsx:249 🎛️ Opening config panel for node: send-email-1764009961802
+installHook.js:1 [ZodParser] Unsupported type for field "value": ZodAny Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+parseZodField @ zod-schema-parser.ts:346
+parseZodField @ zod-schema-parser.ts:314
+parseConfigSchema @ zod-schema-parser.ts:380
+DynamicFormRenderer @ DynamicFormRenderer.tsx:63
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+DynamicFormRenderer.tsx:67 [DynamicFormRenderer] Parsed schema: {fields: {…}, fieldOrder: Array(10), hasNestedObjects: false, requiredFields: Array(5), optionalFields: Array(5), …}
+installHook.js:1 [DynamicFormRenderer] No component found for field "template" with type "resource" Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ DynamicFormRenderer.tsx:127
+DynamicFormRenderer @ DynamicFormRenderer.tsx:95
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+installHook.js:1 [ZodParser] Unsupported type for field "value": 'ZodAny' Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+parseZodField @ zod-schema-parser.ts:346
+parseZodField @ zod-schema-parser.ts:314
+parseConfigSchema @ zod-schema-parser.ts:380
+DynamicFormRenderer @ DynamicFormRenderer.tsx:63
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14976
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+installHook.js:1 [DynamicFormRenderer] Parsed schema: {fields: {…}, fieldOrder: Array(10), hasNestedObjects: false, requiredFields: Array(5), optionalFields: Array(5), …}
+installHook.js:1 [DynamicFormRenderer] No component found for field "template" with type "resource" Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ DynamicFormRenderer.tsx:127
+DynamicFormRenderer @ DynamicFormRenderer.tsx:95
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14976
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+installHook.js:1 [ZodParser] Unsupported type for field "value": ZodAny Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+parseZodField @ zod-schema-parser.ts:346
+parseZodField @ zod-schema-parser.ts:314
+parseConfigSchema @ zod-schema-parser.ts:380
+DynamicFormRenderer @ DynamicFormRenderer.tsx:63
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+DynamicFormRenderer.tsx:67 [DynamicFormRenderer] Parsed schema: {fields: {…}, fieldOrder: Array(10), hasNestedObjects: false, requiredFields: Array(5), optionalFields: Array(5), …}
+installHook.js:1 [DynamicFormRenderer] No component found for field "template" with type "resource" Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ DynamicFormRenderer.tsx:127
+DynamicFormRenderer @ DynamicFormRenderer.tsx:95
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+installHook.js:1 [ZodParser] Unsupported type for field "value": 'ZodAny' Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+parseZodField @ zod-schema-parser.ts:346
+parseZodField @ zod-schema-parser.ts:314
+parseConfigSchema @ zod-schema-parser.ts:380
+DynamicFormRenderer @ DynamicFormRenderer.tsx:63
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14587
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+installHook.js:1 [DynamicFormRenderer] Parsed schema: {fields: {…}, fieldOrder: Array(10), hasNestedObjects: false, requiredFields: Array(5), optionalFields: Array(5), …}
+installHook.js:1 [DynamicFormRenderer] No component found for field "template" with type "resource" Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ DynamicFormRenderer.tsx:127
+DynamicFormRenderer @ DynamicFormRenderer.tsx:95
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14587
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this warning
+installHook.js:1 [ZodParser] Unsupported type for field "value": ZodAny Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+parseZodField @ zod-schema-parser.ts:346
+parseZodField @ zod-schema-parser.ts:314
+parseConfigSchema @ zod-schema-parser.ts:380
+DynamicFormRenderer @ DynamicFormRenderer.tsx:63
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+DynamicFormRenderer.tsx:67 [DynamicFormRenderer] Parsed schema: {fields: {…}, fieldOrder: Array(10), hasNestedObjects: false, requiredFields: Array(5), optionalFields: Array(5), …}
+installHook.js:1 [DynamicFormRenderer] No component found for field "template" with type "resource" Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ DynamicFormRenderer.tsx:127
+DynamicFormRenderer @ DynamicFormRenderer.tsx:95
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 [ZodParser] Unsupported type for field "value": 'ZodAny' Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+parseZodField @ zod-schema-parser.ts:346
+parseZodField @ zod-schema-parser.ts:314
+parseConfigSchema @ zod-schema-parser.ts:380
+DynamicFormRenderer @ DynamicFormRenderer.tsx:63
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14587
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 [DynamicFormRenderer] Parsed schema: {fields: {…}, fieldOrder: Array(10), hasNestedObjects: false, requiredFields: Array(5), optionalFields: Array(5), …}
+installHook.js:1 [DynamicFormRenderer] No component found for field "template" with type "resource" Error Component Stack
+    at DynamicFormRenderer (DynamicFormRenderer.tsx:56:3)
+    at form (<anonymous>)
+    at FormProvider (chunk-SNPXSC7A.js?v=f4a34e1b:101:11)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:55:7
+    at div (<anonymous>)
+    at NodeConfigFormHost (NodeConfigFormHost.tsx:89:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:117:13
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at @radix-ui_react-scroll-area.js?v=f4a34e1b:55:7
+    at _c (scroll-area.tsx:11:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:47:7
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-ALPY2UPK.js?v=f4a34e1b:29:5
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at DndContext2 (chunk-IVYLFSHY.js?v=f4a34e1b:2521:5)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at NodeInspector (NodeInspector.tsx:742:3)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:93:35)
+    at BatchProvider (@xyflow_react.js?v=f4a34e1b:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=f4a34e1b:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ DynamicFormRenderer.tsx:127
+DynamicFormRenderer @ DynamicFormRenderer.tsx:95
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14587
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning

@@ -29,8 +29,8 @@ export { CronExpressionBuilder } from './custom/CronExpressionBuilder';
 export { WebhookAuthConfig } from './custom/WebhookAuthConfig';
 export { IPWhitelistBuilder } from './custom/IPWhitelistBuilder';
 
-// === RESOURCE COMPONENTS (coming soon) ===
-// export { ResourceField } from './resource/ResourceField';
+// === RESOURCE COMPONENTS ===
+export { ResourceField } from './resource/ResourceField';
 
 // === DEFAULT FIELD COMPONENT REGISTRY ===
 import { StringField } from './base/StringField';
@@ -47,6 +47,7 @@ import { RecordField } from './complex/RecordField';
 import { CronExpressionBuilder } from './custom/CronExpressionBuilder';
 import { WebhookAuthConfig } from './custom/WebhookAuthConfig';
 import { IPWhitelistBuilder } from './custom/IPWhitelistBuilder';
+import { ResourceField } from './resource/ResourceField';
 import { FieldComponentRegistry, FieldComponent, CustomComponentRegistry } from './types';
 
 /**
@@ -71,6 +72,9 @@ export const DEFAULT_FIELD_REGISTRY: Partial<FieldComponentRegistry> = {
   array: ArrayField,
   object: ObjectField,
   record: RecordField,
+  
+  // Resource types
+  resource: ResourceField,
   
   // Unsupported → will use JSON fallback
   unsupported: StringField, // Temporary fallback
