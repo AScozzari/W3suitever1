@@ -207,8 +207,8 @@ export function DealCard({ deal }: DealCardProps) {
                   onClick={(e) => {
                     e.stopPropagation();
                     toast({
-                      title: 'In sviluppo',
-                      description: 'Funzionalità di modifica deal in arrivo.',
+                      title: 'Funzionalità in arrivo',
+                      description: 'La modifica della deal sarà disponibile a breve.',
                     });
                   }}
                   data-testid={`menu-edit-${deal.id}`}
