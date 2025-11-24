@@ -94,9 +94,9 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
   const stages = stagesData || [];
   const deals = dealsData || [];
 
-  // Move deal mutation
+  // Move deal mutation with optimistic update
   const moveDealMutation = useMutation({
-    retry: false, // Disable automatic retry to prevent double requests
+    retry: false,
     mutationFn: async ({ dealId, targetStage }: { dealId: string; targetStage: string }) => {
       return apiRequest(`/api/crm/deals/${dealId}/move`, {
         method: 'PATCH',
@@ -106,22 +106,46 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
         },
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
-      toast({
-        title: 'Deal spostato',
-        description: 'Il deal è stato spostato con successo',
+    onMutate: async ({ dealId, targetStage }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
+      
+      // Snapshot previous value
+      const previousDeals = queryClient.getQueryData<Deal[]>([`/api/crm/deals?pipelineId=${pipelineId}`]);
+      
+      // Optimistically update
+      queryClient.setQueryData<Deal[]>([`/api/crm/deals?pipelineId=${pipelineId}`], (old) => {
+        if (!old) return old;
+        return old.map(deal => 
+          deal.id === dealId 
+            ? { ...deal, stage: targetStage }
+            : deal
+        );
       });
+      
+      // Return context with snapshot
+      return { previousDeals };
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // Rollback on error
+      if (context?.previousDeals) {
+        queryClient.setQueryData([`/api/crm/deals?pipelineId=${pipelineId}`], context.previousDeals);
+      }
+      
       const message = error.response?.data?.message || 'Errore durante lo spostamento del deal';
       toast({
         title: 'Operazione non consentita',
         description: message,
         variant: 'destructive',
       });
-      // Invalidate to reset UI state
+    },
+    onSuccess: () => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
+      toast({
+        title: 'Deal spostato',
+        description: 'Il deal è stato spostato con successo',
+      });
     },
   });
 
