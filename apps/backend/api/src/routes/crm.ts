@@ -7449,7 +7449,7 @@ router.post('/deals/:id/duplicate', rbacMiddleware, requirePermission('crm.manag
     const duplicateData = {
       ...dealFields,
       // Reset workflow/finalization fields when forcing status='open'
-      dealCreationSource: 'duplicate' as const,
+      dealCreationSource: 'manual' as const, // Use 'manual' since 'duplicate' is not in the enum
       status: 'open' as const,
       completedAt: null,
       stageFinalizedAt: null,
