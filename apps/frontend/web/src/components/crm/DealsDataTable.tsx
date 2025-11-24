@@ -426,6 +426,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`button-actions-${row.original.id}`}>
                 <MoreHorizontal className="h-4 w-4 text-foreground opacity-70" />
+                <span className="sr-only">Apri menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -463,7 +464,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         ),
       },
     ],
-    [allTeams, duplicateMutation.isPending, deleteMutation.isPending]
+    [allTeams, duplicateMutation.isPending, deleteMutation.isPending, handleDuplicate, handleDeleteClick, handleEdit]
   );
 
   const table = useReactTable({
