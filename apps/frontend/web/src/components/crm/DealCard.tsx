@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Euro, User, TrendingUp, GripVertical, MoreHorizontal, Workflow, Edit, Trash2, Copy } from 'lucide-react';
+import { Euro, User, TrendingUp, GripVertical, MoreVertical, Workflow, Edit, Trash2, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { WorkflowExecutionPanel } from './WorkflowExecutionPanel';
 
@@ -119,16 +119,14 @@ export function DealCard({ deal }: DealCardProps) {
           <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0"
+                <button 
+                  className="h-6 w-6 p-0 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   onClick={(e) => e.stopPropagation()}
                   data-testid={`button-deal-menu-${deal.id}`}
                 >
-                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  <MoreVertical className="h-4 w-4 text-foreground opacity-70 hover:opacity-100" />
                   <span className="sr-only">Apri menu</span>
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem 
