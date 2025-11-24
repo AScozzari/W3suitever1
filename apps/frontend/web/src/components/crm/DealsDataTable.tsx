@@ -76,6 +76,7 @@ import {
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { ViewEditDealDialog } from './ViewEditDealDialog';
 
 interface Deal {
   id: string;
@@ -165,6 +166,8 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
   const [globalFilter, setGlobalFilter] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dealToDelete, setDealToDelete] = useState<string | null>(null);
+  const [viewEditDialogOpen, setViewEditDialogOpen] = useState(false);
+  const [dealToView, setDealToView] = useState<Deal | null>(null);
   const { toast } = useToast();
 
   // Fetch deals
@@ -247,11 +250,9 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
     }
   };
 
-  const handleEdit = () => {
-    toast({
-      title: 'Funzionalità in arrivo',
-      description: 'La modifica della deal sarà disponibile a breve.',
-    });
+  const handleViewEdit = (deal: Deal) => {
+    setDealToView(deal);
+    setViewEditDialogOpen(true);
   };
 
   // Column definitions
@@ -433,16 +434,12 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem data-testid={`action-view-${row.original.id}`}>
-                <Eye className="mr-2 h-4 w-4" />
-                Visualizza Dettagli
-              </DropdownMenuItem>
               <DropdownMenuItem 
-                onSelect={handleEdit}
-                data-testid={`action-edit-${row.original.id}`}
+                onSelect={() => handleViewEdit(row.original)}
+                data-testid={`action-view-${row.original.id}`}
               >
-                <Edit className="mr-2 h-4 w-4" />
-                Modifica Deal
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizza / Modifica
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onSelect={() => handleDuplicate(row.original.id)}
@@ -663,6 +660,14 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {/* View/Edit Deal Dialog */}
+    <ViewEditDealDialog
+      open={viewEditDialogOpen}
+      onOpenChange={setViewEditDialogOpen}
+      deal={dealToView}
+      pipelineId={pipelineId}
+    />
   </>
   );
 }
