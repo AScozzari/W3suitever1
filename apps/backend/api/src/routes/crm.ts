@@ -7400,6 +7400,92 @@ router.patch('/deals/:id', async (req, res) => {
 });
 
 /**
+ * DELETE /api/crm/deals/:id
+ * Delete a deal permanently
+ */
+router.delete('/deals/:id', rbacMiddleware, requirePermission('crm.manage_deals'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    // Check if deal exists
+    const existingDeal = await db
+      .select()
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existingDeal || existingDeal.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Deal not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Delete the deal
+    await db
+      .delete(crmDeals)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ));
+
+    // Invalidate analytics cache
+    (async () => {
+      try {
+        if (existingDeal[0].pipelineId) {
+          await analyticsCacheService.invalidatePipelineStats({
+            pipelineId: existingDeal[0].pipelineId,
+            dealId: id,
+            tenantId
+          });
+        }
+      } catch (cacheError) {
+        logger.error('Failed to invalidate analytics cache', {
+          error: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+          dealId: id
+        });
+      }
+    })();
+
+    logger.info('Deal deleted', { dealId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      message: 'Deal deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting deal', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      dealId: req.params.id,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete deal',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * PATCH /api/crm/deals/:id/move
  * Move deal to a different stage with workflow validation
  * 

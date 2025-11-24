@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
+import { useMutation } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Euro, User, TrendingUp, GripVertical, MoreVertical, Workflow, Edit, Trash2, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { WorkflowExecutionPanel } from './WorkflowExecutionPanel';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface Deal {
   id: string;
@@ -76,6 +89,8 @@ const translateOutboundChannel = (channel?: string | null): string => {
 
 export function DealCard({ deal }: DealCardProps) {
   const [workflowDrawerOpen, setWorkflowDrawerOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { toast } = useToast();
   
   const {
     attributes,
@@ -84,6 +99,59 @@ export function DealCard({ deal }: DealCardProps) {
     transform,
     isDragging,
   } = useDraggable({ id: deal.id });
+
+  // Mutation: Duplicate deal
+  const duplicateMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/crm/deals', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...deal,
+          id: undefined, // Remove ID to create new deal
+          createdAt: undefined,
+          updatedAt: undefined,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/deals'] });
+      toast({
+        title: 'Deal duplicato',
+        description: 'Il deal è stato duplicato con successo.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error.message || 'Impossibile duplicare il deal.',
+      });
+    },
+  });
+
+  // Mutation: Delete deal
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/crm/deals/${deal.id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/deals'] });
+      toast({
+        title: 'Deal eliminato',
+        description: 'Il deal è stato eliminato con successo.',
+      });
+      setShowDeleteDialog(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error.message || 'Impossibile eliminare il deal.',
+      });
+    },
+  });
 
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
@@ -141,14 +209,24 @@ export function DealCard({ deal }: DealCardProps) {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast({
+                      title: 'In sviluppo',
+                      description: 'Funzionalità di modifica deal in arrivo.',
+                    });
+                  }}
                   data-testid={`menu-edit-${deal.id}`}
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   Modifica Deal
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    duplicateMutation.mutate();
+                  }}
+                  disabled={duplicateMutation.isPending}
                   data-testid={`menu-duplicate-${deal.id}`}
                 >
                   <Copy className="mr-2 h-4 w-4" />
@@ -156,7 +234,10 @@ export function DealCard({ deal }: DealCardProps) {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteDialog(true);
+                  }}
                   className="text-red-600"
                   data-testid={`menu-delete-${deal.id}`}
                 >
@@ -251,6 +332,35 @@ export function DealCard({ deal }: DealCardProps) {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare questo deal? Questa azione non può essere annullata.
+              {deal.customerName && (
+                <div className="mt-2 font-medium">
+                  Deal: {deal.customerName} - {formatCurrency(deal.estimatedValue)}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteMutation.isPending ? 'Eliminazione...' : 'Elimina'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
