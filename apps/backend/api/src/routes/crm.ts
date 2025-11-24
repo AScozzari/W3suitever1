@@ -7402,7 +7402,7 @@ router.patch('/deals/:id', async (req, res) => {
  * 1. Cannot return to "starter" category from any other stage
  * 2. finalized/ko/archive stages are LOCKED (require confirmOverride=true)
  */
-router.patch('/deals/:id/move', async (req, res) => {
+router.patch('/deals/:id/move', rbacMiddleware, requirePermission('crm.manage_deals'), async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
