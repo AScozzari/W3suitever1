@@ -126,7 +126,7 @@ export function DealCard({ deal }: DealCardProps) {
                   onClick={(e) => e.stopPropagation()}
                   data-testid={`button-deal-menu-${deal.id}`}
                 >
-                  <MoreHorizontal className="h-4 w-4" />
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                   <span className="sr-only">Apri menu</span>
                 </Button>
               </DropdownMenuTrigger>
