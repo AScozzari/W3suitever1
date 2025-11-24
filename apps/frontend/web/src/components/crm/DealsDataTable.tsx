@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   useReactTable,
   getCoreRowModel,
@@ -23,6 +23,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -61,8 +71,11 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Copy,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Deal {
   id: string;
@@ -150,6 +163,9 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'wonAt', desc: true }]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [dealToDelete, setDealToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Fetch deals
   const { data: dealsResponse, isLoading } = useQuery<Deal[]>({
@@ -162,6 +178,81 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
   });
 
   const deals = dealsResponse || [];
+
+  // Duplicate deal mutation
+  const duplicateMutation = useMutation({
+    mutationFn: async (dealId: string) => {
+      return apiRequest(`/api/crm/deals/${dealId}/duplicate`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/analytics'] });
+      toast({
+        title: 'Deal duplicata',
+        description: 'La deal è stata duplicata con successo.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile duplicare la deal.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete deal mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (dealId: string) => {
+      return apiRequest(`/api/crm/deals/${dealId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crm/analytics'] });
+      toast({
+        title: 'Deal eliminata',
+        description: 'La deal è stata eliminata con successo.',
+      });
+      setDeleteDialogOpen(false);
+      setDealToDelete(null);
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile eliminare la deal.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handlers
+  const handleDuplicate = (dealId: string) => {
+    duplicateMutation.mutate(dealId);
+  };
+
+  const handleDeleteClick = (dealId: string) => {
+    setDealToDelete(dealId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (dealToDelete) {
+      deleteMutation.mutate(dealToDelete);
+    }
+  };
+
+  const handleEdit = () => {
+    toast({
+      title: 'Funzionalità in arrivo',
+      description: 'La modifica della deal sarà disponibile a breve.',
+    });
+  };
 
   // Column definitions
   const columns = useMemo<ColumnDef<Deal>[]>(
@@ -334,7 +425,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`button-actions-${row.original.id}`}>
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="h-4 w-4 text-foreground opacity-70" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -342,16 +433,28 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
                 <Eye className="mr-2 h-4 w-4" />
                 Visualizza Dettagli
               </DropdownMenuItem>
-              <DropdownMenuItem data-testid={`action-edit-${row.original.id}`}>
+              <DropdownMenuItem 
+                onClick={handleEdit}
+                data-testid={`action-edit-${row.original.id}`}
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 Modifica Deal
               </DropdownMenuItem>
-              <DropdownMenuItem data-testid={`action-move-${row.original.id}`}>
-                <MoveRight className="mr-2 h-4 w-4" />
-                Cambia Stato
+              <DropdownMenuItem 
+                onClick={() => handleDuplicate(row.original.id)}
+                disabled={duplicateMutation.isPending}
+                data-testid={`action-duplicate-${row.original.id}`}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                {duplicateMutation.isPending ? 'Duplicazione...' : 'Duplica Deal'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive" data-testid={`action-delete-${row.original.id}`}>
+              <DropdownMenuItem 
+                className="text-destructive" 
+                onClick={() => handleDeleteClick(row.original.id)}
+                disabled={deleteMutation.isPending}
+                data-testid={`action-delete-${row.original.id}`}
+              >
                 <Trash className="mr-2 h-4 w-4" />
                 Elimina Deal
               </DropdownMenuItem>
@@ -360,7 +463,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         ),
       },
     ],
-    [allTeams]
+    [allTeams, duplicateMutation.isPending, deleteMutation.isPending]
   );
 
   const table = useReactTable({
@@ -401,9 +504,10 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filters & Search */}
-      <Card className="p-4 glass-card border-0">
+    <>
+      <div className="space-y-4">
+        {/* Filters & Search */}
+        <Card className="p-4 glass-card border-0">
         <div className="flex items-center gap-3 flex-wrap">
           {/* Global Search */}
           <div className="relative flex-1 min-w-[250px]">
@@ -531,5 +635,30 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         </div>
       </div>
     </div>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Sei sicuro di voler eliminare questa deal?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Questa azione non può essere annullata. La deal verrà eliminata permanentemente dal sistema.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setDealToDelete(null)}>
+            Annulla
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Eliminazione...' : 'Elimina'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
