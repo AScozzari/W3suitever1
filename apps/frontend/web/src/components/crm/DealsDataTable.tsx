@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   useReactTable,
@@ -231,28 +231,28 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
     },
   });
 
-  // Handlers
-  const handleDuplicate = (dealId: string) => {
+  // Handlers with useCallback to ensure stable references
+  const handleDuplicate = useCallback((dealId: string) => {
     duplicateMutation.mutate(dealId);
-  };
+  }, [duplicateMutation]);
 
-  const handleDeleteClick = (dealId: string) => {
+  const handleDeleteClick = useCallback((dealId: string) => {
     setDealToDelete(dealId);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = useCallback(() => {
     if (dealToDelete) {
       deleteMutation.mutate(dealToDelete);
     }
-  };
+  }, [dealToDelete, deleteMutation]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     toast({
       title: 'Funzionalità in arrivo',
       description: 'La modifica della deal sarà disponibile a breve.',
     });
-  };
+  }, [toast]);
 
   // Column definitions
   const columns = useMemo<ColumnDef<Deal>[]>(
