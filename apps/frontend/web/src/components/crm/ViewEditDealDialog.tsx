@@ -134,22 +134,22 @@ export function ViewEditDealDialog({
   });
 
   // Fetch data
-  const { data: pipelines } = useQuery<ApiResponse<Pipeline[]>>({
+  const { data: pipelines } = useQuery<Pipeline[]>({
     queryKey: ['/api/crm/pipelines'],
     enabled: open,
   });
 
-  const { data: stores } = useQuery<ApiResponse<Store[]>>({
+  const { data: stores } = useQuery<Store[]>({
     queryKey: ['/api/stores'],
     enabled: open,
   });
 
-  const { data: users } = useQuery<ApiResponse<User[]>>({
+  const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
     enabled: open,
   });
 
-  const selectedPipeline = pipelines?.data?.find(p => p.id === selectedPipelineId);
+  const selectedPipeline = pipelines?.find(p => p.id === selectedPipelineId);
   const stages = selectedPipeline?.stages || [];
 
   useEffect(() => {
@@ -296,7 +296,7 @@ export function ViewEditDealDialog({
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Pipeline</label>
                 <div className="text-sm font-medium p-2 bg-muted rounded-md mt-1">
-                  {pipelines?.data?.find(p => p.id === deal.pipelineId)?.name || 'N/A'}
+                  {pipelines?.find(p => p.id === deal.pipelineId)?.name || 'N/A'}
                 </div>
               </div>
 
@@ -310,7 +310,7 @@ export function ViewEditDealDialog({
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Store</label>
                 <div className="text-sm font-medium p-2 bg-muted rounded-md mt-1">
-                  {stores?.data?.find(s => s.id === deal.storeId)?.name || 'N/A'}
+                  {stores?.find(s => s.id === deal.storeId)?.name || 'N/A'}
                 </div>
               </div>
 
@@ -439,7 +439,7 @@ export function ViewEditDealDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {pipelines?.data?.map(pipeline => (
+                        {pipelines?.map(pipeline => (
                           <SelectItem key={pipeline.id} value={pipeline.id}>
                             {pipeline.name} ({pipeline.driver})
                           </SelectItem>
@@ -493,7 +493,7 @@ export function ViewEditDealDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {stores?.data?.map(store => (
+                        {stores?.map(store => (
                           <SelectItem key={store.id} value={store.id}>
                             {store.name} ({store.code})
                           </SelectItem>
@@ -518,7 +518,7 @@ export function ViewEditDealDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {users?.data?.map(user => (
+                        {users?.map(user => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.firstName} {user.lastName}
                           </SelectItem>
