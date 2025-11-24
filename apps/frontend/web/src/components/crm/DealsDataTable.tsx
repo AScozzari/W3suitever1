@@ -438,14 +438,14 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
                 Visualizza Dettagli
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={handleEdit}
+                onSelect={handleEdit}
                 data-testid={`action-edit-${row.original.id}`}
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Modifica Deal
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => handleDuplicate(row.original.id)}
+                onSelect={() => handleDuplicate(row.original.id)}
                 disabled={duplicateMutation.isPending}
                 data-testid={`action-duplicate-${row.original.id}`}
               >
@@ -455,7 +455,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive" 
-                onClick={() => handleDeleteClick(row.original.id)}
+                onSelect={() => handleDeleteClick(row.original.id)}
                 disabled={deleteMutation.isPending}
                 data-testid={`action-delete-${row.original.id}`}
               >
