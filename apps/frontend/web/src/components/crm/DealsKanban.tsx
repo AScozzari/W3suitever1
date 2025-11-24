@@ -96,6 +96,7 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
 
   // Move deal mutation
   const moveDealMutation = useMutation({
+    retry: false, // Disable automatic retry to prevent double requests
     mutationFn: async ({ dealId, targetStage }: { dealId: string; targetStage: string }) => {
       return apiRequest(`/api/crm/deals/${dealId}/move`, {
         method: 'PATCH',
@@ -107,6 +108,10 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
+      toast({
+        title: 'Deal spostato',
+        description: 'Il deal è stato spostato con successo',
+      });
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Errore durante lo spostamento del deal';
@@ -115,6 +120,8 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
         description: message,
         variant: 'destructive',
       });
+      // Invalidate to reset UI state
+      queryClient.invalidateQueries({ queryKey: [`/api/crm/deals?pipelineId=${pipelineId}`] });
     },
   });
 
