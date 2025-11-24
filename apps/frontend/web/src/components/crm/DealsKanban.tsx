@@ -10,7 +10,6 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -100,7 +99,10 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
     mutationFn: async ({ dealId, targetStage }: { dealId: string; targetStage: string }) => {
       return apiRequest(`/api/crm/deals/${dealId}/move`, {
         method: 'PATCH',
-        body: { targetStage },
+        body: JSON.stringify({ targetStage }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
@@ -188,16 +190,14 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
             count={dealsByStage[stage.name]?.length || 0}
             color={categoryColors[stage.category]}
           >
-            <SortableContext items={dealsByStage[stage.name]?.map((d) => d.id) || []} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
-                {dealsByStage[stage.name]?.map((deal) => (
-                  <DealCard key={deal.id} deal={deal} />
-                ))}
-                {(!dealsByStage[stage.name] || dealsByStage[stage.name].length === 0) && (
-                  <div className="text-sm text-muted-foreground text-center py-8">Nessun deal</div>
-                )}
-              </div>
-            </SortableContext>
+            <div className="space-y-2">
+              {dealsByStage[stage.name]?.map((deal) => (
+                <DealCard key={deal.id} deal={deal} />
+              ))}
+              {(!dealsByStage[stage.name] || dealsByStage[stage.name].length === 0) && (
+                <div className="text-sm text-muted-foreground text-center py-8">Nessun deal</div>
+              )}
+            </div>
           </KanbanColumn>
         ))}
       </div>
