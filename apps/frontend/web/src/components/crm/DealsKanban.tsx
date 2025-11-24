@@ -132,7 +132,8 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
         queryClient.setQueryData([`/api/crm/deals?pipelineId=${pipelineId}`], context.previousDeals);
       }
       
-      const message = error.response?.data?.message || 'Errore durante lo spostamento del deal';
+      // Extract message from error (now comes from apiRequest)
+      const message = error?.message || 'Errore durante lo spostamento del deal';
       toast({
         title: 'Operazione non consentita',
         description: message,

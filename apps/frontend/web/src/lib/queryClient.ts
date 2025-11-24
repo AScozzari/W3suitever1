@@ -350,7 +350,21 @@ export async function apiRequest(
       
       throw new Error(`401: Unauthorized`);
     }
-    throw new Error(`${res.status}: ${res.statusText}`);
+    
+    // Try to extract error message from response body
+    let errorMessage = `${res.status}: ${res.statusText}`;
+    try {
+      const errorData = await res.json();
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+      // Failed to parse JSON, use default error message
+    }
+    
+    const error = new Error(errorMessage);
+    (error as any).status = res.status;
+    throw error;
   }
 
   return res.json();
