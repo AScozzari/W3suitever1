@@ -425,7 +425,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`button-actions-${row.original.id}`}>
-                <MoreHorizontal className="h-4 w-4 text-foreground opacity-70" />
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                 <span className="sr-only">Apri menu</span>
               </Button>
             </DropdownMenuTrigger>
