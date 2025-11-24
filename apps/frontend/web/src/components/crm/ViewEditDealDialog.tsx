@@ -438,7 +438,7 @@ export function ViewEditDealDialog({
                           <SelectValue placeholder="Seleziona pipeline" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent container={null}>
                         {pipelines?.map(pipeline => (
                           <SelectItem key={pipeline.id} value={pipeline.id}>
                             {pipeline.name} ({pipeline.driver})
@@ -467,7 +467,7 @@ export function ViewEditDealDialog({
                           <SelectValue placeholder="Seleziona stage" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent container={null}>
                         {stages.map((stage) => (
                           <SelectItem key={stage.id} value={stage.id}>
                             {stage.name}
@@ -492,7 +492,7 @@ export function ViewEditDealDialog({
                           <SelectValue placeholder="Seleziona store" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent container={null}>
                         {stores?.map(store => (
                           <SelectItem key={store.id} value={store.id}>
                             {store.name} ({store.code})
@@ -517,7 +517,7 @@ export function ViewEditDealDialog({
                           <SelectValue placeholder="Seleziona assegnato" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent container={null}>
                         {users?.map(user => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.firstName} {user.lastName}
