@@ -33,8 +33,8 @@ export const EmailActionConfigSchema = z.object({
   cc: z.array(z.string().email()).optional(),
   bcc: z.array(z.string().email()).optional(),
   subject: z.string().min(1, "Subject is required"),
-  template: z.string().min(1, "Template is required"),
-  variables: z.record(z.string(), z.any()).optional(),
+  template: z.string().min(1, "Template is required").describe('type:resource'),
+  variables: z.record(z.string(), z.string()).optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   attachments: z.array(z.string()).optional(),
   sendAt: z.date().optional(),
@@ -63,7 +63,7 @@ export const ApprovalActionConfigSchema = z.object({
     conditions: z.array(z.object({
       field: z.string(),
       operator: z.enum(['equals', 'less_than', 'greater_than', 'contains']),
-      value: z.any()
+      value: z.string()
     }))
   }).optional(),
   timeout: z.object({

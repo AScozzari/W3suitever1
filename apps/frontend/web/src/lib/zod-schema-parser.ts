@@ -338,6 +338,22 @@ function parseZodField(
     );
   }
   
+  // === ZOD ANY / UNKNOWN TYPES ===
+  
+  // ZodAny type (z.any()) → treat as JSON field
+  else if ((unwrapped as any)._def?.typeName === 'ZodAny') {
+    baseMetadata.type = 'record'; // Use RecordField for JSON key-value editing
+    baseMetadata.recordValueType = 'string';
+    baseMetadata.description = baseMetadata.description || 'JSON field (any value)';
+  }
+  
+  // ZodUnknown type (z.unknown()) → treat as JSON field
+  else if ((unwrapped as any)._def?.typeName === 'ZodUnknown') {
+    baseMetadata.type = 'record';
+    baseMetadata.recordValueType = 'string';
+    baseMetadata.description = baseMetadata.description || 'Unknown JSON field';
+  }
+  
   // === UNSUPPORTED FALLBACK ===
   
   // Unknown/unsupported types → flag for JSON editor
