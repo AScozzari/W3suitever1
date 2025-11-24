@@ -20,13 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -425,27 +419,23 @@ export function ViewEditDealDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pipeline *</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setSelectedPipelineId(value);
-                        form.setValue('stage', '');
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona pipeline" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent container={null}>
+                    <FormControl>
+                      <NativeSelect
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                          setSelectedPipelineId(e.target.value);
+                          form.setValue('stage', '');
+                        }}
+                        placeholder="Seleziona pipeline"
+                      >
                         {pipelines?.map(pipeline => (
-                          <SelectItem key={pipeline.id} value={pipeline.id}>
+                          <option key={pipeline.id} value={pipeline.id}>
                             {pipeline.name} ({pipeline.driver})
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </NativeSelect>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -457,24 +447,19 @@ export function ViewEditDealDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Stage *</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!selectedPipelineId}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona stage" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent container={null}>
+                    <FormControl>
+                      <NativeSelect
+                        {...field}
+                        disabled={!selectedPipelineId}
+                        placeholder="Seleziona stage"
+                      >
                         {stages.map((stage) => (
-                          <SelectItem key={stage.id} value={stage.id}>
+                          <option key={stage.id} value={stage.id}>
                             {stage.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </NativeSelect>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -486,20 +471,15 @@ export function ViewEditDealDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Store *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona store" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent container={null}>
+                    <FormControl>
+                      <NativeSelect {...field} placeholder="Seleziona store">
                         {stores?.map(store => (
-                          <SelectItem key={store.id} value={store.id}>
+                          <option key={store.id} value={store.id}>
                             {store.name} ({store.code})
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </NativeSelect>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -511,20 +491,15 @@ export function ViewEditDealDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assegnato *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona assegnato" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent container={null}>
+                    <FormControl>
+                      <NativeSelect {...field} placeholder="Seleziona assegnato">
                         {users?.map(user => (
-                          <SelectItem key={user.id} value={user.id}>
+                          <option key={user.id} value={user.id}>
                             {user.firstName} {user.lastName}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </NativeSelect>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
