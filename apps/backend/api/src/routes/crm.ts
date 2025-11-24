@@ -7062,9 +7062,10 @@ router.get('/deals', async (req, res) => {
         END`,
         ownerEmail: users.email,
         customerName: sql<string>`CASE 
-          WHEN ${crmCustomers.customerType} = 'b2b' THEN CONCAT(COALESCE(${crmCustomers.firstName}, ''), ' ', COALESCE(${crmCustomers.lastName}, ''))
-          WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(COALESCE(${crmCustomers.firstName}, ''), ' ', COALESCE(${crmCustomers.lastName}, ''))
-          ELSE NULL
+          WHEN ${crmCustomers.companyName} IS NOT NULL THEN ${crmCustomers.companyName}
+          WHEN ${crmCustomers.firstName} IS NOT NULL OR ${crmCustomers.lastName} IS NOT NULL 
+          THEN TRIM(CONCAT(COALESCE(${crmCustomers.firstName}, ''), ' ', COALESCE(${crmCustomers.lastName}, '')))
+          ELSE ${crmPersonIdentities.identifierValue}
         END`,
         customerCompanyName: crmCustomers.companyName,
         customerType: crmCustomers.customerType,
@@ -7072,6 +7073,10 @@ router.get('/deals', async (req, res) => {
       .from(crmDeals)
       .leftJoin(users, eq(crmDeals.ownerUserId, users.id))
       .leftJoin(crmCustomers, eq(crmDeals.customerId, crmCustomers.id))
+      .leftJoin(crmPersonIdentities, and(
+        eq(crmPersonIdentities.personId, crmDeals.personId),
+        eq(crmPersonIdentities.identifierType, 'email')
+      ))
       .where(and(...conditions))
       .orderBy(desc(crmDeals.createdAt))
       .limit(parseInt(limit as string))
