@@ -103,14 +103,9 @@ export function DealCard({ deal }: DealCardProps) {
   // Mutation: Duplicate deal
   const duplicateMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/crm/deals', {
+      // Use dedicated backend duplicate endpoint (handles all fields server-side)
+      return await apiRequest(`/api/crm/deals/${deal.id}/duplicate`, {
         method: 'POST',
-        body: JSON.stringify({
-          ...deal,
-          id: undefined, // Remove ID to create new deal
-          createdAt: undefined,
-          updatedAt: undefined,
-        }),
       });
     },
     onSuccess: () => {

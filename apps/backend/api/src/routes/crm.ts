@@ -7400,6 +7400,116 @@ router.patch('/deals/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/crm/deals/:id/duplicate
+ * Duplicate an existing deal
+ */
+router.post('/deals/:id/duplicate', rbacMiddleware, requirePermission('crm.manage_deals'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(tenantId);
+
+    // Fetch original deal
+    const originalDeal = await db
+      .select()
+      .from(crmDeals)
+      .where(and(
+        eq(crmDeals.id, id),
+        eq(crmDeals.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!originalDeal || originalDeal.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Deal not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const deal = originalDeal[0];
+
+    // Create duplicate (exclude auto-generated fields, reset finalization fields)
+    const { 
+      id: dealId, 
+      createdAt: dealCreatedAt, 
+      updatedAt: dealUpdatedAt, 
+      version: dealVersion, 
+      ...dealFields 
+    } = deal;
+
+    const duplicateData = {
+      ...dealFields,
+      // Reset workflow/finalization fields when forcing status='open'
+      dealCreationSource: 'duplicate' as const,
+      status: 'open' as const,
+      completedAt: null,
+      stageFinalizedAt: null,
+      revenue: null,
+      closeReason: null,
+      lostReason: null,
+      currentStageEnteredAt: new Date(), // Reset stage timestamp
+      // tenantId is preserved from original
+      // pipelineId, stage, storeId, ownerUserId, customerId, etc. preserved
+    };
+
+    const [newDeal] = await db
+      .insert(crmDeals)
+      .values(duplicateData)
+      .returning();
+
+    // Invalidate caches
+    (async () => {
+      try {
+        if (deal.pipelineId) {
+          await analyticsCacheService.invalidatePipelineStats({
+            pipelineId: deal.pipelineId,
+            dealId: newDeal.id,
+            tenantId
+          });
+        }
+      } catch (cacheError) {
+        logger.error('Failed to invalidate analytics cache', {
+          error: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+          dealId: newDeal.id
+        });
+      }
+    })();
+
+    logger.info('Deal duplicated', { originalId: id, newId: newDeal.id, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: newDeal,
+      message: 'Deal duplicated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error duplicating deal', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      dealId: req.params.id,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to duplicate deal',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * DELETE /api/crm/deals/:id
  * Delete a deal permanently
  */
