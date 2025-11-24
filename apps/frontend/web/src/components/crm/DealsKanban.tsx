@@ -176,11 +176,37 @@ export default function DealsKanban({ pipelineId }: DealsKanbanProps) {
     const deal = deals.find((d) => d.id === dealId);
     if (!deal || deal.stage === targetStage) return;
 
-    // Find target stage category
+    // Find current and target stage data
+    const currentStageData = stages.find((s) => s.name === deal.stage);
     const targetStageData = stages.find((s) => s.name === targetStage);
-    if (!targetStageData) return;
+    if (!currentStageData || !targetStageData) return;
 
-    // Check workflow rules (will be handled by backend)
+    // CLIENT-SIDE WORKFLOW VALIDATION (prevent 403 errors)
+    const currentCategory = currentStageData.category;
+    const targetCategory = targetStageData.category;
+
+    // RULE 1: Cannot return to "starter" category from any other stage
+    if (targetCategory === 'starter' && currentCategory !== 'starter') {
+      toast({
+        title: 'Operazione non consentita',
+        description: 'Non puoi tornare allo stage iniziale da uno stage successivo',
+        variant: 'destructive',
+      });
+      return; // Block the move without making API call
+    }
+
+    // RULE 2: finalized/ko/archive stages are LOCKED
+    const lockedCategories = ['finalized', 'ko', 'archive'];
+    if (lockedCategories.includes(currentCategory)) {
+      toast({
+        title: 'Stage bloccato',
+        description: `Questo deal è in uno stage bloccato (${currentCategory}). Non può essere spostato tramite drag & drop.`,
+        variant: 'destructive',
+      });
+      return; // Block the move without making API call
+    }
+
+    // Validation passed - proceed with API call
     moveDealMutation.mutate({ dealId, targetStage });
   };
 
