@@ -231,28 +231,28 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
     },
   });
 
-  // Handlers with useCallback to ensure stable references
-  const handleDuplicate = useCallback((dealId: string) => {
+  // Handlers - don't use useCallback with mutation dependencies
+  const handleDuplicate = (dealId: string) => {
     duplicateMutation.mutate(dealId);
-  }, [duplicateMutation]);
+  };
 
-  const handleDeleteClick = useCallback((dealId: string) => {
+  const handleDeleteClick = (dealId: string) => {
     setDealToDelete(dealId);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = () => {
     if (dealToDelete) {
       deleteMutation.mutate(dealToDelete);
     }
-  }, [dealToDelete, deleteMutation]);
+  };
 
-  const handleEdit = useCallback(() => {
+  const handleEdit = () => {
     toast({
       title: 'Funzionalità in arrivo',
       description: 'La modifica della deal sarà disponibile a breve.',
     });
-  }, [toast]);
+  };
 
   // Column definitions
   const columns = useMemo<ColumnDef<Deal>[]>(
@@ -467,7 +467,7 @@ export default function DealsDataTable({ pipelineId }: DealsDataTableProps) {
         ),
       },
     ],
-    [allTeams, duplicateMutation.isPending, deleteMutation.isPending, handleDuplicate, handleDeleteClick, handleEdit]
+    [allTeams, duplicateMutation.isPending, deleteMutation.isPending]
   );
 
   const table = useReactTable({
