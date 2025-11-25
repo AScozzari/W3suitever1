@@ -58,6 +58,30 @@ Il sistema VoIP di W3 Suite è integrato con **edgvoip PBX** (FreeSWITCH) e offr
 
 ---
 
+## 🔐 Environment Variables
+
+Per abilitare la sincronizzazione bidirezionale con edgvoip, configurare le seguenti variabili d'ambiente:
+
+```bash
+# edgvoip API Configuration
+EDGVOIP_API_URL=https://api.edgvoip.it
+EDGVOIP_ACCESS_TOKEN=your_oauth_bearer_token_here
+EDGVOIP_WEBHOOK_SECRET=your_webhook_signing_secret_here
+```
+
+**Descrizione**:
+- `EDGVOIP_API_URL`: Base URL dell'API edgvoip (es. `https://api.edgvoip.it`)
+- `EDGVOIP_ACCESS_TOKEN`: Token OAuth/Bearer per autenticazione API (fornito da edgvoip)
+- `EDGVOIP_WEBHOOK_SECRET`: Secret condiviso per firma HMAC-SHA256 dei webhook e delle API request
+
+**Security Note**: Il sistema usa **doppia autenticazione**:
+1. **OAuth Bearer Token** (header `Authorization: Bearer ${token}`) per identificazione
+2. **HMAC-SHA256 Signature** (header `X-W3-Signature`) per integrità richieste
+
+Senza queste variabili configurate, gli endpoint di refresh ritorneranno `503 Service Unavailable`.
+
+---
+
 ## 📊 Database Schema
 
 ### 1. VoIP Trunks (`voip_trunks`)

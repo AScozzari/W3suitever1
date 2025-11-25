@@ -42,6 +42,9 @@ import {
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { voipExtensionService } from '../services/voip-extension.service';
 import { syncAIConfigToEdgvoip } from '../services/voip-edgvoip-sync.service';
+import { syncTrunksFromEdgvoip } from '../services/voip-trunk-sync.service';
+import { syncExtensionsFromEdgvoip } from '../services/voip-extension-sync.service';
+import { checkEdgvoipConnection } from '../services/edgvoip-api-client.service';
 
 const router = express.Router();
 
@@ -136,6 +139,84 @@ router.get('/trunks', rbacMiddleware, async (req, res) => {
 
 // NOTE: Trunk creation/update/delete managed by edgvoip via webhook
 // See /api/webhooks/voip/trunk for sync endpoint
+
+// POST /api/voip/trunks/refresh - Manual sync of all trunks from edgvoip
+router.post('/trunks/refresh', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    logger.info('Manual trunk refresh requested', { tenantId, actor: req.user?.id });
+
+    // Check edgvoip connection first
+    const connectionCheck = await checkEdgvoipConnection(tenantId);
+    if (!connectionCheck.available) {
+      logger.warn('edgvoip not available for trunk refresh', { 
+        tenantId, 
+        error: connectionCheck.error 
+      });
+      
+      return res.status(503).json({ 
+        error: 'edgvoip service not available',
+        details: connectionCheck.error
+      } as ApiErrorResponse);
+    }
+
+    // Sync trunks from edgvoip
+    const syncResult = await syncTrunksFromEdgvoip(tenantId);
+
+    // Log activity
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'sync',
+      'trunk',
+      'all',
+      syncResult.success ? 'ok' : 'fail',
+      { 
+        total: syncResult.total,
+        synced: syncResult.synced,
+        failed: syncResult.failed,
+        errors: syncResult.errors
+      }
+    );
+
+    if (!syncResult.success) {
+      logger.error('Trunk refresh failed', { 
+        tenantId, 
+        syncResult 
+      });
+
+      return res.status(500).json({ 
+        error: 'Trunk refresh failed',
+        details: syncResult.errors
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Trunk refresh completed successfully', { 
+      tenantId,
+      total: syncResult.total,
+      synced: syncResult.synced,
+      failed: syncResult.failed
+    });
+
+    return res.json({ 
+      success: true, 
+      data: {
+        message: `Successfully synced ${syncResult.synced} of ${syncResult.total} trunks from edgvoip`,
+        total: syncResult.total,
+        synced: syncResult.synced,
+        failed: syncResult.failed,
+        errors: syncResult.errors
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error refreshing trunks', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to refresh trunks' } as ApiErrorResponse);
+  }
+});
 
 // ==================== VOIP EXTENSIONS ====================
 
@@ -482,6 +563,92 @@ router.post('/extensions/:id/sync', rbacMiddleware, requirePermission('manage_te
   } catch (error) {
     logger.error('Error syncing extension', { error, extensionId: req.params.id, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to sync extension' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/extensions/refresh-all - Manual sync of all extensions from edgvoip
+router.post('/extensions/refresh-all', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    const { domainId } = req.body;
+
+    logger.info('Manual extension refresh requested', { 
+      tenantId, 
+      domainId,
+      actor: req.user?.id 
+    });
+
+    // Check edgvoip connection first
+    const connectionCheck = await checkEdgvoipConnection(tenantId);
+    if (!connectionCheck.available) {
+      logger.warn('edgvoip not available for extension refresh', { 
+        tenantId, 
+        error: connectionCheck.error 
+      });
+      
+      return res.status(503).json({ 
+        error: 'edgvoip service not available',
+        details: connectionCheck.error
+      } as ApiErrorResponse);
+    }
+
+    // Sync extensions from edgvoip
+    const syncResult = await syncExtensionsFromEdgvoip(tenantId, domainId);
+
+    // Log activity
+    await logActivity(
+      tenantId,
+      req.user?.id || 'system',
+      'sync',
+      'ext',
+      'all',
+      syncResult.success ? 'ok' : 'fail',
+      { 
+        total: syncResult.total,
+        synced: syncResult.synced,
+        failed: syncResult.failed,
+        errors: syncResult.errors,
+        domainId
+      }
+    );
+
+    if (!syncResult.success) {
+      logger.error('Extension refresh failed', { 
+        tenantId, 
+        syncResult 
+      });
+
+      return res.status(500).json({ 
+        error: 'Extension refresh failed',
+        details: syncResult.errors
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Extension refresh completed successfully', { 
+      tenantId,
+      domainId,
+      total: syncResult.total,
+      synced: syncResult.synced,
+      failed: syncResult.failed
+    });
+
+    return res.json({ 
+      success: true, 
+      data: {
+        message: `Successfully synced ${syncResult.synced} of ${syncResult.total} extensions from edgvoip`,
+        total: syncResult.total,
+        synced: syncResult.synced,
+        failed: syncResult.failed,
+        errors: syncResult.errors
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error refreshing extensions', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to refresh extensions' } as ApiErrorResponse);
   }
 });
 

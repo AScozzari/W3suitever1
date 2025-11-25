@@ -560,28 +560,25 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  console.log('🔵 [REFRESH] Pulsante Refresh cliccato!');
-                  console.log('🔵 [REFRESH] trunksLoading:', trunksLoading);
-                  console.log('🔵 [REFRESH] trunks.length prima del refetch:', trunks.length);
-                  console.log('🔵 [REFRESH] refetchTrunks function:', typeof refetchTrunks);
-                  
                   try {
-                    console.log('🔵 [REFRESH] Chiamata a refetchTrunks()...');
-                    const result = await refetchTrunks();
-                    console.log('🔵 [REFRESH] Risultato refetchTrunks:', result);
-                    console.log('🔵 [REFRESH] trunks.length dopo il refetch:', trunks.length);
-                    
-                    toast({
-                      title: "✅ Trunks aggiornati",
-                      description: `Dati ricaricati dal database. ${trunks.length} trunk${trunks.length !== 1 ? 's' : ''} sincronizzati.`,
+                    const response = await apiRequest('/api/voip/trunks/refresh', {
+                      method: 'POST'
                     });
-                    console.log('🔵 [REFRESH] Toast mostrato con successo');
+                    
+                    if (response.success) {
+                      await refetchTrunks();
+                      toast({
+                        title: "✅ Trunks sincronizzati",
+                        description: response.data?.message || `${response.data?.synced || 0} trunk aggiornati da edgvoip`,
+                      });
+                    } else {
+                      throw new Error(response.error || 'Sync failed');
+                    }
                   } catch (error) {
-                    console.error('🔴 [REFRESH] Errore durante refetch:', error);
-                    console.error('🔴 [REFRESH] Stack trace:', error instanceof Error ? error.stack : 'N/A');
+                    console.error('[REFRESH] Errore sync trunk da edgvoip:', error);
                     toast({
-                      title: "❌ Errore",
-                      description: "Impossibile aggiornare i trunks. Riprova.",
+                      title: "❌ Errore sincronizzazione",
+                      description: error instanceof Error ? error.message : "Impossibile sincronizzare da edgvoip",
                       variant: "destructive",
                     });
                   }
@@ -591,7 +588,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 className="hover:bg-gray-50"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${trunksLoading ? 'animate-spin' : ''}`} />
-                Refresh
+                Refresh da edgvoip
               </Button>
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                 Read-Only
@@ -759,18 +756,54 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
             <p className="text-sm text-gray-600">
               {extensions.length} extension{extensions.length !== 1 ? 's' : ''} configurate
             </p>
-            <Button 
-              onClick={() => {
-                setShowExtensionForm(true);
-                setEditingExtension(null);
-                extensionForm.reset();
-              }}
-              data-testid="button-add-extension"
-              className="bg-purple-500 hover:bg-purple-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi Extension
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await apiRequest('/api/voip/extensions/refresh-all', {
+                      method: 'POST'
+                    });
+                    
+                    if (response.success) {
+                      await queryClient.invalidateQueries({ queryKey: ['/api/voip/extensions'] });
+                      toast({
+                        title: "✅ Extension sincronizzate",
+                        description: response.data?.message || `${response.data?.synced || 0} extension aggiornate da edgvoip`,
+                      });
+                    } else {
+                      throw new Error(response.error || 'Sync failed');
+                    }
+                  } catch (error) {
+                    console.error('[REFRESH] Errore sync extension da edgvoip:', error);
+                    toast({
+                      title: "❌ Errore sincronizzazione",
+                      description: error instanceof Error ? error.message : "Impossibile sincronizzare da edgvoip",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                disabled={extensionsLoading}
+                data-testid="button-refresh-extensions"
+                className="hover:bg-gray-50"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${extensionsLoading ? 'animate-spin' : ''}`} />
+                Refresh da edgvoip
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowExtensionForm(true);
+                  setEditingExtension(null);
+                  extensionForm.reset();
+                }}
+                data-testid="button-add-extension"
+                className="bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Extension
+              </Button>
+            </div>
           </div>
 
           {extensionsLoading ? (
