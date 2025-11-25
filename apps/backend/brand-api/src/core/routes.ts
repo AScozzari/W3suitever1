@@ -4419,6 +4419,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
           });
         }
 
+        const { db } = await import("../db/index.js");
         const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
         const { brandAiAgents } = await import("../db/schema/brand-interface.js");
         const { eq, and } = await import("drizzle-orm");
@@ -4915,6 +4916,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const { agentId } = req.params;
 
     try {
+      const { db } = await import("../db/index.js");
       const { ragEmbeddingsUsage, ragAgents } = await import("../db/schema/brand-interface.js");
       const { eq, and, desc, sql } = await import("drizzle-orm");
 
