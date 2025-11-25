@@ -4207,6 +4207,433 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== RAG MULTI-AGENT SYSTEM ====================
+
+  // Get RAG stats for an agent
+  app.get("/brand-api/agents/:agentId/rag/stats", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const stats = await ragService.getAgentStats(agentId);
+
+      if (!stats) {
+        return res.json({
+          success: true,
+          data: {
+            agentId,
+            sourcesCount: 0,
+            chunksCount: 0,
+            totalTokensUsed: 0,
+            totalCostCents: 0,
+            config: null
+          }
+        });
+      }
+
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error("❌ Error fetching RAG stats:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch RAG stats"
+      });
+    }
+  });
+
+  // List data sources for an agent
+  app.get("/brand-api/agents/:agentId/rag/sources", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const sources = await ragService.listDataSources(agentId);
+
+      res.json({ success: true, data: sources });
+    } catch (error) {
+      console.error("❌ Error fetching data sources:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch data sources"
+      });
+    }
+  });
+
+  // Add URL source to agent
+  app.post("/brand-api/agents/:agentId/rag/sources/url", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+    const { url, metadata } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ success: false, error: "URL is required" });
+    }
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const { brandAiAgents } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+
+      // Get agent name from brandAiAgents table
+      const agents = await db
+        .select()
+        .from(brandAiAgents)
+        .where(
+          and(
+            eq(brandAiAgents.agentId, agentId),
+            eq(brandAiAgents.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      const agentName = agents.length > 0 ? agents[0].name : agentId;
+
+      // Ensure RAG agent exists
+      await ragService.ensureRagAgent({
+        agentId,
+        agentName
+      });
+
+      const sourceId = await ragService.addWebUrlSource(agentId, url, metadata);
+
+      res.json({
+        success: true,
+        data: { sourceId },
+        message: "URL source added successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error adding URL source:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to add URL source"
+      });
+    }
+  });
+
+  // Add manual text source to agent
+  app.post("/brand-api/agents/:agentId/rag/sources/text", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+    const { text, metadata } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ success: false, error: "Text content is required" });
+    }
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const { brandAiAgents } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+
+      // Get agent name
+      const agents = await db
+        .select()
+        .from(brandAiAgents)
+        .where(
+          and(
+            eq(brandAiAgents.agentId, agentId),
+            eq(brandAiAgents.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      const agentName = agents.length > 0 ? agents[0].name : agentId;
+
+      // Ensure RAG agent exists
+      await ragService.ensureRagAgent({
+        agentId,
+        agentName
+      });
+
+      const sourceId = await ragService.addManualTextSource(agentId, text, metadata);
+
+      res.json({
+        success: true,
+        data: { sourceId },
+        message: "Text source added successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error adding text source:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to add text source"
+      });
+    }
+  });
+
+  // Process/sync a data source (generate chunks and embeddings)
+  app.post("/brand-api/agents/:agentId/rag/sources/:sourceId/sync", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId, sourceId } = req.params;
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+
+      // Process async in background
+      ragService.processDataSource(sourceId).catch(err => {
+        console.error(`❌ Background sync failed for source ${sourceId}:`, err);
+      });
+
+      res.json({
+        success: true,
+        message: "Sync started in background"
+      });
+    } catch (error) {
+      console.error("❌ Error starting sync:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to start sync"
+      });
+    }
+  });
+
+  // Delete a data source
+  app.delete("/brand-api/agents/:agentId/rag/sources/:sourceId", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId, sourceId } = req.params;
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+      await ragService.deleteDataSource(sourceId);
+
+      res.json({
+        success: true,
+        message: "Data source deleted successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error deleting data source:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete data source"
+      });
+    }
+  });
+
+  // Search similar chunks (RAG retrieval)
+  app.get("/brand-api/agents/:agentId/rag/search", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+    const { query, limit = "5" } = req.query;
+
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ success: false, error: "Query parameter is required" });
+    }
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const results = await ragService.searchSimilar(agentId, query, parseInt(limit as string, 10));
+
+      res.json({
+        success: true,
+        data: {
+          query,
+          results
+        },
+        message: `Found ${results.length} similar results`
+      });
+    } catch (error) {
+      console.error("❌ Error searching RAG:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to search RAG"
+      });
+    }
+  });
+
+  // List chunks for an agent
+  app.get("/brand-api/agents/:agentId/rag/chunks", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+    const { sourceId, limit = "50" } = req.query;
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const chunks = await ragService.listChunks(
+        agentId,
+        sourceId as string | undefined,
+        parseInt(limit as string, 10)
+      );
+
+      res.json({
+        success: true,
+        data: chunks
+      });
+    } catch (error) {
+      console.error("❌ Error fetching chunks:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch chunks"
+      });
+    }
+  });
+
+  // Delete a chunk
+  app.delete("/brand-api/agents/:agentId/rag/chunks/:chunkId", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId, chunkId } = req.params;
+
+    try {
+      const { ragChunks } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      await db
+        .delete(ragChunks)
+        .where(
+          and(
+            eq(ragChunks.id, chunkId),
+            eq(ragChunks.brandTenantId, user.brandTenantId)
+          )
+        );
+
+      res.json({
+        success: true,
+        message: "Chunk deleted successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error deleting chunk:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete chunk"
+      });
+    }
+  });
+
+  // Get sync jobs for an agent
+  app.get("/brand-api/agents/:agentId/rag/jobs", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+    const { limit = "20" } = req.query;
+
+    try {
+      const { ragSyncJobs, ragAgents } = await import("../db/schema/brand-interface.js");
+      const { eq, and, desc } = await import("drizzle-orm");
+
+      // Get RAG agent ID
+      const agents = await db
+        .select()
+        .from(ragAgents)
+        .where(
+          and(
+            eq(ragAgents.agentId, agentId),
+            eq(ragAgents.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      if (agents.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
+
+      const jobs = await db
+        .select()
+        .from(ragSyncJobs)
+        .where(
+          and(
+            eq(ragSyncJobs.ragAgentId, agents[0].id),
+            eq(ragSyncJobs.brandTenantId, user.brandTenantId)
+          )
+        )
+        .orderBy(desc(ragSyncJobs.createdAt))
+        .limit(parseInt(limit as string, 10));
+
+      res.json({ success: true, data: jobs });
+    } catch (error) {
+      console.error("❌ Error fetching sync jobs:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch sync jobs"
+      });
+    }
+  });
+
+  // Get embeddings usage for an agent
+  app.get("/brand-api/agents/:agentId/rag/usage", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+
+    try {
+      const { ragEmbeddingsUsage, ragAgents } = await import("../db/schema/brand-interface.js");
+      const { eq, and, desc, sql } = await import("drizzle-orm");
+
+      // Get RAG agent ID
+      const agents = await db
+        .select()
+        .from(ragAgents)
+        .where(
+          and(
+            eq(ragAgents.agentId, agentId),
+            eq(ragAgents.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      if (agents.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            totalTokens: 0,
+            totalCost: 0,
+            history: []
+          }
+        });
+      }
+
+      // Get aggregated stats
+      const stats = await db
+        .select({
+          totalTokens: sql<number>`COALESCE(SUM(tokens_used), 0)`,
+          totalCost: sql<number>`COALESCE(SUM(estimated_cost), 0)`
+        })
+        .from(ragEmbeddingsUsage)
+        .where(
+          and(
+            eq(ragEmbeddingsUsage.ragAgentId, agents[0].id),
+            eq(ragEmbeddingsUsage.brandTenantId, user.brandTenantId)
+          )
+        );
+
+      // Get recent usage history
+      const history = await db
+        .select()
+        .from(ragEmbeddingsUsage)
+        .where(
+          and(
+            eq(ragEmbeddingsUsage.ragAgentId, agents[0].id),
+            eq(ragEmbeddingsUsage.brandTenantId, user.brandTenantId)
+          )
+        )
+        .orderBy(desc(ragEmbeddingsUsage.createdAt))
+        .limit(30);
+
+      res.json({
+        success: true,
+        data: {
+          totalTokens: stats[0]?.totalTokens || 0,
+          totalCost: stats[0]?.totalCost || 0,
+          history
+        }
+      });
+    } catch (error) {
+      console.error("❌ Error fetching usage:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch usage"
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 
