@@ -4302,10 +4302,15 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
       const sourceId = await ragService.addWebUrlSource(agentId, url, metadata);
 
+      // Start processing in background automatically
+      ragService.processDataSource(sourceId).catch(err => {
+        console.error(`❌ Background processing failed for URL ${url}:`, err);
+      });
+
       res.json({
         success: true,
         data: { sourceId },
-        message: "URL source added successfully"
+        message: "URL source added successfully, processing started"
       });
     } catch (error) {
       console.error("❌ Error adding URL source:", error);
@@ -4355,10 +4360,15 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
       const sourceId = await ragService.addManualTextSource(agentId, text, metadata);
 
+      // Start processing in background automatically
+      ragService.processDataSource(sourceId).catch(err => {
+        console.error(`❌ Background processing failed for manual text:`, err);
+      });
+
       res.json({
         success: true,
         data: { sourceId },
-        message: "Text source added successfully"
+        message: "Text source added successfully, processing started"
       });
     } catch (error) {
       console.error("❌ Error adding text source:", error);
@@ -4480,6 +4490,11 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
                 uploadedAt: new Date().toISOString()
               }
             );
+
+            // Start processing in background automatically
+            ragService.processDataSource(sourceId).catch(err => {
+              console.error(`❌ Background processing failed for ${file.originalname}:`, err);
+            });
 
             results.push({
               fileName: file.originalname,
