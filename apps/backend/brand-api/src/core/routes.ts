@@ -4575,6 +4575,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const { agentId } = req.params;
 
     try {
+      const { db } = await import("../db/index.js");
       const { ragDataSources, ragAgents } = await import("../db/schema/brand-interface.js");
       const { eq, and, or, inArray } = await import("drizzle-orm");
 
@@ -4646,6 +4647,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const { agentId, jobId } = req.params;
 
     try {
+      const { db } = await import("../db/index.js");
       const { ragDataSources } = await import("../db/schema/brand-interface.js");
       const { eq, and } = await import("drizzle-orm");
 
@@ -4681,6 +4683,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const { agentId } = req.params;
 
     try {
+      const { db } = await import("../db/index.js");
       const { ragDataSources, ragAgents } = await import("../db/schema/brand-interface.js");
       const { eq, and, or } = await import("drizzle-orm");
 
