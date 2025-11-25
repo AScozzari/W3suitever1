@@ -97,13 +97,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     staleTime: 0,
   });
 
-  // Force refetch when modal opens
-  useEffect(() => {
-    if (visible) {
-      refetchTrunks();
-    }
-  }, [visible, refetchTrunks]);
-
   const { data: extensions = [], isLoading: extensionsLoading } = useQuery<any[]>({
     queryKey: ['/api/voip/extensions'],
     enabled: visible,
