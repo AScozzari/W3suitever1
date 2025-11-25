@@ -567,11 +567,18 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  const result = await refetchTrunks();
-                  if (result.isSuccess) {
+                  try {
+                    await refetchTrunks();
                     toast({
                       title: "✅ Trunks aggiornati",
-                      description: "Dati ricaricati dal database. I trunks vengono sincronizzati automaticamente da edgvoip via webhook.",
+                      description: `Dati ricaricati dal database. ${trunks.length} trunk${trunks.length !== 1 ? 's' : ''} sincronizzati.`,
+                    });
+                  } catch (error) {
+                    console.error('Error refetching trunks:', error);
+                    toast({
+                      title: "❌ Errore",
+                      description: "Impossibile aggiornare i trunks. Riprova.",
+                      variant: "destructive",
                     });
                   }
                 }}
