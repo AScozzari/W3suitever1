@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
 import { 
   Database, Upload, Link2, Search, BarChart3, FileText,
-  Loader2, Plus, Trash2, RefreshCw, Play, Check, X,
+  Loader2, Plus, Trash2, RefreshCw, Play, Check, X, XCircle,
   AlertCircle, ChevronDown, ChevronUp, Eye, Zap, File
 } from 'lucide-react';
 
@@ -190,6 +190,34 @@ export default function RagKnowledgeSection({ agentId, agentName }: RagKnowledge
     },
     onError: (error: any) => {
       showToast(error?.message || 'Errore durante l\'eliminazione del chunk', 'error');
+    }
+  });
+
+  const cancelJobMutation = useMutation({
+    mutationFn: (jobId: string) => 
+      apiRequest(`/brand-api/agents/${agentId}/rag/jobs/${jobId}/cancel`, {
+        method: 'POST'
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/agents', agentId, 'rag'] });
+      showToast('Job annullato con successo', 'success');
+    },
+    onError: (error: any) => {
+      showToast(error?.message || 'Errore durante l\'annullamento del job', 'error');
+    }
+  });
+
+  const cancelAllJobsMutation = useMutation({
+    mutationFn: () => 
+      apiRequest(`/brand-api/agents/${agentId}/rag/jobs/cancel-all`, {
+        method: 'POST'
+      }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/agents', agentId, 'rag'] });
+      showToast(`${data?.data?.cancelled || 0} job annullati`, 'success');
+    },
+    onError: (error: any) => {
+      showToast(error?.message || 'Errore durante l\'annullamento dei job', 'error');
     }
   });
 
@@ -552,6 +580,98 @@ export default function RagKnowledgeSection({ agentId, agentName }: RagKnowledge
                   {addTextMutation.isPending ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />}
                   Save Text
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Active Jobs Section */}
+          {jobs.length > 0 && (
+            <div style={{
+              border: `1px solid ${COLORS.semantic.warning}`,
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              background: `${COLORS.semantic.warning}10`
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Loader2 size={16} style={{ color: COLORS.semantic.warning, animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark }}>
+                    {jobs.length} job{jobs.length > 1 ? 's' : ''} in elaborazione
+                  </span>
+                </div>
+                <button
+                  onClick={() => cancelAllJobsMutation.mutate()}
+                  disabled={cancelAllJobsMutation.isPending}
+                  style={{
+                    padding: '6px 12px',
+                    background: COLORS.semantic.error,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  data-testid="button-cancel-all-jobs"
+                >
+                  {cancelAllJobsMutation.isPending ? (
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <XCircle size={12} />
+                  )}
+                  Ferma Tutti
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {jobs.map((job: any) => (
+                  <div 
+                    key={job.id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      background: 'white',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      color: COLORS.neutral.dark
+                    }}
+                  >
+                    <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {job.name}
+                    </span>
+                    <span style={{ 
+                      padding: '2px 6px', 
+                      background: job.status === 'processing' ? COLORS.semantic.info : COLORS.neutral.lighter,
+                      color: job.status === 'processing' ? 'white' : COLORS.neutral.medium,
+                      borderRadius: '3px',
+                      fontSize: '10px',
+                      fontWeight: 600
+                    }}>
+                      {job.status}
+                    </span>
+                    <button
+                      onClick={() => cancelJobMutation.mutate(job.id)}
+                      disabled={cancelJobMutation.isPending}
+                      style={{
+                        padding: '2px',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: COLORS.semantic.error,
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      data-testid={`button-cancel-job-${job.id}`}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}

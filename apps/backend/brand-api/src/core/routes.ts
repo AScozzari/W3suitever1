@@ -4569,6 +4569,172 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // List active embedding jobs (sources in pending/processing state)
+  app.get("/brand-api/agents/:agentId/rag/jobs", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+
+    try {
+      const { ragDataSources, ragAgents } = await import("../db/schema/brand-interface.js");
+      const { eq, and, or, inArray } = await import("drizzle-orm");
+
+      // Get the RAG agent
+      const ragAgent = await db
+        .select()
+        .from(ragAgents)
+        .where(
+          and(
+            eq(ragAgents.agentId, agentId),
+            eq(ragAgents.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      if (ragAgent.length === 0) {
+        return res.json({
+          success: true,
+          data: []
+        });
+      }
+
+      // Get sources in pending or processing state
+      const jobs = await db
+        .select({
+          id: ragDataSources.id,
+          sourceType: ragDataSources.sourceType,
+          sourceUrl: ragDataSources.sourceUrl,
+          fileName: ragDataSources.fileName,
+          status: ragDataSources.status,
+          createdAt: ragDataSources.createdAt,
+          updatedAt: ragDataSources.updatedAt
+        })
+        .from(ragDataSources)
+        .where(
+          and(
+            eq(ragDataSources.ragAgentId, ragAgent[0].id),
+            eq(ragDataSources.brandTenantId, user.brandTenantId),
+            or(
+              eq(ragDataSources.status, 'pending'),
+              eq(ragDataSources.status, 'processing')
+            )
+          )
+        );
+
+      res.json({
+        success: true,
+        data: jobs.map(job => ({
+          id: job.id,
+          type: job.sourceType,
+          name: job.fileName || job.sourceUrl || 'Unknown',
+          status: job.status,
+          startedAt: job.createdAt,
+          updatedAt: job.updatedAt
+        }))
+      });
+    } catch (error) {
+      console.error("❌ Error fetching jobs:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch jobs"
+      });
+    }
+  });
+
+  // Cancel an embedding job (set status to 'cancelled')
+  app.post("/brand-api/agents/:agentId/rag/jobs/:jobId/cancel", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId, jobId } = req.params;
+
+    try {
+      const { ragDataSources } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      await db
+        .update(ragDataSources)
+        .set({ 
+          status: 'cancelled',
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(ragDataSources.id, jobId),
+            eq(ragDataSources.brandTenantId, user.brandTenantId)
+          )
+        );
+
+      res.json({
+        success: true,
+        message: "Job cancelled successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error cancelling job:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to cancel job"
+      });
+    }
+  });
+
+  // Cancel all pending/processing jobs for an agent
+  app.post("/brand-api/agents/:agentId/rag/jobs/cancel-all", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+
+    try {
+      const { ragDataSources, ragAgents } = await import("../db/schema/brand-interface.js");
+      const { eq, and, or } = await import("drizzle-orm");
+
+      // Get the RAG agent
+      const ragAgent = await db
+        .select()
+        .from(ragAgents)
+        .where(
+          and(
+            eq(ragAgents.agentId, agentId),
+            eq(ragAgents.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      if (ragAgent.length === 0) {
+        return res.json({
+          success: true,
+          data: { cancelled: 0 }
+        });
+      }
+
+      const result = await db
+        .update(ragDataSources)
+        .set({ 
+          status: 'cancelled',
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(ragDataSources.ragAgentId, ragAgent[0].id),
+            eq(ragDataSources.brandTenantId, user.brandTenantId),
+            or(
+              eq(ragDataSources.status, 'pending'),
+              eq(ragDataSources.status, 'processing')
+            )
+          )
+        )
+        .returning();
+
+      res.json({
+        success: true,
+        data: { cancelled: result.length },
+        message: `${result.length} job(s) cancelled`
+      });
+    } catch (error) {
+      console.error("❌ Error cancelling all jobs:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to cancel jobs"
+      });
+    }
+  });
+
   // Search similar chunks (RAG retrieval) - GET version for compatibility
   app.get("/brand-api/agents/:agentId/rag/search", async (req, res) => {
     const user = (req as any).user;
