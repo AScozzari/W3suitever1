@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, boolean, uuid, timestamp, smallint, date, integer, jsonb, pgSchema, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, boolean, uuid, timestamp, smallint, date, integer, jsonb, pgSchema, pgEnum, vector, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -452,3 +452,62 @@ export const insertBrandDeploymentStatusSchema = createInsertSchema(brandDeploym
 });
 
 export const updateBrandDeploymentStatusSchema = insertBrandDeploymentStatusSchema.partial();
+
+// ==================== RAG SYSTEM - WINDTRE OFFERS ====================
+
+// WindTre Offers Raw - Raw HTML from scraped pages
+export const windtreOffersRaw = brandInterfaceSchema.table("windtre_offers_raw", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  url: text("url").notNull().unique(),
+  urlChecksum: varchar("url_checksum", { length: 64 }).notNull(), // SHA256 hash
+  htmlContent: text("html_content").notNull(),
+  pageTitle: varchar("page_title", { length: 500 }),
+  scrapedAt: timestamp("scraped_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// WindTre Offer Chunks - Chunked text with embeddings for RAG
+export const windtreOfferChunks = brandInterfaceSchema.table(
+  "windtre_offer_chunks",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    rawOfferId: uuid("raw_offer_id").notNull().references(() => windtreOffersRaw.id, { onDelete: 'cascade' }),
+    chunkIndex: integer("chunk_index").notNull(),
+    chunkText: text("chunk_text").notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }), // OpenAI text-embedding-3-small
+    metadata: jsonb("metadata").default({}), // { offerType, price, category, etc. }
+    createdAt: timestamp("created_at").defaultNow(),
+    brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+  },
+  (table) => [
+    // HNSW index for fast cosine similarity search
+    index("windtre_chunks_embedding_idx").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    )
+  ]
+);
+
+// RAG Sync State - Track scraping/sync status
+export const ragSyncState = brandInterfaceSchema.table("rag_sync_state", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  lastRunAt: timestamp("last_run_at"),
+  status: varchar("status", { length: 50 }).notNull().default("idle"), // idle, running, success, error
+  totalPagesScraped: integer("total_pages_scraped").default(0),
+  totalChunksCreated: integer("total_chunks_created").default(0),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// ==================== RAG TYPES ====================
+
+export type WindtreOfferRaw = typeof windtreOffersRaw.$inferSelect;
+export type NewWindtreOfferRaw = typeof windtreOffersRaw.$inferInsert;
+export type WindtreOfferChunk = typeof windtreOfferChunks.$inferSelect;
+export type NewWindtreOfferChunk = typeof windtreOfferChunks.$inferInsert;
+export type RagSyncState = typeof ragSyncState.$inferSelect;
+export type NewRagSyncState = typeof ragSyncState.$inferInsert;

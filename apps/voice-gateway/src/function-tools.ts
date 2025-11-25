@@ -130,9 +130,34 @@ export const bookAppointmentTool: FunctionToolDefinition = {
 };
 
 /**
+ * Search WindTre Offers Tool (RAG)
+ */
+export const searchWindtreOffersTool: FunctionToolDefinition = {
+  type: 'function',
+  name: 'search_windtre_offers',
+  description: 'Search for current WindTre offers, tariffs, and promotions using semantic search. Always use this when customer asks about prices, offers, mobile/fiber plans, or bundles.',
+  parameters: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Natural language search query for offers (e.g., "offerte fibra casa", "tariffe mobile giovani", "bundle famiglia")'
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximum number of results to return (default: 5, max: 10)',
+        default: 5
+      }
+    },
+    required: ['query']
+  }
+};
+
+/**
  * All available function tools for AI Agent
  */
 export const allFunctionTools: FunctionToolDefinition[] = [
+  searchWindtreOffersTool, // RAG search tool - highest priority for sales
   crmLookupTool,
   createTicketTool,
   transferCallTool,
@@ -155,6 +180,9 @@ export async function executeFunctionTool(
 
   try {
     switch (functionName) {
+      case 'search_windtre_offers':
+        return await searchWindtreOffers(args, context);
+      
       case 'crm_lookup_customer':
         return await crmLookupCustomer(args, context);
       
@@ -322,5 +350,79 @@ async function bookAppointment(
     appointmentId: data.data.id,
     datetime: `${args.date} ${args.time}`,
     message: `Appointment booked for ${args.date} at ${args.time}`
+  };
+}
+
+/**
+ * Search WindTre Offers Implementation (RAG)
+ */
+async function searchWindtreOffers(
+  args: { query: string; limit?: number },
+  context: { tenantId: string }
+): Promise<any> {
+  const { query, limit = 5 } = args;
+  
+  // Get Brand API URL from environment (default to localhost for development)
+  const brandApiUrl = process.env.BRAND_API_URL || 'http://localhost:3002';
+  
+  logger.info('[FunctionTools] Searching WindTre offers', {
+    query,
+    limit,
+    brandApiUrl
+  });
+
+  // Call Brand API RAG search endpoint
+  const queryParams = new URLSearchParams({
+    query,
+    limit: Math.min(limit, 10).toString()
+  });
+
+  const response = await fetch(`${brandApiUrl}/brand-api/windtre/search?${queryParams}`, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    logger.error('[FunctionTools] WindTre search API error', {
+      status: response.status,
+      statusText: response.statusText
+    });
+    throw new Error(`WindTre search API error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.success || !data.data.results || data.data.results.length === 0) {
+    return {
+      found: false,
+      message: 'Non ho trovato offerte corrispondenti alla tua ricerca. Potresti riformulare la domanda?'
+    };
+  }
+
+  // Format results for voice agent
+  const offers = data.data.results.map((result: any, index: number) => ({
+    position: index + 1,
+    text: result.text,
+    similarity: result.similarity,
+    metadata: result.metadata
+  }));
+
+  // Create a concise summary for voice response
+  const summary = offers
+    .slice(0, 3) // Take only top 3 for voice readability
+    .map((offer: any, idx: number) => {
+      const price = offer.metadata?.price || '';
+      const type = offer.metadata?.offerType || '';
+      return `${idx + 1}. ${offer.text.substring(0, 150)}${price ? ` - ${price}` : ''}`;
+    })
+    .join('\n\n');
+
+  return {
+    found: true,
+    totalResults: offers.length,
+    offers,
+    summary,
+    message: `Ho trovato ${offers.length} offerte rilevanti per la tua ricerca "${query}". Ecco le più pertinenti:\n\n${summary}`
   };
 }

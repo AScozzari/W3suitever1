@@ -4010,6 +4010,203 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== RAG SYSTEM - WINDTRE OFFERS ====================
+
+  // Trigger WindTre scraping and embedding pipeline
+  app.post("/brand-api/windtre/sync", async (req, res) => {
+    const user = (req as any).user;
+    const { WindtreScraperService } = await import("../services/windtre-scraper.service.js");
+    const { WindtreChunkingEmbeddingService } = await import("../services/windtre-chunking-embedding.service.js");
+    const { ragSyncState } = await import("../db/schema/brand-interface.js");
+    const { db } = await import("../db/index.js");
+    const { eq } = await import("drizzle-orm");
+
+    try {
+      console.log("🚀 Starting WindTre RAG sync pipeline...");
+
+      // Update sync state to running
+      await db
+        .update(ragSyncState)
+        .set({
+          status: "running",
+          lastRunAt: new Date(),
+          errorMessage: null
+        })
+        .where(eq(ragSyncState.brandTenantId, user.brandTenantId));
+
+      // Step 1: Scrape WindTre offers
+      console.log("📡 Step 1: Scraping WindTre website...");
+      const scraper = new WindtreScraperService(user.brandTenantId);
+      const scrapeResult = await scraper.scrapeWindtreOffers();
+
+      if (!scrapeResult.success) {
+        throw new Error(`Scraping failed: ${scrapeResult.errors.join(", ")}`);
+      }
+
+      console.log(`✅ Scraping complete: ${scrapeResult.pagesScraped} pages scraped`);
+
+      // Step 2: Process chunks and generate embeddings
+      console.log("🔮 Step 2: Processing chunks and generating embeddings...");
+      const embeddingService = new WindtreChunkingEmbeddingService();
+      const embeddingResult = await embeddingService.processAllOffers(user.brandTenantId);
+
+      if (!embeddingResult.success) {
+        throw new Error(`Embedding failed: ${embeddingResult.errors.join(", ")}`);
+      }
+
+      console.log(`✅ Embedding complete: ${embeddingResult.chunksProcessed} chunks, ${embeddingResult.embeddingsCreated} embeddings`);
+
+      // Update sync state to success
+      await db
+        .update(ragSyncState)
+        .set({
+          status: "success",
+          totalPagesScraped: scrapeResult.pagesScraped,
+          totalChunksCreated: embeddingResult.embeddingsCreated,
+          updatedAt: new Date()
+        })
+        .where(eq(ragSyncState.brandTenantId, user.brandTenantId));
+
+      res.json({
+        success: true,
+        data: {
+          pagesScraped: scrapeResult.pagesScraped,
+          chunksProcessed: embeddingResult.chunksProcessed,
+          embeddingsCreated: embeddingResult.embeddingsCreated
+        },
+        message: "WindTre RAG sync completed successfully"
+      });
+
+    } catch (error) {
+      console.error("❌ WindTre RAG sync failed:", error);
+
+      // Update sync state to error
+      const { ragSyncState } = await import("../db/schema/brand-interface.js");
+      const { db } = await import("../db/index.js");
+      const { eq } = await import("drizzle-orm");
+
+      await db
+        .update(ragSyncState)
+        .set({
+          status: "error",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+          updatedAt: new Date()
+        })
+        .where(eq(ragSyncState.brandTenantId, user.brandTenantId));
+
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "WindTre RAG sync failed"
+      });
+    }
+  });
+
+  // RAG similarity search endpoint
+  app.get("/brand-api/windtre/search", async (req, res) => {
+    const user = (req as any).user;
+    const { query, limit = "5" } = req.query;
+
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ error: "Query parameter is required" });
+    }
+
+    try {
+      const { WindtreChunkingEmbeddingService } = await import("../services/windtre-chunking-embedding.service.js");
+      const { windtreOfferChunks } = await import("../db/schema/brand-interface.js");
+      const { db } = await import("../db/index.js");
+      const { eq, sql } = await import("drizzle-orm");
+
+      // Generate embedding for query
+      const embeddingService = new WindtreChunkingEmbeddingService();
+      const queryEmbedding = await (embeddingService as any).generateEmbedding(query);
+
+      // Perform cosine similarity search
+      const similarityThreshold = 0.7;
+      const maxResults = Math.min(parseInt(limit as string, 10), 20);
+
+      const results = await db.execute(sql`
+        SELECT 
+          id,
+          chunk_text,
+          metadata,
+          1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) AS similarity
+        FROM brand_interface.windtre_offer_chunks
+        WHERE brand_tenant_id = ${user.brandTenantId}
+          AND 1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) > ${similarityThreshold}
+        ORDER BY embedding <=> ${JSON.stringify(queryEmbedding)}::vector
+        LIMIT ${maxResults}
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          query,
+          results: results.rows.map((row: any) => ({
+            id: row.id,
+            text: row.chunk_text,
+            metadata: row.metadata,
+            similarity: parseFloat(row.similarity)
+          }))
+        },
+        message: `Found ${results.rows.length} similar results`
+      });
+
+    } catch (error) {
+      console.error("❌ RAG search failed:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "RAG search failed"
+      });
+    }
+  });
+
+  // Get RAG sync status
+  app.get("/brand-api/windtre/sync-status", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { ragSyncState } = await import("../db/schema/brand-interface.js");
+      const { db } = await import("../db/index.js");
+      const { eq } = await import("drizzle-orm");
+
+      const syncStatus = await db
+        .select()
+        .from(ragSyncState)
+        .where(eq(ragSyncState.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      if (syncStatus.length === 0) {
+        // Create initial sync state
+        const newStatus = await db
+          .insert(ragSyncState)
+          .values({
+            brandTenantId: user.brandTenantId,
+            status: "idle",
+            totalPagesScraped: 0,
+            totalChunksCreated: 0
+          })
+          .returning();
+
+        return res.json({
+          success: true,
+          data: newStatus[0]
+        });
+      }
+
+      res.json({
+        success: true,
+        data: syncStatus[0]
+      });
+
+    } catch (error) {
+      console.error("❌ Error fetching sync status:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch sync status"
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 

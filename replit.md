@@ -93,6 +93,36 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   Permission templates defined in `italian-role-templates.ts`, auto-applied via `apply-default-permissions.ts` script.
 - **Workflow Database Operations (PRODUCTION-READY MVP)**: [W3] Database Operation node with 4 secure operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema only. Visual query builder for non-technical users, RLS enforcement via `setTenantContext()`, prepared statements with proper parameter binding, table/column validation via `validateTableName/validateColumns/sanitizeIdentifier`. Preview functionality shows RLS-filtered sample data with tenant_id transparency. EXECUTE_QUERY permanently disabled for MVP (requires pg-query-parser for AST-based validation - see Known Issues section).
 
+# Production Features
+
+## AI Voice Agent RAG System - WindTre Offers (PRODUCTION-READY)
+**Status**: Fully implemented (2025-11-25)
+**Components**:
+- ✅ **pgvector Database Schema**: 3 tables in `brand_interface` schema
+  - `windtre_offers_raw`: HTML storage with URL checksum deduplication
+  - `windtre_offer_chunks`: Text chunks with embeddings (vector 1536 dimensions)
+  - `rag_sync_state`: Sync status tracking
+  - HNSW index for fast cosine similarity search
+- ✅ **Web Scraper**: Puppeteer-based scraper with robots.txt compliance, 2s rate limiting, SHA256 checksums
+- ✅ **Chunking & Embedding Service**: OpenAI text-embedding-3-small, 512-token chunks with 50-token overlap, batch processing
+- ✅ **Brand API Endpoints**:
+  - `POST /brand-api/windtre/sync` - Manual trigger scraping + embedding pipeline
+  - `GET /brand-api/windtre/search` - RAG similarity search (cosine distance, similarity threshold 0.7)
+  - `GET /brand-api/windtre/sync-status` - Sync state monitoring
+- ✅ **Voice Agent Integration**: Function calling tool `search_windtre_offers` con formatting per voice readability
+- ✅ **Voice Quality Fixes**: temperature 0.95, max_output_tokens 420, VAD optimized (700ms silence, 400ms prefix padding)
+
+**Usage Flow**:
+1. Call `POST /brand-api/windtre/sync` to scrape www.windtre.it and generate embeddings (one-time setup, then scheduled)
+2. Voice agent automatically calls `search_windtre_offers` when customer asks about offers/tariffs/prices
+3. RAG returns top-5 relevant chunks with real pricing/details from WindTre website
+
+**Files**: 
+- Services: `apps/backend/brand-api/src/services/windtre-*.service.ts`
+- Endpoints: `apps/backend/brand-api/src/core/routes.ts` (lines 4016-4211)
+- Voice integration: `apps/voice-gateway/src/function-tools.ts`
+- Schema: `apps/backend/brand-api/src/db/schema/brand-interface.ts` (lines 459-516)
+
 # Known Issues & Future Work
 
 ## Workflow Database Operations - Phase 1 MVP Complete ✅

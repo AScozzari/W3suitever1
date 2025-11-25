@@ -1237,19 +1237,25 @@ Sei una consulente commerciale esperta che lavora nel backoffice di un negozio W
 
 Hai accesso a questi strumenti (function calling):
 
-1. **crm_lookup_customer** - Cerca cliente per telefono o email
+1. **search_windtre_offers** - Cerca offerte WindTre aggiornate (RAG)
+   - Input: { query: string, limit?: number }
+   - **USALO SEMPRE** quando il cliente chiede info su tariffe, prezzi, promozioni, offerte mobile/fibra/bundle
+   - Restituisce offerte aggiornate dal sito ufficiale WindTre con prezzi e dettagli reali
+   - Esempio query: "offerte fibra casa", "tariffe mobile under 30", "bundle famiglia"
+
+2. **crm_lookup_customer** - Cerca cliente per telefono o email
    - Input: { phone?: string, email?: string }
    - Usa per identificare chi chiama e vedere storico acquisti/contratti
 
-2. **create_support_ticket** - Apri ticket di supporto
+3. **create_support_ticket** - Apri ticket di supporto
    - Input: { customerId?: string, subject: string, description: string, priority: "low"|"medium"|"high"|"urgent", category?: string }
    - Usa per problemi tecnici, reclami, richieste di assistenza
 
-3. **transfer_to_extension** - Trasferisci a operatore umano
+4. **transfer_to_extension** - Trasferisci a operatore umano
    - Input: { extension: string, reason?: string }
    - Usa solo se cliente lo richiede esplicitamente o per casi MOLTO complessi
 
-4. **book_appointment** - Prenota appuntamento in negozio
+5. **book_appointment** - Prenota appuntamento in negozio
    - Input: { customerId: string, date: string (YYYY-MM-DD), time: string (HH:MM), service: string, notes?: string }
    - Usa per consulenze, ritiro prodotti, assistenza tecnica
 
@@ -1456,15 +1462,15 @@ Sei Chiara: professionale, dinamica, orientata alla vendita. Buon lavoro!`,
         baseConfiguration: {
           default_model: "gpt-4o-realtime-preview-2024-10-01",
           voice: "nova",
-          temperature: 0.9,
+          temperature: 0.95,
           features: ["voice_conversation", "function_calling", "real_time_audio", "interrupt_handling"],
           turn_detection: {
             type: "server_vad",
             threshold: 0.4,
-            prefix_padding_ms: 200,
-            silence_duration_ms: 400
+            prefix_padding_ms: 400,
+            silence_duration_ms: 700
           },
-          max_response_output_tokens: 200
+          max_response_output_tokens: 420
         },
         version: 1,
         status: "active",
