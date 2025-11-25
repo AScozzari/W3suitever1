@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
 import { 
@@ -58,22 +58,39 @@ export default function RagKnowledgeSection({ agentId, agentName }: RagKnowledge
     setTimeout(() => setToast(null), 4000);
   };
 
+  // State to track if polling should be active
+  const [isPolling, setIsPolling] = useState(false);
+
+  const { data: sourcesData, isLoading: loadingSources, refetch: refetchSources } = useQuery({
+    queryKey: ['/brand-api/agents', agentId, 'rag', 'sources'],
+    queryFn: () => apiRequest(`/brand-api/agents/${agentId}/rag/sources`),
+    staleTime: isPolling ? 2000 : 30000,
+    refetchInterval: isPolling ? 3000 : false
+  });
+
+  // Check if there are active jobs (pending/processing) to enable polling
+  const sourcesArray = (sourcesData as any)?.data || [];
+  const hasActiveJobs = sourcesArray.some((s: any) => s.status === 'pending' || s.status === 'processing');
+  
+  // Update polling state when active jobs change
+  useEffect(() => {
+    if (hasActiveJobs !== isPolling) {
+      setIsPolling(hasActiveJobs);
+    }
+  }, [hasActiveJobs, isPolling]);
+
   const { data: statsData, isLoading: loadingStats } = useQuery({
     queryKey: ['/brand-api/agents', agentId, 'rag', 'stats'],
     queryFn: () => apiRequest(`/brand-api/agents/${agentId}/rag/stats`),
-    staleTime: 30000
-  });
-
-  const { data: sourcesData, isLoading: loadingSources } = useQuery({
-    queryKey: ['/brand-api/agents', agentId, 'rag', 'sources'],
-    queryFn: () => apiRequest(`/brand-api/agents/${agentId}/rag/sources`),
-    staleTime: 30000
+    staleTime: isPolling ? 2000 : 30000,
+    refetchInterval: isPolling ? 3000 : false
   });
 
   const { data: chunksData, isLoading: loadingChunks } = useQuery({
     queryKey: ['/brand-api/agents', agentId, 'rag', 'chunks'],
     queryFn: () => apiRequest(`/brand-api/agents/${agentId}/rag/chunks?limit=100`),
-    staleTime: 30000,
+    staleTime: isPolling ? 5000 : 30000,
+    refetchInterval: isPolling && activeTab === 'chunks' ? 5000 : false,
     enabled: activeTab === 'chunks'
   });
 
@@ -87,7 +104,8 @@ export default function RagKnowledgeSection({ agentId, agentName }: RagKnowledge
   const { data: jobsData } = useQuery({
     queryKey: ['/brand-api/agents', agentId, 'rag', 'jobs'],
     queryFn: () => apiRequest(`/brand-api/agents/${agentId}/rag/jobs`),
-    staleTime: 15000,
+    staleTime: isPolling ? 2000 : 15000,
+    refetchInterval: isPolling ? 3000 : false,
     enabled: activeTab === 'sources' || activeTab === 'analytics'
   });
 
@@ -725,21 +743,60 @@ export default function RagKnowledgeSection({ agentId, agentName }: RagKnowledge
                       <td style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 600, color: COLORS.primary.purple }}>
                         {source.chunksCount || 0}
                       </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 10px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          color: getStatusColor(source.status),
-                          background: `${getStatusColor(source.status)}15`,
-                          borderRadius: '12px'
-                        }}>
-                          {getStatusIcon(source.status)}
-                          {source.status}
-                        </span>
+                      <td style={{ padding: '12px', textAlign: 'center', minWidth: '140px' }}>
+                        {(source.status === 'pending' || source.status === 'processing') ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: COLORS.semantic.warning,
+                              background: `${COLORS.semantic.warning}15`,
+                              borderRadius: '12px'
+                            }}>
+                              <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                              {source.status === 'pending' ? 'In coda...' : 'Elaborazione...'}
+                            </span>
+                            <div style={{
+                              width: '100%',
+                              height: '4px',
+                              background: COLORS.neutral.lighter,
+                              borderRadius: '2px',
+                              overflow: 'hidden',
+                              position: 'relative'
+                            }}>
+                              <div style={{
+                                position: 'absolute',
+                                width: source.status === 'processing' ? '60%' : '30%',
+                                height: '100%',
+                                background: `linear-gradient(90deg, ${COLORS.primary.orange}, ${COLORS.primary.purple})`,
+                                borderRadius: '2px',
+                                animation: 'progressIndeterminate 2s ease-in-out infinite'
+                              }} />
+                            </div>
+                            <span style={{ fontSize: '10px', color: COLORS.neutral.medium }}>
+                              {source.status === 'pending' ? 'Attesa elaborazione' : 'Creazione embeddings'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: getStatusColor(source.status),
+                            background: `${getStatusColor(source.status)}15`,
+                            borderRadius: '12px'
+                          }}>
+                            {getStatusIcon(source.status)}
+                            {source.status === 'completed' ? 'Completato' : source.status === 'failed' ? 'Errore' : source.status}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '12px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
