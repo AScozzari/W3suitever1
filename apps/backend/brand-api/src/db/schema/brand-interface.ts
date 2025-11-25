@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, boolean, uuid, timestamp, smallint, date, integer, jsonb, pgSchema, pgEnum, vector, index } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, boolean, uuid, timestamp, smallint, date, integer, real, jsonb, pgSchema, pgEnum, vector, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -453,7 +453,111 @@ export const insertBrandDeploymentStatusSchema = createInsertSchema(brandDeploym
 
 export const updateBrandDeploymentStatusSchema = insertBrandDeploymentStatusSchema.partial();
 
-// ==================== RAG SYSTEM - WINDTRE OFFERS ====================
+// ==================== RAG SYSTEM - MULTI-AGENT KNOWLEDGE BASE ====================
+
+// RAG Agents - Configuration for each AI agent's knowledge base
+export const ragAgents = brandInterfaceSchema.table("rag_agents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  agentId: varchar("agent_id", { length: 255 }).notNull(), // e.g., "funnel-orchestrator-assistant", "customer-care-voice"
+  agentName: varchar("agent_name", { length: 255 }).notNull(),
+  embeddingModel: varchar("embedding_model", { length: 100 }).notNull().default("text-embedding-3-small"),
+  chunkSize: integer("chunk_size").notNull().default(512),
+  chunkOverlap: integer("chunk_overlap").notNull().default(50),
+  topK: integer("top_k").notNull().default(5), // Default number of chunks to retrieve
+  similarityThreshold: real("similarity_threshold").notNull().default(0.7),
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata").default({}), // { maxTokensPerContext, systemPromptTemplate, etc. }
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+}, (table) => [
+  index("rag_agents_brand_agent_idx").on(table.brandTenantId, table.agentId)
+]);
+
+// RAG Data Sources - Web URLs, uploaded documents, manual text
+export const ragDataSources = brandInterfaceSchema.table("rag_data_sources", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  ragAgentId: uuid("rag_agent_id").notNull().references(() => ragAgents.id, { onDelete: 'cascade' }),
+  sourceType: varchar("source_type", { length: 50 }).notNull(), // 'web_url', 'pdf_upload', 'doc_upload', 'manual_text'
+  sourceUrl: text("source_url"), // For web_url type
+  sourceChecksum: varchar("source_checksum", { length: 64 }), // SHA256 hash for deduplication
+  fileName: varchar("file_name", { length: 500 }), // For uploads
+  fileSize: integer("file_size"), // Bytes
+  rawContent: text("raw_content"), // HTML, PDF text, or manual text
+  metadata: jsonb("metadata").default({}), // { title, author, uploadedBy, etc. }
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, processing, completed, failed
+  errorMessage: text("error_message"),
+  chunksCount: integer("chunks_count").default(0),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+}, (table) => [
+  index("rag_sources_agent_idx").on(table.ragAgentId),
+  index("rag_sources_status_idx").on(table.status)
+]);
+
+// RAG Chunks - Chunked text with embeddings (generalized from windtre_offer_chunks)
+export const ragChunks = brandInterfaceSchema.table("rag_chunks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  ragAgentId: uuid("rag_agent_id").notNull().references(() => ragAgents.id, { onDelete: 'cascade' }),
+  dataSourceId: uuid("data_source_id").notNull().references(() => ragDataSources.id, { onDelete: 'cascade' }),
+  chunkIndex: integer("chunk_index").notNull(),
+  chunkText: text("chunk_text").notNull(),
+  embedding: vector("embedding", { dimensions: 1536 }), // OpenAI text-embedding-3-small
+  metadata: jsonb("metadata").default({}), // { page, section, keywords, etc. }
+  createdAt: timestamp("created_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+}, (table) => [
+  // HNSW index for fast cosine similarity search
+  index("rag_chunks_embedding_idx").using(
+    "hnsw",
+    table.embedding.op("vector_cosine_ops")
+  ),
+  index("rag_chunks_agent_idx").on(table.ragAgentId),
+  index("rag_chunks_source_idx").on(table.dataSourceId)
+]);
+
+// RAG Sync Jobs - Track ingestion/sync jobs with progress
+export const ragSyncJobs = brandInterfaceSchema.table("rag_sync_jobs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  ragAgentId: uuid("rag_agent_id").notNull().references(() => ragAgents.id, { onDelete: 'cascade' }),
+  dataSourceId: uuid("data_source_id").references(() => ragDataSources.id, { onDelete: 'set null' }),
+  jobType: varchar("job_type", { length: 50 }).notNull(), // 'full_sync', 'incremental', 'single_source'
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, running, completed, failed
+  progress: integer("progress").default(0), // 0-100 percentage
+  totalItems: integer("total_items").default(0),
+  processedItems: integer("processed_items").default(0),
+  chunksCreated: integer("chunks_created").default(0),
+  tokensUsed: integer("tokens_used").default(0), // For cost tracking
+  errorMessage: text("error_message"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+}, (table) => [
+  index("rag_jobs_agent_idx").on(table.ragAgentId),
+  index("rag_jobs_status_idx").on(table.status)
+]);
+
+// RAG Embeddings Usage - Cost tracking and analytics
+export const ragEmbeddingsUsage = brandInterfaceSchema.table("rag_embeddings_usage", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  ragAgentId: uuid("rag_agent_id").notNull().references(() => ragAgents.id, { onDelete: 'cascade' }),
+  syncJobId: uuid("sync_job_id").references(() => ragSyncJobs.id, { onDelete: 'set null' }),
+  embeddingModel: varchar("embedding_model", { length: 100 }).notNull(),
+  tokensUsed: integer("tokens_used").notNull(),
+  chunksProcessed: integer("chunks_processed").notNull(),
+  estimatedCost: real("estimated_cost").notNull(), // In cents (USD)
+  createdAt: timestamp("created_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+}, (table) => [
+  index("rag_usage_agent_idx").on(table.ragAgentId),
+  index("rag_usage_date_idx").on(table.createdAt)
+]);
+
+// ==================== LEGACY WINDTRE TABLES (DEPRECATED - TO BE MIGRATED) ====================
 
 // WindTre Offers Raw - Raw HTML from scraped pages
 export const windtreOffersRaw = brandInterfaceSchema.table("windtre_offers_raw", {
@@ -505,6 +609,18 @@ export const ragSyncState = brandInterfaceSchema.table("rag_sync_state", {
 
 // ==================== RAG TYPES ====================
 
+export type RagAgent = typeof ragAgents.$inferSelect;
+export type NewRagAgent = typeof ragAgents.$inferInsert;
+export type RagDataSource = typeof ragDataSources.$inferSelect;
+export type NewRagDataSource = typeof ragDataSources.$inferInsert;
+export type RagChunk = typeof ragChunks.$inferSelect;
+export type NewRagChunk = typeof ragChunks.$inferInsert;
+export type RagSyncJob = typeof ragSyncJobs.$inferSelect;
+export type NewRagSyncJob = typeof ragSyncJobs.$inferInsert;
+export type RagEmbeddingsUsage = typeof ragEmbeddingsUsage.$inferSelect;
+export type NewRagEmbeddingsUsage = typeof ragEmbeddingsUsage.$inferInsert;
+
+// Legacy WindTre types
 export type WindtreOfferRaw = typeof windtreOffersRaw.$inferSelect;
 export type NewWindtreOfferRaw = typeof windtreOffersRaw.$inferInsert;
 export type WindtreOfferChunk = typeof windtreOfferChunks.$inferSelect;
