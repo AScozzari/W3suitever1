@@ -560,14 +560,25 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
+                  console.log('🔵 [REFRESH] Pulsante Refresh cliccato!');
+                  console.log('🔵 [REFRESH] trunksLoading:', trunksLoading);
+                  console.log('🔵 [REFRESH] trunks.length prima del refetch:', trunks.length);
+                  console.log('🔵 [REFRESH] refetchTrunks function:', typeof refetchTrunks);
+                  
                   try {
-                    await refetchTrunks();
+                    console.log('🔵 [REFRESH] Chiamata a refetchTrunks()...');
+                    const result = await refetchTrunks();
+                    console.log('🔵 [REFRESH] Risultato refetchTrunks:', result);
+                    console.log('🔵 [REFRESH] trunks.length dopo il refetch:', trunks.length);
+                    
                     toast({
                       title: "✅ Trunks aggiornati",
                       description: `Dati ricaricati dal database. ${trunks.length} trunk${trunks.length !== 1 ? 's' : ''} sincronizzati.`,
                     });
+                    console.log('🔵 [REFRESH] Toast mostrato con successo');
                   } catch (error) {
-                    console.error('Error refetching trunks:', error);
+                    console.error('🔴 [REFRESH] Errore durante refetch:', error);
+                    console.error('🔴 [REFRESH] Stack trace:', error instanceof Error ? error.stack : 'N/A');
                     toast({
                       title: "❌ Errore",
                       description: "Impossibile aggiornare i trunks. Riprova.",
