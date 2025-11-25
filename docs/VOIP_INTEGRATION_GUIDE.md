@@ -392,6 +392,63 @@ Dettagli trunk singolo.
 }
 ```
 
+#### `POST /api/voip/trunks/refresh`
+**🔄 Bidirectional Sync** - Sincronizza trunk da edgvoip PBX a W3 Suite database.
+
+**Descrizione**: Questo endpoint esegue un pull attivo dei trunk dall'API edgvoip e aggiorna il database W3 Suite con i dati più recenti. Utile per forzare una sincronizzazione manuale dei trunk.
+
+**Authentication**: Richiede OAuth Bearer token + HMAC signature (configurati via env vars)
+
+**Env Vars Required**:
+- `EDGVOIP_API_URL`
+- `EDGVOIP_ACCESS_TOKEN`
+- `EDGVOIP_WEBHOOK_SECRET`
+
+**Behavior**:
+- Fetch trunk data da `GET /api/v1/tenants/{tenantId}/trunks` su edgvoip
+- Upsert trunk nel database W3 Suite (insert o update basato su `edgvoipTrunkId`)
+- Aggiorna campo `last_sync_at` per tracking
+- Rispetta RLS tenant isolation
+
+**Response Success (200)**:
+```json
+{
+  "success": true,
+  "synced": 5,
+  "failed": 0,
+  "total": 5,
+  "message": "Successfully synced 5 trunks from edgvoip"
+}
+```
+
+**Response Partial Failure (500)**:
+```json
+{
+  "error": "Trunk refresh failed",
+  "details": [
+    {
+      "trunkId": "b773a426-c646-47e4-ba13-1320dc8724cb",
+      "error": "Database constraint violation: duplicate key"
+    }
+  ],
+  "synced": 4,
+  "failed": 1,
+  "total": 5
+}
+```
+
+**Response Service Unavailable (503)**:
+```json
+{
+  "error": "edgvoip service not available",
+  "details": "Missing required environment variables: EDGVOIP_ACCESS_TOKEN"
+}
+```
+
+**RBAC**: Richiede permesso `voip:trunks:write`
+
+**Activity Logging**: Log automatico con `voip_trunk_refresh` action
+
 ---
 
 ### Extensions API (Full CRUD)
@@ -516,6 +573,65 @@ Recupera credenziali SIP (richiede permesso voip.extensions.view_credentials).
   "wsPort": 7443
 }
 ```
+
+#### `POST /api/voip/extensions/refresh-all`
+**🔄 Bidirectional Sync** - Sincronizza tutte le extension da edgvoip PBX a W3 Suite database.
+
+**Descrizione**: Questo endpoint esegue un pull attivo di tutte le extension dall'API edgvoip per ogni dominio SIP associato ai trunk del tenant e aggiorna il database W3 Suite con i dati più recenti. Utile per sincronizzare manualmente le extension o recuperare modifiche fatte direttamente su edgvoip PBX.
+
+**Authentication**: Richiede OAuth Bearer token + HMAC signature (configurati via env vars)
+
+**Env Vars Required**:
+- `EDGVOIP_API_URL`
+- `EDGVOIP_ACCESS_TOKEN`
+- `EDGVOIP_WEBHOOK_SECRET`
+
+**Behavior**:
+- Per ogni trunk del tenant, estrae il `domainId` dal campo `edgvoipTrunkId`
+- Fetch extension data da `GET /api/v1/domains/{domainId}/extensions` su edgvoip
+- Upsert extension nel database W3 Suite (insert o update basato su `edgvoipExtensionId`)
+- Aggiorna campo `last_sync_at` per tracking
+- Rispetta RLS tenant isolation
+- Sincronizza extension solo per trunk attivi del tenant
+
+**Response Success (200)**:
+```json
+{
+  "success": true,
+  "synced": 12,
+  "failed": 0,
+  "total": 12,
+  "message": "Successfully synced 12 extensions from edgvoip"
+}
+```
+
+**Response Partial Failure (500)**:
+```json
+{
+  "error": "Extension refresh failed",
+  "details": [
+    {
+      "extensionId": "ext-123-456",
+      "error": "Invalid extension format: missing required field sipUsername"
+    }
+  ],
+  "synced": 11,
+  "failed": 1,
+  "total": 12
+}
+```
+
+**Response Service Unavailable (503)**:
+```json
+{
+  "error": "edgvoip service not available",
+  "details": "Missing required environment variables: EDGVOIP_ACCESS_TOKEN"
+}
+```
+
+**RBAC**: Richiede permesso `voip:extensions:write`
+
+**Activity Logging**: Log automatico con `voip_extension_refresh` action
 
 ---
 

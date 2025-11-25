@@ -70,7 +70,15 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Campaign Management**: Dual-mode campaign creation (wizard/advanced), GDPR Consent Enforcement.
 - **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning), Deploy Center Bidirectional Branch Linking (linking tenants/stores to branches).
 - **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance, JSON files with Git versioning, tasks system).
-- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, call actions integrated with CRM, CDR analytics, policy-based routing, edgvoip PBX Integration. **📚 Documentazione completa**: `docs/VOIP_INTEGRATION_GUIDE.md` (API endpoints, database schema, AI Voice Agent setup, WebRTC client, troubleshooting).
+- **VoIP Telephony (PRODUCTION-READY)**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, call actions integrated with CRM, CDR analytics, policy-based routing, edgvoip PBX Integration. **📚 Documentazione completa**: `docs/VOIP_INTEGRATION_GUIDE.md` (API endpoints, database schema, AI Voice Agent setup, WebRTC client, troubleshooting). **Bidirectional Sync System**:
+  - **Trunk Sync**: `POST /api/voip/trunks/refresh` - Pull attivo trunk da edgvoip (read-only in W3)
+  - **Extension Sync**: `POST /api/voip/extensions/refresh-all` - Pull attivo extension da edgvoip per tutti i domini
+  - **Dual Authentication**: OAuth Bearer token (`Authorization` header) + HMAC-SHA256 signature (`X-W3-Signature` header)
+  - **Environment Variables**: `EDGVOIP_API_URL`, `EDGVOIP_ACCESS_TOKEN`, `EDGVOIP_WEBHOOK_SECRET`
+  - **Error Handling**: Detailed error messages con missing env vars detection, partial failure tracking (synced/failed counts), 503 per servizio non configurato
+  - **RBAC**: Endpoint protetti con permessi `voip:trunks:write` e `voip:extensions:write`
+  - **Activity Logging**: Log automatico per audit trail (`voip_trunk_refresh`, `voip_extension_refresh`)
+  - **Services**: `edgvoip-api-client.service.ts`, `voip-trunk-sync.service.ts`, `voip-extension-sync.service.ts`
 - **RBAC System (PRODUCTION-READY)**: 10 Italian role templates with granular permission system (215 total permissions). Default permission assignments:
   - **Amministratore** (215 perms): Full access to all platform features
   - **Store Manager** (59 perms): Complete store operations (CRM, POS, Inventory, Analytics)
