@@ -567,11 +567,13 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  await queryClient.invalidateQueries({ queryKey: ['/api/voip/trunks'] });
-                  toast({
-                    title: "✅ Trunks aggiornati",
-                    description: "Dati ricaricati dal database. I trunks vengono sincronizzati automaticamente da edgvoip via webhook.",
-                  });
+                  const result = await refetchTrunks();
+                  if (result.isSuccess) {
+                    toast({
+                      title: "✅ Trunks aggiornati",
+                      description: "Dati ricaricati dal database. I trunks vengono sincronizzati automaticamente da edgvoip via webhook.",
+                    });
+                  }
                 }}
                 disabled={trunksLoading}
                 data-testid="button-refresh-trunks"
