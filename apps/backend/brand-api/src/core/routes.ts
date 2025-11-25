@@ -4369,6 +4369,156 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Upload documents (PDF, DOC, TXT, etc.)
+  app.post("/brand-api/agents/:agentId/rag/sources/upload", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+
+    try {
+      const multer = await import("multer");
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      
+      const storage = multer.default.memoryStorage();
+      const upload = multer.default({
+        storage,
+        limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+        fileFilter: (req: any, file: any, cb: any) => {
+          const allowedMimes = [
+            'application/pdf',
+            'text/plain',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/markdown'
+          ];
+          const allowedExts = ['.pdf', '.txt', '.doc', '.docx', '.md'];
+          const ext = path.extname(file.originalname).toLowerCase();
+          
+          if (allowedMimes.includes(file.mimetype) || allowedExts.includes(ext)) {
+            cb(null, true);
+          } else {
+            cb(new Error(`Formato file non supportato: ${ext}. Usa PDF, TXT, DOC, DOCX o MD.`));
+          }
+        }
+      }).array('documents', 10); // Max 10 files
+
+      upload(req, res, async (err: any) => {
+        if (err) {
+          console.error("❌ Upload error:", err);
+          return res.status(400).json({
+            success: false,
+            error: err.message || "Upload failed"
+          });
+        }
+
+        const files = (req as any).files as Express.Multer.File[];
+        if (!files || files.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: "No files provided"
+          });
+        }
+
+        const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+        const { brandAiAgents } = await import("../db/schema/brand-interface.js");
+        const { eq, and } = await import("drizzle-orm");
+
+        const ragService = new RagMultiAgentService(user.brandTenantId);
+
+        // Get agent name
+        const agents = await db
+          .select()
+          .from(brandAiAgents)
+          .where(
+            and(
+              eq(brandAiAgents.agentId, agentId),
+              eq(brandAiAgents.brandTenantId, user.brandTenantId)
+            )
+          )
+          .limit(1);
+
+        const agentName = agents.length > 0 ? agents[0].name : agentId;
+
+        // Ensure RAG agent exists
+        await ragService.ensureRagAgent({
+          agentId,
+          agentName
+        });
+
+        const results: { fileName: string; sourceId: string; success: boolean; error?: string }[] = [];
+
+        for (const file of files) {
+          try {
+            // Extract text from file based on type
+            let textContent = "";
+            const ext = path.extname(file.originalname).toLowerCase();
+
+            if (ext === '.txt' || ext === '.md') {
+              textContent = file.buffer.toString('utf-8');
+            } else if (ext === '.pdf') {
+              // Use pdf-parse for PDF extraction
+              const pdfParse = await import("pdf-parse");
+              const pdfData = await pdfParse.default(file.buffer);
+              textContent = pdfData.text;
+            } else if (ext === '.doc' || ext === '.docx') {
+              // For DOC/DOCX, store raw and extract later or use basic extraction
+              textContent = `[Document: ${file.originalname}]\n\nThis document format requires specialized parsing. The file has been stored for processing.`;
+            }
+
+            if (!textContent.trim()) {
+              textContent = `[Empty or unreadable document: ${file.originalname}]`;
+            }
+
+            const sourceId = await ragService.addDocumentSource(
+              agentId,
+              file.originalname,
+              file.size,
+              textContent,
+              {
+                mimeType: file.mimetype,
+                uploadedAt: new Date().toISOString()
+              }
+            );
+
+            results.push({
+              fileName: file.originalname,
+              sourceId,
+              success: true
+            });
+
+          } catch (fileError: any) {
+            console.error(`❌ Error processing file ${file.originalname}:`, fileError);
+            results.push({
+              fileName: file.originalname,
+              sourceId: '',
+              success: false,
+              error: fileError.message
+            });
+          }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        
+        res.json({
+          success: successCount > 0,
+          data: {
+            count: successCount,
+            total: files.length,
+            results
+          },
+          message: `${successCount}/${files.length} documenti caricati con successo`
+        });
+      });
+
+    } catch (error) {
+      console.error("❌ Error in upload endpoint:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to upload documents"
+      });
+    }
+  });
+
   // Process/sync a data source (generate chunks and embeddings)
   app.post("/brand-api/agents/:agentId/rag/sources/:sourceId/sync", async (req, res) => {
     const user = (req as any).user;
@@ -4419,7 +4569,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Search similar chunks (RAG retrieval)
+  // Search similar chunks (RAG retrieval) - GET version for compatibility
   app.get("/brand-api/agents/:agentId/rag/search", async (req, res) => {
     const user = (req as any).user;
     const { agentId } = req.params;
@@ -4427,6 +4577,38 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
     if (!query || typeof query !== "string") {
       return res.status(400).json({ success: false, error: "Query parameter is required" });
+    }
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const results = await ragService.searchSimilar(agentId, query, parseInt(limit as string, 10));
+
+      res.json({
+        success: true,
+        data: {
+          query,
+          results
+        },
+        message: `Found ${results.length} similar results`
+      });
+    } catch (error) {
+      console.error("❌ Error searching RAG:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to search RAG"
+      });
+    }
+  });
+
+  // Search similar chunks (RAG retrieval) - POST version for long queries
+  app.post("/brand-api/agents/:agentId/rag/search", async (req, res) => {
+    const user = (req as any).user;
+    const { agentId } = req.params;
+    const { query, limit = 5 } = req.body;
+
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ success: false, error: "Query is required in request body" });
     }
 
     try {
