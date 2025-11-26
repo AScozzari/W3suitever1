@@ -244,10 +244,8 @@ export default function RagKnowledgeSection({ agentId, agentName }: RagKnowledge
     setIsSearching(true);
     setSearchError(null);
     try {
-      const response = await apiRequest(`/brand-api/agents/${agentId}/rag/search`, {
-        method: 'POST',
-        body: JSON.stringify({ query: playgroundQuery, limit: 5 })
-      });
+      const queryParams = new URLSearchParams({ query: playgroundQuery, limit: '5' });
+      const response = await apiRequest(`/brand-api/agents/${agentId}/rag/search?${queryParams.toString()}`);
       setSearchResults(response?.data?.results || []);
     } catch (error: any) {
       console.error('Search error:', error);
