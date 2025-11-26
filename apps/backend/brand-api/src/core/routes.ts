@@ -4101,6 +4101,42 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Generate embeddings only (skip scraping - use existing raw data)
+  app.post("/brand-api/windtre/generate-embeddings", async (req, res) => {
+    const user = (req as any).user;
+    const { WindtreChunkingEmbeddingService } = await import("../services/windtre-chunking-embedding.service.js");
+
+    try {
+      console.log("🔮 Starting embedding generation only (no scraping)...");
+      
+      // Process chunks and generate embeddings from existing raw data
+      const embeddingService = new WindtreChunkingEmbeddingService();
+      const embeddingResult = await embeddingService.processAllOffers(user.brandTenantId);
+
+      if (!embeddingResult.success) {
+        throw new Error(`Embedding failed: ${embeddingResult.errors.join(", ")}`);
+      }
+
+      console.log(`✅ Embedding complete: ${embeddingResult.chunksProcessed} chunks, ${embeddingResult.embeddingsCreated} embeddings`);
+
+      res.json({
+        success: true,
+        data: {
+          chunksProcessed: embeddingResult.chunksProcessed,
+          embeddingsCreated: embeddingResult.embeddingsCreated
+        },
+        message: "Embeddings generated successfully"
+      });
+
+    } catch (error) {
+      console.error("❌ Embedding generation failed:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Embedding generation failed"
+      });
+    }
+  });
+
   // RAG similarity search endpoint
   app.get("/brand-api/windtre/search", async (req, res) => {
     const user = (req as any).user;

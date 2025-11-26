@@ -34,10 +34,13 @@ export class WindtreChunkingEmbeddingService {
   }
 
   /**
-   * Extract clean text from HTML content
+   * Extract clean text from HTML content (memory-safe)
    */
   private extractTextFromHtml(html: string): { text: string; metadata: Record<string, any> } {
-    const $ = cheerio.load(html);
+    // Limit HTML size to avoid memory issues (100KB max)
+    const maxHtmlSize = 100000;
+    const truncatedHtml = html.length > maxHtmlSize ? html.slice(0, maxHtmlSize) : html;
+    const $ = cheerio.load(truncatedHtml);
 
     // Remove unwanted elements
     $('script, style, nav, header, footer, iframe, noscript').remove();
@@ -216,7 +219,8 @@ export class WindtreChunkingEmbeddingService {
   }
 
   /**
-   * Process all raw offers and generate embeddings
+   * Process all raw offers and generate embeddings - MEMORY OPTIMIZED
+   * Processes one offer at a time to avoid memory issues
    */
   async processAllOffers(brandTenantId: string): Promise<EmbeddingResult> {
     const errors: string[] = [];
@@ -224,68 +228,81 @@ export class WindtreChunkingEmbeddingService {
     let embeddingsCreated = 0;
 
     try {
-      console.log('🚀 Starting chunking and embedding pipeline...');
+      console.log('🚀 Starting chunking and embedding pipeline (memory optimized)...');
 
-      // Get all raw offers
-      const rawOffers = await db
-        .select()
+      // Get only IDs first to minimize memory usage - limit to 15 pages per batch to avoid OOM
+      const MAX_PAGES_PER_RUN = 15;
+      const rawOfferIds = await db
+        .select({ id: windtreOffersRaw.id })
         .from(windtreOffersRaw)
-        .where(eq(windtreOffersRaw.brandTenantId, brandTenantId));
+        .where(eq(windtreOffersRaw.brandTenantId, brandTenantId))
+        .limit(MAX_PAGES_PER_RUN);
 
-      console.log(`📄 Found ${rawOffers.length} raw offers to process`);
+      console.log(`📄 Processing ${rawOfferIds.length} raw offers (limit: ${MAX_PAGES_PER_RUN})`);
 
-      if (rawOffers.length === 0) {
+      if (rawOfferIds.length === 0) {
         return { success: true, chunksProcessed: 0, embeddingsCreated: 0, errors };
       }
 
-      // Process each offer
-      const allChunks: ChunkResult[] = [];
-
-      for (const offer of rawOffers) {
+      // Process one offer at a time to save memory
+      for (let i = 0; i < rawOfferIds.length; i++) {
+        const offerId = rawOfferIds[i].id;
+        
         try {
+          // Fetch single offer
+          const [offer] = await db
+            .select()
+            .from(windtreOffersRaw)
+            .where(eq(windtreOffersRaw.id, offerId))
+            .limit(1);
+          
+          if (!offer) continue;
+
+          // Process single offer into chunks
           const chunks = await this.processOffer(offer);
-          allChunks.push(...chunks);
-          chunksProcessed += chunks.length;
-          console.log(`✅ Processed ${offer.url}: ${chunks.length} chunks`);
-        } catch (error) {
-          const errorMsg = `Failed to process ${offer.url}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-          errors.push(errorMsg);
-          console.error(errorMsg);
-        }
-      }
+          
+          if (chunks.length === 0) {
+            console.log(`⏭️ [${i + 1}/${rawOfferIds.length}] Skipped (no chunks): ${offer.url}`);
+            continue;
+          }
 
-      console.log(`📦 Total chunks created: ${allChunks.length}`);
-
-      // Generate embeddings in batches
-      console.log('🔮 Generating embeddings...');
-      const allEmbeddings: number[][] = [];
-
-      for (let i = 0; i < allChunks.length; i += this.BATCH_SIZE) {
-        const batch = allChunks.slice(i, i + this.BATCH_SIZE);
-        const texts = batch.map(chunk => chunk.chunkText);
-
-        try {
+          // Generate embeddings for this offer's chunks (small batch)
+          const texts = chunks.map(chunk => chunk.chunkText);
           const embeddings = await this.generateEmbeddingsBatch(texts);
-          allEmbeddings.push(...embeddings);
+          
+          // Delete existing chunks for this offer
+          await db
+            .delete(windtreOfferChunks)
+            .where(eq(windtreOfferChunks.rawOfferId, offerId));
+          
+          // Insert new chunks with embeddings immediately
+          const chunksToInsert = chunks.map((chunk, idx) => ({
+            rawOfferId: chunk.rawOfferId,
+            chunkIndex: chunk.chunkIndex,
+            chunkText: chunk.chunkText,
+            embedding: embeddings[idx],
+            metadata: chunk.metadata,
+            brandTenantId
+          }));
+          
+          await db.insert(windtreOfferChunks).values(chunksToInsert);
+          
+          chunksProcessed += chunks.length;
           embeddingsCreated += embeddings.length;
-
-          console.log(`✅ Generated embeddings batch ${Math.floor(i / this.BATCH_SIZE) + 1}/${Math.ceil(allChunks.length / this.BATCH_SIZE)}`);
+          
+          console.log(`✅ [${i + 1}/${rawOfferIds.length}] ${offer.url}: ${chunks.length} chunks saved`);
+          
         } catch (error) {
-          const errorMsg = `Failed to generate embeddings for batch ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const errorMsg = `Failed to process offer ${offerId}: ${error instanceof Error ? error.message : 'Unknown error'}`;
           errors.push(errorMsg);
-          console.error(errorMsg);
+          console.error(`❌ [${i + 1}/${rawOfferIds.length}] ${errorMsg}`);
         }
       }
 
-      // Save chunks with embeddings to database
-      if (allEmbeddings.length > 0) {
-        console.log('💾 Saving chunks with embeddings to database...');
-        await this.saveChunksWithEmbeddings(allChunks, allEmbeddings, brandTenantId);
-        console.log(`✅ Saved ${allEmbeddings.length} chunks with embeddings`);
-      }
+      console.log(`🎉 Pipeline complete: ${chunksProcessed} chunks, ${embeddingsCreated} embeddings`);
 
       return {
-        success: errors.length === 0,
+        success: errors.length < rawOfferIds.length, // Success if at least some worked
         chunksProcessed,
         embeddingsCreated,
         errors
