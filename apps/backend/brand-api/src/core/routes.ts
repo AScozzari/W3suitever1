@@ -4421,24 +4421,11 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
     try {
       const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
-      const { brandAiAgents } = await import("../db/schema/brand-interface.js");
-      const { eq, and } = await import("drizzle-orm");
-
+      
       const ragService = new RagMultiAgentService(user.brandTenantId);
 
-      // Get agent name
-      const agents = await db
-        .select()
-        .from(brandAiAgents)
-        .where(
-          and(
-            eq(brandAiAgents.agentId, agentId),
-            eq(brandAiAgents.brandTenantId, user.brandTenantId)
-          )
-        )
-        .limit(1);
-
-      const agentName = agents.length > 0 ? agents[0].name : agentId;
+      // Use agentId as name (simpler approach that avoids DB lookup issues)
+      const agentName = agentId;
 
       // Ensure RAG agent exists
       await ragService.ensureRagAgent({
