@@ -315,20 +315,25 @@ export class RagMultiAgentService {
     }
 
     const queryEmbedding = await this.generateEmbedding(query, ragAgent.embeddingModel);
+    
+    // Format embedding as PostgreSQL array literal for pgvector - use sql.raw for proper casting
+    const embeddingStr = `'[${queryEmbedding.join(',')}]'::vector`;
 
     const results = await db.execute(sql`
       SELECT 
         id,
         chunk_text,
         metadata,
-        1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) AS similarity
+        1 - (embedding <=> ${sql.raw(embeddingStr)}) AS similarity
       FROM brand_interface.rag_chunks
       WHERE rag_agent_id = ${ragAgent.id}
         AND brand_tenant_id = ${this.brandTenantId}
-        AND 1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) > ${ragAgent.similarityThreshold}
-      ORDER BY embedding <=> ${JSON.stringify(queryEmbedding)}::vector
+        AND 1 - (embedding <=> ${sql.raw(embeddingStr)}) > ${ragAgent.similarityThreshold}
+      ORDER BY embedding <=> ${sql.raw(embeddingStr)}
       LIMIT ${Math.min(limit, 20)}
     `);
+
+    console.log(`📊 [RAG-SEARCH] Found ${results.rows.length} results for "${query}" (threshold: ${ragAgent.similarityThreshold})`);
 
     return results.rows.map((row: any) => ({
       text: row.chunk_text,

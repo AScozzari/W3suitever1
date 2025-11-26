@@ -4831,7 +4831,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
   // Search similar chunks (RAG retrieval) - GET version for compatibility
   app.get("/brand-api/agents/:agentId/rag/search", async (req, res) => {
-    const user = (req as any).user;
+    const brandContext = (req as any).brandContext;
     const { agentId } = req.params;
     const { query, limit = "5" } = req.query;
 
@@ -4841,7 +4841,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
     try {
       const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
-      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const ragService = new RagMultiAgentService(brandContext.brandTenantId);
       const results = await ragService.searchSimilar(agentId, query, parseInt(limit as string, 10));
 
       res.json({
@@ -4863,7 +4863,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
   // Search similar chunks (RAG retrieval) - POST version for long queries
   app.post("/brand-api/agents/:agentId/rag/search", async (req, res) => {
-    const user = (req as any).user;
+    const brandContext = (req as any).brandContext;
     const { agentId } = req.params;
     const { query, limit = 5 } = req.body;
 
@@ -4873,7 +4873,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
     try {
       const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
-      const ragService = new RagMultiAgentService(user.brandTenantId);
+      const ragService = new RagMultiAgentService(brandContext.brandTenantId);
       const results = await ragService.searchSimilar(agentId, query, parseInt(limit as string, 10));
 
       res.json({
