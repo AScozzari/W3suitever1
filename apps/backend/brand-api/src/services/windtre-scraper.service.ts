@@ -25,7 +25,7 @@ export class WindtreScraperService {
   constructor(brandTenantId: string) {
     this.config = {
       baseUrl: 'https://www.windtre.it',
-      maxPagesPerRun: 50, // Limit pages per run to avoid long execution
+      maxPagesPerRun: 10, // Limit to 10 pages to avoid memory issues
       delayBetweenPages: 2000, // 2 seconds between requests (respectful rate limiting)
       userAgent: 'W3Suite-Scraper/1.0 (+https://w3suite.com/bot)',
       brandTenantId
@@ -127,9 +127,11 @@ export class WindtreScraperService {
       // Navigate to page
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
-      // Get page title and HTML content
+      // Get page title and HTML content (limit to 50KB to avoid memory issues)
       const pageTitle = await page.title();
-      const htmlContent = await page.content();
+      const fullHtml = await page.content();
+      const MAX_HTML_SIZE = 50000; // 50KB max per page
+      const htmlContent = fullHtml.length > MAX_HTML_SIZE ? fullHtml.slice(0, MAX_HTML_SIZE) : fullHtml;
 
       // Calculate checksum
       const urlChecksum = this.calculateChecksum(url);

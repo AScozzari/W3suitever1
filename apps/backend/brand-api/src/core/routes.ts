@@ -4137,6 +4137,58 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Regenerate embeddings for existing chunks (replaces random embeddings with real OpenAI ones)
+  app.post("/brand-api/windtre/regenerate-embeddings", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { WindtreChunkingEmbeddingService } = await import("../services/windtre-chunking-embedding.service.js");
+      const { windtreOfferChunks } = await import("../db/schema/brand-interface.js");
+      const { db } = await import("../db/index.js");
+      const { eq } = await import("drizzle-orm");
+
+      console.log("🔄 Regenerating embeddings for existing chunks...");
+
+      // Get all chunks
+      const chunks = await db
+        .select({ id: windtreOfferChunks.id, chunkText: windtreOfferChunks.chunkText })
+        .from(windtreOfferChunks)
+        .where(eq(windtreOfferChunks.brandTenantId, user.brandTenantId));
+
+      console.log(`📄 Found ${chunks.length} chunks to process`);
+
+      const embeddingService = new WindtreChunkingEmbeddingService();
+      let processed = 0;
+
+      for (const chunk of chunks) {
+        const embedding = await (embeddingService as any).generateEmbedding(chunk.chunkText);
+        
+        await db
+          .update(windtreOfferChunks)
+          .set({ embedding })
+          .where(eq(windtreOfferChunks.id, chunk.id));
+        
+        processed++;
+        console.log(`✅ [${processed}/${chunks.length}] Embedding regenerated`);
+      }
+
+      console.log(`✅ Regeneration complete: ${processed} embeddings updated`);
+
+      res.json({
+        success: true,
+        data: { processed },
+        message: `Regenerated ${processed} embeddings`
+      });
+
+    } catch (error) {
+      console.error("❌ Embedding regeneration failed:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Embedding regeneration failed"
+      });
+    }
+  });
+
   // RAG similarity search endpoint
   app.get("/brand-api/windtre/search", async (req, res) => {
     const user = (req as any).user;
@@ -4156,10 +4208,11 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const embeddingService = new WindtreChunkingEmbeddingService();
       const queryEmbedding = await (embeddingService as any).generateEmbedding(query);
 
-      // Perform cosine similarity search
-      const similarityThreshold = 0.7;
+      // Perform cosine similarity search (cross-tenant for WindTre offers)
+      const similarityThreshold = 0.5; // Lower threshold for better recall
       const maxResults = Math.min(parseInt(limit as string, 10), 20);
 
+      // WindTre offers are shared across all tenants
       const results = await db.execute(sql`
         SELECT 
           id,
@@ -4167,8 +4220,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
           metadata,
           1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) AS similarity
         FROM brand_interface.windtre_offer_chunks
-        WHERE brand_tenant_id = ${user.brandTenantId}
-          AND 1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) > ${similarityThreshold}
+        WHERE 1 - (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) > ${similarityThreshold}
         ORDER BY embedding <=> ${JSON.stringify(queryEmbedding)}::vector
         LIMIT ${maxResults}
       `);

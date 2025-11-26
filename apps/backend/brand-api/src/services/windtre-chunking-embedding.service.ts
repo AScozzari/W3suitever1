@@ -37,8 +37,8 @@ export class WindtreChunkingEmbeddingService {
    * Extract clean text from HTML content (memory-safe)
    */
   private extractTextFromHtml(html: string): { text: string; metadata: Record<string, any> } {
-    // Limit HTML size to avoid memory issues (100KB max)
-    const maxHtmlSize = 100000;
+    // Limit HTML size to avoid memory issues (50KB max - aligned with scraper limit)
+    const maxHtmlSize = 50000;
     const truncatedHtml = html.length > maxHtmlSize ? html.slice(0, maxHtmlSize) : html;
     const $ = cheerio.load(truncatedHtml);
 

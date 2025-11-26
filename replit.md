@@ -96,13 +96,14 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 # Production Features
 
 ## AI Voice Agent RAG System - WindTre Offers (PRODUCTION-READY)
-**Status**: Fully implemented (2025-11-25)
+**Status**: Fully operational (2025-11-26)
 **Components**:
 - ✅ **pgvector Database Schema**: 3 tables in `brand_interface` schema
   - `windtre_offers_raw`: HTML storage with URL checksum deduplication
-  - `windtre_offer_chunks`: Text chunks with embeddings (vector 1536 dimensions)
+  - `windtre_offer_chunks`: Text chunks with embeddings (vector 1536 dimensions, OpenAI text-embedding-3-small)
   - `rag_sync_state`: Sync status tracking
-  - HNSW index for fast cosine similarity search
+  - HNSW index for fast cosine similarity search (similarity threshold: 0.5)
+- ✅ **8 Real WindTre Offers**: Super Fibra, Di Più Unlimited 5G, Young 5G, Call Your Country, Super Internet Casa 5G, Business Partita IVA, Family Plan, Smart Pack Tablet
 - ✅ **Web Scraper**: Puppeteer-based scraper with robots.txt compliance, 2s rate limiting, SHA256 checksums
 - ✅ **Chunking & Embedding Service**: OpenAI text-embedding-3-small, 512-token chunks with 50-token overlap, batch processing
 - ✅ **Brand API Endpoints**:
