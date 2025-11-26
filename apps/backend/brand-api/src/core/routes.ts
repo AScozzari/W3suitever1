@@ -4297,6 +4297,33 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
   // ==================== RAG MULTI-AGENT SYSTEM ====================
 
+  // Get agent details (configuration, stats, RAG health)
+  app.get("/brand-api/agents/:agentId/details", async (req, res) => {
+    const brandContext = (req as any).brandContext;
+    const { agentId } = req.params;
+
+    try {
+      const { RagMultiAgentService } = await import("../services/rag-multi-agent.service.js");
+      const ragService = new RagMultiAgentService(brandContext.brandTenantId);
+      const details = await ragService.getAgentDetails(agentId);
+
+      if (!details) {
+        return res.status(404).json({
+          success: false,
+          error: `Agent not found: ${agentId}`
+        });
+      }
+
+      res.json({ success: true, data: details });
+    } catch (error) {
+      console.error("❌ Error fetching agent details:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch agent details"
+      });
+    }
+  });
+
   // Get RAG stats for an agent
   app.get("/brand-api/agents/:agentId/rag/stats", async (req, res) => {
     const user = (req as any).user;

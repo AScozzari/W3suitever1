@@ -460,6 +460,111 @@ export class RagMultiAgentService {
     };
   }
 
+  async getAgentDetails(agentId: string): Promise<any> {
+    const ragAgent = await this.getRagAgentByAgentId(agentId);
+    if (!ragAgent) {
+      return null;
+    }
+
+    // Get sources count by type
+    const sourcesByType = await db
+      .select({
+        sourceType: ragDataSources.sourceType,
+        count: sql<number>`count(*)`
+      })
+      .from(ragDataSources)
+      .where(
+        and(
+          eq(ragDataSources.ragAgentId, ragAgent.id),
+          eq(ragDataSources.brandTenantId, this.brandTenantId)
+        )
+      )
+      .groupBy(ragDataSources.sourceType);
+
+    // Get total chunks and tokens
+    const chunkStats = await db
+      .select({
+        count: sql<number>`count(*)`,
+        totalChars: sql<number>`COALESCE(SUM(LENGTH(chunk_text)), 0)`
+      })
+      .from(ragChunks)
+      .where(
+        and(
+          eq(ragChunks.ragAgentId, ragAgent.id),
+          eq(ragChunks.brandTenantId, this.brandTenantId)
+        )
+      );
+
+    // Get recent sources (last 7 days)
+    const recentSources = await db
+      .select({
+        date: sql<string>`DATE(created_at)`,
+        count: sql<number>`count(*)`
+      })
+      .from(ragDataSources)
+      .where(
+        and(
+          eq(ragDataSources.ragAgentId, ragAgent.id),
+          eq(ragDataSources.brandTenantId, this.brandTenantId),
+          sql`created_at >= NOW() - INTERVAL '7 days'`
+        )
+      )
+      .groupBy(sql`DATE(created_at)`)
+      .orderBy(sql`DATE(created_at)`);
+
+    // Get total usage
+    const totalUsage = await db
+      .select({
+        totalTokens: sql<number>`COALESCE(SUM(tokens_used), 0)`,
+        totalCost: sql<number>`COALESCE(SUM(estimated_cost), 0)`
+      })
+      .from(ragEmbeddingsUsage)
+      .where(
+        and(
+          eq(ragEmbeddingsUsage.ragAgentId, ragAgent.id),
+          eq(ragEmbeddingsUsage.brandTenantId, this.brandTenantId)
+        )
+      );
+
+    // Calculate estimated tokens from characters (rough: 1 token ≈ 4 chars)
+    const estimatedTokens = Math.round((chunkStats[0]?.totalChars || 0) / 4);
+
+    // Build sources breakdown
+    const sourcesBreakdown: Record<string, number> = {};
+    sourcesByType.forEach((s: { sourceType: string; count: number }) => {
+      sourcesBreakdown[s.sourceType] = Number(s.count);
+    });
+
+    return {
+      id: ragAgent.id,
+      agentId: ragAgent.agentId,
+      agentName: ragAgent.agentName,
+      isActive: ragAgent.isActive,
+      createdAt: ragAgent.createdAt,
+      updatedAt: ragAgent.updatedAt,
+      configuration: {
+        embeddingModel: ragAgent.embeddingModel,
+        chunkSize: ragAgent.chunkSize,
+        chunkOverlap: ragAgent.chunkOverlap,
+        topK: ragAgent.topK,
+        similarityThreshold: ragAgent.similarityThreshold,
+        metadata: ragAgent.metadata || {}
+      },
+      stats: {
+        sourcesCount: Object.values(sourcesBreakdown).reduce((a, b) => a + b, 0),
+        chunksCount: chunkStats[0]?.count || 0,
+        estimatedTokens,
+        totalTokensUsed: totalUsage[0]?.totalTokens || 0,
+        totalCostCents: totalUsage[0]?.totalCost || 0
+      },
+      sourcesBreakdown,
+      recentActivity: recentSources.map((r: { date: string; count: number }) => ({
+        date: r.date,
+        count: Number(r.count)
+      }))
+    };
+  }
+
   private async getRagAgentByAgentId(agentId: string): Promise<any | null> {
     const agents = await db
       .select()
