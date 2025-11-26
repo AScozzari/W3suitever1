@@ -243,7 +243,7 @@ export class RagMultiAgentService {
           dataSourceId: dataSource.id,
           chunkIndex: i,
           chunkText: chunks[i],
-          embedding: JSON.stringify(embeddings[i]),
+          embedding: embeddings[i],
           metadata: {},
           brandTenantId: this.brandTenantId
         });
