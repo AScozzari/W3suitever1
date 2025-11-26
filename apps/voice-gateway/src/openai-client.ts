@@ -67,14 +67,15 @@ export class OpenAIRealtimeClient {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.5, // BALANCED: Good sensitivity without false positives
-          prefix_padding_ms: 300, // Capture full start of user speech
-          silence_duration_ms: 700 // BALANCED: Wait 0.7s of silence before detecting end of speech
+          threshold: 0.4, // SENSITIVE: React quickly when customer speaks (barge-in)
+          prefix_padding_ms: 200, // Quick capture of customer speech start
+          silence_duration_ms: 500, // RESPONSIVE: Detect end of speech faster for natural flow
+          create_response: true // Auto-respond when customer stops speaking
         },
         tools: this.config.tools || [],
         tool_choice: 'auto',
-        temperature: 0.8, // BALANCED: Natural speech without hallucinations
-        max_response_output_tokens: 250 // Natural conversation: allows 2-3 complete sentences (50-70 words)
+        temperature: 0.9, // HIGH: More natural, human-like conversational tone
+        max_response_output_tokens: 'inf' // NO LIMIT: Let agent complete full responses naturally
       }
     };
 
