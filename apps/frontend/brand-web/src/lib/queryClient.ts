@@ -42,7 +42,29 @@ export const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // 10 minutes (cacheTime è deprecato in v5)
       refetchOnWindowFocus: false,
       queryFn: async ({ queryKey }) => {
-        const url = Array.isArray(queryKey) ? queryKey.join('') : String(queryKey);
+        let url: string;
+        if (Array.isArray(queryKey)) {
+          // First element is the base URL, rest might be params objects
+          const baseUrl = String(queryKey[0]);
+          const params = queryKey.slice(1);
+          
+          // Build query string from object params
+          const queryParams = new URLSearchParams();
+          for (const param of params) {
+            if (param && typeof param === 'object') {
+              for (const [key, value] of Object.entries(param)) {
+                if (value !== undefined && value !== null) {
+                  queryParams.append(key, String(value));
+                }
+              }
+            }
+          }
+          
+          const queryString = queryParams.toString();
+          url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+        } else {
+          url = String(queryKey);
+        }
         
         // Normalize URL to relative path to ensure it goes through nginx
         let finalUrl = url;
