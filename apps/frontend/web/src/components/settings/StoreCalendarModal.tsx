@@ -41,8 +41,7 @@ interface CalendarOverride {
   date: string;
   overrideType: 'closed' | 'special_hours' | 'holiday';
   isOpen: boolean;
-  openTime?: string;
-  closeTime?: string;
+  timeSlots: TimeSlot[];
   reason?: string;
   holidayName?: string;
 }
@@ -387,7 +386,14 @@ export function StoreCalendarModal({
     if (existing) {
       setOverrides(prev => prev.map(o => 
         o.date === selectedDate 
-          ? { ...o, overrideType: type, isOpen: type === 'special_hours' }
+          ? { 
+              ...o, 
+              overrideType: type, 
+              isOpen: type === 'special_hours',
+              timeSlots: type === 'special_hours' && o.timeSlots.length === 0 
+                ? createDefaultTimeSlots() 
+                : o.timeSlots
+            }
           : o
       ));
     } else {
@@ -395,11 +401,48 @@ export function StoreCalendarModal({
         date: selectedDate,
         overrideType: type,
         isOpen: type === 'special_hours',
-        openTime: '09:00',
-        closeTime: '20:00',
+        timeSlots: type === 'special_hours' ? createDefaultTimeSlots() : [],
         reason: ''
       }]);
     }
+  };
+
+  const addOverrideTimeSlot = (dateStr: string) => {
+    setOverrides(prev => prev.map(o => {
+      if (o.date !== dateStr) return o;
+      const lastSlot = o.timeSlots[o.timeSlots.length - 1];
+      const newStart = lastSlot ? lastSlot.endTime : '09:00';
+      return {
+        ...o,
+        timeSlots: [...o.timeSlots, { id: generateId(), startTime: newStart, endTime: '19:30' }]
+      };
+    }));
+  };
+
+  const removeOverrideTimeSlot = (dateStr: string, slotId: string) => {
+    setOverrides(prev => prev.map(o => {
+      if (o.date !== dateStr) return o;
+      return {
+        ...o,
+        timeSlots: o.timeSlots.filter(s => s.id !== slotId)
+      };
+    }));
+  };
+
+  const updateOverrideTimeSlot = (dateStr: string, slotId: string, field: 'startTime' | 'endTime', value: string) => {
+    setOverrides(prev => prev.map(o => {
+      if (o.date !== dateStr) return o;
+      return {
+        ...o,
+        timeSlots: o.timeSlots.map(s => s.id === slotId ? { ...s, [field]: value } : s)
+      };
+    }));
+  };
+
+  const updateOverrideReason = (dateStr: string, reason: string) => {
+    setOverrides(prev => prev.map(o => 
+      o.date === dateStr ? { ...o, reason } : o
+    ));
   };
 
   const removeOverride = (dateStr: string) => {
@@ -923,11 +966,13 @@ export function StoreCalendarModal({
                   {/* Selected Day Panel */}
                   {selectedDate && (
                     <div style={{
-                      width: '280px',
+                      width: '320px',
                       background: '#f8fafc',
                       borderRadius: '12px',
                       padding: '20px',
-                      border: '1px solid #e2e8f0'
+                      border: '1px solid #e2e8f0',
+                      maxHeight: '400px',
+                      overflow: 'auto'
                     }}>
                       <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '16px' }}>
                         {new Date(selectedDate).toLocaleDateString('it-IT', { 
@@ -951,40 +996,187 @@ export function StoreCalendarModal({
                         </div>
                       )}
 
-                      {getOverride(new Date(selectedDate)) ? (
-                        <div>
-                          <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px' }}>
-                            Questo giorno ha un override manuale
-                          </p>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeOverride(selectedDate)}
-                            data-testid="btn-remove-override"
-                          >
-                            Rimuovi Override
-                          </Button>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addOverride('closed')}
-                            data-testid="btn-set-closed"
-                          >
-                            Imposta come Chiuso
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addOverride('special_hours')}
-                            data-testid="btn-set-special"
-                          >
-                            Imposta Orario Speciale
-                          </Button>
-                        </div>
-                      )}
+                      {(() => {
+                        const override = getOverride(new Date(selectedDate));
+                        if (override) {
+                          return (
+                            <div>
+                              {override.overrideType === 'closed' ? (
+                                <div style={{
+                                  background: '#fef2f2',
+                                  borderRadius: '8px',
+                                  padding: '12px',
+                                  marginBottom: '12px'
+                                }}>
+                                  <p style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>
+                                    Giorno impostato come CHIUSO
+                                  </p>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px', fontWeight: '500' }}>
+                                    Orario speciale per questo giorno:
+                                  </p>
+                                  
+                                  {/* Time Slots Editor */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                                    {override.timeSlots.map((slot, idx) => (
+                                      <div key={slot.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '11px', color: '#6b7280', width: '50px' }}>
+                                          Fascia {idx + 1}:
+                                        </span>
+                                        <input
+                                          type="time"
+                                          value={slot.startTime}
+                                          onChange={(e) => updateOverrideTimeSlot(selectedDate, slot.id, 'startTime', e.target.value)}
+                                          data-testid={`override-start-${idx}`}
+                                          style={{
+                                            padding: '4px 6px',
+                                            borderRadius: '4px',
+                                            border: '1px solid #d1d5db',
+                                            fontSize: '12px',
+                                            width: '85px'
+                                          }}
+                                        />
+                                        <span style={{ color: '#6b7280', fontSize: '11px' }}>-</span>
+                                        <input
+                                          type="time"
+                                          value={slot.endTime}
+                                          onChange={(e) => updateOverrideTimeSlot(selectedDate, slot.id, 'endTime', e.target.value)}
+                                          data-testid={`override-end-${idx}`}
+                                          style={{
+                                            padding: '4px 6px',
+                                            borderRadius: '4px',
+                                            border: '1px solid #d1d5db',
+                                            fontSize: '12px',
+                                            width: '85px'
+                                          }}
+                                        />
+                                        {override.timeSlots.length > 1 && (
+                                          <button
+                                            onClick={() => removeOverrideTimeSlot(selectedDate, slot.id)}
+                                            data-testid={`btn-remove-override-slot-${idx}`}
+                                            style={{
+                                              padding: '3px',
+                                              borderRadius: '4px',
+                                              border: 'none',
+                                              background: '#fee2e2',
+                                              cursor: 'pointer',
+                                              display: 'flex',
+                                              alignItems: 'center'
+                                            }}
+                                          >
+                                            <Trash2 size={10} style={{ color: '#dc2626' }} />
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  
+                                  <button
+                                    onClick={() => addOverrideTimeSlot(selectedDate)}
+                                    data-testid="btn-add-override-slot"
+                                    style={{
+                                      width: '100%',
+                                      padding: '6px',
+                                      borderRadius: '6px',
+                                      border: '1px dashed #d1d5db',
+                                      background: 'white',
+                                      fontSize: '11px',
+                                      color: '#6b7280',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '4px',
+                                      marginBottom: '12px'
+                                    }}
+                                  >
+                                    <Plus size={12} />
+                                    Aggiungi fascia oraria
+                                  </button>
+
+                                  {/* Reason input */}
+                                  <div style={{ marginBottom: '12px' }}>
+                                    <label style={{ fontSize: '11px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                      Motivo (opzionale):
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={override.reason || ''}
+                                      onChange={(e) => updateOverrideReason(selectedDate, e.target.value)}
+                                      placeholder="Es: Inventario, Evento speciale..."
+                                      data-testid="input-override-reason"
+                                      style={{
+                                        width: '100%',
+                                        padding: '6px 8px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #d1d5db',
+                                        fontSize: '12px'
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                {override.overrideType === 'closed' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addOverride('special_hours')}
+                                    data-testid="btn-change-to-special"
+                                    style={{ flex: 1, fontSize: '11px' }}
+                                  >
+                                    Cambia in Orario Speciale
+                                  </Button>
+                                )}
+                                {override.overrideType === 'special_hours' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addOverride('closed')}
+                                    data-testid="btn-change-to-closed"
+                                    style={{ flex: 1, fontSize: '11px' }}
+                                  >
+                                    Imposta Chiuso
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => removeOverride(selectedDate)}
+                                  data-testid="btn-remove-override"
+                                  style={{ fontSize: '11px' }}
+                                >
+                                  Rimuovi
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addOverride('closed')}
+                                data-testid="btn-set-closed"
+                              >
+                                Imposta come Chiuso
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addOverride('special_hours')}
+                                data-testid="btn-set-special"
+                              >
+                                Imposta Orario Speciale
+                              </Button>
+                            </div>
+                          );
+                        }
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1038,7 +1230,7 @@ export function StoreCalendarModal({
                             </div>
                             <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>
                               {override.isOpen 
-                                ? `Aperto: ${override.openTime} - ${override.closeTime}`
+                                ? `Aperto: ${override.timeSlots.map(s => `${s.startTime}-${s.endTime}`).join(', ')}`
                                 : 'Chiuso'}
                               {override.reason && ` - ${override.reason}`}
                             </div>
