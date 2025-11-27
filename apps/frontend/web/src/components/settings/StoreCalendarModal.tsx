@@ -5,15 +5,11 @@ import {
   Clock, 
   ChevronLeft, 
   ChevronRight, 
-  Check, 
   Copy,
-  Sun,
-  Moon,
-  Coffee,
+  Plus,
+  Trash2,
   AlertCircle,
   Save,
-  RotateCcw,
-  Settings,
   Store
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,14 +25,16 @@ interface StoreCalendarModalProps {
   allStores?: Array<{ id: string; nome: string }>;
 }
 
+interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface OpeningRule {
   dayOfWeek: string;
   isOpen: boolean;
-  openTime: string;
-  closeTime: string;
-  hasBreak: boolean;
-  breakStartTime: string;
-  breakEndTime: string;
+  timeSlots: TimeSlot[];
 }
 
 interface CalendarOverride {
@@ -82,14 +80,17 @@ const ITALIAN_HOLIDAYS_2025 = [
   { date: '2025-12-26', name: 'Santo Stefano', type: 'religious' },
 ];
 
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+const createDefaultTimeSlots = (): TimeSlot[] => [
+  { id: generateId(), startTime: '09:00', endTime: '13:00' },
+  { id: generateId(), startTime: '15:00', endTime: '19:30' }
+];
+
 const DEFAULT_OPENING_RULES: OpeningRule[] = DAYS_OF_WEEK.map(day => ({
   dayOfWeek: day.key,
   isOpen: day.key !== 'sunday',
-  openTime: '09:00',
-  closeTime: '20:00',
-  hasBreak: false,
-  breakStartTime: '13:00',
-  breakEndTime: '14:00',
+  timeSlots: day.key !== 'sunday' ? createDefaultTimeSlots() : []
 }));
 
 const DEFAULT_SETTINGS: CalendarSettings = {
@@ -139,7 +140,26 @@ export function StoreCalendarModal({
         const responseData = await response.json();
         const data = responseData.data || responseData;
         if (data.openingRules?.length > 0) {
-          setOpeningRules(data.openingRules);
+          const convertedRules = data.openingRules.map((rule: any) => {
+            if (rule.timeSlots) {
+              return rule;
+            }
+            const timeSlots: TimeSlot[] = [];
+            if (rule.isOpen) {
+              if (rule.hasBreak) {
+                timeSlots.push({ id: generateId(), startTime: rule.openTime || '09:00', endTime: rule.breakStartTime || '13:00' });
+                timeSlots.push({ id: generateId(), startTime: rule.breakEndTime || '14:00', endTime: rule.closeTime || '19:30' });
+              } else {
+                timeSlots.push({ id: generateId(), startTime: rule.openTime || '09:00', endTime: rule.closeTime || '19:30' });
+              }
+            }
+            return {
+              dayOfWeek: rule.dayOfWeek,
+              isOpen: rule.isOpen,
+              timeSlots
+            };
+          });
+          setOpeningRules(convertedRules);
         }
         if (data.settings) {
           setSettings(data.settings);
@@ -232,33 +252,81 @@ export function StoreCalendarModal({
     }
   };
 
-  const updateRule = (dayKey: string, field: keyof OpeningRule, value: any) => {
-    setOpeningRules(prev => prev.map(rule => 
-      rule.dayOfWeek === dayKey ? { ...rule, [field]: value } : rule
-    ));
+  const updateDayOpen = (dayKey: string, isOpen: boolean) => {
+    setOpeningRules(prev => prev.map(rule => {
+      if (rule.dayOfWeek !== dayKey) return rule;
+      return {
+        ...rule,
+        isOpen,
+        timeSlots: isOpen && rule.timeSlots.length === 0 ? createDefaultTimeSlots() : rule.timeSlots
+      };
+    }));
   };
 
-  const applyToAllDays = (sourceDay: string, field: 'times' | 'break') => {
+  const addTimeSlot = (dayKey: string) => {
+    setOpeningRules(prev => prev.map(rule => {
+      if (rule.dayOfWeek !== dayKey) return rule;
+      const lastSlot = rule.timeSlots[rule.timeSlots.length - 1];
+      const newStart = lastSlot ? lastSlot.endTime : '09:00';
+      return {
+        ...rule,
+        timeSlots: [...rule.timeSlots, { id: generateId(), startTime: newStart, endTime: '19:30' }]
+      };
+    }));
+  };
+
+  const removeTimeSlot = (dayKey: string, slotId: string) => {
+    setOpeningRules(prev => prev.map(rule => {
+      if (rule.dayOfWeek !== dayKey) return rule;
+      return {
+        ...rule,
+        timeSlots: rule.timeSlots.filter(s => s.id !== slotId)
+      };
+    }));
+  };
+
+  const updateTimeSlot = (dayKey: string, slotId: string, field: 'startTime' | 'endTime', value: string) => {
+    setOpeningRules(prev => prev.map(rule => {
+      if (rule.dayOfWeek !== dayKey) return rule;
+      return {
+        ...rule,
+        timeSlots: rule.timeSlots.map(s => s.id === slotId ? { ...s, [field]: value } : s)
+      };
+    }));
+  };
+
+  const applyToAllDays = (sourceDay: string) => {
     const sourceRule = openingRules.find(r => r.dayOfWeek === sourceDay);
     if (!sourceRule) return;
     
     setOpeningRules(prev => prev.map(rule => {
       if (rule.dayOfWeek === sourceDay) return rule;
-      if (field === 'times') {
-        return { ...rule, openTime: sourceRule.openTime, closeTime: sourceRule.closeTime };
-      } else {
-        return { 
-          ...rule, 
-          hasBreak: sourceRule.hasBreak, 
-          breakStartTime: sourceRule.breakStartTime, 
-          breakEndTime: sourceRule.breakEndTime 
-        };
-      }
+      if (rule.dayOfWeek === 'sunday' && settings.autoCloseSundays) return rule;
+      return {
+        ...rule,
+        isOpen: sourceRule.isOpen,
+        timeSlots: sourceRule.timeSlots.map(s => ({ ...s, id: generateId() }))
+      };
     }));
     toast({
       title: "Applicato",
-      description: field === 'times' ? "Orari copiati su tutti i giorni" : "Pausa copiata su tutti i giorni"
+      description: "Orari copiati su tutti i giorni lavorativi"
     });
+  };
+
+  const handleSettingChange = (setting: keyof CalendarSettings, value: boolean) => {
+    setSettings(prev => ({ ...prev, [setting]: value }));
+    
+    if (setting === 'autoCloseSundays') {
+      setOpeningRules(prev => prev.map(rule => {
+        if (rule.dayOfWeek !== 'sunday') return rule;
+        return {
+          ...rule,
+          isOpen: !value,
+          timeSlots: !value && rule.timeSlots.length === 0 ? createDefaultTimeSlots() : rule.timeSlots
+        };
+      }));
+    }
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -304,10 +372,6 @@ export function StoreCalendarModal({
     const dayOfWeek = DAYS_OF_WEEK[(date.getDay() + 6) % 7].key;
     const rule = openingRules.find(r => r.dayOfWeek === dayOfWeek);
     
-    if (dayOfWeek === 'sunday' && settings.autoCloseSundays && !rule?.isOpen) {
-      return 'closed';
-    }
-    
     return rule?.isOpen ? 'open' : 'closed';
   };
 
@@ -346,6 +410,8 @@ export function StoreCalendarModal({
 
   if (!open) return null;
 
+  const isSundayClosed = settings.autoCloseSundays;
+
   return (
     <div style={{
       position: 'fixed',
@@ -363,8 +429,8 @@ export function StoreCalendarModal({
       <div style={{
         background: 'white',
         borderRadius: '20px',
-        width: '90%',
-        maxWidth: '900px',
+        width: '95%',
+        maxWidth: '1000px',
         maxHeight: '90vh',
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -373,62 +439,63 @@ export function StoreCalendarModal({
       }}>
         {/* Header */}
         <div style={{
-          padding: '24px 32px',
+          padding: '20px 24px',
           borderBottom: '1px solid #e5e7eb',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)'
+          background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
+              width: '44px',
+              height: '44px',
               borderRadius: '12px',
               background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Calendar size={24} style={{ color: 'white' }} />
+              <Calendar size={22} style={{ color: 'white' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>
                 Calendario Orari
               </h2>
-              <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
                 {storeName}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {allStores.length > 1 && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCopyModal(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                data-testid="btn-copy-config"
               >
-                <Copy size={14} />
-                Copia su altri negozi
+                <Copy size={14} className="mr-1" />
+                Copia
               </Button>
             )}
             <Button
               onClick={handleSave}
               disabled={isSaving}
+              size="sm"
+              data-testid="btn-save-calendar"
               style={{
                 background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
+                color: 'white'
               }}
             >
-              <Save size={14} />
-              {isSaving ? 'Salvataggio...' : 'Salva'}
+              <Save size={14} className="mr-1" />
+              {isSaving ? 'Salvo...' : 'Salva'}
             </Button>
             <button
               onClick={onClose}
+              data-testid="btn-close-calendar"
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -446,9 +513,10 @@ export function StoreCalendarModal({
         <div style={{
           display: 'flex',
           gap: '4px',
-          padding: '16px 32px',
+          padding: '12px 24px',
           borderBottom: '1px solid #e5e7eb',
-          background: '#fafafa'
+          background: '#fafafa',
+          flexShrink: 0
         }}>
           {[
             { id: 'rules', label: 'Orari Settimanali', icon: Clock },
@@ -458,29 +526,30 @@ export function StoreCalendarModal({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
+              data-testid={`tab-${tab.id}`}
               style={{
-                padding: '10px 20px',
-                borderRadius: '10px',
+                padding: '8px 16px',
+                borderRadius: '8px',
                 border: 'none',
                 background: activeTab === tab.id ? '#3b82f6' : 'transparent',
                 color: activeTab === tab.id ? 'white' : '#6b7280',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 transition: 'all 0.2s ease'
               }}
             >
-              <tab.icon size={16} />
+              <tab.icon size={14} />
               {tab.label}
             </button>
           ))}
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '24px 32px' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
           {isLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
               <div style={{ color: '#6b7280' }}>Caricamento...</div>
@@ -494,167 +563,179 @@ export function StoreCalendarModal({
                   <div style={{
                     background: '#f8fafc',
                     borderRadius: '12px',
-                    padding: '20px',
-                    marginBottom: '24px',
+                    padding: '16px',
+                    marginBottom: '20px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>
                       Regole Automatiche
                     </h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <Switch
                           checked={settings.autoCloseSundays}
-                          onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoCloseSundays: checked }))}
+                          onCheckedChange={(checked) => handleSettingChange('autoCloseSundays', checked)}
+                          data-testid="switch-sunday-closed"
                         />
-                        <span style={{ fontSize: '14px', color: '#374151' }}>Chiuso la Domenica</span>
+                        <span style={{ fontSize: '13px', color: '#374151' }}>Chiuso la Domenica</span>
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <Switch
                           checked={settings.autoCloseNationalHolidays}
-                          onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoCloseNationalHolidays: checked }))}
+                          onCheckedChange={(checked) => handleSettingChange('autoCloseNationalHolidays', checked)}
+                          data-testid="switch-national-holidays"
                         />
-                        <span style={{ fontSize: '14px', color: '#374151' }}>Chiuso Festivi Nazionali</span>
+                        <span style={{ fontSize: '13px', color: '#374151' }}>Chiuso Festivi Nazionali</span>
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <Switch
                           checked={settings.autoCloseReligiousHolidays}
-                          onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoCloseReligiousHolidays: checked }))}
+                          onCheckedChange={(checked) => handleSettingChange('autoCloseReligiousHolidays', checked)}
+                          data-testid="switch-religious-holidays"
                         />
-                        <span style={{ fontSize: '14px', color: '#374151' }}>Chiuso Festivi Religiosi</span>
+                        <span style={{ fontSize: '13px', color: '#374151' }}>Chiuso Festivi Religiosi</span>
                       </label>
                     </div>
                   </div>
 
+                  {/* Apply to All Button */}
+                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyToAllDays('monday')}
+                      data-testid="btn-apply-all-days"
+                    >
+                      <Copy size={12} className="mr-1" />
+                      Copia Lunedì su tutti i giorni
+                    </Button>
+                  </div>
+
                   {/* Weekly Schedule */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {DAYS_OF_WEEK.map((day, idx) => {
-                      const rule = openingRules.find(r => r.dayOfWeek === day.key) || DEFAULT_OPENING_RULES[idx];
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {DAYS_OF_WEEK.map((day) => {
+                      const rule = openingRules.find(r => r.dayOfWeek === day.key);
+                      const isDisabledByRule = day.key === 'sunday' && isSundayClosed;
+                      const effectivelyOpen = rule?.isOpen && !isDisabledByRule;
+                      
                       return (
                         <div
                           key={day.key}
+                          data-testid={`day-row-${day.key}`}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '16px',
-                            padding: '16px 20px',
-                            background: rule.isOpen ? '#f0fdf4' : '#fef2f2',
-                            borderRadius: '12px',
-                            border: `1px solid ${rule.isOpen ? '#bbf7d0' : '#fecaca'}`
+                            padding: '12px 16px',
+                            background: effectivelyOpen ? '#f0fdf4' : '#fef2f2',
+                            borderRadius: '10px',
+                            border: `1px solid ${effectivelyOpen ? '#bbf7d0' : '#fecaca'}`,
+                            opacity: isDisabledByRule ? 0.6 : 1
                           }}
                         >
-                          {/* Day Name */}
-                          <div style={{ width: '100px', fontWeight: '600', color: '#374151' }}>
-                            {day.label}
+                          {/* Day Header Row */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: effectivelyOpen ? '10px' : 0 }}>
+                            <div style={{ width: '90px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>
+                              {day.label}
+                            </div>
+                            
+                            <Switch
+                              checked={rule?.isOpen || false}
+                              onCheckedChange={(checked) => updateDayOpen(day.key, checked)}
+                              disabled={isDisabledByRule}
+                              data-testid={`switch-day-${day.key}`}
+                            />
+                            <span style={{ 
+                              fontSize: '12px', 
+                              color: effectivelyOpen ? '#16a34a' : '#dc2626',
+                              fontWeight: '500',
+                              minWidth: '50px'
+                            }}>
+                              {effectivelyOpen ? 'Aperto' : 'Chiuso'}
+                            </span>
+                            
+                            {isDisabledByRule && (
+                              <span style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic' }}>
+                                (disattiva "Chiuso la Domenica" per configurare)
+                              </span>
+                            )}
                           </div>
 
-                          {/* Open/Closed Toggle */}
-                          <Switch
-                            checked={rule.isOpen}
-                            onCheckedChange={(checked) => updateRule(day.key, 'isOpen', checked)}
-                          />
-                          <span style={{ 
-                            fontSize: '13px', 
-                            color: rule.isOpen ? '#16a34a' : '#dc2626',
-                            fontWeight: '500',
-                            width: '60px'
-                          }}>
-                            {rule.isOpen ? 'Aperto' : 'Chiuso'}
-                          </span>
-
-                          {rule.isOpen && (
-                            <>
-                              {/* Opening Hours */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Sun size={16} style={{ color: '#f59e0b' }} />
-                                <input
-                                  type="time"
-                                  value={rule.openTime}
-                                  onChange={(e) => updateRule(day.key, 'openTime', e.target.value)}
-                                  style={{
-                                    padding: '6px 10px',
-                                    borderRadius: '6px',
-                                    border: '1px solid #d1d5db',
-                                    fontSize: '14px'
-                                  }}
-                                />
-                                <span style={{ color: '#6b7280' }}>-</span>
-                                <Moon size={16} style={{ color: '#6366f1' }} />
-                                <input
-                                  type="time"
-                                  value={rule.closeTime}
-                                  onChange={(e) => updateRule(day.key, 'closeTime', e.target.value)}
-                                  style={{
-                                    padding: '6px 10px',
-                                    borderRadius: '6px',
-                                    border: '1px solid #d1d5db',
-                                    fontSize: '14px'
-                                  }}
-                                />
-                              </div>
-
-                              {/* Break Toggle */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '16px' }}>
-                                <Coffee size={16} style={{ color: '#8b5cf6' }} />
-                                <Switch
-                                  checked={rule.hasBreak}
-                                  onCheckedChange={(checked) => updateRule(day.key, 'hasBreak', checked)}
-                                />
-                                {rule.hasBreak && (
-                                  <>
+                          {/* Time Slots */}
+                          {effectivelyOpen && rule && (
+                            <div style={{ marginLeft: '102px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {rule.timeSlots.map((slot, idx) => (
+                                  <div key={slot.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '11px', color: '#6b7280', width: '60px' }}>
+                                      Fascia {idx + 1}:
+                                    </span>
                                     <input
                                       type="time"
-                                      value={rule.breakStartTime}
-                                      onChange={(e) => updateRule(day.key, 'breakStartTime', e.target.value)}
+                                      value={slot.startTime}
+                                      onChange={(e) => updateTimeSlot(day.key, slot.id, 'startTime', e.target.value)}
+                                      data-testid={`input-start-${day.key}-${idx}`}
                                       style={{
                                         padding: '4px 8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '6px',
                                         border: '1px solid #d1d5db',
                                         fontSize: '13px',
-                                        width: '90px'
+                                        width: '100px'
                                       }}
                                     />
-                                    <span style={{ color: '#6b7280', fontSize: '13px' }}>-</span>
+                                    <span style={{ color: '#6b7280', fontSize: '12px' }}>-</span>
                                     <input
                                       type="time"
-                                      value={rule.breakEndTime}
-                                      onChange={(e) => updateRule(day.key, 'breakEndTime', e.target.value)}
+                                      value={slot.endTime}
+                                      onChange={(e) => updateTimeSlot(day.key, slot.id, 'endTime', e.target.value)}
+                                      data-testid={`input-end-${day.key}-${idx}`}
                                       style={{
                                         padding: '4px 8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '6px',
                                         border: '1px solid #d1d5db',
                                         fontSize: '13px',
-                                        width: '90px'
+                                        width: '100px'
                                       }}
                                     />
-                                  </>
-                                )}
+                                    {rule.timeSlots.length > 1 && (
+                                      <button
+                                        onClick={() => removeTimeSlot(day.key, slot.id)}
+                                        data-testid={`btn-remove-slot-${day.key}-${idx}`}
+                                        style={{
+                                          padding: '4px',
+                                          borderRadius: '4px',
+                                          border: 'none',
+                                          background: '#fee2e2',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center'
+                                        }}
+                                      >
+                                        <Trash2 size={12} style={{ color: '#dc2626' }} />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
-
-                              {/* Apply to All Button */}
-                              {idx === 0 && (
-                                <button
-                                  onClick={() => applyToAllDays(day.key, 'times')}
-                                  style={{
-                                    marginLeft: 'auto',
-                                    padding: '4px 10px',
-                                    borderRadius: '6px',
-                                    border: '1px solid #d1d5db',
-                                    background: 'white',
-                                    fontSize: '12px',
-                                    color: '#6b7280',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                  title="Applica questi orari a tutti i giorni"
-                                >
-                                  <RotateCcw size={12} />
-                                  Applica a tutti
-                                </button>
-                              )}
-                            </>
+                              
+                              <button
+                                onClick={() => addTimeSlot(day.key)}
+                                data-testid={`btn-add-slot-${day.key}`}
+                                style={{
+                                  marginTop: '8px',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  border: '1px dashed #d1d5db',
+                                  background: 'white',
+                                  fontSize: '11px',
+                                  color: '#6b7280',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <Plus size={12} />
+                                Aggiungi fascia oraria
+                              </button>
+                            </div>
                           )}
                         </div>
                       );
@@ -677,6 +758,7 @@ export function StoreCalendarModal({
                     }}>
                       <button
                         onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                        data-testid="btn-prev-month"
                         style={{
                           padding: '8px',
                           borderRadius: '8px',
@@ -692,6 +774,7 @@ export function StoreCalendarModal({
                       </h3>
                       <button
                         onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                        data-testid="btn-next-month"
                         style={{
                           padding: '8px',
                           borderRadius: '8px',
@@ -763,6 +846,7 @@ export function StoreCalendarModal({
                           <button
                             key={dateStr}
                             onClick={() => handleDateClick(date)}
+                            data-testid={`calendar-day-${dateStr}`}
                             style={{
                               aspectRatio: '1',
                               borderRadius: '8px',
@@ -876,6 +960,7 @@ export function StoreCalendarModal({
                             variant="destructive"
                             size="sm"
                             onClick={() => removeOverride(selectedDate)}
+                            data-testid="btn-remove-override"
                           >
                             Rimuovi Override
                           </Button>
@@ -886,6 +971,7 @@ export function StoreCalendarModal({
                             variant="outline"
                             size="sm"
                             onClick={() => addOverride('closed')}
+                            data-testid="btn-set-closed"
                           >
                             Imposta come Chiuso
                           </Button>
@@ -893,6 +979,7 @@ export function StoreCalendarModal({
                             variant="outline"
                             size="sm"
                             onClick={() => addOverride('special_hours')}
+                            data-testid="btn-set-special"
                           >
                             Imposta Orario Speciale
                           </Button>
@@ -929,6 +1016,7 @@ export function StoreCalendarModal({
                       {overrides.map(override => (
                         <div
                           key={override.date}
+                          data-testid={`exception-${override.date}`}
                           style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -959,6 +1047,7 @@ export function StoreCalendarModal({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeOverride(override.date)}
+                            data-testid={`btn-remove-exception-${override.date}`}
                           >
                             <X size={16} />
                           </Button>
@@ -1027,6 +1116,7 @@ export function StoreCalendarModal({
                         setSelectedStoresForCopy(prev => prev.filter(id => id !== store.id));
                       }
                     }}
+                    data-testid={`checkbox-store-${store.id}`}
                   />
                   <Store size={16} style={{ color: '#6b7280' }} />
                   <span style={{ fontSize: '14px', color: '#111827' }}>{store.nome}</span>
@@ -1035,12 +1125,13 @@ export function StoreCalendarModal({
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <Button variant="outline" onClick={() => setShowCopyModal(false)}>
+              <Button variant="outline" onClick={() => setShowCopyModal(false)} data-testid="btn-cancel-copy">
                 Annulla
               </Button>
               <Button
                 onClick={handleCopyToStores}
                 disabled={selectedStoresForCopy.length === 0 || isSaving}
+                data-testid="btn-confirm-copy"
               >
                 {isSaving ? 'Copiando...' : `Copia su ${selectedStoresForCopy.length} negozi`}
               </Button>
