@@ -130,7 +130,10 @@ export function StoreCalendarModal({
     setIsLoading(true);
     try {
       const response = await fetch(`/api/stores/${storeId}/calendar`, {
-        headers: { 'x-tenant-id': tenantId }
+        headers: { 
+          'x-tenant-id': tenantId,
+          'X-Auth-Session': 'authenticated'
+        }
       });
       if (response.ok) {
         const responseData = await response.json();
@@ -163,7 +166,8 @@ export function StoreCalendarModal({
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-tenant-id': tenantId 
+          'x-tenant-id': tenantId,
+          'X-Auth-Session': 'authenticated'
         },
         body: JSON.stringify({
           openingRules,
@@ -199,7 +203,8 @@ export function StoreCalendarModal({
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-tenant-id': tenantId 
+          'x-tenant-id': tenantId,
+          'X-Auth-Session': 'authenticated'
         },
         body: JSON.stringify({
           targetStoreIds: selectedStoresForCopy,
