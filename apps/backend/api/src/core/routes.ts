@@ -106,7 +106,12 @@ import {
   // ✅ AUDIT TRAIL: Import logging tables for enterprise audit
   entityLogs,
   structuredLogs,
-  insertEntityLogSchema
+  insertEntityLogSchema,
+  // ✅ STORE CALENDAR: Tables for store opening hours and holidays
+  storeOpeningRules,
+  storeCalendarOverrides,
+  storeCalendarSettings,
+  italianHolidays
 } from "../db/schema/w3suite";
 import { utmSources, utmMediums } from "../db/schema/public";
 import { JWT_SECRET, config } from "./config";
@@ -1851,6 +1856,315 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error: any) {
       handleApiError(error, res, 'eliminazione negozio');
+    }
+  });
+
+  // ==================== STORE CALENDAR API ====================
+  
+  // Get store calendar configuration (opening rules, settings, overrides)
+  app.get('/api/stores/:storeId/calendar', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { storeId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      
+      if (!validateUUIDParam(storeId, 'ID negozio', res)) return;
+      
+      await setTenantContext(tenantId);
+      
+      // Get opening rules (double-layer security: RLS + explicit tenantId filter)
+      const openingRulesResult = await db
+        .select()
+        .from(storeOpeningRules)
+        .where(
+          and(
+            eq(storeOpeningRules.storeId, storeId),
+            eq(storeOpeningRules.tenantId, tenantId)
+          )
+        );
+      
+      // Get calendar settings
+      const settingsResult = await db
+        .select()
+        .from(storeCalendarSettings)
+        .where(
+          and(
+            eq(storeCalendarSettings.storeId, storeId),
+            eq(storeCalendarSettings.tenantId, tenantId)
+          )
+        )
+        .limit(1);
+      
+      // Get overrides for current and next year
+      const currentYear = new Date().getFullYear();
+      const overridesResult = await db
+        .select()
+        .from(storeCalendarOverrides)
+        .where(
+          and(
+            eq(storeCalendarOverrides.storeId, storeId),
+            eq(storeCalendarOverrides.tenantId, tenantId)
+          )
+        );
+      
+      // Get Italian holidays
+      const holidaysResult = await db
+        .select()
+        .from(italianHolidays)
+        .where(
+          sql`${italianHolidays.year} >= ${currentYear} AND ${italianHolidays.year} <= ${currentYear + 1}`
+        );
+      
+      res.json({
+        success: true,
+        data: {
+          openingRules: openingRulesResult.map(r => ({
+            dayOfWeek: r.dayOfWeek,
+            isOpen: r.isOpen,
+            openTime: r.openTime,
+            closeTime: r.closeTime,
+            hasBreak: r.hasBreak,
+            breakStartTime: r.breakStartTime,
+            breakEndTime: r.breakEndTime
+          })),
+          settings: settingsResult[0] ? {
+            autoCloseSundays: settingsResult[0].autoCloseSundays,
+            autoCloseNationalHolidays: settingsResult[0].autoCloseNationalHolidays,
+            autoCloseReligiousHolidays: settingsResult[0].autoCloseReligiousHolidays,
+            patronSaintDay: settingsResult[0].patronSaintDay,
+            patronSaintName: settingsResult[0].patronSaintName
+          } : null,
+          overrides: overridesResult.map(o => ({
+            date: o.date,
+            overrideType: o.overrideType,
+            isOpen: o.isOpen,
+            openTime: o.openTime,
+            closeTime: o.closeTime,
+            reason: o.reason,
+            holidayName: o.holidayName
+          })),
+          holidays: holidaysResult.map(h => ({
+            date: h.date,
+            name: h.name,
+            type: h.holidayType
+          }))
+        }
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'recupero calendario negozio');
+    }
+  });
+  
+  // Save store calendar configuration
+  app.post('/api/stores/:storeId/calendar', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { storeId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      const { openingRules: rules, settings, overrides } = req.body;
+      
+      if (!validateUUIDParam(storeId, 'ID negozio', res)) return;
+      
+      await setTenantContext(tenantId);
+      
+      // Save opening rules (upsert for each day)
+      if (rules && Array.isArray(rules)) {
+        for (const rule of rules) {
+          await db
+            .insert(storeOpeningRules)
+            .values({
+              tenantId,
+              storeId,
+              dayOfWeek: rule.dayOfWeek,
+              isOpen: rule.isOpen,
+              openTime: rule.openTime,
+              closeTime: rule.closeTime,
+              hasBreak: rule.hasBreak || false,
+              breakStartTime: rule.breakStartTime,
+              breakEndTime: rule.breakEndTime
+            })
+            .onConflictDoUpdate({
+              target: [storeOpeningRules.storeId, storeOpeningRules.dayOfWeek],
+              set: {
+                isOpen: rule.isOpen,
+                openTime: rule.openTime,
+                closeTime: rule.closeTime,
+                hasBreak: rule.hasBreak || false,
+                breakStartTime: rule.breakStartTime,
+                breakEndTime: rule.breakEndTime,
+                updatedAt: new Date()
+              }
+            });
+        }
+      }
+      
+      // Save calendar settings (upsert)
+      if (settings) {
+        await db
+          .insert(storeCalendarSettings)
+          .values({
+            tenantId,
+            storeId,
+            autoCloseSundays: settings.autoCloseSundays ?? true,
+            autoCloseNationalHolidays: settings.autoCloseNationalHolidays ?? true,
+            autoCloseReligiousHolidays: settings.autoCloseReligiousHolidays ?? false,
+            patronSaintDay: settings.patronSaintDay,
+            patronSaintName: settings.patronSaintName
+          })
+          .onConflictDoUpdate({
+            target: storeCalendarSettings.storeId,
+            set: {
+              autoCloseSundays: settings.autoCloseSundays ?? true,
+              autoCloseNationalHolidays: settings.autoCloseNationalHolidays ?? true,
+              autoCloseReligiousHolidays: settings.autoCloseReligiousHolidays ?? false,
+              patronSaintDay: settings.patronSaintDay,
+              patronSaintName: settings.patronSaintName,
+              updatedAt: new Date()
+            }
+          });
+      }
+      
+      // Save overrides (delete existing and insert new)
+      if (overrides && Array.isArray(overrides)) {
+        // Delete existing overrides for this store (scoped by tenantId for RLS security)
+        await db
+          .delete(storeCalendarOverrides)
+          .where(
+            and(
+              eq(storeCalendarOverrides.storeId, storeId),
+              eq(storeCalendarOverrides.tenantId, tenantId)
+            )
+          );
+        
+        // Insert new overrides
+        if (overrides.length > 0) {
+          await db.insert(storeCalendarOverrides).values(
+            overrides.map((o: any) => ({
+              tenantId,
+              storeId,
+              date: o.date,
+              overrideType: o.overrideType || 'closed',
+              isOpen: o.isOpen ?? false,
+              openTime: o.openTime,
+              closeTime: o.closeTime,
+              reason: o.reason,
+              holidayName: o.holidayName
+            }))
+          );
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: 'Calendario negozio salvato con successo'
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'salvataggio calendario negozio');
+    }
+  });
+  
+  // Copy calendar configuration to other stores
+  app.post('/api/stores/:storeId/calendar/copy', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { storeId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      const { targetStoreIds, copyRules = true, copySettings = true } = req.body;
+      
+      if (!validateUUIDParam(storeId, 'ID negozio sorgente', res)) return;
+      if (!targetStoreIds || !Array.isArray(targetStoreIds) || targetStoreIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Nessun negozio di destinazione specificato'
+        });
+      }
+      
+      await setTenantContext(tenantId);
+      
+      // Get source configuration
+      const sourceRules = await db
+        .select()
+        .from(storeOpeningRules)
+        .where(eq(storeOpeningRules.storeId, storeId));
+      
+      const sourceSettings = await db
+        .select()
+        .from(storeCalendarSettings)
+        .where(eq(storeCalendarSettings.storeId, storeId))
+        .limit(1);
+      
+      let copiedCount = 0;
+      
+      for (const targetId of targetStoreIds) {
+        try {
+          // Copy opening rules
+          if (copyRules && sourceRules.length > 0) {
+            for (const rule of sourceRules) {
+              await db
+                .insert(storeOpeningRules)
+                .values({
+                  tenantId,
+                  storeId: targetId,
+                  dayOfWeek: rule.dayOfWeek,
+                  isOpen: rule.isOpen,
+                  openTime: rule.openTime,
+                  closeTime: rule.closeTime,
+                  hasBreak: rule.hasBreak,
+                  breakStartTime: rule.breakStartTime,
+                  breakEndTime: rule.breakEndTime
+                })
+                .onConflictDoUpdate({
+                  target: [storeOpeningRules.storeId, storeOpeningRules.dayOfWeek],
+                  set: {
+                    isOpen: rule.isOpen,
+                    openTime: rule.openTime,
+                    closeTime: rule.closeTime,
+                    hasBreak: rule.hasBreak,
+                    breakStartTime: rule.breakStartTime,
+                    breakEndTime: rule.breakEndTime,
+                    updatedAt: new Date()
+                  }
+                });
+            }
+          }
+          
+          // Copy settings
+          if (copySettings && sourceSettings[0]) {
+            const s = sourceSettings[0];
+            await db
+              .insert(storeCalendarSettings)
+              .values({
+                tenantId,
+                storeId: targetId,
+                autoCloseSundays: s.autoCloseSundays,
+                autoCloseNationalHolidays: s.autoCloseNationalHolidays,
+                autoCloseReligiousHolidays: s.autoCloseReligiousHolidays,
+                patronSaintDay: s.patronSaintDay,
+                patronSaintName: s.patronSaintName
+              })
+              .onConflictDoUpdate({
+                target: storeCalendarSettings.storeId,
+                set: {
+                  autoCloseSundays: s.autoCloseSundays,
+                  autoCloseNationalHolidays: s.autoCloseNationalHolidays,
+                  autoCloseReligiousHolidays: s.autoCloseReligiousHolidays,
+                  patronSaintDay: s.patronSaintDay,
+                  patronSaintName: s.patronSaintName,
+                  updatedAt: new Date()
+                }
+              });
+          }
+          
+          copiedCount++;
+        } catch (err) {
+          logger.warn(`Failed to copy calendar to store ${targetId}`, { error: err });
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Configurazione copiata su ${copiedCount} negozi`,
+        copiedCount
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'copia calendario negozio');
     }
   });
 

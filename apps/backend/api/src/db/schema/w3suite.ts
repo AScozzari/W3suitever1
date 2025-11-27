@@ -734,6 +734,140 @@ export const insertStoreTrackingConfigSchema = createInsertSchema(storeTrackingC
 export type InsertStoreTrackingConfig = z.infer<typeof insertStoreTrackingConfigSchema>;
 export type StoreTrackingConfig = typeof storeTrackingConfig.$inferSelect;
 
+// ==================== STORE CALENDAR & OPENING HOURS ====================
+// Day of week enum for opening rules
+export const dayOfWeekEnum = pgEnum('day_of_week', ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
+
+// Store Opening Rules - Standard weekly schedule for each store
+export const storeOpeningRules = w3suiteSchema.table("store_opening_rules", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Day of week (monday-sunday)
+  dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
+  
+  // Opening hours for this day
+  isOpen: boolean("is_open").default(true).notNull(),
+  openTime: varchar("open_time", { length: 5 }), // Format: HH:MM (e.g., "09:00")
+  closeTime: varchar("close_time", { length: 5 }), // Format: HH:MM (e.g., "20:00")
+  
+  // Optional break time (e.g., lunch break)
+  hasBreak: boolean("has_break").default(false).notNull(),
+  breakStartTime: varchar("break_start_time", { length: 5 }), // Format: HH:MM
+  breakEndTime: varchar("break_end_time", { length: 5 }), // Format: HH:MM
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("store_opening_rules_store_day_unique").on(table.storeId, table.dayOfWeek),
+  index("store_opening_rules_tenant_idx").on(table.tenantId),
+  index("store_opening_rules_store_idx").on(table.storeId),
+]);
+
+export const insertStoreOpeningRuleSchema = createInsertSchema(storeOpeningRules).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertStoreOpeningRule = z.infer<typeof insertStoreOpeningRuleSchema>;
+export type StoreOpeningRule = typeof storeOpeningRules.$inferSelect;
+
+// Store Calendar Overrides - Specific date overrides (holidays, special hours, closures)
+export const storeCalendarOverrides = w3suiteSchema.table("store_calendar_overrides", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Specific date for override
+  date: date("date").notNull(),
+  
+  // Override type
+  overrideType: varchar("override_type", { length: 20 }).notNull(), // 'closed', 'special_hours', 'holiday'
+  
+  // If open with special hours
+  isOpen: boolean("is_open").default(false).notNull(),
+  openTime: varchar("open_time", { length: 5 }), // Format: HH:MM
+  closeTime: varchar("close_time", { length: 5 }), // Format: HH:MM
+  
+  // Reason/note for override
+  reason: varchar("reason", { length: 255 }),
+  holidayName: varchar("holiday_name", { length: 100 }), // If it's a holiday
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("store_calendar_overrides_store_date_unique").on(table.storeId, table.date),
+  index("store_calendar_overrides_tenant_idx").on(table.tenantId),
+  index("store_calendar_overrides_store_idx").on(table.storeId),
+  index("store_calendar_overrides_date_idx").on(table.date),
+]);
+
+export const insertStoreCalendarOverrideSchema = createInsertSchema(storeCalendarOverrides).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertStoreCalendarOverride = z.infer<typeof insertStoreCalendarOverrideSchema>;
+export type StoreCalendarOverride = typeof storeCalendarOverrides.$inferSelect;
+
+// Italian National Holidays - Reference table for Italian public holidays
+export const italianHolidays = w3suiteSchema.table("italian_holidays", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Holiday info
+  name: varchar("name", { length: 100 }).notNull(), // e.g., "Capodanno", "Pasqua", "Ferragosto"
+  date: date("date").notNull(), // Specific date for this year
+  year: integer("year").notNull(), // Year for this holiday entry
+  
+  // Holiday type
+  holidayType: varchar("holiday_type", { length: 30 }).notNull(), // 'national', 'religious', 'local'
+  isMovable: boolean("is_movable").default(false).notNull(), // e.g., Easter moves each year
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("italian_holidays_name_year_unique").on(table.name, table.year),
+  index("italian_holidays_year_idx").on(table.year),
+  index("italian_holidays_date_idx").on(table.date),
+]);
+
+export const insertItalianHolidaySchema = createInsertSchema(italianHolidays).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertItalianHoliday = z.infer<typeof insertItalianHolidaySchema>;
+export type ItalianHoliday = typeof italianHolidays.$inferSelect;
+
+// Store Calendar Settings - Global settings for store calendar (auto-apply rules)
+export const storeCalendarSettings = w3suiteSchema.table("store_calendar_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Auto-apply rules
+  autoCloseSundays: boolean("auto_close_sundays").default(true).notNull(),
+  autoCloseNationalHolidays: boolean("auto_close_national_holidays").default(true).notNull(),
+  autoCloseReligiousHolidays: boolean("auto_close_religious_holidays").default(false).notNull(),
+  
+  // Default patron saint day (local holiday)
+  patronSaintDay: date("patron_saint_day"), // e.g., "06-24" for San Giovanni (Firenze)
+  patronSaintName: varchar("patron_saint_name", { length: 100 }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("store_calendar_settings_store_unique").on(table.storeId),
+  index("store_calendar_settings_tenant_idx").on(table.tenantId),
+]);
+
+export const insertStoreCalendarSettingsSchema = createInsertSchema(storeCalendarSettings).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertStoreCalendarSettings = z.infer<typeof insertStoreCalendarSettingsSchema>;
+export type StoreCalendarSettings = typeof storeCalendarSettings.$inferSelect;
+
 // ==================== RBAC SYSTEM ====================
 export const roles = w3suiteSchema.table("roles", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

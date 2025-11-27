@@ -19,6 +19,7 @@ import {
 } from '../components/Leave/forms/StandardFields';
 import AISettingsPage from '../components/AI/AISettingsPage';
 import { StoreConfigurationDialog } from '../components/settings/StoreConfigurationDialog';
+import { StoreCalendarModal } from '../components/settings/StoreCalendarModal';
 import ChannelSettingsPage from './settings/ChannelSettingsPage';
 import { z } from 'zod';
 import { 
@@ -524,6 +525,7 @@ export default function SettingsPage() {
   const [userModal, setUserModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [logDetailsModal, setLogDetailsModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [calendarModal, setCalendarModal] = useState<{ open: boolean; storeId: string | null; storeName: string }>({ open: false, storeId: null, storeName: '' });
 
   // Avatar change handler
   const handleAvatarChange = (avatarData: { url?: string; blob?: Blob; type: 'upload' | 'generated' }) => {
@@ -2553,6 +2555,31 @@ export default function SettingsPage() {
                         }}
                         title="Configura Store (GPS, Social, Marketing, WhatsApp)">
                         <Settings size={14} style={{ color: '#ff6900' }} />
+                      </button>
+                      <button
+                        onClick={() => setCalendarModal({ open: true, storeId: item.id, storeName: item.nome })}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#f0f9ff';
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}
+                        title="Calendario Orari e Aperture"
+                        data-testid={`btn-calendar-store-${item.id}`}>
+                        <CalendarIcon size={14} style={{ color: '#3b82f6' }} />
                       </button>
                       <button
                         onClick={() => setStoreModal({ open: true, data: item })}
@@ -9038,6 +9065,16 @@ export default function SettingsPage() {
           onOpenChange={() => setSelectedStoreId(null)}
         />
       )}
+
+      {/* Store Calendar Modal */}
+      <StoreCalendarModal
+        open={calendarModal.open}
+        storeId={calendarModal.storeId}
+        storeName={calendarModal.storeName}
+        onClose={() => setCalendarModal({ open: false, storeId: null, storeName: '' })}
+        tenantId={currentTenantId}
+        allStores={puntiVenditaList.map(s => ({ id: s.id, nome: s.nome }))}
+      />
 
       {/* Create Custom Role Modal - MOVED TO ROOT LEVEL */}
       {createRoleModalOpen && (
