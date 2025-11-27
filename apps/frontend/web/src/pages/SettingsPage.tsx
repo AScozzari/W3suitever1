@@ -9072,7 +9072,7 @@ export default function SettingsPage() {
         storeId={calendarModal.storeId}
         storeName={calendarModal.storeName}
         onClose={() => setCalendarModal({ open: false, storeId: null, storeName: '' })}
-        tenantId={currentTenantId}
+        tenantId={DEMO_TENANT_ID}
         allStores={puntiVenditaList.map(s => ({ id: s.id, nome: s.nome }))}
       />
 
