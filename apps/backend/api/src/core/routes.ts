@@ -2168,6 +2168,242 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== STORE WORKING STATS API ====================
+  
+  // Get store working statistics (days and hours)
+  // Query params: period (week|month|year), startDate, endDate
+  app.get('/api/stores/:storeId/working-stats', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { storeId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      const { period, startDate, endDate } = req.query;
+      
+      if (!validateUUIDParam(storeId, 'ID negozio', res)) return;
+      
+      await setTenantContext(tenantId);
+      
+      // Determine date range
+      const now = new Date();
+      let rangeStart: Date;
+      let rangeEnd: Date;
+      
+      if (startDate && endDate) {
+        rangeStart = new Date(startDate as string);
+        rangeEnd = new Date(endDate as string);
+      } else if (period === 'week') {
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+        rangeEnd = new Date(rangeStart);
+        rangeEnd.setDate(rangeEnd.getDate() + 6);
+      } else if (period === 'year') {
+        rangeStart = new Date(now.getFullYear(), 0, 1);
+        rangeEnd = new Date(now.getFullYear(), 11, 31);
+      } else {
+        // Default: current month
+        rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        rangeEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      }
+      
+      // Get opening rules
+      const openingRulesResult = await db
+        .select()
+        .from(storeOpeningRules)
+        .where(
+          and(
+            eq(storeOpeningRules.storeId, storeId),
+            eq(storeOpeningRules.tenantId, tenantId)
+          )
+        );
+      
+      // Get calendar settings
+      const settingsResult = await db
+        .select()
+        .from(storeCalendarSettings)
+        .where(
+          and(
+            eq(storeCalendarSettings.storeId, storeId),
+            eq(storeCalendarSettings.tenantId, tenantId)
+          )
+        )
+        .limit(1);
+      
+      const settings = settingsResult[0] || {
+        autoCloseSundays: true,
+        autoCloseNationalHolidays: true,
+        autoCloseReligiousHolidays: false
+      };
+      
+      // Get overrides in range
+      const overridesResult = await db
+        .select()
+        .from(storeCalendarOverrides)
+        .where(
+          and(
+            eq(storeCalendarOverrides.storeId, storeId),
+            eq(storeCalendarOverrides.tenantId, tenantId),
+            sql`${storeCalendarOverrides.date} >= ${rangeStart.toISOString().split('T')[0]}`,
+            sql`${storeCalendarOverrides.date} <= ${rangeEnd.toISOString().split('T')[0]}`
+          )
+        );
+      
+      // Get holidays in range
+      const holidaysResult = await db
+        .select()
+        .from(italianHolidays)
+        .where(
+          and(
+            sql`${italianHolidays.date} >= ${rangeStart.toISOString().split('T')[0]}`,
+            sql`${italianHolidays.date} <= ${rangeEnd.toISOString().split('T')[0]}`
+          )
+        );
+      
+      // Create lookup maps
+      const rulesMap = new Map(openingRulesResult.map(r => [r.dayOfWeek, r]));
+      const overridesMap = new Map(overridesResult.map(o => [o.date, o]));
+      const holidaysMap = new Map(holidaysResult.map(h => [h.date, h]));
+      
+      const dayOfWeekNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      // Helper to calculate hours from time range
+      const calculateHours = (startTime: string | null, endTime: string | null): number => {
+        if (!startTime || !endTime) return 0;
+        const [startH, startM] = startTime.split(':').map(Number);
+        const [endH, endM] = endTime.split(':').map(Number);
+        return (endH + endM / 60) - (startH + startM / 60);
+      };
+      
+      // Calculate stats for each day in range
+      let workingDays = 0;
+      let closedDays = 0;
+      let totalHours = 0;
+      let regularDays = 0;
+      let holidaysClosed = 0;
+      let overrideDays = 0;
+      let sundaysClosed = 0;
+      
+      const dailyBreakdown: Array<{
+        date: string;
+        dayOfWeek: string;
+        isOpen: boolean;
+        hours: number;
+        status: string;
+      }> = [];
+      
+      const currentDate = new Date(rangeStart);
+      while (currentDate <= rangeEnd) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayOfWeekNum = currentDate.getDay();
+        const dayOfWeekName = dayOfWeekNames[dayOfWeekNum];
+        
+        let isOpen = true;
+        let hoursToday = 0;
+        let status = 'regular';
+        
+        // Check for override first (highest priority)
+        const override = overridesMap.get(dateStr);
+        if (override) {
+          isOpen = override.isOpen ?? false;
+          if (isOpen) {
+            hoursToday = calculateHours(override.openTime, override.closeTime);
+          }
+          status = override.isOpen ? 'override_open' : 'override_closed';
+          overrideDays++;
+        } else {
+          // Check for holiday
+          const holiday = holidaysMap.get(dateStr);
+          if (holiday) {
+            const isNational = holiday.holidayType === 'national';
+            const isReligious = holiday.holidayType === 'religious';
+            if ((isNational && settings.autoCloseNationalHolidays) ||
+                (isReligious && settings.autoCloseReligiousHolidays)) {
+              isOpen = false;
+              status = 'holiday_closed';
+              holidaysClosed++;
+            }
+          }
+          
+          // Check Sunday auto-close
+          if (isOpen && dayOfWeekNum === 0 && settings.autoCloseSundays) {
+            isOpen = false;
+            status = 'sunday_closed';
+            sundaysClosed++;
+          }
+          
+          // Apply regular rule if still open
+          if (isOpen) {
+            const rule = rulesMap.get(dayOfWeekName);
+            if (rule) {
+              isOpen = rule.isOpen ?? false;
+              if (isOpen) {
+                hoursToday = calculateHours(rule.openTime, rule.closeTime);
+                if (rule.hasBreak && rule.breakStartTime && rule.breakEndTime) {
+                  hoursToday -= calculateHours(rule.breakStartTime, rule.breakEndTime);
+                }
+                regularDays++;
+              } else {
+                status = 'closed';
+              }
+            } else {
+              // No rule defined, default to closed
+              isOpen = false;
+              status = 'no_rule';
+            }
+          }
+        }
+        
+        if (isOpen) {
+          workingDays++;
+          totalHours += hoursToday;
+        } else {
+          closedDays++;
+        }
+        
+        dailyBreakdown.push({
+          date: dateStr,
+          dayOfWeek: dayOfWeekName,
+          isOpen,
+          hours: Math.round(hoursToday * 100) / 100,
+          status
+        });
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      const totalDays = workingDays + closedDays;
+      const averageHoursPerDay = workingDays > 0 ? totalHours / workingDays : 0;
+      
+      res.json({
+        success: true,
+        data: {
+          storeId,
+          period: {
+            start: rangeStart.toISOString().split('T')[0],
+            end: rangeEnd.toISOString().split('T')[0],
+            type: period || 'month'
+          },
+          summary: {
+            totalDays,
+            workingDays,
+            closedDays,
+            totalHours: Math.round(totalHours * 100) / 100,
+            averageHoursPerDay: Math.round(averageHoursPerDay * 100) / 100,
+            averageHoursPerWeek: Math.round((totalHours / (totalDays / 7)) * 100) / 100
+          },
+          breakdown: {
+            regularDays,
+            holidaysClosed,
+            sundaysClosed,
+            overrideDays
+          },
+          dailyDetails: dailyBreakdown
+        }
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'calcolo statistiche lavorative negozio');
+    }
+  });
+
   // Helper function to calculate Haversine distance between two points
   function calculateHaversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371e3; // Earth's radius in meters
