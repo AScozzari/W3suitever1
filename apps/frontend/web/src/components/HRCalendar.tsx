@@ -281,13 +281,38 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   // ✅ FASE 1.2 FIX: Gestione click su evento - legge dalla struttura unificata
   const handleEventClick = useCallback((arg: any) => {
     const event = arg.event;
-    if (event.extendedProps.type === 'shift') {
+    const eventType = event.extendedProps.type;
+    
+    if (eventType === 'shift') {
       form.setValue('title', event.title);
       form.setValue('start', event.start.toISOString().slice(0, 16));
       form.setValue('end', event.end.toISOString().slice(0, 16));
       form.setValue('employeeId', event.extendedProps.metadata?.employeeId || '');
       form.setValue('shiftType', event.extendedProps.metadata?.shiftType || 'full_time');
       form.setValue('notes', event.extendedProps.description || '');
+      
+      setSelectedEvent(event);
+      setEventModalMode('edit');
+      setShowEventModal(true);
+    } else if (eventType === 'planned_shift') {
+      form.setValue('title', event.title || 'Turno Pianificato');
+      form.setValue('start', event.start?.toISOString().slice(0, 16) || '');
+      form.setValue('end', event.end?.toISOString().slice(0, 16) || '');
+      form.setValue('employeeId', '');
+      form.setValue('shiftType', 'full_time');
+      form.setValue('notes', `Turno pianificato - Staff richiesto: ${event.extendedProps.requiredStaff || 1}`);
+      
+      setSelectedEvent(event);
+      setEventModalMode('edit');
+      setShowEventModal(true);
+    } else if (eventType === 'shift_assignment') {
+      const assignment = event.extendedProps;
+      form.setValue('title', event.title || 'Turno Assegnato');
+      form.setValue('start', event.start?.toISOString?.()?.slice(0, 16) || '');
+      form.setValue('end', event.end?.toISOString?.()?.slice(0, 16) || '');
+      form.setValue('employeeId', assignment.employee?.id || '');
+      form.setValue('shiftType', 'full_time');
+      form.setValue('notes', assignment.hasConflict ? 'ATTENZIONE: Questo turno ha conflitti!' : '');
       
       setSelectedEvent(event);
       setEventModalMode('edit');
