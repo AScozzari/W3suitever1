@@ -1002,16 +1002,18 @@ router.get('/staff/availability', requirePermission('hr.shifts.read'), async (re
 // ==================== SHIFT TEMPLATES ====================
 
 // GET /api/hr/shift-templates - Get shift templates for tenant
+// Query params: storeId (optional) - filter templates by scope (global + store-specific)
 router.get('/shift-templates', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
+    const storeId = req.query.storeId as string | undefined;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // Get shift templates using existing storage function
-    const templates = await hrStorage.getShiftTemplates(tenantId);
+    // Get shift templates with optional storeId filter (global + store-specific)
+    const templates = await hrStorage.getShiftTemplates(tenantId, undefined, storeId);
 
     res.json(templates);
   } catch (error) {

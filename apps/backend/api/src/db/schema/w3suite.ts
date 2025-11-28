@@ -1783,7 +1783,10 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   
-  // Store assignment (NEW: template belongs to specific store)
+  // Scope: 'global' = tutti i negozi, 'store' = solo negozio specifico
+  scope: varchar("scope", { length: 10 }).notNull().default("global"), // 'global' | 'store'
+  
+  // Store assignment (solo se scope='store')
   storeId: uuid("store_id").references(() => stores.id),
   
   // Pattern configuration

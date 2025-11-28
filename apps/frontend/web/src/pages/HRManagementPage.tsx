@@ -6,9 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import { useAuth } from '@/hooks/useAuth';
 import HRCalendar from '@/components/HRCalendar';
-import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
-import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
-import BulkShiftPlanner from '@/components/Shifts/BulkShiftPlanner';
+import ShiftTemplateStudio from '@/components/Shifts/ShiftTemplateStudio';
+import ShiftPlanningWorkspace from '@/components/Shifts/ShiftPlanningWorkspace';
 import { EmployeeDataTable } from '@/components/hr/EmployeeDataTable';
 import { EmployeeEditModal } from '@/components/hr/EmployeeEditModal';
 
@@ -1225,151 +1224,31 @@ const HRManagementPage: React.FC = () => {
   );
 
   // ==================== SHIFTS SECTION ====================
+  // Struttura semplificata: 1. Calendario 2. Template Studio 3. Gestione Turni
 
   const ShiftsSection = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestione Turni</h2>
-          <p className="text-slate-600 dark:text-slate-400">Template e assegnazioni turni</p>
+          <p className="text-slate-600 dark:text-slate-400">Calendario, template e assegnazioni</p>
         </div>
       </div>
 
-      {/* 1. Professional HR Calendar with its own filters */}
+      {/* 1. CALENDARIO - Visualizzazione turni */}
       <HRCalendar 
         storeId={selectedStore?.id}
         startDate={null}
         endDate={null}
       />
 
-      {/* 2. Bulk Shift Planner - Pianificazione Rapida */}
-      <BulkShiftPlanner 
-        storeId={selectedStore?.id}
-        className="mt-6"
+      {/* 2. TEMPLATE STUDIO - Creazione e gestione template turni */}
+      <ShiftTemplateStudio 
+        selectedStoreId={selectedStore?.id}
       />
 
-      {/* 3. Shift Template Manager */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20">
-        <CardContent className="pt-6">
-          <ShiftTemplateManager 
-            templates={shiftTemplates} 
-            storeId="" 
-            onApplyTemplate={async (templateId, startDate, endDate) => {
-              try {
-                // TODO: Implement apply template logic
-                toast({
-                  title: "Template applicato",
-                  description: "Template turno applicato con successo"
-                });
-              } catch (error) {
-                toast({
-                  title: "Errore",
-                  description: "Impossibile applicare il template",
-                  variant: "destructive"
-                });
-              }
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      {/* 4. Assignment Section - Gantt & Grid Views */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20">
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <CardTitle>Assegnazione Turni - Vista Gantt & Grid</CardTitle>
-              <CardDescription>Assegna turni alle risorse con controllo conflitti</CardDescription>
-            </div>
-            <Badge variant="secondary" className="bg-green-100 text-green-800 flex-shrink-0">
-              <CheckCircle className="w-4 h-4 mr-1" />
-              Sistema Attivo
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ShiftAssignmentDashboard
-            storeId={selectedStore?.id}
-            selectedWeek={selectedDate}
-            onAssignShift={async (shiftId: string, employeeIds: string[]) => {
-              try {
-
-                const response = await apiRequest(`/api/hr/shifts/${shiftId}/assign`, {
-                  method: 'POST',
-                  body: JSON.stringify({ employeeIds })
-                });
-                
-                // Refresh queries
-                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
-                
-                toast({
-                  title: "Assegnazione Completata",
-                  description: `${employeeIds.length} dipendente/i assegnato/i al turno`
-                });
-              } catch (error) {
-                console.error('Error assigning shift:', error);
-                throw error;
-              }
-            }}
-            onUnassignShift={async (shiftId: string, employeeIds: string[]) => {
-              try {
-
-                const response = await apiRequest(`/api/hr/shifts/${shiftId}/unassign`, {
-                  method: 'POST',
-                  body: JSON.stringify({ employeeIds })
-                });
-                
-                // Refresh queries
-                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
-                
-                toast({
-                  title: "Rimozione Completata",
-                  description: `${employeeIds.length} dipendente/i rimosso/i dal turno`
-                });
-              } catch (error) {
-                console.error('Error unassigning shift:', error);
-                throw error;
-              }
-            }}
-            onBulkAssign={async (assignments: { shiftId: string; employeeId: string }[]) => {
-              try {
-                // Group assignments by shiftId to match backend API format
-                const groupedAssignments = assignments.reduce((acc, assignment) => {
-                  const existing = acc.find(item => item.shiftId === assignment.shiftId);
-                  if (existing) {
-                    existing.employeeIds.push(assignment.employeeId);
-                  } else {
-                    acc.push({
-                      shiftId: assignment.shiftId,
-                      employeeIds: [assignment.employeeId]
-                    });
-                  }
-                  return acc;
-                }, [] as { shiftId: string; employeeIds: string[] }[]);
-
-                const response = await apiRequest('/api/hr/shifts/bulk-assign', {
-                  method: 'POST',
-                  body: JSON.stringify({ assignments: groupedAssignments })
-                });
-                
-                // Refresh queries
-                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
-                
-                toast({
-                  title: "Bulk Assignment Completato",
-                  description: `${assignments.length} assegnazioni create con successo`
-                });
-              } catch (error) {
-                console.error('Error bulk assigning shifts:', error);
-                throw error;
-              }
-            }}
-          />
-        </CardContent>
-      </Card>
+      {/* 3. GESTIONE TURNI - Flusso lineare: Negozio → Template → Risorse → Coperture */}
+      <ShiftPlanningWorkspace />
     </div>
   );
 

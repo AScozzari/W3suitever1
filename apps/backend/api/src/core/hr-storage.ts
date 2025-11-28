@@ -183,7 +183,7 @@ export interface IHRStorage {
   getUserCalendarPermissions(userId: string, userRole: string): CalendarPermissions;
   
   // Shift Templates
-  getShiftTemplates(tenantId: string, isActive?: boolean): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]>;
+  getShiftTemplates(tenantId: string, isActive?: boolean, storeId?: string): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]>;
   createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
   updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
   deleteShiftTemplate(id: string, tenantId: string): Promise<void>;
@@ -1035,10 +1035,20 @@ export class HRStorage implements IHRStorage {
   }
   
   // ==================== SHIFT TEMPLATES ====================
-  async getShiftTemplates(tenantId: string, isActive?: boolean): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]> {
+  async getShiftTemplates(tenantId: string, isActive?: boolean, storeId?: string): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]> {
     const conditions = [eq(shiftTemplates.tenantId, tenantId)];
     if (isActive !== undefined) {
       conditions.push(eq(shiftTemplates.isActive, isActive));
+    }
+    
+    // Filter by scope: global templates OR store-specific templates
+    if (storeId) {
+      conditions.push(
+        or(
+          eq(shiftTemplates.scope, 'global'),
+          and(eq(shiftTemplates.scope, 'store'), eq(shiftTemplates.storeId, storeId))
+        )!
+      );
     }
     
     // Get templates
