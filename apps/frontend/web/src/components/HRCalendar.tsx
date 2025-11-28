@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import { Calendar, Clock, Users, Filter, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -544,6 +544,11 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
             <DialogTitle>
               {eventModalMode === 'create' ? 'Nuovo Turno' : 'Modifica Turno'}
             </DialogTitle>
+            <DialogDescription>
+              {eventModalMode === 'create' 
+                ? 'Crea un nuovo turno assegnando un dipendente a una fascia oraria' 
+                : 'Modifica i dettagli del turno selezionato'}
+            </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -700,6 +705,9 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                 })}
               </span>
             </DialogTitle>
+            <DialogDescription>
+              Visualizza i dipendenti assegnati ai turni per questa giornata
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
