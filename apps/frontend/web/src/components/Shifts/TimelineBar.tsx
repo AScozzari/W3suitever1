@@ -52,8 +52,11 @@ const COLOR_LABELS = {
 };
 
 const timeToMinutes = (time: string): number => {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + (minutes || 0);
+  if (!time || typeof time !== 'string') return 0;
+  const parts = time.split(':');
+  const hours = parseInt(parts[0], 10) || 0;
+  const minutes = parseInt(parts[1], 10) || 0;
+  return hours * 60 + minutes;
 };
 
 const minutesToPercent = (minutes: number, startHour: number, endHour: number): number => {
@@ -62,9 +65,8 @@ const minutesToPercent = (minutes: number, startHour: number, endHour: number): 
   return Math.max(0, Math.min(100, (offsetMinutes / totalMinutes) * 100));
 };
 
-const LANE_HEIGHT = 44;
-const HEADER_HEIGHT = 28;
-const MIN_TOTAL_HEIGHT = 180;
+const LANE_HEIGHT = 48;
+const MIN_TOTAL_HEIGHT = 200;
 
 export function TimelineBar({
   day,
@@ -84,7 +86,7 @@ export function TimelineBar({
   }, [startHour, endHour]);
 
   const totalHeight = useMemo(() => {
-    const lanesHeight = lanes.length * LANE_HEIGHT + HEADER_HEIGHT;
+    const lanesHeight = lanes.length * LANE_HEIGHT + 32;
     return Math.max(MIN_TOTAL_HEIGHT, lanesHeight);
   }, [lanes.length]);
 
@@ -102,22 +104,22 @@ export function TimelineBar({
           <TooltipTrigger asChild>
             <div
               className={cn(
-                "absolute rounded-md cursor-pointer transition-all hover:opacity-90 hover:ring-2 hover:ring-white/60 shadow-sm",
+                "absolute rounded-md cursor-pointer transition-all hover:opacity-90 hover:ring-2 hover:ring-white/60 shadow-md",
                 "flex items-center justify-center text-white font-semibold overflow-hidden"
               )}
               style={{
                 left: `${left}%`,
                 width: `${Math.max(width, 2)}%`,
-                top: '4px',
-                bottom: '4px',
+                top: '6px',
+                bottom: '6px',
                 backgroundColor: bgColor,
               }}
               onClick={() => onSegmentClick?.(segment)}
               data-testid={`timeline-segment-${segment.id}`}
             >
-              {width > 5 && (
+              {width > 8 && (
                 <span className="truncate px-2 text-[12px]">
-                  {segment.resourceName || segment.label || `${segment.startTime.slice(0,5)}-${segment.endTime.slice(0,5)}`}
+                  {segment.resourceName || segment.label || `${segment.startTime}-${segment.endTime}`}
                 </span>
               )}
             </div>
@@ -125,7 +127,7 @@ export function TimelineBar({
           <TooltipContent side="top" className="max-w-xs bg-gray-900 text-white border-gray-700">
             <div className="text-sm space-y-1.5 p-1">
               <p className="font-semibold text-base">{segment.label || segment.templateName || COLOR_LABELS[segment.type]}</p>
-              <p className="text-gray-300 font-medium">{segment.startTime.slice(0,5)} - {segment.endTime.slice(0,5)}</p>
+              <p className="text-gray-300 font-medium">{segment.startTime} - {segment.endTime}</p>
               {segment.resourceName && <p className="text-purple-300">Risorsa: {segment.resourceName}</p>}
               {segment.requiredStaff !== undefined && (
                 <p className="text-orange-300">Staff: {segment.assignedStaff || 0}/{segment.requiredStaff}</p>
@@ -143,20 +145,22 @@ export function TimelineBar({
     return (
       <div 
         key={lane.id}
-        className="relative border-b border-gray-100 last:border-b-0"
+        className="flex items-stretch border-b border-gray-100 last:border-b-0"
         style={{ height: `${LANE_HEIGHT}px` }}
         data-testid={`timeline-lane-${lane.id}`}
       >
         <div 
-          className="absolute left-0 top-0 bottom-0 w-1 rounded-l"
+          className="w-1 shrink-0 rounded-l"
           style={{ backgroundColor: laneColor }}
         />
         
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-500 w-20 truncate z-10">
-          {lane.label}
+        <div className="w-24 shrink-0 flex items-center px-2">
+          <span className="text-[11px] font-medium text-gray-600 truncate">
+            {lane.label}
+          </span>
         </div>
         
-        <div className="absolute left-24 right-2 top-0 bottom-0 relative">
+        <div className="flex-1 relative">
           {lane.segments.map(seg => renderSegment(seg))}
         </div>
       </div>
@@ -166,52 +170,60 @@ export function TimelineBar({
   return (
     <div className={cn("bg-white rounded-lg border border-gray-200 p-4 shadow-sm", className)} data-testid={`timeline-day-${day}`}>
       <div className="flex items-start gap-4">
-        <div className="w-28 pt-3 text-sm font-bold text-gray-800 shrink-0">
+        <div className="w-24 pt-2 text-sm font-bold text-gray-800 shrink-0">
           {dayLabel}
         </div>
         
-        <div className="flex-1 relative">
+        <div className="flex-1">
           <div 
             className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100"
             style={{ minHeight: `${totalHeight}px` }}
           >
-            <div className="relative" style={{ height: `${HEADER_HEIGHT}px` }}>
-              {hourMarkers.map(hour => {
-                const left = minutesToPercent(hour * 60, startHour, endHour);
-                return (
-                  <div
-                    key={hour}
-                    className="absolute h-full"
-                    style={{ left: `calc(96px + ${left}% * (100% - 96px - 8px) / 100)` }}
-                  >
-                    <span className="absolute top-1 -translate-x-1/2 text-[13px] font-bold text-gray-600 bg-gray-50 px-1">
-                      {hour}:00
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="flex items-center border-b border-gray-200 h-8">
+              <div className="w-1 shrink-0" />
+              <div className="w-24 shrink-0" />
+              <div className="flex-1 relative h-full">
+                {hourMarkers.map(hour => {
+                  const left = minutesToPercent(hour * 60, startHour, endHour);
+                  return (
+                    <div
+                      key={hour}
+                      className="absolute h-full flex items-center"
+                      style={{ left: `${left}%` }}
+                    >
+                      <span className="text-[12px] font-bold text-gray-600 -translate-x-1/2 bg-gray-50 px-1">
+                        {hour}:00
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             
             <div className="relative">
-              {hourMarkers.map(hour => {
-                const left = minutesToPercent(hour * 60, startHour, endHour);
-                return (
-                  <div
-                    key={`grid-${hour}`}
-                    className="absolute top-0 bottom-0 border-l border-gray-200/60"
-                    style={{ 
-                      left: `calc(96px + ${left}% * (100% - 96px - 8px) / 100)`,
-                      height: `${lanes.length * LANE_HEIGHT}px`
-                    }}
-                  />
-                );
-              })}
-              
-              {lanes.map((lane, idx) => renderLane(lane, idx))}
+              {lanes.map((lane, idx) => (
+                <div key={lane.id} className="relative">
+                  {hourMarkers.map(hour => {
+                    const left = minutesToPercent(hour * 60, startHour, endHour);
+                    return (
+                      <div
+                        key={`grid-${hour}-${lane.id}`}
+                        className="absolute border-l border-gray-200/50"
+                        style={{ 
+                          left: `calc(100px + ${left}% * (100% - 100px) / 100%)`,
+                          top: 0,
+                          height: `${LANE_HEIGHT}px`
+                        }}
+                      />
+                    );
+                  })}
+                  {renderLane(lane, idx)}
+                </div>
+              ))}
               
               {lanes.length === 0 && (
-                <div className="flex items-center justify-center h-24 text-gray-400 text-sm">
-                  Nessun elemento da visualizzare
+                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+                  Seleziona un negozio, le date e i template per vedere la timeline
                 </div>
               )}
             </div>
