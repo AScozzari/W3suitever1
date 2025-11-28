@@ -1,33 +1,45 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { 
   Store as StoreIcon, Calendar as CalendarIcon, Users, 
   ChevronLeft, ChevronRight, Check, AlertTriangle, AlertCircle,
   Clock, CheckCircle2, XCircle, User, Plus, Minus, 
-  ArrowRight, Layers, Eye, Save, RotateCcw
+  ArrowRight, Layers, Eye, Save, RotateCcw, GripVertical,
+  CalendarDays, CalendarRange, Trash2
 } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, getDay } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, getDay, parseISO, isSameDay } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { useShiftPlanningStore, type ShiftTemplate, type TimeSlot, type ResourceAssignment } from '@/stores/shiftPlanningStore';
+import { TimelineBar, TimelineLegend, type TimelineSegment } from './TimelineBar';
 
 interface Store {
   id: string;
   name?: string;
   nome?: string;
   code?: string;
+}
+
+interface StoreOpeningRule {
+  id: string;
+  storeId: string;
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
+  isClosed: boolean;
 }
 
 interface ApiShiftTemplate {
@@ -43,8 +55,6 @@ interface ApiShiftTemplate {
     name?: string;
     requiredStaff?: number;
   }>;
-  defaultStartTime?: string;
-  defaultEndTime?: string;
 }
 
 interface Resource {
@@ -56,16 +66,13 @@ interface Resource {
   storeId?: string;
 }
 
-const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-const DAY_NAMES_FULL = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+type ActiveTab = 'store' | 'days' | 'templates' | 'resources';
+type DaySelectionMode = 'range' | 'calendar';
 
 export default function ShiftPlanningWorkspace() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
-  // Zustand store
   const {
-    currentPhase,
     selectedStoreId,
     selectedStoreName,
     periodStart,
@@ -73,62 +80,54 @@ export default function ShiftPlanningWorkspace() {
     templateSelections,
     resourceAssignments,
     coveragePreview,
+    storeOpeningHours,
     setStore,
     setPeriod,
+    setStoreOpeningHours,
     addTemplateSelection,
     removeTemplateSelection,
     toggleDayForTemplate,
     selectAllDaysForTemplate,
-    clearAllDaysForTemplate,
     assignResource,
     removeResourceAssignment,
-    goToPhase,
     computeCoverage,
     resetPlanning
   } = useShiftPlanningStore();
   
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [showResourceModal, setShowResourceModal] = useState(false);
-  const [selectedSlotForAssignment, setSelectedSlotForAssignment] = useState<{
-    templateId: string;
-    slotId: string;
-    day: string;
-    startTime: string;
-    endTime: string;
-    templateName: string;
-  } | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('store');
+  const [daySelectionMode, setDaySelectionMode] = useState<DaySelectionMode>('range');
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+    to: endOfWeek(new Date(), { weekStartsOn: 1 })
+  });
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [draggedResource, setDraggedResource] = useState<Resource | null>(null);
   
-  // Fetch stores
   const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ['/api/stores'],
   });
 
-  // Fetch templates for selected store (global + store-specific)
+  const { data: openingRules = [] } = useQuery<StoreOpeningRule[]>({
+    queryKey: ['/api/stores', selectedStoreId, 'opening-rules'],
+    enabled: !!selectedStoreId,
+  });
+
   const { data: apiTemplates = [], isLoading: templatesLoading } = useQuery<ApiShiftTemplate[]>({
     queryKey: ['/api/hr/shift-templates', { storeId: selectedStoreId }],
     enabled: !!selectedStoreId,
   });
 
-  // Fetch resources/users
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ['/api/users', selectedStoreId],
     enabled: !!selectedStoreId,
   });
-  
-  // Period calculations
-  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  
-  const periodDays = useMemo(() => {
-    return eachDayOfInterval({ start: weekStart, end: weekEnd });
-  }, [weekStart, weekEnd]);
-  
-  // Convert API templates to store format
+
   const templates: ShiftTemplate[] = useMemo(() => {
     return apiTemplates.map(t => ({
       id: t.id,
       name: t.name,
-      color: t.color || '#FF6900',
+      color: t.color || '#f97316',
       scope: t.scope || (t.storeId ? 'store' : 'global'),
       storeId: t.storeId || null,
       timeSlots: (t.timeSlots || []).map((slot, idx) => ({
@@ -140,110 +139,226 @@ export default function ShiftPlanningWorkspace() {
       }))
     }));
   }, [apiTemplates]);
-  
-  // Update period in store when currentDate changes
+
+  const periodDays = useMemo(() => {
+    if (daySelectionMode === 'range') {
+      return eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+    }
+    return selectedDates.sort((a, b) => a.getTime() - b.getTime());
+  }, [daySelectionMode, dateRange, selectedDates]);
+
   useEffect(() => {
-    setPeriod(weekStart, weekEnd);
-  }, [weekStart, weekEnd, setPeriod]);
-  
-  // Navigate week
-  function navigateWeek(direction: 'prev' | 'next') {
-    setCurrentDate(prev => addDays(prev, direction === 'next' ? 7 : -7));
-  }
-  
-  // Handle store selection
-  function handleStoreSelect(storeId: string) {
+    if (periodDays.length > 0) {
+      setPeriod(periodDays[0], periodDays[periodDays.length - 1]);
+    }
+  }, [periodDays, setPeriod]);
+
+  useEffect(() => {
+    if (openingRules.length > 0) {
+      const hours = openingRules.map(rule => ({
+        day: rule.dayOfWeek,
+        openTime: rule.openTime,
+        closeTime: rule.closeTime,
+        isClosed: rule.isClosed
+      }));
+      setStoreOpeningHours(hours);
+    }
+  }, [openingRules, setStoreOpeningHours]);
+
+  const handleStoreSelect = (storeId: string) => {
     const store = stores.find(s => s.id === storeId);
     if (store) {
       setStore(storeId, store.nome || store.name || '');
+      setActiveTab('days');
     }
-  }
-  
-  // Handle template toggle (multi-select)
-  function handleTemplateToggle(template: ShiftTemplate) {
+  };
+
+  const handleTemplateToggle = (template: ShiftTemplate) => {
     const isSelected = templateSelections.find(ts => ts.templateId === template.id);
     if (isSelected) {
       removeTemplateSelection(template.id);
     } else {
       addTemplateSelection(template);
     }
-  }
-  
-  // Get days as ISO strings for the current period
-  const periodDayStrings = useMemo(() => {
-    return periodDays.map(d => format(d, 'yyyy-MM-dd'));
-  }, [periodDays]);
-  
-  // Compute coverage stats per day
-  const dayCoverageStats = useMemo(() => {
-    const stats: Record<string, { total: number; covered: number; partial: number; uncovered: number }> = {};
-    
-    periodDayStrings.forEach(day => {
-      const daySlots = coveragePreview.filter(s => s.day === day);
-      stats[day] = {
-        total: daySlots.length,
-        covered: daySlots.filter(s => s.coverageStatus === 'covered').length,
-        partial: daySlots.filter(s => s.coverageStatus === 'partial').length,
-        uncovered: daySlots.filter(s => s.coverageStatus === 'uncovered').length
-      };
-    });
-    
-    return stats;
-  }, [periodDayStrings, coveragePreview]);
-  
-  // Get slots for a specific day grouped by template
-  const getSlotsForDay = (day: string) => {
-    return coveragePreview.filter(s => s.day === day);
   };
-  
-  // Open resource assignment modal
-  function openResourceModal(templateId: string, slotId: string, day: string, startTime: string, endTime: string, templateName: string) {
-    setSelectedSlotForAssignment({ templateId, slotId, day, startTime, endTime, templateName });
-    setShowResourceModal(true);
-  }
-  
-  // Assign resource to slot
-  function handleAssignResource(resource: Resource) {
-    if (!selectedSlotForAssignment) return;
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    
+    if (daySelectionMode === 'calendar') {
+      setSelectedDates(prev => {
+        const exists = prev.find(d => isSameDay(d, date));
+        if (exists) {
+          return prev.filter(d => !isSameDay(d, date));
+        }
+        return [...prev, date];
+      });
+    }
+  };
+
+  const buildTimelineSegments = useCallback((day: Date): TimelineSegment[] => {
+    const segments: TimelineSegment[] = [];
+    const dayOfWeek = getDay(day);
+    const dayStr = format(day, 'yyyy-MM-dd');
+    
+    const dayOpening = storeOpeningHours.find(h => h.day === dayOfWeek);
+    if (dayOpening && !dayOpening.isClosed) {
+      segments.push({
+        id: `opening-${dayStr}`,
+        startTime: dayOpening.openTime.substring(0, 5),
+        endTime: dayOpening.closeTime.substring(0, 5),
+        type: 'opening',
+        label: 'Apertura'
+      });
+    }
+    
+    const daySlots = coveragePreview.filter(s => s.day === dayStr);
+    daySlots.forEach((slot, idx) => {
+      segments.push({
+        id: `template-${slot.templateId}-${slot.slotId}-${dayStr}`,
+        startTime: slot.startTime.substring(0, 5),
+        endTime: slot.endTime.substring(0, 5),
+        type: 'template',
+        label: slot.templateName,
+        templateName: slot.templateName,
+        color: slot.templateColor,
+        requiredStaff: slot.requiredStaff,
+        assignedStaff: slot.assignedResources.length
+      });
+      
+      slot.assignedResources.forEach((ra, raIdx) => {
+        segments.push({
+          id: `resource-${ra.resourceId}-${slot.slotId}-${dayStr}-${raIdx}`,
+          startTime: slot.startTime.substring(0, 5),
+          endTime: slot.endTime.substring(0, 5),
+          type: 'resource',
+          label: ra.resourceName,
+          resourceName: ra.resourceName,
+          templateName: slot.templateName
+        });
+      });
+      
+      if (slot.assignedResources.length < slot.requiredStaff) {
+        const missing = slot.requiredStaff - slot.assignedResources.length;
+        segments.push({
+          id: `shortage-${slot.templateId}-${slot.slotId}-${dayStr}`,
+          startTime: slot.startTime.substring(0, 5),
+          endTime: slot.endTime.substring(0, 5),
+          type: 'shortage',
+          label: `Mancano ${missing}`,
+          requiredStaff: slot.requiredStaff,
+          assignedStaff: slot.assignedResources.length
+        });
+      }
+    });
+
+    if (dayOpening && !dayOpening.isClosed && daySlots.length > 0) {
+      const openStart = parseInt(dayOpening.openTime.substring(0, 2)) * 60 + parseInt(dayOpening.openTime.substring(3, 5));
+      const openEnd = parseInt(dayOpening.closeTime.substring(0, 2)) * 60 + parseInt(dayOpening.closeTime.substring(3, 5));
+      
+      const coveredRanges = daySlots.map(s => ({
+        start: parseInt(s.startTime.substring(0, 2)) * 60 + parseInt(s.startTime.substring(3, 5)),
+        end: parseInt(s.endTime.substring(0, 2)) * 60 + parseInt(s.endTime.substring(3, 5))
+      })).sort((a, b) => a.start - b.start);
+      
+      let cursor = openStart;
+      coveredRanges.forEach(range => {
+        if (range.start > cursor) {
+          const gapStart = `${Math.floor(cursor / 60).toString().padStart(2, '0')}:${(cursor % 60).toString().padStart(2, '0')}`;
+          const gapEnd = `${Math.floor(range.start / 60).toString().padStart(2, '0')}:${(range.start % 60).toString().padStart(2, '0')}`;
+          segments.push({
+            id: `gap-${dayStr}-${cursor}`,
+            startTime: gapStart,
+            endTime: gapEnd,
+            type: 'gap',
+            label: 'Non coperto'
+          });
+        }
+        cursor = Math.max(cursor, range.end);
+      });
+      
+      if (cursor < openEnd) {
+        const gapStart = `${Math.floor(cursor / 60).toString().padStart(2, '0')}:${(cursor % 60).toString().padStart(2, '0')}`;
+        const gapEnd = `${Math.floor(openEnd / 60).toString().padStart(2, '0')}:${(openEnd % 60).toString().padStart(2, '0')}`;
+        segments.push({
+          id: `gap-${dayStr}-${cursor}-end`,
+          startTime: gapStart,
+          endTime: gapEnd,
+          type: 'gap',
+          label: 'Non coperto'
+        });
+      }
+    }
+    
+    return segments;
+  }, [storeOpeningHours, coveragePreview]);
+
+  const handleResourceDrop = (templateId: string, slotId: string, day: string, resource: Resource) => {
+    const existingAssignment = resourceAssignments.find(
+      ra => ra.resourceId === resource.id && ra.day === day
+    );
+    
+    if (existingAssignment) {
+      const slot = coveragePreview.find(s => s.slotId === existingAssignment.slotId && s.day === day);
+      if (slot) {
+        const overlap = checkTimeOverlap(
+          slot.startTime, slot.endTime,
+          coveragePreview.find(s => s.templateId === templateId && s.slotId === slotId && s.day === day)?.startTime || '',
+          coveragePreview.find(s => s.templateId === templateId && s.slotId === slotId && s.day === day)?.endTime || ''
+        );
+        
+        if (overlap) {
+          toast({
+            title: 'Sovrapposizione orario',
+            description: `${resource.firstName || resource.email} è già assegnato a una fascia sovrapposta in questo giorno`,
+            variant: 'destructive'
+          });
+          return;
+        }
+      }
+    }
     
     assignResource({
       resourceId: resource.id,
       resourceName: `${resource.firstName || ''} ${resource.lastName || ''}`.trim() || resource.email,
-      templateId: selectedSlotForAssignment.templateId,
-      slotId: selectedSlotForAssignment.slotId,
-      day: selectedSlotForAssignment.day
+      templateId,
+      slotId,
+      day
     });
     
     toast({
       title: 'Risorsa assegnata',
-      description: `${resource.firstName || resource.email} assegnato alla fascia ${selectedSlotForAssignment.startTime}-${selectedSlotForAssignment.endTime}`
+      description: `${resource.firstName || resource.email} assegnato`
     });
-  }
-  
-  // Get assigned resources for a slot
-  function getAssignedResources(templateId: string, slotId: string, day: string): ResourceAssignment[] {
-    return resourceAssignments.filter(
-      ra => ra.templateId === templateId && ra.slotId === slotId && ra.day === day
-    );
-  }
-  
-  // Save planning mutation
+  };
+
+  const checkTimeOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    return start1 < end2 && end1 > start2;
+  };
+
+  const totalCoverage = useMemo(() => {
+    if (coveragePreview.length === 0) return 0;
+    const covered = coveragePreview.filter(s => s.assignedResources.length >= s.requiredStaff).length;
+    return Math.round((covered / coveragePreview.length) * 100);
+  }, [coveragePreview]);
+
   const savePlanningMutation = useMutation({
     mutationFn: async () => {
-      // Build bulk data from selections
-      // Use consistent slotId generation matching the store
       const shifts = templateSelections.flatMap(ts => 
         ts.selectedDays.flatMap(day => 
           ts.template.timeSlots.map((slot, slotIndex) => {
             const slotId = slot.id || `slot-${slotIndex}`;
+            const assignments = resourceAssignments.filter(
+              ra => ra.templateId === ts.templateId && ra.slotId === slotId && ra.day === day
+            );
             return {
               templateId: ts.templateId,
               storeId: selectedStoreId,
               date: day,
               startTime: slot.startTime,
               endTime: slot.endTime,
-              slotId, // Include slotId for backend reference
-              assignments: getAssignedResources(ts.templateId, slotId, day).map(ra => ra.resourceId)
+              slotId,
+              assignments: assignments.map(ra => ra.resourceId)
             };
           })
         )
@@ -258,125 +373,43 @@ export default function ShiftPlanningWorkspace() {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
       toast({
         title: 'Pianificazione salvata!',
-        description: 'I turni e le assegnazioni sono stati salvati con successo'
+        description: 'I turni sono stati salvati correttamente'
       });
+      setShowSummaryModal(false);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: 'Errore salvataggio',
-        description: error.message || 'Errore nel salvataggio della pianificazione',
+        title: 'Errore',
+        description: 'Impossibile salvare la pianificazione',
         variant: 'destructive'
       });
     }
   });
-  
-  // Check if a resource is already assigned to a slot
-  function isResourceAssigned(resourceId: string, templateId: string, slotId: string, day: string): boolean {
-    return resourceAssignments.some(
-      ra => ra.resourceId === resourceId && ra.templateId === templateId && ra.slotId === slotId && ra.day === day
-    );
-  }
-  
-  // Coverage status color
-  function getCoverageColor(status: 'covered' | 'partial' | 'uncovered'): string {
-    switch (status) {
-      case 'covered': return 'bg-green-100 border-green-300 text-green-800';
-      case 'partial': return 'bg-amber-100 border-amber-300 text-amber-800';
-      case 'uncovered': return 'bg-red-100 border-red-300 text-red-800';
-    }
-  }
-  
-  // Day coverage badge color
-  function getDayCoverageColor(stats: { total: number; covered: number; partial: number; uncovered: number }): string {
-    if (stats.total === 0) return 'bg-gray-100 text-gray-500';
-    if (stats.uncovered > 0) return 'bg-red-500 text-white';
-    if (stats.partial > 0) return 'bg-amber-500 text-white';
-    return 'bg-green-500 text-white';
-  }
-  
-  // Total coverage percentage
-  const totalCoverage = useMemo(() => {
-    const total = coveragePreview.length;
-    if (total === 0) return 0;
-    const covered = coveragePreview.filter(s => s.coverageStatus === 'covered').length;
-    return Math.round((covered / total) * 100);
-  }, [coveragePreview]);
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Layers className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold">Pianificazione Turni</h2>
-              <p className="text-sm text-muted-foreground">
-                {currentPhase === 1 ? 'Fase 1: Seleziona template e giorni' : 'Fase 2: Assegna risorse alle fasce'}
-              </p>
-            </div>
+    <div className="flex flex-col h-full bg-gray-50">
+      <div className="bg-white border-b p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-semibold">Pianificazione Turni</h1>
+            <p className="text-sm text-muted-foreground">
+              {selectedStoreName ? `${selectedStoreName} - ` : ''}
+              {periodDays.length > 0 && `${format(periodDays[0], 'd MMM', { locale: it })} - ${format(periodDays[periodDays.length - 1], 'd MMM yyyy', { locale: it })}`}
+            </p>
           </div>
-          
-          <div className="flex items-center gap-2">
-            {/* Phase indicator */}
-            <div className="flex items-center gap-1 mr-4">
-              <Button
-                variant={currentPhase === 1 ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => goToPhase(1)}
-                className="gap-1"
-                data-testid="btn-phase-1"
-              >
-                <CalendarIcon className="w-4 h-4" />
-                Template
-              </Button>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-              <Button
-                variant={currentPhase === 2 ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => goToPhase(2)}
-                disabled={templateSelections.length === 0}
-                className="gap-1"
-                data-testid="btn-phase-2"
-              >
-                <Users className="w-4 h-4" />
-                Risorse
-              </Button>
-            </div>
-            
-            {/* Coverage indicator */}
-            {templateSelections.length > 0 && (
-              <Badge 
-                variant="outline" 
-                className={cn(
-                  "text-sm",
-                  totalCoverage >= 80 ? "bg-green-50 text-green-700 border-green-200" :
-                  totalCoverage >= 50 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                  "bg-red-50 text-red-700 border-red-200"
-                )}
-              >
-                Copertura: {totalCoverage}%
-              </Badge>
-            )}
-            
-            {/* Actions */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => resetPlanning()}
-              data-testid="btn-reset"
-            >
+          <div className="flex items-center gap-3">
+            <Badge variant={totalCoverage >= 80 ? 'default' : totalCoverage >= 50 ? 'secondary' : 'destructive'}>
+              Copertura: {totalCoverage}%
+            </Badge>
+            <Button variant="outline" size="sm" onClick={resetPlanning} data-testid="btn-reset">
               <RotateCcw className="w-4 h-4 mr-1" />
               Reset
             </Button>
-            
-            <Button
-              size="sm"
-              onClick={() => savePlanningMutation.mutate()}
-              disabled={templateSelections.length === 0 || savePlanningMutation.isPending}
-              data-testid="btn-save-planning"
+            <Button 
+              size="sm" 
+              onClick={() => setShowSummaryModal(true)}
+              disabled={templateSelections.length === 0}
+              data-testid="btn-save"
             >
               <Save className="w-4 h-4 mr-1" />
               Salva Pianificazione
@@ -384,689 +417,461 @@ export default function ShiftPlanningWorkspace() {
           </div>
         </div>
 
-        {/* Main content: 3-panel layout */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left Panel: Context (Store, Period) */}
-          <div className="w-64 border-r bg-gray-50 p-4 flex flex-col">
-            <div className="space-y-4">
-              {/* Store selector */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <StoreIcon className="w-4 h-4" />
-                  Punto Vendita
-                </Label>
-                <Select value={selectedStoreId || ''} onValueChange={handleStoreSelect}>
-                  <SelectTrigger data-testid="select-store">
-                    <SelectValue placeholder="Seleziona negozio..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores.map((store) => (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.nome || store.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Separator />
-              
-              {/* Week navigator */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  Settimana
-                </Label>
-                <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigateWeek('prev')}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="flex-1 text-center text-sm font-medium">
-                    {format(weekStart, 'd MMM', { locale: it })} - {format(weekEnd, 'd MMM', { locale: it })}
-                  </div>
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigateWeek('next')}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              {/* Selected templates summary */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Template Selezionati</Label>
-                {templateSelections.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nessun template selezionato</p>
-                ) : (
-                  <div className="space-y-1">
-                    {templateSelections.map(ts => (
-                      <div 
-                        key={ts.templateId}
-                        className="flex items-center gap-2 p-2 bg-white rounded border text-xs"
-                      >
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: ts.template.color }}
-                        />
-                        <span className="flex-1 truncate">{ts.template.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {ts.selectedDays.length}g
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActiveTab)}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="store" className="gap-2" data-testid="tab-store">
+              <StoreIcon className="w-4 h-4" />
+              Negozio
+            </TabsTrigger>
+            <TabsTrigger value="days" className="gap-2" disabled={!selectedStoreId} data-testid="tab-days">
+              <CalendarIcon className="w-4 h-4" />
+              Giorni
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="gap-2" disabled={!selectedStoreId || periodDays.length === 0} data-testid="tab-templates">
+              <Layers className="w-4 h-4" />
+              Template
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="gap-2" disabled={templateSelections.length === 0} data-testid="tab-resources">
+              <Users className="w-4 h-4" />
+              Risorse
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Center Panel: Phase-specific content */}
-          <div className="flex-1 overflow-auto p-4">
-            {!selectedStoreId ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-muted-foreground">
-                  <StoreIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Seleziona un punto vendita per iniziare</p>
+          <TabsContent value="store" className="mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {stores.map(store => (
+                <Card 
+                  key={store.id}
+                  className={cn(
+                    "cursor-pointer hover:border-primary transition-colors",
+                    selectedStoreId === store.id && "border-primary bg-primary/5"
+                  )}
+                  onClick={() => handleStoreSelect(store.id)}
+                  data-testid={`store-card-${store.id}`}
+                >
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <StoreIcon className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-sm">{store.nome || store.name}</p>
+                      {store.code && <p className="text-xs text-muted-foreground">{store.code}</p>}
+                    </div>
+                    {selectedStoreId === store.id && (
+                      <CheckCircle2 className="w-4 h-4 text-primary ml-auto" />
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="days" className="mt-4">
+            <div className="flex items-center gap-4 mb-4">
+              <Button
+                variant={daySelectionMode === 'range' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDaySelectionMode('range')}
+                data-testid="btn-range-mode"
+              >
+                <CalendarRange className="w-4 h-4 mr-1" />
+                Range Dal/Al
+              </Button>
+              <Button
+                variant={daySelectionMode === 'calendar' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDaySelectionMode('calendar')}
+                data-testid="btn-calendar-mode"
+              >
+                <CalendarDays className="w-4 h-4 mr-1" />
+                Multi-Selezione
+              </Button>
+            </div>
+
+            {daySelectionMode === 'range' ? (
+              <div className="flex items-center gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Dal</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-40" data-testid="btn-date-from">
+                        {format(dateRange.from, 'd MMM yyyy', { locale: it })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                        locale={it}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Al</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-40" data-testid="btn-date-to">
+                        {format(dateRange.to, 'd MMM yyyy', { locale: it })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
+                        locale={it}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-muted-foreground">
+                    {periodDays.length} giorni selezionati
+                  </p>
                 </div>
               </div>
-            ) : currentPhase === 1 ? (
-              /* Phase 1: Template Multi-Select */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Seleziona Template</h3>
-                  <Badge variant="outline">
-                    {templates.length} template disponibili
-                  </Badge>
-                </div>
-                
-                {templatesLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">Caricamento template...</div>
-                ) : templates.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CalendarIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Nessun template disponibile per questo negozio</p>
+            ) : (
+              <div className="flex gap-6">
+                <Calendar
+                  mode="multiple"
+                  selected={selectedDates}
+                  onSelect={(dates) => setSelectedDates(dates || [])}
+                  locale={it}
+                  className="rounded-md border"
+                />
+                <div>
+                  <p className="text-sm font-medium mb-2">Giorni selezionati: {selectedDates.length}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedDates.slice(0, 10).map(date => (
+                      <Badge key={date.toISOString()} variant="secondary" className="text-xs">
+                        {format(date, 'd MMM', { locale: it })}
+                      </Badge>
+                    ))}
+                    {selectedDates.length > 10 && (
+                      <Badge variant="outline">+{selectedDates.length - 10}</Badge>
+                    )}
                   </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {templates.map(template => {
-                      const selection = templateSelections.find(ts => ts.templateId === template.id);
-                      const isSelected = !!selection;
+                </div>
+              </div>
+            )}
+            
+            {periodDays.length > 0 && (
+              <Button 
+                className="mt-4" 
+                onClick={() => setActiveTab('templates')}
+                data-testid="btn-next-templates"
+              >
+                Avanti: Seleziona Template
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
+          </TabsContent>
+
+          <TabsContent value="templates" className="mt-4">
+            {templatesLoading ? (
+              <div className="text-center py-8">Caricamento template...</div>
+            ) : templates.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nessun template disponibile per questo negozio
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {templates.map(template => {
+                  const isSelected = templateSelections.find(ts => ts.templateId === template.id);
+                  return (
+                    <Card 
+                      key={template.id}
+                      className={cn(
+                        "cursor-pointer hover:border-primary transition-colors",
+                        isSelected && "border-primary bg-primary/5"
+                      )}
+                      onClick={() => handleTemplateToggle(template)}
+                      data-testid={`template-card-${template.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div 
+                            className="w-4 h-4 rounded"
+                            style={{ backgroundColor: template.color }}
+                          />
+                          <p className="font-medium text-sm flex-1">{template.name}</p>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                        </div>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {template.timeSlots.map((slot, idx) => (
+                            <p key={idx}>{slot.startTime} - {slot.endTime}</p>
+                          ))}
+                        </div>
+                        <Badge variant="outline" className="mt-2 text-[10px]">
+                          {template.scope === 'global' ? 'Globale' : 'Locale'}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+            
+            {templateSelections.length > 0 && (
+              <Button 
+                className="mt-4" 
+                onClick={() => setActiveTab('resources')}
+                data-testid="btn-next-resources"
+              >
+                Avanti: Assegna Risorse
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
+          </TabsContent>
+
+          <TabsContent value="resources" className="mt-4">
+            <div className="flex gap-4">
+              <div className="w-64 shrink-0">
+                <h3 className="font-medium mb-3">Risorse Disponibili</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Trascina una risorsa sulla fascia oraria nel timeline sotto
+                </p>
+                <ScrollArea className="h-[300px] border rounded-lg p-2">
+                  {resources.map(resource => (
+                    <div
+                      key={resource.id}
+                      draggable
+                      onDragStart={() => setDraggedResource(resource)}
+                      onDragEnd={() => setDraggedResource(null)}
+                      className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing mb-1"
+                      data-testid={`resource-${resource.id}`}
+                    >
+                      <GripVertical className="w-4 h-4 text-gray-400" />
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {resource.firstName} {resource.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {resource.email}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+              
+              <div className="flex-1">
+                <h3 className="font-medium mb-3">Fasce da Coprire</h3>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {periodDays.map(day => {
+                      const dayStr = format(day, 'yyyy-MM-dd');
+                      const daySlots = coveragePreview.filter(s => s.day === dayStr);
+                      
+                      if (daySlots.length === 0) return null;
                       
                       return (
-                        <Card 
-                          key={template.id}
-                          className={cn(
-                            "transition-all cursor-pointer hover:shadow-md",
-                            isSelected && "ring-2 ring-orange-500"
-                          )}
-                          onClick={() => handleTemplateToggle(template)}
-                          data-testid={`template-card-${template.id}`}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              {/* Color indicator */}
-                              <div 
-                                className="w-4 h-4 rounded-full mt-1 flex-shrink-0"
-                                style={{ backgroundColor: template.color }}
-                              />
-                              
-                              {/* Template info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium">{template.name}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {template.scope === 'global' ? '🌐 Globale' : '🏪 Store'}
+                        <Card key={dayStr} className="overflow-hidden">
+                          <CardHeader className="py-2 px-3 bg-gray-50">
+                            <CardTitle className="text-sm">
+                              {format(day, 'EEEE d MMMM', { locale: it })}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-2 space-y-1">
+                            {daySlots.map((slot, idx) => (
+                              <div
+                                key={`${slot.templateId}-${slot.slotId}-${idx}`}
+                                className={cn(
+                                  "p-2 rounded border-2 border-dashed transition-colors",
+                                  slot.assignedResources.length >= slot.requiredStaff 
+                                    ? "border-green-300 bg-green-50"
+                                    : slot.assignedResources.length > 0
+                                    ? "border-amber-300 bg-amber-50"
+                                    : "border-gray-300 bg-gray-50"
+                                )}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                  if (draggedResource) {
+                                    handleResourceDrop(slot.templateId, slot.slotId, dayStr, draggedResource);
+                                  }
+                                }}
+                                data-testid={`slot-drop-${slot.slotId}-${dayStr}`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-3 h-3 rounded"
+                                      style={{ backgroundColor: slot.templateColor }}
+                                    />
+                                    <span className="text-xs font-medium">
+                                      {slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}
+                                    </span>
+                                  </div>
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {slot.assignedResources.length}/{slot.requiredStaff}
                                   </Badge>
                                 </div>
-                                
-                                {/* Time slots preview */}
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {template.timeSlots.map((slot, idx) => (
+                                <p className="text-[10px] text-muted-foreground mb-1">
+                                  {slot.templateName}
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {slot.assignedResources.map(ra => (
                                     <Badge 
-                                      key={slot.id || idx}
-                                      variant="secondary" 
-                                      className="text-xs"
+                                      key={ra.resourceId}
+                                      variant="secondary"
+                                      className="text-[10px] gap-1"
                                     >
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {slot.startTime}-{slot.endTime}
+                                      {ra.resourceName}
+                                      <button
+                                        className="hover:text-red-500"
+                                        onClick={() => removeResourceAssignment(
+                                          ra.resourceId, slot.templateId, slot.slotId, dayStr
+                                        )}
+                                      >
+                                        <XCircle className="w-3 h-3" />
+                                      </button>
                                     </Badge>
                                   ))}
                                 </div>
-                                
-                                {/* Day selection (only if selected) */}
-                                {isSelected && selection && (
-                                  <div className="mt-3 pt-3 border-t" onClick={e => e.stopPropagation()}>
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-xs text-muted-foreground">Giorni attivi:</span>
-                                      <div className="flex gap-1">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 text-xs"
-                                          onClick={() => selectAllDaysForTemplate(template.id, periodDayStrings)}
-                                        >
-                                          Tutti
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 text-xs"
-                                          onClick={() => clearAllDaysForTemplate(template.id)}
-                                        >
-                                          Nessuno
-                                        </Button>
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                      {periodDays.map((day, idx) => {
-                                        const dayStr = format(day, 'yyyy-MM-dd');
-                                        const isActive = selection.selectedDays.includes(dayStr);
-                                        const dayOfWeek = getDay(day);
-                                        
-                                        return (
-                                          <Tooltip key={dayStr}>
-                                            <TooltipTrigger asChild>
-                                              <button
-                                                className={cn(
-                                                  "w-9 h-9 rounded-md text-xs font-medium transition-colors",
-                                                  isActive 
-                                                    ? "bg-orange-500 text-white" 
-                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200",
-                                                  isWeekend(day) && !isActive && "bg-gray-50 text-gray-400"
-                                                )}
-                                                onClick={() => toggleDayForTemplate(template.id, dayStr)}
-                                                data-testid={`day-toggle-${template.id}-${dayStr}`}
-                                              >
-                                                {DAY_NAMES[dayOfWeek]}
-                                              </button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              {format(day, 'EEEE d MMMM', { locale: it })}
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
                               </div>
-                              
-                              {/* Selection checkbox */}
-                              <Checkbox
-                                checked={isSelected}
-                                className="mt-1"
-                                data-testid={`checkbox-template-${template.id}`}
-                              />
-                            </div>
+                            ))}
                           </CardContent>
                         </Card>
                       );
                     })}
                   </div>
-                )}
-                
-                {/* Proceed to Phase 2 */}
-                {templateSelections.length > 0 && (
-                  <div className="flex justify-end mt-4">
-                    <Button onClick={() => goToPhase(2)} data-testid="btn-proceed-phase2">
-                      Procedi alle Risorse
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                )}
+                </ScrollArea>
               </div>
-            ) : (
-              /* Phase 2: Resource Assignment */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Assegna Risorse alle Fasce</h3>
-                  <Button variant="outline" size="sm" onClick={() => goToPhase(1)}>
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                    Torna ai Template
-                  </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <div className="flex-1 p-4 overflow-auto">
+        <div className="mb-3">
+          <TimelineLegend />
+        </div>
+        
+        <div className="space-y-2">
+          {periodDays.map(day => (
+            <TimelineBar
+              key={format(day, 'yyyy-MM-dd')}
+              day={format(day, 'yyyy-MM-dd')}
+              dayLabel={format(day, 'EEE d MMM', { locale: it })}
+              segments={buildTimelineSegments(day)}
+              startHour={6}
+              endHour={24}
+            />
+          ))}
+        </div>
+      </div>
+
+      <Dialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Riepilogo Pianificazione</DialogTitle>
+            <DialogDescription>
+              Verifica la pianificazione prima di salvare
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{periodDays.length}</p>
+                  <p className="text-sm text-muted-foreground">Giorni</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{coveragePreview.length}</p>
+                  <p className="text-sm text-muted-foreground">Fasce orarie</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{totalCoverage}%</p>
+                  <p className="text-sm text-muted-foreground">Copertura</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Giorno</th>
+                    <th className="px-3 py-2 text-left">Template</th>
+                    <th className="px-3 py-2 text-left">Fascia</th>
+                    <th className="px-3 py-2 text-left">Risorse</th>
+                    <th className="px-3 py-2 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coveragePreview.slice(0, 20).map((slot, idx) => (
+                    <tr key={idx} className="border-t">
+                      <td className="px-3 py-2">
+                        {format(parseISO(slot.day), 'EEE d MMM', { locale: it })}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded"
+                            style={{ backgroundColor: slot.templateColor }}
+                          />
+                          {slot.templateName}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        {slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {slot.assignedResources.map(ra => ra.resourceName).join(', ') || '-'}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {slot.assignedResources.length >= slot.requiredStaff ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-600 inline" />
+                        ) : slot.assignedResources.length > 0 ? (
+                          <AlertTriangle className="w-4 h-4 text-amber-600 inline" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-red-600 inline" />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {coveragePreview.length > 20 && (
+                <div className="p-2 text-center text-sm text-muted-foreground border-t">
+                  ... e altre {coveragePreview.length - 20} fasce
                 </div>
-                
-                {/* Resource assignment grid by day and slot */}
-                <div className="space-y-4">
-                  {periodDays.map(day => {
-                    const dayStr = format(day, 'yyyy-MM-dd');
-                    const daySlots = getSlotsForDay(dayStr);
-                    
-                    if (daySlots.length === 0) return null;
-                    
-                    return (
-                      <Card key={dayStr} className="overflow-hidden">
-                        <CardHeader className="py-3 bg-gray-50">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm font-medium">
-                              {format(day, 'EEEE d MMMM', { locale: it })}
-                            </CardTitle>
-                            <Badge 
-                              className={getDayCoverageColor(dayCoverageStats[dayStr] || { total: 0, covered: 0, partial: 0, uncovered: 0 })}
-                            >
-                              {dayCoverageStats[dayStr]?.covered || 0}/{dayCoverageStats[dayStr]?.total || 0} coperti
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="p-3">
-                          <div className="space-y-2">
-                            {daySlots.map((slot, idx) => {
-                              // Use slot.slotId for consistent matching with store
-                              const slotId = slot.slotId;
-                              const assigned = getAssignedResources(slot.templateId, slotId, dayStr);
-                              
-                              return (
-                                <div 
-                                  key={`${slot.templateId}-${slotId}-${dayStr}`}
-                                  className={cn(
-                                    "flex items-center gap-3 p-3 rounded-lg border",
-                                    getCoverageColor(slot.coverageStatus)
-                                  )}
-                                >
-                                  {/* Template color + time */}
-                                  <div className="flex items-center gap-2 min-w-[120px]">
-                                    <div 
-                                      className="w-3 h-3 rounded-full"
-                                      style={{ backgroundColor: slot.templateColor }}
-                                    />
-                                    <span className="text-sm font-medium">
-                                      {slot.startTime} - {slot.endTime}
-                                    </span>
-                                  </div>
-                                  
-                                  {/* Template name */}
-                                  <span className="text-xs text-muted-foreground truncate min-w-[100px]">
-                                    {slot.templateName}
-                                  </span>
-                                  
-                                  {/* Assigned resources */}
-                                  <div className="flex-1 flex items-center gap-1 flex-wrap">
-                                    {assigned.map(ra => (
-                                      <Badge 
-                                        key={ra.resourceId}
-                                        variant="secondary"
-                                        className="gap-1"
-                                      >
-                                        <User className="w-3 h-3" />
-                                        {ra.resourceName}
-                                        <button
-                                          className="ml-1 hover:text-red-500"
-                                          onClick={() => removeResourceAssignment(ra.resourceId, slot.templateId, slotId, dayStr)}
-                                        >
-                                          <XCircle className="w-3 h-3" />
-                                        </button>
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                  
-                                  {/* Coverage status + Add button */}
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs">
-                                      {assigned.length}/{slot.requiredStaff}
-                                    </span>
-                                    {slot.coverageStatus === 'covered' ? (
-                                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                    ) : slot.coverageStatus === 'partial' ? (
-                                      <AlertTriangle className="w-4 h-4 text-amber-600" />
-                                    ) : (
-                                      <AlertCircle className="w-4 h-4 text-red-600" />
-                                    )}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7"
-                                      onClick={() => openResourceModal(
-                                        slot.templateId, 
-                                        slotId, 
-                                        dayStr, 
-                                        slot.startTime, 
-                                        slot.endTime,
-                                        slot.templateName
-                                      )}
-                                      data-testid={`btn-assign-${dayStr}-${slotId}`}
-                                    >
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Assegna
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+              )}
+            </div>
+
+            {coveragePreview.filter(s => s.assignedResources.length < s.requiredStaff).length > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-700">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="font-medium">
+                    Attenzione: {coveragePreview.filter(s => s.assignedResources.length < s.requiredStaff).length} fasce non hanno copertura completa
+                  </span>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Right Panel: Coverage Matrix Preview */}
-          <div className="w-80 border-l bg-gray-50 p-4 overflow-auto">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                <h3 className="font-medium text-sm">
-                  {currentPhase === 1 ? 'Pianificazione Turni' : 'Copertura Risorse'}
-                </h3>
-              </div>
-              
-              {templateSelections.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  <CalendarIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>Seleziona almeno un template per vedere la copertura</p>
-                </div>
-              ) : (
-                <>
-                  {/* Phase indicator */}
-                  <div className={cn(
-                    "p-2 rounded-lg text-xs",
-                    currentPhase === 1 
-                      ? "bg-blue-50 text-blue-700 border border-blue-200" 
-                      : "bg-orange-50 text-orange-700 border border-orange-200"
-                  )}>
-                    {currentPhase === 1 ? (
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
-                        <span>Fase 1: Selezione fasce orarie per giorno</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>Fase 2: Assegnazione risorse alle fasce</span>
-                      </div>
-                    )}
-                  </div>
-                
-                  {/* Weekly overview grid */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {periodDays.map(day => {
-                      const dayStr = format(day, 'yyyy-MM-dd');
-                      const stats = dayCoverageStats[dayStr] || { total: 0, covered: 0, partial: 0, uncovered: 0 };
-                      const dayOfWeek = getDay(day);
-                      
-                      // Phase 1: green if has slots planned, gray if no slots
-                      // Phase 2: green/amber/red based on resource coverage
-                      const getColorClass = () => {
-                        if (stats.total === 0) return "bg-gray-100 text-gray-400";
-                        if (currentPhase === 1) {
-                          // Phase 1: all slots are "covered" (planned)
-                          return "bg-green-100 text-green-700 border border-green-200";
-                        } else {
-                          // Phase 2: based on resource assignments
-                          if (stats.uncovered > 0) return "bg-red-100 text-red-700 border border-red-200";
-                          if (stats.partial > 0) return "bg-amber-100 text-amber-700 border border-amber-200";
-                          return "bg-green-100 text-green-700 border border-green-200";
-                        }
-                      };
-                      
-                      return (
-                        <Tooltip key={dayStr}>
-                          <TooltipTrigger asChild>
-                            <div 
-                              className={cn(
-                                "aspect-square rounded-lg flex flex-col items-center justify-center text-xs font-medium cursor-pointer transition-all hover:scale-105",
-                                getColorClass()
-                              )}
-                            >
-                              <span>{DAY_NAMES[dayOfWeek]}</span>
-                              <span className="text-[10px] opacity-70">{format(day, 'd')}</span>
-                              {stats.total > 0 && (
-                                <span className="text-[8px] font-bold">{stats.total}</span>
-                              )}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <div className="text-xs">
-                              <p className="font-medium">{format(day, 'EEEE d MMMM', { locale: it })}</p>
-                              {stats.total > 0 ? (
-                                currentPhase === 1 ? (
-                                  <p className="text-green-600">✓ {stats.total} fasce pianificate</p>
-                                ) : (
-                                  <>
-                                    <p className="text-green-600">✓ Coperti: {stats.covered}</p>
-                                    {stats.partial > 0 && <p className="text-amber-600">⚠ Parziali: {stats.partial}</p>}
-                                    {stats.uncovered > 0 && <p className="text-red-600">✗ Da assegnare: {stats.uncovered}</p>}
-                                  </>
-                                )
-                              ) : (
-                                <p className="text-muted-foreground">Nessuna fascia pianificata</p>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Legend - different for each phase */}
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Legenda</p>
-                    {currentPhase === 1 ? (
-                      <>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded bg-green-500" />
-                          <span>Fascia pianificata</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded bg-gray-300" />
-                          <span>Nessun template</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded bg-green-500" />
-                          <span>Risorse complete</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded bg-amber-500" />
-                          <span>Risorse parziali</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded bg-red-500" />
-                          <span>Risorse mancanti</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Slot summary per day */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {currentPhase === 1 ? 'Riepilogo Fasce' : 'Stato Assegnazioni'}
-                    </p>
-                    <ScrollArea className="h-[200px]">
-                      <div className="space-y-1">
-                        {periodDays.map(day => {
-                          const dayStr = format(day, 'yyyy-MM-dd');
-                          const daySlots = coveragePreview.filter(s => s.day === dayStr);
-                          
-                          if (daySlots.length === 0) return null;
-                          
-                          return (
-                            <div key={dayStr} className="p-2 bg-white rounded border">
-                              <p className="text-xs font-medium mb-1">
-                                {format(day, 'EEE d MMM', { locale: it })}
-                              </p>
-                              <div className="space-y-1">
-                                {daySlots.map((slot, idx) => (
-                                  <div 
-                                    key={idx}
-                                    className={cn(
-                                      "flex items-center justify-between text-[10px] p-1 rounded",
-                                      currentPhase === 1 
-                                        ? "bg-green-50 text-green-700"
-                                        : slot.resourceCoverageStatus === 'covered'
-                                          ? "bg-green-50 text-green-700"
-                                          : slot.resourceCoverageStatus === 'partial'
-                                            ? "bg-amber-50 text-amber-700"
-                                            : "bg-red-50 text-red-700"
-                                    )}
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      <div 
-                                        className="w-2 h-2 rounded-full"
-                                        style={{ backgroundColor: slot.templateColor }}
-                                      />
-                                      <span>{slot.startTime}-{slot.endTime}</span>
-                                    </div>
-                                    <span>
-                                      {currentPhase === 1 
-                                        ? `${slot.requiredStaff} richiesti`
-                                        : `${slot.assignedResources.length}/${slot.requiredStaff}`
-                                      }
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                  
-                  {/* Phase 2 only: Coverage alerts */}
-                  {currentPhase === 2 && coveragePreview.filter(s => s.resourceCoverageStatus !== 'covered').length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-red-600 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          Fasce da completare
-                        </p>
-                        <div className="space-y-1">
-                          {coveragePreview
-                            .filter(s => s.resourceCoverageStatus !== 'covered')
-                            .slice(0, 10)
-                            .map((slot, idx) => (
-                              <div 
-                                key={`alert-${idx}`}
-                                className={cn(
-                                  "p-2 rounded text-xs",
-                                  slot.resourceCoverageStatus === 'uncovered' 
-                                    ? "bg-red-50 text-red-700" 
-                                    : "bg-amber-50 text-amber-700"
-                                )}
-                              >
-                                <div className="flex items-center gap-1">
-                                  {slot.resourceCoverageStatus === 'uncovered' 
-                                    ? <AlertCircle className="w-3 h-3" />
-                                    : <AlertTriangle className="w-3 h-3" />
-                                  }
-                                  <span className="font-medium">
-                                    {format(new Date(slot.day), 'EEE d', { locale: it })}
-                                  </span>
-                                  <span>{slot.startTime}-{slot.endTime}</span>
-                                </div>
-                                <p className="text-[10px] opacity-80 ml-4">
-                                  {slot.assignedResources.length}/{slot.requiredStaff} risorse assegnate
-                                </p>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Phase 1 only: Template summary */}
-                  {currentPhase === 1 && (
-                    <>
-                      <Separator />
-                      <div className="flex items-center gap-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <div>
-                          <p className="font-medium">{coveragePreview.length} fasce pianificate</p>
-                          <p className="text-[10px] opacity-80">
-                            Procedi alla Fase 2 per assegnare le risorse
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Resource Assignment Modal */}
-        <Dialog open={showResourceModal} onOpenChange={setShowResourceModal}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Assegna Risorsa</DialogTitle>
-              <DialogDescription>
-                {selectedSlotForAssignment && (
-                  <>
-                    Fascia {selectedSlotForAssignment.startTime} - {selectedSlotForAssignment.endTime}
-                    <br />
-                    {format(new Date(selectedSlotForAssignment.day), 'EEEE d MMMM yyyy', { locale: it })}
-                  </>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <ScrollArea className="max-h-[400px]">
-              <div className="space-y-2">
-                {resources.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">Nessuna risorsa disponibile</p>
-                ) : (
-                  resources.map(resource => {
-                    const isAssigned = selectedSlotForAssignment && isResourceAssigned(
-                      resource.id, 
-                      selectedSlotForAssignment.templateId,
-                      selectedSlotForAssignment.slotId,
-                      selectedSlotForAssignment.day
-                    );
-                    
-                    return (
-                      <div
-                        key={resource.id}
-                        className={cn(
-                          "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
-                          isAssigned 
-                            ? "bg-green-50 border-green-200" 
-                            : "hover:bg-gray-50"
-                        )}
-                        onClick={() => !isAssigned && handleAssignResource(resource)}
-                        data-testid={`resource-option-${resource.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-4 h-4 text-gray-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">
-                              {resource.firstName} {resource.lastName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{resource.email}</p>
-                          </div>
-                        </div>
-                        {isAssigned ? (
-                          <Badge variant="outline" className="bg-green-100 text-green-700">
-                            <Check className="w-3 h-3 mr-1" />
-                            Assegnato
-                          </Badge>
-                        ) : (
-                          <Button variant="ghost" size="sm">
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </TooltipProvider>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSummaryModal(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={() => savePlanningMutation.mutate()}
+              disabled={savePlanningMutation.isPending}
+            >
+              {savePlanningMutation.isPending ? 'Salvataggio...' : 'Conferma e Salva'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
