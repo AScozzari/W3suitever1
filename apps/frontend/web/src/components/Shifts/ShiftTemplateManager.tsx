@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,15 +68,11 @@ export default function ShiftTemplateManager({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  // Fetch stores for filter dropdown
+  // Fetch stores for filter dropdown (uses default fetcher with auth headers)
   const { data: stores, isLoading: storesLoading } = useQuery({
-    queryKey: ['/api/stores'],
-    queryFn: async () => {
-      const response = await fetch('/api/stores');
-      if (!response.ok) return [];
-      return response.json();
-    }
+    queryKey: ['/api/stores']
   });
   
   // Filter templates based on selected filters
@@ -127,21 +124,18 @@ export default function ShiftTemplateManager({
   const handleArchiveTemplate = async (templateId: string) => {
     setIsDeletingTemplate(templateId);
     try {
-      const response = await fetch(`/api/hr/shift-templates/${templateId}`, {
+      await apiRequest(`/api/hr/shift-templates/${templateId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: false })
       });
-      
-      if (!response.ok) throw new Error('Failed to archive template');
       
       toast({
         title: "Template archiviato",
         description: "Il template è stato archiviato"
       });
       
-      // Refresh page
-      window.location.reload();
+      // Refresh templates
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
     } catch (error) {
       toast({
         title: "Errore",
@@ -161,21 +155,18 @@ export default function ShiftTemplateManager({
         id: undefined // Remove ID to create new
       };
       
-      const response = await fetch('/api/hr/shift-templates', {
+      await apiRequest('/api/hr/shift-templates', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(duplicatedTemplate)
       });
-      
-      if (!response.ok) throw new Error('Failed to duplicate template');
       
       toast({
         title: "Template duplicato",
         description: "Il template è stato copiato con successo"
       });
       
-      // Refresh page
-      window.location.reload();
+      // Refresh templates
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
     } catch (error) {
       toast({
         title: "Errore",

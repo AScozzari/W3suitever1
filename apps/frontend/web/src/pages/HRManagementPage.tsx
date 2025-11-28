@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import { useAuth } from '@/hooks/useAuth';
 import HRCalendar from '@/components/HRCalendar';
-import ShiftTemplateStudio from '@/components/Shifts/ShiftTemplateStudio';
+import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftPlanningWorkspace from '@/components/Shifts/ShiftPlanningWorkspace';
 import { EmployeeDataTable } from '@/components/hr/EmployeeDataTable';
 import { EmployeeEditModal } from '@/components/hr/EmployeeEditModal';
@@ -1242,9 +1242,22 @@ const HRManagementPage: React.FC = () => {
         endDate={null}
       />
 
-      {/* 2. TEMPLATE STUDIO - Creazione e gestione template turni */}
-      <ShiftTemplateStudio 
-        selectedStoreId={selectedStore?.id}
+      {/* 2. TEMPLATE MANAGER - Gestione template turni con modal */}
+      <ShiftTemplateManager 
+        templates={shiftTemplates}
+        storeId={selectedStore?.id || ''}
+        onApplyTemplate={async (templateId, startDate, endDate) => {
+          await apiRequest('/api/hr/shifts/bulk-template-assign', {
+            method: 'POST',
+            body: JSON.stringify({
+              templateId,
+              storeId: selectedStore?.id,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString()
+            })
+          });
+          queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+        }}
       />
 
       {/* 3. GESTIONE TURNI - Flusso lineare: Negozio → Template → Risorse → Coperture */}
