@@ -75,15 +75,7 @@ export default function ShiftTemplateStudio({ selectedStoreId, onTemplateSelect 
   ]);
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery<ShiftTemplate[]>({
-    queryKey: ['/api/hr/shift-templates', selectedStoreId],
-    queryFn: async () => {
-      const url = selectedStoreId 
-        ? `/api/hr/shift-templates?storeId=${selectedStoreId}`
-        : '/api/hr/shift-templates';
-      const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) return [];
-      return response.json();
-    }
+    queryKey: ['/api/hr/shift-templates', selectedStoreId ? { storeId: selectedStoreId } : {}],
   });
 
   const { data: stores = [] } = useQuery<Store[]>({

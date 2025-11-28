@@ -115,12 +115,7 @@ export default function ShiftPlanningWorkspace() {
   });
 
   const { data: templates = [] } = useQuery<ShiftTemplate[]>({
-    queryKey: ['/api/hr/shift-templates', selectedStoreId],
-    queryFn: async () => {
-      const response = await fetch(`/api/hr/shift-templates?storeId=${selectedStoreId}`, { credentials: 'include' });
-      if (!response.ok) return [];
-      return response.json();
-    },
+    queryKey: ['/api/hr/shift-templates', { storeId: selectedStoreId }],
     enabled: !!selectedStoreId,
   });
 
@@ -133,25 +128,12 @@ export default function ShiftPlanningWorkspace() {
   const periodEnd = useMemo(() => getPeriodEnd(), [currentDate, periodType]);
   
   const { data: shifts = [] } = useQuery<Shift[]>({
-    queryKey: ['/api/hr/shifts', selectedStoreId, format(periodStart, 'yyyy-MM-dd')],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/hr/shifts?storeId=${selectedStoreId}&startDate=${format(periodStart, 'yyyy-MM-dd')}&endDate=${format(periodEnd, 'yyyy-MM-dd')}`,
-        { credentials: 'include' }
-      );
-      if (!response.ok) return [];
-      return response.json();
-    },
+    queryKey: ['/api/hr/shifts', { storeId: selectedStoreId, startDate: format(periodStart, 'yyyy-MM-dd'), endDate: format(periodEnd, 'yyyy-MM-dd') }],
     enabled: !!selectedStoreId,
   });
 
   const { data: assignments = [] } = useQuery<ShiftAssignment[]>({
-    queryKey: ['/api/hr/shift-assignments', selectedStoreId],
-    queryFn: async () => {
-      const response = await fetch(`/api/hr/shift-assignments?storeId=${selectedStoreId}`, { credentials: 'include' });
-      if (!response.ok) return [];
-      return response.json();
-    },
+    queryKey: ['/api/hr/shift-assignments', { storeId: selectedStoreId }],
     enabled: !!selectedStoreId,
   });
 
