@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
 import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
+import BulkShiftPlanner from '@/components/Shifts/BulkShiftPlanner';
 import { EmployeeDataTable } from '@/components/hr/EmployeeDataTable';
 import { EmployeeEditModal } from '@/components/hr/EmployeeEditModal';
 
@@ -1239,6 +1240,12 @@ const HRManagementPage: React.FC = () => {
         storeId={selectedStore?.id}
         startDate={null}
         endDate={null}
+      />
+
+      {/* 2. Bulk Shift Planner - Pianificazione Rapida */}
+      <BulkShiftPlanner 
+        storeId={selectedStore?.id}
+        className="mt-6"
       />
 
       {/* 3. Shift Template Manager */}

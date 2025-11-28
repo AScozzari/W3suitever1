@@ -3,7 +3,7 @@ import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
-import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability } from '../db/schema/w3suite';
+import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability, stores } from '../db/schema/w3suite';
 import { eq, and, gte, lte, inArray, sql, count } from 'drizzle-orm';
 
 const router = Router();
@@ -367,6 +367,275 @@ router.post('/shifts/bulk-unassign', requirePermission('hr.shifts.manage'), asyn
   } catch (error) {
     console.error('Error processing bulk unassignments:', error);
     res.status(500).json({ error: 'Failed to process bulk unassignments' });
+  }
+});
+
+// ==================== BULK TEMPLATE TO STORE ====================
+
+// POST /api/hr/shifts/bulk-template-assign - Bulk apply template to multiple stores for a period
+router.post('/shifts/bulk-template-assign', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user?.id;
+    const { templateId, storeIds, startDate, endDate, periodType = 'week', excludeDates = [], overwriteExisting = false } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!templateId || !storeIds || !Array.isArray(storeIds) || storeIds.length === 0) {
+      return res.status(400).json({ error: 'Template ID and store IDs array are required' });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    // Validate template exists and belongs to tenant
+    const [template] = await db.select().from(shiftTemplates).where(and(
+      eq(shiftTemplates.id, templateId),
+      eq(shiftTemplates.tenantId, tenantId)
+    )).limit(1);
+
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    // ✅ SECURITY: Validate all stores belong to tenant
+    const validStores = await db.select({ id: stores.id }).from(stores).where(and(
+      eq(stores.tenantId, tenantId),
+      inArray(stores.id, storeIds)
+    ));
+
+    const validStoreIds = validStores.map(s => s.id);
+    const invalidStoreIds = storeIds.filter((id: string) => !validStoreIds.includes(id));
+
+    if (invalidStoreIds.length > 0) {
+      return res.status(403).json({ 
+        error: 'Some stores do not belong to this tenant',
+        invalidStoreIds 
+      });
+    }
+
+    // Generate dates for the period
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const dates: string[] = [];
+    
+    let current = new Date(start);
+    while (current <= end) {
+      const dateStr = current.toISOString().split('T')[0];
+      if (!excludeDates.includes(dateStr)) {
+        dates.push(dateStr);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Create shifts for each store and date combination
+    const createdShifts: any[] = [];
+    const errors: any[] = [];
+
+    for (const storeId of storeIds) {
+      for (const date of dates) {
+        try {
+          // Check if shift already exists for this store/date/template
+          const existingShift = await db.select().from(shifts).where(and(
+            eq(shifts.tenantId, tenantId),
+            eq(shifts.storeId, storeId),
+            eq(shifts.date, date),
+            eq(shifts.templateId, templateId)
+          )).limit(1);
+
+          if (existingShift.length > 0 && !overwriteExisting) {
+            continue; // Skip existing shifts unless overwrite is enabled
+          }
+
+          // Create new shift
+          const [newShift] = await db.insert(shifts).values({
+            tenantId,
+            storeId,
+            templateId,
+            date,
+            status: 'active',
+            startTime: template.defaultStartTime || '09:00',
+            endTime: template.defaultEndTime || '18:00',
+            breakMinutes: template.defaultBreakMinutes || 60,
+            minStaff: template.minStaffRequired || 1,
+            maxStaff: template.maxStaffAllowed || 10,
+            createdBy: userId,
+          }).returning();
+
+          createdShifts.push(newShift);
+        } catch (err: any) {
+          errors.push({ storeId, date, error: err.message });
+        }
+      }
+    }
+
+    // Broadcast real-time update
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'shifts_bulk_created', {
+        templateId,
+        storeIds,
+        totalCreated: createdShifts.length,
+        periodType,
+        startDate,
+        endDate
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
+    res.json({
+      success: true,
+      createdCount: createdShifts.length,
+      totalDates: dates.length,
+      totalStores: storeIds.length,
+      expectedCount: dates.length * storeIds.length,
+      shifts: createdShifts,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error bulk assigning template:', error);
+    res.status(500).json({ error: 'Failed to bulk assign template' });
+  }
+});
+
+// POST /api/hr/shift-assignments/bulk - Bulk assign resources to shifts for a period
+router.post('/shift-assignments/bulk', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user?.id;
+    const { userIds, shiftIds, slotIds, startDate, endDate } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'User IDs array is required' });
+    }
+
+    if (!shiftIds || !Array.isArray(shiftIds) || shiftIds.length === 0) {
+      return res.status(400).json({ error: 'Shift IDs array is required' });
+    }
+
+    // ✅ SECURITY: Validate all users belong to tenant
+    const validUsers = await db.select({ id: users.id }).from(users).where(and(
+      eq(users.tenantId, tenantId),
+      inArray(users.id, userIds)
+    ));
+
+    const validUserIds = validUsers.map(u => u.id);
+    const invalidUserIds = userIds.filter((id: string) => !validUserIds.includes(id));
+
+    if (invalidUserIds.length > 0) {
+      return res.status(403).json({
+        error: 'Some users do not belong to this tenant',
+        invalidUserIds
+      });
+    }
+
+    // Fetch shifts for the period (with tenant validation)
+    const targetShifts = await db.select().from(shifts).where(and(
+      eq(shifts.tenantId, tenantId),
+      inArray(shifts.id, shiftIds)
+    ));
+
+    if (targetShifts.length === 0) {
+      return res.status(404).json({ error: 'No shifts found for the specified IDs' });
+    }
+
+    // Check resource availability conflicts
+    const conflicts: any[] = [];
+    for (const shift of targetShifts) {
+      for (const uid of userIds) {
+        const availabilityConflicts = await db.select()
+          .from(resourceAvailability)
+          .where(and(
+            eq(resourceAvailability.tenantId, tenantId),
+            eq(resourceAvailability.userId, uid),
+            eq(resourceAvailability.blocksShiftAssignment, true),
+            lte(resourceAvailability.startDate, shift.date),
+            gte(resourceAvailability.endDate, shift.date)
+          ));
+
+        if (availabilityConflicts.length > 0) {
+          conflicts.push({
+            shiftId: shift.id,
+            userId: uid,
+            date: shift.date,
+            reason: availabilityConflicts[0].reasonType || 'unavailable'
+          });
+        }
+      }
+    }
+
+    // Create assignments for each user-shift combination (skip conflicts)
+    const createdAssignments: any[] = [];
+    const skippedDueToConflict: any[] = [];
+
+    for (const shift of targetShifts) {
+      for (const uid of userIds) {
+        // Skip if there's a conflict
+        const hasConflict = conflicts.some(c => c.shiftId === shift.id && c.userId === uid);
+        if (hasConflict) {
+          skippedDueToConflict.push({ shiftId: shift.id, userId: uid });
+          continue;
+        }
+
+        try {
+          // Check if assignment already exists
+          const existingAssignment = await db.select().from(shiftAssignments).where(and(
+            eq(shiftAssignments.tenantId, tenantId),
+            eq(shiftAssignments.shiftId, shift.id),
+            eq(shiftAssignments.userId, uid)
+          )).limit(1);
+
+          if (existingAssignment.length > 0) {
+            continue; // Skip existing assignments
+          }
+
+          // Create new assignment
+          const [newAssignment] = await db.insert(shiftAssignments).values({
+            tenantId,
+            shiftId: shift.id,
+            userId: uid,
+            timeSlotId: slotIds && slotIds.length > 0 ? slotIds[0] : null,
+            status: 'assigned',
+            assignedBy: userId,
+            assignedAt: new Date(),
+          }).returning();
+
+          createdAssignments.push(newAssignment);
+        } catch (err: any) {
+          console.warn(`Failed to create assignment for shift ${shift.id}, user ${uid}:`, err.message);
+        }
+      }
+    }
+
+    // Broadcast real-time update
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'assignments_bulk_created', {
+        totalCreated: createdAssignments.length,
+        userCount: userIds.length,
+        shiftCount: shiftIds.length
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
+    res.json({
+      success: true,
+      createdCount: createdAssignments.length,
+      expectedCount: userIds.length * targetShifts.length,
+      skippedDueToConflict: skippedDueToConflict.length,
+      conflicts,
+      assignments: createdAssignments
+    });
+  } catch (error) {
+    console.error('Error bulk assigning resources:', error);
+    res.status(500).json({ error: 'Failed to bulk assign resources' });
   }
 });
 
