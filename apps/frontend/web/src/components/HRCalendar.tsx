@@ -104,6 +104,22 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     enabled: hrQueryReadiness.enabled && Boolean(storeId),
   });
 
+  // ✅ Query per turni pianificati (bulk-planning)
+  const { data: plannedShifts = [] } = useQuery({
+    queryKey: ['/api/hr/shifts', { storeId, startDate, endDate }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (storeId) params.append('storeId', storeId);
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      
+      const url = `/api/hr/shifts${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await apiRequest(url);
+      return response;
+    },
+    enabled: hrQueryReadiness.enabled,
+  });
+
   // ✅ FASE 1.2: Mutation per creare eventi usando l'API unificata
   const createEventMutation = useMutation({
     mutationFn: (data: ShiftEventForm) => apiRequest('/api/hr/calendar/events', {
@@ -193,7 +209,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       id: `assignment-${assignment.id}`,
       title: assignment.template?.name || `Turno ${assignment.employee?.firstName || 'Risorsa'}`,
       start: assignment.shiftDate,
-      end: assignment.shiftDate, // TODO: calcolare end da template startTime/endTime
+      end: assignment.shiftDate,
       resourceId: assignment.employeeId,
       backgroundColor: assignment.hasConflict ? 'hsl(0, 84%, 60%)' : 'hsl(142, 76%, 36%)',
       borderColor: assignment.hasConflict ? 'hsl(0, 84%, 60%)' : 'hsl(142, 76%, 36%)',
@@ -210,9 +226,33 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
         },
       },
     }));
+
+    // ✅ Turni pianificati (bulk-planning)
+    const shiftsArray = Array.isArray(plannedShifts) ? plannedShifts : [];
+    const plannedShiftEvents = shiftsArray.map((shift: any) => ({
+      id: `shift-${shift.id}`,
+      title: shift.name || 'Turno Pianificato',
+      start: shift.startTime,
+      end: shift.endTime,
+      resourceId: shift.storeId,
+      backgroundColor: 'hsl(280, 70%, 50%)',
+      borderColor: 'hsl(280, 70%, 50%)',
+      extendedProps: {
+        type: 'planned_shift',
+        shiftId: shift.id,
+        storeId: shift.storeId,
+        templateId: shift.templateId,
+        requiredStaff: shift.requiredStaff,
+        status: shift.status,
+        metadata: {
+          date: shift.date,
+          storeId: shift.storeId,
+        },
+      },
+    }));
     
-    return [...calendarEventsFromBackend, ...shiftAssignmentEvents];
-  }, [backendEvents, shiftAssignments]);
+    return [...calendarEventsFromBackend, ...shiftAssignmentEvents, ...plannedShiftEvents];
+  }, [backendEvents, shiftAssignments, plannedShifts]);
 
 
   // ✅ FASE 1.2: Colori per tutti i tipi di evento del calendario unificato
@@ -221,6 +261,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       case 'meeting': return 'hsl(var(--primary))'; // Brand primary
       case 'shift': return 'hsl(var(--success))'; // Verde per turni  
       case 'shift_assignment': return 'hsl(142, 76%, 36%)'; // Verde per turni assegnati (Task 8)
+      case 'planned_shift': return 'hsl(280, 70%, 50%)'; // Viola per turni pianificati
       case 'time_off': return 'hsl(var(--warning))'; // Arancione per ferie
       case 'overtime': return 'hsl(var(--destructive))'; // Rosso per straordinari
       case 'training': return 'hsl(212, 100%, 50%)'; // Blu per formazione
