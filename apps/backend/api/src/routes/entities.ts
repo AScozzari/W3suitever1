@@ -12,7 +12,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema } from '../db/schema/w3suite';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules } from '../db/schema/w3suite';
 import { channels, commercialAreas, drivers } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -222,6 +222,70 @@ router.get('/stores', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve stores',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/stores/:storeId/opening-rules
+ * Get opening rules for a specific store
+ */
+router.get('/stores/:storeId/opening-rules', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { storeId } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const rules = await db
+      .select()
+      .from(storeOpeningRules)
+      .where(
+        and(
+          eq(storeOpeningRules.storeId, storeId),
+          eq(storeOpeningRules.tenantId, tenantId)
+        )
+      );
+
+    const mappedRules = rules.map(rule => ({
+      id: rule.id,
+      storeId: rule.storeId,
+      dayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(rule.dayOfWeek),
+      openTime: rule.openTime || '09:00',
+      closeTime: rule.closeTime || '18:00',
+      isClosed: !rule.isOpen,
+      isOpen: rule.isOpen,
+      hasBreak: rule.hasBreak,
+      breakStartTime: rule.breakStartTime,
+      breakEndTime: rule.breakEndTime
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: mappedRules,
+      message: 'Opening rules retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving opening rules', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve opening rules',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

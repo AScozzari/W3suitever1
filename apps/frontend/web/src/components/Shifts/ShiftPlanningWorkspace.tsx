@@ -109,7 +109,7 @@ export default function ShiftPlanningWorkspace() {
   });
 
   const { data: openingRules = [] } = useQuery<StoreOpeningRule[]>({
-    queryKey: ['/api/stores', selectedStoreId, 'opening-rules'],
+    queryKey: [`/api/stores/${selectedStoreId}/opening-rules`],
     enabled: !!selectedStoreId,
   });
 

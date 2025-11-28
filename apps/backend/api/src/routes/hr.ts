@@ -501,6 +501,141 @@ router.post('/shifts/bulk-template-assign', requirePermission('hr.shifts.manage'
   }
 });
 
+// POST /api/hr/shifts/bulk-planning - Bulk create shifts with assignments from planning workspace
+router.post('/shifts/bulk-planning', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user?.id;
+    const { shifts: plannedShifts, storeId } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!storeId) {
+      return res.status(400).json({ error: 'Store ID is required' });
+    }
+
+    if (!plannedShifts || !Array.isArray(plannedShifts) || plannedShifts.length === 0) {
+      return res.status(400).json({ error: 'Shifts array is required' });
+    }
+
+    const createdShifts: any[] = [];
+    const createdAssignments: any[] = [];
+    const errors: any[] = [];
+
+    for (const plannedShift of plannedShifts) {
+      try {
+        const { templateId, date, startTime, endTime, slotId, assignments = [] } = plannedShift;
+
+        const shiftDate = new Date(date);
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+        
+        const shiftStart = new Date(shiftDate);
+        shiftStart.setHours(startHour, startMin, 0, 0);
+        
+        const shiftEnd = new Date(shiftDate);
+        shiftEnd.setHours(endHour, endMin, 0, 0);
+
+        const existingShift = await db.select()
+          .from(shifts)
+          .where(and(
+            eq(shifts.tenantId, tenantId),
+            eq(shifts.storeId, storeId),
+            eq(shifts.date, date),
+            eq(shifts.startTime, shiftStart),
+            eq(shifts.endTime, shiftEnd)
+          ))
+          .limit(1);
+
+        let shiftRecord;
+        
+        if (existingShift.length > 0) {
+          shiftRecord = existingShift[0];
+        } else {
+          const templateData = await db.select()
+            .from(shiftTemplates)
+            .where(eq(shiftTemplates.id, templateId))
+            .limit(1);
+          
+          const templateName = templateData[0]?.name || 'Turno Pianificato';
+
+          const [newShift] = await db.insert(shifts).values({
+            tenantId,
+            storeId,
+            name: `${templateName} - ${date}`,
+            code: `SHIFT-${Date.now()}`,
+            date,
+            startTime: shiftStart,
+            endTime: shiftEnd,
+            breakMinutes: 0,
+            requiredStaff: assignments.length || 1,
+            minStaff: 1,
+            maxStaff: 10,
+            status: 'scheduled',
+            shiftType: 'regular',
+            templateId
+          }).returning();
+
+          shiftRecord = newShift;
+          createdShifts.push(newShift);
+        }
+
+        for (const assignedUserId of assignments) {
+          const existingAssignment = await db.select()
+            .from(shiftAssignments)
+            .where(and(
+              eq(shiftAssignments.shiftId, shiftRecord.id),
+              eq(shiftAssignments.userId, assignedUserId)
+            ))
+            .limit(1);
+
+          if (existingAssignment.length === 0) {
+            const [assignment] = await db.insert(shiftAssignments).values({
+              tenantId,
+              shiftId: shiftRecord.id,
+              userId: assignedUserId,
+              status: 'assigned',
+              assignedBy: userId
+            }).returning();
+
+            createdAssignments.push(assignment);
+          }
+        }
+      } catch (shiftError: any) {
+        errors.push({
+          shift: plannedShift,
+          error: shiftError.message
+        });
+      }
+    }
+
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'shifts_bulk_planning_created', {
+        storeId,
+        totalShifts: createdShifts.length,
+        totalAssignments: createdAssignments.length
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
+    res.json({
+      success: true,
+      createdShiftsCount: createdShifts.length,
+      createdAssignmentsCount: createdAssignments.length,
+      totalPlanned: plannedShifts.length,
+      shifts: createdShifts,
+      assignments: createdAssignments,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error in bulk planning:', error);
+    res.status(500).json({ error: 'Failed to create bulk planning' });
+  }
+});
+
 // POST /api/hr/shift-assignments/bulk - Bulk assign resources to shifts for a period
 router.post('/shift-assignments/bulk', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
   try {
