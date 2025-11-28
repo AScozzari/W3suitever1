@@ -163,7 +163,7 @@ const shiftTemplateSchema = z.object({
     .min(3, 'Nome deve avere almeno 3 caratteri')
     .max(50, 'Nome troppo lungo (max 50 caratteri)'),
   description: z.string().max(200, 'Descrizione troppo lunga (max 200 caratteri)').optional(),
-  storeId: z.string().min(1, 'Seleziona un punto vendita'),
+  storeId: z.string().default('global'), // 'global' = valido per tutti i punti vendita
   status: z.enum(['active', 'archived']).default('active'),
   // ✅ NEW: Shift type selection
   shiftType: z.enum(['slot_based', 'split_shift']).default('slot_based'),
@@ -376,7 +376,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     defaultValues: {
       name: template?.name || '',
       description: template?.description || '',
-      storeId: template?.storeId || '',
+      storeId: template?.storeId || 'global', // Default: valido per tutti i punti vendita
       status: template?.status || 'active',
       // ✅ NEW: Shift type defaults
       shiftType: template?.shiftType || 'slot_based',
@@ -424,10 +424,12 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       const method = template?.id ? 'PUT' : 'POST';
       
       // Enterprise format with multiple timeSlots support
+      // 'global' = null (valido per tutti i punti vendita)
       const enterpriseData = {
         name: data.name,
         description: data.description,
-        storeId: data.storeId,
+        storeId: data.storeId === 'global' ? null : data.storeId,
+        scope: data.storeId === 'global' ? 'global' : 'store', // Scope per filtro backend
         status: data.status,
         // ✅ NEW: Shift type and global tolerances
         shiftType: data.shiftType,
@@ -723,7 +725,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <StoreIcon className="w-4 h-4" />
-                          Punto Vendita *
+                          Ambito Applicazione
                         </FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
@@ -736,6 +738,9 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="global" className="font-semibold text-orange-600">
+                              🌐 Tutti i Punti Vendita (Globale)
+                            </SelectItem>
                             {stores?.map((store: any) => (
                               <SelectItem key={store.id} value={store.id}>
                                 {store.nome || store.name} - {store.code}
