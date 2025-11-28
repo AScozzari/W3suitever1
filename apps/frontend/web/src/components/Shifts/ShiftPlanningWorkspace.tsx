@@ -117,7 +117,7 @@ export default function ShiftPlanningWorkspace() {
   const { data: templates = [] } = useQuery<ShiftTemplate[]>({
     queryKey: ['/api/hr/shift-templates', selectedStoreId],
     queryFn: async () => {
-      const response = await fetch(`/api/hr/shift-templates?storeId=${selectedStoreId}`);
+      const response = await fetch(`/api/hr/shift-templates?storeId=${selectedStoreId}`, { credentials: 'include' });
       if (!response.ok) return [];
       return response.json();
     },
@@ -136,7 +136,8 @@ export default function ShiftPlanningWorkspace() {
     queryKey: ['/api/hr/shifts', selectedStoreId, format(periodStart, 'yyyy-MM-dd')],
     queryFn: async () => {
       const response = await fetch(
-        `/api/hr/shifts?storeId=${selectedStoreId}&startDate=${format(periodStart, 'yyyy-MM-dd')}&endDate=${format(periodEnd, 'yyyy-MM-dd')}`
+        `/api/hr/shifts?storeId=${selectedStoreId}&startDate=${format(periodStart, 'yyyy-MM-dd')}&endDate=${format(periodEnd, 'yyyy-MM-dd')}`,
+        { credentials: 'include' }
       );
       if (!response.ok) return [];
       return response.json();
@@ -147,7 +148,7 @@ export default function ShiftPlanningWorkspace() {
   const { data: assignments = [] } = useQuery<ShiftAssignment[]>({
     queryKey: ['/api/hr/shift-assignments', selectedStoreId],
     queryFn: async () => {
-      const response = await fetch(`/api/hr/shift-assignments?storeId=${selectedStoreId}`);
+      const response = await fetch(`/api/hr/shift-assignments?storeId=${selectedStoreId}`, { credentials: 'include' });
       if (!response.ok) return [];
       return response.json();
     },

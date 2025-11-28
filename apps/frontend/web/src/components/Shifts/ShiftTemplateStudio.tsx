@@ -80,7 +80,7 @@ export default function ShiftTemplateStudio({ selectedStoreId, onTemplateSelect 
       const url = selectedStoreId 
         ? `/api/hr/shift-templates?storeId=${selectedStoreId}`
         : '/api/hr/shift-templates';
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: 'include' });
       if (!response.ok) return [];
       return response.json();
     }
