@@ -1,5 +1,5 @@
 // WebSocket Hook for Real-time Notifications
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { queryClient, getCurrentTenantId } from '@/lib/queryClient';
 
 interface WebSocketEvent {
@@ -22,6 +22,16 @@ interface UseWebSocketOptions {
   onConflictUpdate?: (conflicts: any[]) => void;
 }
 
+// Global connection state to prevent multiple connections
+const globalConnectionState = {
+  isConnecting: false,
+  lastConnectionTime: 0,
+  activeConnection: null as WebSocket | null,
+  connectionCount: 0,
+};
+
+const MIN_CONNECTION_INTERVAL = 2000; // Minimum 2 seconds between connections
+
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const { enabled = true, userId, onNotification, onConnectionChange, onShiftUpdate, onConflictUpdate } = options;
   
@@ -36,16 +46,44 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
+  const connectionIdRef = useRef(0);
 
-  const connect = () => {
-    if (!enabled || !tenantId || wsRef.current?.readyState === WebSocket.CONNECTING) {
+  const connect = useCallback(() => {
+    // Guard: check if already connecting or connected
+    if (!enabled || !tenantId) {
+      return;
+    }
+
+    // Guard: prevent rapid reconnections
+    const now = Date.now();
+    if (now - globalConnectionState.lastConnectionTime < MIN_CONNECTION_INTERVAL) {
+      console.log('🌐 [WS] Throttled: too soon since last connection');
+      return;
+    }
+
+    // Guard: already connecting
+    if (globalConnectionState.isConnecting) {
+      console.log('🌐 [WS] Already connecting, skipping');
+      return;
+    }
+
+    // Guard: already connected with same params
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
+      console.log('🌐 [WS] Already connected/connecting, skipping');
       return;
     }
 
     try {
-      // Close existing connection
+      globalConnectionState.isConnecting = true;
+      globalConnectionState.lastConnectionTime = now;
+      connectionIdRef.current++;
+      const thisConnectionId = connectionIdRef.current;
+
+      // Close existing connection cleanly
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef.current.close(1000, 'New connection');
+        wsRef.current = null;
       }
 
       // Create WebSocket URL (same-origin for both dev and prod)
@@ -53,13 +91,22 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       const host = window.location.host; // Use same origin as current page
       const wsUrl = `${protocol}//${host}/ws/notifications?userId=${encodeURIComponent(currentUserId)}&tenantId=${encodeURIComponent(tenantId || '')}&token=dev-token`;
 
-      console.log('🌐 [WS] Connecting to:', wsUrl);
+      console.log('🌐 [WS] Connecting to:', wsUrl, '(id:', thisConnectionId, ')');
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
+      globalConnectionState.activeConnection = ws;
 
       ws.onopen = () => {
-        console.log('🌐 [WS] Connected successfully');
+        globalConnectionState.isConnecting = false;
+        
+        // Ignore if component unmounted or connection superseded
+        if (!mountedRef.current || connectionIdRef.current !== thisConnectionId) {
+          ws.close(1000, 'Superseded');
+          return;
+        }
+        
+        console.log('🌐 [WS] Connected successfully (id:', thisConnectionId, ')');
         setIsConnected(true);
         setReconnectAttempts(0);
         onConnectionChange?.(true);
@@ -140,9 +187,19 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       };
 
       ws.onclose = (event) => {
-        console.log('🌐 [WS] Connection closed:', event.code, event.reason);
-        setIsConnected(false);
-        onConnectionChange?.(false);
+        globalConnectionState.isConnecting = false;
+        
+        // Ignore if this is not the current connection
+        if (connectionIdRef.current !== thisConnectionId) {
+          return;
+        }
+        
+        console.log('🌐 [WS] Connection closed:', event.code, event.reason, '(id:', thisConnectionId, ')');
+        
+        if (mountedRef.current) {
+          setIsConnected(false);
+          onConnectionChange?.(false);
+        }
 
         // Clear ping interval
         if (pingIntervalRef.current) {
@@ -150,34 +207,50 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           pingIntervalRef.current = null;
         }
 
-        // Attempt reconnection if not manually closed
-        if (event.code !== 1000 && enabled) {
+        // Attempt reconnection only if:
+        // - Not manually closed (code 1000)
+        // - Component still mounted
+        // - Still enabled
+        // - This is still the current connection
+        if (event.code !== 1000 && mountedRef.current && enabled && connectionIdRef.current === thisConnectionId) {
           scheduleReconnect();
         }
       };
 
       ws.onerror = (error) => {
-        console.error('🌐 [WS] Connection error:', error);
-        setIsConnected(false);
-        onConnectionChange?.(false);
+        globalConnectionState.isConnecting = false;
+        console.error('🌐 [WS] Connection error:', error, '(id:', thisConnectionId, ')');
+        
+        if (mountedRef.current && connectionIdRef.current === thisConnectionId) {
+          setIsConnected(false);
+          onConnectionChange?.(false);
+        }
       };
 
     } catch (error) {
+      globalConnectionState.isConnecting = false;
       console.error('🌐 [WS] Failed to create connection:', error);
-      scheduleReconnect();
+      if (mountedRef.current) {
+        scheduleReconnect();
+      }
     }
-  };
+  }, [enabled, tenantId, currentUserId]);
 
-  const scheduleReconnect = () => {
-    if (!enabled) return;
+  const scheduleReconnect = useCallback(() => {
+    if (!enabled || !mountedRef.current) return;
 
     const maxAttempts = 10;
-    const baseDelay = 1000;
+    const baseDelay = 2000; // Increased base delay
     const maxDelay = 30000;
 
     if (reconnectAttempts >= maxAttempts) {
       console.error('🌐 [WS] Max reconnection attempts reached');
       return;
+    }
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
     }
 
     // Exponential backoff with jitter
@@ -189,10 +262,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     console.log(`🌐 [WS] Scheduling reconnect in ${Math.round(delay)}ms (attempt ${reconnectAttempts + 1})`);
 
     reconnectTimeoutRef.current = setTimeout(() => {
-      setReconnectAttempts(prev => prev + 1);
-      connect();
+      if (mountedRef.current) {
+        setReconnectAttempts(prev => prev + 1);
+        connect();
+      }
     }, delay);
-  };
+  }, [enabled, reconnectAttempts, connect]);
 
   const disconnect = () => {
     // Clear timeouts
@@ -251,16 +326,34 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
   };
 
+  // Track component mount state
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   // Connect on mount and when enabled/tenantId changes
   useEffect(() => {
     if (enabled && tenantId) {
-      connect();
+      // Small delay to debounce rapid mount/unmount cycles
+      const timeoutId = setTimeout(() => {
+        if (mountedRef.current) {
+          connect();
+        }
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        disconnect();
+      };
     } else {
       disconnect();
     }
-
+    
     return () => disconnect();
-  }, [enabled, tenantId, userId]);
+  }, [enabled, tenantId, connect]);
 
   return {
     isConnected,
