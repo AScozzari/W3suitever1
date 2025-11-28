@@ -34,6 +34,7 @@ export interface ResourceAssignment {
 
 export interface CoverageSlot {
   day: string;
+  slotId: string; // Unique slot identifier for matching assignments
   startTime: string;
   endTime: string;
   templateId: string;
@@ -41,7 +42,11 @@ export interface CoverageSlot {
   templateColor: string;
   requiredStaff: number;
   assignedResources: ResourceAssignment[];
-  coverageStatus: 'covered' | 'partial' | 'uncovered';
+  // Phase 1: template coverage (slots planned)
+  // Phase 2: resource coverage (staff assigned)
+  templateCoverageStatus: 'planned' | 'not_planned'; // Template selected for this slot?
+  resourceCoverageStatus: 'covered' | 'partial' | 'uncovered'; // Resources assigned?
+  coverageStatus: 'covered' | 'partial' | 'uncovered'; // Combined status for display
 }
 
 export interface StoreOpeningHours {
@@ -268,11 +273,15 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
   // Navigate phases
   goToPhase: (phase) => {
     set({ currentPhase: phase });
+    // Recompute coverage when phase changes (coverage logic differs per phase)
+    get().computeCoverage();
   },
   
   // Compute coverage preview
+  // Phase 1: Shows template coverage (which slots are planned)
+  // Phase 2: Shows resource coverage (which slots have assigned staff)
   computeCoverage: () => {
-    const { templateSelections, resourceAssignments, storeOpeningHours } = get();
+    const { templateSelections, resourceAssignments, currentPhase } = get();
     
     const coverageSlots: CoverageSlot[] = [];
     
@@ -283,26 +292,38 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       // For each selected day
       selectedDays.forEach(day => {
         // For each time slot in template
-        (template.timeSlots || []).forEach(slot => {
+        (template.timeSlots || []).forEach((slot, slotIndex) => {
           const requiredStaff = slot.requiredStaff || 1;
+          const slotId = slot.id || `slot-${slotIndex}`;
           
-          // Find assignments for this slot
+          // Find assignments for this slot (match by templateId, slotId, and day)
           const assignments = resourceAssignments.filter(
             ra => ra.templateId === template.id && 
-                  ra.slotId === slot.id && 
+                  ra.slotId === slotId && 
                   ra.day === day
           );
           
-          // Determine coverage status
-          let coverageStatus: 'covered' | 'partial' | 'uncovered' = 'uncovered';
+          // Template coverage: slot is planned if day is selected
+          const templateCoverageStatus: 'planned' | 'not_planned' = 'planned';
+          
+          // Resource coverage: based on assigned staff vs required
+          // This is ALWAYS calculated regardless of phase
+          let resourceCoverageStatus: 'covered' | 'partial' | 'uncovered' = 'uncovered';
           if (assignments.length >= requiredStaff) {
-            coverageStatus = 'covered';
+            resourceCoverageStatus = 'covered';
           } else if (assignments.length > 0) {
-            coverageStatus = 'partial';
+            resourceCoverageStatus = 'partial';
           }
+          
+          // Combined coverage status depends on current phase
+          // Phase 1: "covered" = slot is planned (template selected for this day)
+          // Phase 2: "covered" = slot has enough resources assigned (uses resourceCoverageStatus)
+          const coverageStatus: 'covered' | 'partial' | 'uncovered' = 
+            currentPhase === 1 ? 'covered' : resourceCoverageStatus;
           
           coverageSlots.push({
             day,
+            slotId, // Include slotId for matching
             startTime: slot.startTime,
             endTime: slot.endTime,
             templateId: template.id,
@@ -310,6 +331,8 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
             templateColor: template.color,
             requiredStaff,
             assignedResources: assignments,
+            templateCoverageStatus,
+            resourceCoverageStatus,
             coverageStatus
           });
         });
