@@ -254,113 +254,155 @@ export default function ShiftTemplateManager({
         </CardContent>
       </Card>
       
-      {/* Templates Table */}
-      <Card className="windtre-glass-panel border-white/20">
+      {/* Templates Table - Modern Design */}
+      <Card className="windtre-glass-panel border-white/20 overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="border-gray-200">
-                <TableHead className="font-semibold text-gray-900">Nome</TableHead>
-                <TableHead className="font-semibold text-gray-900">Punto Vendita</TableHead>
-                <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
-                <TableHead className="font-semibold text-gray-900">Stato</TableHead>
-                <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
+              <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                <TableHead className="font-semibold text-gray-700 py-4">Nome Template</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4">Punto Vendita</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4">Fasce Orarie</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4 text-center">Stato</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4 w-28 text-center">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTemplates.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                    Nessun template trovato con i filtri selezionati
+                  <TableCell colSpan={5} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-2">
+                      <Clock className="h-10 w-10 text-gray-300" />
+                      <span className="text-gray-500 font-medium">Nessun template trovato</span>
+                      <span className="text-gray-400 text-sm">Modifica i filtri o crea un nuovo template</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTemplates.map((template) => {
-                  const storeName = stores?.find((s: any) => s.id === template.storeId)?.nome || 
-                                   stores?.find((s: any) => s.id === template.storeId)?.name || '-';
+                filteredTemplates.map((template, index) => {
+                  const store = stores?.find((s: any) => s.id === template.storeId);
+                  const storeName = store?.nome || store?.name;
+                  const isGlobal = !template.storeId || !storeName;
                   
                   return (
-                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`template-row-${template.id}`}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">{template.name}</div>
-                          {template.description && (
-                            <div className="text-sm text-gray-600">{template.description}</div>
-                          )}
+                    <TableRow 
+                      key={template.id} 
+                      className={cn(
+                        "transition-all duration-200 hover:bg-orange-50/50",
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                      )}
+                      data-testid={`template-row-${template.id}`}
+                    >
+                      <TableCell className="py-4">
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-1 h-12 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: template.color || '#f97316' }}
+                          />
+                          <div>
+                            <div className="font-semibold text-gray-900">{template.name}</div>
+                            {template.description && (
+                              <div className="text-sm text-gray-500 mt-0.5 line-clamp-1">{template.description}</div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <StoreIcon className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{storeName}</span>
-                        </div>
+                      <TableCell className="py-4">
+                        {isGlobal ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
+                            <StoreIcon className="h-3.5 w-3.5 mr-1.5" />
+                            Globale
+                          </Badge>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <StoreIcon className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700">{storeName}</span>
+                          </div>
+                        )}
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
+                      <TableCell className="py-4">
+                        <div className="space-y-1.5">
                           {template.timeSlots?.map((slot, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <div className="text-sm">
+                            <div key={idx} className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-fit">
+                              <Clock className="h-3.5 w-3.5 text-orange-500" />
+                              <div className="text-sm font-medium text-gray-700">
                                 {slot.segmentType === 'split' ? (
-                                  <>
-                                    <span className="font-medium">{slot.startTime} - {slot.endTime}</span>
-                                    <span className="text-gray-400 mx-1">+</span>
-                                    <span className="font-medium">{slot.block2StartTime} - {slot.block2EndTime}</span>
-                                    <Badge variant="outline" className="text-xs ml-2">Spezzato</Badge>
-                                  </>
+                                  <span>
+                                    {slot.startTime?.slice(0,5)} - {slot.endTime?.slice(0,5)}
+                                    <span className="text-orange-500 mx-1.5">•</span>
+                                    {slot.block2StartTime?.slice(0,5)} - {slot.block2EndTime?.slice(0,5)}
+                                  </span>
                                 ) : (
-                                  <span className="font-medium">{slot.startTime} - {slot.endTime}</span>
-                                )}
-                                {slot.breakMinutes !== undefined && slot.breakMinutes > 0 && (
-                                  <Badge variant="outline" className="text-xs ml-2">
-                                    {slot.breakMinutes}min pausa
-                                  </Badge>
+                                  <span>{slot.startTime?.slice(0,5)} - {slot.endTime?.slice(0,5)}</span>
                                 )}
                               </div>
+                              {slot.segmentType === 'split' && (
+                                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                                  Spezzato
+                                </Badge>
+                              )}
+                              {slot.breakMinutes !== undefined && slot.breakMinutes > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {slot.breakMinutes}' pausa
+                                </Badge>
+                              )}
                             </div>
                           )) || (
-                            <span className="text-sm text-gray-400">Nessuna fascia definita</span>
+                            <span className="text-sm text-gray-400 italic">Nessuna fascia</span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={template.isActive ? "default" : "secondary"}>
+                      <TableCell className="py-4 text-center">
+                        <Badge 
+                          variant={template.isActive ? "default" : "secondary"}
+                          className={cn(
+                            "font-medium",
+                            template.isActive 
+                              ? "bg-green-100 text-green-700 hover:bg-green-100" 
+                              : "bg-gray-100 text-gray-500"
+                          )}
+                        >
                           {template.isActive ? 'Attivo' : 'Archiviato'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-4 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 hover:bg-orange-100"
+                              data-testid={`button-actions-${template.id}`}
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedTemplate(template);
-                              setIsApplyModalOpen(true);
-                            }}>
-                              <CalendarIcon className="h-4 w-4 mr-2" />
-                              Applica
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem 
+                              onClick={() => handleEditTemplate(template)}
+                              className="cursor-pointer"
+                            >
+                              <Edit className="h-4 w-4 mr-2 text-blue-600" />
+                              <span>Modifica</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplica
+                            <DropdownMenuItem 
+                              onClick={() => handleDuplicateTemplate(template)}
+                              className="cursor-pointer"
+                            >
+                              <Copy className="h-4 w-4 mr-2 text-purple-600" />
+                              <span>Duplica</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleArchiveTemplate(template.id)}
                               disabled={isDeletingTemplate === template.id}
+                              className="cursor-pointer text-amber-600 focus:text-amber-700"
                             >
                               {isDeletingTemplate === template.id ? (
                                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
                                 <Archive className="h-4 w-4 mr-2" />
                               )}
-                              Archivia
+                              <span>Archivia</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
