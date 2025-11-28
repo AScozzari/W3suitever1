@@ -213,18 +213,60 @@ export default function ShiftPlanningWorkspace() {
     }
     
     const daySlots = coveragePreview.filter(s => s.day === dayStr);
+    const openStart = dayOpening && !dayOpening.isClosed 
+      ? parseInt(dayOpening.openTime.substring(0, 2)) * 60 + parseInt(dayOpening.openTime.substring(3, 5))
+      : 0;
+    const openEnd = dayOpening && !dayOpening.isClosed 
+      ? parseInt(dayOpening.closeTime.substring(0, 2)) * 60 + parseInt(dayOpening.closeTime.substring(3, 5))
+      : 1440;
+    
     daySlots.forEach((slot, idx) => {
-      segments.push({
-        id: `template-${slot.templateId}-${slot.slotId}-${dayStr}`,
-        startTime: slot.startTime.substring(0, 5),
-        endTime: slot.endTime.substring(0, 5),
-        type: 'template',
-        label: slot.templateName,
-        templateName: slot.templateName,
-        color: slot.templateColor,
-        requiredStaff: slot.requiredStaff,
-        assignedStaff: slot.assignedResources.length
-      });
+      const slotStart = parseInt(slot.startTime.substring(0, 2)) * 60 + parseInt(slot.startTime.substring(3, 5));
+      const slotEnd = parseInt(slot.endTime.substring(0, 2)) * 60 + parseInt(slot.endTime.substring(3, 5));
+      
+      const hasOverflowBefore = slotStart < openStart;
+      const hasOverflowAfter = slotEnd > openEnd;
+      
+      if (hasOverflowBefore) {
+        const overflowEnd = Math.min(slotEnd, openStart);
+        segments.push({
+          id: `overflow-before-${slot.templateId}-${slot.slotId}-${dayStr}`,
+          startTime: slot.startTime.substring(0, 5),
+          endTime: `${Math.floor(overflowEnd / 60).toString().padStart(2, '0')}:${(overflowEnd % 60).toString().padStart(2, '0')}`,
+          type: 'overflow',
+          label: 'Fuori orario',
+          templateName: slot.templateName
+        });
+      }
+      
+      if (hasOverflowAfter) {
+        const overflowStart = Math.max(slotStart, openEnd);
+        segments.push({
+          id: `overflow-after-${slot.templateId}-${slot.slotId}-${dayStr}`,
+          startTime: `${Math.floor(overflowStart / 60).toString().padStart(2, '0')}:${(overflowStart % 60).toString().padStart(2, '0')}`,
+          endTime: slot.endTime.substring(0, 5),
+          type: 'overflow',
+          label: 'Fuori orario',
+          templateName: slot.templateName
+        });
+      }
+      
+      const effectiveStart = Math.max(slotStart, openStart);
+      const effectiveEnd = Math.min(slotEnd, openEnd);
+      
+      if (effectiveStart < effectiveEnd) {
+        segments.push({
+          id: `template-${slot.templateId}-${slot.slotId}-${dayStr}`,
+          startTime: `${Math.floor(effectiveStart / 60).toString().padStart(2, '0')}:${(effectiveStart % 60).toString().padStart(2, '0')}`,
+          endTime: `${Math.floor(effectiveEnd / 60).toString().padStart(2, '0')}:${(effectiveEnd % 60).toString().padStart(2, '0')}`,
+          type: 'template',
+          label: slot.templateName,
+          templateName: slot.templateName,
+          color: slot.templateColor,
+          requiredStaff: slot.requiredStaff,
+          assignedStaff: slot.assignedResources.length
+        });
+      }
       
       slot.assignedResources.forEach((ra, raIdx) => {
         segments.push({
@@ -253,9 +295,6 @@ export default function ShiftPlanningWorkspace() {
     });
 
     if (dayOpening && !dayOpening.isClosed && daySlots.length > 0) {
-      const openStart = parseInt(dayOpening.openTime.substring(0, 2)) * 60 + parseInt(dayOpening.openTime.substring(3, 5));
-      const openEnd = parseInt(dayOpening.closeTime.substring(0, 2)) * 60 + parseInt(dayOpening.closeTime.substring(3, 5));
-      
       const coveredRanges = daySlots.map(s => ({
         start: parseInt(s.startTime.substring(0, 2)) * 60 + parseInt(s.startTime.substring(3, 5)),
         end: parseInt(s.endTime.substring(0, 2)) * 60 + parseInt(s.endTime.substring(3, 5))
