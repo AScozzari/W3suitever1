@@ -322,8 +322,7 @@ router.get('/universal-requests', requirePermission('hr.requests.read'), async (
       .select({
         id: universalRequests.id,
         category: universalRequests.category,
-        requestType: universalRequests.requestType,
-        requestSubtype: universalRequests.requestSubtype,
+        type: universalRequests.type,
         title: universalRequests.title,
         description: universalRequests.description,
         requesterId: universalRequests.requesterId,
