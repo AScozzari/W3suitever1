@@ -15,10 +15,17 @@ export interface TimelineSegment {
   assignedStaff?: number;
 }
 
+export interface TimelineLane {
+  id: string;
+  type: 'opening' | 'template' | 'gap' | 'resource' | 'shortage' | 'overflow';
+  label: string;
+  segments: TimelineSegment[];
+}
+
 interface TimelineBarProps {
   day: string;
   dayLabel: string;
-  segments: TimelineSegment[];
+  lanes: TimelineLane[];
   startHour?: number;
   endHour?: number;
   onSegmentClick?: (segment: TimelineSegment) => void;
@@ -55,14 +62,14 @@ const minutesToPercent = (minutes: number, startHour: number, endHour: number): 
   return Math.max(0, Math.min(100, (offsetMinutes / totalMinutes) * 100));
 };
 
-const BAR_HEIGHT = 18;
-const TRACK_HEIGHT = 22;
-const TOTAL_HEIGHT = TRACK_HEIGHT * 3 + 28;
+const LANE_HEIGHT = 44;
+const HEADER_HEIGHT = 28;
+const MIN_TOTAL_HEIGHT = 180;
 
 export function TimelineBar({
   day,
   dayLabel,
-  segments,
+  lanes,
   startHour = 6,
   endHour = 24,
   onSegmentClick,
@@ -76,23 +83,12 @@ export function TimelineBar({
     return markers;
   }, [startHour, endHour]);
 
-  const groupedSegments = useMemo(() => {
-    const groups: Record<string, TimelineSegment[]> = {
-      opening: [],
-      template: [],
-      resource: [],
-    };
-    
-    segments.forEach(seg => {
-      if (seg.type === 'opening') groups.opening.push(seg);
-      else if (seg.type === 'template' || seg.type === 'gap' || seg.type === 'overflow') groups.template.push(seg);
-      else if (seg.type === 'resource' || seg.type === 'shortage') groups.resource.push(seg);
-    });
-    
-    return groups;
-  }, [segments]);
+  const totalHeight = useMemo(() => {
+    const lanesHeight = lanes.length * LANE_HEIGHT + HEADER_HEIGHT;
+    return Math.max(MIN_TOTAL_HEIGHT, lanesHeight);
+  }, [lanes.length]);
 
-  const renderSegment = (segment: TimelineSegment, trackIndex: number) => {
+  const renderSegment = (segment: TimelineSegment) => {
     const startMinutes = timeToMinutes(segment.startTime);
     const endMinutes = timeToMinutes(segment.endTime);
     const left = minutesToPercent(startMinutes, startHour, endHour);
@@ -107,20 +103,20 @@ export function TimelineBar({
             <div
               className={cn(
                 "absolute rounded-md cursor-pointer transition-all hover:opacity-90 hover:ring-2 hover:ring-white/60 shadow-sm",
-                "flex items-center justify-center text-xs text-white font-semibold overflow-hidden"
+                "flex items-center justify-center text-white font-semibold overflow-hidden"
               )}
               style={{
                 left: `${left}%`,
-                width: `${Math.max(width, 1.5)}%`,
-                top: `${trackIndex * TRACK_HEIGHT + 2}px`,
-                height: `${BAR_HEIGHT}px`,
+                width: `${Math.max(width, 2)}%`,
+                top: '4px',
+                bottom: '4px',
                 backgroundColor: bgColor,
               }}
               onClick={() => onSegmentClick?.(segment)}
               data-testid={`timeline-segment-${segment.id}`}
             >
-              {width > 6 && (
-                <span className="truncate px-1.5 text-[11px]">
+              {width > 5 && (
+                <span className="truncate px-2 text-[12px]">
                   {segment.resourceName || segment.label || `${segment.startTime.slice(0,5)}-${segment.endTime.slice(0,5)}`}
                 </span>
               )}
@@ -141,42 +137,83 @@ export function TimelineBar({
     );
   };
 
+  const renderLane = (lane: TimelineLane, index: number) => {
+    const laneColor = COLORS[lane.type];
+    
+    return (
+      <div 
+        key={lane.id}
+        className="relative border-b border-gray-100 last:border-b-0"
+        style={{ height: `${LANE_HEIGHT}px` }}
+        data-testid={`timeline-lane-${lane.id}`}
+      >
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-1 rounded-l"
+          style={{ backgroundColor: laneColor }}
+        />
+        
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-500 w-20 truncate z-10">
+          {lane.label}
+        </div>
+        
+        <div className="absolute left-24 right-2 top-0 bottom-0 relative">
+          {lane.segments.map(seg => renderSegment(seg))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={cn("bg-white rounded-lg border border-gray-200 p-4 shadow-sm", className)} data-testid={`timeline-day-${day}`}>
-      <div className="flex items-center gap-4">
-        <div className="w-32 text-sm font-semibold text-gray-800 shrink-0">
+      <div className="flex items-start gap-4">
+        <div className="w-28 pt-3 text-sm font-bold text-gray-800 shrink-0">
           {dayLabel}
         </div>
         
         <div className="flex-1 relative">
-          <div className="bg-gray-50 rounded-lg relative overflow-hidden border border-gray-100" style={{ height: `${TOTAL_HEIGHT}px` }}>
-            <div className="absolute inset-0 flex">
+          <div 
+            className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100"
+            style={{ minHeight: `${totalHeight}px` }}
+          >
+            <div className="relative" style={{ height: `${HEADER_HEIGHT}px` }}>
               {hourMarkers.map(hour => {
                 const left = minutesToPercent(hour * 60, startHour, endHour);
                 return (
                   <div
                     key={hour}
-                    className="absolute h-full border-l border-gray-200/80"
-                    style={{ left: `${left}%` }}
+                    className="absolute h-full"
+                    style={{ left: `calc(96px + ${left}% * (100% - 96px - 8px) / 100)` }}
                   >
-                    <span className="absolute top-1 -translate-x-1/2 text-[12px] font-semibold text-gray-500 bg-gray-50 px-0.5">
-                      {hour}
+                    <span className="absolute top-1 -translate-x-1/2 text-[13px] font-bold text-gray-600 bg-gray-50 px-1">
+                      {hour}:00
                     </span>
                   </div>
                 );
               })}
             </div>
             
-            <div className="absolute inset-x-2 top-6" style={{ height: `${TRACK_HEIGHT}px` }}>
-              {groupedSegments.opening.map(seg => renderSegment(seg, 0))}
-            </div>
-            
-            <div className="absolute inset-x-2" style={{ height: `${TRACK_HEIGHT}px`, top: `${TRACK_HEIGHT + 8}px` }}>
-              {groupedSegments.template.map(seg => renderSegment(seg, 0))}
-            </div>
-            
-            <div className="absolute inset-x-2" style={{ height: `${TRACK_HEIGHT}px`, top: `${TRACK_HEIGHT * 2 + 10}px` }}>
-              {groupedSegments.resource.map(seg => renderSegment(seg, 0))}
+            <div className="relative">
+              {hourMarkers.map(hour => {
+                const left = minutesToPercent(hour * 60, startHour, endHour);
+                return (
+                  <div
+                    key={`grid-${hour}`}
+                    className="absolute top-0 bottom-0 border-l border-gray-200/60"
+                    style={{ 
+                      left: `calc(96px + ${left}% * (100% - 96px - 8px) / 100)`,
+                      height: `${lanes.length * LANE_HEIGHT}px`
+                    }}
+                  />
+                );
+              })}
+              
+              {lanes.map((lane, idx) => renderLane(lane, idx))}
+              
+              {lanes.length === 0 && (
+                <div className="flex items-center justify-center h-24 text-gray-400 text-sm">
+                  Nessun elemento da visualizzare
+                </div>
+              )}
             </div>
           </div>
         </div>

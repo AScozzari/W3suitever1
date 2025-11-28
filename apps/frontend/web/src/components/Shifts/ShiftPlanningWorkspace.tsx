@@ -24,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { useShiftPlanningStore, type ShiftTemplate, type TimeSlot, type ResourceAssignment } from '@/stores/shiftPlanningStore';
-import { TimelineBar, TimelineLegend, type TimelineSegment } from './TimelineBar';
+import { TimelineBar, TimelineLegend, type TimelineSegment, type TimelineLane } from './TimelineBar';
 
 interface Store {
   id: string;
@@ -196,19 +196,25 @@ export default function ShiftPlanningWorkspace() {
     }
   };
 
-  const buildTimelineSegments = useCallback((day: Date): TimelineSegment[] => {
-    const segments: TimelineSegment[] = [];
+  const buildTimelineLanes = useCallback((day: Date): TimelineLane[] => {
+    const lanes: TimelineLane[] = [];
     const dayOfWeek = getDay(day);
     const dayStr = format(day, 'yyyy-MM-dd');
     
     const dayOpening = storeOpeningHours.find(h => h.day === dayOfWeek);
+    
     if (dayOpening && !dayOpening.isClosed) {
-      segments.push({
-        id: `opening-${dayStr}`,
-        startTime: dayOpening.openTime.substring(0, 5),
-        endTime: dayOpening.closeTime.substring(0, 5),
+      lanes.push({
+        id: `lane-opening-${dayStr}`,
         type: 'opening',
-        label: 'Apertura'
+        label: 'Apertura',
+        segments: [{
+          id: `opening-${dayStr}`,
+          startTime: dayOpening.openTime.substring(0, 5),
+          endTime: dayOpening.closeTime.substring(0, 5),
+          type: 'opening',
+          label: `${dayOpening.openTime.substring(0, 5)} - ${dayOpening.closeTime.substring(0, 5)}`
+        }]
       });
     }
     
@@ -220,31 +226,21 @@ export default function ShiftPlanningWorkspace() {
       ? parseInt(dayOpening.closeTime.substring(0, 2)) * 60 + parseInt(dayOpening.closeTime.substring(3, 5))
       : 1440;
     
-    daySlots.forEach((slot, idx) => {
+    daySlots.forEach((slot) => {
       const slotStart = parseInt(slot.startTime.substring(0, 2)) * 60 + parseInt(slot.startTime.substring(3, 5));
       const slotEnd = parseInt(slot.endTime.substring(0, 2)) * 60 + parseInt(slot.endTime.substring(3, 5));
+      
+      const templateSegments: TimelineSegment[] = [];
       
       const hasOverflowBefore = slotStart < openStart;
       const hasOverflowAfter = slotEnd > openEnd;
       
       if (hasOverflowBefore) {
         const overflowEnd = Math.min(slotEnd, openStart);
-        segments.push({
+        templateSegments.push({
           id: `overflow-before-${slot.templateId}-${slot.slotId}-${dayStr}`,
           startTime: slot.startTime.substring(0, 5),
           endTime: `${Math.floor(overflowEnd / 60).toString().padStart(2, '0')}:${(overflowEnd % 60).toString().padStart(2, '0')}`,
-          type: 'overflow',
-          label: 'Fuori orario',
-          templateName: slot.templateName
-        });
-      }
-      
-      if (hasOverflowAfter) {
-        const overflowStart = Math.max(slotStart, openEnd);
-        segments.push({
-          id: `overflow-after-${slot.templateId}-${slot.slotId}-${dayStr}`,
-          startTime: `${Math.floor(overflowStart / 60).toString().padStart(2, '0')}:${(overflowStart % 60).toString().padStart(2, '0')}`,
-          endTime: slot.endTime.substring(0, 5),
           type: 'overflow',
           label: 'Fuori orario',
           templateName: slot.templateName
@@ -255,7 +251,7 @@ export default function ShiftPlanningWorkspace() {
       const effectiveEnd = Math.min(slotEnd, openEnd);
       
       if (effectiveStart < effectiveEnd) {
-        segments.push({
+        templateSegments.push({
           id: `template-${slot.templateId}-${slot.slotId}-${dayStr}`,
           startTime: `${Math.floor(effectiveStart / 60).toString().padStart(2, '0')}:${(effectiveStart % 60).toString().padStart(2, '0')}`,
           endTime: `${Math.floor(effectiveEnd / 60).toString().padStart(2, '0')}:${(effectiveEnd % 60).toString().padStart(2, '0')}`,
@@ -268,28 +264,59 @@ export default function ShiftPlanningWorkspace() {
         });
       }
       
-      slot.assignedResources.forEach((ra, raIdx) => {
-        segments.push({
-          id: `resource-${ra.resourceId}-${slot.slotId}-${dayStr}-${raIdx}`,
-          startTime: slot.startTime.substring(0, 5),
+      if (hasOverflowAfter) {
+        const overflowStart = Math.max(slotStart, openEnd);
+        templateSegments.push({
+          id: `overflow-after-${slot.templateId}-${slot.slotId}-${dayStr}`,
+          startTime: `${Math.floor(overflowStart / 60).toString().padStart(2, '0')}:${(overflowStart % 60).toString().padStart(2, '0')}`,
           endTime: slot.endTime.substring(0, 5),
+          type: 'overflow',
+          label: 'Fuori orario',
+          templateName: slot.templateName
+        });
+      }
+      
+      if (templateSegments.length > 0) {
+        lanes.push({
+          id: `lane-template-${slot.templateId}-${slot.slotId}-${dayStr}`,
+          type: 'template',
+          label: slot.templateName,
+          segments: templateSegments
+        });
+      }
+      
+      slot.assignedResources.forEach((ra, raIdx) => {
+        lanes.push({
+          id: `lane-resource-${ra.resourceId}-${slot.slotId}-${dayStr}`,
           type: 'resource',
           label: ra.resourceName,
-          resourceName: ra.resourceName,
-          templateName: slot.templateName
+          segments: [{
+            id: `resource-${ra.resourceId}-${slot.slotId}-${dayStr}-${raIdx}`,
+            startTime: slot.startTime.substring(0, 5),
+            endTime: slot.endTime.substring(0, 5),
+            type: 'resource',
+            label: ra.resourceName,
+            resourceName: ra.resourceName,
+            templateName: slot.templateName
+          }]
         });
       });
       
       if (slot.assignedResources.length < slot.requiredStaff) {
         const missing = slot.requiredStaff - slot.assignedResources.length;
-        segments.push({
-          id: `shortage-${slot.templateId}-${slot.slotId}-${dayStr}`,
-          startTime: slot.startTime.substring(0, 5),
-          endTime: slot.endTime.substring(0, 5),
+        lanes.push({
+          id: `lane-shortage-${slot.templateId}-${slot.slotId}-${dayStr}`,
           type: 'shortage',
           label: `Mancano ${missing}`,
-          requiredStaff: slot.requiredStaff,
-          assignedStaff: slot.assignedResources.length
+          segments: [{
+            id: `shortage-${slot.templateId}-${slot.slotId}-${dayStr}`,
+            startTime: slot.startTime.substring(0, 5),
+            endTime: slot.endTime.substring(0, 5),
+            type: 'shortage',
+            label: `Mancano ${missing}`,
+            requiredStaff: slot.requiredStaff,
+            assignedStaff: slot.assignedResources.length
+          }]
         });
       }
     });
@@ -300,12 +327,14 @@ export default function ShiftPlanningWorkspace() {
         end: parseInt(s.endTime.substring(0, 2)) * 60 + parseInt(s.endTime.substring(3, 5))
       })).sort((a, b) => a.start - b.start);
       
+      const gapSegments: TimelineSegment[] = [];
       let cursor = openStart;
+      
       coveredRanges.forEach(range => {
         if (range.start > cursor) {
           const gapStart = `${Math.floor(cursor / 60).toString().padStart(2, '0')}:${(cursor % 60).toString().padStart(2, '0')}`;
           const gapEnd = `${Math.floor(range.start / 60).toString().padStart(2, '0')}:${(range.start % 60).toString().padStart(2, '0')}`;
-          segments.push({
+          gapSegments.push({
             id: `gap-${dayStr}-${cursor}`,
             startTime: gapStart,
             endTime: gapEnd,
@@ -319,7 +348,7 @@ export default function ShiftPlanningWorkspace() {
       if (cursor < openEnd) {
         const gapStart = `${Math.floor(cursor / 60).toString().padStart(2, '0')}:${(cursor % 60).toString().padStart(2, '0')}`;
         const gapEnd = `${Math.floor(openEnd / 60).toString().padStart(2, '0')}:${(openEnd % 60).toString().padStart(2, '0')}`;
-        segments.push({
+        gapSegments.push({
           id: `gap-${dayStr}-${cursor}-end`,
           startTime: gapStart,
           endTime: gapEnd,
@@ -327,9 +356,18 @@ export default function ShiftPlanningWorkspace() {
           label: 'Non coperto'
         });
       }
+      
+      if (gapSegments.length > 0) {
+        lanes.push({
+          id: `lane-gap-${dayStr}`,
+          type: 'gap',
+          label: 'Gap',
+          segments: gapSegments
+        });
+      }
     }
     
-    return segments;
+    return lanes;
   }, [storeOpeningHours, coveragePreview]);
 
   const handleResourceDrop = (templateId: string, slotId: string, day: string, resource: Resource) => {
@@ -789,13 +827,13 @@ export default function ShiftPlanningWorkspace() {
           <TimelineLegend />
         </div>
         
-        <div className="space-y-2">
+        <div className="space-y-3">
           {periodDays.map(day => (
             <TimelineBar
               key={format(day, 'yyyy-MM-dd')}
               day={format(day, 'yyyy-MM-dd')}
               dayLabel={format(day, 'EEE d MMM', { locale: it })}
-              segments={buildTimelineSegments(day)}
+              lanes={buildTimelineLanes(day)}
               startHour={6}
               endHour={24}
             />
