@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a distinct WindTre glassmorphism design, robust security measures, and utilizes PostgreSQL with Row Level Security (RLS) for stringent tenant isolation. The platform's primary goal is to provide a scalable, secure, and comprehensive business solution, aiming to significantly enhance operational efficiency and capitalize on market opportunities.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. It features a distinct WindTre glassmorphism design, robust security, and uses PostgreSQL with Row Level Security (RLS) for tenant isolation. The platform aims to enhance operational efficiency and capitalize on market opportunities by providing a scalable, secure, and comprehensive business solution.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -59,112 +59,39 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ FORBIDDEN - Template Literals with tenantSlug**
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System, utilizing `shadcn/ui` and `@w3suite/frontend-kit` with CSS variables and Tailwind CSS. All pages maintain a consistent app structure with header, sidebar, and a white background.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. Consistent app structure with header, sidebar, and white background.
 - **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy.
+- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL RLS for multitenancy and tenant isolation.
 - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
-- **Multitenancy**: PostgreSQL RLS, `TenantProvider`, and global unique constraints.
 - **Core Systems**: Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management System, and Multi-Provider OAuth System (MCP).
-- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (using OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem with PDC Analyzer (GPT-4 for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), AI Funnel Orchestration System (`funnel-orchestrator-assistant` AI agent).
-- **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows. Features include: manual lead/deal creation, omnichannel interaction tracking across 15+ channels, advanced identity resolution with ML-powered duplicate detection, pipeline visualization (Table, Kanban, Gantt), workflow auto-trigger, integrated marketing attribution, and a Customer 360° Dashboard.
+- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem with PDC Analyzer (GPT-4 for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), AI Funnel Orchestration System (`funnel-orchestrator-assistant`). Includes an AI Voice Agent RAG System for WindTre offers using `pgvector`.
+- **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
 - **Campaign Management**: Dual-mode campaign creation (wizard/advanced), GDPR Consent Enforcement.
-- **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning), Deploy Center Bidirectional Branch Linking (linking tenants/stores to branches).
-- **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance, JSON files with Git versioning, tasks system).
-- **VoIP Telephony (PRODUCTION-READY)**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, call actions integrated with CRM, CDR analytics, policy-based routing, edgvoip PBX Integration. **📚 Documentazione completa**: `docs/VOIP_INTEGRATION_GUIDE.md` (API endpoints, database schema, AI Voice Agent setup, WebRTC client, troubleshooting). **Bidirectional Sync System**:
-  - **Trunk Sync**: `POST /api/voip/trunks/refresh` - Pull attivo trunk da edgvoip (read-only in W3)
-  - **Extension Sync**: `POST /api/voip/extensions/refresh-all` - Pull attivo extension da edgvoip per tutti i domini
-  - **Dual Authentication**: OAuth Bearer token (`Authorization` header) + HMAC-SHA256 signature (`X-W3-Signature` header)
-  - **Environment Variables**: `EDGVOIP_API_URL`, `EDGVOIP_ACCESS_TOKEN`, `EDGVOIP_WEBHOOK_SECRET`
-  - **Error Handling**: Detailed error messages con missing env vars detection, partial failure tracking (synced/failed counts), 503 per servizio non configurato
-  - **RBAC**: Endpoint protetti con permessi `voip:trunks:write` e `voip:extensions:write`
-  - **Activity Logging**: Log automatico per audit trail (`voip_trunk_refresh`, `voip_extension_refresh`)
-  - **Services**: `edgvoip-api-client.service.ts`, `voip-trunk-sync.service.ts`, `voip-extension-sync.service.ts`
-- **RBAC System (PRODUCTION-READY)**: 10 Italian role templates with granular permission system (215 total permissions). Default permission assignments:
-  - **Amministratore** (215 perms): Full access to all platform features
-  - **Store Manager** (59 perms): Complete store operations (CRM, POS, Inventory, Analytics)
-  - **Area Manager** (50 perms): Multi-store supervision and analytics
-  - **Finance** (24 perms): Financial operations, invoicing, billing, reports
-  - **HR Manager** (30 perms): Employee management, contracts, payroll, attendance
-  - **Marketing** (29 perms): Campaign management, CMS, customer analytics
-  - **Sales Agent** (19 perms): CRM operations, deals, customer management
-  - **Cassiere** (14 perms): POS operations, transactions, cash drawer
-  - **Magazziniere** (19 perms): Warehouse operations, stock management, receiving/shipping
-  - **Operatore** (7 perms): Basic view-only access
-  Permission templates defined in `italian-role-templates.ts`, auto-applied via `apply-default-permissions.ts` script.
-- **Workflow Database Operations (PRODUCTION-READY MVP)**: [W3] Database Operation node with 4 secure operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema only. Visual query builder for non-technical users, RLS enforcement via `setTenantContext()`, prepared statements with proper parameter binding, table/column validation via `validateTableName/validateColumns/sanitizeIdentifier`. Preview functionality shows RLS-filtered sample data with tenant_id transparency. EXECUTE_QUERY permanently disabled for MVP (requires pg-query-parser for AST-based validation - see Known Issues section).
-
-# Production Features
-
-## AI Voice Agent RAG System - WindTre Offers (PRODUCTION-READY)
-**Status**: Fully operational (2025-11-26)
-**Components**:
-- ✅ **pgvector Database Schema**: 3 tables in `brand_interface` schema
-  - `windtre_offers_raw`: HTML storage with URL checksum deduplication
-  - `windtre_offer_chunks`: Text chunks with embeddings (vector 1536 dimensions, OpenAI text-embedding-3-small)
-  - `rag_sync_state`: Sync status tracking
-  - HNSW index for fast cosine similarity search (similarity threshold: 0.5)
-- ✅ **8 Real WindTre Offers**: Super Fibra, Di Più Unlimited 5G, Young 5G, Call Your Country, Super Internet Casa 5G, Business Partita IVA, Family Plan, Smart Pack Tablet
-- ✅ **Web Scraper**: Puppeteer-based scraper with robots.txt compliance, 2s rate limiting, SHA256 checksums
-- ✅ **Chunking & Embedding Service**: OpenAI text-embedding-3-small, 512-token chunks with 50-token overlap, batch processing
-- ✅ **Brand API Endpoints**:
-  - `POST /brand-api/windtre/sync` - Manual trigger scraping + embedding pipeline
-  - `GET /brand-api/windtre/search` - RAG similarity search (cosine distance, similarity threshold 0.7)
-  - `GET /brand-api/windtre/sync-status` - Sync state monitoring
-- ✅ **Voice Agent Integration**: Function calling tool `search_windtre_offers` con formatting per voice readability
-- ✅ **Voice Quality Fixes**: temperature 0.95, max_output_tokens 420, VAD optimized (700ms silence, 400ms prefix padding)
-
-**Usage Flow**:
-1. Call `POST /brand-api/windtre/sync` to scrape www.windtre.it and generate embeddings (one-time setup, then scheduled)
-2. Voice agent automatically calls `search_windtre_offers` when customer asks about offers/tariffs/prices
-3. RAG returns top-5 relevant chunks with real pricing/details from WindTre website
-
-**Files**: 
-- Services: `apps/backend/brand-api/src/services/windtre-*.service.ts`
-- Endpoints: `apps/backend/brand-api/src/core/routes.ts` (lines 4016-4211)
-- Voice integration: `apps/voice-gateway/src/function-tools.ts`
-- Schema: `apps/backend/brand-api/src/db/schema/brand-interface.ts` (lines 459-516)
-
-# Known Issues & Future Work
-
-## Workflow Database Operations - Phase 1 MVP Complete ✅
-**Status**: Production-ready MVP shipped (2025-11-22)
-**What's included**:
-- ✅ 4 secure database operations: SELECT, INSERT, UPDATE, DELETE
-- ✅ Visual query builder with table/column dropdowns (w3suite schema only)
-- ✅ RLS enforcement via `setTenantContext()` before all queries
-- ✅ Security hardening: `validateTableName()`, `validateColumns()`, `sanitizeIdentifier()`
-- ✅ Prepared statements with proper parameter binding (SQL injection proof)
-- ✅ Preview functionality with RLS-filtered sample data
-- ✅ Workflow executor plugin registered in ActionExecutorsRegistry
-- ✅ ReactFlow integration with node mapping
-
-**EXECUTE_QUERY - Disabled for MVP**:
-**Reason**: Custom SQL queries vulnerable to:
-- search_path manipulation via `set_config()` in CTEs
-- Schema escaping through quoted identifiers bypass
-- False positives on column aliases blocking legitimate JOINs
-**Solution Required**: Implement pg-query-parser for AST-based SQL validation before re-enabling
-**Impact**: Users can use 4 structured operations only - covers 95% of enterprise use cases
-**Decision**: Architect-approved security posture prioritizes safety over flexibility for MVP
+- **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning) and Bidirectional Branch Linking.
+- **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
+- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration for call actions, CDR analytics, policy-based routing, and edgvoip PBX Integration. Supports bidirectional sync for trunks and extensions with dual authentication.
+- **RBAC System**: 10 Italian role templates with a granular permission system (215 total permissions), providing default assignments for various roles (e.g., Amministratore, Store Manager, Sales Agent).
+- **Workflow Database Operations**: Provides 4 secure database operations (SELECT, INSERT, UPDATE, DELETE) on the `w3suite` schema with a visual query builder, RLS enforcement, prepared statements, and table/column validation. EXECUTE_QUERY is disabled for security reasons in the MVP.
+- **Store Working Stats API**: Calculates aggregated working days and hours for stores based on `store_opening_rules`, `store_calendar_settings`, `store_calendar_overrides`, and `public.italian_holidays` tables, with double-layer tenant isolation.
 
 # External Dependencies
-- **Replit Native PostgreSQL**: Managed PostgreSQL 16 (via Neon).
-- **Redis**: BullMQ and Unified Notification System.
-- **OAuth2/OIDC Enterprise**: User authentication.
-- **SHADCN/UI**: UI components.
-- **Radix UI**: Headless component primitives.
-- **Lucide React**: Icon library.
-- **TanStack React Query**: Server state management.
-- **React Hook Form**: Form handling and validation.
+- **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
+- **Redis**: For BullMQ and Unified Notification System.
+- **OAuth2/OIDC Enterprise**: For user authentication.
+- **SHADCN/UI**: For UI components.
+- **Radix UI**: For headless component primitives.
+- **Lucide React**: For icons.
+- **TanStack React Query**: For server state management.
+- **React Hook Form**: For form handling and validation.
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: Database schema management.
-- **PostCSS**: CSS pre-processing.
-- **ESBuild**: Server-side code bundling.
-- **Nginx**: Reverse proxy.
-- **OpenAI**: AI Workflow Builder, PDC Analyzer, AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
-- **Google Workspace**: Integration.
-- **AWS**: Cloud services.
-- **Meta/Instagram**: Social media integrations.
-- **Microsoft 365**: Office suite integration.
-- **Stripe**: Payment processing.
-- **GTM/Analytics**: Google Tag Manager and analytics services.
+- **Drizzle Kit**: For database schema management.
+- **PostCSS**: For CSS pre-processing.
+- **ESBuild**: For server-side code bundling.
+- **Nginx**: As a reverse proxy.
+- **OpenAI**: Used for AI Workflow Builder, PDC Analyzer, and AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
+- **Google Workspace**: For integration.
+- **AWS**: For cloud services.
+- **Meta/Instagram**: For social media integrations.
+- **Microsoft 365**: For Office suite integration.
+- **Stripe**: For payment processing.
+- **GTM/Analytics**: For Google Tag Manager and analytics services.
