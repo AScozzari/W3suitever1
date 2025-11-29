@@ -29,6 +29,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
+import { useShiftPlanningStore, type ResourceAssignment, type CoverageSlot } from '@/stores/shiftPlanningStore';
 
 // Schema per eventi turno
 const shiftEventSchema = z.object({
@@ -86,6 +87,13 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const hrQueryReadiness = useHRQueryReadiness();
+  
+  // FASE 4: Collegamento allo store di pianificazione turni
+  const { 
+    resourceAssignments, 
+    coveragePreview,
+    templateSelections 
+  } = useShiftPlanningStore();
 
   // Form per eventi
   const form = useForm<ShiftEventForm>({
@@ -525,159 +533,135 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     }
   }, [actionTarget, actionType, newAssigneeId, newStartTime, newEndTime, reassignShiftMutation, removeShiftMutation, changeTimeShiftMutation]);
 
-  // ✅ Task 13: Calcola risorse in turno per il giorno selezionato (con multi-select FASE 4)
+  // ✅ FASE 4/5: Calcola risorse in turno per il giorno selezionato DALLO STORE ZUSTAND
   const dayDetailResources = useMemo(() => {
     if (!selectedDayDate) return [];
     
-    const dayStart = new Date(selectedDayDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(selectedDayDate);
-    dayEnd.setHours(23, 59, 59, 999);
-    
+    const dayStr = selectedDayDate.toISOString().split('T')[0];
     const now = new Date();
     
-    // Filtra eventi del giorno
-    const dayEvents = calendarEvents.filter((event: any) => {
-      const eventStart = new Date(event.start);
-      return eventStart >= dayStart && eventStart <= dayEnd;
-    });
+    // Filtra assignment per il giorno corrente dallo store Zustand
+    let dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
     
     // FASE 4: Filtra per stores multi-select
-    let filteredEvents = dayEvents;
     if (selectedStoreFilters.length > 0) {
-      filteredEvents = filteredEvents.filter((event: any) => 
-        selectedStoreFilters.includes(event.extendedProps?.metadata?.storeId)
+      dayAssignments = dayAssignments.filter((ra: ResourceAssignment) => 
+        ra.storeId && selectedStoreFilters.includes(ra.storeId)
       );
     } else if (dayDetailStoreFilter !== 'all') {
-      filteredEvents = filteredEvents.filter((event: any) => 
-        event.extendedProps?.metadata?.storeId === dayDetailStoreFilter
+      dayAssignments = dayAssignments.filter((ra: ResourceAssignment) => 
+        ra.storeId === dayDetailStoreFilter
       );
     }
     
     // FASE 4: Filtra per risorse multi-select
     if (selectedResourceFilters.length > 0) {
-      filteredEvents = filteredEvents.filter((event: any) => 
-        selectedResourceFilters.includes(event.resourceId)
+      dayAssignments = dayAssignments.filter((ra: ResourceAssignment) => 
+        selectedResourceFilters.includes(ra.resourceId)
       );
     }
     
     // Mappa a struttura risorsa con status
-    return filteredEvents.map((event: any) => {
-      const eventStart = new Date(event.start);
-      const eventEnd = event.end ? new Date(event.end) : eventStart;
+    return dayAssignments.map((ra: ResourceAssignment) => {
+      // Parse time to check status
+      const [startH, startM] = (ra.startTime || '00:00').split(':').map(Number);
+      const [endH, endM] = (ra.endTime || '23:59').split(':').map(Number);
+      
+      const startDate = new Date(ra.day);
+      startDate.setHours(startH, startM, 0, 0);
+      const endDate = new Date(ra.day);
+      endDate.setHours(endH, endM, 0, 0);
       
       let status: 'past' | 'present' | 'future' = 'future';
-      if (eventEnd < now) {
+      if (endDate < now) {
         status = 'past';
-      } else if (eventStart <= now && eventEnd >= now) {
+      } else if (startDate <= now && endDate >= now) {
         status = 'present';
       }
       
-      const employee = (employees as any[]).find((e: any) => e.id === event.resourceId);
-      const store = (stores as any[]).find((s: any) => s.id === event.extendedProps?.metadata?.storeId);
+      // Trova template per il nome
+      const template = templateSelections.find(ts => ts.templateId === ra.templateId)?.template;
       
       return {
-        id: event.id,
-        employeeId: event.resourceId,
-        title: event.title,
-        employeeName: employee ? `${employee.firstName} ${employee.lastName}` : 'Risorsa',
-        storeName: store?.nome || 'N/A',
-        storeId: event.extendedProps?.metadata?.storeId,
-        startTime: eventStart.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        endTime: eventEnd.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        id: `${ra.resourceId}-${ra.templateId}-${ra.slotId}-${ra.day}`,
+        employeeId: ra.resourceId,
+        title: template?.name || 'Turno',
+        employeeName: ra.resourceName,
+        storeName: ra.storeName || 'N/A',
+        storeId: ra.storeId,
+        startTime: ra.startTime || '00:00',
+        endTime: ra.endTime || '23:59',
         status,
-        type: event.extendedProps?.type || 'unknown',
+        type: 'shift',
+        templateId: ra.templateId,
+        slotId: ra.slotId,
       };
     });
-  }, [selectedDayDate, calendarEvents, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters, employees, stores]);
+  }, [selectedDayDate, resourceAssignments, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters, templateSelections]);
 
-  // FASE 4: Calcola statistiche copertura per ogni giorno
+  // FASE 4: Calcola statistiche copertura per ogni giorno DALLO STORE ZUSTAND
   const getDayCoverageInfo = useCallback((date: Date) => {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
+    const dayStr = date.toISOString().split('T')[0];
     
-    const dayEvents = calendarEvents.filter((event: any) => {
-      const eventStart = new Date(event.start);
-      return eventStart >= dayStart && eventStart <= dayEnd;
-    });
+    // Filtra assignment per il giorno corrente dallo store Zustand
+    const dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
     
-    const resourceIds = new Set(dayEvents.map((e: any) => e.resourceId));
-    const storeIds = new Set(dayEvents.map((e: any) => e.extendedProps?.metadata?.storeId).filter(Boolean));
+    // Trova le risorse uniche assegnate in questo giorno
+    const resourceIds = new Set(dayAssignments.map((ra: ResourceAssignment) => ra.resourceId));
+    const storeIds = new Set(dayAssignments.map((ra: ResourceAssignment) => ra.storeId).filter(Boolean));
     
     // Genera colori unici per ogni risorsa
     const colors = ['#22c55e', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'];
-    const resourceColors = Array.from(resourceIds).map((_, i) => colors[i % colors.length]);
+    const resourceColors = dayAssignments.map((_, i) => colors[i % colors.length]);
     
     return {
-      totalShifts: dayEvents.length,
+      totalShifts: dayAssignments.length,
       resourceCount: resourceIds.size,
       storeCount: storeIds.size,
       resourceColors,
+      assignments: dayAssignments,
     };
-  }, [calendarEvents]);
+  }, [resourceAssignments]);
   
-  // FASE 4: Lista risorse uniche nel giorno per filtro
+  // FASE 4: Lista risorse uniche nel giorno per filtro DALLO STORE ZUSTAND
   const dayResourcesForFilter = useMemo(() => {
     if (!selectedDayDate) return [];
     
-    const dayStart = new Date(selectedDayDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(selectedDayDate);
-    dayEnd.setHours(23, 59, 59, 999);
-    
-    const dayEvents = calendarEvents.filter((event: any) => {
-      const eventStart = new Date(event.start);
-      return eventStart >= dayStart && eventStart <= dayEnd;
-    });
+    const dayStr = selectedDayDate.toISOString().split('T')[0];
+    const dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
     
     const uniqueResources = new Map();
-    dayEvents.forEach((event: any) => {
-      if (event.resourceId && !uniqueResources.has(event.resourceId)) {
-        const employee = (employees as any[]).find((e: any) => e.id === event.resourceId);
-        if (employee) {
-          uniqueResources.set(event.resourceId, {
-            id: event.resourceId,
-            name: `${employee.firstName} ${employee.lastName}`,
-          });
-        }
+    dayAssignments.forEach((ra: ResourceAssignment) => {
+      if (!uniqueResources.has(ra.resourceId)) {
+        uniqueResources.set(ra.resourceId, {
+          id: ra.resourceId,
+          name: ra.resourceName,
+        });
       }
     });
     
     return Array.from(uniqueResources.values());
-  }, [selectedDayDate, calendarEvents, employees]);
+  }, [selectedDayDate, resourceAssignments]);
 
-  // FASE 4: Lista stores unici nel giorno per filtro
+  // FASE 4: Lista stores unici nel giorno per filtro DALLO STORE ZUSTAND
   const dayStoresForFilter = useMemo(() => {
     if (!selectedDayDate) return [];
     
-    const dayStart = new Date(selectedDayDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(selectedDayDate);
-    dayEnd.setHours(23, 59, 59, 999);
-    
-    const dayEvents = calendarEvents.filter((event: any) => {
-      const eventStart = new Date(event.start);
-      return eventStart >= dayStart && eventStart <= dayEnd;
-    });
+    const dayStr = selectedDayDate.toISOString().split('T')[0];
+    const dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
     
     const uniqueStores = new Map();
-    dayEvents.forEach((event: any) => {
-      const storeId = event.extendedProps?.metadata?.storeId;
-      if (storeId && !uniqueStores.has(storeId)) {
-        const store = (stores as any[]).find((s: any) => s.id === storeId);
-        if (store) {
-          uniqueStores.set(storeId, {
-            id: storeId,
-            name: store.nome || store.name,
-          });
-        }
+    dayAssignments.forEach((ra: ResourceAssignment) => {
+      if (ra.storeId && !uniqueStores.has(ra.storeId)) {
+        uniqueStores.set(ra.storeId, {
+          id: ra.storeId,
+          name: ra.storeName || 'N/A',
+        });
       }
     });
     
     return Array.from(uniqueStores.values());
-  }, [selectedDayDate, calendarEvents, stores]);
+  }, [selectedDayDate, resourceAssignments]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -693,22 +677,6 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                   Vista professionale con gestione completa
                 </p>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  form.reset();
-                  setEventModalMode('create');
-                  setSelectedEvent(null);
-                  setShowEventModal(true);
-                }}
-                data-testid="button-create-shift"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuovo Turno
-              </Button>
             </div>
           </div>
         </CardHeader>
