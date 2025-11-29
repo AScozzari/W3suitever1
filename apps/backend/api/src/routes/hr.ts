@@ -2180,4 +2180,303 @@ router.delete('/shifts/assignments/:id', requirePermission('hr.shifts.manage'), 
   }
 });
 
+// ============================================================================
+// STORE & RESOURCE PLANNING CONTEXT ENDPOINTS
+// ============================================================================
+
+// GET /api/hr/stores/:id/planning-summary - Get store planning summary for date range
+router.get('/stores/:id/planning-summary', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id: storeId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    if (!tenantId || !storeId) {
+      return res.status(400).json({ error: 'Tenant ID and Store ID are required' });
+    }
+
+    console.log('[HR-STORE-PLANNING] Query:', { tenantId, storeId, startDate, endDate });
+
+    // Get all shifts for the store in the date range
+    const shiftsQuery = db.select({
+      id: shifts.id,
+      date: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      requiredResources: shifts.requiredResources,
+      templateId: shifts.templateId,
+    })
+    .from(shifts)
+    .where(and(
+      eq(shifts.tenantId, tenantId),
+      eq(shifts.storeId, storeId)
+    ))
+    .orderBy(shifts.date, shifts.startTime);
+
+    // Get all assignments for the store in the date range
+    const assignmentsQuery = db.select({
+      id: shiftAssignments.id,
+      shiftId: shiftAssignments.shiftId,
+      employeeId: shiftAssignments.employeeId,
+      startTime: shiftAssignments.startTime,
+      endTime: shiftAssignments.endTime,
+      status: shiftAssignments.status,
+      employeeName: users.fullName,
+      employeeRole: users.role,
+    })
+    .from(shiftAssignments)
+    .leftJoin(users, eq(shiftAssignments.employeeId, users.id))
+    .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+    .where(and(
+      eq(shiftAssignments.tenantId, tenantId),
+      eq(shifts.storeId, storeId)
+    ))
+    .orderBy(shiftAssignments.startTime);
+
+    const [shiftsData, assignmentsData] = await Promise.all([shiftsQuery, assignmentsQuery]);
+
+    // Calculate coverage metrics
+    const totalShifts = shiftsData.length;
+    const assignedShifts = new Set(assignmentsData.map(a => a.shiftId)).size;
+    const totalRequiredResources = shiftsData.reduce((sum, s) => sum + (s.requiredResources || 1), 0);
+    const totalAssignedResources = assignmentsData.length;
+    const coveragePercentage = totalRequiredResources > 0 
+      ? Math.round((totalAssignedResources / totalRequiredResources) * 100) 
+      : 0;
+
+    // Group by date for daily breakdown
+    const dailyBreakdown = shiftsData.reduce((acc: any, shift) => {
+      const dateKey = typeof shift.date === 'string' ? shift.date.split('T')[0] : shift.date;
+      if (!acc[dateKey]) {
+        acc[dateKey] = { 
+          shifts: [], 
+          assignments: [],
+          requiredResources: 0,
+          assignedResources: 0 
+        };
+      }
+      acc[dateKey].shifts.push(shift);
+      acc[dateKey].requiredResources += (shift.requiredResources || 1);
+      return acc;
+    }, {});
+
+    // Add assignments to daily breakdown
+    assignmentsData.forEach((assignment: any) => {
+      const shift = shiftsData.find(s => s.id === assignment.shiftId);
+      if (shift) {
+        const dateKey = typeof shift.date === 'string' ? shift.date.split('T')[0] : shift.date;
+        if (dailyBreakdown[dateKey]) {
+          dailyBreakdown[dateKey].assignments.push(assignment);
+          dailyBreakdown[dateKey].assignedResources++;
+        }
+      }
+    });
+
+    // Calculate gaps (shifts missing resources)
+    const gaps = shiftsData.filter(shift => {
+      const shiftAssignmentCount = assignmentsData.filter(a => a.shiftId === shift.id).length;
+      return shiftAssignmentCount < (shift.requiredResources || 1);
+    }).map(shift => ({
+      shiftId: shift.id,
+      date: shift.date,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      required: shift.requiredResources || 1,
+      assigned: assignmentsData.filter(a => a.shiftId === shift.id).length,
+      missing: (shift.requiredResources || 1) - assignmentsData.filter(a => a.shiftId === shift.id).length
+    }));
+
+    res.json({
+      success: true,
+      summary: {
+        storeId,
+        totalShifts,
+        assignedShifts,
+        totalRequiredResources,
+        totalAssignedResources,
+        coveragePercentage,
+        gaps: gaps.length,
+        gapDetails: gaps.slice(0, 10), // Top 10 gaps
+      },
+      dailyBreakdown,
+      assignments: assignmentsData,
+    });
+
+  } catch (error) {
+    console.error('Error getting store planning summary:', error);
+    res.status(500).json({ error: 'Failed to get store planning summary' });
+  }
+});
+
+// GET /api/hr/employees/:id/availability - Get employee availability for date range
+router.get('/employees/:id/availability', requirePermission('hr.employees.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id: employeeId } = req.params;
+    const { startDate, endDate, weekStart, monthStart } = req.query;
+
+    if (!tenantId || !employeeId) {
+      return res.status(400).json({ error: 'Tenant ID and Employee ID are required' });
+    }
+
+    console.log('[HR-EMPLOYEE-AVAILABILITY] Query:', { tenantId, employeeId, startDate, endDate });
+
+    // Get employee info
+    const [employee] = await db.select({
+      id: users.id,
+      fullName: users.fullName,
+      email: users.email,
+      role: users.role,
+      storeId: users.storeId,
+    })
+    .from(users)
+    .where(and(
+      eq(users.id, employeeId),
+      eq(users.tenantId, tenantId)
+    ))
+    .limit(1);
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Get all assignments for the employee
+    const assignmentsQuery = db.select({
+      id: shiftAssignments.id,
+      shiftId: shiftAssignments.shiftId,
+      startTime: shiftAssignments.startTime,
+      endTime: shiftAssignments.endTime,
+      status: shiftAssignments.status,
+      shiftDate: shifts.date,
+      storeId: shifts.storeId,
+      storeName: stores.name,
+    })
+    .from(shiftAssignments)
+    .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+    .leftJoin(stores, eq(shifts.storeId, stores.id))
+    .where(and(
+      eq(shiftAssignments.tenantId, tenantId),
+      eq(shiftAssignments.employeeId, employeeId)
+    ))
+    .orderBy(shifts.date, shiftAssignments.startTime);
+
+    const assignmentsData = await assignmentsQuery;
+
+    // Calculate hours worked
+    const calculateHours = (assignments: any[]) => {
+      return assignments.reduce((total, a) => {
+        if (a.startTime && a.endTime) {
+          const [startH, startM] = a.startTime.split(':').map(Number);
+          const [endH, endM] = a.endTime.split(':').map(Number);
+          const hours = (endH * 60 + endM - startH * 60 - startM) / 60;
+          return total + (hours > 0 ? hours : hours + 24); // Handle overnight shifts
+        }
+        return total;
+      }, 0);
+    };
+
+    // Get current week assignments
+    const now = new Date();
+    const weekStartDate = weekStart ? new Date(weekStart as string) : new Date(now.setDate(now.getDate() - now.getDay() + 1));
+    const weekEndDate = new Date(weekStartDate);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+
+    const weekAssignments = assignmentsData.filter(a => {
+      const assignmentDate = new Date(a.shiftDate);
+      return assignmentDate >= weekStartDate && assignmentDate <= weekEndDate;
+    });
+
+    // Get current month assignments
+    const monthStartDate = monthStart ? new Date(monthStart as string) : new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const monthAssignments = assignmentsData.filter(a => {
+      const assignmentDate = new Date(a.shiftDate);
+      return assignmentDate >= monthStartDate && assignmentDate <= monthEndDate;
+    });
+
+    // Get stores where employee has worked (cross-store history)
+    const storeHistory = assignmentsData.reduce((acc: any, a) => {
+      if (a.storeId && !acc[a.storeId]) {
+        acc[a.storeId] = {
+          storeId: a.storeId,
+          storeName: a.storeName,
+          shiftsCount: 0,
+          lastWorked: a.shiftDate,
+        };
+      }
+      if (a.storeId) {
+        acc[a.storeId].shiftsCount++;
+        if (new Date(a.shiftDate) > new Date(acc[a.storeId].lastWorked)) {
+          acc[a.storeId].lastWorked = a.shiftDate;
+        }
+      }
+      return acc;
+    }, {});
+
+    // Detect conflicts (same day, overlapping times)
+    const conflicts: any[] = [];
+    const assignmentsByDate = assignmentsData.reduce((acc: any, a) => {
+      const dateKey = typeof a.shiftDate === 'string' ? a.shiftDate.split('T')[0] : a.shiftDate;
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(a);
+      return acc;
+    }, {});
+
+    Object.values(assignmentsByDate).forEach((dayAssignments: any) => {
+      if (dayAssignments.length > 1) {
+        for (let i = 0; i < dayAssignments.length; i++) {
+          for (let j = i + 1; j < dayAssignments.length; j++) {
+            const a1 = dayAssignments[i];
+            const a2 = dayAssignments[j];
+            // Check time overlap
+            if (a1.startTime < a2.endTime && a2.startTime < a1.endTime) {
+              conflicts.push({
+                date: a1.shiftDate,
+                assignment1: { id: a1.id, store: a1.storeName, time: `${a1.startTime}-${a1.endTime}` },
+                assignment2: { id: a2.id, store: a2.storeName, time: `${a2.startTime}-${a2.endTime}` },
+              });
+            }
+          }
+        }
+      }
+    });
+
+    // Busy days (days with assignments)
+    const busyDays = [...new Set(assignmentsData.map(a => 
+      typeof a.shiftDate === 'string' ? a.shiftDate.split('T')[0] : a.shiftDate
+    ))];
+
+    res.json({
+      success: true,
+      employee: {
+        id: employee.id,
+        fullName: employee.fullName,
+        email: employee.email,
+        role: employee.role,
+        primaryStoreId: employee.storeId,
+      },
+      hours: {
+        weeklyHours: Math.round(calculateHours(weekAssignments) * 10) / 10,
+        monthlyHours: Math.round(calculateHours(monthAssignments) * 10) / 10,
+        weekRange: { start: weekStartDate.toISOString().split('T')[0], end: weekEndDate.toISOString().split('T')[0] },
+        monthRange: { start: monthStartDate.toISOString().split('T')[0], end: monthEndDate.toISOString().split('T')[0] },
+      },
+      assignments: {
+        total: assignmentsData.length,
+        thisWeek: weekAssignments.length,
+        thisMonth: monthAssignments.length,
+        list: assignmentsData.slice(0, 50), // Last 50 assignments
+      },
+      storeHistory: Object.values(storeHistory),
+      conflicts,
+      busyDays,
+    });
+
+  } catch (error) {
+    console.error('Error getting employee availability:', error);
+    res.status(500).json({ error: 'Failed to get employee availability' });
+  }
+});
+
 export default router;
