@@ -1116,51 +1116,6 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
 
           <ScrollArea className="flex-1 pr-4">
             <div className="space-y-4 mt-4">
-              {/* Filtro per tipo evento */}
-              {selectedDayDate && (
-                <div className="bg-gray-50 rounded-lg p-3 space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <Filter className="w-4 h-4" />
-                    Tipo Evento
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant={!selectedEventTypeFilter ? "default" : "outline"}
-                      className="h-7 text-xs"
-                      onClick={() => setSelectedEventTypeFilter(null)}
-                      data-testid="btn-all-event-types"
-                    >
-                      Tutti
-                    </Button>
-                    {Object.entries(CALENDAR_EVENT_TYPES).map(([typeId, config]) => {
-                      const coverageInfo = getDayCoverageInfo(selectedDayDate);
-                      const count = coverageInfo.eventCounts[typeId] || 0;
-                      if (count === 0) return null;
-                      
-                      const Icon = config.icon;
-                      return (
-                        <Button
-                          key={typeId}
-                          size="sm"
-                          variant={selectedEventTypeFilter === typeId ? "default" : "outline"}
-                          className="h-7 text-xs gap-1.5"
-                          onClick={() => setSelectedEventTypeFilter(typeId)}
-                          style={selectedEventTypeFilter === typeId ? { backgroundColor: config.color } : {}}
-                          data-testid={`btn-event-type-${typeId}`}
-                        >
-                          <Icon className="w-3 h-3" />
-                          {config.label}
-                          <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                            {count}
-                          </Badge>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* FASE 4: Multi-select PDV */}
               <div className="bg-gray-50 rounded-lg p-3 space-y-3">
                 <h4 className="text-sm font-medium flex items-center gap-2">
