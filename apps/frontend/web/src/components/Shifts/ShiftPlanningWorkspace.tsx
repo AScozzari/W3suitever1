@@ -71,6 +71,8 @@ interface Resource {
   email: string;
   role?: string;
   storeId?: string;
+  weeklyHours?: number;
+  contractType?: string;
 }
 
 type ActiveTab = 'store' | 'days' | 'templates' | 'resources';
@@ -203,6 +205,7 @@ export default function ShiftPlanningWorkspace() {
     
     let totalHours = 0;
     const assignedDays = new Set<string>();
+    const hoursByWeek: Record<string, number> = {};
     
     resourceAssignmentsForPeriod.forEach(ra => {
       assignedDays.add(ra.day);
@@ -212,18 +215,35 @@ export default function ShiftPlanningWorkspace() {
       if (slot) {
         const start = parseInt(slot.startTime.substring(0, 2)) * 60 + parseInt(slot.startTime.substring(3, 5));
         const end = parseInt(slot.endTime.substring(0, 2)) * 60 + parseInt(slot.endTime.substring(3, 5));
-        totalHours += (end - start) / 60;
+        const hours = (end - start) / 60;
+        totalHours += hours;
+        
+        const weekKey = format(startOfWeek(new Date(ra.day), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        hoursByWeek[weekKey] = (hoursByWeek[weekKey] || 0) + hours;
       }
     });
     
     const freeDays = periodDays.filter(d => !assignedDays.has(format(d, 'yyyy-MM-dd')));
     const busyDays = periodDays.filter(d => assignedDays.has(format(d, 'yyyy-MM-dd')));
     
+    const currentWeekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const weeklyHoursAssigned = hoursByWeek[currentWeekKey] || 0;
+    
+    const contractHours = selectedResource.weeklyHours || 40;
+    const overtimeHours = Math.max(0, weeklyHoursAssigned - contractHours);
+    const overtimeStatus: 'ok' | 'warning' | 'danger' = 
+      overtimeHours === 0 ? 'ok' : 
+      overtimeHours <= 4 ? 'warning' : 'danger';
+    
     return {
       totalHours: Math.round(totalHours * 10) / 10,
       freeDays,
       busyDays,
-      assignmentsCount: resourceAssignmentsForPeriod.length
+      assignmentsCount: resourceAssignmentsForPeriod.length,
+      weeklyHoursAssigned: Math.round(weeklyHoursAssigned * 10) / 10,
+      contractHours,
+      overtimeHours: Math.round(overtimeHours * 10) / 10,
+      overtimeStatus
     };
   }, [selectedResource, resourceAssignments, coveragePreview, periodDays]);
 
@@ -1189,7 +1209,7 @@ export default function ShiftPlanningWorkspace() {
                     <div className="grid grid-cols-4 gap-2">
                       <div className="p-2 rounded-lg bg-blue-50 text-center">
                         <p className="text-lg font-bold text-blue-700">{resourceStats?.totalHours || 0}h</p>
-                        <p className="text-[10px] text-blue-600">Ore mese</p>
+                        <p className="text-[10px] text-blue-600">Ore periodo</p>
                       </div>
                       <div className="p-2 rounded-lg bg-green-50 text-center">
                         <p className="text-lg font-bold text-green-700">{resourceStats?.freeDays.length || 0}</p>
@@ -1204,6 +1224,54 @@ export default function ShiftPlanningWorkspace() {
                         <p className="text-[10px] text-orange-600">Turni</p>
                       </div>
                     </div>
+                    
+                    {resourceStats && (
+                      <div className={cn(
+                        "p-3 rounded-lg border flex items-center justify-between",
+                        resourceStats.overtimeStatus === 'ok' && "bg-green-50 border-green-200",
+                        resourceStats.overtimeStatus === 'warning' && "bg-amber-50 border-amber-200",
+                        resourceStats.overtimeStatus === 'danger' && "bg-red-50 border-red-200"
+                      )}>
+                        <div className="flex items-center gap-2">
+                          <Clock className={cn(
+                            "h-4 w-4",
+                            resourceStats.overtimeStatus === 'ok' && "text-green-600",
+                            resourceStats.overtimeStatus === 'warning' && "text-amber-600",
+                            resourceStats.overtimeStatus === 'danger' && "text-red-600"
+                          )} />
+                          <div>
+                            <p className="text-xs font-medium">Ore settimana corrente</p>
+                            <p className="text-[10px] text-gray-500">
+                              {selectedResource.weeklyHours ? `Contratto: ${selectedResource.weeklyHours}h` : 'Contratto: 40h (default)'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={cn(
+                            "text-lg font-bold",
+                            resourceStats.overtimeStatus === 'ok' && "text-green-700",
+                            resourceStats.overtimeStatus === 'warning' && "text-amber-700",
+                            resourceStats.overtimeStatus === 'danger' && "text-red-700"
+                          )}>
+                            {resourceStats.weeklyHoursAssigned}h / {resourceStats.contractHours}h
+                          </p>
+                          {resourceStats.overtimeHours > 0 && (
+                            <p className={cn(
+                              "text-[10px] font-medium",
+                              resourceStats.overtimeStatus === 'warning' && "text-amber-600",
+                              resourceStats.overtimeStatus === 'danger' && "text-red-600"
+                            )}>
+                              +{resourceStats.overtimeHours}h straordinario
+                            </p>
+                          )}
+                          {resourceStats.overtimeHours === 0 && resourceStats.weeklyHoursAssigned < resourceStats.contractHours && (
+                            <p className="text-[10px] text-green-600">
+                              {Math.round((resourceStats.contractHours - resourceStats.weeklyHoursAssigned) * 10) / 10}h disponibili
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="flex gap-4">
                       <div className="flex-1">
