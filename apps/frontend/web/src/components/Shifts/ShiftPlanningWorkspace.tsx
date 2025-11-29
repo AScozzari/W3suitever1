@@ -227,24 +227,26 @@ export default function ShiftPlanningWorkspace() {
     };
   }, [selectedResource, resourceAssignments, coveragePreview, periodDays]);
 
-  const availableSlots = useMemo(() => {
-    const slots: Array<{ id: string; label: string; templateId: string; slotId: string; startTime: string; endTime: string; templateName: string }> = [];
-    
-    templateSelections.forEach(ts => {
-      ts.template.timeSlots.forEach(slot => {
-        slots.push({
-          id: `${ts.templateId}-${slot.id}`,
-          label: `${ts.template.name}: ${slot.startTime} - ${slot.endTime}`,
-          templateId: ts.templateId,
-          slotId: slot.id,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          templateName: ts.template.name
-        });
-      });
+  const availableTemplatesForAssignment = useMemo(() => {
+    return templateSelections.map(ts => {
+      const slotsInfo = ts.template.timeSlots.map(slot => ({
+        id: slot.id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        label: slot.label
+      }));
+      
+      const timesLabel = slotsInfo.map(s => `${s.startTime}-${s.endTime}`).join(', ');
+      
+      return {
+        id: ts.templateId,
+        templateId: ts.templateId,
+        templateName: ts.template.name,
+        label: `${ts.template.name} (${timesLabel})`,
+        slots: slotsInfo,
+        color: ts.template.color
+      };
     });
-    
-    return slots;
   }, [templateSelections]);
 
   const getResourceDayInfo = useCallback((resourceId: string, day: Date) => {
@@ -270,47 +272,59 @@ export default function ShiftPlanningWorkspace() {
 
   const handleAssignResource = () => {
     if (!selectedResource || !selectedSlotForAssignment) {
-      toast({ title: "Seleziona una fascia oraria", variant: "destructive" });
+      toast({ title: "Seleziona un turno", variant: "destructive" });
       return;
     }
     
-    const slot = availableSlots.find(s => s.id === selectedSlotForAssignment);
-    if (!slot) return;
+    const template = availableTemplatesForAssignment.find(t => t.id === selectedSlotForAssignment);
+    if (!template) return;
     
     const daysToAssign = assignmentMode === 'single' && singleAssignmentDay 
       ? [singleAssignmentDay]
       : periodDays;
     
     let assignedCount = 0;
+    const resourceName = `${selectedResource.firstName || ''} ${selectedResource.lastName || ''}`.trim() || selectedResource.email;
+    
     daysToAssign.forEach(day => {
       const dayStr = format(day, 'yyyy-MM-dd');
-      const alreadyAssigned = resourceAssignments.some(
-        ra => ra.resourceId === selectedResource.id && 
-              ra.templateId === slot.templateId && 
-              ra.slotId === slot.slotId && 
-              ra.day === dayStr
-      );
       
-      if (!alreadyAssigned) {
-        assignResource({
-          templateId: slot.templateId,
-          slotId: slot.slotId,
-          day: dayStr,
-          resourceId: selectedResource.id,
-          resourceName: `${selectedResource.firstName || ''} ${selectedResource.lastName || ''}`.trim() || selectedResource.email
-        });
-        assignedCount++;
-      }
+      template.slots.forEach(slot => {
+        const alreadyAssigned = resourceAssignments.some(
+          ra => ra.resourceId === selectedResource.id && 
+                ra.templateId === template.templateId && 
+                ra.slotId === slot.id && 
+                ra.day === dayStr
+        );
+        
+        if (!alreadyAssigned) {
+          assignResource({
+            templateId: template.templateId,
+            slotId: slot.id,
+            day: dayStr,
+            resourceId: selectedResource.id,
+            resourceName
+          });
+          assignedCount++;
+        }
+      });
     });
     
     if (assignedCount > 0) {
+      const daysCount = daysToAssign.length;
       toast({ 
-        title: "Risorsa assegnata", 
-        description: `${selectedResource.firstName} assegnato a ${assignedCount} ${assignedCount === 1 ? 'giorno' : 'giorni'}`
+        title: "Turno assegnato", 
+        description: `${selectedResource.firstName} assegnato al turno "${template.templateName}" per ${daysCount} ${daysCount === 1 ? 'giorno' : 'giorni'}`
       });
       computeCoverage();
     }
   };
+
+  useEffect(() => {
+    setSelectedSlotForAssignment(null);
+    setAssignmentMode('bulk');
+    setSingleAssignmentDay(null);
+  }, [selectedResourceId]);
 
   useEffect(() => {
     if (periodDays.length > 0) {
@@ -1254,19 +1268,25 @@ export default function ShiftPlanningWorkspace() {
                         </div>
                       </div>
                       
-                      <div className="w-56 shrink-0">
-                        <h4 className="text-xs font-medium text-gray-500 mb-2">Assegna a fascia</h4>
+                      <div className="w-64 shrink-0">
+                        <h4 className="text-xs font-medium text-gray-500 mb-2">Assegna turno</h4>
                         <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 space-y-3">
                           <div>
-                            <label className="text-[10px] font-medium text-gray-500 mb-1 block">Fascia oraria</label>
+                            <label className="text-[10px] font-medium text-gray-500 mb-1 block">Turno</label>
                             <Select value={selectedSlotForAssignment || ''} onValueChange={setSelectedSlotForAssignment}>
                               <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Seleziona fascia..." />
+                                <SelectValue placeholder="Seleziona turno..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {availableSlots.map(slot => (
-                                  <SelectItem key={slot.id} value={slot.id} className="text-xs">
-                                    {slot.label}
+                                {availableTemplatesForAssignment.map(template => (
+                                  <SelectItem key={template.id} value={template.id} className="text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-2 h-2 rounded-full shrink-0" 
+                                        style={{ backgroundColor: template.color }}
+                                      />
+                                      <span className="truncate">{template.label}</span>
+                                    </div>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
