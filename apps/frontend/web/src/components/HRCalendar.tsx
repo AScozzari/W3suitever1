@@ -86,6 +86,9 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   const [newAssigneeId, setNewAssigneeId] = useState<string>('');
   const [newStartTime, setNewStartTime] = useState<string>('');
   const [newEndTime, setNewEndTime] = useState<string>('');
+  
+  // FASE 6: Resource context panel state
+  const [selectedResourceForContext, setSelectedResourceForContext] = useState<string | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -165,6 +168,18 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       return response;
     },
     enabled: hrQueryReadiness.enabled,
+  });
+
+  // FASE 6: Query per contesto risorsa selezionata - ore lavorate, conflitti, storia
+  const { data: resourceContext, isLoading: resourceContextLoading } = useQuery({
+    queryKey: ['/api/hr/employees', selectedResourceForContext, 'availability'],
+    queryFn: async () => {
+      if (!selectedResourceForContext) return null;
+      const url = `/api/hr/employees/${selectedResourceForContext}/availability`;
+      const response = await apiRequest(url);
+      return response;
+    },
+    enabled: hrQueryReadiness.enabled && !!selectedResourceForContext,
   });
 
   // ✅ FASE 1.2: Mutation per creare eventi usando l'API unificata
@@ -1215,10 +1230,21 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                         'hsl(217, 91%, 60%)'
                     }}>
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="font-semibold">{resource.employeeName}</h4>
+                              <button
+                                className={cn(
+                                  "font-semibold text-left hover:text-blue-600 transition-colors",
+                                  selectedResourceForContext === resource.employeeId && "text-blue-600 underline"
+                                )}
+                                onClick={() => setSelectedResourceForContext(
+                                  selectedResourceForContext === resource.employeeId ? null : resource.employeeId
+                                )}
+                                data-testid={`btn-resource-context-${resource.id}`}
+                              >
+                                {resource.employeeName}
+                              </button>
                               <Badge variant={
                                 resource.status === 'past' ? 'secondary' :
                                 resource.status === 'present' ? 'default' :
@@ -1239,38 +1265,83 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                                 <span>{resource.storeName}</span>
                               </div>
                             </div>
+                            
+                            {/* FASE 6: Contesto Risorsa inline */}
+                            {selectedResourceForContext === resource.employeeId && resourceContext && (
+                              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Users className="w-4 h-4 text-blue-600" />
+                                  <span className="font-medium text-blue-800">Contesto Risorsa</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-slate-700">
+                                  <div>
+                                    <span className="text-slate-500">Ore Settimana:</span>{' '}
+                                    <strong>{resourceContext.hours?.weeklyHours || 0}h</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-500">Ore Mese:</span>{' '}
+                                    <strong>{resourceContext.hours?.monthlyHours || 0}h</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-500">Turni Settimana:</span>{' '}
+                                    <strong>{resourceContext.assignments?.thisWeek || 0}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-500">Turni Mese:</span>{' '}
+                                    <strong>{resourceContext.assignments?.thisMonth || 0}</strong>
+                                  </div>
+                                </div>
+                                {resourceContext.conflicts && resourceContext.conflicts.length > 0 && (
+                                  <div className="mt-2 p-2 bg-red-100 rounded text-red-700 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    <span>{resourceContext.conflicts.length} conflitti rilevati</span>
+                                  </div>
+                                )}
+                                {resourceContext.storeHistory && resourceContext.storeHistory.length > 1 && (
+                                  <div className="mt-2 text-slate-600">
+                                    <span className="text-slate-500">Negozi:</span>{' '}
+                                    {resourceContext.storeHistory.map((s: any) => s.storeName).join(', ')}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {selectedResourceForContext === resource.employeeId && resourceContextLoading && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg animate-pulse text-xs text-gray-500">
+                                Caricamento contesto...
+                              </div>
+                            )}
                           </div>
                           
-                          {/* FASE 5: Azioni sul turno - PULSANTI GRANDI E VISIBILI */}
-                          <div className="flex items-center gap-2">
+                          {/* FASE 5: Azioni sul turno - PULSANTI COMPATTI */}
+                          <div className="flex flex-col gap-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-9 px-3 text-sm font-medium border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                              className="h-8 px-2 text-xs font-medium border-blue-200 hover:bg-blue-50"
                               onClick={() => handleOpenActionModal(resource, 'reassign')}
                               data-testid={`btn-reassign-${resource.id}`}
                             >
-                              <ArrowLeftRight className="w-4 h-4 mr-1.5 text-blue-600" />
+                              <ArrowLeftRight className="w-3.5 h-3.5 mr-1 text-blue-600" />
                               Riassegna
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-9 px-3 text-sm font-medium border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                              className="h-8 px-2 text-xs font-medium border-orange-200 hover:bg-orange-50"
                               onClick={() => handleOpenActionModal(resource, 'change_time')}
                               data-testid={`btn-change-time-${resource.id}`}
                             >
-                              <Clock className="w-4 h-4 mr-1.5 text-orange-600" />
+                              <Clock className="w-3.5 h-3.5 mr-1 text-orange-600" />
                               Orario
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-9 px-3 text-sm font-medium border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+                              className="h-8 px-2 text-xs font-medium border-red-200 hover:bg-red-50 text-red-600"
                               onClick={() => handleOpenActionModal(resource, 'remove')}
                               data-testid={`btn-remove-${resource.id}`}
                             >
-                              <Trash2 className="w-4 h-4 mr-1.5" />
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
                               Rimuovi
                             </Button>
                           </div>
