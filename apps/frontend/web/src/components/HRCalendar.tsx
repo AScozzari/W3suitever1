@@ -126,22 +126,23 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     enabled: hrQueryReadiness.enabled,
   });
 
-  // ✅ Task 8: Query shift assignments con filtri globali - carica SEMPRE senza richiedere storeId
+  // ✅ Task 8: Query shift assignments - carica TUTTI i turni per mostrare pallini nel calendario globale
+  // NON filtrare per storeId nel calendario principale - mostra tutti i negozi
   const { data: shiftAssignments = [], isLoading: assignmentsLoading } = useQuery({
-    queryKey: ['/api/hr/shift-assignments', { storeId, startDate, endDate }],
+    queryKey: ['/api/hr/shift-assignments', { startDate, endDate }], // Rimuovo storeId dalla key
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (storeId) params.append('storeId', storeId);
+      // NON passare storeId - vogliamo vedere TUTTI i turni di tutti i negozi
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
       const url = `/api/hr/shift-assignments${params.toString() ? `?${params.toString()}` : ''}`;
-      console.log('[HRCalendar] Fetching shift assignments:', url);
+      console.log('[HRCalendar] Fetching ALL shift assignments:', url);
       const response = await apiRequest(url);
-      console.log('[HRCalendar] Received assignments:', response?.length);
+      console.log('[HRCalendar] Received assignments:', response?.length, response);
       return response;
     },
-    enabled: hrQueryReadiness.enabled, // ✅ Carica sempre, non richiede storeId
+    enabled: hrQueryReadiness.enabled,
   });
 
   // ✅ Query per turni pianificati (bulk-planning)
