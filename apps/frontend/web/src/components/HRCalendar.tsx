@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import { 
   Calendar, Clock, Users, Filter, ChevronLeft, ChevronRight, Plus, 
-  UserSwitch, Trash2, Edit, AlertTriangle, CheckCircle2, Store as StoreIcon,
+  ArrowLeftRight, Trash2, Edit, AlertTriangle, CheckCircle2, Store as StoreIcon,
   RefreshCw
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -1203,7 +1203,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                                     onClick={() => handleOpenActionModal(resource, 'reassign')}
                                     data-testid={`btn-reassign-${resource.id}`}
                                   >
-                                    <UserSwitch className="w-3.5 h-3.5 mr-2 text-blue-500" />
+                                    <ArrowLeftRight className="w-3.5 h-3.5 mr-2 text-blue-500" />
                                     Riassegna
                                   </Button>
                                   <Button
@@ -1257,7 +1257,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {actionType === 'reassign' && <UserSwitch className="w-5 h-5 text-blue-500" />}
+              {actionType === 'reassign' && <ArrowLeftRight className="w-5 h-5 text-blue-500" />}
               {actionType === 'remove' && <Trash2 className="w-5 h-5 text-red-500" />}
               {actionType === 'change_time' && <Clock className="w-5 h-5 text-orange-500" />}
               {actionType === 'reassign' && 'Riassegna Turno'}
