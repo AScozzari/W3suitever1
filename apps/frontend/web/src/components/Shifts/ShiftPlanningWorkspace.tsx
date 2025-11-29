@@ -628,68 +628,53 @@ export default function ShiftPlanningWorkspace() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredStores.map(store => (
                 <div 
                   key={store.id}
                   className={cn(
-                    "group relative p-5 rounded-2xl cursor-pointer transition-all duration-300",
-                    "bg-white/80 backdrop-blur-sm border-2",
-                    "hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1",
+                    "group relative p-3 rounded-xl cursor-pointer transition-all duration-200",
+                    "bg-white border",
+                    "hover:shadow-md hover:border-primary/40",
                     selectedStoreId === store.id 
-                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/20" 
-                      : "border-gray-100 hover:border-primary/30"
+                      ? "border-primary bg-primary/5 shadow-sm" 
+                      : "border-gray-200"
                   )}
                   onClick={() => handleStoreSelect(store.id)}
                   data-testid={`store-card-${store.id}`}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-center gap-3">
                     <div className={cn(
-                      "w-14 h-14 rounded-xl flex items-center justify-center shrink-0",
-                      "bg-gradient-to-br from-primary/10 to-primary/20",
-                      "group-hover:from-primary/20 group-hover:to-primary/30 transition-colors"
+                      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                      "bg-gradient-to-br from-primary/10 to-primary/20"
                     )}>
-                      <StoreIcon className="w-7 h-7 text-primary" />
+                      <StoreIcon className="w-5 h-5 text-primary" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-base truncate">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-sm truncate">
                           {store.nome || store.name}
                         </h3>
                         {selectedStoreId === store.id && (
-                          <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                         )}
                       </div>
                       
-                      {store.code && (
-                        <Badge variant="outline" className="text-xs mb-2">
-                          {store.code}
-                        </Badge>
-                      )}
-                      
-                      <div className="space-y-1">
-                        {store.city && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            <span className="truncate">{store.city}</span>
-                          </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {store.code && (
+                          <span className="text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded">
+                            {store.code}
+                          </span>
                         )}
-                        {store.phone && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Phone className="w-3 h-3" />
-                            <span>{store.phone}</span>
-                          </div>
+                        {store.city && (
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {store.city}
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  
-                  <div className={cn(
-                    "absolute inset-0 rounded-2xl opacity-0 transition-opacity pointer-events-none",
-                    "bg-gradient-to-br from-primary/5 to-transparent",
-                    selectedStoreId === store.id && "opacity-100"
-                  )} />
                 </div>
               ))}
             </div>
@@ -704,123 +689,176 @@ export default function ShiftPlanningWorkspace() {
 
           <TabsContent value="days" className="mt-4">
             <div className="flex gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-4">
-                  <Button
-                    variant={daySelectionMode === 'range' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setDaySelectionMode('range')}
-                    data-testid="btn-range-mode"
-                  >
-                    <CalendarRange className="w-4 h-4 mr-1" />
-                    Range Dal/Al
-                  </Button>
-                  <Button
-                    variant={daySelectionMode === 'calendar' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setDaySelectionMode('calendar')}
-                    data-testid="btn-calendar-mode"
-                  >
-                    <CalendarDays className="w-4 h-4 mr-1" />
-                    Multi-Selezione
-                  </Button>
+              <div className="w-[40%] shrink-0 space-y-4">
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Modalità selezione</h3>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-lg">
+                    <button
+                      className={cn(
+                        "flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-all",
+                        daySelectionMode === 'range' 
+                          ? "bg-white shadow-sm text-primary" 
+                          : "text-gray-600 hover:text-gray-900"
+                      )}
+                      onClick={() => setDaySelectionMode('range')}
+                      data-testid="btn-range-mode"
+                    >
+                      <CalendarRange className="w-4 h-4" />
+                      Intervallo
+                    </button>
+                    <button
+                      className={cn(
+                        "flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-all",
+                        daySelectionMode === 'calendar' 
+                          ? "bg-white shadow-sm text-primary" 
+                          : "text-gray-600 hover:text-gray-900"
+                      )}
+                      onClick={() => setDaySelectionMode('calendar')}
+                      data-testid="btn-calendar-mode"
+                    >
+                      <CalendarDays className="w-4 h-4" />
+                      Selezione libera
+                    </button>
+                  </div>
                 </div>
 
                 {daySelectionMode === 'range' && (
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block text-muted-foreground">Dal</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-44 justify-start" data-testid="btn-date-from">
-                            <CalendarIcon className="w-4 h-4 mr-2" />
-                            {format(dateRange.from, 'd MMM yyyy', { locale: it })}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={dateRange.from}
-                            onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                            locale={it}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">Periodo pianificazione</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Data inizio</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              className="w-full justify-between h-11 font-medium" 
+                              data-testid="btn-date-from"
+                            >
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="w-4 h-4 text-primary" />
+                                {format(dateRange.from, 'EEEE d MMMM yyyy', { locale: it })}
+                              </div>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={dateRange.from}
+                              onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                              locale={it}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      
+                      <div className="flex items-center justify-center">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <div className="h-px w-8 bg-gray-200" />
+                          <ArrowRight className="w-4 h-4" />
+                          <div className="h-px w-8 bg-gray-200" />
+                        </div>
+                      </div>
+                      
+                      <div className="relative">
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Data fine</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              className="w-full justify-between h-11 font-medium" 
+                              data-testid="btn-date-to"
+                            >
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="w-4 h-4 text-primary" />
+                                {format(dateRange.to, 'EEEE d MMMM yyyy', { locale: it })}
+                              </div>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={dateRange.to}
+                              onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
+                              locale={it}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
                     
-                    <ArrowRight className="w-5 h-5 text-muted-foreground mt-6" />
-                    
-                    <div>
-                      <label className="text-sm font-medium mb-2 block text-muted-foreground">Al</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-44 justify-start" data-testid="btn-date-to">
-                            <CalendarIcon className="w-4 h-4 mr-2" />
-                            {format(dateRange.to, 'd MMM yyyy', { locale: it })}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={dateRange.to}
-                            onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                            locale={it}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    
-                    <div className="ml-4 p-3 bg-white rounded-lg border">
-                      <p className="text-2xl font-bold text-primary">{periodDays.length}</p>
-                      <p className="text-xs text-muted-foreground">giorni</p>
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
+                        <span className="text-sm font-medium text-gray-600">Giorni totali</span>
+                        <span className="text-2xl font-bold text-primary">{periodDays.length}</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {daySelectionMode === 'calendar' && (
-                  <div className="p-4 bg-gray-50 rounded-xl border">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Clicca sui giorni per selezionarli/deselezionarli
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Selezione libera</h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Clicca sui giorni nel calendario per selezionarli o deselezionarli
                     </p>
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {selectedDates.slice(0, 14).map(date => (
-                        <Badge key={date.toISOString()} variant="secondary" className="text-xs">
-                          {format(date, 'd MMM', { locale: it })}
-                        </Badge>
-                      ))}
-                      {selectedDates.length > 14 && (
-                        <Badge variant="outline">+{selectedDates.length - 14}</Badge>
-                      )}
-                    </div>
                     
-                    {selectedDates.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setSelectedDates([])}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Cancella selezione
-                      </Button>
+                    {selectedDates.length > 0 ? (
+                      <>
+                        <div className="flex flex-wrap gap-1.5 mb-4 max-h-32 overflow-y-auto">
+                          {selectedDates.sort((a, b) => a.getTime() - b.getTime()).map(date => (
+                            <Badge 
+                              key={date.toISOString()} 
+                              variant="secondary" 
+                              className="text-xs py-1 cursor-pointer hover:bg-red-100 hover:text-red-600 transition-colors"
+                              onClick={() => setSelectedDates(prev => prev.filter(d => d.getTime() !== date.getTime()))}
+                            >
+                              {format(date, 'd MMM', { locale: it })}
+                              <span className="ml-1 opacity-50">×</span>
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setSelectedDates([])}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Cancella tutto
+                          </Button>
+                          <span className="text-sm font-medium">
+                            <span className="text-2xl font-bold text-primary mr-1">{selectedDates.length}</span>
+                            giorni
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-6 text-gray-400">
+                        <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">Nessun giorno selezionato</p>
+                      </div>
                     )}
                   </div>
                 )}
                 
                 {periodDays.length > 0 && (
                   <Button 
-                    className="mt-4" 
+                    className="w-full h-11" 
                     onClick={() => setActiveTab('templates')}
                     data-testid="btn-next-templates"
                   >
                     Avanti: Seleziona Template
-                    <ArrowRight className="w-4 h-4 ml-1" />
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 )}
               </div>
               
-              <div className="w-[340px] shrink-0">
-                <div className="bg-white rounded-2xl border-2 border-gray-100 p-4 shadow-sm">
+              <div className="flex-1">
+                <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm h-full">
                   <Calendar
                     mode="multiple"
                     selected={selectedDates}
@@ -832,33 +870,33 @@ export default function ShiftPlanningWorkspace() {
                     month={calendarMonth}
                     onMonthChange={setCalendarMonth}
                     locale={it}
+                    numberOfMonths={1}
                     className="w-full"
                     classNames={{
-                      months: "flex flex-col",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center",
-                      caption_label: "text-base font-semibold",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-lg hover:bg-gray-100",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-muted-foreground rounded-md w-10 font-medium text-[0.8rem]",
-                      row: "flex w-full mt-2",
+                      months: "flex flex-col w-full",
+                      month: "space-y-6 w-full",
+                      caption: "flex justify-center pt-2 relative items-center mb-4",
+                      caption_label: "text-lg font-bold text-gray-800",
+                      nav: "space-x-2 flex items-center",
+                      nav_button: "h-9 w-9 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors",
+                      nav_button_previous: "absolute left-2",
+                      nav_button_next: "absolute right-2",
+                      table: "w-full border-collapse",
+                      head_row: "flex w-full mb-2",
+                      head_cell: "text-muted-foreground rounded-md flex-1 font-semibold text-sm text-center py-2",
+                      row: "flex w-full",
                       cell: cn(
-                        "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                        "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
+                        "relative flex-1 p-1 text-center text-sm focus-within:relative focus-within:z-20"
                       ),
                       day: cn(
-                        "h-10 w-10 p-0 font-normal rounded-lg",
-                        "hover:bg-primary/10 hover:text-primary",
+                        "h-12 w-full p-0 font-medium rounded-lg text-base",
+                        "hover:bg-primary/10 hover:text-primary transition-colors",
                         "focus:bg-primary focus:text-primary-foreground"
                       ),
-                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                      day_today: "bg-accent text-accent-foreground font-bold",
-                      day_outside: "text-muted-foreground opacity-50",
-                      day_disabled: "text-muted-foreground opacity-50",
+                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-bold",
+                      day_today: "bg-orange-100 text-orange-700 font-bold",
+                      day_outside: "text-muted-foreground opacity-40",
+                      day_disabled: "text-muted-foreground opacity-30",
                       day_hidden: "invisible",
                     }}
                     modifiers={{
@@ -867,13 +905,25 @@ export default function ShiftPlanningWorkspace() {
                         : []
                     }}
                     modifiersClassNames={{
-                      inRange: "bg-primary/20 text-primary"
+                      inRange: "bg-primary/20 text-primary font-semibold"
                     }}
                   />
                   
-                  <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Giorni selezionati</span>
-                    <span className="text-xl font-bold text-primary">{periodDays.length}</span>
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded bg-primary" />
+                        <span className="text-xs text-muted-foreground">Selezionato</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded bg-orange-100 border border-orange-200" />
+                        <span className="text-xs text-muted-foreground">Oggi</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm text-muted-foreground">Giorni selezionati: </span>
+                      <span className="text-xl font-bold text-primary">{periodDays.length}</span>
+                    </div>
                   </div>
                 </div>
               </div>
