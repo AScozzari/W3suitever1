@@ -289,8 +289,42 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       },
     }));
     
-    return [...calendarEventsFromBackend, ...shiftAssignmentEvents, ...plannedShiftEvents];
-  }, [backendEvents, shiftAssignments, plannedShifts]);
+    // ✅ FASE 4: Eventi dallo store Zustand (resourceAssignments)
+    const storeAssignmentEvents = resourceAssignments.map((ra: ResourceAssignment) => {
+      // Trova il template per ottenere il colore
+      const template = templateSelections.find(ts => ts.templateId === ra.templateId)?.template;
+      const bgColor = template?.color || 'hsl(142, 76%, 36%)';
+      
+      // Crea datetime completo combinando giorno + orario
+      const startDateTime = `${ra.day}T${ra.startTime || '09:00'}:00`;
+      const endDateTime = `${ra.day}T${ra.endTime || '18:00'}:00`;
+      
+      return {
+        id: `store-${ra.resourceId}-${ra.templateId}-${ra.slotId}-${ra.day}`,
+        title: ra.resourceName || 'Risorsa',
+        start: startDateTime,
+        end: endDateTime,
+        resourceId: ra.resourceId,
+        backgroundColor: bgColor,
+        borderColor: bgColor,
+        extendedProps: {
+          type: 'store_assignment',
+          resourceId: ra.resourceId,
+          resourceName: ra.resourceName,
+          templateId: ra.templateId,
+          slotId: ra.slotId,
+          storeId: ra.storeId,
+          storeName: ra.storeName,
+          metadata: {
+            storeId: ra.storeId,
+            employeeId: ra.resourceId,
+          },
+        },
+      };
+    });
+    
+    return [...calendarEventsFromBackend, ...shiftAssignmentEvents, ...plannedShiftEvents, ...storeAssignmentEvents];
+  }, [backendEvents, shiftAssignments, plannedShifts, resourceAssignments, templateSelections]);
 
 
   // ✅ FASE 1.2: Colori per tutti i tipi di evento del calendario unificato
