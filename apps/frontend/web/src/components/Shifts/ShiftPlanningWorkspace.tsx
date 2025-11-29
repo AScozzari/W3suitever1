@@ -1322,9 +1322,9 @@ export default function ShiftPlanningWorkspace() {
                 </div>
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1 flex flex-col min-h-0">
                 {selectedResource ? (
-                  <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+                  <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0 h-full space-y-3">
                     <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
                       <Avatar className={cn("h-10 w-10", getAvatarColor(selectedResource.id))}>
                         <AvatarFallback className="text-white text-sm font-semibold">
@@ -1425,57 +1425,68 @@ export default function ShiftPlanningWorkspace() {
                       </div>
                     )}
                     
-                    <div className="flex gap-4">
-                      <div className="flex-1">
+                    <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+                      <div className="flex flex-col min-h-0">
                         <h4 className="text-xs font-medium text-gray-500 mb-2">Calendario disponibilità</h4>
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <div className="grid grid-cols-7 gap-1 mb-1">
+                        <div className="bg-gray-50 rounded-lg p-3 flex-1 flex flex-col min-h-0">
+                          <div className="grid grid-cols-7 gap-1 mb-2">
                             {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => (
-                              <div key={i} className="text-[9px] font-medium text-center text-gray-400">{d}</div>
+                              <div key={i} className="text-[10px] font-medium text-center text-gray-400">{d}</div>
                             ))}
                           </div>
-                          <div className="grid grid-cols-7 gap-1">
-                            {periodDays.slice(0, 35).map((day, idx) => {
-                              const dayInfo = selectedResource ? getResourceDayInfo(selectedResource.id, day) : null;
-                              const isBusy = dayInfo && dayInfo.length > 0;
-                              const isToday = isSameDay(day, new Date());
-                              
-                              return (
-                                <Popover key={idx}>
-                                  <PopoverTrigger asChild>
-                                    <button
-                                      className={cn(
-                                        "h-7 w-full rounded text-[10px] font-medium transition-colors",
-                                        isBusy ? "bg-purple-200 text-purple-800 hover:bg-purple-300" : "bg-green-100 text-green-700 hover:bg-green-200",
-                                        isToday && "ring-2 ring-orange-400"
-                                      )}
-                                    >
-                                      {format(day, 'd')}
-                                    </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent side="top" className="w-48 p-2">
-                                    <div className="text-xs">
-                                      <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM', { locale: it })}</p>
-                                      {dayInfo && dayInfo.length > 0 ? (
-                                        <div className="space-y-1">
-                                          {dayInfo.map((info, i) => (
-                                            <div key={i} className="p-1.5 bg-purple-50 rounded text-purple-700">
-                                              <p className="font-medium">{info.templateName}</p>
-                                              <p className="text-[10px]">{info.startTime} - {info.endTime}</p>
-                                              <p className="text-[10px] text-purple-500">{info.storeName}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <p className="text-green-600">Disponibile</p>
-                                      )}
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              );
-                            })}
-                          </div>
-                          <div className="flex items-center gap-3 mt-2 pt-2 border-t">
+                          <ScrollArea className="flex-1 min-h-0">
+                            <div className="grid grid-cols-7 gap-1.5 pr-2">
+                              {periodDays.map((day, idx) => {
+                                const dayInfo = selectedResource ? getResourceDayInfo(selectedResource.id, day) : null;
+                                const isBusy = dayInfo && dayInfo.length > 0;
+                                const isToday = isSameDay(day, new Date());
+                                const dayOfWeek = getDay(day);
+                                const dayOpening = storeOpeningHours.find(h => h.day === dayOfWeek);
+                                const isClosed = dayOpening?.isClosed ?? false;
+                                
+                                return (
+                                  <Popover key={idx}>
+                                    <PopoverTrigger asChild>
+                                      <button
+                                        className={cn(
+                                          "h-9 w-full rounded text-xs font-medium transition-colors",
+                                          isClosed 
+                                            ? "bg-gray-100 text-gray-400"
+                                            : isBusy 
+                                              ? "bg-purple-200 text-purple-800 hover:bg-purple-300" 
+                                              : "bg-green-100 text-green-700 hover:bg-green-200",
+                                          isToday && "ring-2 ring-orange-400"
+                                        )}
+                                      >
+                                        {format(day, 'd')}
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent side="top" className="w-48 p-2">
+                                      <div className="text-xs">
+                                        <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM', { locale: it })}</p>
+                                        {isClosed ? (
+                                          <p className="text-gray-500">Sede chiusa</p>
+                                        ) : dayInfo && dayInfo.length > 0 ? (
+                                          <div className="space-y-1">
+                                            {dayInfo.map((info, i) => (
+                                              <div key={i} className="p-1.5 bg-purple-50 rounded text-purple-700">
+                                                <p className="font-medium">{info.templateName}</p>
+                                                <p className="text-[10px]">{info.startTime} - {info.endTime}</p>
+                                                <p className="text-[10px] text-purple-500">{info.storeName}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <p className="text-green-600">Disponibile</p>
+                                        )}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                );
+                              })}
+                            </div>
+                          </ScrollArea>
+                          <div className="flex items-center gap-3 mt-2 pt-2 border-t shrink-0">
                             <div className="flex items-center gap-1">
                               <div className="w-3 h-3 rounded bg-green-100" />
                               <span className="text-[9px] text-gray-500">Libero</span>
@@ -1484,13 +1495,17 @@ export default function ShiftPlanningWorkspace() {
                               <div className="w-3 h-3 rounded bg-purple-200" />
                               <span className="text-[9px] text-gray-500">Occupato</span>
                             </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 rounded bg-gray-100" />
+                              <span className="text-[9px] text-gray-500">Chiuso</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="w-64 shrink-0">
+                      <div className="flex flex-col min-h-0">
                         <h4 className="text-xs font-medium text-gray-500 mb-2">Assegna turno</h4>
-                        <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 space-y-3">
+                        <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 space-y-3 flex-1 flex flex-col min-h-0">
                           <div>
                             <label className="text-[10px] font-medium text-gray-500 mb-1 block">Turno</label>
                             <Select value={selectedSlotForAssignment || ''} onValueChange={setSelectedSlotForAssignment}>
