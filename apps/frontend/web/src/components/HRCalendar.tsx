@@ -857,24 +857,18 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                 allDaySlot={false}
                 weekNumbers={true}
                 weekNumberFormat={{ week: 'numeric' }}
-                events={calendarEvents}
-                editable={true}
-                droppable={true}
+                events={[]}
+                editable={false}
+                droppable={false}
                 selectable={true}
-                selectMirror={true}
+                selectMirror={false}
                 nowIndicator={true}
-                eventResizableFromStart={true}
-                eventDurationEditable={true}
-                eventStartEditable={true}
                 businessHours={{
                   daysOfWeek: [1, 2, 3, 4, 5, 6], // Lunedì-Sabato
                   startTime: '06:00',
                   endTime: '22:00',
                 }}
                 dateClick={handleDateClick}
-                eventClick={handleEventClick}
-                eventDrop={handleEventDrop}
-                eventResize={handleEventDrop}
                 dayCellContent={(arg) => {
                   const coverageInfo = getDayCoverageInfo(arg.date);
                   const hasEvents = Object.values(coverageInfo.eventCounts).some(count => count > 0);
@@ -891,25 +885,6 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                             eventCounts={coverageInfo.eventCounts}
                             onEventTypeClick={(eventType) => handleEventTypeClick(arg.date, eventType)}
                           />
-                        </div>
-                      )}
-                    </div>
-                  );
-                }}
-                eventContent={(arg) => {
-                  const event = arg.event;
-                  return (
-                    <div className="p-1 text-xs">
-                      <div className="font-medium truncate">{event.title}</div>
-                      {event.extendedProps.type === 'shift' && (
-                        <div className="text-xs opacity-75">
-                          {event.start?.toLocaleTimeString('it-IT', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })} - {event.end?.toLocaleTimeString('it-IT', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
                         </div>
                       )}
                     </div>
