@@ -17,7 +17,7 @@ import {
   Store as StoreIcon, Calendar as CalendarIcon, Users, 
   ChevronLeft, ChevronRight, Check, AlertTriangle, AlertCircle,
   Clock, CheckCircle2, XCircle, User, Plus, Minus, 
-  ArrowRight, Layers, Eye, Save, RotateCcw, GripVertical,
+  ArrowRight, Layers, Eye, Save, RotateCcw,
   CalendarDays, CalendarRange, Trash2, Search, MapPin, 
   Phone, Filter, Globe, Building2, Briefcase, CalendarCheck,
   AlertOctagon, CalendarX
@@ -110,13 +110,17 @@ export default function ShiftPlanningWorkspace() {
     to: endOfWeek(new Date(), { weekStartsOn: 1 })
   });
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [draggedResource, setDraggedResource] = useState<Resource | null>(null);
   
   const [storeSearch, setStoreSearch] = useState('');
   const [templateSearch, setTemplateSearch] = useState('');
   const [templateFilter, setTemplateFilter] = useState<TemplateFilter>('all');
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  
+  const [selectedSlotForAssignment, setSelectedSlotForAssignment] = useState<string | null>(null);
+  const [assignmentMode, setAssignmentMode] = useState<'single' | 'bulk'>('bulk');
+  const [singleAssignmentDay, setSingleAssignmentDay] = useState<Date | null>(null);
+  const [hoveredCalendarDay, setHoveredCalendarDay] = useState<Date | null>(null);
   
   const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ['/api/stores'],
@@ -222,6 +226,91 @@ export default function ShiftPlanningWorkspace() {
       assignmentsCount: resourceAssignmentsForPeriod.length
     };
   }, [selectedResource, resourceAssignments, coveragePreview, periodDays]);
+
+  const availableSlots = useMemo(() => {
+    const slots: Array<{ id: string; label: string; templateId: string; slotId: string; startTime: string; endTime: string; templateName: string }> = [];
+    
+    templateSelections.forEach(ts => {
+      ts.template.timeSlots.forEach(slot => {
+        slots.push({
+          id: `${ts.templateId}-${slot.id}`,
+          label: `${ts.template.name}: ${slot.startTime} - ${slot.endTime}`,
+          templateId: ts.templateId,
+          slotId: slot.id,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          templateName: ts.template.name
+        });
+      });
+    });
+    
+    return slots;
+  }, [templateSelections]);
+
+  const getResourceDayInfo = useCallback((resourceId: string, day: Date) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    const assignments = resourceAssignments.filter(
+      ra => ra.resourceId === resourceId && ra.day === dayStr
+    );
+    
+    if (assignments.length === 0) return null;
+    
+    return assignments.map(ra => {
+      const slot = coveragePreview.find(
+        s => s.templateId === ra.templateId && s.slotId === ra.slotId && s.day === dayStr
+      );
+      return {
+        templateName: slot?.templateName || 'Turno',
+        startTime: slot?.startTime || '',
+        endTime: slot?.endTime || '',
+        storeName: selectedStoreName
+      };
+    });
+  }, [resourceAssignments, coveragePreview, selectedStoreName]);
+
+  const handleAssignResource = () => {
+    if (!selectedResource || !selectedSlotForAssignment) {
+      toast({ title: "Seleziona una fascia oraria", variant: "destructive" });
+      return;
+    }
+    
+    const slot = availableSlots.find(s => s.id === selectedSlotForAssignment);
+    if (!slot) return;
+    
+    const daysToAssign = assignmentMode === 'single' && singleAssignmentDay 
+      ? [singleAssignmentDay]
+      : periodDays;
+    
+    let assignedCount = 0;
+    daysToAssign.forEach(day => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const alreadyAssigned = resourceAssignments.some(
+        ra => ra.resourceId === selectedResource.id && 
+              ra.templateId === slot.templateId && 
+              ra.slotId === slot.slotId && 
+              ra.day === dayStr
+      );
+      
+      if (!alreadyAssigned) {
+        assignResource({
+          templateId: slot.templateId,
+          slotId: slot.slotId,
+          day: dayStr,
+          resourceId: selectedResource.id,
+          resourceName: `${selectedResource.firstName || ''} ${selectedResource.lastName || ''}`.trim() || selectedResource.email
+        });
+        assignedCount++;
+      }
+    });
+    
+    if (assignedCount > 0) {
+      toast({ 
+        title: "Risorsa assegnata", 
+        description: `${selectedResource.firstName} assegnato a ${assignedCount} ${assignedCount === 1 ? 'giorno' : 'giorni'}`
+      });
+      computeCoverage();
+    }
+  };
 
   useEffect(() => {
     if (periodDays.length > 0) {
@@ -451,49 +540,6 @@ export default function ShiftPlanningWorkspace() {
     
     return lanes;
   }, [storeOpeningHours, coveragePreview]);
-
-  const handleResourceDrop = (templateId: string, slotId: string, day: string, resource: Resource) => {
-    const existingAssignment = resourceAssignments.find(
-      ra => ra.resourceId === resource.id && ra.day === day
-    );
-    
-    if (existingAssignment) {
-      const slot = coveragePreview.find(s => s.slotId === existingAssignment.slotId && s.day === day);
-      if (slot) {
-        const overlap = checkTimeOverlap(
-          slot.startTime, slot.endTime,
-          coveragePreview.find(s => s.templateId === templateId && s.slotId === slotId && s.day === day)?.startTime || '',
-          coveragePreview.find(s => s.templateId === templateId && s.slotId === slotId && s.day === day)?.endTime || ''
-        );
-        
-        if (overlap) {
-          toast({
-            title: 'Sovrapposizione orario',
-            description: `${resource.firstName || resource.email} è già assegnato a una fascia sovrapposta in questo giorno`,
-            variant: 'destructive'
-          });
-          return;
-        }
-      }
-    }
-    
-    assignResource({
-      resourceId: resource.id,
-      resourceName: `${resource.firstName || ''} ${resource.lastName || ''}`.trim() || resource.email,
-      templateId,
-      slotId,
-      day
-    });
-    
-    toast({
-      title: 'Risorsa assegnata',
-      description: `${resource.firstName || resource.email} assegnato`
-    });
-  };
-
-  const checkTimeOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
-    return start1 < end2 && end1 > start2;
-  };
 
   const totalCoverage = useMemo(() => {
     if (coveragePreview.length === 0) return 0;
@@ -1048,19 +1094,16 @@ export default function ShiftPlanningWorkspace() {
           </TabsContent>
 
           <TabsContent value="resources" className="mt-4">
-            <div className="flex gap-6">
-              <div className="w-72 shrink-0">
-                <div className="bg-white rounded-2xl border-2 border-gray-100 p-4">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    Risorse Disponibili
+            <div className="flex gap-4">
+              <div className="w-64 shrink-0">
+                <div className="bg-white rounded-xl border border-gray-200 p-3">
+                  <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    Risorse ({resources.length})
                   </h3>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Clicca per vedere i dettagli, trascina per assegnare
-                  </p>
                   
-                  <ScrollArea className="h-[320px] -mx-2 px-2">
-                    <div className="space-y-2">
+                  <ScrollArea className="h-[400px] -mx-1 px-1">
+                    <div className="space-y-1">
                       {resources.map(resource => {
                         const isSelected = selectedResourceId === resource.id;
                         const assignmentsCount = resourceAssignments.filter(
@@ -1070,39 +1113,32 @@ export default function ShiftPlanningWorkspace() {
                         return (
                           <div
                             key={resource.id}
-                            draggable
-                            onDragStart={() => setDraggedResource(resource)}
-                            onDragEnd={() => setDraggedResource(null)}
                             onClick={() => setSelectedResourceId(isSelected ? null : resource.id)}
                             className={cn(
-                              "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
-                              "border-2",
+                              "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
                               isSelected 
-                                ? "bg-primary/5 border-primary shadow-sm" 
-                                : "bg-gray-50 border-transparent hover:bg-gray-100 hover:border-gray-200",
-                              "active:cursor-grabbing"
+                                ? "bg-primary/10 ring-1 ring-primary" 
+                                : "hover:bg-gray-50"
                             )}
                             data-testid={`resource-${resource.id}`}
                           >
-                            <GripVertical className="w-4 h-4 text-gray-300 cursor-grab" />
-                            
-                            <Avatar className={cn("h-10 w-10", getAvatarColor(resource.id))}>
-                              <AvatarFallback className="text-white text-sm font-semibold">
+                            <Avatar className={cn("h-8 w-8", getAvatarColor(resource.id))}>
+                              <AvatarFallback className="text-white text-xs font-semibold">
                                 {getInitials(resource.firstName, resource.lastName, resource.email)}
                               </AvatarFallback>
                             </Avatar>
                             
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">
+                              <p className="text-xs font-medium truncate">
                                 {resource.firstName} {resource.lastName}
                               </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {resource.role || resource.email}
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                {resource.role || 'Staff'}
                               </p>
                             </div>
                             
                             {assignmentsCount > 0 && (
-                              <Badge variant="secondary" className="shrink-0">
+                              <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
                                 {assignmentsCount}
                               </Badge>
                             )}
@@ -1116,133 +1152,191 @@ export default function ShiftPlanningWorkspace() {
               
               <div className="flex-1">
                 {selectedResource ? (
-                  <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
-                    <div className="flex items-start gap-4 mb-6">
-                      <Avatar className={cn("h-16 w-16", getAvatarColor(selectedResource.id))}>
-                        <AvatarFallback className="text-white text-xl font-semibold">
+                  <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                      <Avatar className={cn("h-10 w-10", getAvatarColor(selectedResource.id))}>
+                        <AvatarFallback className="text-white text-sm font-semibold">
                           {getInitials(selectedResource.firstName, selectedResource.lastName, selectedResource.email)}
                         </AvatarFallback>
                       </Avatar>
-                      
-                      <div className="flex-1">
-                        <h2 className="text-xl font-semibold">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="font-semibold text-base truncate">
                           {selectedResource.firstName} {selectedResource.lastName}
                         </h2>
-                        <p className="text-sm text-muted-foreground">{selectedResource.email}</p>
-                        {selectedResource.role && (
-                          <Badge variant="secondary" className="mt-2">
-                            <Briefcase className="w-3 h-3 mr-1" />
-                            {selectedResource.role}
-                          </Badge>
-                        )}
+                        <p className="text-xs text-muted-foreground truncate">{selectedResource.email}</p>
+                      </div>
+                      {selectedResource.role && (
+                        <Badge variant="outline" className="text-[10px]">
+                          {selectedResource.role}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="p-2 rounded-lg bg-blue-50 text-center">
+                        <p className="text-lg font-bold text-blue-700">{resourceStats?.totalHours || 0}h</p>
+                        <p className="text-[10px] text-blue-600">Ore mese</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-green-50 text-center">
+                        <p className="text-lg font-bold text-green-700">{resourceStats?.freeDays.length || 0}</p>
+                        <p className="text-[10px] text-green-600">Liberi</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-purple-50 text-center">
+                        <p className="text-lg font-bold text-purple-700">{resourceStats?.busyDays.length || 0}</p>
+                        <p className="text-[10px] text-purple-600">Occupati</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-orange-50 text-center">
+                        <p className="text-lg font-bold text-orange-700">{resourceStats?.assignmentsCount || 0}</p>
+                        <p className="text-[10px] text-orange-600">Turni</p>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                        <div className="flex items-center gap-2 text-blue-600 mb-1">
-                          <Clock className="w-4 h-4" />
-                          <span className="text-sm font-medium">Ore Pianificate</span>
-                        </div>
-                        <p className="text-2xl font-bold text-blue-700">
-                          {resourceStats?.totalHours || 0}h
-                        </p>
-                      </div>
-                      
-                      <div className="p-4 rounded-xl bg-green-50 border border-green-100">
-                        <div className="flex items-center gap-2 text-green-600 mb-1">
-                          <CalendarCheck className="w-4 h-4" />
-                          <span className="text-sm font-medium">Giorni Liberi</span>
-                        </div>
-                        <p className="text-2xl font-bold text-green-700">
-                          {resourceStats?.freeDays.length || periodDays.length}
-                        </p>
-                      </div>
-                      
-                      <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
-                        <div className="flex items-center gap-2 text-purple-600 mb-1">
-                          <CalendarDays className="w-4 h-4" />
-                          <span className="text-sm font-medium">Giorni Occupati</span>
-                        </div>
-                        <p className="text-2xl font-bold text-purple-700">
-                          {resourceStats?.busyDays.length || 0}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-3 flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
-                        Disponibilità nel periodo
-                      </h4>
-                      <div className="bg-gray-50 rounded-xl p-5">
-                        <Calendar
-                          mode="multiple"
-                          selected={resourceStats?.busyDays || []}
-                          month={periodDays[0] || new Date()}
-                          locale={it}
-                          disabled
-                          numberOfMonths={1}
-                          className="w-full pointer-events-none"
-                          classNames={{
-                            months: "flex flex-col w-full",
-                            month: "space-y-6 w-full",
-                            caption: "flex justify-center pt-2 relative items-center mb-4",
-                            caption_label: "text-lg font-bold text-gray-800",
-                            nav: "space-x-2 flex items-center",
-                            nav_button: "h-9 w-9 bg-gray-200 rounded-lg flex items-center justify-center",
-                            nav_button_previous: "absolute left-2",
-                            nav_button_next: "absolute right-2",
-                            table: "w-full border-collapse",
-                            head_row: "flex w-full mb-2",
-                            head_cell: "text-muted-foreground rounded-md flex-1 font-semibold text-sm text-center py-2",
-                            row: "flex w-full",
-                            cell: "relative flex-1 p-1 text-center text-sm",
-                            day: "h-12 w-full p-0 font-medium rounded-lg text-base",
-                            day_selected: "bg-purple-500 text-white font-bold",
-                            day_today: "bg-orange-100 text-orange-700 font-bold",
-                            day_outside: "text-muted-foreground opacity-40",
-                            day_disabled: "text-muted-foreground opacity-30",
-                          }}
-                          modifiers={{
-                            free: resourceStats?.freeDays || [],
-                            busy: resourceStats?.busyDays || []
-                          }}
-                          modifiersClassNames={{
-                            free: "bg-green-100 text-green-700 font-semibold",
-                            busy: "bg-purple-100 text-purple-700 font-semibold"
-                          }}
-                        />
-                        
-                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
-                              <span className="text-xs text-muted-foreground">Libero</span>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <h4 className="text-xs font-medium text-gray-500 mb-2">Calendario disponibilità</h4>
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          <div className="grid grid-cols-7 gap-1 mb-1">
+                            {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => (
+                              <div key={i} className="text-[9px] font-medium text-center text-gray-400">{d}</div>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-7 gap-1">
+                            {periodDays.slice(0, 35).map((day, idx) => {
+                              const dayInfo = selectedResource ? getResourceDayInfo(selectedResource.id, day) : null;
+                              const isBusy = dayInfo && dayInfo.length > 0;
+                              const isToday = isSameDay(day, new Date());
+                              
+                              return (
+                                <Popover key={idx}>
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      className={cn(
+                                        "h-7 w-full rounded text-[10px] font-medium transition-colors",
+                                        isBusy ? "bg-purple-200 text-purple-800 hover:bg-purple-300" : "bg-green-100 text-green-700 hover:bg-green-200",
+                                        isToday && "ring-2 ring-orange-400"
+                                      )}
+                                    >
+                                      {format(day, 'd')}
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="top" className="w-48 p-2">
+                                    <div className="text-xs">
+                                      <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM', { locale: it })}</p>
+                                      {dayInfo && dayInfo.length > 0 ? (
+                                        <div className="space-y-1">
+                                          {dayInfo.map((info, i) => (
+                                            <div key={i} className="p-1.5 bg-purple-50 rounded text-purple-700">
+                                              <p className="font-medium">{info.templateName}</p>
+                                              <p className="text-[10px]">{info.startTime} - {info.endTime}</p>
+                                              <p className="text-[10px] text-purple-500">{info.storeName}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-green-600">Disponibile</p>
+                                      )}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center gap-3 mt-2 pt-2 border-t">
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 rounded bg-green-100" />
+                              <span className="text-[9px] text-gray-500">Libero</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 rounded bg-purple-100 border border-purple-200" />
-                              <span className="text-xs text-muted-foreground">Occupato</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-200" />
-                              <span className="text-xs text-muted-foreground">Oggi</span>
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 rounded bg-purple-200" />
+                              <span className="text-[9px] text-gray-500">Occupato</span>
                             </div>
                           </div>
+                        </div>
+                      </div>
+                      
+                      <div className="w-56 shrink-0">
+                        <h4 className="text-xs font-medium text-gray-500 mb-2">Assegna a fascia</h4>
+                        <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 space-y-3">
+                          <div>
+                            <label className="text-[10px] font-medium text-gray-500 mb-1 block">Fascia oraria</label>
+                            <Select value={selectedSlotForAssignment || ''} onValueChange={setSelectedSlotForAssignment}>
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Seleziona fascia..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableSlots.map(slot => (
+                                  <SelectItem key={slot.id} value={slot.id} className="text-xs">
+                                    {slot.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <label className="text-[10px] font-medium text-gray-500 mb-1 block">Giorni</label>
+                            <div className="grid grid-cols-2 gap-1 p-0.5 bg-gray-100 rounded">
+                              <button
+                                className={cn(
+                                  "py-1 text-[10px] font-medium rounded transition-colors",
+                                  assignmentMode === 'bulk' ? "bg-white shadow-sm" : "text-gray-500"
+                                )}
+                                onClick={() => setAssignmentMode('bulk')}
+                              >
+                                Tutti ({periodDays.length})
+                              </button>
+                              <button
+                                className={cn(
+                                  "py-1 text-[10px] font-medium rounded transition-colors",
+                                  assignmentMode === 'single' ? "bg-white shadow-sm" : "text-gray-500"
+                                )}
+                                onClick={() => setAssignmentMode('single')}
+                              >
+                                Singolo
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {assignmentMode === 'single' && (
+                            <div>
+                              <label className="text-[10px] font-medium text-gray-500 mb-1 block">Giorno</label>
+                              <Select 
+                                value={singleAssignmentDay?.toISOString() || ''} 
+                                onValueChange={(v) => setSingleAssignmentDay(v ? new Date(v) : null)}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Seleziona giorno..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {periodDays.map(day => (
+                                    <SelectItem key={day.toISOString()} value={day.toISOString()} className="text-xs">
+                                      {format(day, 'EEE d MMM', { locale: it })}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          
+                          <Button 
+                            className="w-full h-8 text-xs" 
+                            onClick={handleAssignResource}
+                            disabled={!selectedSlotForAssignment || (assignmentMode === 'single' && !singleAssignmentDay)}
+                            data-testid="btn-assign-resource"
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Assegna
+                          </Button>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                    <div className="text-center py-12">
-                      <User className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium text-gray-500 mb-2">
-                        Seleziona una risorsa
-                      </p>
-                      <p className="text-sm text-muted-foreground max-w-xs">
-                        Clicca su una risorsa dalla lista per vedere le sue informazioni e disponibilità
-                      </p>
+                  <div className="h-full flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <div className="text-center py-8">
+                      <User className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm font-medium text-gray-500">Seleziona una risorsa</p>
+                      <p className="text-xs text-muted-foreground">per vedere dettagli e assegnare turni</p>
                     </div>
                   </div>
                 )}
@@ -1253,19 +1347,11 @@ export default function ShiftPlanningWorkspace() {
       </div>
 
       <div className="flex-1 p-4 overflow-auto">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3">
           <TimelineLegend />
-          {draggedResource && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg border border-primary/30 animate-pulse">
-              <User className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">
-                Trascinando: {draggedResource.firstName} {draggedResource.lastName}
-              </span>
-            </div>
-          )}
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           {periodDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             
@@ -1277,12 +1363,6 @@ export default function ShiftPlanningWorkspace() {
                 lanes={buildTimelineLanes(day)}
                 startHour={6}
                 endHour={24}
-                isDragging={!!draggedResource}
-                onDropResource={(templateId, slotId, dropDay) => {
-                  if (draggedResource) {
-                    handleResourceDrop(templateId, slotId, dropDay, draggedResource);
-                  }
-                }}
               />
             );
           })}

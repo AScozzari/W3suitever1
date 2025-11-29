@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -36,8 +36,6 @@ interface TimelineBarProps {
   startHour?: number;
   endHour?: number;
   onSegmentClick?: (segment: TimelineSegment) => void;
-  onDropResource?: (templateId: string, slotId: string, day: string) => void;
-  isDragging?: boolean;
   className?: string;
 }
 
@@ -73,8 +71,8 @@ const minutesToPercent = (minutes: number, startHour: number, endHour: number): 
   return Math.max(0, Math.min(100, (offsetMinutes / totalMinutes) * 100));
 };
 
-const LANE_HEIGHT = 52;
-const MIN_TOTAL_HEIGHT = 180;
+const LANE_HEIGHT = 44;
+const MIN_TOTAL_HEIGHT = 140;
 
 export function TimelineBar({
   day,
@@ -83,12 +81,8 @@ export function TimelineBar({
   startHour = 6,
   endHour = 24,
   onSegmentClick,
-  onDropResource,
-  isDragging = false,
   className
 }: TimelineBarProps) {
-  const [hoveredLane, setHoveredLane] = useState<string | null>(null);
-  
   const hourMarkers = useMemo(() => {
     const markers = [];
     for (let h = startHour; h <= endHour; h += 2) {
@@ -98,7 +92,7 @@ export function TimelineBar({
   }, [startHour, endHour]);
 
   const totalHeight = useMemo(() => {
-    const lanesHeight = lanes.length * LANE_HEIGHT + 36;
+    const lanesHeight = lanes.length * LANE_HEIGHT + 32;
     return Math.max(MIN_TOTAL_HEIGHT, lanesHeight);
   }, [lanes.length]);
 
@@ -119,18 +113,18 @@ export function TimelineBar({
           <TooltipTrigger asChild>
             <div
               className={cn(
-                "absolute rounded-lg cursor-pointer transition-all duration-200",
+                "absolute rounded-md transition-all duration-200",
                 "flex items-center justify-center overflow-hidden",
                 isShortage && "border-2 border-dashed border-gray-400 bg-gray-100",
-                isResource && "shadow-lg ring-2 ring-white/50",
-                !isShortage && !isResource && "shadow-md",
-                "hover:scale-[1.02] hover:shadow-lg hover:z-10"
+                isResource && "shadow-md ring-1 ring-white/50",
+                !isShortage && !isResource && "shadow-sm",
+                "hover:brightness-110"
               )}
               style={{
                 left: `${left}%`,
                 width: `${Math.max(width, 3)}%`,
-                top: '8px',
-                bottom: '8px',
+                top: '6px',
+                bottom: '6px',
                 backgroundColor: isShortage ? 'transparent' : bgColor,
               }}
               onClick={() => onSegmentClick?.(segment)}
@@ -138,31 +132,31 @@ export function TimelineBar({
             >
               {width > 6 && (
                 <span className={cn(
-                  "truncate px-2 text-[11px] font-semibold",
+                  "truncate px-1.5 text-[10px] font-medium",
                   isShortage ? "text-gray-600" : "text-white"
                 )}>
-                  {isResource && <User className="w-3 h-3 inline mr-1" />}
-                  {isShortage && <AlertTriangle className="w-3 h-3 inline mr-1" />}
+                  {isResource && <User className="w-2.5 h-2.5 inline mr-0.5" />}
+                  {isShortage && <AlertTriangle className="w-2.5 h-2.5 inline mr-0.5" />}
                   {segment.resourceName || segment.label || `${segment.startTime}-${segment.endTime}`}
                 </span>
               )}
             </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs bg-gray-900 text-white border-gray-700 z-50">
-            <div className="text-sm space-y-1.5 p-1">
-              <p className="font-semibold text-base">{segment.label || segment.templateName || COLOR_LABELS[segment.type]}</p>
-              <div className="flex items-center gap-2 text-gray-300">
+            <div className="text-xs space-y-1 p-0.5">
+              <p className="font-semibold">{segment.label || segment.templateName || COLOR_LABELS[segment.type]}</p>
+              <div className="flex items-center gap-1.5 text-gray-300">
                 <Clock className="w-3 h-3" />
                 <span>{segment.startTime} - {segment.endTime}</span>
               </div>
               {segment.resourceName && (
-                <div className="flex items-center gap-2 text-purple-300">
+                <div className="flex items-center gap-1.5 text-purple-300">
                   <User className="w-3 h-3" />
                   <span>{segment.resourceName}</span>
                 </div>
               )}
               {segment.requiredStaff !== undefined && (
-                <div className="flex items-center gap-2 text-orange-300">
+                <div className="flex items-center gap-1.5 text-orange-300">
                   <Users className="w-3 h-3" />
                   <span>Staff: {segment.assignedStaff || 0}/{segment.requiredStaff}</span>
                 </div>
@@ -176,48 +170,28 @@ export function TimelineBar({
 
   const renderLane = (lane: TimelineLane, index: number) => {
     const laneColor = COLORS[lane.type];
-    const isDropTarget = lane.type === 'template' || lane.type === 'shortage';
-    const isHovered = hoveredLane === lane.id;
     
     return (
       <div 
         key={lane.id}
-        className={cn(
-          "flex items-stretch border-b border-gray-100 last:border-b-0 transition-all duration-200",
-          isDragging && isDropTarget && "bg-primary/5",
-          isHovered && isDragging && isDropTarget && "bg-primary/10 ring-2 ring-primary ring-inset"
-        )}
+        className="flex items-stretch border-b border-gray-100 last:border-b-0"
         style={{ height: `${LANE_HEIGHT}px` }}
         data-testid={`timeline-lane-${lane.id}`}
-        onDragOver={(e) => {
-          if (isDropTarget) {
-            e.preventDefault();
-            setHoveredLane(lane.id);
-          }
-        }}
-        onDragLeave={() => setHoveredLane(null)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setHoveredLane(null);
-          if (isDropTarget && lane.templateId && lane.slotId) {
-            onDropResource?.(lane.templateId, lane.slotId, day);
-          }
-        }}
       >
         <div 
-          className="w-1.5 shrink-0 rounded-l"
+          className="w-1 shrink-0 rounded-l"
           style={{ backgroundColor: laneColor }}
         />
         
-        <div className="w-28 shrink-0 flex items-center px-3">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="w-24 shrink-0 flex items-center px-2">
+          <div className="flex items-center gap-1.5 min-w-0">
             {lane.type === 'resource' && (
-              <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                <User className="w-3 h-3 text-purple-600" />
+              <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+                <User className="w-2.5 h-2.5 text-purple-600" />
               </div>
             )}
             <span className={cn(
-              "text-[11px] font-medium truncate",
+              "text-[10px] font-medium truncate",
               lane.type === 'resource' ? "text-purple-700" : "text-gray-600"
             )}>
               {lane.label}
@@ -227,16 +201,6 @@ export function TimelineBar({
         
         <div className="flex-1 relative">
           {lane.segments.map(seg => renderSegment(seg, lane.type))}
-          
-          {isDragging && isDropTarget && (
-            <div className="absolute inset-2 border-2 border-dashed border-primary/40 rounded-lg flex items-center justify-center pointer-events-none">
-              {isHovered && (
-                <span className="text-xs font-medium text-primary bg-white/90 px-2 py-1 rounded">
-                  Rilascia qui
-                </span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -244,33 +208,29 @@ export function TimelineBar({
 
   return (
     <div 
-      className={cn(
-        "bg-white rounded-xl border-2 transition-all duration-200",
-        isDragging ? "border-primary/30 shadow-lg" : "border-gray-100 shadow-sm",
-        className
-      )} 
+      className={cn("bg-white rounded-lg border border-gray-200 shadow-sm", className)} 
       data-testid={`timeline-day-${day}`}
     >
       <div className="flex items-stretch">
-        <div className="w-28 p-4 flex flex-col justify-center border-r border-gray-100 bg-gray-50/50 rounded-l-xl">
-          <p className="text-sm font-bold text-gray-800 leading-tight">
+        <div className="w-20 p-3 flex flex-col justify-center border-r border-gray-100 bg-gray-50/50 rounded-l-lg">
+          <p className="text-xs font-bold text-gray-800 leading-tight">
             {dayLabel}
           </p>
           {lanes.length > 0 && (
-            <Badge variant="outline" className="mt-2 text-[10px] w-fit">
+            <Badge variant="outline" className="mt-1 text-[9px] w-fit h-4 px-1">
               {lanes.filter(l => l.type === 'template').length} fasce
             </Badge>
           )}
         </div>
         
-        <div className="flex-1 p-2">
+        <div className="flex-1 p-1.5">
           <div 
-            className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100"
+            className="bg-gray-50 rounded-md overflow-hidden border border-gray-100"
             style={{ minHeight: `${totalHeight}px` }}
           >
-            <div className="flex items-center border-b border-gray-200 h-9 bg-white/50">
-              <div className="w-1.5 shrink-0" />
-              <div className="w-28 shrink-0" />
+            <div className="flex items-center border-b border-gray-200 h-7 bg-white/50">
+              <div className="w-1 shrink-0" />
+              <div className="w-24 shrink-0" />
               <div className="flex-1 relative h-full">
                 {hourMarkers.map(hour => {
                   const left = minutesToPercent(hour * 60, startHour, endHour);
@@ -280,7 +240,7 @@ export function TimelineBar({
                       className="absolute h-full flex items-center"
                       style={{ left: `${left}%` }}
                     >
-                      <span className="text-[11px] font-bold text-gray-500 -translate-x-1/2 bg-white/80 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] font-semibold text-gray-500 -translate-x-1/2 bg-white/80 px-1 rounded">
                         {hour}:00
                       </span>
                     </div>
@@ -299,7 +259,7 @@ export function TimelineBar({
                         key={`grid-${hour}-${lane.id}`}
                         className="absolute border-l border-gray-200/40"
                         style={{ 
-                          left: `calc(118px + ${left}% * (100% - 118px) / 100%)`,
+                          left: `calc(100px + ${left}% * (100% - 100px) / 100%)`,
                           top: 0,
                           height: `${LANE_HEIGHT}px`
                         }}
@@ -311,10 +271,10 @@ export function TimelineBar({
               ))}
               
               {lanes.length === 0 && (
-                <div className="flex items-center justify-center h-32 text-gray-400">
+                <div className="flex items-center justify-center h-24 text-gray-400">
                   <div className="text-center">
-                    <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">Seleziona template per vedere la timeline</p>
+                    <Clock className="w-6 h-6 mx-auto mb-1 opacity-30" />
+                    <p className="text-xs">Nessun template selezionato</p>
                   </div>
                 </div>
               )}
@@ -328,28 +288,24 @@ export function TimelineBar({
 
 export function TimelineLegend() {
   const legendItems = [
-    { type: 'opening', label: 'Apertura negozio', color: COLORS.opening, icon: '🏪' },
-    { type: 'template', label: 'Template turno', color: COLORS.template, icon: '📋' },
-    { type: 'gap', label: 'Gap non coperto', color: COLORS.gap, icon: '⚠️' },
-    { type: 'overflow', label: 'Fuori orario', color: COLORS.overflow, icon: '🚫' },
-    { type: 'resource', label: 'Risorsa assegnata', color: COLORS.resource, icon: '👤' },
-    { type: 'shortage', label: 'Mancanza staff', color: COLORS.shortage, icon: '❓' },
+    { type: 'opening', label: 'Apertura', color: COLORS.opening },
+    { type: 'template', label: 'Template', color: COLORS.template },
+    { type: 'gap', label: 'Gap', color: COLORS.gap },
+    { type: 'overflow', label: 'Overflow', color: COLORS.overflow },
+    { type: 'resource', label: 'Risorsa', color: COLORS.resource },
+    { type: 'shortage', label: 'Mancanza', color: COLORS.shortage },
   ];
 
   return (
-    <div className="bg-white rounded-xl border-2 border-gray-100 p-4 shadow-sm">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <span className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-xs">🎨</span>
-        Legenda Colori
-      </h4>
-      <div className="flex flex-wrap items-center gap-4">
+    <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3">
         {legendItems.map(item => (
-          <div key={item.type} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100">
+          <div key={item.type} className="flex items-center gap-1.5">
             <div 
-              className="w-4 h-4 rounded-md shadow-sm" 
+              className="w-3 h-3 rounded" 
               style={{ backgroundColor: item.color }} 
             />
-            <span className="text-xs font-medium text-gray-600">{item.label}</span>
+            <span className="text-[10px] font-medium text-gray-600">{item.label}</span>
           </div>
         ))}
       </div>
