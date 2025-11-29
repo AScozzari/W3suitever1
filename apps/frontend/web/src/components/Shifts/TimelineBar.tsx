@@ -43,9 +43,9 @@ const COLORS = {
   opening: '#ef4444',
   template: '#f97316',
   gap: '#eab308',
-  resource: '#8b5cf6',
+  resource: '#22c55e',
   shortage: '#6b7280',
-  overflow: '#c026d3',
+  overflow: '#7c3aed',
 };
 
 const COLOR_LABELS = {
@@ -150,7 +150,7 @@ export function TimelineBar({
                 <span>{segment.startTime} - {segment.endTime}</span>
               </div>
               {segment.resourceName && (
-                <div className="flex items-center gap-1.5 text-purple-300">
+                <div className="flex items-center gap-1.5 text-green-300">
                   <User className="w-3 h-3" />
                   <span>{segment.resourceName}</span>
                 </div>
@@ -186,13 +186,13 @@ export function TimelineBar({
         <div className="w-24 shrink-0 flex items-center px-2">
           <div className="flex items-center gap-1.5 min-w-0">
             {lane.type === 'resource' && (
-              <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                <User className="w-2.5 h-2.5 text-purple-600" />
+              <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <User className="w-2.5 h-2.5 text-green-600" />
               </div>
             )}
             <span className={cn(
               "text-[10px] font-medium truncate",
-              lane.type === 'resource' ? "text-purple-700" : "text-gray-600"
+              lane.type === 'resource' ? "text-green-700" : "text-gray-600"
             )}>
               {lane.label}
             </span>
