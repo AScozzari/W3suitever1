@@ -1182,36 +1182,59 @@ export default function ShiftPlanningWorkspace() {
                         <CalendarIcon className="w-4 h-4" />
                         Disponibilità nel periodo
                       </h4>
-                      <div className="bg-gray-50 rounded-xl p-4">
+                      <div className="bg-gray-50 rounded-xl p-5">
                         <Calendar
                           mode="multiple"
                           selected={resourceStats?.busyDays || []}
                           month={periodDays[0] || new Date()}
                           locale={it}
                           disabled
-                          className="pointer-events-none"
+                          numberOfMonths={1}
+                          className="w-full pointer-events-none"
                           classNames={{
-                            day_selected: "bg-purple-500 text-white",
-                            day: "h-9 w-9 rounded-lg",
+                            months: "flex flex-col w-full",
+                            month: "space-y-6 w-full",
+                            caption: "flex justify-center pt-2 relative items-center mb-4",
+                            caption_label: "text-lg font-bold text-gray-800",
+                            nav: "space-x-2 flex items-center",
+                            nav_button: "h-9 w-9 bg-gray-200 rounded-lg flex items-center justify-center",
+                            nav_button_previous: "absolute left-2",
+                            nav_button_next: "absolute right-2",
+                            table: "w-full border-collapse",
+                            head_row: "flex w-full mb-2",
+                            head_cell: "text-muted-foreground rounded-md flex-1 font-semibold text-sm text-center py-2",
+                            row: "flex w-full",
+                            cell: "relative flex-1 p-1 text-center text-sm",
+                            day: "h-12 w-full p-0 font-medium rounded-lg text-base",
+                            day_selected: "bg-purple-500 text-white font-bold",
+                            day_today: "bg-orange-100 text-orange-700 font-bold",
+                            day_outside: "text-muted-foreground opacity-40",
+                            day_disabled: "text-muted-foreground opacity-30",
                           }}
                           modifiers={{
                             free: resourceStats?.freeDays || [],
                             busy: resourceStats?.busyDays || []
                           }}
                           modifiersClassNames={{
-                            free: "bg-green-100 text-green-700",
-                            busy: "bg-purple-100 text-purple-700"
+                            free: "bg-green-100 text-green-700 font-semibold",
+                            busy: "bg-purple-100 text-purple-700 font-semibold"
                           }}
                         />
                         
-                        <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
-                            <span className="text-xs text-muted-foreground">Libero</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded bg-purple-100 border border-purple-200" />
-                            <span className="text-xs text-muted-foreground">Occupato</span>
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
+                              <span className="text-xs text-muted-foreground">Libero</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded bg-purple-100 border border-purple-200" />
+                              <span className="text-xs text-muted-foreground">Occupato</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-200" />
+                              <span className="text-xs text-muted-foreground">Oggi</span>
+                            </div>
                           </div>
                         </div>
                       </div>
