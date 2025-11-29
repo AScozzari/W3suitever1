@@ -30,6 +30,38 @@ export interface ResourceAssignment {
   templateId: string;
   slotId: string;
   day: string; // ISO date string
+  startTime?: string;
+  endTime?: string;
+  storeId?: string;
+  storeName?: string;
+}
+
+// Conflict detection types
+export interface TimeInterval {
+  startTime: string;
+  endTime: string;
+  templateId: string;
+  slotId: string;
+  storeId?: string;
+  storeName?: string;
+}
+
+export interface ConflictInfo {
+  resourceId: string;
+  resourceName: string;
+  day: string;
+  newInterval: TimeInterval;
+  existingInterval: TimeInterval;
+  conflictType: 'overlap' | 'cross_store';
+  message: string;
+}
+
+// Loaded planning from backend
+export interface LoadedPlanning {
+  exists: boolean;
+  shifts: any[];
+  assignments: any[];
+  templates: any[];
 }
 
 export interface CoverageSlot {
@@ -76,6 +108,15 @@ interface ShiftPlanningState {
   // Computed coverage preview
   coveragePreview: CoverageSlot[];
   
+  // Conflict detection
+  conflicts: ConflictInfo[];
+  hasConflicts: boolean;
+  
+  // Loaded planning state
+  loadedPlanning: LoadedPlanning | null;
+  isLoadingPlanning: boolean;
+  planningExists: boolean;
+  
   // Actions
   setStore: (storeId: string, storeName: string) => void;
   setPeriod: (start: Date, end: Date) => void;
@@ -91,6 +132,16 @@ interface ShiftPlanningState {
   // Resource assignment actions
   assignResource: (assignment: ResourceAssignment) => void;
   removeResourceAssignment: (resourceId: string, templateId: string, slotId: string, day: string) => void;
+  
+  // Conflict detection
+  checkConflict: (resourceId: string, resourceName: string, day: string, startTime: string, endTime: string, templateId: string, slotId: string) => ConflictInfo | null;
+  getResourceConflicts: (resourceId: string) => ConflictInfo[];
+  clearConflicts: () => void;
+  
+  // Load existing planning
+  loadExistingPlanning: (planning: LoadedPlanning) => void;
+  setLoadingPlanning: (loading: boolean) => void;
+  setPlanningExists: (exists: boolean) => void;
   
   // Phase navigation
   goToPhase: (phase: 1 | 2) => void;
@@ -118,6 +169,21 @@ const timeOverlap = (start1: string, end1: string, start2: string, end2: string)
   return start1 < end2 && end1 > start2;
 };
 
+// Helper to parse time string to minutes
+const parseTimeToMinutes = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + (m || 0);
+};
+
+// Helper to check if two time intervals overlap
+const intervalsOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+  const s1 = parseTimeToMinutes(start1);
+  const e1 = parseTimeToMinutes(end1);
+  const s2 = parseTimeToMinutes(start2);
+  const e2 = parseTimeToMinutes(end2);
+  return s1 < e2 && e1 > s2;
+};
+
 export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
   // Initial state
   currentPhase: 1,
@@ -129,6 +195,15 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
   templateSelections: [],
   resourceAssignments: [],
   coveragePreview: [],
+  
+  // Conflict detection state
+  conflicts: [],
+  hasConflicts: false,
+  
+  // Loaded planning state
+  loadedPlanning: null,
+  isLoadingPlanning: false,
+  planningExists: false,
   
   // Store selection
   setStore: (storeId, storeName) => {
@@ -238,7 +313,7 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
   
   // Assign resource to slot
   assignResource: (assignment) => {
-    const { resourceAssignments } = get();
+    const { resourceAssignments, selectedStoreId, selectedStoreName, templateSelections } = get();
     
     // Check if already assigned
     const exists = resourceAssignments.find(
@@ -249,7 +324,19 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
     );
     
     if (!exists) {
-      set({ resourceAssignments: [...resourceAssignments, assignment] });
+      // Find the template to get time slot info
+      const templateSelection = templateSelections.find(ts => ts.templateId === assignment.templateId);
+      const timeSlot = templateSelection?.template.timeSlots.find(s => s.id === assignment.slotId);
+      
+      const enrichedAssignment: ResourceAssignment = {
+        ...assignment,
+        startTime: assignment.startTime || timeSlot?.startTime,
+        endTime: assignment.endTime || timeSlot?.endTime,
+        storeId: assignment.storeId || selectedStoreId || undefined,
+        storeName: assignment.storeName || selectedStoreName || undefined
+      };
+      
+      set({ resourceAssignments: [...resourceAssignments, enrichedAssignment] });
       get().computeCoverage();
     }
   },
@@ -342,6 +429,160 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
     set({ coveragePreview: coverageSlots });
   },
   
+  // Conflict detection: check if adding this assignment would create a conflict
+  checkConflict: (resourceId, resourceName, day, startTime, endTime, templateId, slotId) => {
+    const { resourceAssignments, selectedStoreId, selectedStoreName } = get();
+    
+    // Find all existing assignments for this resource on this day
+    const existingForDay = resourceAssignments.filter(
+      ra => ra.resourceId === resourceId && ra.day === day
+    );
+    
+    for (const existing of existingForDay) {
+      // Skip if same slot (would be a duplicate, not a conflict)
+      if (existing.templateId === templateId && existing.slotId === slotId) {
+        continue;
+      }
+      
+      const existingStart = existing.startTime || '00:00';
+      const existingEnd = existing.endTime || '23:59';
+      
+      if (intervalsOverlap(startTime, endTime, existingStart, existingEnd)) {
+        const conflict: ConflictInfo = {
+          resourceId,
+          resourceName,
+          day,
+          newInterval: { startTime, endTime, templateId, slotId, storeId: selectedStoreId || undefined, storeName: selectedStoreName || undefined },
+          existingInterval: { 
+            startTime: existingStart, 
+            endTime: existingEnd, 
+            templateId: existing.templateId, 
+            slotId: existing.slotId,
+            storeId: existing.storeId,
+            storeName: existing.storeName
+          },
+          conflictType: existing.storeId !== selectedStoreId ? 'cross_store' : 'overlap',
+          message: existing.storeId !== selectedStoreId 
+            ? `${resourceName} già assegnato a ${existing.storeName || 'altro negozio'} dalle ${existingStart} alle ${existingEnd}`
+            : `${resourceName} già assegnato dalle ${existingStart} alle ${existingEnd}`
+        };
+        return conflict;
+      }
+    }
+    
+    return null;
+  },
+  
+  // Get all conflicts for a specific resource
+  getResourceConflicts: (resourceId) => {
+    const { conflicts } = get();
+    return conflicts.filter(c => c.resourceId === resourceId);
+  },
+  
+  // Clear all conflicts
+  clearConflicts: () => {
+    set({ conflicts: [], hasConflicts: false });
+  },
+  
+  // Load existing planning from backend
+  loadExistingPlanning: (planning) => {
+    if (!planning.exists) {
+      set({ loadedPlanning: planning, planningExists: false });
+      return;
+    }
+    
+    const { selectedStoreId, selectedStoreName } = get();
+    
+    // Convert backend data to store format
+    const assignments: ResourceAssignment[] = [];
+    const templateMap = new Map<string, any>();
+    
+    // Build template map
+    planning.templates.forEach(t => templateMap.set(t.id, t));
+    
+    // Build assignments from backend data
+    planning.assignments.forEach(a => {
+      const shift = planning.shifts.find(s => s.id === a.shiftId);
+      if (!shift) return;
+      
+      // Extract time from shift
+      const startTime = shift.startTime instanceof Date 
+        ? `${shift.startTime.getHours().toString().padStart(2, '0')}:${shift.startTime.getMinutes().toString().padStart(2, '0')}`
+        : typeof shift.startTime === 'string' && shift.startTime.includes('T')
+          ? shift.startTime.split('T')[1].substring(0, 5)
+          : shift.startTime;
+          
+      const endTime = shift.endTime instanceof Date
+        ? `${shift.endTime.getHours().toString().padStart(2, '0')}:${shift.endTime.getMinutes().toString().padStart(2, '0')}`
+        : typeof shift.endTime === 'string' && shift.endTime.includes('T')
+          ? shift.endTime.split('T')[1].substring(0, 5)
+          : shift.endTime;
+      
+      assignments.push({
+        resourceId: a.userId,
+        resourceName: a.userName || 'Unknown',
+        templateId: shift.templateId || '',
+        slotId: a.timeSlotId || 'slot-0',
+        day: shift.date,
+        startTime,
+        endTime,
+        storeId: selectedStoreId || undefined,
+        storeName: selectedStoreName || undefined
+      });
+    });
+    
+    // Build template selections
+    const templateSelections: TemplateSelection[] = [];
+    const templateDaysMap = new Map<string, Set<string>>();
+    
+    planning.shifts.forEach(shift => {
+      if (!shift.templateId) return;
+      
+      if (!templateDaysMap.has(shift.templateId)) {
+        templateDaysMap.set(shift.templateId, new Set());
+      }
+      templateDaysMap.get(shift.templateId)!.add(shift.date);
+    });
+    
+    templateDaysMap.forEach((days, templateId) => {
+      const template = templateMap.get(templateId);
+      if (template) {
+        templateSelections.push({
+          templateId,
+          template: {
+            id: template.id,
+            name: template.name,
+            color: template.color || '#f97316',
+            timeSlots: template.timeSlots || [],
+            storeId: template.storeId,
+            scope: template.scope || 'store'
+          },
+          selectedDays: Array.from(days)
+        });
+      }
+    });
+    
+    set({
+      loadedPlanning: planning,
+      planningExists: true,
+      resourceAssignments: assignments,
+      templateSelections,
+      currentPhase: 2 // Go to resource phase since planning exists
+    });
+    
+    get().computeCoverage();
+  },
+  
+  // Set loading state
+  setLoadingPlanning: (loading) => {
+    set({ isLoadingPlanning: loading });
+  },
+  
+  // Set planning exists flag
+  setPlanningExists: (exists) => {
+    set({ planningExists: exists });
+  },
+  
   // Reset everything
   resetPlanning: () => {
     set({
@@ -350,7 +591,12 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       selectedStoreName: null,
       templateSelections: [],
       resourceAssignments: [],
-      coveragePreview: []
+      coveragePreview: [],
+      conflicts: [],
+      hasConflicts: false,
+      loadedPlanning: null,
+      planningExists: false,
+      isLoadingPlanning: false
     });
   }
 }));
