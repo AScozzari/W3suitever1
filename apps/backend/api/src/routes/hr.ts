@@ -1802,6 +1802,8 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
     }
 
     // Get shifts for the period
+    console.log('[PLANNING-API] Query params:', { tenantId, storeId, startDate, endDate });
+    
     const shiftsData = await db.select()
       .from(shifts)
       .where(and(
@@ -1810,6 +1812,8 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
         gte(shifts.date, startDate as string),
         lte(shifts.date, endDate as string)
       ));
+
+    console.log('[PLANNING-API] Found shifts:', shiftsData.length);
 
     if (shiftsData.length === 0) {
       return res.json({
@@ -1820,10 +1824,12 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
       });
     }
 
-    // Get shift IDs
-    const shiftIds = shiftsData.map(s => s.id);
+    // Get shift IDs as strings for varchar comparison
+    const shiftIds = shiftsData.map(s => String(s.id));
+    console.log('[PLANNING-API] Shift IDs:', shiftIds);
 
     // Get assignments for these shifts with user info
+    // Note: shiftAssignments.shiftId is varchar, so we compare as strings
     const assignmentsData = await db.select({
       id: shiftAssignments.id,
       shiftId: shiftAssignments.shiftId,
@@ -1841,6 +1847,8 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
         eq(shiftAssignments.tenantId, tenantId),
         inArray(shiftAssignments.shiftId, shiftIds)
       ));
+    
+    console.log('[PLANNING-API] Found assignments:', assignmentsData.length);
 
     // Get unique template IDs
     const templateIds = [...new Set(shiftsData.map(s => s.templateId).filter(Boolean))];

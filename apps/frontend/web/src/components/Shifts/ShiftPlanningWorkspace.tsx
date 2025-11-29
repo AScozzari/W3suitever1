@@ -523,12 +523,15 @@ export default function ShiftPlanningWorkspace() {
       
       setLoadingPlanning(true);
       try {
+        const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
+        console.log('[PLANNING] Loading existing planning:', { selectedStoreId, startDate, endDate, tenantId });
+        
         const response = await fetch(
           `/api/hr/shifts/planning?storeId=${selectedStoreId}&startDate=${startDate}&endDate=${endDate}`,
           {
             headers: {
               'Content-Type': 'application/json',
-              'x-tenant-id': localStorage.getItem('tenantId') || ''
+              'x-tenant-id': tenantId
             }
           }
         );
