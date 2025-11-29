@@ -92,6 +92,10 @@ const employeeFormSchema = z.object({
   offboardingDate: z.string().optional().nullable().or(z.literal('')),
   level: z.string().optional(),
   contractType: z.string().optional(),
+  weeklyHours: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number().min(1, "Minimo 1 ora").max(48, "Massimo 48 ore").optional()
+  ),
   inpsPosition: z.string().optional(),
   inailPosition: z.string().optional(),
   education: z.string().optional(),
@@ -147,6 +151,7 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
       offboardingDate: '',
       level: '',
       contractType: '',
+      weeklyHours: undefined,
       inpsPosition: '',
       inailPosition: '',
       education: '',
@@ -185,6 +190,7 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
         offboardingDate: employee.offboardingDate || '',
         level: employee.level || '',
         contractType: employee.contractType || '',
+        weeklyHours: employee.weeklyHours,
         inpsPosition: employee.inpsPosition || '',
         inailPosition: employee.inailPosition || '',
         education: employee.education || '',
@@ -952,6 +958,36 @@ export function EmployeeEditModal({ open, onClose, employee }: EmployeeEditModal
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="weeklyHours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ore Settimanali Contratto</FormLabel>
+                        <Select 
+                          onValueChange={(val) => field.onChange(val ? parseInt(val) : undefined)} 
+                          value={field.value?.toString() || ''}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-weeklyHours">
+                              <SelectValue placeholder="Seleziona ore" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="40">Full Time - 40h</SelectItem>
+                            <SelectItem value="36">Part Time - 36h</SelectItem>
+                            <SelectItem value="32">Part Time - 32h</SelectItem>
+                            <SelectItem value="30">Part Time - 30h</SelectItem>
+                            <SelectItem value="24">Part Time - 24h</SelectItem>
+                            <SelectItem value="20">Part Time - 20h</SelectItem>
+                            <SelectItem value="16">Part Time - 16h</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="inpsPosition"
