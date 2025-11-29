@@ -145,16 +145,19 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     enabled: hrQueryReadiness.enabled,
   });
 
-  // ✅ Query per turni pianificati (bulk-planning)
+  // ✅ CROSS-STORE: Query per turni pianificati - storeId opzionale
+  // Se storeId non è passato, carica TUTTI i turni di tutti i negozi
   const { data: plannedShifts = [] } = useQuery({
-    queryKey: ['/api/hr/shifts', { storeId, startDate, endDate }],
+    queryKey: ['/api/hr/shifts', { storeId: storeId || 'all', startDate, endDate }],
     queryFn: async () => {
       const params = new URLSearchParams();
+      // ✅ NON passare storeId se è null/undefined - carica cross-store
       if (storeId) params.append('storeId', storeId);
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
       const url = `/api/hr/shifts${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('[HRCalendar] Fetching shifts:', url, 'cross-store:', !storeId);
       const response = await apiRequest(url);
       return response;
     },

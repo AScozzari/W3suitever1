@@ -112,7 +112,9 @@ const HRManagementPage: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
-  const [selectedStore, setSelectedStore] = useState<any>(null);
+  // ✅ CROSS-STORE: selectedStore ora può essere 'all' o uno store specifico
+  // Default 'all' per amministratori - mostra dati di tutti i negozi
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pushDocumentData, setPushDocumentData] = useState<{
     documentId: string;
@@ -151,12 +153,11 @@ const HRManagementPage: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Initialize selectedStore with first available store
-  useEffect(() => {
-    if (stores.length > 0 && !selectedStore) {
-      setSelectedStore(stores[0]);
-    }
-  }, [stores, selectedStore]);
+  // ✅ CROSS-STORE: Computed selected store object (null if 'all')
+  const selectedStore = useMemo(() => {
+    if (selectedStoreId === 'all') return null;
+    return stores.find(s => s.id === selectedStoreId) || null;
+  }, [selectedStoreId, stores]);
 
   // ✅ UPDATED: Shifts data with authentication readiness  
   const { data: shifts = [], isLoading: loadingShifts } = useQuery<any[]>({
@@ -1231,27 +1232,54 @@ const HRManagementPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestione Turni</h2>
-          <p className="text-slate-600 dark:text-slate-400">Calendario, template e assegnazioni</p>
+          <p className="text-slate-600 dark:text-slate-400">Calendario, template e assegnazioni cross-store</p>
+        </div>
+        
+        {/* ✅ CROSS-STORE: Filtro negozio opzionale */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm font-medium">Negozio:</Label>
+          <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+            <SelectTrigger className="w-[250px]" data-testid="select-store-filter">
+              <SelectValue placeholder="Tutti i Negozi" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">🏪 Tutti i Negozi</SelectItem>
+              {stores.map((store: any) => (
+                <SelectItem key={store.id} value={store.id}>
+                  {store.name || store.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* 1. CALENDARIO - Visualizzazione turni */}
+      {/* 1. CALENDARIO - Visualizzazione turni CROSS-STORE */}
       <HRCalendar 
-        storeId={selectedStore?.id}
+        storeId={selectedStoreId === 'all' ? undefined : selectedStoreId}
         startDate={null}
         endDate={null}
       />
 
-      {/* 2. TEMPLATE MANAGER - Gestione template turni con modal */}
+      {/* 2. TEMPLATE MANAGER - Gestione template turni */}
       <ShiftTemplateManager 
         templates={shiftTemplates}
-        storeId={selectedStore?.id || ''}
+        storeId={selectedStoreId === 'all' ? '' : selectedStoreId}
         onApplyTemplate={async (templateId, startDate, endDate) => {
+          // ✅ CROSS-STORE: Per applicare template serve un negozio specifico
+          if (selectedStoreId === 'all') {
+            toast({
+              title: "Seleziona Negozio",
+              description: "Per applicare un template, seleziona prima un negozio specifico",
+              variant: "destructive"
+            });
+            return;
+          }
           await apiRequest('/api/hr/shifts/bulk-template-assign', {
             method: 'POST',
             body: JSON.stringify({
               templateId,
-              storeId: selectedStore?.id,
+              storeId: selectedStoreId,
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString()
             })
