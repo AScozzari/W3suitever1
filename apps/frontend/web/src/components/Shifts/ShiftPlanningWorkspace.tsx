@@ -123,6 +123,7 @@ export default function ShiftPlanningWorkspace() {
   const [assignmentMode, setAssignmentMode] = useState<'single' | 'bulk'>('bulk');
   const [singleAssignmentDay, setSingleAssignmentDay] = useState<Date | null>(null);
   const [hoveredCalendarDay, setHoveredCalendarDay] = useState<Date | null>(null);
+  const [resourceCalendarMonth, setResourceCalendarMonth] = useState(new Date());
   
   const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ['/api/stores'],
@@ -191,6 +192,30 @@ export default function ShiftPlanningWorkspace() {
     }
     return selectedDates.sort((a, b) => a.getTime() - b.getTime());
   }, [daySelectionMode, dateRange, selectedDates]);
+
+  const resourceCalendarDays = useMemo(() => {
+    const monthStart = startOfMonth(resourceCalendarMonth);
+    const monthEnd = endOfMonth(resourceCalendarMonth);
+    const startDay = getDay(monthStart);
+    const adjustedStartDay = startDay === 0 ? 6 : startDay - 1;
+    
+    const calendarStart = addDays(monthStart, -adjustedStartDay);
+    
+    const allMonthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const totalDays = adjustedStartDay + allMonthDays.length;
+    const rowsNeeded = Math.ceil(totalDays / 7);
+    const totalCells = rowsNeeded * 7;
+    const paddingEnd = totalCells - allMonthDays.length - adjustedStartDay;
+    
+    const calendarEnd = addDays(monthEnd, paddingEnd);
+    
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd }).map(day => ({
+      date: day,
+      isCurrentMonth: isSameMonth(day, resourceCalendarMonth),
+      isInPeriod: periodDays.some(pd => isSameDay(pd, day)),
+      isToday: isSameDay(day, new Date())
+    }));
+  }, [resourceCalendarMonth, periodDays]);
 
   const selectedResource = useMemo(() => {
     return resources.find(r => r.id === selectedResourceId) || null;
@@ -1427,7 +1452,26 @@ export default function ShiftPlanningWorkspace() {
                     
                     <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
                       <div className="flex flex-col min-h-0">
-                        <h4 className="text-xs font-medium text-gray-500 mb-2">Calendario disponibilità</h4>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-medium text-gray-500">Calendario disponibilità</h4>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setResourceCalendarMonth(prev => addDays(startOfMonth(prev), -1))}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
+                              <ChevronLeft className="h-3 w-3 text-gray-500" />
+                            </button>
+                            <span className="text-[10px] font-medium text-gray-600 min-w-[70px] text-center">
+                              {format(resourceCalendarMonth, 'MMMM yyyy', { locale: it })}
+                            </span>
+                            <button
+                              onClick={() => setResourceCalendarMonth(prev => addDays(endOfMonth(prev), 1))}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
+                              <ChevronRight className="h-3 w-3 text-gray-500" />
+                            </button>
+                          </div>
+                        </div>
                         <div className="bg-gray-50 rounded-lg p-3 flex-1 flex flex-col min-h-0">
                           <div className="grid grid-cols-7 gap-1 mb-2">
                             {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => (
@@ -1435,11 +1479,11 @@ export default function ShiftPlanningWorkspace() {
                             ))}
                           </div>
                           <ScrollArea className="flex-1 min-h-0">
-                            <div className="grid grid-cols-7 gap-1.5 pr-2">
-                              {periodDays.map((day, idx) => {
+                            <div className="grid grid-cols-7 gap-1 pr-2">
+                              {resourceCalendarDays.map((dayData, idx) => {
+                                const { date: day, isCurrentMonth, isInPeriod, isToday } = dayData;
                                 const dayInfo = selectedResource ? getResourceDayInfo(selectedResource.id, day) : null;
                                 const isBusy = dayInfo && dayInfo.length > 0;
-                                const isToday = isSameDay(day, new Date());
                                 const dayOfWeek = getDay(day);
                                 const dayOpening = storeOpeningHours.find(h => h.day === dayOfWeek);
                                 const isClosed = dayOpening?.isClosed ?? false;
@@ -1449,21 +1493,34 @@ export default function ShiftPlanningWorkspace() {
                                     <PopoverTrigger asChild>
                                       <button
                                         className={cn(
-                                          "h-9 w-full rounded text-xs font-medium transition-colors",
-                                          isClosed 
-                                            ? "bg-gray-100 text-gray-400"
-                                            : isBusy 
-                                              ? "bg-purple-200 text-purple-800 hover:bg-purple-300" 
-                                              : "bg-green-100 text-green-700 hover:bg-green-200",
-                                          isToday && "ring-2 ring-orange-400"
+                                          "h-8 w-full rounded text-[11px] font-medium transition-colors relative",
+                                          !isCurrentMonth && "opacity-30",
+                                          isCurrentMonth && (
+                                            isClosed 
+                                              ? "bg-gray-100 text-gray-400"
+                                              : isBusy 
+                                                ? "bg-purple-200 text-purple-800 hover:bg-purple-300" 
+                                                : "bg-green-100 text-green-700 hover:bg-green-200"
+                                          ),
+                                          !isCurrentMonth && "bg-gray-50 text-gray-300",
+                                          isToday && "ring-2 ring-orange-400",
+                                          isInPeriod && isCurrentMonth && "ring-2 ring-primary ring-offset-1"
                                         )}
                                       >
                                         {format(day, 'd')}
+                                        {isInPeriod && isCurrentMonth && (
+                                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full" />
+                                        )}
                                       </button>
                                     </PopoverTrigger>
-                                    <PopoverContent side="top" className="w-48 p-2">
+                                    <PopoverContent side="top" className="w-52 p-2">
                                       <div className="text-xs">
-                                        <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM', { locale: it })}</p>
+                                        <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM yyyy', { locale: it })}</p>
+                                        {isInPeriod && (
+                                          <Badge variant="outline" className="text-[9px] mb-2 bg-primary/10 text-primary border-primary/30">
+                                            Nel periodo selezionato
+                                          </Badge>
+                                        )}
                                         {isClosed ? (
                                           <p className="text-gray-500">Sede chiusa</p>
                                         ) : dayInfo && dayInfo.length > 0 ? (
@@ -1472,7 +1529,10 @@ export default function ShiftPlanningWorkspace() {
                                               <div key={i} className="p-1.5 bg-purple-50 rounded text-purple-700">
                                                 <p className="font-medium">{info.templateName}</p>
                                                 <p className="text-[10px]">{info.startTime} - {info.endTime}</p>
-                                                <p className="text-[10px] text-purple-500">{info.storeName}</p>
+                                                <p className="text-[10px] text-purple-500 flex items-center gap-1">
+                                                  <MapPin className="h-2.5 w-2.5" />
+                                                  {info.storeName}
+                                                </p>
                                               </div>
                                             ))}
                                           </div>
@@ -1486,18 +1546,22 @@ export default function ShiftPlanningWorkspace() {
                               })}
                             </div>
                           </ScrollArea>
-                          <div className="flex items-center gap-3 mt-2 pt-2 border-t shrink-0">
+                          <div className="flex items-center gap-2 mt-2 pt-2 border-t shrink-0 flex-wrap">
                             <div className="flex items-center gap-1">
-                              <div className="w-3 h-3 rounded bg-green-100" />
-                              <span className="text-[9px] text-gray-500">Libero</span>
+                              <div className="w-2.5 h-2.5 rounded bg-green-100 border border-green-200" />
+                              <span className="text-[8px] text-gray-500">Libero</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <div className="w-3 h-3 rounded bg-purple-200" />
-                              <span className="text-[9px] text-gray-500">Occupato</span>
+                              <div className="w-2.5 h-2.5 rounded bg-purple-200" />
+                              <span className="text-[8px] text-gray-500">Occupato</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <div className="w-3 h-3 rounded bg-gray-100" />
-                              <span className="text-[9px] text-gray-500">Chiuso</span>
+                              <div className="w-2.5 h-2.5 rounded bg-gray-100 border border-gray-200" />
+                              <span className="text-[8px] text-gray-500">Chiuso</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2.5 h-2.5 rounded ring-2 ring-primary ring-offset-1" />
+                              <span className="text-[8px] text-gray-500">Periodo</span>
                             </div>
                           </div>
                         </div>
