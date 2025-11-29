@@ -2035,6 +2035,62 @@ export default function ShiftPlanningWorkspace() {
               </div>
             </div>
 
+            {/* Timeline Visualization */}
+            {summaryFilteredCoverage.length > 0 && (
+              <div className="bg-white border rounded-lg p-3">
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Visualizzazione Timeline
+                </h4>
+                <TimelineBar 
+                  timeRange={{ start: '06:00', end: '24:00' }}
+                  lanes={(() => {
+                    const grouped: Record<string, typeof summaryFilteredCoverage> = {};
+                    summaryFilteredCoverage.forEach(slot => {
+                      const key = slot.templateId;
+                      if (!grouped[key]) grouped[key] = [];
+                      grouped[key].push(slot);
+                    });
+                    
+                    return Object.entries(grouped).map(([templateId, slots]) => ({
+                      id: templateId,
+                      label: slots[0]?.templateName || 'Template',
+                      segments: slots.map(slot => ({
+                        id: `${slot.slotId}`,
+                        startTime: slot.startTime.substring(0, 5),
+                        endTime: slot.endTime.substring(0, 5),
+                        color: slot.assignedResources.length >= slot.requiredStaff 
+                          ? '#22c55e' 
+                          : slot.assignedResources.length > 0 
+                            ? '#f59e0b' 
+                            : '#6b7280',
+                        label: `${slot.startTime.substring(0, 5)}-${slot.endTime.substring(0, 5)}`,
+                        type: slot.assignedResources.length >= slot.requiredStaff 
+                          ? 'assigned' as const
+                          : slot.assignedResources.length > 0 
+                            ? 'partial' as const 
+                            : 'gap' as const,
+                        tooltip: (
+                          <div className="text-xs">
+                            <p className="font-medium">{slot.templateName}</p>
+                            <p>{slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}</p>
+                            <p className="mt-1">Staff: {slot.assignedResources.length}/{slot.requiredStaff}</p>
+                            {slot.assignedResources.length > 0 && (
+                              <p className="text-green-300">
+                                {slot.assignedResources.map(r => r.resourceName).join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      }))
+                    }));
+                  })()}
+                  height={60}
+                  showTimeMarkers
+                />
+              </div>
+            )}
+
             {/* Coverage Table */}
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
