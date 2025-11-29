@@ -2132,14 +2132,39 @@ export default function ShiftPlanningWorkspace() {
                           {slot.assignedResources.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {slot.assignedResources.map((ra, i) => (
-                                <Badge 
-                                  key={i} 
-                                  variant="secondary" 
-                                  className="text-[10px] bg-green-100 text-green-700"
-                                >
-                                  <User className="w-2.5 h-2.5 mr-1" />
-                                  {ra.resourceName}
-                                </Badge>
+                                <Popover key={i}>
+                                  <PopoverTrigger asChild>
+                                    <Badge 
+                                      variant="secondary" 
+                                      className="text-[10px] bg-green-100 text-green-700 cursor-pointer hover:bg-green-200"
+                                    >
+                                      <User className="w-2.5 h-2.5 mr-1" />
+                                      {ra.resourceName}
+                                    </Badge>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="top" className="w-48 p-2">
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-medium">{ra.resourceName}</p>
+                                      <Separator />
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="w-full h-7 text-xs"
+                                        onClick={() => {
+                                          removeResourceAssignment(ra.resourceId, slot.templateId, slot.slotId, slot.day);
+                                          toast({
+                                            title: 'Assegnazione rimossa',
+                                            description: `${ra.resourceName} rimosso dal turno ${slot.startTime.substring(0, 5)}-${slot.endTime.substring(0, 5)}`,
+                                          });
+                                        }}
+                                        data-testid={`btn-remove-assignment-${ra.resourceId}`}
+                                      >
+                                        <Trash2 className="w-3 h-3 mr-1" />
+                                        Rimuovi Assegnazione
+                                      </Button>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               ))}
                             </div>
                           ) : (
