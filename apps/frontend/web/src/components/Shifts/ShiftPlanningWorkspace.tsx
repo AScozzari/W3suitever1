@@ -134,6 +134,11 @@ export default function ShiftPlanningWorkspace() {
   const [hoveredCalendarDay, setHoveredCalendarDay] = useState<Date | null>(null);
   const [resourceCalendarMonth, setResourceCalendarMonth] = useState(new Date());
   
+  const [showSummaryFilterModal, setShowSummaryFilterModal] = useState(false);
+  const [summaryFilterDay, setSummaryFilterDay] = useState<Date | null>(null);
+  const [summaryFilterStores, setSummaryFilterStores] = useState<string[]>([]);
+  const [summaryFilterResources, setSummaryFilterResources] = useState<string[]>([]);
+  
   const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ['/api/stores'],
   });
@@ -323,6 +328,35 @@ export default function ShiftPlanningWorkspace() {
       };
     });
   }, [templateSelections]);
+
+  const summaryFilteredCoverage = useMemo(() => {
+    if (!summaryFilterDay) return [];
+    
+    const dayStr = format(summaryFilterDay, 'yyyy-MM-dd');
+    let filtered = coveragePreview.filter(c => c.day === dayStr);
+    
+    if (summaryFilterResources.length > 0) {
+      filtered = filtered.filter(c => 
+        c.assignedResources.some(ar => summaryFilterResources.includes(ar.resourceId))
+      );
+    }
+    
+    return filtered;
+  }, [summaryFilterDay, coveragePreview, summaryFilterResources]);
+
+  const allResourcesInCoverage = useMemo(() => {
+    const resourceIds = new Set<string>();
+    coveragePreview.forEach(c => {
+      c.assignedResources.forEach(ar => resourceIds.add(ar.resourceId));
+    });
+    return resources.filter(r => resourceIds.has(r.id));
+  }, [coveragePreview, resources]);
+
+  const handleOpenSummaryModal = useCallback((day: Date) => {
+    setSummaryFilterDay(day);
+    setSummaryFilterResources([]);
+    setShowSummaryFilterModal(true);
+  }, []);
 
   const getResourceDayInfo = useCallback((resourceId: string, day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
@@ -1607,7 +1641,13 @@ export default function ShiftPlanningWorkspace() {
                                       >
                                         {format(day, 'd')}
                                         {isInPeriod && isCurrentMonth && totalSlots > 0 && (
-                                          <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                                          <div 
+                                            className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5 cursor-pointer"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleOpenSummaryModal(day);
+                                            }}
+                                          >
                                             {coveredSlots > 0 && (
                                               <div className="w-1.5 h-1.5 rounded-full bg-green-500" title={`${coveredSlots} coperti`} />
                                             )}
@@ -1935,6 +1975,189 @@ export default function ShiftPlanningWorkspace() {
               disabled={savePlanningMutation.isPending}
             >
               {savePlanningMutation.isPending ? 'Salvataggio...' : 'Conferma e Salva'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Summary Filter Modal */}
+      <Dialog open={showSummaryFilterModal} onOpenChange={setShowSummaryFilterModal}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarCheck className="w-5 h-5 text-primary" />
+              Dettaglio Copertura - {summaryFilterDay && format(summaryFilterDay, 'EEEE d MMMM yyyy', { locale: it })}
+            </DialogTitle>
+            <DialogDescription>
+              Visualizza e filtra la copertura turni per il giorno selezionato
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto space-y-4">
+            {/* Filter Section */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Filtra per Risorsa
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {allResourcesInCoverage.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nessuna risorsa assegnata nel periodo</p>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      variant={summaryFilterResources.length === 0 ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      onClick={() => setSummaryFilterResources([])}
+                    >
+                      Tutte ({allResourcesInCoverage.length})
+                    </Button>
+                    {allResourcesInCoverage.map(r => (
+                      <Button
+                        key={r.id}
+                        size="sm"
+                        variant={summaryFilterResources.includes(r.id) ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          setSummaryFilterResources(prev => 
+                            prev.includes(r.id) 
+                              ? prev.filter(id => id !== r.id)
+                              : [...prev, r.id]
+                          );
+                        }}
+                      >
+                        {r.firstName} {r.lastName}
+                      </Button>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Coverage Table */}
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Template</th>
+                    <th className="px-3 py-2 text-left">Fascia Oraria</th>
+                    <th className="px-3 py-2 text-center">Richiesti</th>
+                    <th className="px-3 py-2 text-left">Risorse Assegnate</th>
+                    <th className="px-3 py-2 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summaryFilteredCoverage.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                        Nessun turno trovato per i filtri selezionati
+                      </td>
+                    </tr>
+                  ) : (
+                    summaryFilteredCoverage.map((slot, idx) => (
+                      <tr key={idx} className="border-t hover:bg-gray-50">
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded shrink-0"
+                              style={{ backgroundColor: slot.templateColor }}
+                            />
+                            <span className="truncate">{slot.templateName}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 font-mono">
+                          {slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Badge variant="outline">{slot.requiredStaff}</Badge>
+                        </td>
+                        <td className="px-3 py-2">
+                          {slot.assignedResources.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {slot.assignedResources.map((ra, i) => (
+                                <Badge 
+                                  key={i} 
+                                  variant="secondary" 
+                                  className="text-[10px] bg-green-100 text-green-700"
+                                >
+                                  <User className="w-2.5 h-2.5 mr-1" />
+                                  {ra.resourceName}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs italic">Nessuno</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {slot.assignedResources.length >= slot.requiredStaff ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Coperto
+                            </Badge>
+                          ) : slot.assignedResources.length > 0 ? (
+                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Parziale ({slot.assignedResources.length}/{slot.requiredStaff})
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Scoperto
+                            </Badge>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary Stats */}
+            {summaryFilteredCoverage.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="bg-green-50">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="text-lg font-bold text-green-700">
+                        {summaryFilteredCoverage.filter(s => s.assignedResources.length >= s.requiredStaff).length}
+                      </p>
+                      <p className="text-xs text-green-600">Turni Coperti</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-amber-50">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <div>
+                      <p className="text-lg font-bold text-amber-700">
+                        {summaryFilteredCoverage.filter(s => s.assignedResources.length > 0 && s.assignedResources.length < s.requiredStaff).length}
+                      </p>
+                      <p className="text-xs text-amber-600">Parzialmente Coperti</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-red-50">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    <div>
+                      <p className="text-lg font-bold text-red-700">
+                        {summaryFilteredCoverage.filter(s => s.assignedResources.length === 0).length}
+                      </p>
+                      <p className="text-xs text-red-600">Scoperti</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSummaryFilterModal(false)}>
+              Chiudi
             </Button>
           </DialogFooter>
         </DialogContent>
