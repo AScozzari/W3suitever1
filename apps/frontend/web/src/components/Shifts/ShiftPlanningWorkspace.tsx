@@ -13,6 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 import { 
   Store as StoreIcon, Calendar as CalendarIcon, Users, 
   ChevronLeft, ChevronRight, Check, AlertTriangle, AlertCircle,
@@ -20,7 +21,7 @@ import {
   ArrowRight, Layers, Eye, Save, RotateCcw,
   CalendarDays, CalendarRange, Trash2, Search, MapPin, 
   Phone, Filter, Globe, Building2, Briefcase, CalendarCheck,
-  AlertOctagon, CalendarX, Star
+  AlertOctagon, CalendarX, Star, Edit, RefreshCcw, UserSwitch
 } from 'lucide-react';
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, getDay, parseISO, isSameDay, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -136,6 +137,22 @@ export default function ShiftPlanningWorkspace() {
   const [summaryFilterDay, setSummaryFilterDay] = useState<Date | null>(null);
   const [summaryFilterStores, setSummaryFilterStores] = useState<string[]>([]);
   const [summaryFilterResources, setSummaryFilterResources] = useState<string[]>([]);
+  
+  const [showSegmentActionModal, setShowSegmentActionModal] = useState(false);
+  const [selectedSegment, setSelectedSegment] = useState<{
+    resourceId: string;
+    resourceName: string;
+    templateId: string;
+    slotId: string;
+    day: string;
+    startTime: string;
+    endTime: string;
+  } | null>(null);
+  const [segmentNewResourceId, setSegmentNewResourceId] = useState<string>('');
+  const [segmentNewStartTime, setSegmentNewStartTime] = useState<string>('');
+  const [segmentNewEndTime, setSegmentNewEndTime] = useState<string>('');
+  
+  const [showSummaryCalendar, setShowSummaryCalendar] = useState(true);
   
   const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ['/api/stores'],

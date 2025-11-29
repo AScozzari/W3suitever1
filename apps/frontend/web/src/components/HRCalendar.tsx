@@ -7,19 +7,28 @@ import listPlugin from '@fullcalendar/list';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
-import { Calendar, Clock, Users, Filter, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  Calendar, Clock, Users, Filter, ChevronLeft, ChevronRight, Plus, 
+  UserSwitch, Trash2, Edit, AlertTriangle, CheckCircle2, Store as StoreIcon,
+  RefreshCw
+} from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
+import { cn } from '@/lib/utils';
 
 // Schema per eventi turno
 const shiftEventSchema = z.object({
@@ -52,6 +61,27 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   const [showDayDetailModal, setShowDayDetailModal] = useState(false);
   const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
   const [dayDetailStoreFilter, setDayDetailStoreFilter] = useState<string>('all');
+  
+  // FASE 4: Multi-select stores and resources
+  const [selectedStoreFilters, setSelectedStoreFilters] = useState<string[]>([]);
+  const [selectedResourceFilters, setSelectedResourceFilters] = useState<string[]>([]);
+  
+  // FASE 5: Segment action modal
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionTarget, setActionTarget] = useState<{
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    startTime: string;
+    endTime: string;
+    storeId?: string;
+    storeName?: string;
+    title: string;
+  } | null>(null);
+  const [actionType, setActionType] = useState<'reassign' | 'remove' | 'change_time' | null>(null);
+  const [newAssigneeId, setNewAssigneeId] = useState<string>('');
+  const [newStartTime, setNewStartTime] = useState<string>('');
+  const [newEndTime, setNewEndTime] = useState<string>('');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -390,7 +420,112 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     }
   };
 
-  // ✅ Task 13: Calcola risorse in turno per il giorno selezionato
+  // FASE 5: Mutations per azioni sui turni
+  const reassignShiftMutation = useMutation({
+    mutationFn: async ({ eventId, newEmployeeId }: { eventId: string; newEmployeeId: string }) => {
+      return apiRequest(`/api/hr/calendar/events/${eventId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          metadata: { employeeId: newEmployeeId }
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+      toast({ title: 'Turno riassegnato con successo!' });
+      setShowActionModal(false);
+      setActionTarget(null);
+    },
+    onError: () => {
+      toast({ title: 'Errore nella riassegnazione', variant: 'destructive' });
+    },
+  });
+
+  const removeShiftMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      return apiRequest(`/api/hr/calendar/events/${eventId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+      toast({ title: 'Turno rimosso con successo!' });
+      setShowActionModal(false);
+      setActionTarget(null);
+    },
+    onError: () => {
+      toast({ title: 'Errore nella rimozione', variant: 'destructive' });
+    },
+  });
+
+  const changeTimeShiftMutation = useMutation({
+    mutationFn: async ({ eventId, startTime, endTime }: { eventId: string; startTime: string; endTime: string }) => {
+      return apiRequest(`/api/hr/calendar/events/${eventId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          startDate: startTime,
+          endDate: endTime,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      toast({ title: 'Orario modificato con successo!' });
+      setShowActionModal(false);
+      setActionTarget(null);
+    },
+    onError: () => {
+      toast({ title: 'Errore nella modifica orario', variant: 'destructive' });
+    },
+  });
+
+  // FASE 5: Handler per aprire modal azioni
+  const handleOpenActionModal = useCallback((resource: any, action: 'reassign' | 'remove' | 'change_time') => {
+    setActionTarget({
+      id: resource.id,
+      employeeId: resource.employeeId,
+      employeeName: resource.employeeName,
+      startTime: resource.startTime,
+      endTime: resource.endTime,
+      storeId: resource.storeId,
+      storeName: resource.storeName,
+      title: resource.title,
+    });
+    setActionType(action);
+    setNewAssigneeId('');
+    setNewStartTime(resource.startTime);
+    setNewEndTime(resource.endTime);
+    setShowActionModal(true);
+  }, []);
+
+  // FASE 5: Handler per eseguire azione
+  const handleExecuteAction = useCallback(() => {
+    if (!actionTarget || !actionType) return;
+
+    switch (actionType) {
+      case 'reassign':
+        if (newAssigneeId) {
+          reassignShiftMutation.mutate({ eventId: actionTarget.id, newEmployeeId: newAssigneeId });
+        }
+        break;
+      case 'remove':
+        removeShiftMutation.mutate(actionTarget.id);
+        break;
+      case 'change_time':
+        if (newStartTime && newEndTime) {
+          changeTimeShiftMutation.mutate({ 
+            eventId: actionTarget.id, 
+            startTime: newStartTime, 
+            endTime: newEndTime 
+          });
+        }
+        break;
+    }
+  }, [actionTarget, actionType, newAssigneeId, newStartTime, newEndTime, reassignShiftMutation, removeShiftMutation, changeTimeShiftMutation]);
+
+  // ✅ Task 13: Calcola risorse in turno per il giorno selezionato (con multi-select FASE 4)
   const dayDetailResources = useMemo(() => {
     if (!selectedDayDate) return [];
     
@@ -407,10 +542,24 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       return eventStart >= dayStart && eventStart <= dayEnd;
     });
     
-    // Filtra per store se selezionato
-    const filteredEvents = dayDetailStoreFilter === 'all' 
-      ? dayEvents 
-      : dayEvents.filter((event: any) => event.extendedProps?.metadata?.storeId === dayDetailStoreFilter);
+    // FASE 4: Filtra per stores multi-select
+    let filteredEvents = dayEvents;
+    if (selectedStoreFilters.length > 0) {
+      filteredEvents = filteredEvents.filter((event: any) => 
+        selectedStoreFilters.includes(event.extendedProps?.metadata?.storeId)
+      );
+    } else if (dayDetailStoreFilter !== 'all') {
+      filteredEvents = filteredEvents.filter((event: any) => 
+        event.extendedProps?.metadata?.storeId === dayDetailStoreFilter
+      );
+    }
+    
+    // FASE 4: Filtra per risorse multi-select
+    if (selectedResourceFilters.length > 0) {
+      filteredEvents = filteredEvents.filter((event: any) => 
+        selectedResourceFilters.includes(event.resourceId)
+      );
+    }
     
     // Mappa a struttura risorsa con status
     return filteredEvents.map((event: any) => {
@@ -429,6 +578,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       
       return {
         id: event.id,
+        employeeId: event.resourceId,
         title: event.title,
         employeeName: employee ? `${employee.firstName} ${employee.lastName}` : 'Risorsa',
         storeName: store?.nome || 'N/A',
@@ -439,7 +589,95 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
         type: event.extendedProps?.type || 'unknown',
       };
     });
-  }, [selectedDayDate, calendarEvents, dayDetailStoreFilter, employees, stores]);
+  }, [selectedDayDate, calendarEvents, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters, employees, stores]);
+
+  // FASE 4: Calcola statistiche copertura per ogni giorno
+  const getDayCoverageInfo = useCallback((date: Date) => {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const dayEvents = calendarEvents.filter((event: any) => {
+      const eventStart = new Date(event.start);
+      return eventStart >= dayStart && eventStart <= dayEnd;
+    });
+    
+    const resourceIds = new Set(dayEvents.map((e: any) => e.resourceId));
+    const storeIds = new Set(dayEvents.map((e: any) => e.extendedProps?.metadata?.storeId).filter(Boolean));
+    
+    // Genera colori unici per ogni risorsa
+    const colors = ['#22c55e', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'];
+    const resourceColors = Array.from(resourceIds).map((_, i) => colors[i % colors.length]);
+    
+    return {
+      totalShifts: dayEvents.length,
+      resourceCount: resourceIds.size,
+      storeCount: storeIds.size,
+      resourceColors,
+    };
+  }, [calendarEvents]);
+  
+  // FASE 4: Lista risorse uniche nel giorno per filtro
+  const dayResourcesForFilter = useMemo(() => {
+    if (!selectedDayDate) return [];
+    
+    const dayStart = new Date(selectedDayDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(selectedDayDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const dayEvents = calendarEvents.filter((event: any) => {
+      const eventStart = new Date(event.start);
+      return eventStart >= dayStart && eventStart <= dayEnd;
+    });
+    
+    const uniqueResources = new Map();
+    dayEvents.forEach((event: any) => {
+      if (event.resourceId && !uniqueResources.has(event.resourceId)) {
+        const employee = (employees as any[]).find((e: any) => e.id === event.resourceId);
+        if (employee) {
+          uniqueResources.set(event.resourceId, {
+            id: event.resourceId,
+            name: `${employee.firstName} ${employee.lastName}`,
+          });
+        }
+      }
+    });
+    
+    return Array.from(uniqueResources.values());
+  }, [selectedDayDate, calendarEvents, employees]);
+
+  // FASE 4: Lista stores unici nel giorno per filtro
+  const dayStoresForFilter = useMemo(() => {
+    if (!selectedDayDate) return [];
+    
+    const dayStart = new Date(selectedDayDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(selectedDayDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    const dayEvents = calendarEvents.filter((event: any) => {
+      const eventStart = new Date(event.start);
+      return eventStart >= dayStart && eventStart <= dayEnd;
+    });
+    
+    const uniqueStores = new Map();
+    dayEvents.forEach((event: any) => {
+      const storeId = event.extendedProps?.metadata?.storeId;
+      if (storeId && !uniqueStores.has(storeId)) {
+        const store = (stores as any[]).find((s: any) => s.id === storeId);
+        if (store) {
+          uniqueStores.set(storeId, {
+            id: storeId,
+            name: store.nome || store.name,
+          });
+        }
+      }
+    });
+    
+    return Array.from(uniqueStores.values());
+  }, [selectedDayDate, calendarEvents, stores]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -578,6 +816,40 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
                 eventResize={handleEventDrop}
+                dayCellContent={(arg) => {
+                  const coverageInfo = getDayCoverageInfo(arg.date);
+                  return (
+                    <div className="relative w-full h-full">
+                      <div className="text-right p-1">
+                        {arg.dayNumberText}
+                      </div>
+                      {/* FASE 4: Pallini colorati per risorse pianificate */}
+                      {coverageInfo.resourceCount > 0 && (
+                        <div className="absolute bottom-1 left-1 flex items-center gap-0.5">
+                          {coverageInfo.resourceColors.slice(0, 4).map((color, i) => (
+                            <div 
+                              key={i}
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: color }}
+                              title={`Risorsa ${i + 1}`}
+                            />
+                          ))}
+                          {coverageInfo.resourceCount > 4 && (
+                            <span className="text-[9px] text-gray-500 ml-0.5">
+                              +{coverageInfo.resourceCount - 4}
+                            </span>
+                          )}
+                          {coverageInfo.storeCount > 0 && (
+                            <div className="flex items-center ml-1">
+                              <StoreIcon className="w-2.5 h-2.5 text-gray-400" />
+                              <span className="text-[9px] text-gray-500">{coverageInfo.storeCount}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
                 eventContent={(arg) => {
                   const event = arg.event;
                   return (
@@ -756,9 +1028,15 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Task 13: Modal Dettaglio Giorno - Risorse in Turno */}
-      <Dialog open={showDayDetailModal} onOpenChange={setShowDayDetailModal}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      {/* ✅ Task 13 + FASE 4/5: Modal Dettaglio Giorno - Risorse in Turno */}
+      <Dialog open={showDayDetailModal} onOpenChange={(open) => {
+        setShowDayDetailModal(open);
+        if (!open) {
+          setSelectedStoreFilters([]);
+          setSelectedResourceFilters([]);
+        }
+      }}>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-3">
               <Calendar className="w-5 h-5 text-orange-500" />
@@ -772,89 +1050,197 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
               </span>
             </DialogTitle>
             <DialogDescription>
-              Visualizza i dipendenti assegnati ai turni per questa giornata
+              Visualizza e gestisci i turni per questa giornata
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
-            {/* Filtro Punto Vendita */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Filtra per Punto Vendita</label>
-              <Select value={dayDetailStoreFilter} onValueChange={setDayDetailStoreFilter}>
-                <SelectTrigger data-testid="select-store-filter">
-                  <SelectValue placeholder="Tutti i punti vendita" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i punti vendita</SelectItem>
-                  {(stores as any[]).map((store: any) => (
-                    <SelectItem key={store.id} value={store.id}>
-                      {store.nome}
-                    </SelectItem>
+          <ScrollArea className="flex-1 pr-4">
+            <div className="space-y-4 mt-4">
+              {/* FASE 4: Multi-select PDV */}
+              <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  Filtra per Punto Vendita
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedStoreFilters.length === 0 ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setSelectedStoreFilters([])}
+                    data-testid="btn-all-stores"
+                  >
+                    Tutti ({dayStoresForFilter.length})
+                  </Button>
+                  {dayStoresForFilter.map((store: any) => (
+                    <Button
+                      key={store.id}
+                      size="sm"
+                      variant={selectedStoreFilters.includes(store.id) ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setSelectedStoreFilters(prev => 
+                          prev.includes(store.id) 
+                            ? prev.filter(id => id !== store.id)
+                            : [...prev, store.id]
+                        );
+                      }}
+                      data-testid={`btn-store-filter-${store.id}`}
+                    >
+                      <StoreIcon className="w-3 h-3 mr-1" />
+                      {store.name}
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Lista Risorse */}
-            {dayDetailResources.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nessuna risorsa in turno per questo giorno</p>
-                {dayDetailStoreFilter !== 'all' && (
-                  <p className="text-sm mt-2">Prova a rimuovere il filtro punto vendita</p>
-                )}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Trovate {dayDetailResources.length} risorse in turno
-                </p>
-                {dayDetailResources.map((resource: any) => (
-                  <Card key={resource.id} className="border-l-4" style={{
-                    borderLeftColor: 
-                      resource.status === 'past' ? 'hsl(var(--muted))' :
-                      resource.status === 'present' ? 'hsl(142, 76%, 36%)' :
-                      'hsl(217, 91%, 60%)'
-                  }}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-semibold">{resource.employeeName}</h4>
-                            <Badge variant={
-                              resource.status === 'past' ? 'secondary' :
-                              resource.status === 'present' ? 'default' :
-                              'outline'
-                            } data-testid={`badge-status-${resource.status}`}>
-                              {resource.status === 'past' ? 'Passato' :
-                               resource.status === 'present' ? 'In Corso' :
-                               'Futuro'}
-                            </Badge>
+
+              {/* FASE 4: Multi-select Risorse */}
+              <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Filtra per Risorsa
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedResourceFilters.length === 0 ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setSelectedResourceFilters([])}
+                    data-testid="btn-all-resources"
+                  >
+                    Tutte ({dayResourcesForFilter.length})
+                  </Button>
+                  {dayResourcesForFilter.map((resource: any) => (
+                    <Button
+                      key={resource.id}
+                      size="sm"
+                      variant={selectedResourceFilters.includes(resource.id) ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setSelectedResourceFilters(prev => 
+                          prev.includes(resource.id) 
+                            ? prev.filter(id => id !== resource.id)
+                            : [...prev, resource.id]
+                        );
+                      }}
+                      data-testid={`btn-resource-filter-${resource.id}`}
+                    >
+                      {resource.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Lista Risorse con azioni FASE 5 */}
+              {dayDetailResources.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Nessuna risorsa in turno per questo giorno</p>
+                  {(selectedStoreFilters.length > 0 || selectedResourceFilters.length > 0) && (
+                    <p className="text-sm mt-2">Prova a rimuovere i filtri</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Trovate {dayDetailResources.length} risorse in turno
+                  </p>
+                  {dayDetailResources.map((resource: any) => (
+                    <Card key={resource.id} className="border-l-4" style={{
+                      borderLeftColor: 
+                        resource.status === 'past' ? 'hsl(var(--muted))' :
+                        resource.status === 'present' ? 'hsl(142, 76%, 36%)' :
+                        'hsl(217, 91%, 60%)'
+                    }}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h4 className="font-semibold">{resource.employeeName}</h4>
+                              <Badge variant={
+                                resource.status === 'past' ? 'secondary' :
+                                resource.status === 'present' ? 'default' :
+                                'outline'
+                              } data-testid={`badge-status-${resource.status}`}>
+                                {resource.status === 'past' ? 'Passato' :
+                                 resource.status === 'present' ? 'In Corso' :
+                                 'Futuro'}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="w-4 h-4" />
+                                <span>{resource.startTime} - {resource.endTime}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <StoreIcon className="w-4 h-4" />
+                                <span>{resource.storeName}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
-                            <div className="flex items-center space-x-2">
-                              <Clock className="w-4 h-4" />
-                              <span>{resource.startTime} - {resource.endTime}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Users className="w-4 h-4" />
-                              <span>{resource.title}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-medium">Punto Vendita:</span>
-                              <span>{resource.storeName}</span>
-                            </div>
+                          
+                          {/* FASE 5: Azioni sul turno */}
+                          <div className="flex items-center gap-1">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0"
+                                  data-testid={`btn-actions-${resource.id}`}
+                                >
+                                  <Edit className="w-4 h-4 text-gray-500" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent side="left" className="w-48 p-2">
+                                <div className="space-y-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start h-8 text-xs"
+                                    onClick={() => handleOpenActionModal(resource, 'reassign')}
+                                    data-testid={`btn-reassign-${resource.id}`}
+                                  >
+                                    <UserSwitch className="w-3.5 h-3.5 mr-2 text-blue-500" />
+                                    Riassegna
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start h-8 text-xs"
+                                    onClick={() => handleOpenActionModal(resource, 'change_time')}
+                                    data-testid={`btn-change-time-${resource.id}`}
+                                  >
+                                    <Clock className="w-3.5 h-3.5 mr-2 text-orange-500" />
+                                    Cambia Orario
+                                  </Button>
+                                  <Separator className="my-1" />
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleOpenActionModal(resource, 'remove')}
+                                    data-testid={`btn-remove-${resource.id}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 mr-2" />
+                                    Rimuovi Turno
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
 
-          <div className="flex justify-end mt-4">
+          <DialogFooter className="mt-4">
             <Button 
               variant="outline" 
               onClick={() => setShowDayDetailModal(false)}
@@ -862,7 +1248,124 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
             >
               Chiudi
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* FASE 5: Modal Azioni Turno */}
+      <Dialog open={showActionModal} onOpenChange={setShowActionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {actionType === 'reassign' && <UserSwitch className="w-5 h-5 text-blue-500" />}
+              {actionType === 'remove' && <Trash2 className="w-5 h-5 text-red-500" />}
+              {actionType === 'change_time' && <Clock className="w-5 h-5 text-orange-500" />}
+              {actionType === 'reassign' && 'Riassegna Turno'}
+              {actionType === 'remove' && 'Rimuovi Turno'}
+              {actionType === 'change_time' && 'Cambia Orario'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionTarget && (
+                <span>
+                  Turno di <strong>{actionTarget.employeeName}</strong> ({actionTarget.startTime} - {actionTarget.endTime})
+                  {actionTarget.storeName && <> presso <strong>{actionTarget.storeName}</strong></>}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Riassegna */}
+            {actionType === 'reassign' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nuova Risorsa</label>
+                <Select value={newAssigneeId} onValueChange={setNewAssigneeId}>
+                  <SelectTrigger data-testid="select-new-assignee">
+                    <SelectValue placeholder="Seleziona risorsa..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(employees as any[])
+                      .filter((e: any) => e.id !== actionTarget?.employeeId)
+                      .map((emp: any) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.firstName} {emp.lastName}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Rimuovi - conferma */}
+            {actionType === 'remove' && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-red-800">Conferma rimozione</p>
+                    <p className="text-sm text-red-600 mt-1">
+                      Sei sicuro di voler rimuovere questo turno? L'azione non può essere annullata.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cambia orario */}
+            {actionType === 'change_time' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Inizio</label>
+                  <Input 
+                    type="time" 
+                    value={newStartTime}
+                    onChange={(e) => setNewStartTime(e.target.value)}
+                    data-testid="input-new-start-time"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Fine</label>
+                  <Input 
+                    type="time" 
+                    value={newEndTime}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    data-testid="input-new-end-time"
+                  />
+                </div>
+              </div>
+            )}
           </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowActionModal(false);
+                setActionTarget(null);
+              }}
+            >
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleExecuteAction}
+              disabled={
+                (actionType === 'reassign' && !newAssigneeId) ||
+                (actionType === 'change_time' && (!newStartTime || !newEndTime)) ||
+                reassignShiftMutation.isPending ||
+                removeShiftMutation.isPending ||
+                changeTimeShiftMutation.isPending
+              }
+              variant={actionType === 'remove' ? 'destructive' : 'default'}
+              data-testid="btn-confirm-action"
+            >
+              {(reassignShiftMutation.isPending || removeShiftMutation.isPending || changeTimeShiftMutation.isPending) 
+                ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Elaborazione...</>
+                : actionType === 'reassign' ? 'Riassegna'
+                : actionType === 'remove' ? 'Rimuovi'
+                : 'Salva'
+              }
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
