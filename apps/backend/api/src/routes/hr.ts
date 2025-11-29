@@ -1785,4 +1785,273 @@ router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), a
   }
 });
 
+// ==================== PLANNING WORKSPACE ====================
+
+// GET /api/hr/shifts/planning - Get existing planning with assignments for store/period
+router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, startDate, endDate } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!storeId || !startDate || !endDate) {
+      return res.status(400).json({ error: 'Store ID, start date, and end date are required' });
+    }
+
+    // Get shifts for the period
+    const shiftsData = await db.select()
+      .from(shifts)
+      .where(and(
+        eq(shifts.tenantId, tenantId),
+        eq(shifts.storeId, storeId as string),
+        gte(shifts.date, startDate as string),
+        lte(shifts.date, endDate as string)
+      ));
+
+    if (shiftsData.length === 0) {
+      return res.json({
+        exists: false,
+        shifts: [],
+        assignments: [],
+        templates: []
+      });
+    }
+
+    // Get shift IDs
+    const shiftIds = shiftsData.map(s => s.id);
+
+    // Get assignments for these shifts with user info
+    const assignmentsData = await db.select({
+      id: shiftAssignments.id,
+      shiftId: shiftAssignments.shiftId,
+      userId: shiftAssignments.userId,
+      timeSlotId: shiftAssignments.timeSlotId,
+      status: shiftAssignments.status,
+      assignedAt: shiftAssignments.assignedAt,
+      userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+      userEmail: users.email,
+      userRole: users.roleTemplate
+    })
+      .from(shiftAssignments)
+      .leftJoin(users, eq(shiftAssignments.userId, users.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        inArray(shiftAssignments.shiftId, shiftIds)
+      ));
+
+    // Get unique template IDs
+    const templateIds = [...new Set(shiftsData.map(s => s.templateId).filter(Boolean))];
+    
+    // Get template info
+    let templatesData: any[] = [];
+    if (templateIds.length > 0) {
+      templatesData = await db.select()
+        .from(shiftTemplates)
+        .where(and(
+          eq(shiftTemplates.tenantId, tenantId),
+          inArray(shiftTemplates.id, templateIds as string[])
+        ));
+    }
+
+    res.json({
+      exists: true,
+      shifts: shiftsData,
+      assignments: assignmentsData,
+      templates: templatesData
+    });
+  } catch (error) {
+    console.error('Error fetching shift planning:', error);
+    res.status(500).json({ error: 'Failed to fetch shift planning' });
+  }
+});
+
+// POST /api/hr/shifts/check-cross-store-conflicts - Check conflicts across all stores for a resource
+router.post('/shifts/check-cross-store-conflicts', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { userId, date, startTime, endTime, excludeShiftId } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!userId || !date || !startTime || !endTime) {
+      return res.status(400).json({ error: 'User ID, date, start time, and end time are required' });
+    }
+
+    // Parse times to minutes for comparison
+    const parseTime = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+    
+    const reqStart = parseTime(startTime);
+    const reqEnd = parseTime(endTime);
+
+    // Find all shifts for this user on this date across ALL stores
+    const userAssignments = await db.select({
+      assignmentId: shiftAssignments.id,
+      shiftId: shifts.id,
+      storeId: shifts.storeId,
+      storeName: stores.name,
+      date: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      templateId: shifts.templateId
+    })
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, userId),
+        eq(shifts.date, date),
+        excludeShiftId ? sql`${shifts.id} != ${excludeShiftId}` : sql`1=1`
+      ));
+
+    // Check for overlaps
+    const conflicts: any[] = [];
+    
+    for (const assignment of userAssignments) {
+      const shiftStart = assignment.startTime instanceof Date 
+        ? assignment.startTime.getHours() * 60 + assignment.startTime.getMinutes()
+        : parseTime(assignment.startTime as any);
+      const shiftEnd = assignment.endTime instanceof Date
+        ? assignment.endTime.getHours() * 60 + assignment.endTime.getMinutes()
+        : parseTime(assignment.endTime as any);
+      
+      // Check overlap: (start1 < end2) && (end1 > start2)
+      const hasOverlap = reqStart < shiftEnd && reqEnd > shiftStart;
+      
+      if (hasOverlap) {
+        conflicts.push({
+          shiftId: assignment.shiftId,
+          storeId: assignment.storeId,
+          storeName: assignment.storeName,
+          date: assignment.date,
+          startTime: assignment.startTime,
+          endTime: assignment.endTime,
+          overlapType: 'time_overlap',
+          message: `Risorsa già assegnata a ${assignment.storeName} dalle ${shiftStart / 60 | 0}:${String(shiftStart % 60).padStart(2, '0')} alle ${shiftEnd / 60 | 0}:${String(shiftEnd % 60).padStart(2, '0')}`
+        });
+      }
+    }
+
+    res.json({
+      hasConflicts: conflicts.length > 0,
+      conflicts,
+      checkedAssignments: userAssignments.length
+    });
+  } catch (error) {
+    console.error('Error checking cross-store conflicts:', error);
+    res.status(500).json({ error: 'Failed to check cross-store conflicts' });
+  }
+});
+
+// PUT /api/hr/shifts/assignments/:id - Update an existing assignment
+router.put('/shifts/assignments/:id', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    const { userId, status, notes } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Verify assignment exists and belongs to tenant
+    const [existing] = await db.select()
+      .from(shiftAssignments)
+      .where(and(
+        eq(shiftAssignments.id, id),
+        eq(shiftAssignments.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    // Update assignment
+    const updateData: any = { updatedAt: new Date() };
+    if (userId !== undefined) updateData.userId = userId;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+
+    const [updated] = await db.update(shiftAssignments)
+      .set(updateData)
+      .where(eq(shiftAssignments.id, id))
+      .returning();
+
+    // Broadcast real-time update
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_updated', {
+        assignmentId: id,
+        shiftId: updated.shiftId,
+        changes: updateData
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
+    res.json({
+      success: true,
+      assignment: updated
+    });
+  } catch (error) {
+    console.error('Error updating assignment:', error);
+    res.status(500).json({ error: 'Failed to update assignment' });
+  }
+});
+
+// DELETE /api/hr/shifts/assignments/:id - Delete an assignment
+router.delete('/shifts/assignments/:id', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Verify assignment exists and belongs to tenant
+    const [existing] = await db.select()
+      .from(shiftAssignments)
+      .where(and(
+        eq(shiftAssignments.id, id),
+        eq(shiftAssignments.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    // Delete assignment
+    await db.delete(shiftAssignments)
+      .where(eq(shiftAssignments.id, id));
+
+    // Broadcast real-time update
+    try {
+      await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_deleted', {
+        assignmentId: id,
+        shiftId: existing.shiftId
+      });
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
+    res.json({
+      success: true,
+      deletedId: id
+    });
+  } catch (error) {
+    console.error('Error deleting assignment:', error);
+    res.status(500).json({ error: 'Failed to delete assignment' });
+  }
+});
+
 export default router;
