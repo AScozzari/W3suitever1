@@ -540,30 +540,24 @@ export default function ShiftPlanningWorkspace() {
       
       setLoadingPlanning(true);
       try {
-        const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
-        console.log('[PLANNING] Loading existing planning:', { selectedStoreId, startDate, endDate, tenantId });
+        console.log('[PLANNING] Loading existing planning:', { selectedStoreId, startDate, endDate });
         
-        const response = await fetch(
+        // Use apiRequest for proper authentication headers
+        const planning = await apiRequest(
           `/api/hr/shifts/planning?storeId=${selectedStoreId}&startDate=${startDate}&endDate=${endDate}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'x-tenant-id': tenantId
-            }
-          }
+          { method: 'GET' }
         );
         
-        if (response.ok) {
-          const planning = await response.json();
-          if (planning.exists) {
-            loadExistingPlanning(planning);
-            toast({
-              title: "Pianificazione caricata",
-              description: `Trovate ${planning.assignments.length} assegnazioni esistenti`
-            });
-          } else {
-            setPlanningExists(false);
-          }
+        console.log('[PLANNING] Response:', planning);
+        
+        if (planning.exists) {
+          loadExistingPlanning(planning);
+          toast({
+            title: "Pianificazione caricata",
+            description: `Trovate ${planning.assignments?.length || 0} assegnazioni esistenti`
+          });
+        } else {
+          setPlanningExists(false);
         }
       } catch (error) {
         console.error('Error loading planning:', error);

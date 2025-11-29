@@ -3,7 +3,7 @@ import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
-import { users, shiftTemplates, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability, stores } from '../db/schema/w3suite';
+import { users, shiftTemplates, shiftTimeSlots, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability, stores } from '../db/schema/w3suite';
 import { eq, and, gte, lte, inArray, sql, count } from 'drizzle-orm';
 
 const router = Router();
@@ -1971,15 +1971,45 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
     // Get unique template IDs
     const templateIds = [...new Set(shiftsData.map(s => s.templateId).filter(Boolean))];
     
-    // Get template info
+    // Get template info with time slots
     let templatesData: any[] = [];
     if (templateIds.length > 0) {
-      templatesData = await db.select()
+      const templates = await db.select()
         .from(shiftTemplates)
         .where(and(
           eq(shiftTemplates.tenantId, tenantId),
           inArray(shiftTemplates.id, templateIds as string[])
         ));
+      
+      // Get time slots for all templates
+      const timeSlots = await db.select()
+        .from(shiftTimeSlots)
+        .where(and(
+          eq(shiftTimeSlots.tenantId, tenantId),
+          inArray(shiftTimeSlots.templateId, templateIds as string[])
+        ))
+        .orderBy(shiftTimeSlots.slotOrder);
+      
+      // Map time slots to templates
+      templatesData = templates.map(t => ({
+        ...t,
+        timeSlots: timeSlots
+          .filter(ts => ts.templateId === t.id)
+          .map(ts => ({
+            id: ts.id,
+            name: ts.name,
+            startTime: ts.startTime,
+            endTime: ts.endTime,
+            requiredStaff: ts.requiredStaff,
+            color: ts.color
+          }))
+      }));
+      
+      console.log('[PLANNING-API] Templates with time slots:', templatesData.map(t => ({ 
+        id: t.id, 
+        name: t.name, 
+        slotsCount: t.timeSlots?.length || 0 
+      })));
     }
 
     res.json({

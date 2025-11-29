@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -89,6 +90,9 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   
   // FASE 6: Resource context panel state
   const [selectedResourceForContext, setSelectedResourceForContext] = useState<string | null>(null);
+  
+  // FASE 7: Dual-view modal state (store timeline vs resource detail)
+  const [dayModalView, setDayModalView] = useState<'store' | 'resource'>('store');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1079,93 +1083,177 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Task 13 + FASE 4/5: Modal Dettaglio Giorno - Risorse in Turno */}
+      {/* ✅ Task 13 + FASE 4/5/7: Modal Dettaglio Giorno - Dual View (Store Timeline + Risorse) */}
       <Dialog open={showDayDetailModal} onOpenChange={(open) => {
         setShowDayDetailModal(open);
         if (!open) {
           setSelectedStoreFilters([]);
           setSelectedResourceFilters([]);
           setSelectedEventTypeFilter(null);
+          setDayModalView('store');
         }
       }}>
-        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-3">
-              {selectedEventTypeFilter ? (
-                <>
-                  {(() => {
-                    const config = getEventTypeConfig(selectedEventTypeFilter);
-                    const Icon = config.icon;
-                    return <Icon className="w-5 h-5" style={{ color: config.color }} />;
-                  })()}
-                  <span>
-                    {getEventTypeConfig(selectedEventTypeFilter).labelPlural} - {selectedDayDate?.toLocaleDateString('it-IT', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="w-5 h-5 text-orange-500" />
-                  <span>
-                    Risorse in Turno - {selectedDayDate?.toLocaleDateString('it-IT', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </span>
-                </>
-              )}
+              <Calendar className="w-5 h-5 text-orange-500" />
+              <span>
+                Pianificazione - {selectedDayDate?.toLocaleDateString('it-IT', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
             </DialogTitle>
             <DialogDescription>
-              {selectedEventTypeFilter 
-                ? `Visualizza e gestisci ${getEventTypeConfig(selectedEventTypeFilter).labelPlural.toLowerCase()} per questa giornata`
-                : 'Visualizza e gestisci i turni per questa giornata'
-              }
+              Visualizza la copertura del negozio o i dettagli delle risorse assegnate
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4 mt-4">
-              {/* FASE 4: Multi-select PDV */}
-              <div className="bg-gray-50 rounded-lg p-3 space-y-3">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filtra per Punto Vendita
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant={selectedStoreFilters.length === 0 ? "default" : "outline"}
-                    className="h-7 text-xs"
-                    onClick={() => setSelectedStoreFilters([])}
-                    data-testid="btn-all-stores"
-                  >
-                    Tutti ({dayStoresForFilter.length})
-                  </Button>
-                  {dayStoresForFilter.map((store: any) => (
-                    <Button
-                      key={store.id}
-                      size="sm"
-                      variant={selectedStoreFilters.includes(store.id) ? "default" : "outline"}
-                      className="h-7 text-xs"
-                      onClick={() => {
-                        setSelectedStoreFilters(prev => 
-                          prev.includes(store.id) 
-                            ? prev.filter(id => id !== store.id)
-                            : [...prev, store.id]
-                        );
-                      }}
-                      data-testid={`btn-store-filter-${store.id}`}
-                    >
-                      <StoreIcon className="w-3 h-3 mr-1" />
-                      {store.name}
-                    </Button>
-                  ))}
+          {/* FASE 7: Tabs per vista Store Timeline vs Dettaglio Risorse */}
+          <Tabs value={dayModalView} onValueChange={(v) => setDayModalView(v as 'store' | 'resource')} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="store" className="flex items-center gap-2" data-testid="tab-store-view">
+                <StoreIcon className="w-4 h-4" />
+                Copertura Store
+              </TabsTrigger>
+              <TabsTrigger value="resource" className="flex items-center gap-2" data-testid="tab-resource-view">
+                <Users className="w-4 h-4" />
+                Dettaglio Risorse
+              </TabsTrigger>
+            </TabsList>
+
+            {/* TAB 1: Vista Store Timeline (Gantt-style) */}
+            <TabsContent value="store" className="flex-1 overflow-auto mt-4">
+              <div className="space-y-4">
+                {/* Store Filter */}
+                <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Seleziona Punto Vendita
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {dayStoresForFilter.map((store: any) => (
+                      <Button
+                        key={store.id}
+                        size="sm"
+                        variant={selectedStoreFilters.includes(store.id) || selectedStoreFilters.length === 0 ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setSelectedStoreFilters([store.id])}
+                        data-testid={`btn-store-select-${store.id}`}
+                      >
+                        <StoreIcon className="w-3 h-3 mr-1" />
+                        {store.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Timeline Fasce Orarie */}
+                <div className="bg-white border rounded-lg p-4">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-orange-500" />
+                    Fasce Orarie e Copertura
+                  </h4>
+                  
+                  {dayDetailResources.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Nessun turno pianificato per questo giorno</p>
+                      <p className="text-sm mt-2">Vai a "Pianificazione Turni" per assegnare risorse</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Raggruppa per fascia oraria */}
+                      {(() => {
+                        const timeBands = new Map<string, any[]>();
+                        dayDetailResources.forEach((resource: any) => {
+                          const bandKey = `${resource.startTime}-${resource.endTime}`;
+                          if (!timeBands.has(bandKey)) {
+                            timeBands.set(bandKey, []);
+                          }
+                          timeBands.get(bandKey)!.push(resource);
+                        });
+                        
+                        return Array.from(timeBands.entries()).map(([bandKey, resources]) => (
+                          <div key={bandKey} className="border rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">{bandKey}</span>
+                              </div>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                {resources.length} risorsa/e
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {resources.map((resource: any) => (
+                                <Button
+                                  key={resource.id}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs border-blue-200 hover:bg-blue-50"
+                                  onClick={() => {
+                                    setSelectedResourceForContext(resource.employeeId);
+                                    setDayModalView('resource');
+                                    setSelectedResourceFilters([resource.employeeId]);
+                                  }}
+                                  data-testid={`btn-resource-timeline-${resource.id}`}
+                                >
+                                  <Users className="w-3 h-3 mr-1 text-blue-600" />
+                                  {resource.employeeName}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 2: Vista Dettaglio Risorse (lista esistente) */}
+            <TabsContent value="resource" className="flex-1 overflow-auto mt-4">
+              <ScrollArea className="h-full pr-4">
+                <div className="space-y-4">
+                  {/* FASE 4: Multi-select PDV */}
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      Filtra per Punto Vendita
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant={selectedStoreFilters.length === 0 ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setSelectedStoreFilters([])}
+                        data-testid="btn-all-stores"
+                      >
+                        Tutti ({dayStoresForFilter.length})
+                      </Button>
+                      {dayStoresForFilter.map((store: any) => (
+                        <Button
+                          key={store.id}
+                          size="sm"
+                          variant={selectedStoreFilters.includes(store.id) ? "default" : "outline"}
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            setSelectedStoreFilters(prev => 
+                              prev.includes(store.id) 
+                                ? prev.filter(id => id !== store.id)
+                                : [...prev, store.id]
+                            );
+                          }}
+                          data-testid={`btn-store-filter-${store.id}`}
+                        >
+                          <StoreIcon className="w-3 h-3 mr-1" />
+                          {store.name}
+                        </Button>
+                      ))}
                 </div>
               </div>
 
@@ -1327,22 +1415,12 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 px-2 text-xs font-medium border-orange-200 hover:bg-orange-50"
-                              onClick={() => handleOpenActionModal(resource, 'change_time')}
-                              data-testid={`btn-change-time-${resource.id}`}
-                            >
-                              <Clock className="w-3.5 h-3.5 mr-1 text-orange-600" />
-                              Orario
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
                               className="h-8 px-2 text-xs font-medium border-red-200 hover:bg-red-50 text-red-600"
                               onClick={() => handleOpenActionModal(resource, 'remove')}
                               data-testid={`btn-remove-${resource.id}`}
                             >
                               <Trash2 className="w-3.5 h-3.5 mr-1" />
-                              Rimuovi
+                              Elimina
                             </Button>
                           </div>
                         </div>
@@ -1351,8 +1429,10 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                   ))}
                 </div>
               )}
-            </div>
-          </ScrollArea>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
 
           <DialogFooter className="mt-4">
             <Button 
@@ -1389,24 +1469,83 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Riassegna */}
+            {/* Riassegna con badge disponibilità */}
             {actionType === 'reassign' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nuova Risorsa</label>
-                <Select value={newAssigneeId} onValueChange={setNewAssigneeId}>
-                  <SelectTrigger data-testid="select-new-assignee">
-                    <SelectValue placeholder="Seleziona risorsa..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(employees as any[])
-                      .filter((e: any) => e.id !== actionTarget?.employeeId)
-                      .map((emp: any) => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.firstName} {emp.lastName}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Seleziona Nuova Risorsa</label>
+                <p className="text-xs text-slate-500">
+                  Fascia oraria: {actionTarget?.startTime} - {actionTarget?.endTime}
+                </p>
+                
+                {/* Lista risorse con indicatori disponibilità */}
+                <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
+                  {(employees as any[])
+                    .filter((e: any) => e.id !== actionTarget?.employeeId)
+                    .map((emp: any) => {
+                      // Verifica se la risorsa ha turni sovrapposti nella stessa fascia
+                      const hasConflict = dayDetailResources.some((r: any) => 
+                        r.employeeId === emp.id && 
+                        r.id !== actionTarget?.id &&
+                        !(r.endTime <= (actionTarget?.startTime || '') || 
+                          r.startTime >= (actionTarget?.endTime || ''))
+                      );
+                      
+                      return (
+                        <button
+                          key={emp.id}
+                          type="button"
+                          className={cn(
+                            "w-full flex items-center justify-between p-3 rounded-lg border transition-colors",
+                            newAssigneeId === emp.id 
+                              ? "border-blue-500 bg-blue-50" 
+                              : hasConflict 
+                                ? "border-red-200 bg-red-50 hover:bg-red-100" 
+                                : "border-green-200 bg-green-50 hover:bg-green-100"
+                          )}
+                          onClick={() => setNewAssigneeId(emp.id)}
+                          data-testid={`btn-select-resource-${emp.id}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Users className={cn(
+                              "w-4 h-4",
+                              hasConflict ? "text-red-500" : "text-green-600"
+                            )} />
+                            <span className="font-medium text-sm">
+                              {emp.firstName} {emp.lastName}
+                            </span>
+                          </div>
+                          <Badge 
+                            variant={hasConflict ? "destructive" : "default"}
+                            className={cn(
+                              "text-xs",
+                              hasConflict 
+                                ? "bg-red-100 text-red-700 border-red-300" 
+                                : "bg-green-100 text-green-700 border-green-300"
+                            )}
+                          >
+                            {hasConflict ? (
+                              <><AlertTriangle className="w-3 h-3 mr-1" /> Occupato</>
+                            ) : (
+                              <><CheckCircle2 className="w-3 h-3 mr-1" /> Libero</>
+                            )}
+                          </Badge>
+                        </button>
+                      );
+                    })}
+                </div>
+                
+                {newAssigneeId && (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-800">
+                      Selezionato: {
+                        (employees as any[]).find((e: any) => e.id === newAssigneeId)?.firstName
+                      } {
+                        (employees as any[]).find((e: any) => e.id === newAssigneeId)?.lastName
+                      }
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
