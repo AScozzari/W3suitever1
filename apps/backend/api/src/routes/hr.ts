@@ -1911,16 +1911,22 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
     const tenantId = req.headers['x-tenant-id'] as string;
     const { storeId, startDate, endDate } = req.query;
     
+    console.log('[PLANNING-API] ========== LOADING EXISTING PLANNING ==========');
+    console.log('[PLANNING-API] Headers:', { tenantId: req.headers['x-tenant-id'] });
+    console.log('[PLANNING-API] Query params:', { storeId, startDate, endDate });
+    
     if (!tenantId) {
+      console.log('[PLANNING-API] ERROR: Missing tenant ID');
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
     if (!storeId || !startDate || !endDate) {
+      console.log('[PLANNING-API] ERROR: Missing required params');
       return res.status(400).json({ error: 'Store ID, start date, and end date are required' });
     }
 
     // Get shifts for the period
-    console.log('[PLANNING-API] Query params:', { tenantId, storeId, startDate, endDate });
+    console.log('[PLANNING-API] Executing shifts query for store:', storeId);
     
     const shiftsData = await db.select()
       .from(shifts)
@@ -1932,8 +1938,12 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
       ));
 
     console.log('[PLANNING-API] Found shifts:', shiftsData.length);
+    if (shiftsData.length > 0) {
+      console.log('[PLANNING-API] First shift:', JSON.stringify(shiftsData[0]));
+    }
 
     if (shiftsData.length === 0) {
+      console.log('[PLANNING-API] No shifts found - returning empty planning');
       return res.json({
         exists: false,
         shifts: [],

@@ -530,44 +530,69 @@ export default function ShiftPlanningWorkspace() {
     }
   }, [openingRules, setStoreOpeningHours]);
 
+  // Memoize period dates to avoid unnecessary re-renders
+  const periodStartDate = useMemo(() => {
+    const result = periodDays.length > 0 ? format(periodDays[0], 'yyyy-MM-dd') : null;
+    console.log('[PLANNING-MEMO] periodStartDate recalculated:', result, 'from', periodDays.length, 'days');
+    return result;
+  }, [periodDays]);
+  
+  const periodEndDate = useMemo(() => {
+    const result = periodDays.length > 0 ? format(periodDays[periodDays.length - 1], 'yyyy-MM-dd') : null;
+    console.log('[PLANNING-MEMO] periodEndDate recalculated:', result);
+    return result;
+  }, [periodDays]);
+  
+  // Debug: Log when selectedStoreId changes
+  useEffect(() => {
+    console.log('[PLANNING-DEBUG] selectedStoreId changed:', selectedStoreId);
+  }, [selectedStoreId]);
+
   // Load existing planning when store and period are selected
   useEffect(() => {
     const loadPlanning = async () => {
-      if (!selectedStoreId || periodDays.length === 0) return;
-      
-      const startDate = format(periodDays[0], 'yyyy-MM-dd');
-      const endDate = format(periodDays[periodDays.length - 1], 'yyyy-MM-dd');
+      if (!selectedStoreId || !periodStartDate || !periodEndDate) {
+        console.log('[PLANNING] Skipping load - missing params:', { selectedStoreId, periodStartDate, periodEndDate });
+        return;
+      }
       
       setLoadingPlanning(true);
       try {
-        console.log('[PLANNING] Loading existing planning:', { selectedStoreId, startDate, endDate });
+        console.log('[PLANNING] ========== LOADING EXISTING PLANNING ==========');
+        console.log('[PLANNING] Store ID:', selectedStoreId);
+        console.log('[PLANNING] Period:', periodStartDate, '->', periodEndDate);
         
         // Use apiRequest for proper authentication headers
         const planning = await apiRequest(
-          `/api/hr/shifts/planning?storeId=${selectedStoreId}&startDate=${startDate}&endDate=${endDate}`,
+          `/api/hr/shifts/planning?storeId=${selectedStoreId}&startDate=${periodStartDate}&endDate=${periodEndDate}`,
           { method: 'GET' }
         );
         
-        console.log('[PLANNING] Response:', planning);
+        console.log('[PLANNING] Response exists:', planning.exists);
+        console.log('[PLANNING] Shifts count:', planning.shifts?.length || 0);
+        console.log('[PLANNING] Assignments count:', planning.assignments?.length || 0);
+        console.log('[PLANNING] Templates count:', planning.templates?.length || 0);
         
-        if (planning.exists) {
+        if (planning.exists && planning.shifts?.length > 0) {
+          console.log('[PLANNING] Loading existing planning into store...');
           loadExistingPlanning(planning);
           toast({
             title: "Pianificazione caricata",
-            description: `Trovate ${planning.assignments?.length || 0} assegnazioni esistenti`
+            description: `Trovati ${planning.shifts.length} turni con ${planning.assignments?.length || 0} assegnazioni`
           });
         } else {
+          console.log('[PLANNING] No existing planning found');
           setPlanningExists(false);
         }
       } catch (error) {
-        console.error('Error loading planning:', error);
+        console.error('[PLANNING] Error loading planning:', error);
       } finally {
         setLoadingPlanning(false);
       }
     };
     
     loadPlanning();
-  }, [selectedStoreId, periodDays.length > 0 ? format(periodDays[0], 'yyyy-MM-dd') : null]);
+  }, [selectedStoreId, periodStartDate, periodEndDate, loadExistingPlanning, setLoadingPlanning, setPlanningExists, toast]);
 
   const handleStoreSelect = (storeId: string) => {
     const store = stores.find(s => s.id === storeId);
