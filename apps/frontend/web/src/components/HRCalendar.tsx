@@ -16,6 +16,8 @@ import {
   ArrowLeftRight, Trash2, Edit, AlertTriangle, CheckCircle2, Store as StoreIcon,
   RefreshCw
 } from 'lucide-react';
+import { DayCellIndicators } from '@/components/hr/CalendarEventIndicator';
+import { CALENDAR_EVENT_TYPES, mapBackendEventToType, getEventTypeConfig } from '@/lib/calendar-event-types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -63,9 +65,10 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
   const [dayDetailStoreFilter, setDayDetailStoreFilter] = useState<string>('all');
   
-  // FASE 4: Multi-select stores and resources
+  // FASE 4: Multi-select stores and resources + event type filter
   const [selectedStoreFilters, setSelectedStoreFilters] = useState<string[]>([]);
   const [selectedResourceFilters, setSelectedResourceFilters] = useState<string[]>([]);
+  const [selectedEventTypeFilter, setSelectedEventTypeFilter] = useState<string | null>(null);
   
   // FASE 5: Segment action modal
   const [showActionModal, setShowActionModal] = useState(false);
@@ -353,6 +356,17 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
   const handleDateClick = useCallback((arg: any) => {
     setSelectedDayDate(new Date(arg.date));
     setDayDetailStoreFilter('all');
+    setSelectedEventTypeFilter(null); // Reset filter
+    setShowDayDetailModal(true);
+  }, []);
+  
+  // Handler per click su icona tipo evento nella cella
+  const handleEventTypeClick = useCallback((date: Date, eventType: string) => {
+    setSelectedDayDate(date);
+    setDayDetailStoreFilter('all');
+    setSelectedStoreFilters([]);
+    setSelectedResourceFilters([]);
+    setSelectedEventTypeFilter(eventType); // Pre-filtra per tipo evento
     setShowDayDetailModal(true);
   }, []);
 
@@ -639,7 +653,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     });
   }, [selectedDayDate, shiftAssignments, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters]);
 
-  // FASE 4: Calcola statistiche copertura per ogni giorno DAI DATI BACKEND
+  // FASE 4: Calcola statistiche copertura per ogni giorno DAI DATI BACKEND + conteggio per tipo evento
   const getDayCoverageInfo = useCallback((date: Date) => {
     const dayStr = date.toISOString().split('T')[0];
     
@@ -656,18 +670,36 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     const resourceIds = new Set(dayAssignments.map((sa: any) => sa.employeeId));
     const storeIds = new Set(dayAssignments.map((sa: any) => sa.storeId).filter(Boolean));
     
-    // Genera colori unici per ogni risorsa
-    const colors = ['#22c55e', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'];
-    const resourceColors = dayAssignments.map((_, i) => colors[i % colors.length]);
+    // Conteggio per tipo evento
+    const eventCounts: Record<string, number> = {
+      shift_planning: dayAssignments.length,
+      leave: 0,
+      training: 0,
+      deadline: 0,
+      meeting: 0,
+      overtime: 0,
+    };
+    
+    // Conta eventi dal calendario backend (leave, training, ecc.)
+    const eventsArray = Array.isArray(backendEvents) ? backendEvents : [];
+    eventsArray.forEach((event: any) => {
+      const eventDate = event.startDate?.split('T')[0] || event.date?.split('T')[0];
+      if (eventDate === dayStr) {
+        const eventType = mapBackendEventToType(event.type);
+        if (eventCounts[eventType] !== undefined) {
+          eventCounts[eventType]++;
+        }
+      }
+    });
     
     return {
       totalShifts: dayAssignments.length,
       resourceCount: resourceIds.size,
       storeCount: storeIds.size,
-      resourceColors,
+      eventCounts,
       assignments: dayAssignments,
     };
-  }, [shiftAssignments]);
+  }, [shiftAssignments, backendEvents]);
   
   // FASE 4: Lista risorse uniche nel giorno per filtro DAI DATI BACKEND
   const dayResourcesForFilter = useMemo(() => {
@@ -845,33 +877,20 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                 eventResize={handleEventDrop}
                 dayCellContent={(arg) => {
                   const coverageInfo = getDayCoverageInfo(arg.date);
+                  const hasEvents = Object.values(coverageInfo.eventCounts).some(count => count > 0);
+                  
                   return (
-                    <div className="relative w-full h-full">
+                    <div className="relative w-full h-full min-h-[60px]">
                       <div className="text-right p-1">
                         {arg.dayNumberText}
                       </div>
-                      {/* FASE 4: Pallini colorati per risorse pianificate */}
-                      {coverageInfo.resourceCount > 0 && (
-                        <div className="absolute bottom-1 left-1 flex items-center gap-0.5">
-                          {coverageInfo.resourceColors.slice(0, 4).map((color, i) => (
-                            <div 
-                              key={i}
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: color }}
-                              title={`Risorsa ${i + 1}`}
-                            />
-                          ))}
-                          {coverageInfo.resourceCount > 4 && (
-                            <span className="text-[9px] text-gray-500 ml-0.5">
-                              +{coverageInfo.resourceCount - 4}
-                            </span>
-                          )}
-                          {coverageInfo.storeCount > 0 && (
-                            <div className="flex items-center ml-1">
-                              <StoreIcon className="w-2.5 h-2.5 text-gray-400" />
-                              <span className="text-[9px] text-gray-500">{coverageInfo.storeCount}</span>
-                            </div>
-                          )}
+                      {/* Icone eventi per tipo con badge contatore e tooltip */}
+                      {hasEvents && (
+                        <div className="absolute bottom-1 left-1 right-1">
+                          <DayCellIndicators 
+                            eventCounts={coverageInfo.eventCounts}
+                            onEventTypeClick={(eventType) => handleEventTypeClick(arg.date, eventType)}
+                          />
                         </div>
                       )}
                     </div>
@@ -1061,28 +1080,97 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
         if (!open) {
           setSelectedStoreFilters([]);
           setSelectedResourceFilters([]);
+          setSelectedEventTypeFilter(null);
         }
       }}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-3">
-              <Calendar className="w-5 h-5 text-orange-500" />
-              <span>
-                Risorse in Turno - {selectedDayDate?.toLocaleDateString('it-IT', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </span>
+              {selectedEventTypeFilter ? (
+                <>
+                  {(() => {
+                    const config = getEventTypeConfig(selectedEventTypeFilter);
+                    const Icon = config.icon;
+                    return <Icon className="w-5 h-5" style={{ color: config.color }} />;
+                  })()}
+                  <span>
+                    {getEventTypeConfig(selectedEventTypeFilter).labelPlural} - {selectedDayDate?.toLocaleDateString('it-IT', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Calendar className="w-5 h-5 text-orange-500" />
+                  <span>
+                    Risorse in Turno - {selectedDayDate?.toLocaleDateString('it-IT', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </span>
+                </>
+              )}
             </DialogTitle>
             <DialogDescription>
-              Visualizza e gestisci i turni per questa giornata
+              {selectedEventTypeFilter 
+                ? `Visualizza e gestisci ${getEventTypeConfig(selectedEventTypeFilter).labelPlural.toLowerCase()} per questa giornata`
+                : 'Visualizza e gestisci i turni per questa giornata'
+              }
             </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1 pr-4">
             <div className="space-y-4 mt-4">
+              {/* Filtro per tipo evento */}
+              {selectedDayDate && (
+                <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Tipo Evento
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={!selectedEventTypeFilter ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      onClick={() => setSelectedEventTypeFilter(null)}
+                      data-testid="btn-all-event-types"
+                    >
+                      Tutti
+                    </Button>
+                    {Object.entries(CALENDAR_EVENT_TYPES).map(([typeId, config]) => {
+                      const coverageInfo = getDayCoverageInfo(selectedDayDate);
+                      const count = coverageInfo.eventCounts[typeId] || 0;
+                      if (count === 0) return null;
+                      
+                      const Icon = config.icon;
+                      return (
+                        <Button
+                          key={typeId}
+                          size="sm"
+                          variant={selectedEventTypeFilter === typeId ? "default" : "outline"}
+                          className="h-7 text-xs gap-1.5"
+                          onClick={() => setSelectedEventTypeFilter(typeId)}
+                          style={selectedEventTypeFilter === typeId ? { backgroundColor: config.color } : {}}
+                          data-testid={`btn-event-type-${typeId}`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          {config.label}
+                          <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                            {count}
+                          </Badge>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* FASE 4: Multi-select PDV */}
               <div className="bg-gray-50 rounded-lg p-3 space-y-3">
                 <h4 className="text-sm font-medium flex items-center gap-2">
