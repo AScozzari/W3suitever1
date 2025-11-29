@@ -20,7 +20,7 @@ import {
   ArrowRight, Layers, Eye, Save, RotateCcw,
   CalendarDays, CalendarRange, Trash2, Search, MapPin, 
   Phone, Filter, Globe, Building2, Briefcase, CalendarCheck,
-  AlertOctagon, CalendarX
+  AlertOctagon, CalendarX, Star
 } from 'lucide-react';
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, getDay, parseISO, isSameDay, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -226,24 +226,45 @@ export default function ShiftPlanningWorkspace() {
     const freeDays = periodDays.filter(d => !assignedDays.has(format(d, 'yyyy-MM-dd')));
     const busyDays = periodDays.filter(d => assignedDays.has(format(d, 'yyyy-MM-dd')));
     
-    const currentWeekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const weeklyHoursAssigned = hoursByWeek[currentWeekKey] || 0;
-    
     const contractHours = selectedResource.weeklyHours || 40;
-    const overtimeHours = Math.max(0, weeklyHoursAssigned - contractHours);
-    const overtimeStatus: 'ok' | 'warning' | 'danger' = 
-      overtimeHours === 0 ? 'ok' : 
-      overtimeHours <= 4 ? 'warning' : 'danger';
+    
+    const allWeeksInPeriod = new Set<string>();
+    periodDays.forEach(day => {
+      const weekKey = format(startOfWeek(day, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      allWeeksInPeriod.add(weekKey);
+    });
+    
+    const weeksInPeriod = Array.from(allWeeksInPeriod)
+      .map(weekKey => {
+        const hours = hoursByWeek[weekKey] || 0;
+        return {
+          weekKey,
+          weekStart: new Date(weekKey),
+          hours: Math.round(hours * 10) / 10,
+          overtime: Math.max(0, Math.round((hours - contractHours) * 10) / 10),
+          status: hours > contractHours + 4 ? 'danger' as const :
+                  hours > contractHours ? 'warning' as const : 'ok' as const
+        };
+      })
+      .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
+    
+    const worstStatus = weeksInPeriod.reduce((worst, week) => {
+      if (week.status === 'danger') return 'danger';
+      if (week.status === 'warning' && worst !== 'danger') return 'warning';
+      return worst;
+    }, 'ok' as 'ok' | 'warning' | 'danger');
+    
+    const totalOvertime = weeksInPeriod.reduce((sum, w) => sum + w.overtime, 0);
     
     return {
       totalHours: Math.round(totalHours * 10) / 10,
       freeDays,
       busyDays,
       assignmentsCount: resourceAssignmentsForPeriod.length,
-      weeklyHoursAssigned: Math.round(weeklyHoursAssigned * 10) / 10,
+      weeksInPeriod,
       contractHours,
-      overtimeHours: Math.round(overtimeHours * 10) / 10,
-      overtimeStatus
+      overtimeStatus: worstStatus,
+      totalOvertime: Math.round(totalOvertime * 10) / 10
     };
   }, [selectedResource, resourceAssignments, coveragePreview, periodDays]);
 
@@ -289,6 +310,50 @@ export default function ShiftPlanningWorkspace() {
       };
     });
   }, [resourceAssignments, coveragePreview, selectedStoreName]);
+
+  const suggestedResources = useMemo(() => {
+    if (!selectedStoreId) return [];
+    
+    return resources
+      .filter(r => r.storeId === selectedStoreId)
+      .map(r => {
+        const assignmentsForPeriod = resourceAssignments.filter(
+          ra => ra.resourceId === r.id
+        );
+        
+        let hoursAssigned = 0;
+        assignmentsForPeriod.forEach(ra => {
+          const slot = coveragePreview.find(
+            s => s.templateId === ra.templateId && s.slotId === ra.slotId && s.day === ra.day
+          );
+          if (slot) {
+            const start = parseInt(slot.startTime.substring(0, 2)) * 60 + parseInt(slot.startTime.substring(3, 5));
+            const end = parseInt(slot.endTime.substring(0, 2)) * 60 + parseInt(slot.endTime.substring(3, 5));
+            hoursAssigned += (end - start) / 60;
+          }
+        });
+        
+        const contractHours = r.weeklyHours || 40;
+        const availableHours = Math.max(0, contractHours - hoursAssigned);
+        const status: 'available' | 'busy' | 'overtime' = 
+          hoursAssigned === 0 ? 'available' :
+          hoursAssigned >= contractHours ? 'overtime' : 'busy';
+        
+        return {
+          ...r,
+          assignmentsCount: assignmentsForPeriod.length,
+          hoursAssigned: Math.round(hoursAssigned * 10) / 10,
+          availableHours: Math.round(availableHours * 10) / 10,
+          status
+        };
+      })
+      .sort((a, b) => a.hoursAssigned - b.hoursAssigned);
+  }, [resources, selectedStoreId, resourceAssignments, coveragePreview]);
+
+  const otherResources = useMemo(() => {
+    if (!selectedStoreId) return resources;
+    return resources.filter(r => r.storeId !== selectedStoreId);
+  }, [resources, selectedStoreId]);
 
   const handleAssignResource = () => {
     if (!selectedResource || !selectedSlotForAssignment) {
@@ -1130,57 +1195,130 @@ export default function ShiftPlanningWorkspace() {
           <TabsContent value="resources" className="mt-4">
             <div className="flex gap-4">
               <div className="w-64 shrink-0">
-                <div className="bg-white rounded-xl border border-gray-200 p-3">
-                  <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-primary" />
-                    Risorse ({resources.length})
-                  </h3>
-                  
-                  <ScrollArea className="h-[400px] -mx-1 px-1">
-                    <div className="space-y-1">
-                      {resources.map(resource => {
-                        const isSelected = selectedResourceId === resource.id;
-                        const assignmentsCount = resourceAssignments.filter(
-                          ra => ra.resourceId === resource.id
-                        ).length;
-                        
-                        return (
-                          <div
-                            key={resource.id}
-                            onClick={() => setSelectedResourceId(isSelected ? null : resource.id)}
-                            className={cn(
-                              "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
-                              isSelected 
-                                ? "bg-primary/10 ring-1 ring-primary" 
-                                : "hover:bg-gray-50"
-                            )}
-                            data-testid={`resource-${resource.id}`}
-                          >
-                            <Avatar className={cn("h-8 w-8", getAvatarColor(resource.id))}>
-                              <AvatarFallback className="text-white text-xs font-semibold">
-                                {getInitials(resource.firstName, resource.lastName, resource.email)}
-                              </AvatarFallback>
-                            </Avatar>
-                            
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate">
-                                {resource.firstName} {resource.lastName}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground truncate">
-                                {resource.role || 'Staff'}
-                              </p>
+                <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-3">
+                  {suggestedResources.length > 0 && (
+                    <div>
+                      <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-500" />
+                        Suggeriti ({suggestedResources.length})
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mb-2">
+                        Risorse assegnate a {selectedStoreName}
+                      </p>
+                      <div className="space-y-1">
+                        {suggestedResources.map(resource => {
+                          const isSelected = selectedResourceId === resource.id;
+                          
+                          return (
+                            <div
+                              key={resource.id}
+                              onClick={() => setSelectedResourceId(isSelected ? null : resource.id)}
+                              className={cn(
+                                "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
+                                isSelected 
+                                  ? "bg-primary/10 ring-1 ring-primary" 
+                                  : "hover:bg-amber-50 bg-amber-50/50"
+                              )}
+                              data-testid={`suggested-resource-${resource.id}`}
+                            >
+                              <div className="relative">
+                                <Avatar className={cn("h-8 w-8", getAvatarColor(resource.id))}>
+                                  <AvatarFallback className="text-white text-xs font-semibold">
+                                    {getInitials(resource.firstName, resource.lastName, resource.email)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className={cn(
+                                  "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white",
+                                  resource.status === 'available' && "bg-green-500",
+                                  resource.status === 'busy' && "bg-amber-500",
+                                  resource.status === 'overtime' && "bg-red-500"
+                                )} />
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">
+                                  {resource.firstName} {resource.lastName}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground truncate">
+                                  {resource.availableHours}h disp. • {resource.hoursAssigned}h ass.
+                                </p>
+                              </div>
+                              
+                              {resource.assignmentsCount > 0 && (
+                                <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                                  {resource.assignmentsCount}
+                                </Badge>
+                              )}
                             </div>
-                            
-                            {assignmentsCount > 0 && (
-                              <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
-                                {assignmentsCount}
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </ScrollArea>
+                  )}
+                  
+                  {otherResources.length > 0 && (
+                    <div>
+                      <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        Altre risorse ({otherResources.length})
+                      </h3>
+                      
+                      <ScrollArea className={cn(
+                        "-mx-1 px-1",
+                        suggestedResources.length > 0 ? "h-[200px]" : "h-[400px]"
+                      )}>
+                        <div className="space-y-1">
+                          {otherResources.map(resource => {
+                            const isSelected = selectedResourceId === resource.id;
+                            const assignmentsCount = resourceAssignments.filter(
+                              ra => ra.resourceId === resource.id
+                            ).length;
+                            
+                            return (
+                              <div
+                                key={resource.id}
+                                onClick={() => setSelectedResourceId(isSelected ? null : resource.id)}
+                                className={cn(
+                                  "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
+                                  isSelected 
+                                    ? "bg-primary/10 ring-1 ring-primary" 
+                                    : "hover:bg-gray-50"
+                                )}
+                                data-testid={`resource-${resource.id}`}
+                              >
+                                <Avatar className={cn("h-8 w-8", getAvatarColor(resource.id))}>
+                                  <AvatarFallback className="text-white text-xs font-semibold">
+                                    {getInitials(resource.firstName, resource.lastName, resource.email)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium truncate">
+                                    {resource.firstName} {resource.lastName}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground truncate">
+                                    {resource.role || 'Staff'}
+                                  </p>
+                                </div>
+                                
+                                {assignmentsCount > 0 && (
+                                  <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                                    {assignmentsCount}
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                  
+                  {suggestedResources.length === 0 && otherResources.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      Nessuna risorsa disponibile
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -1225,51 +1363,65 @@ export default function ShiftPlanningWorkspace() {
                       </div>
                     </div>
                     
-                    {resourceStats && (
-                      <div className={cn(
-                        "p-3 rounded-lg border flex items-center justify-between",
-                        resourceStats.overtimeStatus === 'ok' && "bg-green-50 border-green-200",
-                        resourceStats.overtimeStatus === 'warning' && "bg-amber-50 border-amber-200",
-                        resourceStats.overtimeStatus === 'danger' && "bg-red-50 border-red-200"
-                      )}>
+                    {resourceStats && resourceStats.weeksInPeriod.length > 0 && (
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <Clock className={cn(
-                            "h-4 w-4",
-                            resourceStats.overtimeStatus === 'ok' && "text-green-600",
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <p className="text-xs font-medium">Ore settimanali periodo</p>
+                          <p className="text-[10px] text-gray-400">
+                            (Contratto: {resourceStats.contractHours}h/sett.)
+                          </p>
+                        </div>
+                        <div className="grid gap-1.5">
+                          {resourceStats.weeksInPeriod.map((week) => (
+                            <div 
+                              key={week.weekKey}
+                              className={cn(
+                                "p-2 rounded-lg border flex items-center justify-between",
+                                week.status === 'ok' && "bg-green-50 border-green-200",
+                                week.status === 'warning' && "bg-amber-50 border-amber-200",
+                                week.status === 'danger' && "bg-red-50 border-red-200"
+                              )}
+                            >
+                              <div className="text-xs">
+                                <p className="font-medium">
+                                  Sett. {format(week.weekStart, 'd MMM', { locale: it })}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <p className={cn(
+                                  "text-sm font-bold",
+                                  week.status === 'ok' && "text-green-700",
+                                  week.status === 'warning' && "text-amber-700",
+                                  week.status === 'danger' && "text-red-700"
+                                )}>
+                                  {week.hours}h / {resourceStats.contractHours}h
+                                </p>
+                                {week.overtime > 0 && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(
+                                      "text-[9px] h-4 px-1",
+                                      week.status === 'warning' && "border-amber-400 text-amber-700 bg-amber-100",
+                                      week.status === 'danger' && "border-red-400 text-red-700 bg-red-100"
+                                    )}
+                                  >
+                                    +{week.overtime}h
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {resourceStats.totalOvertime > 0 && (
+                          <p className={cn(
+                            "text-[10px] font-medium text-right",
                             resourceStats.overtimeStatus === 'warning' && "text-amber-600",
                             resourceStats.overtimeStatus === 'danger' && "text-red-600"
-                          )} />
-                          <div>
-                            <p className="text-xs font-medium">Ore settimana corrente</p>
-                            <p className="text-[10px] text-gray-500">
-                              {selectedResource.weeklyHours ? `Contratto: ${selectedResource.weeklyHours}h` : 'Contratto: 40h (default)'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={cn(
-                            "text-lg font-bold",
-                            resourceStats.overtimeStatus === 'ok' && "text-green-700",
-                            resourceStats.overtimeStatus === 'warning' && "text-amber-700",
-                            resourceStats.overtimeStatus === 'danger' && "text-red-700"
                           )}>
-                            {resourceStats.weeklyHoursAssigned}h / {resourceStats.contractHours}h
+                            Straordinario totale periodo: +{resourceStats.totalOvertime}h
                           </p>
-                          {resourceStats.overtimeHours > 0 && (
-                            <p className={cn(
-                              "text-[10px] font-medium",
-                              resourceStats.overtimeStatus === 'warning' && "text-amber-600",
-                              resourceStats.overtimeStatus === 'danger' && "text-red-600"
-                            )}>
-                              +{resourceStats.overtimeHours}h straordinario
-                            </p>
-                          )}
-                          {resourceStats.overtimeHours === 0 && resourceStats.weeklyHoursAssigned < resourceStats.contractHours && (
-                            <p className="text-[10px] text-green-600">
-                              {Math.round((resourceStats.contractHours - resourceStats.weeklyHoursAssigned) * 10) / 10}h disponibili
-                            </p>
-                          )}
-                        </div>
+                        )}
                       </div>
                     )}
                     
