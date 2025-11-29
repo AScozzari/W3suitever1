@@ -824,6 +824,18 @@ export default function ShiftPlanningWorkspace() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {isLoadingPlanning && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Caricamento...
+              </div>
+            )}
+            {planningExists && !isLoadingPlanning && (
+              <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+                <CalendarCheck className="w-3 h-3 mr-1" />
+                Pianificazione esistente
+              </Badge>
+            )}
             <Badge variant={totalCoverage >= 80 ? 'default' : totalCoverage >= 50 ? 'secondary' : 'destructive'}>
               Copertura: {totalCoverage}%
             </Badge>
