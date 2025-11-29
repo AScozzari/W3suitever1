@@ -974,65 +974,58 @@ export default function ShiftPlanningWorkspace() {
                 <p>Nessun template trovato</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filteredTemplates.map(template => {
                   const isSelected = templateSelections.find(ts => ts.templateId === template.id);
                   return (
                     <div 
                       key={template.id}
                       className={cn(
-                        "group relative p-5 rounded-2xl cursor-pointer transition-all duration-300",
-                        "bg-white/80 backdrop-blur-sm border-2",
-                        "hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1",
+                        "group relative p-3 rounded-xl cursor-pointer transition-all duration-200",
+                        "bg-white border",
+                        "hover:shadow-md hover:border-primary/40",
                         isSelected 
-                          ? "border-primary bg-primary/5 shadow-lg" 
-                          : "border-gray-100 hover:border-primary/30"
+                          ? "border-primary bg-primary/5 shadow-sm" 
+                          : "border-gray-200"
                       )}
                       onClick={() => handleTemplateToggle(template)}
                       data-testid={`template-card-${template.id}`}
                     >
-                      <div className="flex items-start gap-3 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <div 
-                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                           style={{ backgroundColor: `${template.color}20` }}
                         >
-                          <Layers className="w-6 h-6" style={{ color: template.color }} />
+                          <Layers className="w-4 h-4" style={{ color: template.color }} />
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-base truncate">{template.name}</h3>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="font-medium text-sm truncate">{template.name}</h3>
                             {isSelected && (
-                              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                             )}
                           </div>
-                          
-                          <Badge 
-                            variant={template.scope === 'global' ? 'default' : 'secondary'} 
-                            className="text-[10px]"
-                          >
-                            {template.scope === 'global' ? (
-                              <><Globe className="w-3 h-3 mr-1" /> Globale</>
-                            ) : (
-                              <><Building2 className="w-3 h-3 mr-1" /> Proprietario</>
-                            )}
-                          </Badge>
                         </div>
+                        
+                        <Badge 
+                          variant={template.scope === 'global' ? 'default' : 'outline'} 
+                          className="text-[9px] h-5 px-1.5"
+                        >
+                          {template.scope === 'global' ? 'G' : 'P'}
+                        </Badge>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {template.timeSlots.map((slot, idx) => (
                           <div 
                             key={idx}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50"
+                            className="flex items-center justify-between text-xs px-2 py-1 rounded bg-gray-50"
                           >
-                            <Clock className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
+                            <span className="font-medium text-gray-700">
                               {slot.startTime} - {slot.endTime}
                             </span>
-                            <Badge variant="outline" className="ml-auto text-[10px]">
-                              {slot.requiredStaff} staff
-                            </Badge>
+                            <span className="text-gray-500">{slot.requiredStaff}p</span>
                           </div>
                         ))}
                       </div>
