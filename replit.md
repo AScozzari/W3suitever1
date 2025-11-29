@@ -57,6 +57,17 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
 - **CRITICAL BUG PREVENTION: Double Tenant Slug in URLs**
   - **✅ ALWAYS use `useTenantNavigation` hook**
   - **❌ FORBIDDEN - Template Literals with tenantSlug**
+- **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
+  - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
+  - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
+  - **📊 Data Queries**: Omettere storeId per vista cross-store, passare solo per filtri specifici
+  - **👤 Admin Role**: Vede tutto, tutti gli utenti, tutti i negozi, senza filtri obbligatori
+  - **Moduli Cross-Store**: HR, CRM, Tasks, Workflows, Teams, WMS, Analytics, Campaigns
+  - **Pattern Query**: `useQuery({ queryKey: ['/api/endpoint'] })` senza storeId = cross-store
+  - **Filtro Opzionale**: `storeId?: string` o `storeIds: []` = tutti i negozi di default
+  - **❌ MAI**: Auto-selezionare il primo negozio come default
+  - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
+  - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
 
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. Consistent app structure with header, sidebar, and white background.
