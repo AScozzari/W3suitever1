@@ -357,7 +357,10 @@ export default function ShiftPlanningWorkspace() {
           id: `lane-template-${slot.templateId}-${slot.slotId}-${dayStr}`,
           type: 'template',
           label: slot.templateName,
-          segments: templateSegments
+          segments: templateSegments,
+          templateId: slot.templateId,
+          slotId: slot.slotId,
+          isDropTarget: true
         });
       }
       
@@ -392,7 +395,10 @@ export default function ShiftPlanningWorkspace() {
             label: `Mancano ${missing}`,
             requiredStaff: slot.requiredStaff,
             assignedStaff: slot.assignedResources.length
-          }]
+          }],
+          templateId: slot.templateId,
+          slotId: slot.slotId,
+          isDropTarget: true
         });
       }
     });
@@ -1181,55 +1187,37 @@ export default function ShiftPlanningWorkspace() {
       </div>
 
       <div className="flex-1 p-4 overflow-auto">
-        <div className="mb-3">
+        <div className="mb-3 flex items-center justify-between">
           <TimelineLegend />
+          {draggedResource && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg border border-primary/30 animate-pulse">
+              <User className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                Trascinando: {draggedResource.firstName} {draggedResource.lastName}
+              </span>
+            </div>
+          )}
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-4">
           {periodDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
-            const daySlots = coveragePreview.filter(s => s.day === dayStr);
             
             return (
-              <div key={dayStr} className="relative">
-                <TimelineBar
-                  day={dayStr}
-                  dayLabel={format(day, 'EEE d MMM', { locale: it })}
-                  lanes={buildTimelineLanes(day)}
-                  startHour={6}
-                  endHour={24}
-                />
-                
-                {daySlots.length > 0 && (
-                  <div 
-                    className="absolute right-4 top-4 z-10"
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.currentTarget.classList.add('ring-2', 'ring-primary');
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.classList.remove('ring-2', 'ring-primary');
-                    }}
-                    onDrop={(e) => {
-                      e.currentTarget.classList.remove('ring-2', 'ring-primary');
-                      if (draggedResource && daySlots[0]) {
-                        handleResourceDrop(
-                          daySlots[0].templateId,
-                          daySlots[0].slotId,
-                          dayStr,
-                          draggedResource
-                        );
-                      }
-                    }}
-                  >
-                    <div className="p-3 bg-white/90 backdrop-blur-sm rounded-lg border-2 border-dashed border-gray-300 hover:border-primary transition-colors">
-                      <p className="text-xs text-muted-foreground text-center">
-                        Trascina qui
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <TimelineBar
+                key={dayStr}
+                day={dayStr}
+                dayLabel={format(day, 'EEE d MMM', { locale: it })}
+                lanes={buildTimelineLanes(day)}
+                startHour={6}
+                endHour={24}
+                isDragging={!!draggedResource}
+                onDropResource={(templateId, slotId, dropDay) => {
+                  if (draggedResource) {
+                    handleResourceDrop(templateId, slotId, dropDay, draggedResource);
+                  }
+                }}
+              />
             );
           })}
         </div>
