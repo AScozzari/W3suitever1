@@ -43,6 +43,124 @@ router.post('/shifts/conflicts', requirePermission('hr.shifts.read'), async (req
   }
 });
 
+// ==================== SHIFT ASSIGNMENTS QUERY ====================
+
+// GET /api/hr/shift-assignments - Get shift assignments with employee/store info
+router.get('/shift-assignments', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, startDate, endDate } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    console.log('[HR-SHIFT-ASSIGNMENTS] Query:', { tenantId, storeId, startDate, endDate });
+
+    // Build conditions
+    const conditions = [eq(shifts.tenantId, tenantId)];
+    
+    if (storeId) {
+      conditions.push(eq(shifts.storeId, storeId as string));
+    }
+    if (startDate) {
+      conditions.push(gte(shifts.date, startDate as string));
+    }
+    if (endDate) {
+      conditions.push(lte(shifts.date, endDate as string));
+    }
+
+    // Get shifts matching criteria - select only existing columns
+    const shiftsData = await db.select({
+      id: shifts.id,
+      tenantId: shifts.tenantId,
+      storeId: shifts.storeId,
+      name: shifts.name,
+      code: shifts.code,
+      date: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      breakMinutes: shifts.breakMinutes,
+      requiredStaff: shifts.requiredStaff,
+      templateId: shifts.templateId,
+      status: shifts.status,
+    })
+      .from(shifts)
+      .where(and(...conditions));
+
+    console.log('[HR-SHIFT-ASSIGNMENTS] Found shifts:', shiftsData.length);
+
+    if (shiftsData.length === 0) {
+      return res.json([]);
+    }
+
+    // Get shift IDs as strings for varchar comparison
+    const shiftIds = shiftsData.map(s => String(s.id));
+
+    // Get assignments with user and store info
+    const assignmentsData = await db.select({
+      id: shiftAssignments.id,
+      shiftId: shiftAssignments.shiftId,
+      employeeId: shiftAssignments.userId,
+      timeSlotId: shiftAssignments.timeSlotId,
+      status: shiftAssignments.status,
+      assignedAt: shiftAssignments.assignedAt,
+      shiftDate: shifts.date,
+      shiftName: shifts.name,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      storeId: shifts.storeId,
+      templateId: shifts.templateId,
+      storeName: stores.nome,
+      employeeFirstName: users.firstName,
+      employeeLastName: users.lastName,
+      employeeEmail: users.email,
+    })
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(sql`${shiftAssignments.shiftId}::uuid`, shifts.id))
+      .leftJoin(users, eq(shiftAssignments.userId, users.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        inArray(shiftAssignments.shiftId, shiftIds)
+      ));
+
+    console.log('[HR-SHIFT-ASSIGNMENTS] Found assignments:', assignmentsData.length);
+
+    // Format response with nested objects for frontend
+    const formattedAssignments = assignmentsData.map(a => ({
+      id: a.id,
+      shiftId: a.shiftId,
+      employeeId: a.employeeId,
+      timeSlotId: a.timeSlotId,
+      status: a.status,
+      assignedAt: a.assignedAt,
+      shiftDate: a.shiftDate,
+      shiftName: a.shiftName,
+      startTime: a.startTime,
+      endTime: a.endTime,
+      storeId: a.storeId,
+      templateId: a.templateId,
+      employee: {
+        id: a.employeeId,
+        firstName: a.employeeFirstName || 'Unknown',
+        lastName: a.employeeLastName || 'User',
+        email: a.employeeEmail,
+      },
+      store: {
+        id: a.storeId,
+        nome: a.storeName,
+        name: a.storeName,
+      },
+    }));
+
+    res.json(formattedAssignments);
+  } catch (error) {
+    console.error('Error fetching shift assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch shift assignments' });
+  }
+});
+
 // ==================== SHIFT TEMPLATE APPLICATION ====================
 
 // POST /api/hr/shifts/apply-template - Apply shift template to generate shifts

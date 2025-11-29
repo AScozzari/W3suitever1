@@ -126,7 +126,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     enabled: hrQueryReadiness.enabled,
   });
 
-  // ✅ Task 8: Query shift assignments con filtri globali
+  // ✅ Task 8: Query shift assignments con filtri globali - carica SEMPRE senza richiedere storeId
   const { data: shiftAssignments = [], isLoading: assignmentsLoading } = useQuery({
     queryKey: ['/api/hr/shift-assignments', { storeId, startDate, endDate }],
     queryFn: async () => {
@@ -136,10 +136,12 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       if (endDate) params.append('endDate', endDate);
       
       const url = `/api/hr/shift-assignments${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('[HRCalendar] Fetching shift assignments:', url);
       const response = await apiRequest(url);
+      console.log('[HRCalendar] Received assignments:', response?.length);
       return response;
     },
-    enabled: hrQueryReadiness.enabled && Boolean(storeId),
+    enabled: hrQueryReadiness.enabled, // ✅ Carica sempre, non richiede storeId
   });
 
   // ✅ Query per turni pianificati (bulk-planning)
@@ -567,82 +569,88 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     }
   }, [actionTarget, actionType, newAssigneeId, newStartTime, newEndTime, reassignShiftMutation, removeShiftMutation, changeTimeShiftMutation]);
 
-  // ✅ FASE 4/5: Calcola risorse in turno per il giorno selezionato DALLO STORE ZUSTAND
+  // ✅ FASE 4/5: Calcola risorse in turno per il giorno selezionato DAI DATI BACKEND
   const dayDetailResources = useMemo(() => {
     if (!selectedDayDate) return [];
     
     const dayStr = selectedDayDate.toISOString().split('T')[0];
     const now = new Date();
     
-    // Filtra assignment per il giorno corrente dallo store Zustand
-    let dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
+    // USA DATI BACKEND (shiftAssignments) come fonte primaria
+    const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
+    
+    // Filtra assignment per il giorno corrente
+    let dayAssignments = assignmentsArray.filter((sa: any) => {
+      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      return shiftDate === dayStr;
+    });
     
     // FASE 4: Filtra per stores multi-select
     if (selectedStoreFilters.length > 0) {
-      dayAssignments = dayAssignments.filter((ra: ResourceAssignment) => 
-        ra.storeId && selectedStoreFilters.includes(ra.storeId)
+      dayAssignments = dayAssignments.filter((sa: any) => 
+        sa.storeId && selectedStoreFilters.includes(sa.storeId)
       );
     } else if (dayDetailStoreFilter !== 'all') {
-      dayAssignments = dayAssignments.filter((ra: ResourceAssignment) => 
-        ra.storeId === dayDetailStoreFilter
+      dayAssignments = dayAssignments.filter((sa: any) => 
+        sa.storeId === dayDetailStoreFilter
       );
     }
     
     // FASE 4: Filtra per risorse multi-select
     if (selectedResourceFilters.length > 0) {
-      dayAssignments = dayAssignments.filter((ra: ResourceAssignment) => 
-        selectedResourceFilters.includes(ra.resourceId)
+      dayAssignments = dayAssignments.filter((sa: any) => 
+        selectedResourceFilters.includes(sa.employeeId)
       );
     }
     
     // Mappa a struttura risorsa con status
-    return dayAssignments.map((ra: ResourceAssignment) => {
-      // Parse time to check status
-      const [startH, startM] = (ra.startTime || '00:00').split(':').map(Number);
-      const [endH, endM] = (ra.endTime || '23:59').split(':').map(Number);
-      
-      const startDate = new Date(ra.day);
-      startDate.setHours(startH, startM, 0, 0);
-      const endDate = new Date(ra.day);
-      endDate.setHours(endH, endM, 0, 0);
+    return dayAssignments.map((sa: any) => {
+      const shiftDate = new Date(sa.shiftDate || sa.date);
       
       let status: 'past' | 'present' | 'future' = 'future';
-      if (endDate < now) {
+      if (shiftDate < now) {
         status = 'past';
-      } else if (startDate <= now && endDate >= now) {
+      } else if (shiftDate.toDateString() === now.toDateString()) {
         status = 'present';
       }
       
-      // Trova template per il nome
-      const template = templateSelections.find(ts => ts.templateId === ra.templateId)?.template;
+      const employeeName = sa.employee 
+        ? `${sa.employee.firstName} ${sa.employee.lastName}` 
+        : 'Risorsa';
       
       return {
-        id: `${ra.resourceId}-${ra.templateId}-${ra.slotId}-${ra.day}`,
-        employeeId: ra.resourceId,
-        title: template?.name || 'Turno',
-        employeeName: ra.resourceName,
-        storeName: ra.storeName || 'N/A',
-        storeId: ra.storeId,
-        startTime: ra.startTime || '00:00',
-        endTime: ra.endTime || '23:59',
+        id: sa.id,
+        employeeId: sa.employeeId,
+        title: sa.template?.name || 'Turno',
+        employeeName,
+        storeName: sa.store?.nome || sa.store?.name || 'N/A',
+        storeId: sa.storeId,
+        startTime: sa.startTime || '09:00',
+        endTime: sa.endTime || '18:00',
         status,
         type: 'shift',
-        templateId: ra.templateId,
-        slotId: ra.slotId,
+        templateId: sa.templateId,
+        hasConflict: sa.hasConflict,
       };
     });
-  }, [selectedDayDate, resourceAssignments, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters, templateSelections]);
+  }, [selectedDayDate, shiftAssignments, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters]);
 
-  // FASE 4: Calcola statistiche copertura per ogni giorno DALLO STORE ZUSTAND
+  // FASE 4: Calcola statistiche copertura per ogni giorno DAI DATI BACKEND
   const getDayCoverageInfo = useCallback((date: Date) => {
     const dayStr = date.toISOString().split('T')[0];
     
-    // Filtra assignment per il giorno corrente dallo store Zustand
-    const dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
+    // USA DATI BACKEND (shiftAssignments) come fonte primaria
+    const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
+    
+    // Filtra assignment per il giorno corrente
+    const dayAssignments = assignmentsArray.filter((sa: any) => {
+      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      return shiftDate === dayStr;
+    });
     
     // Trova le risorse uniche assegnate in questo giorno
-    const resourceIds = new Set(dayAssignments.map((ra: ResourceAssignment) => ra.resourceId));
-    const storeIds = new Set(dayAssignments.map((ra: ResourceAssignment) => ra.storeId).filter(Boolean));
+    const resourceIds = new Set(dayAssignments.map((sa: any) => sa.employeeId));
+    const storeIds = new Set(dayAssignments.map((sa: any) => sa.storeId).filter(Boolean));
     
     // Genera colori unici per ogni risorsa
     const colors = ['#22c55e', '#3b82f6', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'];
@@ -655,47 +663,60 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       resourceColors,
       assignments: dayAssignments,
     };
-  }, [resourceAssignments]);
+  }, [shiftAssignments]);
   
-  // FASE 4: Lista risorse uniche nel giorno per filtro DALLO STORE ZUSTAND
+  // FASE 4: Lista risorse uniche nel giorno per filtro DAI DATI BACKEND
   const dayResourcesForFilter = useMemo(() => {
     if (!selectedDayDate) return [];
     
     const dayStr = selectedDayDate.toISOString().split('T')[0];
-    const dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
+    const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
+    
+    const dayAssignments = assignmentsArray.filter((sa: any) => {
+      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      return shiftDate === dayStr;
+    });
     
     const uniqueResources = new Map();
-    dayAssignments.forEach((ra: ResourceAssignment) => {
-      if (!uniqueResources.has(ra.resourceId)) {
-        uniqueResources.set(ra.resourceId, {
-          id: ra.resourceId,
-          name: ra.resourceName,
+    dayAssignments.forEach((sa: any) => {
+      if (sa.employeeId && !uniqueResources.has(sa.employeeId)) {
+        const name = sa.employee 
+          ? `${sa.employee.firstName} ${sa.employee.lastName}` 
+          : 'Risorsa';
+        uniqueResources.set(sa.employeeId, {
+          id: sa.employeeId,
+          name,
         });
       }
     });
     
     return Array.from(uniqueResources.values());
-  }, [selectedDayDate, resourceAssignments]);
+  }, [selectedDayDate, shiftAssignments]);
 
-  // FASE 4: Lista stores unici nel giorno per filtro DALLO STORE ZUSTAND
+  // FASE 4: Lista stores unici nel giorno per filtro DAI DATI BACKEND
   const dayStoresForFilter = useMemo(() => {
     if (!selectedDayDate) return [];
     
     const dayStr = selectedDayDate.toISOString().split('T')[0];
-    const dayAssignments = resourceAssignments.filter((ra: ResourceAssignment) => ra.day === dayStr);
+    const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
+    
+    const dayAssignments = assignmentsArray.filter((sa: any) => {
+      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      return shiftDate === dayStr;
+    });
     
     const uniqueStores = new Map();
-    dayAssignments.forEach((ra: ResourceAssignment) => {
-      if (ra.storeId && !uniqueStores.has(ra.storeId)) {
-        uniqueStores.set(ra.storeId, {
-          id: ra.storeId,
-          name: ra.storeName || 'N/A',
+    dayAssignments.forEach((sa: any) => {
+      if (sa.storeId && !uniqueStores.has(sa.storeId)) {
+        uniqueStores.set(sa.storeId, {
+          id: sa.storeId,
+          name: sa.store?.nome || sa.store?.name || 'N/A',
         });
       }
     });
     
     return Array.from(uniqueStores.values());
-  }, [selectedDayDate, resourceAssignments]);
+  }, [selectedDayDate, shiftAssignments]);
 
   return (
     <div className={`space-y-6 ${className}`}>
