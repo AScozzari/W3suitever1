@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -11,14 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Store as StoreIcon, Calendar as CalendarIcon, Users, 
   ChevronLeft, ChevronRight, Check, AlertTriangle, AlertCircle,
   Clock, CheckCircle2, XCircle, User, Plus, Minus, 
   ArrowRight, Layers, Eye, Save, RotateCcw, GripVertical,
-  CalendarDays, CalendarRange, Trash2
+  CalendarDays, CalendarRange, Trash2, Search, MapPin, 
+  Phone, Filter, Globe, Building2, Briefcase, CalendarCheck,
+  AlertOctagon, CalendarX
 } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, getDay, parseISO, isSameDay } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, getDay, parseISO, isSameDay, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -31,6 +35,9 @@ interface Store {
   name?: string;
   nome?: string;
   code?: string;
+  address?: string;
+  city?: string;
+  phone?: string;
 }
 
 interface StoreOpeningRule {
@@ -68,6 +75,7 @@ interface Resource {
 
 type ActiveTab = 'store' | 'days' | 'templates' | 'resources';
 type DaySelectionMode = 'range' | 'calendar';
+type TemplateFilter = 'all' | 'global' | 'store';
 
 export default function ShiftPlanningWorkspace() {
   const { toast } = useToast();
@@ -103,6 +111,12 @@ export default function ShiftPlanningWorkspace() {
   });
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [draggedResource, setDraggedResource] = useState<Resource | null>(null);
+  
+  const [storeSearch, setStoreSearch] = useState('');
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>('all');
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
   
   const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ['/api/stores'],
@@ -140,12 +154,74 @@ export default function ShiftPlanningWorkspace() {
     }));
   }, [apiTemplates]);
 
+  const filteredStores = useMemo(() => {
+    if (!storeSearch) return stores;
+    const search = storeSearch.toLowerCase();
+    return stores.filter(s => 
+      (s.nome || s.name || '').toLowerCase().includes(search) ||
+      (s.code || '').toLowerCase().includes(search) ||
+      (s.city || '').toLowerCase().includes(search)
+    );
+  }, [stores, storeSearch]);
+
+  const filteredTemplates = useMemo(() => {
+    let result = templates;
+    
+    if (templateFilter !== 'all') {
+      result = result.filter(t => t.scope === templateFilter);
+    }
+    
+    if (templateSearch) {
+      const search = templateSearch.toLowerCase();
+      result = result.filter(t => t.name.toLowerCase().includes(search));
+    }
+    
+    return result;
+  }, [templates, templateFilter, templateSearch]);
+
   const periodDays = useMemo(() => {
     if (daySelectionMode === 'range') {
       return eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
     }
     return selectedDates.sort((a, b) => a.getTime() - b.getTime());
   }, [daySelectionMode, dateRange, selectedDates]);
+
+  const selectedResource = useMemo(() => {
+    return resources.find(r => r.id === selectedResourceId) || null;
+  }, [resources, selectedResourceId]);
+
+  const resourceStats = useMemo(() => {
+    if (!selectedResource || periodDays.length === 0) return null;
+    
+    const resourceAssignmentsForPeriod = resourceAssignments.filter(
+      ra => ra.resourceId === selectedResource.id
+    );
+    
+    let totalHours = 0;
+    const assignedDays = new Set<string>();
+    
+    resourceAssignmentsForPeriod.forEach(ra => {
+      assignedDays.add(ra.day);
+      const slot = coveragePreview.find(
+        s => s.templateId === ra.templateId && s.slotId === ra.slotId && s.day === ra.day
+      );
+      if (slot) {
+        const start = parseInt(slot.startTime.substring(0, 2)) * 60 + parseInt(slot.startTime.substring(3, 5));
+        const end = parseInt(slot.endTime.substring(0, 2)) * 60 + parseInt(slot.endTime.substring(3, 5));
+        totalHours += (end - start) / 60;
+      }
+    });
+    
+    const freeDays = periodDays.filter(d => !assignedDays.has(format(d, 'yyyy-MM-dd')));
+    const busyDays = periodDays.filter(d => assignedDays.has(format(d, 'yyyy-MM-dd')));
+    
+    return {
+      totalHours: Math.round(totalHours * 10) / 10,
+      freeDays,
+      busyDays,
+      assignmentsCount: resourceAssignmentsForPeriod.length
+    };
+  }, [selectedResource, resourceAssignments, coveragePreview, periodDays]);
 
   useEffect(() => {
     if (periodDays.length > 0) {
@@ -463,6 +539,24 @@ export default function ShiftPlanningWorkspace() {
     }
   });
 
+  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+    if (firstName) return firstName.substring(0, 2).toUpperCase();
+    if (email) return email.substring(0, 2).toUpperCase();
+    return '??';
+  };
+
+  const getAvatarColor = (id: string) => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 
+      'bg-pink-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-rose-500'
+    ];
+    const hash = id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="bg-white border-b p-4">
@@ -515,175 +609,378 @@ export default function ShiftPlanningWorkspace() {
           </TabsList>
 
           <TabsContent value="store" className="mt-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {stores.map(store => (
-                <Card 
+            <div className="mb-4">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca negozio per nome, codice o città..."
+                  value={storeSearch}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-store-search"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredStores.map(store => (
+                <div 
                   key={store.id}
                   className={cn(
-                    "cursor-pointer hover:border-primary transition-colors",
-                    selectedStoreId === store.id && "border-primary bg-primary/5"
+                    "group relative p-5 rounded-2xl cursor-pointer transition-all duration-300",
+                    "bg-white/80 backdrop-blur-sm border-2",
+                    "hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1",
+                    selectedStoreId === store.id 
+                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/20" 
+                      : "border-gray-100 hover:border-primary/30"
                   )}
                   onClick={() => handleStoreSelect(store.id)}
                   data-testid={`store-card-${store.id}`}
                 >
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <StoreIcon className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-sm">{store.nome || store.name}</p>
-                      {store.code && <p className="text-xs text-muted-foreground">{store.code}</p>}
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "w-14 h-14 rounded-xl flex items-center justify-center shrink-0",
+                      "bg-gradient-to-br from-primary/10 to-primary/20",
+                      "group-hover:from-primary/20 group-hover:to-primary/30 transition-colors"
+                    )}>
+                      <StoreIcon className="w-7 h-7 text-primary" />
                     </div>
-                    {selectedStoreId === store.id && (
-                      <CheckCircle2 className="w-4 h-4 text-primary ml-auto" />
-                    )}
-                  </CardContent>
-                </Card>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-base truncate">
+                          {store.nome || store.name}
+                        </h3>
+                        {selectedStoreId === store.id && (
+                          <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                        )}
+                      </div>
+                      
+                      {store.code && (
+                        <Badge variant="outline" className="text-xs mb-2">
+                          {store.code}
+                        </Badge>
+                      )}
+                      
+                      <div className="space-y-1">
+                        {store.city && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span className="truncate">{store.city}</span>
+                          </div>
+                        )}
+                        {store.phone && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Phone className="w-3 h-3" />
+                            <span>{store.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={cn(
+                    "absolute inset-0 rounded-2xl opacity-0 transition-opacity pointer-events-none",
+                    "bg-gradient-to-br from-primary/5 to-transparent",
+                    selectedStoreId === store.id && "opacity-100"
+                  )} />
+                </div>
               ))}
             </div>
+            
+            {filteredStores.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <StoreIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                <p>Nessun negozio trovato</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="days" className="mt-4">
-            <div className="flex items-center gap-4 mb-4">
-              <Button
-                variant={daySelectionMode === 'range' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDaySelectionMode('range')}
-                data-testid="btn-range-mode"
-              >
-                <CalendarRange className="w-4 h-4 mr-1" />
-                Range Dal/Al
-              </Button>
-              <Button
-                variant={daySelectionMode === 'calendar' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDaySelectionMode('calendar')}
-                data-testid="btn-calendar-mode"
-              >
-                <CalendarDays className="w-4 h-4 mr-1" />
-                Multi-Selezione
-              </Button>
-            </div>
+            <div className="flex gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-4">
+                  <Button
+                    variant={daySelectionMode === 'range' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDaySelectionMode('range')}
+                    data-testid="btn-range-mode"
+                  >
+                    <CalendarRange className="w-4 h-4 mr-1" />
+                    Range Dal/Al
+                  </Button>
+                  <Button
+                    variant={daySelectionMode === 'calendar' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDaySelectionMode('calendar')}
+                    data-testid="btn-calendar-mode"
+                  >
+                    <CalendarDays className="w-4 h-4 mr-1" />
+                    Multi-Selezione
+                  </Button>
+                </div>
 
-            {daySelectionMode === 'range' ? (
-              <div className="flex items-center gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Dal</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-40" data-testid="btn-date-from">
-                        {format(dateRange.from, 'd MMM yyyy', { locale: it })}
+                {daySelectionMode === 'range' && (
+                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block text-muted-foreground">Dal</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-44 justify-start" data-testid="btn-date-from">
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            {format(dateRange.from, 'd MMM yyyy', { locale: it })}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.from}
+                            onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                            locale={it}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <ArrowRight className="w-5 h-5 text-muted-foreground mt-6" />
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block text-muted-foreground">Al</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-44 justify-start" data-testid="btn-date-to">
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            {format(dateRange.to, 'd MMM yyyy', { locale: it })}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.to}
+                            onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
+                            locale={it}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="ml-4 p-3 bg-white rounded-lg border">
+                      <p className="text-2xl font-bold text-primary">{periodDays.length}</p>
+                      <p className="text-xs text-muted-foreground">giorni</p>
+                    </div>
+                  </div>
+                )}
+
+                {daySelectionMode === 'calendar' && (
+                  <div className="p-4 bg-gray-50 rounded-xl border">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Clicca sui giorni per selezionarli/deselezionarli
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {selectedDates.slice(0, 14).map(date => (
+                        <Badge key={date.toISOString()} variant="secondary" className="text-xs">
+                          {format(date, 'd MMM', { locale: it })}
+                        </Badge>
+                      ))}
+                      {selectedDates.length > 14 && (
+                        <Badge variant="outline">+{selectedDates.length - 14}</Badge>
+                      )}
+                    </div>
+                    
+                    {selectedDates.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedDates([])}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Cancella selezione
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                        locale={it}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Al</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-40" data-testid="btn-date-to">
-                        {format(dateRange.to, 'd MMM yyyy', { locale: it })}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                        locale={it}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-muted-foreground">
-                    {periodDays.length} giorni selezionati
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-6">
-                <Calendar
-                  mode="multiple"
-                  selected={selectedDates}
-                  onSelect={(dates) => setSelectedDates(dates || [])}
-                  locale={it}
-                  className="rounded-md border"
-                />
-                <div>
-                  <p className="text-sm font-medium mb-2">Giorni selezionati: {selectedDates.length}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedDates.slice(0, 10).map(date => (
-                      <Badge key={date.toISOString()} variant="secondary" className="text-xs">
-                        {format(date, 'd MMM', { locale: it })}
-                      </Badge>
-                    ))}
-                    {selectedDates.length > 10 && (
-                      <Badge variant="outline">+{selectedDates.length - 10}</Badge>
                     )}
+                  </div>
+                )}
+                
+                {periodDays.length > 0 && (
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => setActiveTab('templates')}
+                    data-testid="btn-next-templates"
+                  >
+                    Avanti: Seleziona Template
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+              
+              <div className="w-[340px] shrink-0">
+                <div className="bg-white rounded-2xl border-2 border-gray-100 p-4 shadow-sm">
+                  <Calendar
+                    mode="multiple"
+                    selected={selectedDates}
+                    onSelect={(dates: Date[] | undefined) => {
+                      if (daySelectionMode === 'calendar') {
+                        setSelectedDates(dates || []);
+                      }
+                    }}
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
+                    locale={it}
+                    className="w-full"
+                    classNames={{
+                      months: "flex flex-col",
+                      month: "space-y-4",
+                      caption: "flex justify-center pt-1 relative items-center",
+                      caption_label: "text-base font-semibold",
+                      nav: "space-x-1 flex items-center",
+                      nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-lg hover:bg-gray-100",
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex",
+                      head_cell: "text-muted-foreground rounded-md w-10 font-medium text-[0.8rem]",
+                      row: "flex w-full mt-2",
+                      cell: cn(
+                        "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                        "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
+                      ),
+                      day: cn(
+                        "h-10 w-10 p-0 font-normal rounded-lg",
+                        "hover:bg-primary/10 hover:text-primary",
+                        "focus:bg-primary focus:text-primary-foreground"
+                      ),
+                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                      day_today: "bg-accent text-accent-foreground font-bold",
+                      day_outside: "text-muted-foreground opacity-50",
+                      day_disabled: "text-muted-foreground opacity-50",
+                      day_hidden: "invisible",
+                    }}
+                    modifiers={{
+                      inRange: daySelectionMode === 'range' 
+                        ? periodDays 
+                        : []
+                    }}
+                    modifiersClassNames={{
+                      inRange: "bg-primary/20 text-primary"
+                    }}
+                  />
+                  
+                  <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Giorni selezionati</span>
+                    <span className="text-xl font-bold text-primary">{periodDays.length}</span>
                   </div>
                 </div>
               </div>
-            )}
-            
-            {periodDays.length > 0 && (
-              <Button 
-                className="mt-4" 
-                onClick={() => setActiveTab('templates')}
-                data-testid="btn-next-templates"
-              >
-                Avanti: Seleziona Template
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            )}
+            </div>
           </TabsContent>
 
           <TabsContent value="templates" className="mt-4">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca template..."
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-template-search"
+                />
+              </div>
+              
+              <Select value={templateFilter} onValueChange={(v) => setTemplateFilter(v as TemplateFilter)}>
+                <SelectTrigger className="w-40" data-testid="select-template-filter">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="global">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4" />
+                      Globali
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="store">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Proprietari
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             {templatesLoading ? (
               <div className="text-center py-8">Caricamento template...</div>
-            ) : templates.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nessun template disponibile per questo negozio
+            ) : filteredTemplates.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Layers className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                <p>Nessun template trovato</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {templates.map(template => {
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTemplates.map(template => {
                   const isSelected = templateSelections.find(ts => ts.templateId === template.id);
                   return (
-                    <Card 
+                    <div 
                       key={template.id}
                       className={cn(
-                        "cursor-pointer hover:border-primary transition-colors",
-                        isSelected && "border-primary bg-primary/5"
+                        "group relative p-5 rounded-2xl cursor-pointer transition-all duration-300",
+                        "bg-white/80 backdrop-blur-sm border-2",
+                        "hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1",
+                        isSelected 
+                          ? "border-primary bg-primary/5 shadow-lg" 
+                          : "border-gray-100 hover:border-primary/30"
                       )}
                       onClick={() => handleTemplateToggle(template)}
                       data-testid={`template-card-${template.id}`}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${template.color}20` }}
+                        >
+                          <Layers className="w-6 h-6" style={{ color: template.color }} />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-base truncate">{template.name}</h3>
+                            {isSelected && (
+                              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                            )}
+                          </div>
+                          
+                          <Badge 
+                            variant={template.scope === 'global' ? 'default' : 'secondary'} 
+                            className="text-[10px]"
+                          >
+                            {template.scope === 'global' ? (
+                              <><Globe className="w-3 h-3 mr-1" /> Globale</>
+                            ) : (
+                              <><Building2 className="w-3 h-3 mr-1" /> Proprietario</>
+                            )}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {template.timeSlots.map((slot, idx) => (
                           <div 
-                            className="w-4 h-4 rounded"
-                            style={{ backgroundColor: template.color }}
-                          />
-                          <p className="font-medium text-sm flex-1">{template.name}</p>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
-                        </div>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          {template.timeSlots.map((slot, idx) => (
-                            <p key={idx}>{slot.startTime} - {slot.endTime}</p>
-                          ))}
-                        </div>
-                        <Badge variant="outline" className="mt-2 text-[10px]">
-                          {template.scope === 'global' ? 'Globale' : 'Locale'}
-                        </Badge>
-                      </CardContent>
-                    </Card>
+                            key={idx}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50"
+                          >
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {slot.startTime} - {slot.endTime}
+                            </span>
+                            <Badge variant="outline" className="ml-auto text-[10px]">
+                              {slot.requiredStaff} staff
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -702,120 +999,181 @@ export default function ShiftPlanningWorkspace() {
           </TabsContent>
 
           <TabsContent value="resources" className="mt-4">
-            <div className="flex gap-4">
-              <div className="w-64 shrink-0">
-                <h3 className="font-medium mb-3">Risorse Disponibili</h3>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Trascina una risorsa sulla fascia oraria nel timeline sotto
-                </p>
-                <ScrollArea className="h-[300px] border rounded-lg p-2">
-                  {resources.map(resource => (
-                    <div
-                      key={resource.id}
-                      draggable
-                      onDragStart={() => setDraggedResource(resource)}
-                      onDragEnd={() => setDraggedResource(null)}
-                      className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing mb-1"
-                      data-testid={`resource-${resource.id}`}
-                    >
-                      <GripVertical className="w-4 h-4 text-gray-400" />
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {resource.firstName} {resource.lastName}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {resource.email}
-                        </p>
-                      </div>
+            <div className="flex gap-6">
+              <div className="w-72 shrink-0">
+                <div className="bg-white rounded-2xl border-2 border-gray-100 p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    Risorse Disponibili
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Clicca per vedere i dettagli, trascina per assegnare
+                  </p>
+                  
+                  <ScrollArea className="h-[320px] -mx-2 px-2">
+                    <div className="space-y-2">
+                      {resources.map(resource => {
+                        const isSelected = selectedResourceId === resource.id;
+                        const assignmentsCount = resourceAssignments.filter(
+                          ra => ra.resourceId === resource.id
+                        ).length;
+                        
+                        return (
+                          <div
+                            key={resource.id}
+                            draggable
+                            onDragStart={() => setDraggedResource(resource)}
+                            onDragEnd={() => setDraggedResource(null)}
+                            onClick={() => setSelectedResourceId(isSelected ? null : resource.id)}
+                            className={cn(
+                              "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
+                              "border-2",
+                              isSelected 
+                                ? "bg-primary/5 border-primary shadow-sm" 
+                                : "bg-gray-50 border-transparent hover:bg-gray-100 hover:border-gray-200",
+                              "active:cursor-grabbing"
+                            )}
+                            data-testid={`resource-${resource.id}`}
+                          >
+                            <GripVertical className="w-4 h-4 text-gray-300 cursor-grab" />
+                            
+                            <Avatar className={cn("h-10 w-10", getAvatarColor(resource.id))}>
+                              <AvatarFallback className="text-white text-sm font-semibold">
+                                {getInitials(resource.firstName, resource.lastName, resource.email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {resource.firstName} {resource.lastName}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {resource.role || resource.email}
+                              </p>
+                            </div>
+                            
+                            {assignmentsCount > 0 && (
+                              <Badge variant="secondary" className="shrink-0">
+                                {assignmentsCount}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </ScrollArea>
+                  </ScrollArea>
+                </div>
               </div>
               
               <div className="flex-1">
-                <h3 className="font-medium mb-3">Fasce da Coprire</h3>
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-2">
-                    {periodDays.map(day => {
-                      const dayStr = format(day, 'yyyy-MM-dd');
-                      const daySlots = coveragePreview.filter(s => s.day === dayStr);
+                {selectedResource ? (
+                  <div className="bg-white rounded-2xl border-2 border-gray-100 p-5">
+                    <div className="flex items-start gap-4 mb-6">
+                      <Avatar className={cn("h-16 w-16", getAvatarColor(selectedResource.id))}>
+                        <AvatarFallback className="text-white text-xl font-semibold">
+                          {getInitials(selectedResource.firstName, selectedResource.lastName, selectedResource.email)}
+                        </AvatarFallback>
+                      </Avatar>
                       
-                      if (daySlots.length === 0) return null;
+                      <div className="flex-1">
+                        <h2 className="text-xl font-semibold">
+                          {selectedResource.firstName} {selectedResource.lastName}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">{selectedResource.email}</p>
+                        {selectedResource.role && (
+                          <Badge variant="secondary" className="mt-2">
+                            <Briefcase className="w-3 h-3 mr-1" />
+                            {selectedResource.role}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                        <div className="flex items-center gap-2 text-blue-600 mb-1">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-sm font-medium">Ore Pianificate</span>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {resourceStats?.totalHours || 0}h
+                        </p>
+                      </div>
                       
-                      return (
-                        <Card key={dayStr} className="overflow-hidden">
-                          <CardHeader className="py-2 px-3 bg-gray-50">
-                            <CardTitle className="text-sm">
-                              {format(day, 'EEEE d MMMM', { locale: it })}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-2 space-y-1">
-                            {daySlots.map((slot, idx) => (
-                              <div
-                                key={`${slot.templateId}-${slot.slotId}-${idx}`}
-                                className={cn(
-                                  "p-2 rounded border-2 border-dashed transition-colors",
-                                  slot.assignedResources.length >= slot.requiredStaff 
-                                    ? "border-green-300 bg-green-50"
-                                    : slot.assignedResources.length > 0
-                                    ? "border-amber-300 bg-amber-50"
-                                    : "border-gray-300 bg-gray-50"
-                                )}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={() => {
-                                  if (draggedResource) {
-                                    handleResourceDrop(slot.templateId, slot.slotId, dayStr, draggedResource);
-                                  }
-                                }}
-                                data-testid={`slot-drop-${slot.slotId}-${dayStr}`}
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <div className="flex items-center gap-2">
-                                    <div 
-                                      className="w-3 h-3 rounded"
-                                      style={{ backgroundColor: slot.templateColor }}
-                                    />
-                                    <span className="text-xs font-medium">
-                                      {slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}
-                                    </span>
-                                  </div>
-                                  <Badge variant="outline" className="text-[10px]">
-                                    {slot.assignedResources.length}/{slot.requiredStaff}
-                                  </Badge>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground mb-1">
-                                  {slot.templateName}
-                                </p>
-                                <div className="flex flex-wrap gap-1">
-                                  {slot.assignedResources.map(ra => (
-                                    <Badge 
-                                      key={ra.resourceId}
-                                      variant="secondary"
-                                      className="text-[10px] gap-1"
-                                    >
-                                      {ra.resourceName}
-                                      <button
-                                        className="hover:text-red-500"
-                                        onClick={() => removeResourceAssignment(
-                                          ra.resourceId, slot.templateId, slot.slotId, dayStr
-                                        )}
-                                      >
-                                        <XCircle className="w-3 h-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                      <div className="p-4 rounded-xl bg-green-50 border border-green-100">
+                        <div className="flex items-center gap-2 text-green-600 mb-1">
+                          <CalendarCheck className="w-4 h-4" />
+                          <span className="text-sm font-medium">Giorni Liberi</span>
+                        </div>
+                        <p className="text-2xl font-bold text-green-700">
+                          {resourceStats?.freeDays.length || periodDays.length}
+                        </p>
+                      </div>
+                      
+                      <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
+                        <div className="flex items-center gap-2 text-purple-600 mb-1">
+                          <CalendarDays className="w-4 h-4" />
+                          <span className="text-sm font-medium">Giorni Occupati</span>
+                        </div>
+                        <p className="text-2xl font-bold text-purple-700">
+                          {resourceStats?.busyDays.length || 0}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4" />
+                        Disponibilità nel periodo
+                      </h4>
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <Calendar
+                          mode="multiple"
+                          selected={resourceStats?.busyDays || []}
+                          month={periodDays[0] || new Date()}
+                          locale={it}
+                          disabled
+                          className="pointer-events-none"
+                          classNames={{
+                            day_selected: "bg-purple-500 text-white",
+                            day: "h-9 w-9 rounded-lg",
+                          }}
+                          modifiers={{
+                            free: resourceStats?.freeDays || [],
+                            busy: resourceStats?.busyDays || []
+                          }}
+                          modifiersClassNames={{
+                            free: "bg-green-100 text-green-700",
+                            busy: "bg-purple-100 text-purple-700"
+                          }}
+                        />
+                        
+                        <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
+                            <span className="text-xs text-muted-foreground">Libero</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded bg-purple-100 border border-purple-200" />
+                            <span className="text-xs text-muted-foreground">Occupato</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </ScrollArea>
+                ) : (
+                  <div className="h-full flex items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                    <div className="text-center py-12">
+                      <User className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg font-medium text-gray-500 mb-2">
+                        Seleziona una risorsa
+                      </p>
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        Clicca su una risorsa dalla lista per vedere le sue informazioni e disponibilità
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </TabsContent>
@@ -828,16 +1186,52 @@ export default function ShiftPlanningWorkspace() {
         </div>
         
         <div className="space-y-3">
-          {periodDays.map(day => (
-            <TimelineBar
-              key={format(day, 'yyyy-MM-dd')}
-              day={format(day, 'yyyy-MM-dd')}
-              dayLabel={format(day, 'EEE d MMM', { locale: it })}
-              lanes={buildTimelineLanes(day)}
-              startHour={6}
-              endHour={24}
-            />
-          ))}
+          {periodDays.map(day => {
+            const dayStr = format(day, 'yyyy-MM-dd');
+            const daySlots = coveragePreview.filter(s => s.day === dayStr);
+            
+            return (
+              <div key={dayStr} className="relative">
+                <TimelineBar
+                  day={dayStr}
+                  dayLabel={format(day, 'EEE d MMM', { locale: it })}
+                  lanes={buildTimelineLanes(day)}
+                  startHour={6}
+                  endHour={24}
+                />
+                
+                {daySlots.length > 0 && (
+                  <div 
+                    className="absolute right-4 top-4 z-10"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add('ring-2', 'ring-primary');
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('ring-2', 'ring-primary');
+                    }}
+                    onDrop={(e) => {
+                      e.currentTarget.classList.remove('ring-2', 'ring-primary');
+                      if (draggedResource && daySlots[0]) {
+                        handleResourceDrop(
+                          daySlots[0].templateId,
+                          daySlots[0].slotId,
+                          dayStr,
+                          draggedResource
+                        );
+                      }
+                    }}
+                  >
+                    <div className="p-3 bg-white/90 backdrop-blur-sm rounded-lg border-2 border-dashed border-gray-300 hover:border-primary transition-colors">
+                      <p className="text-xs text-muted-foreground text-center">
+                        Trascina qui
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
