@@ -482,64 +482,77 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     }
   };
 
-  // FASE 5: Mutations per azioni sui turni
+  // FASE 5: Mutations per azioni sui turni - ENDPOINT CORRETTI
   const reassignShiftMutation = useMutation({
-    mutationFn: async ({ eventId, newEmployeeId }: { eventId: string; newEmployeeId: string }) => {
-      return apiRequest(`/api/hr/calendar/events/${eventId}`, {
-        method: 'PATCH',
+    mutationFn: async ({ assignmentId, newEmployeeId }: { assignmentId: string; newEmployeeId: string }) => {
+      return apiRequest(`/api/hr/shifts/assignments/${assignmentId}`, {
+        method: 'PUT',
         body: JSON.stringify({
-          metadata: { employeeId: newEmployeeId }
+          employeeId: newEmployeeId
         }),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
-      toast({ title: 'Turno riassegnato con successo!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      toast({ title: 'Turno riassegnato con successo!', description: 'La risorsa è stata aggiornata' });
       setShowActionModal(false);
       setActionTarget(null);
     },
-    onError: () => {
-      toast({ title: 'Errore nella riassegnazione', variant: 'destructive' });
+    onError: (error: any) => {
+      toast({ 
+        title: 'Errore nella riassegnazione', 
+        description: error?.message || 'Impossibile riassegnare il turno',
+        variant: 'destructive' 
+      });
     },
   });
 
   const removeShiftMutation = useMutation({
-    mutationFn: async (eventId: string) => {
-      return apiRequest(`/api/hr/calendar/events/${eventId}`, {
+    mutationFn: async (assignmentId: string) => {
+      return apiRequest(`/api/hr/shifts/assignments/${assignmentId}`, {
         method: 'DELETE',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
-      toast({ title: 'Turno rimosso con successo!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      toast({ title: 'Turno rimosso con successo!', description: 'L\'assegnazione è stata eliminata' });
       setShowActionModal(false);
       setActionTarget(null);
     },
-    onError: () => {
-      toast({ title: 'Errore nella rimozione', variant: 'destructive' });
+    onError: (error: any) => {
+      toast({ 
+        title: 'Errore nella rimozione', 
+        description: error?.message || 'Impossibile rimuovere il turno',
+        variant: 'destructive' 
+      });
     },
   });
 
   const changeTimeShiftMutation = useMutation({
-    mutationFn: async ({ eventId, startTime, endTime }: { eventId: string; startTime: string; endTime: string }) => {
-      return apiRequest(`/api/hr/calendar/events/${eventId}`, {
-        method: 'PATCH',
+    mutationFn: async ({ assignmentId, startTime, endTime }: { assignmentId: string; startTime: string; endTime: string }) => {
+      return apiRequest(`/api/hr/shifts/assignments/${assignmentId}`, {
+        method: 'PUT',
         body: JSON.stringify({
-          startDate: startTime,
-          endDate: endTime,
+          startTime: startTime,
+          endTime: endTime,
         }),
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
-      toast({ title: 'Orario modificato con successo!' });
+      toast({ title: 'Orario modificato con successo!', description: 'L\'orario del turno è stato aggiornato' });
       setShowActionModal(false);
       setActionTarget(null);
     },
-    onError: () => {
-      toast({ title: 'Errore nella modifica orario', variant: 'destructive' });
+    onError: (error: any) => {
+      toast({ 
+        title: 'Errore nella modifica orario', 
+        description: error?.message || 'Impossibile modificare l\'orario',
+        variant: 'destructive' 
+      });
     },
   });
 
@@ -562,14 +575,16 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     setShowActionModal(true);
   }, []);
 
-  // FASE 5: Handler per eseguire azione
+  // FASE 5: Handler per eseguire azione - USA assignmentId
   const handleExecuteAction = useCallback(() => {
     if (!actionTarget || !actionType) return;
+
+    console.log('[HR-ACTION] Esecuzione azione:', { actionType, assignmentId: actionTarget.id, target: actionTarget });
 
     switch (actionType) {
       case 'reassign':
         if (newAssigneeId) {
-          reassignShiftMutation.mutate({ eventId: actionTarget.id, newEmployeeId: newAssigneeId });
+          reassignShiftMutation.mutate({ assignmentId: actionTarget.id, newEmployeeId: newAssigneeId });
         }
         break;
       case 'remove':
@@ -578,7 +593,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
       case 'change_time':
         if (newStartTime && newEndTime) {
           changeTimeShiftMutation.mutate({ 
-            eventId: actionTarget.id, 
+            assignmentId: actionTarget.id, 
             startTime: newStartTime, 
             endTime: newEndTime 
           });
@@ -1271,55 +1286,38 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                             </div>
                           </div>
                           
-                          {/* FASE 5: Azioni sul turno */}
-                          <div className="flex items-center gap-1">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-8 w-8 p-0"
-                                  data-testid={`btn-actions-${resource.id}`}
-                                >
-                                  <Edit className="w-4 h-4 text-gray-500" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent side="left" className="w-48 p-2">
-                                <div className="space-y-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="w-full justify-start h-8 text-xs"
-                                    onClick={() => handleOpenActionModal(resource, 'reassign')}
-                                    data-testid={`btn-reassign-${resource.id}`}
-                                  >
-                                    <ArrowLeftRight className="w-3.5 h-3.5 mr-2 text-blue-500" />
-                                    Riassegna
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="w-full justify-start h-8 text-xs"
-                                    onClick={() => handleOpenActionModal(resource, 'change_time')}
-                                    data-testid={`btn-change-time-${resource.id}`}
-                                  >
-                                    <Clock className="w-3.5 h-3.5 mr-2 text-orange-500" />
-                                    Cambia Orario
-                                  </Button>
-                                  <Separator className="my-1" />
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="w-full justify-start h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => handleOpenActionModal(resource, 'remove')}
-                                    data-testid={`btn-remove-${resource.id}`}
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 mr-2" />
-                                    Rimuovi Turno
-                                  </Button>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
+                          {/* FASE 5: Azioni sul turno - PULSANTI GRANDI E VISIBILI */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9 px-3 text-sm font-medium border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                              onClick={() => handleOpenActionModal(resource, 'reassign')}
+                              data-testid={`btn-reassign-${resource.id}`}
+                            >
+                              <ArrowLeftRight className="w-4 h-4 mr-1.5 text-blue-600" />
+                              Riassegna
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9 px-3 text-sm font-medium border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                              onClick={() => handleOpenActionModal(resource, 'change_time')}
+                              data-testid={`btn-change-time-${resource.id}`}
+                            >
+                              <Clock className="w-4 h-4 mr-1.5 text-orange-600" />
+                              Orario
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9 px-3 text-sm font-medium border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600"
+                              onClick={() => handleOpenActionModal(resource, 'remove')}
+                              data-testid={`btn-remove-${resource.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1.5" />
+                              Rimuovi
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
