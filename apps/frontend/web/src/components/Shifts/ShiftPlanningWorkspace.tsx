@@ -1504,13 +1504,10 @@ export default function ShiftPlanningWorkspace() {
                                           ),
                                           !isCurrentMonth && "bg-gray-50 text-gray-300",
                                           isToday && "ring-2 ring-orange-400",
-                                          isInPeriod && isCurrentMonth && "ring-2 ring-primary ring-offset-1"
+                                          isInPeriod && isCurrentMonth && "shadow-[inset_0_0_0_50px_rgba(59,130,246,0.25)]"
                                         )}
                                       >
                                         {format(day, 'd')}
-                                        {isInPeriod && isCurrentMonth && (
-                                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full" />
-                                        )}
                                       </button>
                                     </PopoverTrigger>
                                     <PopoverContent side="top" className="w-52 p-2">
@@ -1560,7 +1557,7 @@ export default function ShiftPlanningWorkspace() {
                               <span className="text-[8px] text-gray-500">Chiuso</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <div className="w-2.5 h-2.5 rounded ring-2 ring-primary ring-offset-1" />
+                              <div className="w-2.5 h-2.5 rounded bg-blue-500/25" />
                               <span className="text-[8px] text-gray-500">Periodo</span>
                             </div>
                           </div>
