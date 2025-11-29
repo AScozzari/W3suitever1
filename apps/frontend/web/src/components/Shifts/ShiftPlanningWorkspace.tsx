@@ -27,7 +27,7 @@ import { it } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
-import { useShiftPlanningStore, type ShiftTemplate, type TimeSlot, type ResourceAssignment } from '@/stores/shiftPlanningStore';
+import { useShiftPlanningStore, type ShiftTemplate, type TimeSlot, type ResourceAssignment, type ConflictInfo } from '@/stores/shiftPlanningStore';
 import { TimelineBar, TimelineLegend, type TimelineSegment, type TimelineLane } from './TimelineBar';
 
 interface Store {
@@ -91,6 +91,10 @@ export default function ShiftPlanningWorkspace() {
     resourceAssignments,
     coveragePreview,
     storeOpeningHours,
+    conflicts,
+    hasConflicts,
+    planningExists,
+    isLoadingPlanning,
     setStore,
     setPeriod,
     setStoreOpeningHours,
@@ -100,6 +104,11 @@ export default function ShiftPlanningWorkspace() {
     selectAllDaysForTemplate,
     assignResource,
     removeResourceAssignment,
+    checkConflict,
+    getResourceConflicts,
+    loadExistingPlanning,
+    setLoadingPlanning,
+    setPlanningExists,
     computeCoverage,
     resetPlanning
   } = useShiftPlanningStore();
@@ -394,6 +403,8 @@ export default function ShiftPlanningWorkspace() {
       : periodDays;
     
     let assignedCount = 0;
+    let conflictCount = 0;
+    const conflictsFound: ConflictInfo[] = [];
     const resourceName = `${selectedResource.firstName || ''} ${selectedResource.lastName || ''}`.trim() || selectedResource.email;
     
     daysToAssign.forEach(day => {
@@ -408,23 +419,49 @@ export default function ShiftPlanningWorkspace() {
         );
         
         if (!alreadyAssigned) {
-          assignResource({
-            templateId: template.templateId,
-            slotId: slot.id,
-            day: dayStr,
-            resourceId: selectedResource.id,
-            resourceName
-          });
-          assignedCount++;
+          // Check for conflicts before assigning
+          const conflict = checkConflict(
+            selectedResource.id,
+            resourceName,
+            dayStr,
+            slot.startTime,
+            slot.endTime,
+            template.templateId,
+            slot.id
+          );
+          
+          if (conflict) {
+            conflictCount++;
+            conflictsFound.push(conflict);
+          } else {
+            assignResource({
+              templateId: template.templateId,
+              slotId: slot.id,
+              day: dayStr,
+              resourceId: selectedResource.id,
+              resourceName,
+              startTime: slot.startTime,
+              endTime: slot.endTime
+            });
+            assignedCount++;
+          }
         }
       });
     });
+    
+    if (conflictCount > 0) {
+      toast({ 
+        title: "Conflitti rilevati", 
+        description: `${conflictCount} assegnazioni saltate per sovrapposizione orari`,
+        variant: "destructive"
+      });
+    }
     
     if (assignedCount > 0) {
       const daysCount = daysToAssign.length;
       toast({ 
         title: "Turno assegnato", 
-        description: `${selectedResource.firstName} assegnato al turno "${template.templateName}" per ${daysCount} ${daysCount === 1 ? 'giorno' : 'giorni'}`
+        description: `${selectedResource.firstName} assegnato al turno "${template.templateName}" per ${assignedCount} ${assignedCount === 1 ? 'turno' : 'turni'}`
       });
       computeCoverage();
     }
@@ -453,6 +490,48 @@ export default function ShiftPlanningWorkspace() {
       setStoreOpeningHours(hours);
     }
   }, [openingRules, setStoreOpeningHours]);
+
+  // Load existing planning when store and period are selected
+  useEffect(() => {
+    const loadPlanning = async () => {
+      if (!selectedStoreId || periodDays.length === 0) return;
+      
+      const startDate = format(periodDays[0], 'yyyy-MM-dd');
+      const endDate = format(periodDays[periodDays.length - 1], 'yyyy-MM-dd');
+      
+      setLoadingPlanning(true);
+      try {
+        const response = await fetch(
+          `/api/hr/shifts/planning?storeId=${selectedStoreId}&startDate=${startDate}&endDate=${endDate}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'x-tenant-id': localStorage.getItem('tenantId') || ''
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const planning = await response.json();
+          if (planning.exists) {
+            loadExistingPlanning(planning);
+            toast({
+              title: "Pianificazione caricata",
+              description: `Trovate ${planning.assignments.length} assegnazioni esistenti`
+            });
+          } else {
+            setPlanningExists(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading planning:', error);
+      } finally {
+        setLoadingPlanning(false);
+      }
+    };
+    
+    loadPlanning();
+  }, [selectedStoreId, periodDays.length > 0 ? format(periodDays[0], 'yyyy-MM-dd') : null]);
 
   const handleStoreSelect = (storeId: string) => {
     const store = stores.find(s => s.id === storeId);
