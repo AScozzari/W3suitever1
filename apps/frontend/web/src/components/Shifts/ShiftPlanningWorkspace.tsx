@@ -104,8 +104,6 @@ export default function ShiftPlanningWorkspace() {
     selectAllDaysForTemplate,
     assignResource,
     removeResourceAssignment,
-    checkConflict,
-    getResourceConflicts,
     loadExistingPlanning,
     setLoadingPlanning,
     setPlanningExists,
@@ -453,30 +451,21 @@ export default function ShiftPlanningWorkspace() {
         );
         
         if (!alreadyAssigned) {
-          // Check for conflicts before assigning
-          const conflict = checkConflict(
-            selectedResource.id,
+          // Try to assign - store will check for conflicts and return conflict if blocked
+          const conflict = assignResource({
+            templateId: template.templateId,
+            slotId: slot.id,
+            day: dayStr,
+            resourceId: selectedResource.id,
             resourceName,
-            dayStr,
-            slot.startTime,
-            slot.endTime,
-            template.templateId,
-            slot.id
-          );
+            startTime: slot.startTime,
+            endTime: slot.endTime
+          });
           
           if (conflict) {
             conflictCount++;
             conflictsFound.push(conflict);
           } else {
-            assignResource({
-              templateId: template.templateId,
-              slotId: slot.id,
-              day: dayStr,
-              resourceId: selectedResource.id,
-              resourceName,
-              startTime: slot.startTime,
-              endTime: slot.endTime
-            });
             assignedCount++;
           }
         }
@@ -486,13 +475,12 @@ export default function ShiftPlanningWorkspace() {
     if (conflictCount > 0) {
       toast({ 
         title: "Conflitti rilevati", 
-        description: `${conflictCount} assegnazioni saltate per sovrapposizione orari`,
+        description: `${conflictCount} assegnazioni saltate per sovrapposizione orari. ${conflictsFound[0]?.message || ''}`,
         variant: "destructive"
       });
     }
     
     if (assignedCount > 0) {
-      const daysCount = daysToAssign.length;
       toast({ 
         title: "Turno assegnato", 
         description: `${selectedResource.firstName} assegnato al turno "${template.templateName}" per ${assignedCount} ${assignedCount === 1 ? 'turno' : 'turni'}`

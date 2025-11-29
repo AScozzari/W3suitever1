@@ -129,8 +129,8 @@ interface ShiftPlanningState {
   selectAllDaysForTemplate: (templateId: string, days: string[]) => void;
   clearAllDaysForTemplate: (templateId: string) => void;
   
-  // Resource assignment actions
-  assignResource: (assignment: ResourceAssignment) => void;
+  // Resource assignment actions - assignResource returns ConflictInfo if blocked, null if successful
+  assignResource: (assignment: ResourceAssignment) => ConflictInfo | null;
   removeResourceAssignment: (resourceId: string, templateId: string, slotId: string, day: string) => void;
   
   // Conflict detection
@@ -311,9 +311,9 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
     get().computeCoverage();
   },
   
-  // Assign resource to slot
+  // Assign resource to slot - returns conflict if blocked, null if successful
   assignResource: (assignment) => {
-    const { resourceAssignments, selectedStoreId, selectedStoreName, templateSelections } = get();
+    const { resourceAssignments, selectedStoreId, selectedStoreName, templateSelections, checkConflict } = get();
     
     // Check if already assigned
     const exists = resourceAssignments.find(
@@ -328,17 +328,41 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       const templateSelection = templateSelections.find(ts => ts.templateId === assignment.templateId);
       const timeSlot = templateSelection?.template.timeSlots.find(s => s.id === assignment.slotId);
       
+      const startTime = assignment.startTime || timeSlot?.startTime || '00:00';
+      const endTime = assignment.endTime || timeSlot?.endTime || '23:59';
+      
+      // Check for conflicts before assigning
+      const conflict = checkConflict(
+        assignment.resourceId,
+        assignment.resourceName,
+        assignment.day,
+        startTime,
+        endTime,
+        assignment.templateId,
+        assignment.slotId
+      );
+      
+      if (conflict) {
+        // Return the conflict immediately without mutating state
+        // Caller is responsible for handling the conflict (e.g., showing toast)
+        // This prevents stale conflict state from persisting
+        return conflict;
+      }
+      
       const enrichedAssignment: ResourceAssignment = {
         ...assignment,
-        startTime: assignment.startTime || timeSlot?.startTime,
-        endTime: assignment.endTime || timeSlot?.endTime,
+        startTime,
+        endTime,
         storeId: assignment.storeId || selectedStoreId || undefined,
         storeName: assignment.storeName || selectedStoreName || undefined
       };
       
+      // Add the assignment to the list
       set({ resourceAssignments: [...resourceAssignments, enrichedAssignment] });
       get().computeCoverage();
     }
+    
+    return null; // No conflict - success
   },
   
   // Remove resource assignment
