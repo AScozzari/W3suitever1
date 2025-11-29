@@ -1579,6 +1579,13 @@ export default function ShiftPlanningWorkspace() {
                                 const dayOpening = storeOpeningHours.find(h => h.day === dayOfWeek);
                                 const isClosed = dayOpening?.isClosed ?? false;
                                 
+                                const dayStr = format(day, 'yyyy-MM-dd');
+                                const dayCoverage = coveragePreview.filter(c => c.day === dayStr);
+                                const totalSlots = dayCoverage.length;
+                                const coveredSlots = dayCoverage.filter(c => c.assignedResources.length >= c.requiredStaff).length;
+                                const partialSlots = dayCoverage.filter(c => c.assignedResources.length > 0 && c.assignedResources.length < c.requiredStaff).length;
+                                const uniqueResources = new Set(dayCoverage.flatMap(c => c.assignedResources.map(r => r.resourceId))).size;
+                                
                                 return (
                                   <Popover key={idx}>
                                     <PopoverTrigger asChild>
@@ -1599,9 +1606,24 @@ export default function ShiftPlanningWorkspace() {
                                         )}
                                       >
                                         {format(day, 'd')}
+                                        {isInPeriod && isCurrentMonth && totalSlots > 0 && (
+                                          <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                                            {coveredSlots > 0 && (
+                                              <div className="w-1.5 h-1.5 rounded-full bg-green-500" title={`${coveredSlots} coperti`} />
+                                            )}
+                                            {partialSlots > 0 && (
+                                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500" title={`${partialSlots} parziali`} />
+                                            )}
+                                            {uniqueResources > 0 && (
+                                              <div className="absolute -top-0.5 -right-1 text-[6px] bg-primary text-white rounded-full w-2.5 h-2.5 flex items-center justify-center leading-none">
+                                                {uniqueResources}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </button>
                                     </PopoverTrigger>
-                                    <PopoverContent side="top" className="w-52 p-2">
+                                    <PopoverContent side="top" className="w-60 p-2">
                                       <div className="text-xs">
                                         <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM yyyy', { locale: it })}</p>
                                         {isInPeriod && (
@@ -1611,21 +1633,45 @@ export default function ShiftPlanningWorkspace() {
                                         )}
                                         {isClosed ? (
                                           <p className="text-gray-500">Sede chiusa</p>
-                                        ) : dayInfo && dayInfo.length > 0 ? (
-                                          <div className="space-y-1">
-                                            {dayInfo.map((info, i) => (
-                                              <div key={i} className="p-1.5 bg-purple-50 rounded text-purple-700">
-                                                <p className="font-medium">{info.templateName}</p>
-                                                <p className="text-[10px]">{info.startTime} - {info.endTime}</p>
-                                                <p className="text-[10px] text-purple-500 flex items-center gap-1">
-                                                  <MapPin className="h-2.5 w-2.5" />
-                                                  {info.storeName}
-                                                </p>
-                                              </div>
-                                            ))}
-                                          </div>
                                         ) : (
-                                          <p className="text-green-600">Disponibile</p>
+                                          <>
+                                            {dayInfo && dayInfo.length > 0 ? (
+                                              <div className="space-y-1 mb-2">
+                                                <p className="text-[10px] text-gray-500 font-medium">Turni risorsa:</p>
+                                                {dayInfo.map((info, i) => (
+                                                  <div key={i} className="p-1.5 bg-purple-50 rounded text-purple-700">
+                                                    <p className="font-medium">{info.templateName}</p>
+                                                    <p className="text-[10px]">{info.startTime} - {info.endTime}</p>
+                                                    <p className="text-[10px] text-purple-500 flex items-center gap-1">
+                                                      <MapPin className="h-2.5 w-2.5" />
+                                                      {info.storeName}
+                                                    </p>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <p className="text-green-600 mb-2">Risorsa disponibile</p>
+                                            )}
+                                            {totalSlots > 0 && (
+                                              <div className="pt-2 border-t">
+                                                <p className="text-[10px] text-gray-500 font-medium mb-1">Copertura turni giorno:</p>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  <span className="flex items-center gap-1">
+                                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                                    <span className="text-[9px]">{coveredSlots} coperti</span>
+                                                  </span>
+                                                  <span className="flex items-center gap-1">
+                                                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                                    <span className="text-[9px]">{partialSlots} parziali</span>
+                                                  </span>
+                                                  <span className="flex items-center gap-1">
+                                                    <Users className="w-2.5 h-2.5 text-primary" />
+                                                    <span className="text-[9px]">{uniqueResources} risorse</span>
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </>
                                         )}
                                       </div>
                                     </PopoverContent>
@@ -1650,6 +1696,15 @@ export default function ShiftPlanningWorkspace() {
                             <div className="flex items-center gap-1">
                               <div className="w-2.5 h-2.5 rounded bg-blue-500/25" />
                               <span className="text-[8px] text-gray-500">Periodo</span>
+                            </div>
+                            <div className="h-3 border-l border-gray-200 mx-1" />
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              <span className="text-[8px] text-gray-500">Coperto</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-amber-500" />
+                              <span className="text-[8px] text-gray-500">Parziale</span>
                             </div>
                           </div>
                         </div>
