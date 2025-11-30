@@ -1226,8 +1226,30 @@ const HRManagementPage: React.FC = () => {
 
   // ==================== SHIFTS SECTION ====================
   // Struttura semplificata: 1. Calendario 2. Template Studio 3. Gestione Turni
+  // ✅ FIX: Memoized to prevent remount on parent re-render (fixes FullCalendar DOM cleanup errors)
+  
+  const handleApplyTemplate = useMemo(() => async (templateId: string, startDate: Date, endDate: Date) => {
+    if (selectedStoreId === 'all') {
+      toast({
+        title: "Seleziona Negozio",
+        description: "Per applicare un template, seleziona prima un negozio specifico",
+        variant: "destructive"
+      });
+      return;
+    }
+    await apiRequest('/api/hr/shifts/bulk-template-assign', {
+      method: 'POST',
+      body: JSON.stringify({
+        templateId,
+        storeId: selectedStoreId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      })
+    });
+    queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+  }, [selectedStoreId, toast, queryClient]);
 
-  const ShiftsSection = () => (
+  const ShiftsSectionContent = useMemo(() => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -1265,33 +1287,13 @@ const HRManagementPage: React.FC = () => {
       <ShiftTemplateManager 
         templates={shiftTemplates}
         storeId={selectedStoreId === 'all' ? '' : selectedStoreId}
-        onApplyTemplate={async (templateId, startDate, endDate) => {
-          // ✅ CROSS-STORE: Per applicare template serve un negozio specifico
-          if (selectedStoreId === 'all') {
-            toast({
-              title: "Seleziona Negozio",
-              description: "Per applicare un template, seleziona prima un negozio specifico",
-              variant: "destructive"
-            });
-            return;
-          }
-          await apiRequest('/api/hr/shifts/bulk-template-assign', {
-            method: 'POST',
-            body: JSON.stringify({
-              templateId,
-              storeId: selectedStoreId,
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString()
-            })
-          });
-          queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
-        }}
+        onApplyTemplate={handleApplyTemplate}
       />
 
       {/* 3. GESTIONE TURNI - Flusso lineare: Negozio → Template → Risorse → Coperture */}
       <ShiftPlanningWorkspace />
     </div>
-  );
+  ), [selectedStoreId, stores, shiftTemplates, handleApplyTemplate]);
 
   // ==================== DOCUMENTS SECTION ====================
 
@@ -2237,7 +2239,7 @@ const HRManagementPage: React.FC = () => {
       case 'requests':
         return <RequestsSection />;
       case 'shifts':
-        return <ShiftsSection />;
+        return ShiftsSectionContent;
       case 'attendance':
         return <AttendanceSection />;
       case 'coverage':
