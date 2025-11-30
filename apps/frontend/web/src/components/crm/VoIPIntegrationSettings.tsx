@@ -160,7 +160,8 @@ export function VoIPIntegrationSettings() {
       if (data.webhookSecret) payload.webhookSecret = data.webhookSecret;
       if (data.apiBaseUrl) payload.apiBaseUrl = data.apiBaseUrl;
       
-      return apiRequest('PUT', '/api/voip/settings', payload);
+      console.log('[VoIP Settings] Sending PUT request with payload:', payload);
+      return apiRequest('/api/voip/settings', { method: 'PUT', body: payload });
     },
     onSuccess: () => {
       toast({
@@ -181,7 +182,7 @@ export function VoIPIntegrationSettings() {
 
   const testMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/voip/settings/test', null);
+      return apiRequest('/api/voip/settings/test', { method: 'POST' });
     },
     onSuccess: (response: any) => {
       const isConnected = response?.data?.connected;
@@ -205,7 +206,7 @@ export function VoIPIntegrationSettings() {
 
   const testAllMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/voip/settings/test-all', null);
+      return apiRequest('/api/voip/settings/test-all', { method: 'POST' });
     },
     onSuccess: (response: any) => {
       const data = response?.data as APITestResponse;
