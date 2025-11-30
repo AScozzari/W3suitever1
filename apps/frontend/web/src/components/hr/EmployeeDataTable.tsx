@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   flexRender,
@@ -26,12 +26,6 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   Search,
   ArrowUpDown,
   Eye,
@@ -44,6 +38,13 @@ import {
   Building2,
   UserCog,
 } from 'lucide-react';
+
+interface HoverTooltipState {
+  visible: boolean;
+  x: number;
+  y: number;
+  content: React.ReactNode;
+}
 
 interface User {
   id: string;
@@ -343,29 +344,27 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           
           if (scopeInfo.type === 'multiple' && scopeInfo.items) {
             return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Badge 
-                      variant="outline" 
-                      className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
-                      data-testid={`badge-scope-${row.original.id}`}
-                    >
-                      🏪 {scopeInfo.displayName}
-                    </Badge>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
-                  <div className="text-sm">
-                    <p className="font-semibold mb-2">Punti Vendita:</p>
-                    <ul className="space-y-1">
-                      {scopeInfo.items.map((item, idx) => (
-                        <li key={idx} className="text-gray-700">• {item}</li>
-                      ))}
-                    </ul>
+              <div className="group relative inline-flex">
+                <Badge 
+                  variant="outline" 
+                  className="border-purple-200 bg-purple-50 text-purple-700 cursor-help"
+                  data-testid={`badge-scope-${row.original.id}`}
+                >
+                  🏪 {scopeInfo.displayName}
+                </Badge>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none">
+                  <div className="max-w-xs backdrop-blur-md bg-white/95 border border-white/20 rounded-lg shadow-lg p-3">
+                    <div className="text-sm">
+                      <p className="font-semibold mb-2">Punti Vendita:</p>
+                      <ul className="space-y-1">
+                        {scopeInfo.items.map((item, idx) => (
+                          <li key={idx} className="text-gray-700">• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </TooltipContent>
-              </Tooltip>
+                </div>
+              </div>
             );
           }
           
@@ -394,29 +393,27 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
           
           if (row.original.teamsList && row.original.teamsList.length > 0) {
             return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Badge 
-                      variant="outline" 
-                      className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
-                      data-testid={`badge-teams-${row.original.id}`}
-                    >
-                      {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
-                    </Badge>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs backdrop-blur-md bg-white/95 border-white/20">
-                  <div className="text-sm">
-                    <p className="font-semibold mb-2">Team:</p>
-                    <ul className="space-y-1">
-                      {row.original.teamsList.map((team, idx) => (
-                        <li key={idx} className="text-gray-700">• {team}</li>
-                      ))}
-                    </ul>
+              <div className="group relative inline-flex">
+                <Badge 
+                  variant="outline" 
+                  className="border-emerald-200 bg-emerald-50 text-emerald-700 cursor-help"
+                  data-testid={`badge-teams-${row.original.id}`}
+                >
+                  {row.original.teamsCount} {row.original.teamsCount === 1 ? 'team' : 'team'}
+                </Badge>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none">
+                  <div className="max-w-xs backdrop-blur-md bg-white/95 border border-white/20 rounded-lg shadow-lg p-3">
+                    <div className="text-sm">
+                      <p className="font-semibold mb-2">Team:</p>
+                      <ul className="space-y-1">
+                        {row.original.teamsList.map((team, idx) => (
+                          <li key={idx} className="text-gray-700">• {team}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </TooltipContent>
-              </Tooltip>
+                </div>
+              </div>
             );
           }
           
@@ -531,10 +528,9 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="space-y-4">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -656,6 +652,5 @@ export function EmployeeDataTable({ onEmployeeClick, onEditEmployee, currentUser
         </Table>
       </div>
     </div>
-    </TooltipProvider>
   );
 }
