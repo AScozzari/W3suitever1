@@ -874,7 +874,7 @@ export default function ShiftAssignmentDashboard({
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent container={null}>
                   <SelectItem value="hours">Ore</SelectItem>
                   <SelectItem value="half">30 min</SelectItem>
                   <SelectItem value="quarter">15 min</SelectItem>
@@ -888,7 +888,7 @@ export default function ShiftAssignmentDashboard({
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent container={null}>
                   {Array.from({ length: 24 }, (_, i) => (
                     <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
                   ))}
@@ -899,7 +899,7 @@ export default function ShiftAssignmentDashboard({
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent container={null}>
                   {Array.from({ length: 24 }, (_, i) => (
                     <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
                   ))}
@@ -1420,7 +1420,7 @@ export default function ShiftAssignmentDashboard({
               <SelectTrigger data-testid="select-store-filter-dashboard">
                 <SelectValue placeholder="Seleziona punto vendita" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent container={null}>
                 <SelectItem value="all">Tutti i punti vendita</SelectItem>
                 {(stores as any[]).map((store: any) => (
                   <SelectItem key={store.id} value={store.id}>
@@ -1464,7 +1464,7 @@ export default function ShiftAssignmentDashboard({
               <SelectTrigger data-testid="select-shift-template">
                 <SelectValue placeholder="Seleziona template" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent container={null}>
                 <SelectItem value="none">Nessun template</SelectItem>
                 {filteredTemplates.map((template: any) => (
                   <SelectItem key={template.id} value={template.id}>

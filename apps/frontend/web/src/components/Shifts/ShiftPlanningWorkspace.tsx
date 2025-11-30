@@ -1064,7 +1064,7 @@ export default function ShiftPlanningWorkspace() {
                               </div>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0" align="start" container={null}>
                             <Calendar
                               mode="single"
                               selected={dateRange.from}
@@ -1098,7 +1098,7 @@ export default function ShiftPlanningWorkspace() {
                               </div>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0" align="start" container={null}>
                             <Calendar
                               mode="single"
                               selected={dateRange.to}
@@ -1270,7 +1270,7 @@ export default function ShiftPlanningWorkspace() {
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent container={null}>
                   <SelectItem value="all">Tutti</SelectItem>
                   <SelectItem value="global">
                     <div className="flex items-center gap-2">
@@ -1690,7 +1690,7 @@ export default function ShiftPlanningWorkspace() {
                                         )}
                                       </button>
                                     </PopoverTrigger>
-                                    <PopoverContent side="top" className="w-60 p-2">
+                                    <PopoverContent side="top" className="w-60 p-2" container={null}>
                                       <div className="text-xs">
                                         <p className="font-semibold mb-1">{format(day, 'EEEE d MMMM yyyy', { locale: it })}</p>
                                         {isInPeriod && (
@@ -1786,7 +1786,7 @@ export default function ShiftPlanningWorkspace() {
                               <SelectTrigger className="h-8 text-xs">
                                 <SelectValue placeholder="Seleziona turno..." />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent container={null}>
                                 {availableTemplatesForAssignment.map(template => (
                                   <SelectItem key={template.id} value={template.id} className="text-xs">
                                     <div className="flex items-center gap-2">
@@ -1836,7 +1836,7 @@ export default function ShiftPlanningWorkspace() {
                                 <SelectTrigger className="h-8 text-xs">
                                   <SelectValue placeholder="Seleziona giorno..." />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent container={null}>
                                   {periodDays.map(day => (
                                     <SelectItem key={day.toISOString()} value={day.toISOString()} className="text-xs">
                                       {format(day, 'EEE d MMM', { locale: it })}
@@ -2169,7 +2169,7 @@ export default function ShiftPlanningWorkspace() {
                                       {ra.resourceName}
                                     </Badge>
                                   </PopoverTrigger>
-                                  <PopoverContent side="top" className="w-48 p-2">
+                                  <PopoverContent side="top" className="w-48 p-2" container={null}>
                                     <div className="space-y-2">
                                       <p className="text-xs font-medium">{ra.resourceName}</p>
                                       <Separator />
