@@ -1,0 +1,89 @@
+DEBUG] Role Permissions Query State: Object
+SettingsPage.tsx:1722 [RBAC] 🔄 Permission initialization effect triggered Object
+/api/voip/extensions/me:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+useSIPRegistration.ts:75 🔍 [SIP Hook] Query state: Object
+installHook.js:1 ❌ [SIP Hook] Query error: Error: 404: Not Found
+    at queryFn (queryClient.ts:214:17) Error Component Stack
+    at SoftphoneWidget (SoftphoneWidget.tsx:42:35)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at SettingsPage (SettingsPage.tsx:514:27)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1Understand this error
+useSIPRegistration.ts:146 ⏸️ [SIP Hook] Skipping setup: Object
+SettingsPage.tsx:669 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage.tsx:1459 [RBAC-DEBUG] Role Permissions Query State: Object
+2chunk-3WVMON5O.js?v=f4a34e1b:50 Uncaught Error: `TabsContent` must be used within `Tabs`
+    at useContext2 (chunk-3WVMON5O.js?v=f4a34e1b:50:13)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:178:21
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=f4a34e1b:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15946:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=f4a34e1b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=f4a34e1b:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=f4a34e1b:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:19198:20)Understand this error
+installHook.js:1 The above error occurred in the <TabsContent> component:
+
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=f4a34e1b:177:13
+    at _c5 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/tabs.tsx:61:12)
+    at div
+    at PhoneVoIPConfig (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/crm/PhoneVoIPConfig.tsx:86:35)
+    at div
+    at MotionComponent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/framer-motion.js?v=f4a34e1b:945:40)
+    at div
+    at ChannelSettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/settings/ChannelSettingsPage.tsx:118:49)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:206:34)
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:341:27)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:870:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:254:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:112:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1Understand this error
+chunk-ZHRYBLGQ.js?v=f4a34e1b:9129 Uncaught Error: `TabsContent` must be used within `Tabs`
+    at useContext2 (chunk-3WVMON5O.js?v=f4a34e1b:50:13)
+    at @radix-ui_react-tabs.js?v=f4a34e1b:178:21
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=f4a34e1b:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15946:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=f4a34e1b:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=f4a34e1b:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=f4a34e1b:18736:28)Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+SettingsPage.tsx:684 📦 SettingsPage: loadSettingsData result: Object
+SettingsPage.tsx:697 📝 Setting state with data: Object

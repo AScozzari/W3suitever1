@@ -1319,6 +1319,11 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
             </div>
           )}
         </TabsContent>
+
+        {/* Integration Tab Content */}
+        <TabsContent value="integration" className="mt-6">
+          <VoIPIntegrationSettings />
+        </TabsContent>
       </Tabs>
 
       {/* SIP Credentials Dialog - Shows ONLY on creation/reset */}
@@ -1454,11 +1459,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Integration Tab Content */}
-        <TabsContent value="integration" className="mt-6">
-          <VoIPIntegrationSettings />
-        </TabsContent>
 
       {/* Trunk AI Configuration Dialog */}
       <TrunkAIConfigDialog
