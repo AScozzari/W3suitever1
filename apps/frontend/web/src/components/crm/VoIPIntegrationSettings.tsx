@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -126,13 +126,26 @@ export function VoIPIntegrationSettings() {
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
-      tenantExternalId: config?.tenantExternalId || '',
+      tenantExternalId: '',
       apiKey: '',
       webhookSecret: '',
-      apiBaseUrl: config?.apiBaseUrl || 'https://edgvoip.it/api/v2/voip',
-      enabled: config?.enabled ?? true
+      apiBaseUrl: 'https://edgvoip.it/api/v2/voip',
+      enabled: true
     }
   });
+
+  // Update form when config data is loaded
+  useEffect(() => {
+    if (config) {
+      form.reset({
+        tenantExternalId: config.tenantExternalId || '',
+        apiKey: '',
+        webhookSecret: '',
+        apiBaseUrl: config.apiBaseUrl || 'https://edgvoip.it/api/v2/voip',
+        enabled: config.enabled ?? true
+      });
+    }
+  }, [config, form]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: SettingsFormValues) => {
