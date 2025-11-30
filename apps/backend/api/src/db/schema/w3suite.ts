@@ -437,6 +437,10 @@ export const voipCredentialTypeEnum = pgEnum('voip_credential_type', ['sip_trunk
 export const voipDidStatusEnum = pgEnum('voip_did_status', ['active', 'porting_in', 'porting_out', 'inactive', 'cancelled']);
 export const voipRouteTypeEnum = pgEnum('voip_route_type', ['inbound', 'outbound', 'emergency']);
 export const voipAssignmentTypeEnum = pgEnum('voip_assignment_type', ['store', 'extension', 'ivr', 'queue', 'conference']);
+export const voipExtensionTypeEnum = pgEnum('voip_extension_type', ['user', 'queue', 'conference']);
+export const voipSyncStatusEnum = pgEnum('voip_sync_status', ['synced', 'pending', 'failed', 'local_only']);
+export const voipConnectionStatusEnum = pgEnum('voip_connection_status', ['connected', 'error', 'unknown']);
+export const voipRegistrationStatusEnum = pgEnum('voip_registration_status', ['registered', 'unregistered', 'failed', 'unknown']);
 
 // ==================== WMS (WAREHOUSE MANAGEMENT SYSTEM) ENUMS ====================
 export const productSourceEnum = pgEnum('product_source', ['brand', 'tenant']);
@@ -6506,40 +6510,105 @@ export const insertCrmCustomerNoteSchema = createInsertSchema(crmCustomerNotes).
 export type InsertCrmCustomerNote = z.infer<typeof insertCrmCustomerNoteSchema>;
 export type CrmCustomerNote = typeof crmCustomerNotes.$inferSelect;
 
-// ==================== VOIP SYSTEM (7 TABLES - FINAL SPEC) ====================
+// ==================== VOIP SYSTEM (8 TABLES - API v2 SPEC) ====================
 
-// 1) voip_trunks - Trunk SIP per store/tenant (READ-ONLY, synced from edgvoip)
+// 0) voip_tenant_config - Per-tenant EDGVoIP API configuration
+export const voipTenantConfig = w3suiteSchema.table("voip_tenant_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }).unique(),
+  
+  // EDGVoIP API v2 Configuration
+  tenantExternalId: varchar("tenant_external_id", { length: 255 }).notNull(), // Custom identifier for edgvoip
+  apiKey: text("api_key").notNull(), // Encrypted: sk_live_...
+  apiKeyLastFour: varchar("api_key_last_four", { length: 4 }), // Last 4 chars for display
+  webhookSecret: text("webhook_secret"), // For HMAC verification
+  apiBaseUrl: varchar("api_base_url", { length: 255 }).default('https://edgvoip.it/api/v2/voip'),
+  
+  // Scopes and permissions
+  scopes: text("scopes").array(), // ['voip:read', 'voip:write', 'trunks:sync', etc.]
+  
+  // Connection status
+  enabled: boolean("enabled").default(true).notNull(),
+  connectionStatus: voipConnectionStatusEnum("connection_status").default('unknown'),
+  lastConnectionTest: timestamp("last_connection_test"),
+  connectionError: text("connection_error"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("voip_tenant_config_tenant_idx").on(table.tenantId),
+  uniqueIndex("voip_tenant_config_external_id_unique").on(table.tenantExternalId),
+]);
+
+export const insertVoipTenantConfigSchema = createInsertSchema(voipTenantConfig).omit({
+  id: true,
+  apiKeyLastFour: true,
+  connectionStatus: true,
+  lastConnectionTest: true,
+  connectionError: true,
+  createdAt: true,
+  updatedAt: true
+});
+export const updateVoipTenantConfigSchema = insertVoipTenantConfigSchema.omit({ tenantId: true }).partial();
+export type InsertVoipTenantConfig = z.infer<typeof insertVoipTenantConfigSchema>;
+export type UpdateVoipTenantConfig = z.infer<typeof updateVoipTenantConfigSchema>;
+export type VoipTenantConfig = typeof voipTenantConfig.$inferSelect;
+
+// 1) voip_trunks - Trunk SIP per store/tenant (Full CRUD + Sync with EDGVoIP API v2)
 export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
   
-  // Sync metadata (edgvoip is source of truth)
-  edgvoipTrunkId: varchar("edgvoip_trunk_id", { length: 255 }).unique(), // External trunk ID from edgvoip
-  syncSource: varchar("sync_source", { length: 20 }).default('edgvoip').notNull(), // Always 'edgvoip'
-  lastSyncAt: timestamp("last_sync_at"), // Last webhook sync timestamp
+  // API v2 External ID (UUID for bidirectional sync)
+  externalId: uuid("external_id"), // UUID from EDGVoIP API v2
   
-  // Trunk configuration (synced from edgvoip)
+  // Legacy sync metadata
+  edgvoipTrunkId: varchar("edgvoip_trunk_id", { length: 255 }).unique(), // Legacy external trunk ID
+  syncSource: varchar("sync_source", { length: 20 }).default('w3suite').notNull(), // w3suite|edgvoip|local
+  syncStatus: voipSyncStatusEnum("sync_status").default('local_only'),
+  lastSyncAt: timestamp("last_sync_at"),
+  
+  // Basic trunk info
   name: varchar("name", { length: 255 }).notNull(),
-  provider: varchar("provider", { length: 100 }), // Telecom Italia, Vodafone, etc.
-  host: varchar("host", { length: 255 }), // SIP proxy hostname
+  provider: varchar("provider", { length: 100 }),
+  status: voipTrunkStatusEnum("status").default('active').notNull(),
+  registrationStatus: voipRegistrationStatusEnum("registration_status").default('unknown'),
+  
+  // API v2: SIP Configuration (JSONB)
+  sipConfig: jsonb("sip_config"), // {host, port, transport, username, password, register, ...}
+  
+  // API v2: DID Configuration (JSONB)
+  didConfig: jsonb("did_config"), // {number, country_code, area_code, local_number, ...}
+  
+  // API v2: Security Configuration (JSONB)
+  security: jsonb("security"), // {encryption, authentication, acl, rate_limit}
+  
+  // API v2: GDPR Configuration (JSONB)
+  gdpr: jsonb("gdpr"), // {data_retention_days, recording_consent_required, ...}
+  
+  // API v2: Codec preferences
+  codecPreferences: text("codec_preferences").array(), // ['PCMU', 'PCMA', 'G729']
+  
+  // Legacy fields (for backward compatibility)
+  host: varchar("host", { length: 255 }),
   port: integer("port").default(5060),
-  protocol: voipProtocolEnum("protocol").default('udp'), // udp|tcp|tls
-  didRange: varchar("did_range", { length: 100 }), // +39 02 1234xxxx
+  protocol: voipProtocolEnum("protocol").default('udp'),
+  didRange: varchar("did_range", { length: 100 }),
   maxChannels: integer("max_channels").default(10).notNull(),
   currentChannels: integer("current_channels").default(0).notNull(),
-  status: voipTrunkStatusEnum("status").default('active').notNull(),
+  webhookToken: varchar("webhook_token", { length: 64 }),
   
-  // AI Voice Agent configuration (synced from edgvoip)
+  // AI Voice Agent configuration
   aiAgentEnabled: boolean("ai_agent_enabled").default(false).notNull(),
-  aiAgentRef: varchar("ai_agent_ref", { length: 100 }), // Reference to aiAgentsRegistry (e.g. "customer-care-voice")
-  aiTimePolicy: jsonb("ai_time_policy"), // Business hours JSON: {monday: {start: "09:00", end: "18:00"}, ...}
-  aiFailoverExtension: varchar("ai_failover_extension", { length: 20 }), // Extension to fallback when AI unavailable
+  aiAgentRef: varchar("ai_agent_ref", { length: 100 }),
+  aiTimePolicy: jsonb("ai_time_policy"),
+  aiFailoverExtension: varchar("ai_failover_extension", { length: 20 }),
   
   // edgvoip AI Config Sync tracking
-  edgvoipAiSyncedAt: timestamp("edgvoip_ai_synced_at"), // Last successful AI config sync with edgvoip
-  edgvoipAiSyncStatus: varchar("edgvoip_ai_sync_status", { length: 50 }), // success|error|pending|none
-  edgvoipAiSyncError: text("edgvoip_ai_sync_error"), // Last sync error message if any
+  edgvoipAiSyncedAt: timestamp("edgvoip_ai_synced_at"),
+  edgvoipAiSyncStatus: varchar("edgvoip_ai_sync_status", { length: 50 }),
+  edgvoipAiSyncError: text("edgvoip_ai_sync_error"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -6547,57 +6616,95 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   index("voip_trunks_tenant_idx").on(table.tenantId),
   index("voip_trunks_store_idx").on(table.storeId),
   index("voip_trunks_edgvoip_id_idx").on(table.edgvoipTrunkId),
+  index("voip_trunks_external_id_idx").on(table.externalId),
+  index("voip_trunks_sync_status_idx").on(table.syncStatus),
   uniqueIndex("voip_trunks_tenant_store_name_unique").on(table.tenantId, table.storeId, table.name),
+  uniqueIndex("voip_trunks_external_id_unique").on(table.tenantId, table.externalId),
 ]);
 
-// Note: No insert/update schemas - trunks are managed via webhook from edgvoip
+export const insertVoipTrunkSchema = createInsertSchema(voipTrunks).omit({
+  id: true,
+  externalId: true,
+  edgvoipTrunkId: true,
+  syncStatus: true,
+  lastSyncAt: true,
+  registrationStatus: true,
+  currentChannels: true,
+  webhookToken: true,
+  edgvoipAiSyncedAt: true,
+  edgvoipAiSyncStatus: true,
+  edgvoipAiSyncError: true,
+  createdAt: true,
+  updatedAt: true
+});
+export const updateVoipTrunkSchema = insertVoipTrunkSchema.omit({ tenantId: true, storeId: true }).partial();
+export type InsertVoipTrunk = z.infer<typeof insertVoipTrunkSchema>;
+export type UpdateVoipTrunk = z.infer<typeof updateVoipTrunkSchema>;
 export type VoipTrunk = typeof voipTrunks.$inferSelect;
 
-// 2) voip_extensions - Interni del tenant (1:1 con users)
+// 2) voip_extensions - Interni del tenant (1:1 con users) - Full CRUD + Sync with API v2
 export const voipExtensions = w3suiteSchema.table("voip_extensions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // ACTUAL DB: VARCHAR not UUID! 1:1 relationship
-  domainId: uuid("domain_id").notNull(), // ACTUAL DB: domain_id (references voip_domains)
-  extension: varchar("extension", { length: 20 }).notNull(), // ACTUAL DB: extension number (1001, 1002, etc.)
-  sipUsername: varchar("sip_username", { length: 100 }).notNull(), // ACTUAL DB: SIP auth username
-  sipPassword: text("sip_password").notNull(), // ACTUAL DB: SIP password (encrypted at rest)
-  displayName: varchar("display_name", { length: 255 }), // ACTUAL DB: display name
-  email: varchar("email", { length: 255 }), // ACTUAL DB: email
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }), // API v2: Store reference
+  domainId: uuid("domain_id"), // Legacy: domain_id (optional now)
+  
+  // API v2 External ID (UUID for bidirectional sync)
+  externalId: uuid("external_id"), // UUID from EDGVoIP API v2
+  
+  // Basic extension info
+  extension: varchar("extension", { length: 20 }).notNull(),
+  sipUsername: varchar("sip_username", { length: 100 }).notNull(),
+  sipPassword: text("sip_password").notNull(), // Encrypted at rest
+  displayName: varchar("display_name", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  
+  // API v2: Extension type
+  type: voipExtensionTypeEnum("type").default('user'),
+  
+  // API v2: Settings (JSONB)
+  settings: jsonb("settings"), // {voicemail_enabled, call_forwarding, recording}
   
   // FreeSWITCH Best Practice Fields
-  sipServer: varchar("sip_server", { length: 255 }).default('sip.edgvoip.it'), // SIP server hostname
-  sipPort: integer("sip_port").default(5060), // SIP port (5060 for UDP, 5061 for TLS)
-  wsPort: integer("ws_port").default(7443), // WebSocket port for WebRTC (edgvoip uses 7443)
-  transport: varchar("transport", { length: 20 }).default('WSS'), // UDP|TCP|TLS|WS|WSS
+  sipServer: varchar("sip_server", { length: 255 }).default('sip.edgvoip.it'),
+  sipPort: integer("sip_port").default(5060),
+  wsPort: integer("ws_port").default(7443),
+  transport: varchar("transport", { length: 20 }).default('WSS'),
   
   // Caller ID Configuration
-  callerIdName: varchar("caller_id_name", { length: 100 }), // Outbound caller ID name
-  callerIdNumber: varchar("caller_id_number", { length: 50 }), // Outbound caller ID number (E.164)
+  callerIdName: varchar("caller_id_name", { length: 100 }),
+  callerIdNumber: varchar("caller_id_number", { length: 50 }),
   
-  // Codec Configuration (comma-separated, priority order)
-  allowedCodecs: varchar("allowed_codecs", { length: 255 }).default('OPUS,G722,PCMU,PCMA'), // Video codecs available: VP8,VP9,H264
+  // Codec Configuration
+  allowedCodecs: varchar("allowed_codecs", { length: 255 }).default('OPUS,G722,PCMU,PCMA'),
   
   // Security & Authentication
-  authRealm: varchar("auth_realm", { length: 255 }), // SIP authentication realm (default: domain)
-  registrationExpiry: integer("registration_expiry").default(3600), // Registration TTL in seconds (default: 1 hour)
-  maxConcurrentCalls: integer("max_concurrent_calls").default(4), // Call limit per extension
+  authRealm: varchar("auth_realm", { length: 255 }),
+  registrationExpiry: integer("registration_expiry").default(3600),
+  maxConcurrentCalls: integer("max_concurrent_calls").default(4),
   
-  // Call Features
-  voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(), // ACTUAL DB: voicemail flag
-  voicemailEmail: varchar("voicemail_email", { length: 255 }), // ACTUAL DB: voicemail email
-  voicemailPin: varchar("voicemail_pin", { length: 20 }), // Voicemail access PIN
-  recordingEnabled: boolean("recording_enabled").default(false).notNull(), // ACTUAL DB: recording flag
-  dndEnabled: boolean("dnd_enabled").default(false).notNull(), // ACTUAL DB: DND flag
-  forwardOnBusy: varchar("forward_on_busy", { length: 100 }), // ACTUAL DB: forward on busy
-  forwardOnNoAnswer: varchar("forward_on_no_answer", { length: 100 }), // ACTUAL DB: forward on no answer
-  forwardUnconditional: varchar("forward_unconditional", { length: 100 }), // ACTUAL DB: unconditional forward
+  // Call Features (legacy - now in settings JSONB)
+  voicemailEnabled: boolean("voicemail_enabled").default(true).notNull(),
+  voicemailEmail: varchar("voicemail_email", { length: 255 }),
+  voicemailPin: varchar("voicemail_pin", { length: 20 }),
+  recordingEnabled: boolean("recording_enabled").default(false).notNull(),
+  dndEnabled: boolean("dnd_enabled").default(false).notNull(),
+  forwardOnBusy: varchar("forward_on_busy", { length: 100 }),
+  forwardOnNoAnswer: varchar("forward_on_no_answer", { length: 100 }),
+  forwardUnconditional: varchar("forward_unconditional", { length: 100 }),
   
-  // Sync Metadata (for edgvoip API integration)
-  edgvoipExtensionId: varchar("edgvoip_extension_id", { length: 100 }), // External PBX extension ID
-  lastSyncAt: timestamp("last_sync_at"), // Last successful sync with edgvoip
-  syncStatus: varchar("sync_status", { length: 50 }).default('pending'), // pending|synced|failed
-  syncErrorMessage: text("sync_error_message"), // Last sync error if any
+  // Registration Status (API v2)
+  registrationStatus: voipRegistrationStatusEnum("registration_status").default('unknown'),
+  lastRegistration: timestamp("last_registration"),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  
+  // Sync Metadata
+  edgvoipExtensionId: varchar("edgvoip_extension_id", { length: 100 }),
+  syncSource: varchar("sync_source", { length: 20 }).default('w3suite').notNull(),
+  syncStatus: voipSyncStatusEnum("sync_status").default('local_only'),
+  lastSyncAt: timestamp("last_sync_at"),
+  syncErrorMessage: text("sync_error_message"),
   
   status: voipExtensionStatusEnum("status").default('active').notNull(), // ACTUAL DB: status enum
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -6605,38 +6712,51 @@ export const voipExtensions = w3suiteSchema.table("voip_extensions", {
 }, (table) => [
   index("voip_extensions_tenant_idx").on(table.tenantId),
   index("voip_extensions_user_idx").on(table.userId),
-  index("voip_extensions_domain_idx").on(table.domainId), // ACTUAL DB: domain index
+  index("voip_extensions_store_idx").on(table.storeId),
+  index("voip_extensions_domain_idx").on(table.domainId),
+  index("voip_extensions_external_id_idx").on(table.externalId),
   index("voip_extensions_sync_status_idx").on(table.syncStatus),
-  uniqueIndex("voip_extensions_domain_extension_unique").on(table.domainId, table.extension), // ACTUAL DB: unique extension per domain
-  uniqueIndex("voip_extensions_domain_sip_username_unique").on(table.domainId, table.sipUsername), // ACTUAL DB: unique sip_username per domain
-  uniqueIndex("voip_extensions_user_unique").on(table.userId), // ACTUAL DB: conditional unique on user_id
-  uniqueIndex("voip_extensions_edgvoip_id_unique").on(table.tenantId, table.edgvoipExtensionId), // For webhook upsert on (tenant_id, edgvoip_extension_id)
+  index("voip_extensions_type_idx").on(table.type),
+  uniqueIndex("voip_extensions_tenant_extension_unique").on(table.tenantId, table.extension),
+  uniqueIndex("voip_extensions_domain_extension_unique").on(table.domainId, table.extension),
+  uniqueIndex("voip_extensions_domain_sip_username_unique").on(table.domainId, table.sipUsername),
+  uniqueIndex("voip_extensions_user_unique").on(table.userId),
+  uniqueIndex("voip_extensions_edgvoip_id_unique").on(table.tenantId, table.edgvoipExtensionId),
+  uniqueIndex("voip_extensions_external_id_unique").on(table.tenantId, table.externalId),
 ]);
 
 export const insertVoipExtensionSchema = createInsertSchema(voipExtensions).omit({ 
   id: true, 
-  createdAt: true, 
-  updatedAt: true,
+  externalId: true,
+  edgvoipExtensionId: true,
+  registrationStatus: true,
+  lastRegistration: true,
+  ipAddress: true,
+  syncStatus: true,
+  syncSource: true,
   lastSyncAt: true,
-  syncErrorMessage: true 
+  syncErrorMessage: true,
+  createdAt: true, 
+  updatedAt: true
 }).extend({
-  userId: z.string().optional(), // ACTUAL DB: VARCHAR, optional (1:1 with users)
-  domainId: z.string().uuid("Invalid domain ID"),
+  userId: z.string().optional(),
+  storeId: z.string().uuid("Invalid store ID").optional(),
+  domainId: z.string().uuid("Invalid domain ID").optional(),
   extension: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
   sipUsername: z.string().min(1, "SIP username is required"),
-  sipPassword: z.string().min(16, "SIP password must be at least 16 characters"), // Auto-generated, 16+ chars
+  sipPassword: z.string().min(16, "SIP password must be at least 16 characters"),
+  type: z.enum(['user', 'queue', 'conference']).optional(),
   transport: z.enum(['UDP', 'TCP', 'TLS', 'WS', 'WSS']).optional(),
   allowedCodecs: z.string().optional(),
   callerIdNumber: z.string().regex(/^\+\d{7,15}$/, "Must be E.164 format").optional(),
   status: z.enum(['active', 'inactive', 'suspended']).optional(),
-  syncStatus: z.enum(['pending', 'synced', 'failed']).optional(),
 });
 export const updateVoipExtensionSchema = insertVoipExtensionSchema.omit({ 
   tenantId: true, 
   userId: true, 
   domainId: true, 
   extension: true,
-  sipPassword: true // Password changes via dedicated endpoint
+  sipPassword: true
 }).partial();
 export type InsertVoipExtension = z.infer<typeof insertVoipExtensionSchema>;
 export type UpdateVoipExtension = z.infer<typeof updateVoipExtensionSchema>;
@@ -6672,32 +6792,65 @@ export type InsertVoipExtensionStoreAccess = z.infer<typeof insertVoipExtensionS
 export type UpdateVoipExtensionStoreAccess = z.infer<typeof updateVoipExtensionStoreAccessSchema>;
 export type VoipExtensionStoreAccess = typeof voipExtensionStoreAccess.$inferSelect;
 
-// 7) voip_cdr - Mirror CDR per report KPI
+// 7) voip_cdr - Mirror CDR per report KPI (Enhanced for API v2)
 export const voipCdrs = w3suiteSchema.table("voip_cdrs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }), // Deducibile da DID/ext
-  sipDomain: varchar("sip_domain", { length: 255 }).notNull(), // Per correlazione multi-tenant
-  callId: varchar("call_id", { length: 255 }).notNull(), // ID chiamata PBX
-  direction: voipCallDirectionEnum("direction").notNull(), // in|out
-  fromUri: varchar("from_uri", { length: 100 }).notNull(), // E.164 o ext
-  toUri: varchar("to_uri", { length: 100 }).notNull(), // E.164 o ext
-  didE164: varchar("did_e164", { length: 50 }), // DID coinvolto (if inbound)
-  extNumber: varchar("ext_number", { length: 20 }), // Interno coinvolto (if present)
-  startTs: timestamp("start_ts").notNull(),
-  answerTs: timestamp("answer_ts"),
-  endTs: timestamp("end_ts"),
-  billsec: integer("billsec").default(0).notNull(), // Secondi fatturati
-  disposition: voipCallDispositionEnum("disposition").notNull(), // ANSWERED|NO_ANSWER|BUSY|FAILED
-  recordingUrl: varchar("recording_url", { length: 500 }), // Link registrazione
-  metaJson: jsonb("meta_json"), // Extra (codec, mos, cause codes)
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  
+  // API v2 identifiers
+  edgvoipCallId: varchar("edgvoip_call_id", { length: 255 }), // External call ID from EDGVoIP
+  callUuid: varchar("call_uuid", { length: 255 }), // FreeSWITCH call UUID
+  
+  // Legacy identifiers
+  sipDomain: varchar("sip_domain", { length: 255 }), // Made optional for API v2
+  callId: varchar("call_id", { length: 255 }), // Legacy call ID
+  
+  // Call direction and parties
+  direction: voipCallDirectionEnum("direction").notNull(),
+  callerNumber: varchar("caller_number", { length: 100 }), // API v2 caller
+  calledNumber: varchar("called_number", { length: 100 }), // API v2 destination
+  fromUri: varchar("from_uri", { length: 100 }), // Legacy E.164 o ext
+  toUri: varchar("to_uri", { length: 100 }), // Legacy E.164 o ext
+  didE164: varchar("did_e164", { length: 50 }),
+  extNumber: varchar("ext_number", { length: 20 }),
+  
+  // Timestamps
+  startTime: timestamp("start_time"), // API v2: call start time
+  answerTime: timestamp("answer_time"), // API v2: when answered
+  endTime: timestamp("end_time"), // API v2: call end time
+  startTs: timestamp("start_ts"), // Legacy start
+  answerTs: timestamp("answer_ts"), // Legacy answer
+  endTs: timestamp("end_ts"), // Legacy end
+  
+  // Duration
+  duration: integer("duration"), // API v2: total duration in seconds
+  billSec: integer("bill_sec"), // API v2: billable seconds
+  billsec: integer("billsec").default(0), // Legacy billable seconds
+  
+  // Call result
+  hangupCause: varchar("hangup_cause", { length: 100 }), // API v2: SIP hangup cause
+  disposition: voipCallDispositionEnum("disposition"), // Made optional for API v2
+  
+  // Recording
+  recordingUrl: varchar("recording_url", { length: 500 }),
+  
+  // Metadata
+  metaJson: jsonb("meta_json"),
+  
+  // Sync tracking
+  syncSource: varchar("sync_source", { length: 20 }).default('w3suite'),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("voip_cdrs_tenant_idx").on(table.tenantId),
   index("voip_cdrs_store_idx").on(table.storeId),
   index("voip_cdrs_sip_domain_idx").on(table.sipDomain),
   index("voip_cdrs_call_id_idx").on(table.callId),
+  index("voip_cdrs_call_uuid_idx").on(table.callUuid),
+  index("voip_cdrs_edgvoip_call_id_idx").on(table.edgvoipCallId),
   index("voip_cdrs_start_ts_idx").on(table.startTs),
+  index("voip_cdrs_start_time_idx").on(table.startTime),
   index("voip_cdrs_did_idx").on(table.didE164),
   index("voip_cdrs_ext_idx").on(table.extNumber),
 ]);
@@ -6706,12 +6859,15 @@ export const insertVoipCdrSchema = createInsertSchema(voipCdrs).omit({
   id: true, 
   createdAt: true 
 }).extend({
-  sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format"),
+  sipDomain: z.string().regex(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/, "Invalid SIP domain format").optional(),
   direction: z.enum(['inbound', 'outbound', 'internal']),
-  disposition: z.enum(['answered', 'no_answer', 'busy', 'failed', 'voicemail']),
-  startTs: z.coerce.date(),
+  disposition: z.enum(['answered', 'no_answer', 'busy', 'failed', 'voicemail']).optional(),
+  startTs: z.coerce.date().optional().nullable(),
+  startTime: z.coerce.date().optional().nullable(),
   answerTs: z.coerce.date().optional().nullable(),
+  answerTime: z.coerce.date().optional().nullable(),
   endTs: z.coerce.date().optional().nullable(),
+  endTime: z.coerce.date().optional().nullable(),
 });
 export type InsertVoipCdr = z.infer<typeof insertVoipCdrSchema>;
 export type VoipCdr = typeof voipCdrs.$inferSelect;
@@ -6770,7 +6926,7 @@ export const insertVoipActivityLogSchema = createInsertSchema(voipActivityLog).o
   ts: true
 }).extend({
   action: z.enum(['create', 'update', 'delete', 'provision', 'sync']),
-  targetType: z.enum(['trunk', 'did', 'ext', 'route', 'policy']),
+  targetType: z.enum(['trunk', 'did', 'ext', 'route', 'policy', 'cdr']),
   status: z.enum(['ok', 'fail']),
 });
 export type InsertVoipActivityLog = z.infer<typeof insertVoipActivityLogSchema>;
