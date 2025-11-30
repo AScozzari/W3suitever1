@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { TrunkAIConfigDialog } from './TrunkAIConfigDialog';
 import { VoIPIntegrationSettings } from './VoIPIntegrationSettings';
+import { TrunkFormModal } from './TrunkFormModal';
 
 interface PhoneVoIPConfigProps {
   visible: boolean;
@@ -94,6 +95,8 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   } | null>(null);
   const [trunkAIConfig, setTrunkAIConfig] = useState<any | null>(null);
   const [showTrunkAIConfig, setShowTrunkAIConfig] = useState(false);
+  const [showTrunkForm, setShowTrunkForm] = useState(false);
+  const [editingTrunk, setEditingTrunk] = useState<any | null>(null);
 
   const { data: trunks = [], isLoading: trunksLoading, refetch: refetchTrunks } = useQuery<any[]>({
     queryKey: ['/api/voip/trunks'],
@@ -562,10 +565,10 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-600">
-                {trunks.length} trunk{trunks.length !== 1 ? 's' : ''} sincronizzati da edgvoip
+                {trunks.length} trunk{trunks.length !== 1 ? 's' : ''} configurati
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                I trunks sono gestiti centralmente da edgvoip PBX. Modifiche solo via webhook.
+                Gestisci i trunk SIP per le chiamate VoIP. Sync bidirezionale con EDGVoIP.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -581,7 +584,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                     if (response.success) {
                       await refetchTrunks();
                       toast({
-                        title: "✅ Trunks sincronizzati",
+                        title: "Trunks sincronizzati",
                         description: response.data?.message || `${response.data?.synced || 0} trunk aggiornati da edgvoip`,
                       });
                     } else {
@@ -590,7 +593,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                   } catch (error) {
                     console.error('[REFRESH] Errore sync trunk da edgvoip:', error);
                     toast({
-                      title: "❌ Errore sincronizzazione",
+                      title: "Errore sincronizzazione",
                       description: error instanceof Error ? error.message : "Impossibile sincronizzare da edgvoip",
                       variant: "destructive",
                     });
@@ -601,11 +604,20 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                 className="hover:bg-gray-50"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${trunksLoading ? 'animate-spin' : ''}`} />
-                Refresh da edgvoip
+                Sync da EDGVoIP
               </Button>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                Read-Only
-              </Badge>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingTrunk(null);
+                  setShowTrunkForm(true);
+                }}
+                data-testid="button-new-trunk"
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuovo Trunk
+              </Button>
             </div>
           </div>
 
@@ -686,6 +698,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                       <TableHead className="font-semibold text-gray-700">AI Agent</TableHead>
                       <TableHead className="font-semibold text-gray-700 text-center">Extensions</TableHead>
                       <TableHead className="font-semibold text-gray-700">Last Sync</TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-right">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -754,6 +767,57 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                               })}
                             </p>
                           )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingTrunk(trunk.trunk);
+                                setShowTrunkForm(true);
+                              }}
+                              data-testid={`button-edit-trunk-${trunk.trunk.id}`}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setTrunkAIConfig(trunk.trunk);
+                                setShowTrunkAIConfig(true);
+                              }}
+                              data-testid={`button-ai-trunk-${trunk.trunk.id}`}
+                            >
+                              <Bot className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={async () => {
+                                if (!confirm('Sei sicuro di voler eliminare questo trunk?')) return;
+                                try {
+                                  await apiRequest('DELETE', `/api/voip/trunks/${trunk.trunk.id}`, null);
+                                  toast({
+                                    title: "Trunk eliminato",
+                                    description: "Il trunk è stato rimosso correttamente"
+                                  });
+                                  await refetchTrunks();
+                                } catch (error) {
+                                  toast({
+                                    title: "Errore",
+                                    description: "Impossibile eliminare il trunk",
+                                    variant: "destructive"
+                                  });
+                                }
+                              }}
+                              data-testid={`button-delete-trunk-${trunk.trunk.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1030,7 +1094,61 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={extensionForm.control}
+                      name="callForwardEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-gray-700">Inoltro Chiamate</FormLabel>
+                            <FormDescription className="text-xs text-gray-500">
+                              Deviazione automatica
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-callforward-enabled"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </div>
+
+                  {extensionForm.watch('callForwardEnabled') && (
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Phone className="w-5 h-5 text-blue-500" />
+                        Configurazione Inoltro
+                      </h3>
+                      
+                      <FormField
+                        control={extensionForm.control}
+                        name="callForwardNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">Numero Destinazione</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                value={field.value || ''} 
+                                placeholder="+39 339 1234567" 
+                                data-testid="input-callforward-number"
+                                className="bg-white"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-gray-500">
+                              Numero a cui inoltrare le chiamate quando attivo
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
 
                   {extensionForm.watch('voicemailEnabled') && (
                     <div className="border-t border-gray-200 pt-4 mt-4">
@@ -1167,6 +1285,8 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                                 voicemailEmail: ext.extension.voicemailEmail || '',
                                 recordingEnabled: ext.extension.recordingEnabled,
                                 dndEnabled: ext.extension.dndEnabled,
+                                callForwardEnabled: ext.extension.callForwardEnabled || false,
+                                callForwardNumber: ext.extension.callForwardNumber || '',
                                 status: ext.extension.status,
                               });
                             }}
@@ -1346,6 +1466,14 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
         extensions={extensions}
         open={showTrunkAIConfig}
         onOpenChange={setShowTrunkAIConfig}
+      />
+
+      {/* Trunk Create/Edit Modal */}
+      <TrunkFormModal
+        open={showTrunkForm}
+        onOpenChange={setShowTrunkForm}
+        trunk={editingTrunk}
+        onSuccess={() => refetchTrunks()}
       />
     </div>
   );

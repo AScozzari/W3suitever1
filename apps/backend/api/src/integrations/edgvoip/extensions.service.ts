@@ -696,6 +696,52 @@ export async function syncExtensionsWithEdgvoip(
 }
 
 /**
+ * Sync a single extension with EDGVoIP
+ */
+export async function syncExtensionWithEdgvoip(
+  extensionId: string,
+  tenantId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await setTenantContext(db, tenantId);
+
+    const [extension] = await db.select()
+      .from(voipExtensions)
+      .where(and(
+        eq(voipExtensions.id, extensionId),
+        eq(voipExtensions.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!extension) {
+      return { success: false, error: 'Extension not found' };
+    }
+
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return { success: false, error: 'EDGVoIP not configured' };
+    }
+
+    // Sync this specific extension
+    const syncResult = await syncExtensionsWithEdgvoip(tenantId, {
+      extensionIds: [extension.externalId || extensionId]
+    });
+
+    return {
+      success: syncResult.success,
+      error: syncResult.errors?.length > 0 ? syncResult.errors[0].error : undefined
+    };
+  } catch (error) {
+    logger.error('Failed to sync extension', { error, extensionId, tenantId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Sync failed'
+    };
+  }
+}
+
+/**
  * Get SIP credentials for user (decrypted)
  */
 export async function getUserCredentials(

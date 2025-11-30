@@ -44,11 +44,13 @@ import {
 } from '../db/schema/w3suite';
 import { encryptionKeyService } from '../core/encryption-service';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
-import { voipExtensionService } from '../services/voip-extension.service';
-import { syncAIConfigToEdgvoip } from '../services/voip-edgvoip-sync.service';
-import { syncTrunksFromEdgvoip } from '../services/voip-trunk-sync.service';
-import { syncExtensionsFromEdgvoip } from '../services/voip-extension-sync.service';
-import { checkEdgvoipConnection } from '../services/edgvoip-api-client.service';
+import { 
+  extensionsService,
+  trunksService,
+  checkEdgvoipConnection,
+  syncTrunksWithEdgvoip,
+  syncExtensionsWithEdgvoip
+} from '../integrations/edgvoip';
 
 const router = express.Router();
 
@@ -169,7 +171,7 @@ router.post('/trunks/refresh', rbacMiddleware, requirePermission('manage_telepho
     }
 
     // Sync trunks from edgvoip
-    const syncResult = await syncTrunksFromEdgvoip(tenantId);
+    const syncResult = await syncTrunksWithEdgvoip(tenantId);
 
     // Log activity
     await logActivity(
@@ -282,10 +284,10 @@ router.post('/extensions', rbacMiddleware, requirePermission('manage_telephony')
     await setTenantContext(db, tenantId);
 
     // Auto-generate secure SIP password (20 chars)
-    const plaintextPassword = voipExtensionService.generateSIPPassword(20);
+    const plaintextPassword = extensionsService.generateSIPPassword(20);
     
     // Encrypt password for storage
-    const encryptedPassword = await voipExtensionService.encryptPassword(plaintextPassword, tenantId);
+    const encryptedPassword = await encryptionKeyService.encrypt(plaintextPassword, tenantId);
 
     // Validate input (without sipPassword from request body)
     const { sipPassword: _ignored, ...bodyWithoutPassword } = req.body;
@@ -443,7 +445,7 @@ router.get('/extensions/me', rbacMiddleware, async (req, res) => {
     await setTenantContext(db, tenantId);
 
     // Get decrypted SIP credentials via service
-    const credentials = await voipExtensionService.getUserCredentials(userId, tenantId);
+    const credentials = await extensionsService.getUserCredentials(userId, tenantId);
 
     if (!credentials) {
       return res.status(404).json({ 
@@ -487,7 +489,7 @@ router.patch('/extensions/:id/reset-password', rbacMiddleware, requirePermission
     }
 
     // Reset password via service
-    const newPassword = await voipExtensionService.resetPassword(id, tenantId);
+    const newPassword = await extensionsService.resetExtensionPassword(id, tenantId);
 
     await logActivity(
       tenantId,
@@ -540,8 +542,8 @@ router.post('/extensions/:id/sync', rbacMiddleware, requirePermission('manage_te
       return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
     }
 
-    // Sync with edgvoip (stub for now)
-    const syncResult = await voipExtensionService.syncWithEdgvoip(id, tenantId);
+    // Sync with edgvoip
+    const syncResult = await extensionsService.syncExtensionWithEdgvoip(id, tenantId);
 
     await logActivity(
       tenantId,
@@ -601,7 +603,7 @@ router.post('/extensions/refresh-all', rbacMiddleware, requirePermission('manage
     }
 
     // Sync extensions from edgvoip
-    const syncResult = await syncExtensionsFromEdgvoip(tenantId, domainId);
+    const syncResult = await syncExtensionsWithEdgvoip(tenantId);
 
     // Log activity
     await logActivity(
@@ -1944,25 +1946,15 @@ router.patch('/trunks/:id/ai-config', rbacMiddleware, requirePermission('manage_
       { aiConfig: validated }
     );
 
-    // ✅ AUTO-TRIGGER: Sync AI config to edgvoip
-    logger.info('Auto-triggering edgvoip AI config sync', { trunkId: id, tenantId });
-    
-    const syncResult = await syncAIConfigToEdgvoip(id, tenantId);
+    // Note: AI config is stored locally. Use trunks sync to push to edgvoip
+    logger.info('Trunk AI config updated locally', { trunkId: id, tenantId });
 
-    if (!syncResult.success) {
-      logger.warn('edgvoip sync failed, but trunk updated locally', {
-        trunkId: id,
-        syncError: syncResult.error,
-        tenantId
-      });
-    }
-
-    // Return updated trunk with sync status
+    // Return updated trunk
     return res.json({
       success: true,
       data: {
         trunk: updated,
-        edgvoipSync: syncResult
+        message: 'AI configuration saved. Use sync to push changes to EDGVoIP.'
       }
     } as ApiSuccessResponse);
   } catch (error) {
