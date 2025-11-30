@@ -32,8 +32,11 @@ import {
   Clock,
   Server,
   Wifi,
-  WifiOff
+  WifiOff,
+  FlaskConical,
+  Zap
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 interface VoIPSettingsResponse {
   configured: boolean;
@@ -61,6 +64,28 @@ interface VoIPLogEntry {
   createdAt: string;
 }
 
+interface APITestResult {
+  name: string;
+  endpoint: string;
+  description: string;
+  success: boolean;
+  status: number | null;
+  responseTime: number;
+  error: string | null;
+  data?: { count?: number };
+}
+
+interface APITestResponse {
+  summary: {
+    passed: number;
+    failed: number;
+    total: number;
+    allPassed: boolean;
+    testedAt: string;
+  };
+  results: APITestResult[];
+}
+
 const settingsFormSchema = z.object({
   tenantExternalId: z.string().min(1, "ID esterno tenant obbligatorio"),
   apiKey: z.string().optional(),
@@ -73,9 +98,10 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export function VoIPIntegrationSettings() {
   const { toast } = useToast();
-  const [activeSubTab, setActiveSubTab] = useState<'config' | 'logs'>('config');
+  const [activeSubTab, setActiveSubTab] = useState<'config' | 'logs' | 'test'>('config');
   const [showApiKey, setShowApiKey] = useState(false);
   const [logFilter, setLogFilter] = useState<string>('all');
+  const [testResults, setTestResults] = useState<APITestResponse | null>(null);
 
   const { data: settingsData, isLoading: settingsLoading, refetch: refetchSettings } = useQuery<{ data: VoIPSettingsResponse }>({
     queryKey: ['/api/voip/settings'],
@@ -161,6 +187,30 @@ export function VoIPIntegrationSettings() {
     }
   });
 
+  const testAllMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/voip/settings/test-all', null);
+    },
+    onSuccess: (response: any) => {
+      const data = response?.data as APITestResponse;
+      setTestResults(data);
+      const allPassed = data?.summary?.allPassed;
+      toast({
+        title: allPassed ? "Tutti i test superati!" : "Alcuni test falliti",
+        description: `${data?.summary?.passed}/${data?.summary?.total} endpoint funzionanti`,
+        variant: allPassed ? "default" : "destructive"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/voip/settings'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore test API",
+        description: error.message || "Errore durante il test delle API",
+        variant: "destructive"
+      });
+    }
+  });
+
   const onSubmit = (data: SettingsFormValues) => {
     saveMutation.mutate(data);
   };
@@ -238,6 +288,10 @@ export function VoIPIntegrationSettings() {
               <TabsTrigger value="config" data-testid="subtab-config">
                 <Key className="w-4 h-4 mr-2" />
                 Configurazione API
+              </TabsTrigger>
+              <TabsTrigger value="test" data-testid="subtab-test" disabled={!isConfigured}>
+                <FlaskConical className="w-4 h-4 mr-2" />
+                Test API
               </TabsTrigger>
               <TabsTrigger value="logs" data-testid="subtab-logs">
                 <Activity className="w-4 h-4 mr-2" />
@@ -421,6 +475,156 @@ export function VoIPIntegrationSettings() {
                   </div>
                 </form>
               </Form>
+            </TabsContent>
+
+            <TabsContent value="test" className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                <FlaskConical className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-blue-800">Test Completo API EDGVoIP</p>
+                  <p className="text-sm text-blue-700">Verifica la connettività e le autorizzazioni per ogni endpoint API disponibile</p>
+                </div>
+                <Button
+                  onClick={() => testAllMutation.mutate()}
+                  disabled={testAllMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  data-testid="button-test-all-apis"
+                >
+                  {testAllMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 mr-2" />
+                      Esegui Test Completo
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {testResults && (
+                <>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Card className={`p-4 ${testResults.summary.allPassed ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                      <div className="flex items-center gap-3">
+                        {testResults.summary.allPassed ? (
+                          <CheckCircle2 className="w-8 h-8 text-green-600" />
+                        ) : (
+                          <AlertCircle className="w-8 h-8 text-amber-600" />
+                        )}
+                        <div>
+                          <p className="text-sm text-gray-600">Stato Generale</p>
+                          <p className={`text-lg font-bold ${testResults.summary.allPassed ? 'text-green-700' : 'text-amber-700'}`}>
+                            {testResults.summary.allPassed ? 'Tutti OK' : 'Attenzione'}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 bg-green-50 border-green-200">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-8 h-8 text-green-600" />
+                        <div>
+                          <p className="text-sm text-gray-600">Test Superati</p>
+                          <p className="text-2xl font-bold text-green-700">
+                            {testResults.summary.passed}/{testResults.summary.total}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 bg-red-50 border-red-200">
+                      <div className="flex items-center gap-3">
+                        <XCircle className="w-8 h-8 text-red-600" />
+                        <div>
+                          <p className="text-sm text-gray-600">Test Falliti</p>
+                          <p className="text-2xl font-bold text-red-700">
+                            {testResults.summary.failed}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-0 overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="w-10">Stato</TableHead>
+                          <TableHead>Endpoint</TableHead>
+                          <TableHead>Descrizione</TableHead>
+                          <TableHead className="w-24">HTTP Status</TableHead>
+                          <TableHead className="w-24">Tempo (ms)</TableHead>
+                          <TableHead>Risultato</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {testResults.results.map((result, idx) => (
+                          <TableRow key={idx} data-testid={`test-result-row-${idx}`}>
+                            <TableCell>
+                              {result.success ? (
+                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                              ) : (
+                                <XCircle className="w-5 h-5 text-red-600" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{result.name}</p>
+                                <p className="text-xs text-gray-500 font-mono">{result.endpoint}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {result.description}
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                className={result.success 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-red-100 text-red-700'
+                                }
+                              >
+                                {result.status || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {result.responseTime}ms
+                            </TableCell>
+                            <TableCell>
+                              {result.success ? (
+                                result.data?.count !== undefined ? (
+                                  <span className="text-sm text-green-700">
+                                    {result.data.count} elementi
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-green-700">OK</span>
+                                )
+                              ) : (
+                                <span className="text-sm text-red-600" title={result.error || ''}>
+                                  {result.error?.substring(0, 30)}...
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Card>
+
+                  <p className="text-xs text-gray-500 text-right">
+                    Ultimo test: {new Date(testResults.summary.testedAt).toLocaleString('it-IT')}
+                  </p>
+                </>
+              )}
+
+              {!testResults && !testAllMutation.isPending && (
+                <div className="text-center py-12 text-gray-500">
+                  <FlaskConical className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p>Clicca "Esegui Test Completo" per verificare tutti gli endpoint API</p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="logs" className="space-y-6">

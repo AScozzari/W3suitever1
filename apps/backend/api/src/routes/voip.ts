@@ -2243,6 +2243,151 @@ router.post('/settings/test', rbacMiddleware, requirePermission('manage_telephon
   }
 });
 
+// POST /api/voip/settings/test-all - Test all EDGVoIP APIs
+router.post('/settings/test-all', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Get config
+    const [config] = await db
+      .select()
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId));
+
+    if (!config) {
+      return res.status(404).json({ error: 'VoIP not configured for this tenant' } as ApiErrorResponse);
+    }
+
+    // Decrypt API key
+    const decryptedApiKey = await encryptionKeyService.decrypt(config.apiKey, tenantId);
+    if (!decryptedApiKey) {
+      return res.status(500).json({ error: 'Failed to decrypt API key' } as ApiErrorResponse);
+    }
+
+    const baseUrl = config.apiBaseUrl || 'https://edgvoip.it/api/v2/voip';
+    const headers = {
+      'X-API-Key': decryptedApiKey,
+      'X-Tenant-ID': config.tenantExternalId,
+      'Content-Type': 'application/json'
+    };
+
+    // Define all API tests
+    const apiTests = [
+      { name: 'Health Check', endpoint: '/health', method: 'GET', description: 'Verifica connessione API' },
+      { name: 'Lista Trunk', endpoint: '/trunks', method: 'GET', description: 'Recupera lista trunk SIP' },
+      { name: 'Lista Extensions', endpoint: '/extensions', method: 'GET', description: 'Recupera lista interni' },
+      { name: 'Lista DID', endpoint: '/dids', method: 'GET', description: 'Recupera lista numeri DID' },
+      { name: 'CDR Access', endpoint: '/cdr', method: 'GET', description: 'Accesso ai record chiamate' },
+      { name: 'Account Info', endpoint: '/account', method: 'GET', description: 'Info account tenant' },
+    ];
+
+    const results: Array<{
+      name: string;
+      endpoint: string;
+      description: string;
+      success: boolean;
+      status: number | null;
+      responseTime: number;
+      error: string | null;
+      data?: any;
+    }> = [];
+
+    // Execute all tests
+    for (const test of apiTests) {
+      const startTime = Date.now();
+      try {
+        const response = await fetch(`${baseUrl}${test.endpoint}`, {
+          method: test.method,
+          headers
+        });
+
+        const responseTime = Date.now() - startTime;
+        const success = response.ok;
+        let responseData = null;
+
+        try {
+          responseData = await response.json();
+        } catch {
+          // Response might not be JSON
+        }
+
+        results.push({
+          name: test.name,
+          endpoint: test.endpoint,
+          description: test.description,
+          success,
+          status: response.status,
+          responseTime,
+          error: success ? null : `HTTP ${response.status}: ${response.statusText}`,
+          data: success && responseData ? { 
+            count: Array.isArray(responseData) ? responseData.length : 
+                   (responseData.data && Array.isArray(responseData.data)) ? responseData.data.length : 
+                   undefined 
+          } : undefined
+        });
+      } catch (fetchError: any) {
+        const responseTime = Date.now() - startTime;
+        results.push({
+          name: test.name,
+          endpoint: test.endpoint,
+          description: test.description,
+          success: false,
+          status: null,
+          responseTime,
+          error: fetchError.message || 'Network error'
+        });
+      }
+    }
+
+    // Calculate summary
+    const successCount = results.filter(r => r.success).length;
+    const totalTests = results.length;
+    const allPassed = successCount === totalTests;
+
+    // Update connection status based on health check
+    const healthTest = results.find(r => r.name === 'Health Check');
+    if (healthTest) {
+      await db
+        .update(voipTenantConfig)
+        .set({
+          connectionStatus: healthTest.success ? 'connected' : 'error',
+          lastConnectionTest: new Date(),
+          connectionError: healthTest.error
+        })
+        .where(eq(voipTenantConfig.tenantId, tenantId));
+    }
+
+    logger.info('VoIP API test-all completed', {
+      tenantId,
+      successCount,
+      totalTests,
+      allPassed
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        summary: {
+          passed: successCount,
+          failed: totalTests - successCount,
+          total: totalTests,
+          allPassed,
+          testedAt: new Date()
+        },
+        results
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error running VoIP API tests', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to run API tests' } as ApiErrorResponse);
+  }
+});
+
 // ==================== VOIP ACTIVITY LOGS ====================
 
 // GET /api/voip/logs - Get VoIP activity logs with filters
