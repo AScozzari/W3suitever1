@@ -90,7 +90,10 @@ const settingsFormSchema = z.object({
   tenantExternalId: z.string().min(1, "ID esterno tenant obbligatorio"),
   apiKey: z.string().optional(),
   webhookSecret: z.string().optional(),
-  apiBaseUrl: z.string().url("URL API non valido").optional(),
+  apiBaseUrl: z.string().optional().refine(
+    (val) => !val || val === '' || /^https?:\/\/.+/.test(val),
+    "URL API non valido"
+  ),
   enabled: z.boolean().default(true)
 });
 
