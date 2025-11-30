@@ -306,7 +306,7 @@ export default function ShiftEditorModal({
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={null}>
                     <SelectItem value="full_time">Standard Full-Time</SelectItem>
                     <SelectItem value="part_time">Part-Time</SelectItem>
                     <SelectItem value="flexible">Flessibile</SelectItem>
@@ -431,7 +431,7 @@ export default function ShiftEditorModal({
                     <SelectTrigger>
                       <SelectValue placeholder="Seleziona pattern" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent container={null}>
                       <SelectItem value="daily">Giornaliero</SelectItem>
                       <SelectItem value="weekly">Settimanale</SelectItem>
                       <SelectItem value="monthly">Mensile</SelectItem>

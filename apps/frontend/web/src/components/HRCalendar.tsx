@@ -1002,7 +1002,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                           <SelectValue placeholder="Seleziona dipendente" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent container={null}>
                         {(employees as any[]).map((emp: any) => (
                           <SelectItem key={emp.id} value={emp.id}>
                             {emp.firstName} {emp.lastName} - {emp.role || 'Dipendente'}
@@ -1027,7 +1027,7 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                           <SelectValue placeholder="Seleziona tipo" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent container={null}>
                         <SelectItem value="full_time">Standard Full-Time (8h)</SelectItem>
                         <SelectItem value="part_time_4h">Part-Time (4h)</SelectItem>
                         <SelectItem value="part_time_6h">Part-Time (6h)</SelectItem>

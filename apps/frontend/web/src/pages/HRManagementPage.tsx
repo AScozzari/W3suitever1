@@ -991,7 +991,7 @@ const HRManagementPage: React.FC = () => {
                 <SelectTrigger data-testid="select-request-type">
                   <SelectValue placeholder="Seleziona tipo..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent container={null}>
                   <SelectItem value="leave">Ferie</SelectItem>
                   <SelectItem value="sick_leave">Malattia</SelectItem>
                   <SelectItem value="overtime">Straordinari</SelectItem>
@@ -1110,7 +1110,7 @@ const HRManagementPage: React.FC = () => {
               <SelectTrigger data-testid="select-document">
                 <SelectValue placeholder="Seleziona documento da inviare..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent container={null}>
                 {documents.map((doc) => (
                   <SelectItem key={doc.id} value={doc.id}>
                     <div className="flex items-center gap-2">

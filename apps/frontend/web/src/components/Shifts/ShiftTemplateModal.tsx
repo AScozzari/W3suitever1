@@ -777,7 +777,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
                               <SelectValue placeholder="Seleziona punto vendita" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent container={null}>
                             <SelectItem value="global" className="font-semibold text-orange-600">
                               🌐 Tutti i Punti Vendita (Globale)
                             </SelectItem>
