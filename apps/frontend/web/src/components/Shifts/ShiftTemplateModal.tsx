@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -404,6 +404,57 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
 
   // Track active block count for each time slot (1-4)
   const [blockCounts, setBlockCounts] = useState<Record<number, number>>({});
+
+  // ✅ FIX: Reset form when template changes (edit mode)
+  // useForm's defaultValues only apply on first mount, so we need to reset when switching templates
+  useEffect(() => {
+    if (template?.id) {
+      // Editing existing template - populate form with template data
+      form.reset({
+        name: template.name || '',
+        description: template.description || '',
+        storeId: template.storeId || 'global',
+        status: template.status || 'active',
+        shiftType: template.shiftType || 'slot_based',
+        globalClockInTolerance: template.globalClockInTolerance || 15,
+        globalClockOutTolerance: template.globalClockOutTolerance || 15,
+        globalBreakMinutes: template.globalBreakMinutes || 30,
+        timeSlots: template.timeSlots || (template.defaultStartTime ? [
+          { 
+            segmentType: 'continuous',
+            startTime: template.defaultStartTime, 
+            endTime: template.defaultEndTime, 
+            breakMinutes: template.defaultBreakMinutes || 30,
+            clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
+            clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
+          }
+        ] : [
+          { segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
+        ]),
+        color: template.color || '#FF6900',
+        isActive: template.isActive ?? true,
+        notes: template.notes || ''
+      });
+      setBlockCounts({}); // Reset block counts for new template
+    } else {
+      // Creating new template - reset to defaults
+      form.reset({
+        name: '',
+        description: '',
+        storeId: 'global',
+        status: 'active',
+        shiftType: 'slot_based',
+        globalClockInTolerance: 15,
+        globalClockOutTolerance: 15,
+        globalBreakMinutes: 30,
+        timeSlots: [{ segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }],
+        color: '#FF6900',
+        isActive: true,
+        notes: ''
+      });
+      setBlockCounts({});
+    }
+  }, [template?.id, form]);
 
   // Dynamic time slots management
   const { fields, append, remove } = useFieldArray({
