@@ -228,8 +228,15 @@ export function VoIPIntegrationSettings() {
   });
 
   const onSubmit = (data: SettingsFormValues) => {
+    console.log('[VoIP Settings] Form submitted:', data);
     saveMutation.mutate(data);
   };
+
+  // Debug: log form errors
+  const formErrors = form.formState.errors;
+  if (Object.keys(formErrors).length > 0) {
+    console.log('[VoIP Settings] Form validation errors:', formErrors);
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -480,10 +487,25 @@ export function VoIPIntegrationSettings() {
                       Aggiorna
                     </Button>
                     <Button
-                      type="submit"
+                      type="button"
                       disabled={saveMutation.isPending}
                       className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                       data-testid="button-save-settings"
+                      onClick={async () => {
+                        console.log('[VoIP] Button clicked, form values:', form.getValues());
+                        console.log('[VoIP] Form errors:', form.formState.errors);
+                        const isValid = await form.trigger();
+                        console.log('[VoIP] Form valid:', isValid);
+                        if (isValid) {
+                          form.handleSubmit(onSubmit)();
+                        } else {
+                          toast({
+                            title: "Errore di validazione",
+                            description: "Controlla i campi del form",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
                     >
                       {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Salva Configurazione
