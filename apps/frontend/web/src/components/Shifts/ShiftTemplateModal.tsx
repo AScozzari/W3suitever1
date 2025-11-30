@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -404,6 +404,10 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
 
   // Track active block count for each time slot (1-4)
   const [blockCounts, setBlockCounts] = useState<Record<number, number>>({});
+  
+  // FIX: State to track when form is ready to prevent DOM conflicts
+  const [isFormReady, setIsFormReady] = useState(false);
+  const formResetRef = useRef(false);
 
   // Dynamic time slots management
   const { fields, append, remove } = useFieldArray({
@@ -411,35 +415,53 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     name: 'timeSlots'
   });
 
-  // Reset form when template or isOpen changes
+  // FIX: Reset form BEFORE rendering content to prevent DOM conflicts
+  // Use microtask to ensure state is fully settled before rendering
   useEffect(() => {
     if (isOpen) {
-      form.reset({
-        name: template?.name || '',
-        description: template?.description || '',
-        storeId: template?.storeId || 'global',
-        status: template?.status || 'active',
-        shiftType: template?.shiftType || 'slot_based',
-        globalClockInTolerance: template?.globalClockInTolerance || 15,
-        globalClockOutTolerance: template?.globalClockOutTolerance || 15,
-        globalBreakMinutes: template?.globalBreakMinutes || 30,
-        timeSlots: template?.timeSlots || (template?.defaultStartTime ? [
-          { 
-            segmentType: 'continuous',
-            startTime: template.defaultStartTime, 
-            endTime: template.defaultEndTime, 
-            breakMinutes: template.defaultBreakMinutes || 30,
-            clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
-            clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
-          }
-        ] : [
-          { segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
-        ]),
-        color: template?.color || '#FF6900',
-        isActive: template?.isActive ?? true,
-        notes: template?.notes || ''
+      // Mark form as not ready during reset
+      setIsFormReady(false);
+      formResetRef.current = false;
+      
+      // Use microtask to defer reset and avoid StrictMode double-mount conflicts
+      queueMicrotask(() => {
+        if (formResetRef.current) return; // Prevent double execution
+        formResetRef.current = true;
+        
+        form.reset({
+          name: template?.name || '',
+          description: template?.description || '',
+          storeId: template?.storeId || 'global',
+          status: template?.status || 'active',
+          shiftType: template?.shiftType || 'slot_based',
+          globalClockInTolerance: template?.globalClockInTolerance || 15,
+          globalClockOutTolerance: template?.globalClockOutTolerance || 15,
+          globalBreakMinutes: template?.globalBreakMinutes || 30,
+          timeSlots: template?.timeSlots || (template?.defaultStartTime ? [
+            { 
+              segmentType: 'continuous',
+              startTime: template.defaultStartTime, 
+              endTime: template.defaultEndTime, 
+              breakMinutes: template.defaultBreakMinutes || 30,
+              clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
+              clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
+            }
+          ] : [
+            { segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
+          ]),
+          color: template?.color || '#FF6900',
+          isActive: template?.isActive ?? true,
+          notes: template?.notes || ''
+        });
+        setBlockCounts({});
+        
+        // Mark form as ready after reset completes
+        setIsFormReady(true);
       });
-      setBlockCounts({});
+    } else {
+      // Reset ready state when modal closes
+      setIsFormReady(false);
+      formResetRef.current = false;
     }
   }, [isOpen, template?.id]);
 
@@ -668,8 +690,11 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   
   const totalHours = calculateTotalHours(watchedTimeSlots || []);
 
+  // FIX: Generate stable key to force clean remount when switching between templates
+  const dialogKey = `shift-template-modal-${template?.id ?? 'new'}`;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog key={dialogKey} open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -684,6 +709,16 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
           </DialogDescription>
         </DialogHeader>
 
+        {/* FIX: Only render form when ready to prevent DOM conflicts with Portal components */}
+        {!isFormReady ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+              <span className="text-sm text-gray-500">Caricamento...</span>
+            </div>
+          </div>
+        ) : (
+        <>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {/* Template Basic Info */}
@@ -1428,6 +1463,8 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
             )}
           </Button>
         </DialogFooter>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
