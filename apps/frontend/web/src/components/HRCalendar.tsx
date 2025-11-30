@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, useEffect, memo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, memo, useDeferredValue } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -162,7 +162,7 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
 
   // ✅ Task 8: Query shift assignments - carica TUTTI i turni per mostrare pallini nel calendario globale
   // NON filtrare per storeId nel calendario principale - mostra tutti i negozi
-  const { data: shiftAssignments = [], isLoading: assignmentsLoading } = useQuery({
+  const { data: rawShiftAssignments = [], isLoading: assignmentsLoading } = useQuery({
     queryKey: ['/api/hr/shift-assignments', { startDate, endDate }], // Rimuovo storeId dalla key
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -178,6 +178,10 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
     },
     enabled: hrQueryReadiness.enabled,
   });
+  
+  // ✅ FIX: Use useDeferredValue to prevent FullCalendar re-render conflicts with Portal transitions
+  // This defers the update so React can prioritize Portal DOM operations before calendar updates
+  const shiftAssignments = useDeferredValue(rawShiftAssignments);
 
   // ✅ CROSS-STORE: Query per turni pianificati - storeId opzionale
   // Se storeId non è passato, carica TUTTI i turni di tutti i negozi
