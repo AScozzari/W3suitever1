@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -404,66 +404,12 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
 
   // Track active block count for each time slot (1-4)
   const [blockCounts, setBlockCounts] = useState<Record<number, number>>({});
-  
-  // FIX: State to track when form is ready to prevent DOM conflicts
-  const [isFormReady, setIsFormReady] = useState(false);
-  const formResetRef = useRef(false);
 
   // Dynamic time slots management
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'timeSlots'
   });
-
-  // FIX: Reset form BEFORE rendering content to prevent DOM conflicts
-  // Use microtask to ensure state is fully settled before rendering
-  useEffect(() => {
-    if (isOpen) {
-      // Mark form as not ready during reset
-      setIsFormReady(false);
-      formResetRef.current = false;
-      
-      // Use microtask to defer reset and avoid StrictMode double-mount conflicts
-      queueMicrotask(() => {
-        if (formResetRef.current) return; // Prevent double execution
-        formResetRef.current = true;
-        
-        form.reset({
-          name: template?.name || '',
-          description: template?.description || '',
-          storeId: template?.storeId || 'global',
-          status: template?.status || 'active',
-          shiftType: template?.shiftType || 'slot_based',
-          globalClockInTolerance: template?.globalClockInTolerance || 15,
-          globalClockOutTolerance: template?.globalClockOutTolerance || 15,
-          globalBreakMinutes: template?.globalBreakMinutes || 30,
-          timeSlots: template?.timeSlots || (template?.defaultStartTime ? [
-            { 
-              segmentType: 'continuous',
-              startTime: template.defaultStartTime, 
-              endTime: template.defaultEndTime, 
-              breakMinutes: template.defaultBreakMinutes || 30,
-              clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
-              clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
-            }
-          ] : [
-            { segmentType: 'continuous', startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }
-          ]),
-          color: template?.color || '#FF6900',
-          isActive: template?.isActive ?? true,
-          notes: template?.notes || ''
-        });
-        setBlockCounts({});
-        
-        // Mark form as ready after reset completes
-        setIsFormReady(true);
-      });
-    } else {
-      // Reset ready state when modal closes
-      setIsFormReady(false);
-      formResetRef.current = false;
-    }
-  }, [isOpen, template?.id]);
 
   // ✅ NEW: Watch shift type to conditionally show/hide fields
   const shiftType = form.watch('shiftType');
@@ -709,16 +655,6 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
           </DialogDescription>
         </DialogHeader>
 
-        {/* FIX: Only render form when ready to prevent DOM conflicts with Portal components */}
-        {!isFormReady ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-              <span className="text-sm text-gray-500">Caricamento...</span>
-            </div>
-          </div>
-        ) : (
-        <>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {/* Template Basic Info */}
@@ -1463,8 +1399,6 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
             )}
           </Button>
         </DialogFooter>
-        </>
-        )}
       </DialogContent>
     </Dialog>
   );

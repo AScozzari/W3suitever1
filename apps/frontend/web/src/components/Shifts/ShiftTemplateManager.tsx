@@ -417,12 +417,14 @@ export default function ShiftTemplateManager({
       </Card>
       
       
-      {/* Advanced Template Modal */}
-      <ShiftTemplateModal
-        isOpen={isCreateModalOpen}
-        onClose={handleCloseModal}
-        template={editingTemplate}
-      />
+      {/* Advanced Template Modal - FULL UNMOUNT when closed to prevent Portal/DOM conflicts */}
+      {isCreateModalOpen && (
+        <ShiftTemplateModal
+          isOpen={true}
+          onClose={handleCloseModal}
+          template={editingTemplate}
+        />
+      )}
       
       {/* Apply Template Modal */}
       <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
