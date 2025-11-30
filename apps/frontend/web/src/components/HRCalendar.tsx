@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, memo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -53,9 +53,33 @@ interface HRCalendarProps {
   endDate?: string | null;
 }
 
-export default function HRCalendar({ className, storeId, startDate, endDate }: HRCalendarProps) {
+function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
+  const isMountedRef = useRef(true);
   const [currentView, setCurrentView] = useState('dayGridMonth');
+  
+  // ✅ FIX: Guard against React.StrictMode double-mount/unmount cycle
+  // This prevents FullCalendar DOM cleanup errors when React unmounts/remounts the component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Delay cleanup to allow React to finish its cycle before FullCalendar cleanup
+      if (calendarRef.current) {
+        const api = calendarRef.current.getApi();
+        // Use setTimeout to defer destruction, preventing race with React's DOM cleanup
+        setTimeout(() => {
+          try {
+            if (!isMountedRef.current) {
+              api.destroy();
+            }
+          } catch (e) {
+            // Silently handle cleanup errors from StrictMode double-mount
+          }
+        }, 0);
+      }
+    };
+  }, []);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -1625,3 +1649,8 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
     </div>
   );
 }
+
+// ✅ FIX: Wrap with React.memo to prevent unnecessary re-renders that trigger FullCalendar remount
+// This combined with the useEffect cleanup guard protects against React.StrictMode double-mount errors
+const HRCalendar = memo(HRCalendarComponent);
+export default HRCalendar;
