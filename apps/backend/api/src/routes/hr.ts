@@ -1967,7 +1967,7 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
       assignedAt: shiftAssignments.assignedAt,
       userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       userEmail: users.email,
-      userRole: users.roleTemplate
+      userRole: users.role
     })
       .from(shiftAssignments)
       .leftJoin(users, eq(shiftAssignments.userId, users.id))
