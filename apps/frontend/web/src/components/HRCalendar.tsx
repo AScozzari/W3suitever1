@@ -860,9 +860,10 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
           </div>
 
           {/* Calendario FullCalendar */}
-          <div className="calendar-container bg-white dark:bg-slate-900 rounded-lg p-4 shadow-sm">
-            {(calendarLoading || assignmentsLoading) ? (
-              <div className="flex items-center justify-center h-96">
+          <div className="calendar-container bg-white dark:bg-slate-900 rounded-lg p-4 shadow-sm relative">
+            {/* Loading overlay - shown on top of calendar instead of replacing it */}
+            {(calendarLoading || assignmentsLoading) && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 rounded-lg">
                 <div className="text-center">
                   <Clock className="w-12 h-12 mx-auto mb-4 text-slate-400 animate-spin" />
                   <p className="text-slate-600 dark:text-slate-400">
@@ -870,8 +871,9 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                   </p>
                 </div>
               </div>
-            ) : (
-              <FullCalendar
+            )}
+            {/* FullCalendar always mounted to prevent DOM cleanup errors */}
+            <FullCalendar
                 ref={calendarRef}
                 plugins={[
                   dayGridPlugin,
@@ -925,7 +927,6 @@ export default function HRCalendar({ className, storeId, startDate, endDate }: H
                   );
                 }}
               />
-            )}
           </div>
         </CardContent>
       </Card>
