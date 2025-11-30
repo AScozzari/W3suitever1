@@ -29,6 +29,7 @@ import {
   voipAiSessions,
   notifications,
   users,
+  voipTenantConfig,
   insertVoipExtensionSchema,
   updateVoipExtensionSchema,
   insertVoipExtensionStoreAccessSchema,
@@ -37,8 +38,11 @@ import {
   updateContactPolicySchema,
   insertVoipActivityLogSchema,
   insertVoipCdrSchema,
-  insertVoipAiSessionSchema
+  insertVoipAiSessionSchema,
+  insertVoipTenantConfigSchema,
+  updateVoipTenantConfigSchema
 } from '../db/schema/w3suite';
+import { encryptionKeyService } from '../core/encryption-service';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { voipExtensionService } from '../services/voip-extension.service';
 import { syncAIConfigToEdgvoip } from '../services/voip-edgvoip-sync.service';
@@ -1970,5 +1974,424 @@ router.patch('/trunks/:id/ai-config', rbacMiddleware, requirePermission('manage_
   }
 });
 
+// ==================== VOIP INTEGRATION SETTINGS ====================
+
+// GET /api/voip/settings - Get tenant VoIP integration settings
+router.get('/settings', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const [config] = await db
+      .select({
+        id: voipTenantConfig.id,
+        tenantId: voipTenantConfig.tenantId,
+        tenantExternalId: voipTenantConfig.tenantExternalId,
+        apiKeyLastFour: voipTenantConfig.apiKeyLastFour,
+        webhookSecret: voipTenantConfig.webhookSecret,
+        apiBaseUrl: voipTenantConfig.apiBaseUrl,
+        scopes: voipTenantConfig.scopes,
+        enabled: voipTenantConfig.enabled,
+        connectionStatus: voipTenantConfig.connectionStatus,
+        lastConnectionTest: voipTenantConfig.lastConnectionTest,
+        connectionError: voipTenantConfig.connectionError,
+        createdAt: voipTenantConfig.createdAt,
+        updatedAt: voipTenantConfig.updatedAt
+      })
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId));
+
+    if (!config) {
+      return res.json({
+        success: true,
+        data: {
+          configured: false,
+          config: null
+        }
+      } as ApiSuccessResponse);
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        configured: true,
+        config: {
+          ...config,
+          hasApiKey: !!config.apiKeyLastFour
+        }
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching VoIP settings', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch VoIP settings' } as ApiErrorResponse);
+  }
+});
+
+// PUT /api/voip/settings - Create or update tenant VoIP settings
+router.put('/settings', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const updateSchema = z.object({
+      tenantExternalId: z.string().min(1, 'Tenant External ID required'),
+      apiKey: z.string().optional(), // Only if changing
+      webhookSecret: z.string().optional(),
+      apiBaseUrl: z.string().url().optional(),
+      scopes: z.array(z.string()).optional(),
+      enabled: z.boolean().optional()
+    });
+
+    const validated = updateSchema.parse(req.body);
+
+    // Check if config exists
+    const [existing] = await db
+      .select({ id: voipTenantConfig.id })
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId));
+
+    let result;
+
+    if (existing) {
+      // Update existing config
+      const updateData: any = {
+        tenantExternalId: validated.tenantExternalId,
+        updatedAt: new Date()
+      };
+
+      if (validated.apiKey) {
+        // Encrypt new API key
+        updateData.apiKey = await encryptionKeyService.encrypt(validated.apiKey, tenantId);
+        updateData.apiKeyLastFour = validated.apiKey.slice(-4);
+      }
+
+      if (validated.webhookSecret !== undefined) {
+        updateData.webhookSecret = validated.webhookSecret;
+      }
+
+      if (validated.apiBaseUrl) {
+        updateData.apiBaseUrl = validated.apiBaseUrl;
+      }
+
+      if (validated.scopes) {
+        updateData.scopes = validated.scopes;
+      }
+
+      if (validated.enabled !== undefined) {
+        updateData.enabled = validated.enabled;
+      }
+
+      const [updated] = await db
+        .update(voipTenantConfig)
+        .set(updateData)
+        .where(eq(voipTenantConfig.tenantId, tenantId))
+        .returning();
+
+      result = updated;
+      
+      logger.info('VoIP settings updated', { tenantId, configId: updated.id });
+    } else {
+      // Create new config
+      if (!validated.apiKey) {
+        return res.status(400).json({ error: 'API key required for initial setup' } as ApiErrorResponse);
+      }
+
+      const encryptedApiKey = await encryptionKeyService.encrypt(validated.apiKey, tenantId);
+
+      const [created] = await db
+        .insert(voipTenantConfig)
+        .values({
+          tenantId,
+          tenantExternalId: validated.tenantExternalId,
+          apiKey: encryptedApiKey,
+          apiKeyLastFour: validated.apiKey.slice(-4),
+          webhookSecret: validated.webhookSecret,
+          apiBaseUrl: validated.apiBaseUrl || 'https://edgvoip.it/api/v2/voip',
+          scopes: validated.scopes || ['voip:read', 'voip:write'],
+          enabled: validated.enabled !== false,
+          connectionStatus: 'unknown'
+        })
+        .returning();
+
+      result = created;
+      
+      logger.info('VoIP settings created', { tenantId, configId: created.id });
+    }
+
+    // Return config without sensitive data
+    return res.json({
+      success: true,
+      data: {
+        id: result.id,
+        tenantExternalId: result.tenantExternalId,
+        apiKeyLastFour: result.apiKeyLastFour,
+        apiBaseUrl: result.apiBaseUrl,
+        scopes: result.scopes,
+        enabled: result.enabled,
+        connectionStatus: result.connectionStatus,
+        updatedAt: result.updatedAt
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error updating VoIP settings', { error, tenantId: getTenantId(req) });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors } as ApiErrorResponse);
+    }
+    return res.status(500).json({ error: 'Failed to update VoIP settings' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/settings/test - Test API connection
+router.post('/settings/test', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    // Get config
+    const [config] = await db
+      .select()
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId));
+
+    if (!config) {
+      return res.status(404).json({ error: 'VoIP not configured for this tenant' } as ApiErrorResponse);
+    }
+
+    // Decrypt API key
+    const decryptedApiKey = await encryptionKeyService.decrypt(config.apiKey, tenantId);
+    if (!decryptedApiKey) {
+      return res.status(500).json({ error: 'Failed to decrypt API key' } as ApiErrorResponse);
+    }
+
+    // Test connection
+    try {
+      const testUrl = `${config.apiBaseUrl || 'https://edgvoip.it/api/v2/voip'}/health`;
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'X-API-Key': decryptedApiKey,
+          'X-Tenant-ID': config.tenantExternalId,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const isHealthy = response.ok;
+      const connectionStatus = isHealthy ? 'connected' : 'error';
+      const connectionError = isHealthy ? null : `HTTP ${response.status}: ${response.statusText}`;
+
+      // Update connection status
+      await db
+        .update(voipTenantConfig)
+        .set({
+          connectionStatus,
+          lastConnectionTest: new Date(),
+          connectionError
+        })
+        .where(eq(voipTenantConfig.tenantId, tenantId));
+
+      logger.info('VoIP connection test completed', {
+        tenantId,
+        status: connectionStatus,
+        httpStatus: response.status
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          connected: isHealthy,
+          status: connectionStatus,
+          lastTest: new Date(),
+          error: connectionError,
+          httpStatus: response.status
+        }
+      } as ApiSuccessResponse);
+    } catch (fetchError: any) {
+      // Network error
+      const connectionError = fetchError.message || 'Connection failed';
+
+      await db
+        .update(voipTenantConfig)
+        .set({
+          connectionStatus: 'error',
+          lastConnectionTest: new Date(),
+          connectionError
+        })
+        .where(eq(voipTenantConfig.tenantId, tenantId));
+
+      logger.error('VoIP connection test failed', {
+        tenantId,
+        error: connectionError
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          connected: false,
+          status: 'error',
+          lastTest: new Date(),
+          error: connectionError
+        }
+      } as ApiSuccessResponse);
+    }
+  } catch (error) {
+    logger.error('Error testing VoIP connection', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to test VoIP connection' } as ApiErrorResponse);
+  }
+});
+
+// ==================== VOIP ACTIVITY LOGS ====================
+
+// GET /api/voip/logs - Get VoIP activity logs with filters
+router.get('/logs', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const {
+      targetType,
+      action,
+      status,
+      limit = '50',
+      offset = '0',
+      startDate,
+      endDate
+    } = req.query;
+
+    const conditions = [eq(voipActivityLog.tenantId, tenantId)];
+
+    if (targetType) {
+      conditions.push(eq(voipActivityLog.targetType, targetType as any));
+    }
+
+    if (action) {
+      conditions.push(eq(voipActivityLog.action, action as any));
+    }
+
+    if (status) {
+      conditions.push(eq(voipActivityLog.status, status as any));
+    }
+
+    if (startDate) {
+      conditions.push(gte(voipActivityLog.createdAt, new Date(startDate as string)));
+    }
+
+    if (endDate) {
+      conditions.push(lte(voipActivityLog.createdAt, new Date(endDate as string)));
+    }
+
+    const logs = await db
+      .select()
+      .from(voipActivityLog)
+      .where(and(...conditions))
+      .orderBy(desc(voipActivityLog.createdAt))
+      .limit(parseInt(limit as string))
+      .offset(parseInt(offset as string));
+
+    // Get total count
+    const [countResult] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(voipActivityLog)
+      .where(and(...conditions));
+
+    return res.json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          total: countResult?.count || 0,
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string)
+        }
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching VoIP logs', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch VoIP logs' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/logs/stats - Get VoIP activity stats
+router.get('/logs/stats', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    await setTenantContext(db, tenantId);
+
+    const { days = '7' } = req.query;
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - parseInt(days as string));
+
+    // Get stats by action
+    const actionStats = await db
+      .select({
+        action: voipActivityLog.action,
+        count: sql<number>`cast(count(*) as int)`
+      })
+      .from(voipActivityLog)
+      .where(and(
+        eq(voipActivityLog.tenantId, tenantId),
+        gte(voipActivityLog.createdAt, daysAgo)
+      ))
+      .groupBy(voipActivityLog.action);
+
+    // Get stats by status
+    const statusStats = await db
+      .select({
+        status: voipActivityLog.status,
+        count: sql<number>`cast(count(*) as int)`
+      })
+      .from(voipActivityLog)
+      .where(and(
+        eq(voipActivityLog.tenantId, tenantId),
+        gte(voipActivityLog.createdAt, daysAgo)
+      ))
+      .groupBy(voipActivityLog.status);
+
+    // Get stats by target type
+    const targetStats = await db
+      .select({
+        targetType: voipActivityLog.targetType,
+        count: sql<number>`cast(count(*) as int)`
+      })
+      .from(voipActivityLog)
+      .where(and(
+        eq(voipActivityLog.tenantId, tenantId),
+        gte(voipActivityLog.createdAt, daysAgo)
+      ))
+      .groupBy(voipActivityLog.targetType);
+
+    return res.json({
+      success: true,
+      data: {
+        period: `last ${days} days`,
+        byAction: actionStats,
+        byStatus: statusStats,
+        byTargetType: targetStats
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching VoIP log stats', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to fetch VoIP log stats' } as ApiErrorResponse);
+  }
+});
 
 export default router;

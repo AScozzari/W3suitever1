@@ -32,9 +32,14 @@ import {
   Shield,
   Pencil,
   Trash2,
-  Bot
+  Bot,
+  Settings,
+  PlayCircle,
+  Loader2,
+  Activity
 } from 'lucide-react';
 import { TrunkAIConfigDialog } from './TrunkAIConfigDialog';
+import { VoIPIntegrationSettings } from './VoIPIntegrationSettings';
 
 interface PhoneVoIPConfigProps {
   visible: boolean;
@@ -75,7 +80,7 @@ type ExtensionFormValues = z.infer<typeof extensionFormSchema>;
 export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   const { toast } = useToast();
   const tenantId = useRequiredTenantId();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'trunks' | 'extensions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'trunks' | 'extensions' | 'integration'>('dashboard');
   const [editingExtension, setEditingExtension] = useState<string | null>(null);
   const [showExtensionForm, setShowExtensionForm] = useState(false);
   const [showAdvancedSIP, setShowAdvancedSIP] = useState(false);
@@ -280,7 +285,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-100/80 backdrop-blur-sm border border-gray-200">
+        <TabsList className="grid w-full grid-cols-4 bg-gray-100/80 backdrop-blur-sm border border-gray-200">
           <TabsTrigger 
             value="dashboard" 
             data-testid="tab-dashboard" 
@@ -295,7 +300,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
             className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-orange-600"
           >
             <Server className="w-4 h-4 mr-2" />
-            Trunks (Read-Only)
+            Trunks
           </TabsTrigger>
           <TabsTrigger 
             value="extensions" 
@@ -304,6 +309,14 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           >
             <User className="w-4 h-4 mr-2" />
             Extensions
+          </TabsTrigger>
+          <TabsTrigger 
+            value="integration" 
+            data-testid="tab-integration" 
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Integrazione
           </TabsTrigger>
         </TabsList>
 
@@ -1321,6 +1334,11 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Integration Tab Content */}
+        <TabsContent value="integration" className="mt-6">
+          <VoIPIntegrationSettings />
+        </TabsContent>
 
       {/* Trunk AI Configuration Dialog */}
       <TrunkAIConfigDialog

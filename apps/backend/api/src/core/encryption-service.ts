@@ -613,6 +613,145 @@ export class EncryptionKeyService {
       };
     }
   }
+
+  // ==================== SIMPLE STRING ENCRYPTION ====================
+  
+  /**
+   * Gets a key by its keyId (for decryption with specific key)
+   */
+  async getKeyByKeyId(keyId: string): Promise<KeyMetadata | null> {
+    try {
+      const [key] = await db
+        .select()
+        .from(encryptionKeys)
+        .where(
+          and(
+            eq(encryptionKeys.keyId, keyId),
+            isNull(encryptionKeys.destroyedAt)
+          )
+        )
+        .limit(1);
+
+      if (!key) {
+        console.error('Key not found:', keyId);
+        return null;
+      }
+
+      return this.mapToKeyMetadata(key);
+    } catch (error) {
+      console.error('Failed to get key by keyId:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Encrypts a string value using AES-256-GCM
+   * Returns: keyId:iv:authTag:encryptedData in base64 (includes keyId for future decryption)
+   */
+  async encrypt(plaintext: string, tenantId: string): Promise<string> {
+    try {
+      // Get or create tenant key
+      let keyMeta = await this.getActiveTenantKey(tenantId);
+      if (!keyMeta) {
+        keyMeta = await this.createTenantKey(tenantId);
+      }
+      
+      // Derive key from salt
+      const salt = Buffer.from(keyMeta.saltBase64, 'base64');
+      const masterKey = process.env.ENCRYPTION_MASTER_KEY || 'dev-master-key-change-in-production';
+      const derivedKey = crypto.pbkdf2Sync(
+        masterKey,
+        salt,
+        keyMeta.iterations,
+        32,
+        'sha256'
+      );
+      
+      // Generate IV
+      const iv = crypto.randomBytes(12);
+      
+      // Encrypt
+      const cipher = crypto.createCipheriv('aes-256-gcm', derivedKey, iv);
+      const encrypted = Buffer.concat([
+        cipher.update(plaintext, 'utf8'),
+        cipher.final()
+      ]);
+      const authTag = cipher.getAuthTag();
+      
+      // Return as: keyId:iv:authTag:encrypted (all base64, keyId for decryption key lookup)
+      return `${keyMeta.keyId}:${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`;
+    } catch (error) {
+      console.error('Encryption failed:', error);
+      throw new Error('Failed to encrypt data');
+    }
+  }
+  
+  /**
+   * Decrypts a string value encrypted with encrypt()
+   * Uses the keyId stored in the ciphertext to find the correct key (rotation-safe)
+   */
+  async decrypt(ciphertext: string, tenantId: string): Promise<string | null> {
+    try {
+      // Parse ciphertext: keyId:iv:authTag:encrypted (or legacy format iv:authTag:encrypted)
+      const parts = ciphertext.split(':');
+      
+      let keyMeta: KeyMetadata | null;
+      let ivB64: string;
+      let authTagB64: string;
+      let encryptedB64: string;
+      
+      if (parts.length === 4) {
+        // New format with keyId: keyId:iv:authTag:encrypted
+        const [keyId, iv, authTag, encrypted] = parts;
+        keyMeta = await this.getKeyByKeyId(keyId);
+        ivB64 = iv;
+        authTagB64 = authTag;
+        encryptedB64 = encrypted;
+      } else if (parts.length === 3) {
+        // Legacy format without keyId: iv:authTag:encrypted
+        // Fall back to active key (may fail after rotation)
+        console.warn('Decrypting legacy format ciphertext (no keyId). May fail after key rotation.');
+        keyMeta = await this.getActiveTenantKey(tenantId);
+        [ivB64, authTagB64, encryptedB64] = parts;
+      } else {
+        console.error('Invalid ciphertext format');
+        return null;
+      }
+      
+      if (!keyMeta) {
+        console.error('No encryption key available for decryption');
+        return null;
+      }
+      
+      const iv = Buffer.from(ivB64, 'base64');
+      const authTag = Buffer.from(authTagB64, 'base64');
+      const encrypted = Buffer.from(encryptedB64, 'base64');
+      
+      // Derive key from salt
+      const salt = Buffer.from(keyMeta.saltBase64, 'base64');
+      const masterKey = process.env.ENCRYPTION_MASTER_KEY || 'dev-master-key-change-in-production';
+      const derivedKey = crypto.pbkdf2Sync(
+        masterKey,
+        salt,
+        keyMeta.iterations,
+        32,
+        'sha256'
+      );
+      
+      // Decrypt
+      const decipher = crypto.createDecipheriv('aes-256-gcm', derivedKey, iv);
+      decipher.setAuthTag(authTag);
+      const decrypted = Buffer.concat([
+        decipher.update(encrypted),
+        decipher.final()
+      ]);
+      
+      return decrypted.toString('utf8');
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      return null;
+    }
+  }
 }
 
 // ==================== SINGLETON EXPORT ====================
