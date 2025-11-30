@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import { CALENDAR_EVENT_TYPES, type CalendarEventType } from '@/lib/calendar-event-types';
+import { CALENDAR_EVENT_TYPES } from '@/lib/calendar-event-types';
 
 interface EventIndicatorProps {
   eventType: string;
@@ -7,18 +6,7 @@ interface EventIndicatorProps {
   onClick: (eventType: string) => void;
 }
 
-interface TooltipState {
-  visible: boolean;
-  text: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  x: number;
-  y: number;
-}
-
 export function CalendarEventIndicator({ eventType, count, onClick }: EventIndicatorProps) {
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const config = CALENDAR_EVENT_TYPES[eventType];
   
   if (!config || count === 0) return null;
@@ -27,37 +15,19 @@ export function CalendarEventIndicator({ eventType, count, onClick }: EventIndic
   const tooltipText = count === 1 
     ? `1 ${config.label}` 
     : `${count} ${config.labelPlural}`;
-
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({
-      visible: true,
-      text: tooltipText,
-      color: config.color,
-      bgColor: config.bgColor,
-      borderColor: config.borderColor,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 4
-    });
-  }, [tooltipText, config]);
-
-  const handleMouseLeave = useCallback(() => {
-    setTooltip(null);
-  }, []);
   
   return (
-    <>
+    <div className="relative group/indicator inline-block">
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onClick(eventType);
         }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className="relative flex items-center justify-center p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer group"
+        className="relative flex items-center justify-center p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
         style={{ color: config.color }}
         data-testid={`event-indicator-${eventType}`}
+        title={tooltipText}
       >
         <Icon className="w-3.5 h-3.5" />
         {count > 0 && (
@@ -69,30 +39,19 @@ export function CalendarEventIndicator({ eventType, count, onClick }: EventIndic
           </span>
         )}
       </button>
-      {tooltip && (
-        <div
-          className="fixed z-[9999] pointer-events-none animate-in fade-in-0 zoom-in-95 duration-100"
-          style={{
-            left: `${tooltip.x}px`,
-            top: `${tooltip.y}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-        >
-          <div 
-            className="rounded-md px-2 py-1 shadow-lg text-xs font-medium"
-            style={{ 
-              backgroundColor: tooltip.bgColor,
-              color: tooltip.color,
-              borderColor: tooltip.borderColor,
-              borderWidth: '1px',
-              borderStyle: 'solid'
-            }}
-          >
-            {tooltip.text}
-          </div>
-        </div>
-      )}
-    </>
+      <div 
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded-md shadow-lg text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover/indicator:opacity-100 group-hover/indicator:visible transition-all duration-150 z-50 pointer-events-none"
+        style={{ 
+          backgroundColor: config.bgColor,
+          color: config.color,
+          borderColor: config.borderColor,
+          borderWidth: '1px',
+          borderStyle: 'solid'
+        }}
+      >
+        {tooltipText}
+      </div>
+    </div>
   );
 }
 
@@ -102,8 +61,6 @@ interface DayCellIndicatorsProps {
 }
 
 export function DayCellIndicators({ eventCounts, onEventTypeClick }: DayCellIndicatorsProps) {
-  const [hiddenTooltip, setHiddenTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
-  
   const activeTypes = Object.entries(eventCounts)
     .filter(([, count]) => count > 0)
     .sort((a, b) => b[1] - a[1]);
@@ -125,36 +82,19 @@ export function DayCellIndicators({ eventCounts, onEventTypeClick }: DayCellIndi
         />
       ))}
       {hiddenCount > 0 && (
-        <>
+        <div className="relative group/hidden inline-block">
           <span 
             className="text-[9px] text-gray-500 font-medium cursor-default"
-            onMouseEnter={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setHiddenTooltip({
-                x: rect.left + rect.width / 2,
-                y: rect.top - 4,
-                text: `${hiddenCount} altri tipi evento`
-              });
-            }}
-            onMouseLeave={() => setHiddenTooltip(null)}
+            title={`${hiddenCount} altri tipi evento`}
           >
             +{hiddenTotal}
           </span>
-          {hiddenTooltip && (
-            <div
-              className="fixed z-[9999] pointer-events-none animate-in fade-in-0 zoom-in-95 duration-100"
-              style={{
-                left: `${hiddenTooltip.x}px`,
-                top: `${hiddenTooltip.y}px`,
-                transform: 'translate(-50%, -100%)'
-              }}
-            >
-              <div className="bg-gray-900 text-white rounded-md px-2 py-1 shadow-lg text-xs">
-                {hiddenTooltip.text}
-              </div>
-            </div>
-          )}
-        </>
+          <div 
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-900 text-white rounded-md px-2 py-1 shadow-lg text-xs whitespace-nowrap opacity-0 invisible group-hover/hidden:opacity-100 group-hover/hidden:visible transition-all duration-150 z-50 pointer-events-none"
+          >
+            {hiddenCount} altri tipi evento
+          </div>
+        </div>
       )}
     </div>
   );
