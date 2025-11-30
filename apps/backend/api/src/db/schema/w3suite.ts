@@ -1749,6 +1749,7 @@ export const shifts = w3suiteSchema.table("shifts", {
   // Shift details
   shiftType: shiftTypeEnum("shift_type").notNull(),
   templateId: uuid("template_id"),
+  templateVersionId: uuid("template_version_id"), // References the specific template version used
   skills: jsonb("skills").default([]), // Required skills/certifications
   
   // Status and display
@@ -1764,6 +1765,7 @@ export const shifts = w3suiteSchema.table("shifts", {
   index("shifts_tenant_store_date_idx").on(table.tenantId, table.storeId, table.date),
   index("shifts_tenant_status_idx").on(table.tenantId, table.status),
   index("shifts_template_idx").on(table.templateId),
+  index("shifts_template_version_idx").on(table.templateVersionId),
 ]);
 
 export const insertShiftSchema = createInsertSchema(shifts).omit({ 
@@ -1830,6 +1832,54 @@ export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit
 });
 export type InsertShiftTemplate = z.infer<typeof insertShiftTemplateSchema>;
 export type ShiftTemplate = typeof shiftTemplates.$inferSelect;
+
+// ==================== SHIFT TEMPLATE VERSIONS ====================
+// Stores historical versions of templates for immutable shift history
+// When a template is modified, a new version is created and future shifts inherit it
+// Past shifts (completed/cancelled) retain their original version reference
+export const shiftTemplateVersions = w3suiteSchema.table("shift_template_versions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  templateId: uuid("template_id").notNull().references(() => shiftTemplates.id, { onDelete: 'cascade' }),
+  
+  // Version tracking
+  versionNumber: integer("version_number").notNull(), // Auto-incremented per template
+  effectiveFrom: timestamp("effective_from").notNull().defaultNow(),
+  effectiveUntil: timestamp("effective_until"), // NULL = current version
+  
+  // Snapshot of template data at this version
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  scope: varchar("scope", { length: 10 }).notNull(),
+  storeId: uuid("store_id"),
+  shiftType: varchar("shift_type", { length: 20 }).notNull(),
+  
+  // Global tolerances (for split_shift type)
+  globalClockInTolerance: integer("global_clock_in_tolerance"),
+  globalClockOutTolerance: integer("global_clock_out_tolerance"),
+  globalBreakMinutes: integer("global_break_minutes"),
+  
+  // Time slots snapshot (JSON array with all slot data)
+  timeSlotsSnapshot: jsonb("time_slots_snapshot").notNull().default([]),
+  
+  // Change tracking
+  changeReason: text("change_reason"), // Optional reason for version change
+  changedBy: varchar("changed_by").references(() => users.id),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("shift_template_versions_template_idx").on(table.templateId),
+  index("shift_template_versions_version_idx").on(table.templateId, table.versionNumber),
+  index("shift_template_versions_effective_idx").on(table.templateId, table.effectiveFrom),
+]);
+
+export const insertShiftTemplateVersionSchema = createInsertSchema(shiftTemplateVersions).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertShiftTemplateVersion = z.infer<typeof insertShiftTemplateVersionSchema>;
+export type ShiftTemplateVersion = typeof shiftTemplateVersions.$inferSelect;
 
 // ==================== SHIFT TIME SLOTS ====================
 // Enhanced support for multiple time slots per shift template
@@ -2542,6 +2592,7 @@ export const shiftsRelations = relations(shifts, ({ one, many }) => ({
   tenant: one(tenants, { fields: [shifts.tenantId], references: [tenants.id] }),
   store: one(stores, { fields: [shifts.storeId], references: [stores.id] }),
   template: one(shiftTemplates, { fields: [shifts.templateId], references: [shiftTemplates.id] }),
+  templateVersion: one(shiftTemplateVersions, { fields: [shifts.templateVersionId], references: [shiftTemplateVersions.id] }),
   createdByUser: one(users, { fields: [shifts.createdBy], references: [users.id] }),
   timeTrackingEntries: many(timeTracking),
   assignments: many(shiftAssignments),
@@ -2552,6 +2603,15 @@ export const shiftTemplatesRelations = relations(shiftTemplates, ({ one, many })
   tenant: one(tenants, { fields: [shiftTemplates.tenantId], references: [tenants.id] }),
   shifts: many(shifts),
   timeSlots: many(shiftTimeSlots),
+  versions: many(shiftTemplateVersions),
+}));
+
+// Shift Template Versions Relations
+export const shiftTemplateVersionsRelations = relations(shiftTemplateVersions, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [shiftTemplateVersions.tenantId], references: [tenants.id] }),
+  template: one(shiftTemplates, { fields: [shiftTemplateVersions.templateId], references: [shiftTemplates.id] }),
+  changedByUser: one(users, { fields: [shiftTemplateVersions.changedBy], references: [users.id] }),
+  shifts: many(shifts),
 }));
 
 // Shift Time Slots Relations

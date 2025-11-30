@@ -108,63 +108,61 @@ export function TimelineBar({
     const isResource = segment.type === 'resource';
     
     return (
-      <TooltipProvider key={segment.id}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className={cn(
-                "absolute rounded-md transition-all duration-200",
-                "flex items-center justify-center overflow-hidden",
-                isShortage && "border-2 border-dashed border-gray-400 bg-gray-100",
-                isResource && "shadow-md ring-1 ring-white/50",
-                !isShortage && !isResource && "shadow-sm",
-                "hover:brightness-110"
-              )}
-              style={{
-                left: `${left}%`,
-                width: `${Math.max(width, 3)}%`,
-                top: '6px',
-                bottom: '6px',
-                backgroundColor: isShortage ? 'transparent' : bgColor,
-              }}
-              onClick={() => onSegmentClick?.(segment)}
-              data-testid={`timeline-segment-${segment.id}`}
-            >
-              {width > 6 && (
-                <span className={cn(
-                  "truncate px-1.5 text-[10px] font-medium",
-                  isShortage ? "text-gray-600" : "text-white"
-                )}>
-                  {isResource && <User className="w-2.5 h-2.5 inline mr-0.5" />}
-                  {isShortage && <AlertTriangle className="w-2.5 h-2.5 inline mr-0.5" />}
-                  {segment.resourceName || segment.label || `${segment.startTime}-${segment.endTime}`}
-                </span>
-              )}
+      <Tooltip key={segment.id}>
+        <TooltipTrigger asChild>
+          <div
+            className={cn(
+              "absolute rounded-md transition-all duration-200",
+              "flex items-center justify-center overflow-hidden",
+              isShortage && "border-2 border-dashed border-gray-400 bg-gray-100",
+              isResource && "shadow-md ring-1 ring-white/50",
+              !isShortage && !isResource && "shadow-sm",
+              "hover:brightness-110"
+            )}
+            style={{
+              left: `${left}%`,
+              width: `${Math.max(width, 3)}%`,
+              top: '6px',
+              bottom: '6px',
+              backgroundColor: isShortage ? 'transparent' : bgColor,
+            }}
+            onClick={() => onSegmentClick?.(segment)}
+            data-testid={`timeline-segment-${segment.id}`}
+          >
+            {width > 6 && (
+              <span className={cn(
+                "truncate px-1.5 text-[10px] font-medium",
+                isShortage ? "text-gray-600" : "text-white"
+              )}>
+                {isResource && <User className="w-2.5 h-2.5 inline mr-0.5" />}
+                {isShortage && <AlertTriangle className="w-2.5 h-2.5 inline mr-0.5" />}
+                {segment.resourceName || segment.label || `${segment.startTime}-${segment.endTime}`}
+              </span>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs bg-gray-900 text-white border-gray-700 z-50">
+          <div className="text-xs space-y-1 p-0.5">
+            <p className="font-semibold">{segment.label || segment.templateName || COLOR_LABELS[segment.type]}</p>
+            <div className="flex items-center gap-1.5 text-gray-300">
+              <Clock className="w-3 h-3" />
+              <span>{segment.startTime} - {segment.endTime}</span>
             </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs bg-gray-900 text-white border-gray-700 z-50">
-            <div className="text-xs space-y-1 p-0.5">
-              <p className="font-semibold">{segment.label || segment.templateName || COLOR_LABELS[segment.type]}</p>
-              <div className="flex items-center gap-1.5 text-gray-300">
-                <Clock className="w-3 h-3" />
-                <span>{segment.startTime} - {segment.endTime}</span>
+            {segment.resourceName && (
+              <div className="flex items-center gap-1.5 text-green-300">
+                <User className="w-3 h-3" />
+                <span>{segment.resourceName}</span>
               </div>
-              {segment.resourceName && (
-                <div className="flex items-center gap-1.5 text-green-300">
-                  <User className="w-3 h-3" />
-                  <span>{segment.resourceName}</span>
-                </div>
-              )}
-              {segment.requiredStaff !== undefined && (
-                <div className="flex items-center gap-1.5 text-orange-300">
-                  <Users className="w-3 h-3" />
-                  <span>Staff: {segment.assignedStaff || 0}/{segment.requiredStaff}</span>
-                </div>
-              )}
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+            )}
+            {segment.requiredStaff !== undefined && (
+              <div className="flex items-center gap-1.5 text-orange-300">
+                <Users className="w-3 h-3" />
+                <span>Staff: {segment.assignedStaff || 0}/{segment.requiredStaff}</span>
+              </div>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
     );
   };
 
@@ -207,11 +205,12 @@ export function TimelineBar({
   };
 
   return (
-    <div 
-      className={cn("bg-white rounded-lg border border-gray-200 shadow-sm", className)} 
-      data-testid={`timeline-day-${day}`}
-    >
-      <div className="flex items-stretch">
+    <TooltipProvider delayDuration={200}>
+      <div 
+        className={cn("bg-white rounded-lg border border-gray-200 shadow-sm", className)} 
+        data-testid={`timeline-day-${day}`}
+      >
+        <div className="flex items-stretch">
         <div className="w-20 p-3 flex flex-col justify-center border-r border-gray-100 bg-gray-50/50 rounded-l-lg">
           <p className="text-xs font-bold text-gray-800 leading-tight">
             {dayLabel}
@@ -281,8 +280,9 @@ export function TimelineBar({
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 

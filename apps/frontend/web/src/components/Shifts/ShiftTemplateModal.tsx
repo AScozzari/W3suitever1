@@ -512,8 +512,14 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     queryKey: template?.id ? ['/api/hr/shift-templates', template.id, 'verify-coverage', selectedStoreId] : ['coverage-disabled'],
     queryFn: async () => {
       if (!template?.id || !selectedStoreId) return null;
+      const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
       const response = await fetch(`/api/hr/shift-templates/${template.id}/verify-coverage?storeId=${selectedStoreId}`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': 'admin-user'
+        }
       });
       if (!response.ok) return null;
       return response.json();

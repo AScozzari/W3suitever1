@@ -7,6 +7,7 @@ import {
   shifts,
   shiftTemplates,
   shiftTimeSlots as shiftTimeSlotsTable,
+  shiftTemplateVersions,
   shiftAssignments,
   timeTracking,
   hrDocuments,
@@ -17,12 +18,14 @@ import {
   CalendarEvent,
   Shift,
   ShiftTemplate,
+  ShiftTemplateVersion,
   ShiftTimeSlot,
   ShiftAssignment,
   TimeTracking,
   InsertCalendarEvent,
   InsertShift,
   InsertShiftTemplate,
+  InsertShiftTemplateVersion,
   InsertShiftTimeSlot,
   InsertTimeTracking,
 } from "../db/schema/w3suite";
@@ -184,8 +187,8 @@ export interface IHRStorage {
   
   // Shift Templates
   getShiftTemplates(tenantId: string, isActive?: boolean, storeId?: string): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]>;
-  createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
-  updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
+  createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[]; version?: ShiftTemplateVersion }>;
+  updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any>; changeReason?: string; changedBy?: string }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[]; version?: ShiftTemplateVersion }>;
   deleteShiftTemplate(id: string, tenantId: string): Promise<void>;
   applyShiftTemplate(templateId: string, storeId: string, startDate: Date, endDate: Date, tenantId: string): Promise<Shift[]>;
   
@@ -1076,7 +1079,7 @@ export class HRStorage implements IHRStorage {
     return templatesWithSlots;
   }
   
-  async createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
+  async createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<any> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[]; version?: ShiftTemplateVersion }> {
     return await db.transaction(async (tx) => {
       // Create the template
       const { timeSlots, ...templateData } = data;
@@ -1117,27 +1120,93 @@ export class HRStorage implements IHRStorage {
           .returning();
       }
       
+      // Create initial version (version 1)
+      const timeSlotsSnapshot = createdTimeSlots.map(slot => ({
+        id: slot.id,
+        name: slot.name,
+        slotOrder: slot.slotOrder,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        segmentType: slot.segmentType,
+        block2StartTime: slot.block2StartTime,
+        block2EndTime: slot.block2EndTime,
+        breakMinutes: slot.breakMinutes,
+        clockInTolerance: slot.clockInTolerance,
+        clockOutTolerance: slot.clockOutTolerance,
+        requiredStaff: slot.requiredStaff,
+        skills: slot.skills,
+        isBreak: slot.isBreak,
+        minStaff: slot.minStaff,
+        maxStaff: slot.maxStaff,
+        priority: slot.priority,
+        color: slot.color,
+        notes: slot.notes
+      }));
+      
+      const [initialVersion] = await tx
+        .insert(shiftTemplateVersions)
+        .values({
+          tenantId: template.tenantId,
+          templateId: template.id,
+          versionNumber: 1,
+          effectiveFrom: new Date(),
+          name: template.name,
+          description: template.description,
+          scope: template.scope,
+          storeId: template.storeId,
+          shiftType: template.shiftType,
+          globalClockInTolerance: template.globalClockInTolerance,
+          globalClockOutTolerance: template.globalClockOutTolerance,
+          globalBreakMinutes: template.globalBreakMinutes,
+          timeSlotsSnapshot: timeSlotsSnapshot,
+          changeReason: 'Initial template creation'
+        })
+        .returning();
+      
       return {
         ...template,
-        timeSlots: createdTimeSlots
+        timeSlots: createdTimeSlots,
+        version: initialVersion
       };
     });
   }
   
-  async updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
+  async updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<any>; changeReason?: string; changedBy?: string }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[]; version?: ShiftTemplateVersion }> {
     return await db.transaction(async (tx) => {
       // Update the template
-      const { timeSlots, ...templateData } = data;
+      const { timeSlots, changeReason, changedBy, ...templateData } = data;
+      
+      // 1. Close the current version (set effectiveUntil)
+      const now = new Date();
+      await tx
+        .update(shiftTemplateVersions)
+        .set({ effectiveUntil: now })
+        .where(and(
+          eq(shiftTemplateVersions.templateId, id),
+          isNull(shiftTemplateVersions.effectiveUntil)
+        ));
+      
+      // 2. Get the current max version number
+      const currentVersions = await tx
+        .select({ versionNumber: shiftTemplateVersions.versionNumber })
+        .from(shiftTemplateVersions)
+        .where(eq(shiftTemplateVersions.templateId, id))
+        .orderBy(desc(shiftTemplateVersions.versionNumber))
+        .limit(1);
+      
+      const nextVersionNumber = (currentVersions[0]?.versionNumber || 0) + 1;
+      
+      // 3. Update the template
       const [updated] = await tx
         .update(shiftTemplates)
-        .set({ ...templateData, updatedAt: new Date() })
+        .set({ ...templateData, updatedAt: now })
         .where(and(
           eq(shiftTemplates.id, id),
           eq(shiftTemplates.tenantId, tenantId)
         ))
         .returning();
       
-      // Update time slots if provided
+      // 4. Update time slots if provided
       let updatedTimeSlots: ShiftTimeSlot[] = [];
       if (timeSlots !== undefined) {
         // Delete existing time slots
@@ -1184,9 +1253,72 @@ export class HRStorage implements IHRStorage {
           .orderBy(shiftTimeSlots.slotOrder);
       }
       
+      // 5. Create time slots snapshot for versioning
+      const timeSlotsSnapshot = updatedTimeSlots.map(slot => ({
+        id: slot.id,
+        name: slot.name,
+        slotOrder: slot.slotOrder,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        segmentType: slot.segmentType,
+        block2StartTime: slot.block2StartTime,
+        block2EndTime: slot.block2EndTime,
+        breakMinutes: slot.breakMinutes,
+        clockInTolerance: slot.clockInTolerance,
+        clockOutTolerance: slot.clockOutTolerance,
+        requiredStaff: slot.requiredStaff,
+        skills: slot.skills,
+        isBreak: slot.isBreak,
+        minStaff: slot.minStaff,
+        maxStaff: slot.maxStaff,
+        priority: slot.priority,
+        color: slot.color,
+        notes: slot.notes
+      }));
+      
+      // 6. Create new version entry
+      const [newVersion] = await tx
+        .insert(shiftTemplateVersions)
+        .values({
+          tenantId: updated.tenantId,
+          templateId: id,
+          versionNumber: nextVersionNumber,
+          effectiveFrom: now,
+          name: updated.name,
+          description: updated.description,
+          scope: updated.scope,
+          storeId: updated.storeId,
+          shiftType: updated.shiftType,
+          globalClockInTolerance: updated.globalClockInTolerance,
+          globalClockOutTolerance: updated.globalClockOutTolerance,
+          globalBreakMinutes: updated.globalBreakMinutes,
+          timeSlotsSnapshot: timeSlotsSnapshot,
+          changeReason: changeReason || 'Template updated',
+          changedBy: changedBy || null
+        })
+        .returning();
+      
+      // 7. Update future shifts to use new version
+      // Only update shifts that are not completed/cancelled and have a future date
+      const todayStr = now.toISOString().split('T')[0];
+      await tx
+        .update(shifts)
+        .set({ templateVersionId: newVersion.id })
+        .where(and(
+          eq(shifts.templateId, id),
+          eq(shifts.tenantId, tenantId),
+          gte(shifts.date, todayStr),
+          or(
+            eq(shifts.status, 'draft'),
+            eq(shifts.status, 'scheduled'),
+            eq(shifts.status, 'in_progress')
+          )
+        ));
+      
       return {
         ...updated,
-        timeSlots: updatedTimeSlots
+        timeSlots: updatedTimeSlots,
+        version: newVersion
       };
     });
   }

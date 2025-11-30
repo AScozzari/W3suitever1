@@ -84,6 +84,7 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
 - **RBAC System**: 10 Italian role templates with a granular permission system (215 total permissions), providing default assignments for various roles (e.g., Amministratore, Store Manager, Sales Agent).
 - **Workflow Database Operations**: Provides 4 secure database operations (SELECT, INSERT, UPDATE, DELETE) on the `w3suite` schema with a visual query builder, RLS enforcement, prepared statements, and table/column validation. EXECUTE_QUERY is disabled for security reasons in the MVP.
 - **Store Working Stats API**: Calculates aggregated working days and hours for stores based on `store_opening_rules`, `store_calendar_settings`, `store_calendar_overrides`, and `public.italian_holidays` tables, with double-layer tenant isolation.
+- **Shift Template Versioning System**: Immutable version tracking for shift templates. When templates are updated, a new version is created with snapshot of template data and time slots. Past shifts (completed/cancelled) retain original version reference. Future shifts (draft/scheduled/in_progress with date >= today) are updated to new version. API endpoints: `PUT /api/hr/shift-templates/:id` (creates new version), `GET /api/hr/shift-templates/:id/versions` (version history). Database tables: `shift_template_versions` (version snapshots), `shifts.template_version_id` (version reference).
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).

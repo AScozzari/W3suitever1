@@ -3,8 +3,8 @@ import { requirePermission } from '../middleware/tenant';
 import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
-import { users, shiftTemplates, shiftTimeSlots, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability, stores } from '../db/schema/w3suite';
-import { eq, and, gte, lte, inArray, sql, count } from 'drizzle-orm';
+import { users, shiftTemplates, shiftTimeSlots, shiftTemplateVersions, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability, stores } from '../db/schema/w3suite';
+import { eq, and, gte, lte, inArray, sql, count, desc } from 'drizzle-orm';
 
 const router = Router();
 
@@ -1302,6 +1302,8 @@ router.post('/shift-templates', requirePermission('hr.shifts.manage'), async (re
 });
 
 // PUT /api/hr/shift-templates/:id - Update shift template
+// Creates a new version when template is updated
+// Past shifts keep original version, future shifts get updated version
 router.put('/shift-templates/:id', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
@@ -1312,13 +1314,16 @@ router.put('/shift-templates/:id', requirePermission('hr.shifts.manage'), async 
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
+    const { changeReason, ...bodyData } = req.body;
+    
     const updateData = {
-      ...req.body,
-      updatedBy: userId,
+      ...bodyData,
+      changedBy: userId, // For version tracking
+      changeReason: changeReason || 'Template updated', // For version tracking
       updatedAt: new Date()
     };
 
-    // Update shift template using existing storage function
+    // Update shift template and create new version
     const template = await hrStorage.updateShiftTemplate(templateId, updateData, tenantId);
 
     res.json(template);
@@ -1405,6 +1410,57 @@ router.get('/shift-templates/:id/verify-coverage', requirePermission('hr.shifts.
   } catch (error) {
     console.error('Error verifying template coverage:', error);
     res.status(500).json({ error: 'Failed to verify template coverage' });
+  }
+});
+
+// GET /api/hr/shift-templates/:id/versions - Get version history for a template
+// Returns all versions of a template for audit trail and historical reference
+router.get('/shift-templates/:id/versions', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id: templateId } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Get all versions for this template, ordered by version number descending
+    const versions = await db.select({
+      id: shiftTemplateVersions.id,
+      templateId: shiftTemplateVersions.templateId,
+      versionNumber: shiftTemplateVersions.versionNumber,
+      effectiveFrom: shiftTemplateVersions.effectiveFrom,
+      effectiveUntil: shiftTemplateVersions.effectiveUntil,
+      name: shiftTemplateVersions.name,
+      description: shiftTemplateVersions.description,
+      scope: shiftTemplateVersions.scope,
+      storeId: shiftTemplateVersions.storeId,
+      shiftType: shiftTemplateVersions.shiftType,
+      globalClockInTolerance: shiftTemplateVersions.globalClockInTolerance,
+      globalClockOutTolerance: shiftTemplateVersions.globalClockOutTolerance,
+      globalBreakMinutes: shiftTemplateVersions.globalBreakMinutes,
+      timeSlotsSnapshot: shiftTemplateVersions.timeSlotsSnapshot,
+      changeReason: shiftTemplateVersions.changeReason,
+      changedBy: shiftTemplateVersions.changedBy,
+      createdAt: shiftTemplateVersions.createdAt
+    })
+      .from(shiftTemplateVersions)
+      .where(and(
+        eq(shiftTemplateVersions.templateId, templateId),
+        eq(shiftTemplateVersions.tenantId, tenantId)
+      ))
+      .orderBy(desc(shiftTemplateVersions.versionNumber));
+
+    // Mark which version is current (effectiveUntil is null)
+    const versionsWithStatus = versions.map(v => ({
+      ...v,
+      isCurrent: v.effectiveUntil === null
+    }));
+
+    res.json(versionsWithStatus);
+  } catch (error) {
+    console.error('Error fetching template versions:', error);
+    res.status(500).json({ error: 'Failed to fetch template versions' });
   }
 });
 
