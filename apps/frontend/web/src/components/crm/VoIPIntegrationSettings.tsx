@@ -106,25 +106,25 @@ export function VoIPIntegrationSettings() {
   const [logFilter, setLogFilter] = useState<string>('all');
   const [testResults, setTestResults] = useState<APITestResponse | null>(null);
 
-  const { data: settingsData, isLoading: settingsLoading, refetch: refetchSettings } = useQuery<{ data: VoIPSettingsResponse }>({
+  const { data: settingsData, isLoading: settingsLoading, refetch: refetchSettings } = useQuery<VoIPSettingsResponse>({
     queryKey: ['/api/voip/settings'],
     staleTime: 30000
   });
 
-  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery<{ data: { logs: VoIPLogEntry[], pagination: any } }>({
+  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery<{ logs: VoIPLogEntry[], pagination: any }>({
     queryKey: ['/api/voip/logs', logFilter !== 'all' ? { action: logFilter } : {}],
     enabled: activeSubTab === 'logs',
     staleTime: 10000
   });
 
-  const { data: statsData, isLoading: statsLoading } = useQuery<{ data: any }>({
+  const { data: statsData, isLoading: statsLoading } = useQuery<any>({
     queryKey: ['/api/voip/logs/stats'],
     enabled: activeSubTab === 'logs',
     staleTime: 60000
   });
 
-  const config = settingsData?.data?.config;
-  const isConfigured = settingsData?.data?.configured;
+  const config = settingsData?.config;
+  const isConfigured = settingsData?.configured;
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
@@ -649,7 +649,7 @@ export function VoIPIntegrationSettings() {
             <TabsContent value="logs" className="space-y-6">
               {statsLoading ? (
                 <LoadingState />
-              ) : statsData?.data && (
+              ) : statsData && (
                 <div className="grid grid-cols-4 gap-4">
                   <Card className="p-4 bg-green-50 border-green-200">
                     <div className="flex items-center gap-2">
@@ -657,7 +657,7 @@ export function VoIPIntegrationSettings() {
                       <div>
                         <p className="text-sm text-green-800">Operazioni OK</p>
                         <p className="text-2xl font-bold text-green-700">
-                          {statsData.data.byStatus?.find((s: any) => s.status === 'ok')?.count || 0}
+                          {statsData.byStatus?.find((s: any) => s.status === 'ok')?.count || 0}
                         </p>
                       </div>
                     </div>
@@ -669,7 +669,7 @@ export function VoIPIntegrationSettings() {
                       <div>
                         <p className="text-sm text-red-800">Errori</p>
                         <p className="text-2xl font-bold text-red-700">
-                          {statsData.data.byStatus?.find((s: any) => s.status === 'fail')?.count || 0}
+                          {statsData.byStatus?.find((s: any) => s.status === 'fail')?.count || 0}
                         </p>
                       </div>
                     </div>
@@ -681,7 +681,7 @@ export function VoIPIntegrationSettings() {
                       <div>
                         <p className="text-sm text-blue-800">Sync Trunks</p>
                         <p className="text-2xl font-bold text-blue-700">
-                          {statsData.data.byTargetType?.find((s: any) => s.targetType === 'trunk')?.count || 0}
+                          {statsData.byTargetType?.find((s: any) => s.targetType === 'trunk')?.count || 0}
                         </p>
                       </div>
                     </div>
@@ -693,7 +693,7 @@ export function VoIPIntegrationSettings() {
                       <div>
                         <p className="text-sm text-purple-800">Sync Extensions</p>
                         <p className="text-2xl font-bold text-purple-700">
-                          {statsData.data.byTargetType?.find((s: any) => s.targetType === 'ext')?.count || 0}
+                          {statsData.byTargetType?.find((s: any) => s.targetType === 'ext')?.count || 0}
                         </p>
                       </div>
                     </div>
@@ -742,14 +742,14 @@ export function VoIPIntegrationSettings() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {logsData?.data?.logs?.length === 0 ? (
+                      {logsData?.logs?.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center text-gray-500 py-8">
                             Nessun log disponibile
                           </TableCell>
                         </TableRow>
                       ) : (
-                        logsData?.data?.logs?.map((log) => (
+                        logsData?.logs?.map((log) => (
                           <TableRow key={log.id} data-testid={`table-row-log-${log.id}`}>
                             <TableCell className="text-sm text-gray-600">
                               {formatDate(log.createdAt)}
@@ -777,10 +777,10 @@ export function VoIPIntegrationSettings() {
                 </div>
               )}
 
-              {logsData?.data?.pagination && (
+              {logsData?.pagination && (
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>
-                    Mostrando {logsData.data.logs?.length || 0} di {logsData.data.pagination.total} log
+                    Mostrando {logsData.logs?.length || 0} di {logsData.pagination.total} log
                   </span>
                 </div>
               )}
