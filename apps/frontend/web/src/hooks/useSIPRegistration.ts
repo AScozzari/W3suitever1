@@ -68,21 +68,20 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
     refetchOnWindowFocus: false,
     retry: false, // Don't retry on 404 (no extension assigned)
     enabled: true, // Always try to fetch credentials
+    // Suppress error logging for 404 - it just means no extension assigned
+    throwOnError: false,
   });
 
-  // Debug logging
+  // Check if error is "no extension assigned" (404) vs actual error
+  const isNoExtensionAssigned = error?.message?.includes('404');
+  const isActualError = error && !isNoExtensionAssigned;
+
+  // Debug logging (only log actual errors, not 404)
   useEffect(() => {
-    console.log('🔍 [SIP Hook] Query state:', {
-      isLoading,
-      hasError: !!error,
-      hasCredentials: !!credentials,
-      credentials: credentials
-    });
-    
-    if (error) {
+    if (isActualError) {
       console.error('❌ [SIP Hook] Query error:', error);
     }
-  }, [isLoading, error, credentials]);
+  }, [isActualError, error]);
 
   // Create CDR after call ends
   const createCDR = useCallback(async (callData: CallData, disposition: 'answered' | 'no_answer' | 'busy' | 'failed') => {
@@ -142,12 +141,8 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
 
   // Setup SIP.js UserAgent and Registration
   useEffect(() => {
-    if (!credentials || isLoading || error) {
-      console.log('⏸️ [SIP Hook] Skipping setup:', { 
-        hasCredentials: !!credentials, 
-        isLoading, 
-        hasError: !!error 
-      });
+    // Skip setup if no credentials (including 404 = no extension assigned)
+    if (!credentials || isLoading) {
       return;
     }
 
