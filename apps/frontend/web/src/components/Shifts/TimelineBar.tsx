@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { User, Clock, Users, AlertTriangle } from 'lucide-react';
@@ -74,6 +73,12 @@ const minutesToPercent = (minutes: number, startHour: number, endHour: number): 
 const LANE_HEIGHT = 44;
 const MIN_TOTAL_HEIGHT = 140;
 
+interface TooltipState {
+  segment: TimelineSegment | null;
+  x: number;
+  y: number;
+}
+
 export function TimelineBar({
   day,
   dayLabel,
@@ -83,6 +88,10 @@ export function TimelineBar({
   onSegmentClick,
   className
 }: TimelineBarProps) {
+  const [tooltip, setTooltip] = useState<TooltipState>({ segment: null, x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
   const hourMarkers = useMemo(() => {
     const markers = [];
     for (let h = startHour; h <= endHour; h += 2) {
@@ -96,6 +105,25 @@ export function TimelineBar({
     return Math.max(MIN_TOTAL_HEIGHT, lanesHeight);
   }, [lanes.length]);
 
+  const handleMouseEnter = useCallback((segment: TimelineSegment, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltip({
+      segment,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTooltip({ segment: null, x: 0, y: 0 });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      setTooltip({ segment: null, x: 0, y: 0 });
+    };
+  }, []);
+
   const renderSegment = (segment: TimelineSegment, laneType: string) => {
     const startMinutes = timeToMinutes(segment.startTime);
     const endMinutes = timeToMinutes(segment.endTime);
@@ -108,61 +136,39 @@ export function TimelineBar({
     const isResource = segment.type === 'resource';
     
     return (
-      <Tooltip key={segment.id}>
-        <TooltipTrigger asChild>
-          <div
-            className={cn(
-              "absolute rounded-md transition-all duration-200",
-              "flex items-center justify-center overflow-hidden",
-              isShortage && "border-2 border-dashed border-gray-400 bg-gray-100",
-              isResource && "shadow-md ring-1 ring-white/50",
-              !isShortage && !isResource && "shadow-sm",
-              "hover:brightness-110"
-            )}
-            style={{
-              left: `${left}%`,
-              width: `${Math.max(width, 3)}%`,
-              top: '6px',
-              bottom: '6px',
-              backgroundColor: isShortage ? 'transparent' : bgColor,
-            }}
-            onClick={() => onSegmentClick?.(segment)}
-            data-testid={`timeline-segment-${segment.id}`}
-          >
-            {width > 6 && (
-              <span className={cn(
-                "truncate px-1.5 text-[10px] font-medium",
-                isShortage ? "text-gray-600" : "text-white"
-              )}>
-                {isResource && <User className="w-2.5 h-2.5 inline mr-0.5" />}
-                {isShortage && <AlertTriangle className="w-2.5 h-2.5 inline mr-0.5" />}
-                {segment.resourceName || segment.label || `${segment.startTime}-${segment.endTime}`}
-              </span>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs bg-gray-900 text-white border-gray-700 z-50">
-          <div className="text-xs space-y-1 p-0.5">
-            <p className="font-semibold">{segment.label || segment.templateName || COLOR_LABELS[segment.type]}</p>
-            <div className="flex items-center gap-1.5 text-gray-300">
-              <Clock className="w-3 h-3" />
-              <span>{segment.startTime} - {segment.endTime}</span>
-            </div>
-            {segment.resourceName && (
-              <div className="flex items-center gap-1.5 text-green-300">
-                <User className="w-3 h-3" />
-                <span>{segment.resourceName}</span>
-              </div>
-            )}
-            {segment.requiredStaff !== undefined && (
-              <div className="flex items-center gap-1.5 text-orange-300">
-                <Users className="w-3 h-3" />
-                <span>Staff: {segment.assignedStaff || 0}/{segment.requiredStaff}</span>
-              </div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
+      <div
+        key={segment.id}
+        className={cn(
+          "absolute rounded-md transition-all duration-200 cursor-pointer",
+          "flex items-center justify-center overflow-hidden",
+          isShortage && "border-2 border-dashed border-gray-400 bg-gray-100",
+          isResource && "shadow-md ring-1 ring-white/50",
+          !isShortage && !isResource && "shadow-sm",
+          "hover:brightness-110 hover:scale-[1.02]"
+        )}
+        style={{
+          left: `${left}%`,
+          width: `${Math.max(width, 3)}%`,
+          top: '6px',
+          bottom: '6px',
+          backgroundColor: isShortage ? 'transparent' : bgColor,
+        }}
+        onClick={() => onSegmentClick?.(segment)}
+        onMouseEnter={(e) => handleMouseEnter(segment, e)}
+        onMouseLeave={handleMouseLeave}
+        data-testid={`timeline-segment-${segment.id}`}
+      >
+        {width > 6 && (
+          <span className={cn(
+            "truncate px-1.5 text-[10px] font-medium",
+            isShortage ? "text-gray-600" : "text-white"
+          )}>
+            {isResource && <User className="w-2.5 h-2.5 inline mr-0.5" />}
+            {isShortage && <AlertTriangle className="w-2.5 h-2.5 inline mr-0.5" />}
+            {segment.resourceName || segment.label || `${segment.startTime}-${segment.endTime}`}
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -205,12 +211,12 @@ export function TimelineBar({
   };
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div 
-        className={cn("bg-white rounded-lg border border-gray-200 shadow-sm", className)} 
-        data-testid={`timeline-day-${day}`}
-      >
-        <div className="flex items-stretch">
+    <div 
+      ref={containerRef}
+      className={cn("bg-white rounded-lg border border-gray-200 shadow-sm relative", className)} 
+      data-testid={`timeline-day-${day}`}
+    >
+      <div className="flex items-stretch">
         <div className="w-20 p-3 flex flex-col justify-center border-r border-gray-100 bg-gray-50/50 rounded-l-lg">
           <p className="text-xs font-bold text-gray-800 leading-tight">
             {dayLabel}
@@ -280,9 +286,47 @@ export function TimelineBar({
             </div>
           </div>
         </div>
-        </div>
       </div>
-    </TooltipProvider>
+
+      {tooltip.segment && (
+        <div
+          ref={tooltipRef}
+          className="fixed z-[9999] pointer-events-none animate-in fade-in-0 zoom-in-95 duration-100"
+          style={{
+            left: `${tooltip.x}px`,
+            top: `${tooltip.y}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="bg-gray-900 text-white rounded-md px-3 py-2 shadow-xl border border-gray-700">
+            <div className="text-xs space-y-1">
+              <p className="font-semibold">
+                {tooltip.segment.label || tooltip.segment.templateName || COLOR_LABELS[tooltip.segment.type]}
+              </p>
+              <div className="flex items-center gap-1.5 text-gray-300">
+                <Clock className="w-3 h-3" />
+                <span>{tooltip.segment.startTime} - {tooltip.segment.endTime}</span>
+              </div>
+              {tooltip.segment.resourceName && (
+                <div className="flex items-center gap-1.5 text-green-300">
+                  <User className="w-3 h-3" />
+                  <span>{tooltip.segment.resourceName}</span>
+                </div>
+              )}
+              {tooltip.segment.requiredStaff !== undefined && (
+                <div className="flex items-center gap-1.5 text-orange-300">
+                  <Users className="w-3 h-3" />
+                  <span>Staff: {tooltip.segment.assignedStaff || 0}/{tooltip.segment.requiredStaff}</span>
+                </div>
+              )}
+            </div>
+            <div 
+              className="absolute left-1/2 -bottom-1 w-2 h-2 bg-gray-900 border-r border-b border-gray-700 transform -translate-x-1/2 rotate-45"
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

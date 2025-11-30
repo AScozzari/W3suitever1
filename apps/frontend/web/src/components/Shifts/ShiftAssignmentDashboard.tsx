@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
@@ -80,6 +79,15 @@ interface Props {
   onBulkAssign: (assignments: { shiftId: string; employeeId: string }[]) => Promise<void>;
 }
 
+interface GanttTooltipState {
+  shift: Shift | null;
+  assignment: ShiftAssignment | null;
+  day: Date | null;
+  conflicts: ConflictDetection[];
+  x: number;
+  y: number;
+}
+
 // ==================== CONSTANTS ====================
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -141,6 +149,7 @@ export default function ShiftAssignmentDashboard({
   const [timelineZoom, setTimelineZoom] = useState<'hours' | 'quarter' | 'half'>('hours');
   const [timelineStartHour, setTimelineStartHour] = useState(6); // Start from 6 AM
   const [timelineEndHour, setTimelineEndHour] = useState(22); // End at 10 PM
+  const [ganttTooltip, setGanttTooltip] = useState<GanttTooltipState>({ shift: null, assignment: null, day: null, conflicts: [], x: 0, y: 0 });
   
   // ✅ Task 14: Filtri PdV + Date (storeFilter now drives all queries)
   const [storeFilter, setStoreFilter] = useState<string>(storeId || 'all');
@@ -1020,54 +1029,49 @@ export default function ShiftAssignmentDashboard({
                           const position = getShiftPosition(assignment.startTime, assignment.endTime);
                           
                           return (
-                            <Tooltip key={assignment.id}>
-                              <TooltipTrigger asChild>
-                                <div
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, assignment)}
-                                  onDragEnd={handleDragEnd}
-                                  className={cn(
-                                    "absolute top-1 bottom-1 rounded cursor-move text-xs font-medium text-white flex items-center justify-center",
-                                    "hover:shadow-lg transition-all duration-200",
-                                    SHIFT_STATUS_COLORS[status],
-                                    conflicts.length > 0 && "ring-1 ring-red-400",
-                                    selectedShifts.has(shift.id) && "ring-2 ring-blue-400"
-                                  )}
-                                  style={{
-                                    left: `${position.left}%`,
-                                    width: `${position.width}%`
-                                  }}
-                                  onClick={() => handleShiftSelection(shift.id, !selectedShifts.has(shift.id))}
-                                  data-testid={`gantt-shift-${shift.id}`}
-                                >
-                                  <div className="text-center truncate px-1">
-                                    <div className="font-semibold text-xs truncate">{shift.title}</div>
-                                    {position.width > 15 && (
-                                      <div className="text-xs opacity-90">
-                                        {assignment.startTime.slice(0,5)}-{assignment.endTime.slice(0,5)}
-                                      </div>
-                                    )}
-                                    {conflicts.length > 0 && position.width > 10 && (
-                                      <AlertTriangle className="w-3 h-3 mx-auto" />
-                                    )}
+                            <div
+                              key={assignment.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, assignment)}
+                              onDragEnd={handleDragEnd}
+                              onMouseEnter={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setGanttTooltip({
+                                  shift,
+                                  assignment,
+                                  day,
+                                  conflicts,
+                                  x: rect.left + rect.width / 2,
+                                  y: rect.top - 8
+                                });
+                              }}
+                              onMouseLeave={() => setGanttTooltip({ shift: null, assignment: null, day: null, conflicts: [], x: 0, y: 0 })}
+                              className={cn(
+                                "absolute top-1 bottom-1 rounded cursor-move text-xs font-medium text-white flex items-center justify-center",
+                                "hover:shadow-lg transition-all duration-200",
+                                SHIFT_STATUS_COLORS[status],
+                                conflicts.length > 0 && "ring-1 ring-red-400",
+                                selectedShifts.has(shift.id) && "ring-2 ring-blue-400"
+                              )}
+                              style={{
+                                left: `${position.left}%`,
+                                width: `${position.width}%`
+                              }}
+                              onClick={() => handleShiftSelection(shift.id, !selectedShifts.has(shift.id))}
+                              data-testid={`gantt-shift-${shift.id}`}
+                            >
+                              <div className="text-center truncate px-1">
+                                <div className="font-semibold text-xs truncate">{shift.title}</div>
+                                {position.width > 15 && (
+                                  <div className="text-xs opacity-90">
+                                    {assignment.startTime.slice(0,5)}-{assignment.endTime.slice(0,5)}
                                   </div>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="text-sm">
-                                  <div className="font-semibold">{shift.title}</div>
-                                  <div>{format(day, 'd MMM yyyy', { locale: it })}</div>
-                                  <div>{assignment.startTime} - {assignment.endTime}</div>
-                                  <div>Durata: {calculateShiftHours(assignment.startTime, assignment.endTime).toFixed(1)}h</div>
-                                  <div>Staff: {shift.assignedStaff}/{shift.requiredStaff}</div>
-                                  {conflicts.length > 0 && (
-                                    <div className="text-red-400 mt-1">
-                                      ⚠️ {conflicts.length} conflitto/i rilevato/i
-                                    </div>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
+                                )}
+                                {conflicts.length > 0 && position.width > 10 && (
+                                  <AlertTriangle className="w-3 h-3 mx-auto" />
+                                )}
+                              </div>
+                            </div>
                           );
                         })}
                     </div>
@@ -1773,7 +1777,7 @@ export default function ShiftAssignmentDashboard({
   }
 
   return (
-    <TooltipProvider>
+    <>
       <div className="space-y-6">
         {/* ✅ Task 14: Filtri PdV + Date */}
         {renderFiltersCard()}
@@ -2002,6 +2006,36 @@ export default function ShiftAssignmentDashboard({
           </TabsContent>
         </Tabs>
       </div>
-    </TooltipProvider>
+
+      {/* Custom Gantt Tooltip - No portal, no removeChild errors */}
+      {ganttTooltip.shift && ganttTooltip.assignment && ganttTooltip.day && (
+        <div
+          className="fixed z-[9999] pointer-events-none animate-in fade-in-0 zoom-in-95 duration-100"
+          style={{
+            left: `${ganttTooltip.x}px`,
+            top: `${ganttTooltip.y}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="bg-gray-900 text-white rounded-md px-3 py-2 shadow-xl border border-gray-700">
+            <div className="text-sm space-y-1">
+              <div className="font-semibold">{ganttTooltip.shift.title}</div>
+              <div>{format(ganttTooltip.day, 'd MMM yyyy', { locale: it })}</div>
+              <div>{ganttTooltip.assignment.startTime} - {ganttTooltip.assignment.endTime}</div>
+              <div>Durata: {calculateShiftHours(ganttTooltip.assignment.startTime, ganttTooltip.assignment.endTime).toFixed(1)}h</div>
+              <div>Staff: {ganttTooltip.shift.assignedStaff}/{ganttTooltip.shift.requiredStaff}</div>
+              {ganttTooltip.conflicts.length > 0 && (
+                <div className="text-red-400 mt-1">
+                  ⚠️ {ganttTooltip.conflicts.length} conflitto/i rilevato/i
+                </div>
+              )}
+            </div>
+            <div 
+              className="absolute left-1/2 -bottom-1 w-2 h-2 bg-gray-900 border-r border-b border-gray-700 transform -translate-x-1/2 rotate-45"
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChevronLeft, ChevronRight, Clock, Users, AlertTriangle, Coffee } from 'lucide-react';
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, addMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -31,6 +30,12 @@ interface Props {
   onShiftDrop?: (shiftId: string, newDate: string, newTime: string) => void;
 }
 
+interface TooltipState {
+  shift: Shift | null;
+  x: number;
+  y: number;
+}
+
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const SHIFT_COLORS = {
   morning: 'bg-gradient-to-r from-orange-400 to-orange-500',
@@ -48,8 +53,8 @@ export default function ShiftCalendar({
 }: Props) {
   const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ date: string; hour: number } | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipState>({ shift: null, x: 0, y: 0 });
   
-  // Calculate visible days
   const getVisibleDays = useMemo(() => {
     if (viewMode === 'day') {
       return [selectedDate];
@@ -62,7 +67,6 @@ export default function ShiftCalendar({
     }
   }, [selectedDate, viewMode]);
   
-  // Navigate dates
   const handlePrevious = () => {
     if (viewMode === 'day') {
       onDateChange(addDays(selectedDate, -1));
@@ -83,7 +87,6 @@ export default function ShiftCalendar({
     }
   };
   
-  // Group shifts by date and hour
   const shiftsByDateHour = useMemo(() => {
     const map = new Map<string, Shift[]>();
     
@@ -102,7 +105,6 @@ export default function ShiftCalendar({
     return map;
   }, [shifts]);
   
-  // Handle drag and drop
   const handleDragStart = (e: React.DragEvent, shift: Shift) => {
     setDraggedShift(shift);
     e.dataTransfer.effectAllowed = 'move';
@@ -129,7 +131,6 @@ export default function ShiftCalendar({
     setHoveredCell(null);
   };
   
-  // Calculate coverage for a cell
   const getCellCoverage = (date: string, hour: number) => {
     const key = `${date}_${hour}`;
     const cellShifts = shiftsByDateHour.get(key) || [];
@@ -142,70 +143,62 @@ export default function ShiftCalendar({
     if (totalAssigned >= totalRequired * 0.8) return 'warning';
     return 'critical';
   };
+
+  const handleShiftMouseEnter = useCallback((shift: Shift, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltip({
+      shift,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8
+    });
+  }, []);
+
+  const handleShiftMouseLeave = useCallback(() => {
+    setTooltip({ shift: null, x: 0, y: 0 });
+  }, []);
   
   const renderShift = (shift: Shift) => {
     const coverage = (shift.assignedUsers.length / shift.requiredStaff) * 100;
     const isUnderstaffed = coverage < 100;
     
     return (
-      <TooltipProvider key={shift.id}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className={cn(
-                "p-2 rounded-lg text-white text-xs cursor-pointer transition-all hover:scale-105 hover:shadow-lg",
-                SHIFT_COLORS[shift.shiftType],
-                draggedShift?.id === shift.id && "opacity-50"
-              )}
-              draggable
-              onDragStart={(e) => handleDragStart(e, shift)}
-              onClick={() => onShiftClick(shift)}
-              data-testid={`shift-${shift.id}`}
-            >
-              <div className="font-semibold">{shift.name}</div>
-              <div className="flex items-center justify-between mt-1">
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  <span>{shift.assignedUsers.length}/{shift.requiredStaff}</span>
-                </div>
-                {isUnderstaffed && (
-                  <AlertTriangle className="h-3 w-3 text-yellow-200" />
-                )}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                <Clock className="h-3 w-3" />
-                <span>
-                  {format(new Date(shift.startTime), 'HH:mm')} - 
-                  {format(new Date(shift.endTime), 'HH:mm')}
-                </span>
-              </div>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="space-y-1">
-              <div className="font-semibold">{shift.name}</div>
-              <div>Staff: {shift.assignedUsers.length}/{shift.requiredStaff}</div>
-              <div>Copertura: {Math.round(coverage)}%</div>
-              {shift.breakMinutes && (
-                <div className="flex items-center gap-1">
-                  <Coffee className="h-3 w-3" />
-                  Pausa: {shift.breakMinutes} min
-                </div>
-              )}
-              {shift.skills && shift.skills.length > 0 && (
-                <div>Skills: {shift.skills.join(', ')}</div>
-              )}
-              <div>Status: {shift.status}</div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div
+        key={shift.id}
+        className={cn(
+          "p-2 rounded-lg text-white text-xs cursor-pointer transition-all hover:scale-105 hover:shadow-lg",
+          SHIFT_COLORS[shift.shiftType],
+          draggedShift?.id === shift.id && "opacity-50"
+        )}
+        draggable
+        onDragStart={(e) => handleDragStart(e, shift)}
+        onClick={() => onShiftClick(shift)}
+        onMouseEnter={(e) => handleShiftMouseEnter(shift, e)}
+        onMouseLeave={handleShiftMouseLeave}
+        data-testid={`shift-${shift.id}`}
+      >
+        <div className="font-semibold">{shift.name}</div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            <span>{shift.assignedUsers.length}/{shift.requiredStaff}</span>
+          </div>
+          {isUnderstaffed && (
+            <AlertTriangle className="h-3 w-3 text-yellow-200" />
+          )}
+        </div>
+        <div className="flex items-center gap-1 mt-1">
+          <Clock className="h-3 w-3" />
+          <span>
+            {format(new Date(shift.startTime), 'HH:mm')} - 
+            {format(new Date(shift.endTime), 'HH:mm')}
+          </span>
+        </div>
+      </div>
     );
   };
   
   return (
-    <Card className="p-4">
-      {/* Header Navigation */}
+    <Card className="p-4 relative">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Button
@@ -235,10 +228,8 @@ export default function ShiftCalendar({
         
       </div>
       
-      {/* Calendar Grid */}
       <div className="overflow-x-auto">
         <div className="min-w-[800px]">
-          {/* Day Headers */}
           <div className="grid grid-cols-8 gap-1 mb-2">
             <div className="text-xs font-semibold text-muted-foreground p-2">Ora</div>
             {getVisibleDays.map(day => (
@@ -259,7 +250,6 @@ export default function ShiftCalendar({
             ))}
           </div>
           
-          {/* Hour Rows */}
           <div className="space-y-1">
             {HOURS.filter(h => h >= 6 && h <= 23).map(hour => (
               <div key={hour} className="grid grid-cols-8 gap-1">
@@ -306,6 +296,38 @@ export default function ShiftCalendar({
           </div>
         </div>
       </div>
+
+      {tooltip.shift && (
+        <div
+          className="fixed z-[9999] pointer-events-none animate-in fade-in-0 zoom-in-95 duration-100"
+          style={{
+            left: `${tooltip.x}px`,
+            top: `${tooltip.y}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="bg-gray-900 text-white rounded-md px-3 py-2 shadow-xl border border-gray-700">
+            <div className="space-y-1 text-xs">
+              <div className="font-semibold">{tooltip.shift.name}</div>
+              <div>Staff: {tooltip.shift.assignedUsers.length}/{tooltip.shift.requiredStaff}</div>
+              <div>Copertura: {Math.round((tooltip.shift.assignedUsers.length / tooltip.shift.requiredStaff) * 100)}%</div>
+              {tooltip.shift.breakMinutes && (
+                <div className="flex items-center gap-1">
+                  <Coffee className="h-3 w-3" />
+                  Pausa: {tooltip.shift.breakMinutes} min
+                </div>
+              )}
+              {tooltip.shift.skills && tooltip.shift.skills.length > 0 && (
+                <div>Skills: {tooltip.shift.skills.join(', ')}</div>
+              )}
+              <div>Status: {tooltip.shift.status}</div>
+            </div>
+            <div 
+              className="absolute left-1/2 -bottom-1 w-2 h-2 bg-gray-900 border-r border-b border-gray-700 transform -translate-x-1/2 rotate-45"
+            />
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
