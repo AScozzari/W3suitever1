@@ -1,0 +1,295 @@
+se, hasData: false, data: undefined, …}
+content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonymous) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Understand this error
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonymous) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Understand this error
+6content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonymous) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs/stats 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs?0=a&1=l&2=l 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs/stats 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs?0=a&1=l&2=l 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs?0=a&1=l&2=l 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs/stats 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs?0=a&1=l&2=l 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs/stats 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs?0=a&1=l&2=l 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1449
+refetch @ @tanstack_react-query.js?v=f4a34e1b:1439
+onClick @ VoIPIntegrationSettings.tsx:498
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5449Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/logs?0=a&1=l&2=l 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1449
+refetch @ @tanstack_react-query.js?v=f4a34e1b:1439
+onClick @ VoIPIntegrationSettings.tsx:498
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5449Understand this error
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/extensions/refresh-all 503 (Service Unavailable)
+apiRequest @ queryClient.ts:328
+onClick @ PhoneVoIPConfig.tsx:842
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5449Understand this error
+installHook.js:1 [REFRESH] Errore sync extension da edgvoip: Error: 503: Service Unavailable
+    at apiRequest (queryClient.ts:365:19)
+    at async onClick (PhoneVoIPConfig.tsx:842:38)

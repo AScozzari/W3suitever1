@@ -2280,18 +2280,18 @@ router.get('/logs', rbacMiddleware, requirePermission('view_telephony'), async (
     }
 
     if (startDate) {
-      conditions.push(gte(voipActivityLog.createdAt, new Date(startDate as string)));
+      conditions.push(gte(voipActivityLog.ts, new Date(startDate as string)));
     }
 
     if (endDate) {
-      conditions.push(lte(voipActivityLog.createdAt, new Date(endDate as string)));
+      conditions.push(lte(voipActivityLog.ts, new Date(endDate as string)));
     }
 
     const logs = await db
       .select()
       .from(voipActivityLog)
       .where(and(...conditions))
-      .orderBy(desc(voipActivityLog.createdAt))
+      .orderBy(desc(voipActivityLog.ts))
       .limit(parseInt(limit as string))
       .offset(parseInt(offset as string));
 
@@ -2341,7 +2341,7 @@ router.get('/logs/stats', rbacMiddleware, requirePermission('view_telephony'), a
       .from(voipActivityLog)
       .where(and(
         eq(voipActivityLog.tenantId, tenantId),
-        gte(voipActivityLog.createdAt, daysAgo)
+        gte(voipActivityLog.ts, daysAgo)
       ))
       .groupBy(voipActivityLog.action);
 
@@ -2354,7 +2354,7 @@ router.get('/logs/stats', rbacMiddleware, requirePermission('view_telephony'), a
       .from(voipActivityLog)
       .where(and(
         eq(voipActivityLog.tenantId, tenantId),
-        gte(voipActivityLog.createdAt, daysAgo)
+        gte(voipActivityLog.ts, daysAgo)
       ))
       .groupBy(voipActivityLog.status);
 
@@ -2367,7 +2367,7 @@ router.get('/logs/stats', rbacMiddleware, requirePermission('view_telephony'), a
       .from(voipActivityLog)
       .where(and(
         eq(voipActivityLog.tenantId, tenantId),
-        gte(voipActivityLog.createdAt, daysAgo)
+        gte(voipActivityLog.ts, daysAgo)
       ))
       .groupBy(voipActivityLog.targetType);
 

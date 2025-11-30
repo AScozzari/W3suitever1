@@ -83,7 +83,7 @@ export function VoIPIntegrationSettings() {
   });
 
   const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery<{ data: { logs: VoIPLogEntry[], pagination: any } }>({
-    queryKey: ['/api/voip/logs', logFilter],
+    queryKey: ['/api/voip/logs', logFilter !== 'all' ? { action: logFilter } : {}],
     enabled: activeSubTab === 'logs',
     staleTime: 10000
   });
