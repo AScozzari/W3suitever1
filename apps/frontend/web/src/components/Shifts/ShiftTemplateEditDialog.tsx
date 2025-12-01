@@ -111,7 +111,7 @@ export default function ShiftTemplateEditDialog({ isOpen, onClose, templateId }:
   const { data: coverage, isLoading: coverageLoading } = useQuery({
     queryKey: ['/api/hr/shift-templates', templateId, 'verify-coverage', selectedStoreId],
     queryFn: async () => {
-      if (!templateId || !selectedStoreId) return null;
+      if (!templateId || !selectedStoreId || selectedStoreId === 'global') return null;
       const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
       const response = await fetch(`/api/hr/shift-templates/${templateId}/verify-coverage?storeId=${selectedStoreId}`, {
         credentials: 'include',
@@ -120,7 +120,7 @@ export default function ShiftTemplateEditDialog({ isOpen, onClose, templateId }:
       if (!response.ok) return null;
       return response.json();
     },
-    enabled: !!templateId && !!selectedStoreId && isOpen
+    enabled: !!templateId && !!selectedStoreId && selectedStoreId !== 'global' && isOpen
   });
 
   const editMutation = useMutation({
