@@ -141,7 +141,11 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
   });
 
   const getTrunkRegistrationStatus = (trunkId: string) => {
-    const status = trunksRegistrationStatus.find((s: any) => s.id === trunkId || s.external_id === trunkId);
+    const status = trunksRegistrationStatus.find((s: any) => 
+      s.id === trunkId || 
+      s.external_id === trunkId || 
+      s.externalId === trunkId
+    );
     return status?.status || status?.registration_status || 'unknown';
   };
 

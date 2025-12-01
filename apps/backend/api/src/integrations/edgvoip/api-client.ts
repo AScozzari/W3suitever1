@@ -206,6 +206,15 @@ export class EdgvoipApiClient {
         endpoint,
         executionTimeMs
       });
+      
+      // Debug: Log raw response for status endpoints
+      if (endpoint.includes('/status/')) {
+        logger.info('EDGVoIP STATUS RAW RESPONSE', {
+          requestId,
+          endpoint,
+          rawData: JSON.stringify(responseData)
+        });
+      }
 
       return {
         success: true,
