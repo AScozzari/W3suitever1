@@ -12,7 +12,7 @@
 
 import { db, setTenantContext } from '../../core/db';
 import { logger } from '../../core/logger';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNotNull } from 'drizzle-orm';
 import { voipTrunks, voipActivityLog, stores } from '../../db/schema/w3suite';
 import { EdgvoipApiClient } from './api-client';
 import type {
@@ -635,6 +635,44 @@ export async function syncTrunksWithEdgvoip(
           });
         }
       }
+      
+      // Clean up orphaned trunks (exist locally but not on EDGVoIP)
+      // This includes:
+      // 1. Trunks with external_id that no longer exists on EDGVoIP
+      // 2. Trunks with sync_source='edgvoip' but no external_id (stale data)
+      const remoteExternalIds = new Set(trunksResponse.data.map(t => t.external_id).filter(Boolean));
+      
+      // Find all local trunks synced from EDGVoIP
+      const edgvoipTrunks = await db.select()
+        .from(voipTrunks)
+        .where(
+          and(
+            eq(voipTrunks.tenantId, tenantId),
+            eq(voipTrunks.syncSource, 'edgvoip')
+          )
+        );
+      
+      for (const localTrunk of edgvoipTrunks) {
+        // Delete if:
+        // - No external_id (stale/orphaned local-only trunk marked as edgvoip)
+        // - Has external_id but it's not in the remote list anymore
+        const isOrphaned = !localTrunk.externalId || !remoteExternalIds.has(localTrunk.externalId);
+        
+        if (isOrphaned) {
+          logger.info('Removing orphaned trunk not found on EDGVoIP', {
+            trunkId: localTrunk.id,
+            externalId: localTrunk.externalId || 'NULL',
+            name: localTrunk.name,
+            reason: !localTrunk.externalId ? 'no_external_id' : 'not_in_remote'
+          });
+          
+          // Delete the orphaned trunk
+          await db.delete(voipTrunks)
+            .where(eq(voipTrunks.id, localTrunk.id));
+          
+          (result as any).deleted = ((result as any).deleted || 0) + 1;
+        }
+      }
     }
 
     // Log sync activity
@@ -642,6 +680,7 @@ export async function syncTrunksWithEdgvoip(
       synced: result.synced,
       created: result.created,
       updated: result.updated,
+      deleted: (result as any).deleted || 0,
       failed: result.failed
     });
 
@@ -649,7 +688,8 @@ export async function syncTrunksWithEdgvoip(
     
     logger.info('Trunk sync completed', {
       tenantId,
-      ...result
+      ...result,
+      deleted: (result as any).deleted || 0
     });
 
     return result;
