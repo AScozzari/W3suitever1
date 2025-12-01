@@ -556,8 +556,8 @@ export async function resetExtensionPassword(
 }
 
 /**
- * Bidirectional sync extensions with EDGVoIP
- * Falls back to unidirectional sync (GET only) if POST /extensions/sync fails with 403
+ * Sync extensions from EDGVoIP (unidirectional: GET only)
+ * POST /extensions/sync is not available - we only pull extensions from EDGVoIP
  */
 export async function syncExtensionsWithEdgvoip(
   tenantId: string,
@@ -588,33 +588,9 @@ export async function syncExtensionsWithEdgvoip(
       };
     }
 
-    // Try bidirectional sync first, but gracefully fallback to GET-only if it fails
-    let bidirectionalSyncOk = false;
-    try {
-      const syncResponse = await client.syncExtensions({
-        tenant_external_id: client.tenantExternalId,
-        force: options?.force || false,
-        extension_ids: options?.extensionIds || []
-      });
+    logger.info('Starting extension sync from EDGVoIP (GET only)', { tenantId });
 
-      if (syncResponse.success && syncResponse.data) {
-        bidirectionalSyncOk = true;
-        logger.info('Bidirectional extension sync succeeded', { tenantId });
-      } else {
-        logger.warn('Bidirectional extension sync failed, falling back to GET-only', {
-          tenantId,
-          error: syncResponse.error
-        });
-      }
-    } catch (syncError) {
-      // 403 or other API errors - fallback to GET-only sync
-      logger.warn('Bidirectional extension sync not available, using unidirectional sync', {
-        tenantId,
-        error: syncError instanceof Error ? syncError.message : 'Unknown error'
-      });
-    }
-
-    // Fetch all extensions from EDGVoIP (works regardless of bidirectional sync success)
+    // Fetch all extensions from EDGVoIP
     const extensionsResponse = await client.getExtensions();
 
     if (extensionsResponse.success && extensionsResponse.data) {
@@ -837,5 +813,86 @@ export async function getUserCredentials(
   } catch (error) {
     logger.error('Failed to get user credentials', { error, userId, tenantId });
     return null;
+  }
+}
+
+/**
+ * Get registration status for all extensions from EDGVoIP
+ */
+export async function getExtensionRegistrationStatuses(
+  tenantId: string
+): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  try {
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return { success: false, error: 'EDGVoIP not configured' };
+    }
+
+    const response = await client.getExtensionStatuses();
+
+    if (!response.success) {
+      return { 
+        success: false, 
+        error: response.error || 'Failed to get extension statuses' 
+      };
+    }
+
+    logger.info('Retrieved extension registration statuses', { 
+      tenantId, 
+      count: response.data?.length || 0 
+    });
+
+    return { 
+      success: true, 
+      data: response.data || [] 
+    };
+  } catch (error) {
+    logger.error('Failed to get extension registration statuses', { error, tenantId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Get registration status for a single extension from EDGVoIP
+ */
+export async function getExtensionRegistrationStatus(
+  tenantId: string,
+  externalId: string
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return { success: false, error: 'EDGVoIP not configured' };
+    }
+
+    const response = await client.getExtensionStatus(externalId);
+
+    if (!response.success) {
+      return { 
+        success: false, 
+        error: response.error || 'Failed to get extension status' 
+      };
+    }
+
+    logger.info('Retrieved extension registration status', { 
+      tenantId, 
+      externalId 
+    });
+
+    return { 
+      success: true, 
+      data: response.data 
+    };
+  } catch (error) {
+    logger.error('Failed to get extension registration status', { error, tenantId, externalId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }

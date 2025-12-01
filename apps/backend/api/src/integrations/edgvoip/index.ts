@@ -39,6 +39,8 @@ export {
   updateTrunk,
   deleteTrunk,
   syncTrunksWithEdgvoip,
+  getTrunkRegistrationStatuses,
+  getTrunkRegistrationStatus,
   type TrunkSyncResult,
   type LocalTrunk
 } from './trunks.service';
@@ -54,6 +56,8 @@ export {
   syncExtensionsWithEdgvoip,
   getUserCredentials,
   generateSIPPassword,
+  getExtensionRegistrationStatuses,
+  getExtensionRegistrationStatus,
   type ExtensionSyncResult,
   type LocalExtension,
   type SIPCredentials

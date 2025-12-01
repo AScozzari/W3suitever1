@@ -702,3 +702,84 @@ export async function syncTrunksWithEdgvoip(
     };
   }
 }
+
+/**
+ * Get registration status for all trunks from EDGVoIP
+ */
+export async function getTrunkRegistrationStatuses(
+  tenantId: string
+): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  try {
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return { success: false, error: 'EDGVoIP not configured' };
+    }
+
+    const response = await client.getTrunkStatuses();
+
+    if (!response.success) {
+      return { 
+        success: false, 
+        error: response.error || 'Failed to get trunk statuses' 
+      };
+    }
+
+    logger.info('Retrieved trunk registration statuses', { 
+      tenantId, 
+      count: response.data?.length || 0 
+    });
+
+    return { 
+      success: true, 
+      data: response.data || [] 
+    };
+  } catch (error) {
+    logger.error('Failed to get trunk registration statuses', { error, tenantId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Get registration status for a single trunk from EDGVoIP
+ */
+export async function getTrunkRegistrationStatus(
+  tenantId: string,
+  externalId: string
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return { success: false, error: 'EDGVoIP not configured' };
+    }
+
+    const response = await client.getTrunkStatus(externalId);
+
+    if (!response.success) {
+      return { 
+        success: false, 
+        error: response.error || 'Failed to get trunk status' 
+      };
+    }
+
+    logger.info('Retrieved trunk registration status', { 
+      tenantId, 
+      externalId 
+    });
+
+    return { 
+      success: true, 
+      data: response.data 
+    };
+  } catch (error) {
+    logger.error('Failed to get trunk registration status', { error, tenantId, externalId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

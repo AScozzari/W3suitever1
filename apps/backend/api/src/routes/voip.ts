@@ -50,7 +50,11 @@ import {
   trunksService,
   checkEdgvoipConnection,
   syncTrunksWithEdgvoip,
-  syncExtensionsWithEdgvoip
+  syncExtensionsWithEdgvoip,
+  getTrunkRegistrationStatuses,
+  getTrunkRegistrationStatus,
+  getExtensionRegistrationStatuses,
+  getExtensionRegistrationStatus
 } from '../integrations/edgvoip';
 
 const router = express.Router();
@@ -222,6 +226,84 @@ router.post('/trunks/refresh', rbacMiddleware, requirePermission('manage_telepho
   } catch (error) {
     logger.error('Error refreshing trunks', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to refresh trunks' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/trunks/status - Get registration status for all trunks from EDGVoIP
+router.get('/trunks/status', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    logger.info('Fetching trunk registration statuses', { tenantId });
+
+    const result = await getTrunkRegistrationStatuses(tenantId);
+
+    if (!result.success) {
+      return res.status(503).json({ 
+        error: 'Failed to get trunk statuses',
+        details: result.error
+      } as ApiErrorResponse);
+    }
+
+    return res.json({ 
+      success: true, 
+      data: result.data 
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching trunk statuses', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to get trunk statuses' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/trunks/:id/status - Get registration status for a single trunk from EDGVoIP
+router.get('/trunks/:id/status', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(db, tenantId);
+
+    // Get the trunk to find its external_id
+    const [trunk] = await db.select()
+      .from(voipTrunks)
+      .where(and(
+        eq(voipTrunks.id, id),
+        eq(voipTrunks.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!trunk) {
+      return res.status(404).json({ error: 'Trunk not found' } as ApiErrorResponse);
+    }
+
+    if (!trunk.externalId) {
+      return res.status(400).json({ error: 'Trunk not synced with EDGVoIP' } as ApiErrorResponse);
+    }
+
+    logger.info('Fetching trunk registration status', { tenantId, trunkId: id, externalId: trunk.externalId });
+
+    const result = await getTrunkRegistrationStatus(tenantId, trunk.externalId);
+
+    if (!result.success) {
+      return res.status(503).json({ 
+        error: 'Failed to get trunk status',
+        details: result.error
+      } as ApiErrorResponse);
+    }
+
+    return res.json({ 
+      success: true, 
+      data: result.data 
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching trunk status', { error, trunkId: req.params.id, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to get trunk status' } as ApiErrorResponse);
   }
 });
 
@@ -656,6 +738,87 @@ router.post('/extensions/refresh-all', rbacMiddleware, requirePermission('manage
   } catch (error) {
     logger.error('Error refreshing extensions', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to refresh extensions' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/extensions/status - Get registration status for all extensions from EDGVoIP
+router.get('/extensions/status', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    logger.info('Fetching extension registration statuses', { tenantId });
+
+    const result = await getExtensionRegistrationStatuses(tenantId);
+
+    if (!result.success) {
+      return res.status(503).json({ 
+        error: 'Failed to get extension statuses',
+        details: result.error
+      } as ApiErrorResponse);
+    }
+
+    return res.json({ 
+      success: true, 
+      data: result.data 
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching extension statuses', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to get extension statuses' } as ApiErrorResponse);
+  }
+});
+
+// GET /api/voip/extensions/:id/status - Get registration status for a single extension from EDGVoIP
+router.get('/extensions/:id/status', rbacMiddleware, requirePermission('view_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    const { id } = req.params;
+    await setTenantContext(db, tenantId);
+
+    // Get the extension to find its external_id
+    const [extension] = await db.select()
+      .from(voipExtensions)
+      .where(and(
+        eq(voipExtensions.id, id),
+        eq(voipExtensions.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!extension) {
+      return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
+    }
+
+    // Use edgvoipExtensionId or externalId field
+    const externalId = extension.edgvoipExtensionId || extension.externalId;
+    
+    if (!externalId) {
+      return res.status(400).json({ error: 'Extension not synced with EDGVoIP' } as ApiErrorResponse);
+    }
+
+    logger.info('Fetching extension registration status', { tenantId, extensionId: id, externalId });
+
+    const result = await getExtensionRegistrationStatus(tenantId, externalId);
+
+    if (!result.success) {
+      return res.status(503).json({ 
+        error: 'Failed to get extension status',
+        details: result.error
+      } as ApiErrorResponse);
+    }
+
+    return res.json({ 
+      success: true, 
+      data: result.data 
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error fetching extension status', { error, extensionId: req.params.id, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to get extension status' } as ApiErrorResponse);
   }
 });
 
