@@ -359,9 +359,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   template?: any; // For editing existing templates
+  mode?: 'create' | 'edit' | 'duplicate';
 }
 
-export default function ShiftTemplateModal({ isOpen, onClose, template }: Props) {
+export default function ShiftTemplateModal({ isOpen, onClose, template, mode = 'create' }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -408,10 +409,15 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   // ✅ FIX: Reset form when template changes (edit mode)
   // useForm's defaultValues only apply on first mount, so we need to reset when switching templates
   useEffect(() => {
-    if (template?.id) {
-      // Editing existing template - populate form with template data
+    if (template?.id && (mode === 'edit' || mode === 'duplicate')) {
+      // Editing or duplicating existing template - populate form with template data
+      // For duplicate mode, add "(Copia)" suffix to name
+      const templateName = mode === 'duplicate' 
+        ? `${template.name || ''} (Copia)`
+        : template.name || '';
+      
       form.reset({
-        name: template.name || '',
+        name: templateName,
         description: template.description || '',
         storeId: template.storeId || 'global',
         status: template.status || 'active',
@@ -436,7 +442,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         notes: template.notes || ''
       });
       setBlockCounts({}); // Reset block counts for new template
-    } else {
+    } else if (mode === 'create') {
       // Creating new template - reset to defaults
       form.reset({
         name: '',
@@ -454,7 +460,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       });
       setBlockCounts({});
     }
-  }, [template?.id, form]);
+  }, [template?.id, mode, form]);
 
   // Dynamic time slots management
   const { fields, append, remove } = useFieldArray({
@@ -465,19 +471,32 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
   // ✅ NEW: Watch shift type to conditionally show/hide fields
   const shiftType = form.watch('shiftType');
 
-  // Create/Update mutation
+  // Create/Update mutation - mode-aware
   const saveTemplateMutation = useMutation({
     mutationFn: async (data: ShiftTemplateFormData) => {
-      const endpoint = template?.id 
+      // Determine endpoint and method based on mode
+      // - create: POST to /api/hr/shift-templates
+      // - edit: PUT to /api/hr/shift-templates/:id (creates new version via backend versioning)
+      // - duplicate: POST to /api/hr/shift-templates (creates new record)
+      const isEditMode = mode === 'edit' && template?.id;
+      const isDuplicateMode = mode === 'duplicate';
+      
+      const endpoint = isEditMode 
         ? `/api/hr/shift-templates/${template.id}` 
         : '/api/hr/shift-templates';
       
-      const method = template?.id ? 'PUT' : 'POST';
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      // For duplicate mode, ensure name has "(Copia)" suffix
+      let templateName = data.name;
+      if (isDuplicateMode && !templateName.includes('(Copia)')) {
+        templateName = `${templateName} (Copia)`;
+      }
       
       // Enterprise format with multiple timeSlots support
       // 'global' = null (valido per tutti i punti vendita)
       const enterpriseData = {
-        name: data.name,
+        name: templateName,
         description: data.description,
         storeId: data.storeId === 'global' ? null : data.storeId,
         scope: data.storeId === 'global' ? 'global' : 'store', // Scope per filtro backend
@@ -507,10 +526,16 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
-      toast({
-        title: template?.id ? "Template Aggiornato" : "Template Creato",
-        description: "Il template turni è stato salvato con successo",
-      });
+      
+      // Mode-specific success messages
+      const successMessages = {
+        create: { title: "Template Creato", desc: "Il nuovo template turni è stato creato con successo" },
+        edit: { title: "Template Aggiornato", desc: "È stata creata una nuova versione del template. I turni futuri sono stati aggiornati." },
+        duplicate: { title: "Template Duplicato", desc: "Il template è stato copiato con successo" }
+      };
+      
+      const { title, desc } = successMessages[mode];
+      toast({ title, description: desc });
       onClose();
       form.reset();
     },
@@ -696,11 +721,13 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-orange-500" />
-            {template?.id ? 'Modifica Template Turni' : 'Nuovo Template Turni'}
+            {mode === 'edit' ? 'Modifica Template Turni' : mode === 'duplicate' ? 'Duplica Template Turni' : 'Nuovo Template Turni'}
           </DialogTitle>
           <DialogDescription>
-            {template?.id 
-              ? 'Modifica le impostazioni del template turno esistente'
+            {mode === 'edit' 
+              ? 'Modifica le impostazioni del template. Verrà creata una nuova versione e i turni futuri saranno aggiornati.'
+              : mode === 'duplicate'
+              ? 'Crea una copia del template selezionato con un nuovo nome'
               : 'Crea un nuovo template per organizzare i turni del tuo team'
             }
           </DialogDescription>
@@ -1445,7 +1472,7 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                {template?.id ? 'Aggiorna Template' : 'Crea Template'}
+                {mode === 'edit' ? 'Aggiorna Template' : mode === 'duplicate' ? 'Duplica Template' : 'Crea Template'}
               </>
             )}
           </Button>
