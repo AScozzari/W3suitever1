@@ -147,7 +147,8 @@ export default function ShiftTemplateEditDialog({ isOpen, onClose, templateId }:
         isActive: data.isActive,
         notes: data.notes,
         color: data.color,
-        timeSlots: data.timeSlots
+        timeSlots: data.timeSlots,
+        changeReason: 'Modifica template tramite interfaccia'
       };
       
       return await apiRequest(`/api/hr/shift-templates/${templateId}`, {
@@ -157,7 +158,10 @@ export default function ShiftTemplateEditDialog({ isOpen, onClose, templateId }:
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
-      toast({ title: "Template Aggiornato", description: "Il template turni è stato aggiornato con successo" });
+      toast({ 
+        title: "Template Aggiornato", 
+        description: "Il template è stato aggiornato. I turni passati mantengono la versione originale, i turni futuri riceveranno le modifiche." 
+      });
       handleClose();
     },
     onError: (error: any) => {

@@ -355,18 +355,18 @@ export default function ShiftTemplateManager({
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                  className="h-10 w-10 p-0 hover:bg-blue-100"
                                   onClick={() => handleEditTemplate(template)}
                                   data-testid={`button-edit-${template.id}`}
                                 >
-                                  <Edit className="h-4 w-4 text-blue-600" />
+                                  <Edit className="h-6 w-6 text-blue-600" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -381,11 +381,11 @@ export default function ShiftTemplateManager({
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-8 w-8 p-0 hover:bg-purple-100"
+                                  className="h-10 w-10 p-0 hover:bg-purple-100"
                                   onClick={() => handleDuplicateTemplate(template)}
                                   data-testid={`button-duplicate-${template.id}`}
                                 >
-                                  <Copy className="h-4 w-4 text-purple-600" />
+                                  <Copy className="h-6 w-6 text-purple-600" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -400,15 +400,15 @@ export default function ShiftTemplateManager({
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-8 w-8 p-0 hover:bg-amber-100"
+                                  className="h-10 w-10 p-0 hover:bg-amber-100"
                                   onClick={() => handleArchiveTemplate(template.id)}
                                   disabled={isDeletingTemplate === template.id}
                                   data-testid={`button-archive-${template.id}`}
                                 >
                                   {isDeletingTemplate === template.id ? (
-                                    <RefreshCw className="h-4 w-4 text-amber-600 animate-spin" />
+                                    <RefreshCw className="h-6 w-6 text-amber-600 animate-spin" />
                                   ) : (
-                                    <Archive className="h-4 w-4 text-amber-600" />
+                                    <Archive className="h-6 w-6 text-amber-600" />
                                   )}
                                 </Button>
                               </TooltipTrigger>

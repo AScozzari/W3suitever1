@@ -1820,6 +1820,9 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   validFrom: date("valid_from"),
   validUntil: date("valid_until"),
   
+  // Duplication tracking - references parent template if this was created via duplicate
+  sourceTemplateId: uuid("source_template_id"),
+  
   // Audit
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1827,6 +1830,7 @@ export const shiftTemplates = w3suiteSchema.table("shift_templates", {
   index("shift_templates_tenant_active_idx").on(table.tenantId, table.isActive),
   index("shift_templates_pattern_idx").on(table.pattern),
   index("shift_templates_store_idx").on(table.storeId),
+  index("shift_templates_source_idx").on(table.sourceTemplateId),
 ]);
 
 export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({ 

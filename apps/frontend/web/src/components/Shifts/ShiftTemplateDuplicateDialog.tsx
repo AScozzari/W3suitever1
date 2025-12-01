@@ -88,6 +88,7 @@ export default function ShiftTemplateDuplicateDialog({ isOpen, onClose, template
       lastTemplateIdRef.current = templateId;
       
       const formValues = getDefaultFormValues(template, 'duplicate');
+      formValues.name = '';
       
       replace(formValues.timeSlots);
       
@@ -108,13 +109,12 @@ export default function ShiftTemplateDuplicateDialog({ isOpen, onClose, template
 
   const duplicateMutation = useMutation({
     mutationFn: async (data: ShiftTemplateFormData) => {
-      let templateName = data.name;
-      if (!templateName.includes('(Copia)')) {
-        templateName = `${templateName} (Copia)`;
+      if (!data.name || data.name.trim() === '') {
+        throw new Error('Il nome del template è obbligatorio');
       }
       
       const enterpriseData = {
-        name: templateName,
+        name: data.name.trim(),
         description: data.description,
         storeId: data.storeId === 'global' ? null : data.storeId,
         scope: data.storeId === 'global' ? 'global' : 'store',
@@ -133,7 +133,8 @@ export default function ShiftTemplateDuplicateDialog({ isOpen, onClose, template
         isActive: data.isActive,
         notes: data.notes,
         color: data.color,
-        timeSlots: data.timeSlots
+        timeSlots: data.timeSlots,
+        sourceTemplateId: templateId
       };
       
       return await apiRequest('/api/hr/shift-templates', {
@@ -143,7 +144,10 @@ export default function ShiftTemplateDuplicateDialog({ isOpen, onClose, template
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
-      toast({ title: "Template Duplicato", description: "Il template turni è stato duplicato con successo" });
+      toast({ 
+        title: "Template Duplicato", 
+        description: "Il nuovo template è stato creato come copia del template originale" 
+      });
       handleClose();
     },
     onError: (error: any) => {
