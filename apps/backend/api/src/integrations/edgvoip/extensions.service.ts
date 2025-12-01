@@ -606,6 +606,20 @@ export async function syncExtensionsWithEdgvoip(
     const extensionsResponse = await client.getExtensions();
 
     if (extensionsResponse.success && extensionsResponse.data) {
+      // Sanitize JSONB fields: ensure they are objects or null, never strings
+      const sanitizeJson = (value: any): any => {
+        if (value === null || value === undefined || value === '') return null;
+        if (typeof value === 'string') {
+          try {
+            return JSON.parse(value);
+          } catch {
+            return null;
+          }
+        }
+        if (typeof value === 'object') return value;
+        return null;
+      };
+
       for (const remoteExt of extensionsResponse.data) {
         try {
           // Check if extension exists locally by external_id
@@ -621,11 +635,11 @@ export async function syncExtensionsWithEdgvoip(
             tenantId,
             externalId: remoteExt.external_id,
             extension: remoteExt.extension,
-            displayName: remoteExt.display_name,
-            storeId: remoteExt.store_id,
-            status: remoteExt.status,
-            type: remoteExt.type,
-            settings: remoteExt.settings,
+            displayName: remoteExt.display_name || remoteExt.extension,
+            storeId: remoteExt.store_id || null,
+            status: remoteExt.status || 'active',
+            type: remoteExt.type || 'user',
+            settings: sanitizeJson(remoteExt.settings),
             registrationStatus: remoteExt.is_registered ? 'registered' : 'unregistered',
             syncSource: 'edgvoip' as const,
             syncStatus: 'synced' as const,
