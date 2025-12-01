@@ -504,17 +504,31 @@ export async function syncTrunksWithEdgvoip(
             ))
             .limit(1);
 
+          // Sanitize JSONB fields: ensure they are objects or null, never strings
+          const sanitizeJson = (value: any): any => {
+            if (value === null || value === undefined || value === '') return null;
+            if (typeof value === 'string') {
+              try {
+                return JSON.parse(value);
+              } catch {
+                return null;
+              }
+            }
+            if (typeof value === 'object') return value;
+            return null;
+          };
+
           const trunkData = {
             tenantId,
             externalId: remoteTrunk.external_id,
             name: remoteTrunk.name,
-            provider: remoteTrunk.provider,
+            provider: remoteTrunk.provider || null,
             status: remoteTrunk.status,
-            sipConfig: remoteTrunk.sip_config,
-            didConfig: remoteTrunk.did_config,
-            security: remoteTrunk.security,
-            gdpr: remoteTrunk.gdpr,
-            codecPreferences: remoteTrunk.codec_preferences,
+            sipConfig: sanitizeJson(remoteTrunk.sip_config),
+            didConfig: sanitizeJson(remoteTrunk.did_config),
+            security: sanitizeJson(remoteTrunk.security),
+            gdpr: sanitizeJson(remoteTrunk.gdpr),
+            codecPreferences: Array.isArray(remoteTrunk.codec_preferences) ? remoteTrunk.codec_preferences : null,
             syncSource: 'edgvoip' as const,
             syncStatus: 'synced' as const,
             lastSyncAt: new Date(),

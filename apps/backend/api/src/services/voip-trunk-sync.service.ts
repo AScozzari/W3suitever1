@@ -1,5 +1,9 @@
 /**
- * VoIP Trunk Sync Service
+ * VoIP Trunk Sync Service (DEPRECATED)
+ * 
+ * @deprecated Use integrations/edgvoip/trunks.service.ts instead.
+ * This legacy service uses global environment variables for configuration.
+ * The new service uses per-tenant API keys from voip_tenant_config table.
  * 
  * Synchronizes trunk data from edgvoip PBX to W3 Suite database
  * Supports manual refresh triggered by users
