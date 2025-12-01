@@ -2169,12 +2169,11 @@ router.post('/settings/test', rbacMiddleware, requirePermission('manage_telephon
 
     // Test connection
     try {
+      // Health check is PUBLIC - no auth required
       const testUrl = `${config.apiBaseUrl || 'https://edgvoip.it/api/v2/voip'}/health`;
       const response = await fetch(testUrl, {
         method: 'GET',
         headers: {
-          'X-API-Key': decryptedApiKey,
-          'X-Tenant-ID': config.tenantExternalId,
           'Content-Type': 'application/json'
         }
       });
@@ -2270,20 +2269,26 @@ router.post('/settings/test-all', rbacMiddleware, requirePermission('manage_tele
     }
 
     const baseUrl = config.apiBaseUrl || 'https://edgvoip.it/api/v2/voip';
-    const headers = {
+    
+    // Headers for authenticated endpoints
+    const authHeaders = {
       'X-API-Key': decryptedApiKey,
       'X-Tenant-ID': config.tenantExternalId,
       'Content-Type': 'application/json'
     };
+    
+    // Headers for public endpoints (no auth)
+    const publicHeaders = {
+      'Content-Type': 'application/json'
+    };
 
-    // Define all API tests
+    // Define all API tests - health is PUBLIC, others require auth
     const apiTests = [
-      { name: 'Health Check', endpoint: '/health', method: 'GET', description: 'Verifica connessione API' },
-      { name: 'Lista Trunk', endpoint: '/trunks', method: 'GET', description: 'Recupera lista trunk SIP' },
-      { name: 'Lista Extensions', endpoint: '/extensions', method: 'GET', description: 'Recupera lista interni' },
-      { name: 'Lista DID', endpoint: '/dids', method: 'GET', description: 'Recupera lista numeri DID' },
-      { name: 'CDR Access', endpoint: '/cdr', method: 'GET', description: 'Accesso ai record chiamate' },
-      { name: 'Account Info', endpoint: '/account', method: 'GET', description: 'Info account tenant' },
+      { name: 'Health Check', endpoint: '/health', method: 'GET', description: 'Verifica connessione API (pubblico)', isPublic: true },
+      { name: 'Lista Trunk', endpoint: '/trunks', method: 'GET', description: 'Recupera lista trunk SIP', isPublic: false },
+      { name: 'Lista Extensions', endpoint: '/extensions', method: 'GET', description: 'Recupera lista interni', isPublic: false },
+      { name: 'Lista DID', endpoint: '/did', method: 'GET', description: 'Recupera lista numeri DID', isPublic: false },
+      { name: 'CDR Access', endpoint: '/cdr', method: 'GET', description: 'Accesso ai record chiamate', isPublic: false },
     ];
 
     const results: Array<{
@@ -2295,6 +2300,7 @@ router.post('/settings/test-all', rbacMiddleware, requirePermission('manage_tele
       responseTime: number;
       error: string | null;
       data?: any;
+      requiresAuth: boolean;
     }> = [];
 
     // Execute all tests
@@ -2303,7 +2309,7 @@ router.post('/settings/test-all', rbacMiddleware, requirePermission('manage_tele
       try {
         const response = await fetch(`${baseUrl}${test.endpoint}`, {
           method: test.method,
-          headers
+          headers: test.isPublic ? publicHeaders : authHeaders
         });
 
         const responseTime = Date.now() - startTime;
@@ -2328,7 +2334,8 @@ router.post('/settings/test-all', rbacMiddleware, requirePermission('manage_tele
             count: Array.isArray(responseData) ? responseData.length : 
                    (responseData.data && Array.isArray(responseData.data)) ? responseData.data.length : 
                    undefined 
-          } : undefined
+          } : undefined,
+          requiresAuth: !test.isPublic
         });
       } catch (fetchError: any) {
         const responseTime = Date.now() - startTime;
@@ -2339,7 +2346,8 @@ router.post('/settings/test-all', rbacMiddleware, requirePermission('manage_tele
           success: false,
           status: null,
           responseTime,
-          error: fetchError.message || 'Network error'
+          error: fetchError.message || 'Network error',
+          requiresAuth: !test.isPublic
         });
       }
     }

@@ -488,37 +488,177 @@ export class EdgvoipApiClient {
     });
   }
 
-  // ==================== CONNECTION TEST ====================
+  // ==================== HEALTH CHECK (PUBLIC - NO AUTH) ====================
 
-  async testConnection(): Promise<{
-    connected: boolean;
-    latencyMs?: number;
-    error?: string;
-    rateLimitInfo?: RateLimitInfo;
-  }> {
+  /**
+   * Health check endpoint - PUBLIC, no API key required
+   * Used to verify API availability
+   */
+  async getHealth(): Promise<EdgvoipApiResponse<{ status: string; timestamp: string }>> {
+    const requestId = crypto.randomUUID();
     const startTime = Date.now();
+    const url = `${this.config.apiBaseUrl}/health`;
 
     try {
-      const response = await this.getTrunkStatuses();
-      const latencyMs = Date.now() - startTime;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      if (response.success) {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId
+        },
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const executionTimeMs = Date.now() - startTime;
+      const responseData = await response.json();
+
+      logger.info('EDGVoIP health check', {
+        requestId,
+        status: response.status,
+        executionTimeMs
+      });
+
+      if (!response.ok) {
         return {
-          connected: true,
-          latencyMs,
-          rateLimitInfo: this.getRateLimitInfo()
+          success: false,
+          error: responseData.error || `HTTP ${response.status}`,
+          error_code: 'HEALTH_CHECK_FAILED',
+          request_id: requestId
         };
       }
 
       return {
-        connected: false,
+        success: true,
+        data: responseData.data || responseData,
+        request_id: requestId
+      };
+    } catch (error) {
+      logger.error('EDGVoIP health check failed', { error, requestId });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Health check failed',
+        error_code: 'NETWORK_ERROR',
+        request_id: requestId
+      };
+    }
+  }
+
+  // ==================== DID MANAGEMENT ====================
+
+  /**
+   * Get DIDs for tenant
+   */
+  async getDIDs(storeId?: string): Promise<EdgvoipApiResponse<any[]>> {
+    const queryParams = storeId ? { store_id: storeId } : undefined;
+    return this.request<any[]>({
+      method: 'GET',
+      endpoint: '/did',
+      queryParams
+    });
+  }
+
+  // ==================== CDR (Call Detail Records) ====================
+
+  /**
+   * Get CDR records with optional filters
+   */
+  async getCDR(options?: {
+    start_date?: string;
+    end_date?: string;
+    store_id?: string;
+    extension_id?: string;
+    trunk_id?: string;
+    direction?: 'inbound' | 'outbound';
+    limit?: number;
+    offset?: number;
+  }): Promise<EdgvoipApiResponse<any[]>> {
+    const queryParams: Record<string, string> = {};
+    if (options?.start_date) queryParams.start_date = options.start_date;
+    if (options?.end_date) queryParams.end_date = options.end_date;
+    if (options?.store_id) queryParams.store_id = options.store_id;
+    if (options?.extension_id) queryParams.extension_id = options.extension_id;
+    if (options?.trunk_id) queryParams.trunk_id = options.trunk_id;
+    if (options?.direction) queryParams.direction = options.direction;
+    if (options?.limit) queryParams.limit = options.limit.toString();
+    if (options?.offset) queryParams.offset = options.offset.toString();
+
+    return this.request<any[]>({
+      method: 'GET',
+      endpoint: '/cdr',
+      queryParams: Object.keys(queryParams).length > 0 ? queryParams : undefined
+    });
+  }
+
+  // ==================== CONNECTION TEST ====================
+
+  /**
+   * Test connection using public health endpoint first,
+   * then verify authenticated access with trunks endpoint
+   */
+  async testConnection(): Promise<{
+    connected: boolean;
+    authenticated: boolean;
+    latencyMs?: number;
+    error?: string;
+    rateLimitInfo?: RateLimitInfo;
+    details?: {
+      healthCheck: boolean;
+      trunksAccess: boolean;
+      extensionsAccess: boolean;
+    };
+  }> {
+    const startTime = Date.now();
+
+    try {
+      // Step 1: Test public health endpoint (no auth)
+      const healthResponse = await this.getHealth();
+      const healthCheckPassed = healthResponse.success;
+
+      if (!healthCheckPassed) {
+        return {
+          connected: false,
+          authenticated: false,
+          latencyMs: Date.now() - startTime,
+          error: healthResponse.error || 'Health check failed - API unreachable'
+        };
+      }
+
+      // Step 2: Test authenticated access with trunks endpoint
+      const trunksResponse = await this.getTrunks();
+      const trunksAccessPassed = trunksResponse.success;
+
+      // Step 3: Test extensions endpoint
+      const extensionsResponse = await this.getExtensions();
+      const extensionsAccessPassed = extensionsResponse.success;
+
+      const latencyMs = Date.now() - startTime;
+
+      // Determine overall status
+      const authenticated = trunksAccessPassed || extensionsAccessPassed;
+
+      return {
+        connected: true,
+        authenticated,
         latencyMs,
-        error: response.error,
-        rateLimitInfo: this.getRateLimitInfo()
+        rateLimitInfo: this.getRateLimitInfo(),
+        details: {
+          healthCheck: healthCheckPassed,
+          trunksAccess: trunksAccessPassed,
+          extensionsAccess: extensionsAccessPassed
+        },
+        error: !authenticated 
+          ? `Authentication failed: ${trunksResponse.error || extensionsResponse.error}`
+          : undefined
       };
     } catch (error) {
       return {
         connected: false,
+        authenticated: false,
+        latencyMs: Date.now() - startTime,
         error: error instanceof Error ? error.message : 'Connection failed'
       };
     }
