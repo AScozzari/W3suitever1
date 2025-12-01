@@ -4,9 +4,9 @@ import { logger } from '../core/logger.js';
 import { z } from 'zod';
 import { rbacMiddleware, requirePermission } from '../middleware/tenant.js';
 import crypto from 'crypto';
-import { db } from '../core/db.js';
+import { db, setTenantContext } from '../core/db.js';
 import { eq, and, sql } from 'drizzle-orm';
-import { tenants, suppliers } from '../db/schema/w3suite.js';
+import { tenants, suppliers, voipTenantConfig, voipActivityLog, voipTrunks, voipExtensions } from '../db/schema/w3suite.js';
 
 const router = Router();
 
@@ -590,6 +590,356 @@ router.post('/:tenantId/signatures', rbacMiddleware, requirePermission('webhooks
       error: 'Failed to create webhook signature',
       details: errorMessage
     });
+  }
+});
+
+// ==================== EDGVoIP WEBHOOK RECEIVER ====================
+// POST /api/webhooks - Main endpoint for EDGVoIP call and status events
+// Uses HMAC-SHA256 signature verification with tenant-specific secrets
+// Reference: EDGVoIP API v2 Webhook Documentation
+
+// Types for EDGVoIP webhook events
+interface WebhookCallData {
+  call_uuid: string;
+  caller_id_number?: string;
+  caller_id_name?: string;
+  destination_number: string;
+  call_direction: 'inbound' | 'outbound';
+  context?: string;
+  answer_time?: string;
+  start_time?: string;
+  end_time?: string;
+  duration?: number;
+  billable_seconds?: number;
+  hangup_cause?: string;
+  hangup_cause_code?: number;
+}
+
+interface WebhookTrunkStatusData {
+  trunk_id: string;
+  trunk_external_id: string;
+  trunk_name: string;
+  previous_status: string;
+  current_status: string;
+}
+
+interface WebhookExtensionStatusData {
+  extension_id: string;
+  extension_external_id: string;
+  extension: string;
+  previous_status: string;
+  current_status: string;
+  connection_type?: string;
+  registration_ip?: string;
+  registration_port?: number;
+}
+
+interface EDGVoIPWebhookPayload {
+  type: 'call.start' | 'call.ringing' | 'call.answered' | 'call.ended' | 'trunk.status' | 'extension.status';
+  tenant_id: string;
+  tenant_external_id: string;
+  timestamp: string;
+  data: WebhookCallData | WebhookTrunkStatusData | WebhookExtensionStatusData;
+}
+
+// Timing-safe HMAC verification
+function verifyEdgvoipWebhookSignature(rawBody: string, signature: string, secret: string): boolean {
+  try {
+    if (!signature || !secret) return false;
+    
+    // Signature format: sha256=<hex_hash>
+    const expectedSig = 'sha256=' + crypto
+      .createHmac('sha256', secret)
+      .update(rawBody, 'utf8')
+      .digest('hex');
+    
+    // Timing-safe comparison
+    const sigBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSig);
+    
+    if (sigBuffer.length !== expectedBuffer.length) {
+      return false;
+    }
+    
+    return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+  } catch (error) {
+    logger.error('Error verifying EDGVoIP webhook signature', { error });
+    return false;
+  }
+}
+
+// Get tenant's webhook secret by external ID
+async function getEdgvoipTenantWebhookSecret(tenantExternalId: string): Promise<{ tenantId: string; secret: string } | null> {
+  try {
+    const [config] = await db
+      .select({
+        tenantId: voipTenantConfig.tenantId,
+        webhookSecret: voipTenantConfig.webhookSecret
+      })
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantExternalId, tenantExternalId));
+    
+    if (!config || !config.webhookSecret) {
+      return null;
+    }
+    
+    return {
+      tenantId: config.tenantId,
+      secret: config.webhookSecret
+    };
+  } catch (error) {
+    logger.error('Error fetching tenant webhook secret', { error, tenantExternalId });
+    return null;
+  }
+}
+
+// Process call events asynchronously
+async function processEdgvoipCallEvent(tenantId: string, eventType: string, data: WebhookCallData): Promise<void> {
+  try {
+    await setTenantContext(db, tenantId);
+    
+    // Log the call event
+    await db.insert(voipActivityLog).values({
+      tenantId,
+      action: `webhook_${eventType}`,
+      targetType: 'call',
+      targetId: data.call_uuid,
+      status: 'success',
+      detailsJson: {
+        callerNumber: data.caller_id_number,
+        callerName: data.caller_id_name,
+        destination: data.destination_number,
+        direction: data.call_direction,
+        answerTime: data.answer_time,
+        duration: data.duration,
+        hangupCause: data.hangup_cause
+      }
+    });
+    
+    logger.debug('EDGVoIP call event processed', { tenantId, eventType, callUuid: data.call_uuid });
+  } catch (error) {
+    logger.error('Error processing EDGVoIP call event', { error, tenantId, eventType, data });
+    throw error;
+  }
+}
+
+// Process trunk status events
+async function processEdgvoipTrunkStatusEvent(tenantId: string, data: WebhookTrunkStatusData): Promise<void> {
+  try {
+    await setTenantContext(db, tenantId);
+    
+    // Update trunk status in local database
+    await db
+      .update(voipTrunks)
+      .set({
+        status: data.current_status,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(voipTrunks.tenantId, tenantId),
+        eq(voipTrunks.externalId, data.trunk_external_id)
+      ));
+    
+    // Log the status change
+    await db.insert(voipActivityLog).values({
+      tenantId,
+      action: 'webhook_trunk.status',
+      targetType: 'trunk',
+      targetId: data.trunk_external_id,
+      status: 'success',
+      detailsJson: {
+        trunkName: data.trunk_name,
+        previousStatus: data.previous_status,
+        currentStatus: data.current_status
+      }
+    });
+    
+    logger.info('EDGVoIP trunk status updated via webhook', {
+      tenantId,
+      trunkId: data.trunk_external_id,
+      status: data.current_status
+    });
+  } catch (error) {
+    logger.error('Error processing EDGVoIP trunk status event', { error, tenantId, data });
+    throw error;
+  }
+}
+
+// Process extension status events
+async function processEdgvoipExtensionStatusEvent(tenantId: string, data: WebhookExtensionStatusData): Promise<void> {
+  try {
+    await setTenantContext(db, tenantId);
+    
+    // Update extension status in local database
+    await db
+      .update(voipExtensions)
+      .set({
+        status: data.current_status,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(voipExtensions.tenantId, tenantId),
+        eq(voipExtensions.externalId, data.extension_external_id)
+      ));
+    
+    // Log the status change
+    await db.insert(voipActivityLog).values({
+      tenantId,
+      action: 'webhook_extension.status',
+      targetType: 'extension',
+      targetId: data.extension_external_id,
+      status: 'success',
+      detailsJson: {
+        extension: data.extension,
+        previousStatus: data.previous_status,
+        currentStatus: data.current_status,
+        connectionType: data.connection_type,
+        registrationIp: data.registration_ip
+      }
+    });
+    
+    logger.info('EDGVoIP extension status updated via webhook', {
+      tenantId,
+      extensionId: data.extension_external_id,
+      status: data.current_status
+    });
+  } catch (error) {
+    logger.error('Error processing EDGVoIP extension status event', { error, tenantId, data });
+    throw error;
+  }
+}
+
+/**
+ * POST /api/webhooks
+ * 
+ * Main EDGVoIP webhook receiver endpoint
+ * Receives call events (start, ringing, answered, ended) and status events (trunk.status, extension.status)
+ * 
+ * Headers:
+ * - X-Webhook-Signature: HMAC-SHA256 signature (sha256=<hex>)
+ * - X-Webhook-Event: Event type
+ * - X-Request-ID: Unique delivery ID
+ * 
+ * Payload:
+ * - type: Event type
+ * - tenant_id: EDGVoIP internal tenant ID
+ * - tenant_external_id: W3 Suite tenant identifier (used for lookup)
+ * - timestamp: ISO 8601 timestamp
+ * - data: Event-specific data
+ */
+router.post('/', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const requestId = (req.headers['x-request-id'] as string) || crypto.randomUUID();
+  const eventType = req.headers['x-webhook-event'] as string;
+  const signature = req.headers['x-webhook-signature'] as string;
+  
+  try {
+    // Get raw body for HMAC verification
+    const rawBody = (req as any).rawBody;
+    
+    if (!rawBody) {
+      logger.warn('EDGVoIP webhook received without raw body', { requestId });
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+    
+    const rawBodyStr = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
+    
+    // Parse the payload
+    let payload: EDGVoIPWebhookPayload;
+    try {
+      payload = JSON.parse(rawBodyStr);
+    } catch (e) {
+      logger.warn('EDGVoIP webhook received with invalid JSON', { requestId, error: e });
+      return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+    
+    // Extract tenant_external_id from payload
+    const { tenant_external_id, type, data, timestamp } = payload;
+    
+    if (!tenant_external_id) {
+      logger.warn('EDGVoIP webhook missing tenant_external_id', { requestId, eventType: type });
+      return res.status(400).json({ error: 'Missing tenant_external_id' });
+    }
+    
+    // Get tenant's webhook secret
+    const tenantConfig = await getEdgvoipTenantWebhookSecret(tenant_external_id);
+    
+    if (!tenantConfig) {
+      logger.warn('EDGVoIP webhook secret not found for tenant', { requestId, tenantExternalId: tenant_external_id });
+      return res.status(401).json({ error: 'Tenant not configured' });
+    }
+    
+    // Verify HMAC signature
+    if (!verifyEdgvoipWebhookSignature(rawBodyStr, signature, tenantConfig.secret)) {
+      logger.warn('EDGVoIP webhook signature verification failed', { 
+        requestId, 
+        tenantExternalId: tenant_external_id,
+        eventType: type 
+      });
+      
+      // Log failed attempt for security monitoring
+      await db.insert(voipActivityLog).values({
+        tenantId: tenantConfig.tenantId,
+        action: 'webhook_signature_failed',
+        targetType: 'webhook',
+        targetId: requestId,
+        status: 'failed',
+        detailsJson: {
+          eventType: type,
+          timestamp,
+          reason: 'Invalid HMAC signature'
+        }
+      }).catch(() => {}); // Don't fail if logging fails
+      
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+    
+    // Respond immediately with 200 OK (best practice - respond within 5 seconds)
+    res.status(200).json({ received: true, requestId });
+    
+    // Process event asynchronously (don't await - fire and forget)
+    setImmediate(async () => {
+      try {
+        switch (type) {
+          case 'call.start':
+          case 'call.ringing':
+          case 'call.answered':
+          case 'call.ended':
+            await processEdgvoipCallEvent(tenantConfig.tenantId, type, data as WebhookCallData);
+            break;
+          
+          case 'trunk.status':
+            await processEdgvoipTrunkStatusEvent(tenantConfig.tenantId, data as WebhookTrunkStatusData);
+            break;
+          
+          case 'extension.status':
+            await processEdgvoipExtensionStatusEvent(tenantConfig.tenantId, data as WebhookExtensionStatusData);
+            break;
+          
+          default:
+            logger.warn('Unknown EDGVoIP webhook event type', { requestId, eventType: type, tenantExternalId: tenant_external_id });
+        }
+        
+        logger.info('EDGVoIP webhook processed successfully', {
+          requestId,
+          eventType: type,
+          tenantExternalId: tenant_external_id,
+          processingTime: Date.now() - startTime
+        });
+      } catch (error) {
+        logger.error('Error processing EDGVoIP webhook event', { 
+          error, 
+          requestId, 
+          eventType: type, 
+          tenantExternalId: tenant_external_id 
+        });
+      }
+    });
+    
+  } catch (error) {
+    logger.error('EDGVoIP webhook handler error', { error, requestId });
+    // Return 200 anyway to prevent retries if we've already received the webhook
+    return res.status(200).json({ received: true, requestId, warning: 'Processing error occurred' });
   }
 });
 

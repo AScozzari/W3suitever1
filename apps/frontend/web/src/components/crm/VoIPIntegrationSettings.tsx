@@ -51,6 +51,7 @@ interface VoIPSettingsResponse {
     lastConnectionTest: string | null;
     connectionError: string | null;
     hasApiKey: boolean;
+    hasWebhookSecret: boolean;
   } | null;
 }
 
@@ -101,8 +102,9 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export function VoIPIntegrationSettings() {
   const { toast } = useToast();
-  const [activeSubTab, setActiveSubTab] = useState<'config' | 'logs' | 'test'>('config');
+  const [activeSubTab, setActiveSubTab] = useState<'config' | 'logs' | 'test' | 'webhook'>('config');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [logFilter, setLogFilter] = useState<string>('all');
   const [testResults, setTestResults] = useState<APITestResponse | null>(null);
 
@@ -309,6 +311,10 @@ export function VoIPIntegrationSettings() {
                 <FlaskConical className="w-4 h-4 mr-2" />
                 Test API
               </TabsTrigger>
+              <TabsTrigger value="webhook" data-testid="subtab-webhook" disabled={!isConfigured || !config?.hasWebhookSecret}>
+                <Zap className="w-4 h-4 mr-2" />
+                Test Webhook
+              </TabsTrigger>
               <TabsTrigger value="logs" data-testid="subtab-logs">
                 <Activity className="w-4 h-4 mr-2" />
                 Log Attività
@@ -414,17 +420,33 @@ export function VoIPIntegrationSettings() {
                       name="webhookSecret"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Webhook Secret</FormLabel>
+                          <FormLabel>
+                            Webhook Secret {config?.hasWebhookSecret ? '(lascia vuoto per mantenere)' : ''}
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="password"
-                              placeholder="whsec_..." 
-                              {...field}
-                              data-testid="input-webhook-secret"
-                            />
+                            <div className="relative">
+                              <Input 
+                                type={showWebhookSecret ? 'text' : 'password'}
+                                placeholder={config?.hasWebhookSecret ? '●●●●●●●● (configurato)' : 'whsec_...'} 
+                                {...field}
+                                data-testid="input-webhook-secret"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => setShowWebhookSecret(!showWebhookSecret)}
+                                data-testid="button-toggle-webhook-secret"
+                              >
+                                {showWebhookSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </Button>
+                            </div>
                           </FormControl>
                           <FormDescription>
-                            Usato per verificare le firme HMAC dei webhook
+                            {config?.hasWebhookSecret 
+                              ? <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Webhook secret configurato</span>
+                              : 'Usato per verificare le firme HMAC dei webhook'}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -642,6 +664,131 @@ export function VoIPIntegrationSettings() {
                 <div className="text-center py-12 text-gray-500">
                   <FlaskConical className="w-12 h-12 mx-auto mb-4 opacity-30" />
                   <p>Clicca "Esegui Test Completo" per verificare tutti gli endpoint API</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="webhook" className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-blue-800">Test Configurazione Webhook</p>
+                  <p className="text-sm text-blue-700">
+                    Verifica che la firma HMAC-SHA256 venga generata e validata correttamente.
+                    Questo test simula un evento webhook come se fosse ricevuto da EDGVoIP.
+                  </p>
+                </div>
+              </div>
+
+              {config?.hasWebhookSecret ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="font-medium">Webhook Secret configurato</span>
+                  </div>
+
+                  <Card className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">URL Webhook Endpoint</span>
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">POST /api/webhooks</code>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Algoritmo Firma</span>
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">HMAC-SHA256</code>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Header Signature</span>
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">X-Webhook-Signature</code>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Tenant External ID</span>
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{config?.tenantExternalId || 'N/A'}</code>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium mb-3">Eventi Webhook Supportati</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>call.start - Chiamata iniziata</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                        <span>call.ringing - In squillo</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        <span>call.answered - Risposta</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>call.ended - Terminata</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full" />
+                        <span>trunk.status - Stato trunk</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full" />
+                        <span>extension.status - Stato interno</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
+                        const response = await fetch('/api/voip/webhooks/test', {
+                          method: 'POST',
+                          credentials: 'include',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'X-Tenant-ID': tenantId,
+                            'X-Auth-Session': 'authenticated',
+                            'X-Demo-User': 'admin-user'
+                          }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                          toast({
+                            title: 'Test Webhook completato',
+                            description: data.data.message,
+                            variant: 'default'
+                          });
+                        } else {
+                          toast({
+                            title: 'Errore test webhook',
+                            description: data.error || 'Test fallito',
+                            variant: 'destructive'
+                          });
+                        }
+                      } catch (error) {
+                        toast({
+                          title: 'Errore',
+                          description: 'Impossibile eseguire il test webhook',
+                          variant: 'destructive'
+                        });
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    data-testid="button-test-webhook"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Esegui Test Verifica HMAC
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p className="font-medium">Webhook Secret non configurato</p>
+                  <p className="text-sm mt-2">
+                    Vai alla tab "Configurazione API" e inserisci il Webhook Secret
+                    per abilitare la ricezione dei webhook da EDGVoIP.
+                  </p>
                 </div>
               )}
             </TabsContent>

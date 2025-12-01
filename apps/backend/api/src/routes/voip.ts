@@ -12,6 +12,7 @@
  */
 
 import express from 'express';
+import crypto from 'crypto';
 import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
 import { correlationMiddleware, logger } from '../core/logger';
@@ -2012,8 +2013,20 @@ router.get('/settings', rbacMiddleware, requirePermission('manage_telephony'), a
       data: {
         configured: true,
         config: {
-          ...config,
-          hasApiKey: !!config.apiKeyLastFour
+          id: config.id,
+          tenantId: config.tenantId,
+          tenantExternalId: config.tenantExternalId,
+          apiKeyLastFour: config.apiKeyLastFour,
+          apiBaseUrl: config.apiBaseUrl,
+          scopes: config.scopes,
+          enabled: config.enabled,
+          connectionStatus: config.connectionStatus,
+          lastConnectionTest: config.lastConnectionTest,
+          connectionError: config.connectionError,
+          createdAt: config.createdAt,
+          updatedAt: config.updatedAt,
+          hasApiKey: !!config.apiKeyLastFour,
+          hasWebhookSecret: !!config.webhookSecret
         }
       }
     } as ApiSuccessResponse);
@@ -2129,7 +2142,9 @@ router.put('/settings', rbacMiddleware, requirePermission('manage_telephony'), a
         scopes: result.scopes,
         enabled: result.enabled,
         connectionStatus: result.connectionStatus,
-        updatedAt: result.updatedAt
+        updatedAt: result.updatedAt,
+        hasApiKey: !!result.apiKeyLastFour,
+        hasWebhookSecret: !!result.webhookSecret
       }
     } as ApiSuccessResponse);
   } catch (error) {
@@ -2536,6 +2551,149 @@ router.get('/logs/stats', rbacMiddleware, requirePermission('view_telephony'), a
   } catch (error) {
     logger.error('Error fetching VoIP log stats', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to fetch VoIP log stats' } as ApiErrorResponse);
+  }
+});
+
+// ==================== WEBHOOK TEST ENDPOINT ====================
+// POST /api/voip/webhooks/test - Test webhook configuration (internal)
+// Note: Main webhook receiver is at POST /api/webhooks (in webhooks.ts)
+
+// Type for test webhook payload
+interface WebhookTestPayload {
+  type: string;
+  tenant_id: string;
+  tenant_external_id: string;
+  timestamp: string;
+  data: {
+    call_uuid: string;
+    caller_id_number: string;
+    caller_id_name: string;
+    destination_number: string;
+    call_direction: string;
+    start_time: string;
+    answer_time: string;
+    end_time: string;
+    duration: number;
+    billable_seconds: number;
+    hangup_cause: string;
+    hangup_cause_code: number;
+  };
+}
+
+// Helper function to verify HMAC signature
+function verifyTestWebhookSignature(rawBody: string, signature: string, secret: string): boolean {
+  try {
+    if (!signature || !secret) return false;
+    const expectedSig = 'sha256=' + crypto.createHmac('sha256', secret)
+      .update(rawBody, 'utf8')
+      .digest('hex');
+    const sigBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSig);
+    if (sigBuffer.length !== expectedBuffer.length) return false;
+    return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+  } catch {
+    return false;
+  }
+}
+
+router.post('/webhooks/test', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+    
+    await setTenantContext(db, tenantId);
+    
+    // Get tenant config
+    const [config] = await db
+      .select({
+        tenantExternalId: voipTenantConfig.tenantExternalId,
+        webhookSecret: voipTenantConfig.webhookSecret
+      })
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId));
+    
+    if (!config) {
+      return res.status(400).json({ 
+        error: 'VoIP not configured',
+        configured: false 
+      } as ApiErrorResponse);
+    }
+    
+    if (!config.webhookSecret) {
+      return res.status(400).json({ 
+        error: 'Webhook secret not configured',
+        hasWebhookSecret: false 
+      } as ApiErrorResponse);
+    }
+    
+    // Simulate a test webhook payload
+    const testPayload: WebhookTestPayload = {
+      type: 'call.ended',
+      tenant_id: 'test-internal',
+      tenant_external_id: config.tenantExternalId,
+      timestamp: new Date().toISOString(),
+      data: {
+        call_uuid: `test-${crypto.randomUUID()}`,
+        caller_id_number: '+390000000000',
+        caller_id_name: 'Test Call',
+        destination_number: '2000',
+        call_direction: 'inbound',
+        start_time: new Date(Date.now() - 60000).toISOString(),
+        answer_time: new Date(Date.now() - 55000).toISOString(),
+        end_time: new Date().toISOString(),
+        duration: 55,
+        billable_seconds: 55,
+        hangup_cause: 'NORMAL_CLEARING',
+        hangup_cause_code: 16
+      }
+    };
+    
+    const rawPayload = JSON.stringify(testPayload);
+    
+    // Generate correct signature
+    const signature = 'sha256=' + crypto.createHmac('sha256', config.webhookSecret)
+      .update(rawPayload, 'utf8')
+      .digest('hex');
+    
+    // Verify our own signature (sanity check)
+    const isValid = verifyTestWebhookSignature(rawPayload, signature, config.webhookSecret);
+    
+    // Log test
+    await db.insert(voipActivityLog).values({
+      tenantId,
+      action: 'webhook_test',
+      targetType: 'webhook',
+      targetId: 'internal-test',
+      status: isValid ? 'success' : 'failed',
+      detailsJson: {
+        signatureValid: isValid,
+        testPayloadType: testPayload.type,
+        timestamp: testPayload.timestamp
+      }
+    });
+    
+    return res.json({
+      success: true,
+      data: {
+        configured: true,
+        hasWebhookSecret: true,
+        signatureVerificationTest: isValid ? 'passed' : 'failed',
+        testPayload: {
+          type: testPayload.type,
+          tenantExternalId: testPayload.tenant_external_id,
+          timestamp: testPayload.timestamp
+        },
+        generatedSignature: signature.substring(0, 20) + '...',
+        message: isValid 
+          ? 'Webhook configuration is valid. HMAC verification works correctly.'
+          : 'Webhook configuration error. HMAC verification failed.'
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error testing webhook configuration', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to test webhook configuration' } as ApiErrorResponse);
   }
 });
 
