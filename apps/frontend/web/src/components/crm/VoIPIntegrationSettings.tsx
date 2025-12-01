@@ -60,7 +60,7 @@ interface VoIPLogEntry {
   targetId: string;
   status: string;
   detailsJson: any;
-  createdAt: string;
+  ts: string;
 }
 
 interface APITestResult {
@@ -103,6 +103,7 @@ export function VoIPIntegrationSettings() {
   const [activeSubTab, setActiveSubTab] = useState<'config' | 'logs' | 'test' | 'webhook'>('config');
   const [logFilter, setLogFilter] = useState<string>('all');
   const [testResults, setTestResults] = useState<APITestResponse | null>(null);
+  const [webhookTestLoading, setWebhookTestLoading] = useState(false);
 
   const { data: settingsData, isLoading: settingsLoading, refetch: refetchSettings } = useQuery<VoIPSettingsResponse>({
     queryKey: ['/api/voip/settings'],
@@ -241,7 +242,8 @@ export function VoIPIntegrationSettings() {
   };
 
   const getLogStatusBadge = (status: string) => {
-    return status === 'ok' 
+    const isSuccess = status === 'ok' || status === 'success';
+    return isSuccess 
       ? <Badge className="bg-green-100 text-green-700">OK</Badge>
       : <Badge className="bg-red-100 text-red-700">FAIL</Badge>;
   };
@@ -712,6 +714,7 @@ export function VoIPIntegrationSettings() {
 
                   <Button
                     onClick={async () => {
+                      setWebhookTestLoading(true);
                       try {
                         const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
                         const response = await fetch('/api/voip/webhooks/test', {
@@ -731,12 +734,14 @@ export function VoIPIntegrationSettings() {
                             description: data.data.message,
                             variant: 'default'
                           });
+                          refetchLogs();
                         } else {
                           toast({
                             title: 'Errore test webhook',
                             description: data.error || 'Test fallito',
                             variant: 'destructive'
                           });
+                          refetchLogs();
                         }
                       } catch (error) {
                         toast({
@@ -744,13 +749,20 @@ export function VoIPIntegrationSettings() {
                           description: 'Impossibile eseguire il test webhook',
                           variant: 'destructive'
                         });
+                      } finally {
+                        setWebhookTestLoading(false);
                       }
                     }}
+                    disabled={webhookTestLoading}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     data-testid="button-test-webhook"
                   >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Esegui Test Verifica HMAC
+                    {webhookTestLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Zap className="w-4 h-4 mr-2" />
+                    )}
+                    {webhookTestLoading ? 'Test in corso...' : 'Esegui Test Verifica HMAC'}
                   </Button>
                 </div>
               ) : (
@@ -871,7 +883,7 @@ export function VoIPIntegrationSettings() {
                         logsData?.logs?.map((log) => (
                           <TableRow key={log.id} data-testid={`table-row-log-${log.id}`}>
                             <TableCell className="text-sm text-gray-600">
-                              {formatDate(log.createdAt)}
+                              {formatDate(log.ts)}
                             </TableCell>
                             <TableCell className="font-medium">{log.action}</TableCell>
                             <TableCell>
