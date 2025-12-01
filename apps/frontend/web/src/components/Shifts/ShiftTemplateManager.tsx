@@ -17,20 +17,26 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import ShiftTemplateModal from './ShiftTemplateModal';
+import ShiftTemplateCreateDialog from './ShiftTemplateCreateDialog';
+import ShiftTemplateMutateDialog from './ShiftTemplateMutateDialog';
+import type { ShiftTemplate } from './shiftTemplateSchemas';
 
 interface TimeSlot {
-  segmentType: 'continuous' | 'split';
+  segmentType: 'continuous' | 'split' | 'triple' | 'quad';
   startTime: string;
   endTime: string;
   block2StartTime?: string;
   block2EndTime?: string;
+  block3StartTime?: string;
+  block3EndTime?: string;
+  block4StartTime?: string;
+  block4EndTime?: string;
   breakMinutes?: number;
   clockInToleranceMinutes?: number;
   clockOutToleranceMinutes?: number;
 }
 
-interface ShiftTemplate {
+interface LocalShiftTemplate {
   id: string;
   name: string;
   description?: string;
@@ -43,7 +49,7 @@ interface ShiftTemplate {
 }
 
 interface Props {
-  templates: ShiftTemplate[];
+  templates: LocalShiftTemplate[];
   storeId: string;
   onApplyTemplate: (templateId: string, startDate: Date, endDate: Date) => Promise<void>;
 }
@@ -53,13 +59,10 @@ export default function ShiftTemplateManager({
   storeId,
   onApplyTemplate
 }: Props) {
-  const [selectedTemplate, setSelectedTemplate] = useState<ShiftTemplate | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<LocalShiftTemplate | null>(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const [isDeletingTemplate, setIsDeletingTemplate] = useState<string | null>(null);
-  const [editingTemplate, setEditingTemplate] = useState<ShiftTemplate | null>(null);
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'duplicate'>('create');
   const [applyDateRange, setApplyDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -67,17 +70,21 @@ export default function ShiftTemplateManager({
   
   const [storeFilter, setStoreFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [modalKey, setModalKey] = useState(0); // For forcing modal remount on mode/template change
+  
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [mutateState, setMutateState] = useState<{ 
+    isOpen: boolean; 
+    template: ShiftTemplate | null; 
+    mode: 'edit' | 'duplicate' 
+  }>({ isOpen: false, template: null, mode: 'edit' });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch stores for filter dropdown (uses default fetcher with auth headers)
   const { data: stores, isLoading: storesLoading } = useQuery({
     queryKey: ['/api/stores']
   });
   
-  // Filter templates based on selected filters
   const filteredTemplates = templates.filter(template => {
     const matchesStore = storeFilter === 'all' || template.storeId === storeFilter;
     const matchesStatus = statusFilter === 'all' || 
@@ -86,31 +93,32 @@ export default function ShiftTemplateManager({
     return matchesStore && matchesStatus;
   });
   
-  const handleCloseModal = () => {
-    setIsCreateModalOpen(false);
-    setEditingTemplate(null);
-    setModalMode('create');
+  const handleOpenCreateDialog = () => {
+    setIsCreateOpen(true);
   };
   
-  const handleEditTemplate = (template: ShiftTemplate) => {
-    setModalKey(prev => prev + 1); // Force modal remount
-    setEditingTemplate(template);
-    setModalMode('edit');
-    setIsCreateModalOpen(true);
+  const handleCloseCreateDialog = () => {
+    setIsCreateOpen(false);
   };
   
-  const handleOpenDuplicateModal = (template: ShiftTemplate) => {
-    setModalKey(prev => prev + 1); // Force modal remount
-    setEditingTemplate(template);
-    setModalMode('duplicate');
-    setIsCreateModalOpen(true);
+  const handleEditTemplate = (template: LocalShiftTemplate) => {
+    setMutateState({ 
+      isOpen: true, 
+      template: template as ShiftTemplate, 
+      mode: 'edit' 
+    });
   };
   
-  const handleOpenCreateModal = () => {
-    setModalKey(prev => prev + 1); // Force modal remount
-    setEditingTemplate(null);
-    setModalMode('create');
-    setIsCreateModalOpen(true);
+  const handleDuplicateTemplate = (template: LocalShiftTemplate) => {
+    setMutateState({ 
+      isOpen: true, 
+      template: template as ShiftTemplate, 
+      mode: 'duplicate' 
+    });
+  };
+  
+  const handleCloseMutateDialog = () => {
+    setMutateState({ isOpen: false, template: null, mode: 'edit' });
   };
   
   const handleApplyTemplate = async () => {
@@ -153,7 +161,6 @@ export default function ShiftTemplateManager({
         description: "Il template è stato archiviato"
       });
       
-      // Refresh templates
       queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
     } catch (error) {
       toast({
@@ -169,13 +176,12 @@ export default function ShiftTemplateManager({
   
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Template Turni</h2>
         </div>
         <Button 
-          onClick={handleOpenCreateModal}
+          onClick={handleOpenCreateDialog}
           className="bg-gradient-to-r from-orange-500 to-orange-600"
           data-testid="button-create-template"
         >
@@ -184,7 +190,6 @@ export default function ShiftTemplateManager({
         </Button>
       </div>
       
-      {/* Template Filters */}
       <Card className="windtre-glass-panel border-white/20">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
@@ -245,7 +250,6 @@ export default function ShiftTemplateManager({
         </CardContent>
       </Card>
       
-      {/* Templates Table - Modern Design */}
       <Card className="windtre-glass-panel border-white/20 overflow-hidden">
         <CardContent className="p-0">
           <Table>
@@ -384,7 +388,7 @@ export default function ShiftTemplateManager({
                                   variant="ghost" 
                                   size="sm" 
                                   className="h-8 w-8 p-0 hover:bg-purple-100"
-                                  onClick={() => handleOpenDuplicateModal(template)}
+                                  onClick={() => handleDuplicateTemplate(template)}
                                   data-testid={`button-duplicate-${template.id}`}
                                 >
                                   <Copy className="h-4 w-4 text-purple-600" />
@@ -431,18 +435,20 @@ export default function ShiftTemplateManager({
       </Card>
       
       
-      {/* Advanced Template Modal - FULL UNMOUNT with stable key to prevent Portal/DOM conflicts */}
-      {isCreateModalOpen && (
-        <ShiftTemplateModal
-          key={`modal-${modalKey}`}
-          isOpen={true}
-          onClose={handleCloseModal}
-          template={editingTemplate}
-          mode={modalMode}
+      <ShiftTemplateCreateDialog 
+        isOpen={isCreateOpen}
+        onClose={handleCloseCreateDialog}
+      />
+      
+      {mutateState.template && (
+        <ShiftTemplateMutateDialog
+          isOpen={mutateState.isOpen}
+          onClose={handleCloseMutateDialog}
+          template={mutateState.template}
+          mode={mutateState.mode}
         />
       )}
       
-      {/* Apply Template Modal */}
       <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
         <DialogContent>
           <DialogHeader>
