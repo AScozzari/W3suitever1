@@ -67,6 +67,7 @@ export default function ShiftTemplateManager({
   
   const [storeFilter, setStoreFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [modalKey, setModalKey] = useState(0); // For forcing modal remount on mode/template change
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -92,18 +93,21 @@ export default function ShiftTemplateManager({
   };
   
   const handleEditTemplate = (template: ShiftTemplate) => {
+    setModalKey(prev => prev + 1); // Force modal remount
     setEditingTemplate(template);
     setModalMode('edit');
     setIsCreateModalOpen(true);
   };
   
   const handleOpenDuplicateModal = (template: ShiftTemplate) => {
+    setModalKey(prev => prev + 1); // Force modal remount
     setEditingTemplate(template);
     setModalMode('duplicate');
     setIsCreateModalOpen(true);
   };
   
   const handleOpenCreateModal = () => {
+    setModalKey(prev => prev + 1); // Force modal remount
     setEditingTemplate(null);
     setModalMode('create');
     setIsCreateModalOpen(true);
@@ -427,9 +431,10 @@ export default function ShiftTemplateManager({
       </Card>
       
       
-      {/* Advanced Template Modal - FULL UNMOUNT when closed to prevent Portal/DOM conflicts */}
+      {/* Advanced Template Modal - FULL UNMOUNT with stable key to prevent Portal/DOM conflicts */}
       {isCreateModalOpen && (
         <ShiftTemplateModal
+          key={`modal-${modalKey}`}
           isOpen={true}
           onClose={handleCloseModal}
           template={editingTemplate}
