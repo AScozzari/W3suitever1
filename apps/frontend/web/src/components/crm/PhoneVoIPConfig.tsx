@@ -121,11 +121,6 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     queryKey: ['/api/users'],
     enabled: visible,
   });
-  
-  // Find current user name for display when editing
-  const currentUserName = editingExtension 
-    ? users.find(u => u.id === extensionForm.getValues('userId'))?.email || 'Utente selezionato'
-    : null;
 
   const { data: connectionStatus, isLoading: connectionLoading } = useQuery<any>({
     queryKey: ['/api/voip/connection-status'],
@@ -898,36 +893,39 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                     <FormField
                       control={extensionForm.control}
                       name="userId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Utente *</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value}
-                            disabled={usersLoading}
-                          >
-                            <FormControl>
-                              <SelectTrigger data-testid="select-extension-user" className="bg-white">
-                                <SelectValue placeholder={usersLoading ? "Caricamento utenti..." : "Seleziona utente"}>
-                                  {field.value && (
-                                    users.find(u => u.id === field.value)
-                                      ? `${users.find(u => u.id === field.value)?.firstName || ''} ${users.find(u => u.id === field.value)?.lastName || ''} (${users.find(u => u.id === field.value)?.email || ''})`
-                                      : currentUserName
-                                  )}
-                                </SelectValue>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {users.map((user: any) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.firstName} {user.lastName} ({user.email})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const selectedUser = users.find(u => u.id === field.value);
+                        const displayName = selectedUser 
+                          ? `${selectedUser.firstName || ''} ${selectedUser.lastName || ''} (${selectedUser.email || ''})`.trim()
+                          : null;
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">Utente *</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              value={field.value}
+                              disabled={usersLoading}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-extension-user" className="bg-white">
+                                  <SelectValue placeholder={usersLoading ? "Caricamento utenti..." : "Seleziona utente"}>
+                                    {field.value && (displayName || 'Utente selezionato')}
+                                  </SelectValue>
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {users.map((user: any) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.firstName} {user.lastName} ({user.email})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     <FormField
