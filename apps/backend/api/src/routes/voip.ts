@@ -2661,8 +2661,10 @@ router.post('/webhooks/test', rbacMiddleware, requirePermission('manage_telephon
     const isValid = verifyTestWebhookSignature(rawPayload, signature, config.webhookSecret);
     
     // Log test
+    const userId = (req as any).user?.id || 'system';
     await db.insert(voipActivityLog).values({
       tenantId,
+      actor: userId,
       action: 'webhook_test',
       targetType: 'webhook',
       targetId: 'internal-test',

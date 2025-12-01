@@ -1068,7 +1068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // API-specific exclusions (path relative to /api mount)
         apiPath.startsWith('/auth/') || 
         apiPath.startsWith('/public/') ||
-        apiPath.startsWith('/webhooks/') || // Webhooks are authenticated via HMAC signature, not session
+        apiPath === '/webhooks' || apiPath.startsWith('/webhooks/') || // Webhooks are authenticated via HMAC signature, not session
         apiPath === '/health' ||
         apiPath === '/tenants/resolve' ||
         apiPath === '/utm-sources' || // UTM parameters are public reference data
@@ -1185,6 +1185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.path.startsWith('/auth/') || 
         req.path.startsWith('/public/') ||
         req.path.startsWith('/mcp/oauth/') || // OAuth endpoints use query params, not headers
+        req.path === '/webhooks' || req.path.startsWith('/webhooks/') || // Webhooks identify tenant from payload, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||
         req.path === '/utm-sources' || // UTM parameters are public reference data

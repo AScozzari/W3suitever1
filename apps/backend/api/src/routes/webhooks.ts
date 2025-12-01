@@ -880,6 +880,7 @@ router.post('/', async (req: Request, res: Response) => {
       // Log failed attempt for security monitoring
       await db.insert(voipActivityLog).values({
         tenantId: tenantConfig.tenantId,
+        actor: 'edgvoip-webhook',
         action: 'webhook_signature_failed',
         targetType: 'webhook',
         targetId: requestId,
