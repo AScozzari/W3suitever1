@@ -557,6 +557,7 @@ export async function resetExtensionPassword(
 
 /**
  * Bidirectional sync extensions with EDGVoIP
+ * Falls back to unidirectional sync (GET only) if POST /extensions/sync fails with 403
  */
 export async function syncExtensionsWithEdgvoip(
   tenantId: string,
@@ -587,22 +588,33 @@ export async function syncExtensionsWithEdgvoip(
       };
     }
 
-    // Trigger bidirectional sync on EDGVoIP side
-    const syncResponse = await client.syncExtensions({
-      tenant_external_id: client.tenantExternalId,
-      force: options?.force || false,
-      extension_ids: options?.extensionIds || []
-    });
+    // Try bidirectional sync first, but gracefully fallback to GET-only if it fails
+    let bidirectionalSyncOk = false;
+    try {
+      const syncResponse = await client.syncExtensions({
+        tenant_external_id: client.tenantExternalId,
+        force: options?.force || false,
+        extension_ids: options?.extensionIds || []
+      });
 
-    if (!syncResponse.success || !syncResponse.data) {
-      return {
-        ...result,
-        success: false,
-        errors: [{ extensionId: 'sync', error: syncResponse.error || 'Sync failed' }]
-      };
+      if (syncResponse.success && syncResponse.data) {
+        bidirectionalSyncOk = true;
+        logger.info('Bidirectional extension sync succeeded', { tenantId });
+      } else {
+        logger.warn('Bidirectional extension sync failed, falling back to GET-only', {
+          tenantId,
+          error: syncResponse.error
+        });
+      }
+    } catch (syncError) {
+      // 403 or other API errors - fallback to GET-only sync
+      logger.warn('Bidirectional extension sync not available, using unidirectional sync', {
+        tenantId,
+        error: syncError instanceof Error ? syncError.message : 'Unknown error'
+      });
     }
 
-    // Fetch all extensions from EDGVoIP and upsert locally
+    // Fetch all extensions from EDGVoIP (works regardless of bidirectional sync success)
     const extensionsResponse = await client.getExtensions();
 
     if (extensionsResponse.success && extensionsResponse.data) {
@@ -622,21 +634,40 @@ export async function syncExtensionsWithEdgvoip(
 
       for (const remoteExt of extensionsResponse.data) {
         try {
-          // Check if extension exists locally by external_id
-          const [existing] = await db.select()
+          // Check if extension exists locally by external_id OR by extension number
+          let existing = null;
+          
+          // First try by external_id
+          const [byExternalId] = await db.select()
             .from(voipExtensions)
             .where(and(
               eq(voipExtensions.externalId, remoteExt.external_id),
               eq(voipExtensions.tenantId, tenantId)
             ))
             .limit(1);
+          
+          if (byExternalId) {
+            existing = byExternalId;
+          } else {
+            // Fallback: try by extension number (for first-time sync of existing local extensions)
+            const [byExtNumber] = await db.select()
+              .from(voipExtensions)
+              .where(and(
+                eq(voipExtensions.extension, remoteExt.extension),
+                eq(voipExtensions.tenantId, tenantId)
+              ))
+              .limit(1);
+            existing = byExtNumber || null;
+          }
 
+          // Build update data - PRESERVE local userId and storeId if remote is null
           const extData = {
             tenantId,
             externalId: remoteExt.external_id,
             extension: remoteExt.extension,
             displayName: remoteExt.display_name || remoteExt.extension,
-            storeId: remoteExt.store_id || null,
+            // CRITICAL: Preserve local storeId if remote doesn't provide one
+            storeId: remoteExt.store_id || (existing?.storeId ?? null),
             status: remoteExt.status || 'active',
             type: remoteExt.type || 'user',
             settings: sanitizeJson(remoteExt.settings),
@@ -648,8 +679,14 @@ export async function syncExtensionsWithEdgvoip(
           };
 
           if (existing) {
+            // CRITICAL: Preserve local userId - never overwrite with null from remote
+            // userId is a local W3Suite concept, not managed by EDGVoIP
             await db.update(voipExtensions)
-              .set(extData)
+              .set({
+                ...extData,
+                // Explicitly keep existing userId (EDGVoIP doesn't know about W3Suite users)
+                userId: existing.userId
+              })
               .where(eq(voipExtensions.id, existing.id));
             result.updated++;
           } else {

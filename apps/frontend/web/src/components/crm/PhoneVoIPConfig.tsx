@@ -117,10 +117,15 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     enabled: visible,
   });
 
-  const { data: users = [] } = useQuery<any[]>({
+  const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: visible,
   });
+  
+  // Find current user name for display when editing
+  const currentUserName = editingExtension 
+    ? users.find(u => u.id === extensionForm.getValues('userId'))?.email || 'Utente selezionato'
+    : null;
 
   const { data: connectionStatus, isLoading: connectionLoading } = useQuery<any>({
     queryKey: ['/api/voip/connection-status'],
@@ -896,10 +901,20 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-gray-700">Utente *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={usersLoading}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-extension-user" className="bg-white">
-                                <SelectValue placeholder="Seleziona utente" />
+                                <SelectValue placeholder={usersLoading ? "Caricamento utenti..." : "Seleziona utente"}>
+                                  {field.value && (
+                                    users.find(u => u.id === field.value)
+                                      ? `${users.find(u => u.id === field.value)?.firstName || ''} ${users.find(u => u.id === field.value)?.lastName || ''} (${users.find(u => u.id === field.value)?.email || ''})`
+                                      : currentUserName
+                                  )}
+                                </SelectValue>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
