@@ -153,8 +153,13 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     return status?.status || status?.registration_status || 'unknown';
   };
 
-  const getExtensionRegistrationStatus = (extensionId: string) => {
-    const status = extensionsRegistrationStatus.find((s: any) => s.id === extensionId || s.external_id === extensionId);
+  const getExtensionRegistrationStatus = (extensionIdOrNumber: string) => {
+    const status = extensionsRegistrationStatus.find((s: any) => 
+      s.id === extensionIdOrNumber || 
+      s.external_id === extensionIdOrNumber ||
+      s.externalId === extensionIdOrNumber ||
+      s.extension === extensionIdOrNumber
+    );
     return status?.status || 'unknown';
   };
 
@@ -581,7 +586,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
                             <h4 className="font-medium text-gray-800">Interno {ext.extension}</h4>
-                            {getStatusBadge(getExtensionRegistrationStatus(ext.externalId || ext.id))}
+                            {getStatusBadge(getExtensionRegistrationStatus(ext.extension))}
                             <Badge variant={ext.dbStatus === 'active' ? 'default' : 'secondary'} className={
                               ext.dbStatus === 'active' 
                                 ? 'bg-blue-100 text-blue-700 border-blue-300' 
@@ -1294,7 +1299,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="font-semibold text-gray-800">{ext.extension.extension}</h4>
-                          {getStatusBadge(getExtensionRegistrationStatus(ext.extension.externalId || ext.extension.id))}
+                          {getStatusBadge(getExtensionRegistrationStatus(ext.extension.extension))}
                           <Badge variant={ext.extension.status === 'active' ? 'default' : 'secondary'} className={
                             ext.extension.status === 'active' 
                               ? 'bg-green-100 text-green-700 border-green-300' 
