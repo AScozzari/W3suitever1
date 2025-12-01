@@ -18,7 +18,8 @@ import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import ShiftTemplateCreateDialog from './ShiftTemplateCreateDialog';
-import ShiftTemplateMutateDialog from './ShiftTemplateMutateDialog';
+import ShiftTemplateEditDialog from './ShiftTemplateEditDialog';
+import ShiftTemplateDuplicateDialog from './ShiftTemplateDuplicateDialog';
 import type { ShiftTemplate } from './shiftTemplateSchemas';
 
 interface TimeSlot {
@@ -72,11 +73,8 @@ export default function ShiftTemplateManager({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [mutateState, setMutateState] = useState<{ 
-    isOpen: boolean; 
-    template: ShiftTemplate | null; 
-    mode: 'edit' | 'duplicate' 
-  }>({ isOpen: false, template: null, mode: 'edit' });
+  const [editState, setEditState] = useState<{ isOpen: boolean; template: ShiftTemplate | null }>({ isOpen: false, template: null });
+  const [duplicateState, setDuplicateState] = useState<{ isOpen: boolean; template: ShiftTemplate | null }>({ isOpen: false, template: null });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,23 +100,19 @@ export default function ShiftTemplateManager({
   };
   
   const handleEditTemplate = (template: LocalShiftTemplate) => {
-    setMutateState({ 
-      isOpen: true, 
-      template: template as ShiftTemplate, 
-      mode: 'edit' 
-    });
+    setEditState({ isOpen: true, template: template as ShiftTemplate });
   };
   
   const handleDuplicateTemplate = (template: LocalShiftTemplate) => {
-    setMutateState({ 
-      isOpen: true, 
-      template: template as ShiftTemplate, 
-      mode: 'duplicate' 
-    });
+    setDuplicateState({ isOpen: true, template: template as ShiftTemplate });
   };
   
-  const handleCloseMutateDialog = () => {
-    setMutateState({ isOpen: false, template: null, mode: 'edit' });
+  const handleCloseEditDialog = () => {
+    setEditState({ isOpen: false, template: null });
+  };
+  
+  const handleCloseDuplicateDialog = () => {
+    setDuplicateState({ isOpen: false, template: null });
   };
   
   const handleApplyTemplate = async () => {
@@ -440,14 +434,17 @@ export default function ShiftTemplateManager({
         onClose={handleCloseCreateDialog}
       />
       
-      {mutateState.template && (
-        <ShiftTemplateMutateDialog
-          isOpen={mutateState.isOpen}
-          onClose={handleCloseMutateDialog}
-          template={mutateState.template}
-          mode={mutateState.mode}
-        />
-      )}
+      <ShiftTemplateEditDialog
+        isOpen={editState.isOpen}
+        onClose={handleCloseEditDialog}
+        template={editState.template}
+      />
+      
+      <ShiftTemplateDuplicateDialog
+        isOpen={duplicateState.isOpen}
+        onClose={handleCloseDuplicateDialog}
+        template={duplicateState.template}
+      />
       
       <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
         <DialogContent>
