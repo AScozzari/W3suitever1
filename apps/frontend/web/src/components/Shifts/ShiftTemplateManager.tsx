@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarIcon, Copy, Edit, Archive, Plus, Clock, Users, RefreshCw, MoreHorizontal, Store as StoreIcon, Filter } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { CalendarIcon, Copy, Edit, Archive, Plus, Clock, Users, RefreshCw, Store as StoreIcon, Filter } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,7 @@ export default function ShiftTemplateManager({
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const [isDeletingTemplate, setIsDeletingTemplate] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<ShiftTemplate | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'duplicate'>('create');
   const [applyDateRange, setApplyDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -87,10 +88,24 @@ export default function ShiftTemplateManager({
   const handleCloseModal = () => {
     setIsCreateModalOpen(false);
     setEditingTemplate(null);
+    setModalMode('create');
   };
   
   const handleEditTemplate = (template: ShiftTemplate) => {
     setEditingTemplate(template);
+    setModalMode('edit');
+    setIsCreateModalOpen(true);
+  };
+  
+  const handleOpenDuplicateModal = (template: ShiftTemplate) => {
+    setEditingTemplate(template);
+    setModalMode('duplicate');
+    setIsCreateModalOpen(true);
+  };
+  
+  const handleOpenCreateModal = () => {
+    setEditingTemplate(null);
+    setModalMode('create');
     setIsCreateModalOpen(true);
   };
   
@@ -147,34 +162,6 @@ export default function ShiftTemplateManager({
     }
   };
 
-  const handleDuplicateTemplate = async (template: ShiftTemplate) => {
-    try {
-      const duplicatedTemplate = {
-        ...template,
-        name: `${template.name} (Copia)`,
-        id: undefined // Remove ID to create new
-      };
-      
-      await apiRequest('/api/hr/shift-templates', {
-        method: 'POST',
-        body: JSON.stringify(duplicatedTemplate)
-      });
-      
-      toast({
-        title: "Template duplicato",
-        description: "Il template è stato copiato con successo"
-      });
-      
-      // Refresh templates
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-templates'] });
-    } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Impossibile duplicare il template",
-        variant: "destructive"
-      });
-    }
-  };
   
   return (
     <div className="space-y-6">
@@ -184,7 +171,7 @@ export default function ShiftTemplateManager({
           <h2 className="text-xl font-semibold">Template Turni</h2>
         </div>
         <Button 
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="bg-gradient-to-r from-orange-500 to-orange-600"
           data-testid="button-create-template"
         >
@@ -365,47 +352,70 @@ export default function ShiftTemplateManager({
                           {template.isActive ? 'Attivo' : 'Archiviato'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 hover:bg-orange-100"
-                              data-testid={`button-actions-${template.id}`}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem 
-                              onClick={() => handleEditTemplate(template)}
-                              className="cursor-pointer"
-                            >
-                              <Edit className="h-4 w-4 mr-2 text-blue-600" />
-                              <span>Modifica</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDuplicateTemplate(template)}
-                              className="cursor-pointer"
-                            >
-                              <Copy className="h-4 w-4 mr-2 text-purple-600" />
-                              <span>Duplica</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleArchiveTemplate(template.id)}
-                              disabled={isDeletingTemplate === template.id}
-                              className="cursor-pointer text-amber-600 focus:text-amber-700"
-                            >
-                              {isDeletingTemplate === template.id ? (
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Archive className="h-4 w-4 mr-2" />
-                              )}
-                              <span>Archivia</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <TableCell className="py-4">
+                        <div className="flex items-center justify-center gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                  onClick={() => handleEditTemplate(template)}
+                                  data-testid={`button-edit-${template.id}`}
+                                >
+                                  <Edit className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Modifica (crea nuova versione)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 hover:bg-purple-100"
+                                  onClick={() => handleOpenDuplicateModal(template)}
+                                  data-testid={`button-duplicate-${template.id}`}
+                                >
+                                  <Copy className="h-4 w-4 text-purple-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Duplica template</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 hover:bg-amber-100"
+                                  onClick={() => handleArchiveTemplate(template.id)}
+                                  disabled={isDeletingTemplate === template.id}
+                                  data-testid={`button-archive-${template.id}`}
+                                >
+                                  {isDeletingTemplate === template.id ? (
+                                    <RefreshCw className="h-4 w-4 text-amber-600 animate-spin" />
+                                  ) : (
+                                    <Archive className="h-4 w-4 text-amber-600" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Archivia template</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -423,6 +433,7 @@ export default function ShiftTemplateManager({
           isOpen={true}
           onClose={handleCloseModal}
           template={editingTemplate}
+          mode={modalMode}
         />
       )}
       
