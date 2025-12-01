@@ -92,12 +92,17 @@ export function TrunkFormModal({ open, onOpenChange, trunk, onSuccess }: TrunkFo
   const [activeTab, setActiveTab] = useState('basic');
   const isEditing = !!trunk;
 
-  const { data: storesData } = useQuery<{ data: any[] }>({
+  const { data: storesData, isLoading: storesLoading } = useQuery<{ data: any[] }>({
     queryKey: ['/api/stores'],
     enabled: open
   });
 
   const stores = storesData?.data || [];
+  
+  // Find current store name for display when editing
+  const currentStoreName = trunk?.storeId 
+    ? stores.find(s => s.id === trunk.storeId)?.name || trunk.storeName || 'Store selezionato'
+    : null;
 
   const defaultValues: TrunkFormValues = {
     name: '',
@@ -152,7 +157,7 @@ export function TrunkFormModal({ open, onOpenChange, trunk, onSuccess }: TrunkFo
   });
 
   useEffect(() => {
-    if (trunk && open) {
+    if (trunk && open && !storesLoading) {
       form.reset({
         name: trunk.name || '',
         provider: trunk.provider || '',
@@ -199,10 +204,10 @@ export function TrunkFormModal({ open, onOpenChange, trunk, onSuccess }: TrunkFo
         },
         codecPreferences: trunk.codecPreferences?.join(',') || 'G.711,G.729,Opus'
       });
-    } else if (!trunk && open) {
+    } else if (!trunk && open && !storesLoading) {
       form.reset(defaultValues);
     }
-  }, [trunk, open, form]);
+  }, [trunk, open, form, storesLoading]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: TrunkFormValues) => {
@@ -334,10 +339,16 @@ export function TrunkFormModal({ open, onOpenChange, trunk, onSuccess }: TrunkFo
                       render={({ field }) => (
                         <FormItem className="col-span-2">
                           <FormLabel>Store Associato *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                            disabled={storesLoading}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-trunk-store">
-                                <SelectValue placeholder="Seleziona uno store" />
+                                <SelectValue placeholder={storesLoading ? "Caricamento stores..." : "Seleziona uno store"}>
+                                  {field.value && (stores.find(s => s.id === field.value)?.name || currentStoreName)}
+                                </SelectValue>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
