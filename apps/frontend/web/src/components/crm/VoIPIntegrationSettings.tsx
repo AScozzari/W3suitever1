@@ -26,8 +26,6 @@ import {
   Loader2,
   Activity,
   RefreshCw,
-  Eye,
-  EyeOff,
   Copy,
   Clock,
   Server,
@@ -103,8 +101,6 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 export function VoIPIntegrationSettings() {
   const { toast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState<'config' | 'logs' | 'test' | 'webhook'>('config');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [logFilter, setLogFilter] = useState<string>('all');
   const [testResults, setTestResults] = useState<APITestResponse | null>(null);
 
@@ -388,24 +384,12 @@ export function VoIPIntegrationSettings() {
                             Chiave API {isConfigured ? '(lascia vuoto per mantenere)' : '*'}
                           </FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Input 
-                                type={showApiKey ? 'text' : 'password'}
-                                placeholder={isConfigured ? `●●●●●●●●${config?.apiKeyLastFour || ''}` : 'sk_live_...'}
-                                {...field}
-                                data-testid="input-api-key"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3"
-                                onClick={() => setShowApiKey(!showApiKey)}
-                                data-testid="button-toggle-api-key"
-                              >
-                                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </Button>
-                            </div>
+                            <Input 
+                              type="password"
+                              placeholder={isConfigured ? `●●●●●●●●${config?.apiKeyLastFour || ''}` : 'sk_live_...'}
+                              {...field}
+                              data-testid="input-api-key"
+                            />
                           </FormControl>
                           <FormDescription>
                             La chiave viene crittografata prima del salvataggio
@@ -424,24 +408,12 @@ export function VoIPIntegrationSettings() {
                             Webhook Secret {config?.hasWebhookSecret ? '(lascia vuoto per mantenere)' : ''}
                           </FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <Input 
-                                type={showWebhookSecret ? 'text' : 'password'}
-                                placeholder={config?.hasWebhookSecret ? '●●●●●●●● (configurato)' : 'whsec_...'} 
-                                {...field}
-                                data-testid="input-webhook-secret"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3"
-                                onClick={() => setShowWebhookSecret(!showWebhookSecret)}
-                                data-testid="button-toggle-webhook-secret"
-                              >
-                                {showWebhookSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </Button>
-                            </div>
+                            <Input 
+                              type="password"
+                              placeholder={config?.hasWebhookSecret ? '●●●●●●●● (configurato)' : 'whsec_...'} 
+                              {...field}
+                              data-testid="input-webhook-secret"
+                            />
                           </FormControl>
                           <FormDescription>
                             {config?.hasWebhookSecret 
