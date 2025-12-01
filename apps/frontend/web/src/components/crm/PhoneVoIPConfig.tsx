@@ -128,6 +128,43 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     refetchInterval: 30000,
   });
 
+  const { data: trunksRegistrationStatus = [], refetch: refetchTrunksStatus } = useQuery<any[]>({
+    queryKey: ['/api/voip/trunks/status'],
+    enabled: visible && (activeTab === 'trunks' || activeTab === 'dashboard'),
+    refetchInterval: 15000,
+  });
+
+  const { data: extensionsRegistrationStatus = [], refetch: refetchExtensionsStatus } = useQuery<any[]>({
+    queryKey: ['/api/voip/extensions/status'],
+    enabled: visible && (activeTab === 'extensions' || activeTab === 'dashboard'),
+    refetchInterval: 15000,
+  });
+
+  const getTrunkRegistrationStatus = (trunkId: string) => {
+    const status = trunksRegistrationStatus.find((s: any) => s.id === trunkId || s.external_id === trunkId);
+    return status?.status || status?.registration_status || 'unknown';
+  };
+
+  const getExtensionRegistrationStatus = (extensionId: string) => {
+    const status = extensionsRegistrationStatus.find((s: any) => s.id === extensionId || s.external_id === extensionId);
+    return status?.status || 'unknown';
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'registered':
+        return <Badge className="bg-green-100 text-green-700 border-green-300"><CheckCircle2 className="w-3 h-3 mr-1" />Registrato</Badge>;
+      case 'unregistered':
+        return <Badge className="bg-red-100 text-red-700 border-red-300"><XCircle className="w-3 h-3 mr-1" />Non Registrato</Badge>;
+      case 'active':
+        return <Badge className="bg-green-100 text-green-700 border-green-300"><CheckCircle2 className="w-3 h-3 mr-1" />Attivo</Badge>;
+      case 'inactive':
+        return <Badge className="bg-gray-100 text-gray-700 border-gray-300"><AlertCircle className="w-3 h-3 mr-1" />Inattivo</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300"><AlertCircle className="w-3 h-3 mr-1" />Sconosciuto</Badge>;
+    }
+  };
+
   const extensionForm = useForm<ExtensionFormValues>({
     resolver: zodResolver(extensionFormSchema),
     defaultValues: {
@@ -373,6 +410,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                             <TableHead className="font-semibold text-gray-700">Store</TableHead>
                             <TableHead className="font-semibold text-gray-700">Trunk Name</TableHead>
                             <TableHead className="font-semibold text-gray-700">Status</TableHead>
+                            <TableHead className="font-semibold text-gray-700">Registrazione SIP</TableHead>
                             <TableHead className="font-semibold text-gray-700">AI Agent</TableHead>
                             <TableHead className="font-semibold text-gray-700 text-center">Extensions</TableHead>
                             <TableHead className="font-semibold text-gray-700">Sync Source</TableHead>
@@ -402,7 +440,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                                       ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
                                       : 'bg-gray-100 text-gray-700 border-gray-300'
                                   }
-                                  title="Stato nel database (non stato SIP reale)"
+                                  title="Stato nel database"
                                 >
                                   {trunk.trunk.status === 'active' ? (
                                     <><CheckCircle2 className="w-3 h-3 mr-1" /> Configurato</>
@@ -412,6 +450,9 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                                     <><XCircle className="w-3 h-3 mr-1" /> Non Configurato</>
                                   )}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(getTrunkRegistrationStatus(trunk.trunk.externalId || trunk.trunk.id))}
                               </TableCell>
                               <TableCell>
                                 <Badge 
@@ -1238,6 +1279,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="font-semibold text-gray-800">{ext.extension.extension}</h4>
+                          {getStatusBadge(getExtensionRegistrationStatus(ext.extension.externalId || ext.extension.id))}
                           <Badge variant={ext.extension.status === 'active' ? 'default' : 'secondary'} className={
                             ext.extension.status === 'active' 
                               ? 'bg-green-100 text-green-700 border-green-300' 

@@ -559,6 +559,8 @@ router.get('/extensions/me', rbacMiddleware, async (req, res) => {
     const tenantId = getTenantId(req);
     const userId = req.user?.id;
 
+    logger.info('[VOIP-EXT-ME] Getting user credentials', { userId, tenantId, userEmail: req.user?.email });
+
     if (!tenantId || !userId) {
       return res.status(401).json({ error: 'Authentication required' } as ApiErrorResponse);
     }
@@ -567,6 +569,8 @@ router.get('/extensions/me', rbacMiddleware, async (req, res) => {
 
     // Get decrypted SIP credentials via service
     const credentials = await extensionsService.getUserCredentials(userId, tenantId);
+    
+    logger.info('[VOIP-EXT-ME] Credentials result', { userId, tenantId, hasCredentials: !!credentials });
 
     if (!credentials) {
       return res.status(404).json({ 
@@ -609,8 +613,8 @@ router.patch('/extensions/:id/reset-password', rbacMiddleware, requirePermission
       return res.status(404).json({ error: 'Extension not found' } as ApiErrorResponse);
     }
 
-    // Reset password via service
-    const newPassword = await extensionsService.resetExtensionPassword(id, tenantId);
+    // Reset password via service (signature: tenantId, extensionId)
+    const newPassword = await extensionsService.resetExtensionPassword(tenantId, id);
 
     await logActivity(
       tenantId,
