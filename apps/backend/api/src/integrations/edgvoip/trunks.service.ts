@@ -493,8 +493,59 @@ export async function syncTrunksWithEdgvoip(
     const trunksResponse = await client.getTrunks();
 
     if (trunksResponse.success && trunksResponse.data) {
+      // Sanitize JSONB fields: ensure clean serializable object for PostgreSQL
+      // Force JSON roundtrip to eliminate any non-serializable properties
+      const sanitizeJsonbField = (value: any, fieldName: string): Record<string, any> | undefined => {
+        if (value === null || value === undefined || value === '') {
+          return undefined; // Return undefined to skip setting this field
+        }
+        
+        try {
+          let obj: Record<string, any>;
+          
+          if (typeof value === 'string') {
+            try {
+              obj = JSON.parse(value);
+            } catch {
+              logger.info('JSONB field failed to parse string', { fieldName, valuePreview: value.substring(0, 50) });
+              return undefined;
+            }
+          } else if (typeof value === 'object' && !Array.isArray(value)) {
+            obj = value;
+          } else {
+            logger.info('JSONB field invalid type, skipping', { fieldName, type: typeof value, isArray: Array.isArray(value) });
+            return undefined;
+          }
+          
+          // Force JSON roundtrip to get clean serializable object
+          // This removes any undefined values, functions, or circular references
+          const cleanJson = JSON.stringify(obj);
+          const cleanObj = JSON.parse(cleanJson);
+          
+          if (cleanObj && typeof cleanObj === 'object' && !Array.isArray(cleanObj)) {
+            return cleanObj;
+          }
+          
+          logger.info('JSONB field cleaned to non-object, skipping', { fieldName, type: typeof cleanObj });
+          return undefined;
+        } catch (err) {
+          logger.error('JSONB field sanitization failed', { fieldName, error: err instanceof Error ? err.message : 'Unknown error' });
+          return undefined;
+        }
+      };
+
       for (const remoteTrunk of trunksResponse.data) {
         try {
+          // Log raw data from API for debugging
+          logger.info('Processing remote trunk from EDGVoIP', {
+            external_id: remoteTrunk.external_id,
+            name: remoteTrunk.name,
+            sip_config_type: typeof remoteTrunk.sip_config,
+            did_config_type: typeof remoteTrunk.did_config,
+            security_type: typeof remoteTrunk.security,
+            gdpr_type: typeof remoteTrunk.gdpr
+          });
+
           // Check if trunk exists locally by external_id
           const [existing] = await db.select()
             .from(voipTrunks)
@@ -504,38 +555,52 @@ export async function syncTrunksWithEdgvoip(
             ))
             .limit(1);
 
-          // Sanitize JSONB fields: ensure they are objects or null, never strings
-          const sanitizeJson = (value: any): any => {
-            if (value === null || value === undefined || value === '') return null;
-            if (typeof value === 'string') {
-              try {
-                return JSON.parse(value);
-              } catch {
-                return null;
-              }
-            }
-            if (typeof value === 'object') return value;
-            return null;
-          };
+          // Build trunk data object, only including defined JSONB fields
+          const sipConfigSanitized = sanitizeJsonbField(remoteTrunk.sip_config, 'sipConfig');
+          const didConfigSanitized = sanitizeJsonbField(remoteTrunk.did_config, 'didConfig');
+          const securitySanitized = sanitizeJsonbField(remoteTrunk.security, 'security');
+          const gdprSanitized = sanitizeJsonbField(remoteTrunk.gdpr, 'gdpr');
 
-          const trunkData = {
+          // Sanitize codecPreferences - ensure it's a proper string array or null
+          let codecPrefs: string[] | null = null;
+          if (Array.isArray(remoteTrunk.codec_preferences)) {
+            codecPrefs = remoteTrunk.codec_preferences
+              .filter((c: unknown) => typeof c === 'string' && c.length > 0)
+              .map((c: string) => c.trim());
+            if (codecPrefs.length === 0) codecPrefs = null;
+          }
+          
+          // Extract legacy fields from sip_config for backward compatibility
+          // These fields are NOT NULL in the database and must be populated
+          const sipHost = sipConfigSanitized?.host || remoteTrunk.host || 'edgvoip.it';
+          const sipPort = sipConfigSanitized?.port || remoteTrunk.port || 5060;
+          const sipProtocol = sipConfigSanitized?.transport?.toLowerCase() || 'udp';
+          
+          const trunkData: Record<string, any> = {
             tenantId,
             externalId: remoteTrunk.external_id,
-            name: remoteTrunk.name,
-            provider: remoteTrunk.provider || null,
-            status: remoteTrunk.status,
-            sipConfig: sanitizeJson(remoteTrunk.sip_config),
-            didConfig: sanitizeJson(remoteTrunk.did_config),
-            security: sanitizeJson(remoteTrunk.security),
-            gdpr: sanitizeJson(remoteTrunk.gdpr),
-            codecPreferences: Array.isArray(remoteTrunk.codec_preferences) ? remoteTrunk.codec_preferences : null,
+            name: remoteTrunk.name || 'Unknown Trunk',
+            provider: remoteTrunk.provider || 'edgvoip',
+            status: remoteTrunk.status || 'active',
+            codecPreferences: codecPrefs,
             syncSource: 'edgvoip' as const,
             syncStatus: 'synced' as const,
             lastSyncAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            // Legacy fields (NOT NULL constraints)
+            host: sipHost,
+            port: sipPort,
+            protocol: sipProtocol === 'tcp' ? 'tcp' : sipProtocol === 'tls' ? 'tls' : 'udp'
           };
 
+          // Add JSONB fields if they have valid values
+          if (sipConfigSanitized !== undefined) trunkData.sipConfig = sipConfigSanitized;
+          if (didConfigSanitized !== undefined) trunkData.didConfig = didConfigSanitized;
+          if (securitySanitized !== undefined) trunkData.security = securitySanitized;
+          if (gdprSanitized !== undefined) trunkData.gdpr = gdprSanitized;
+
           if (existing) {
+            logger.info('Updating existing trunk', { trunkId: existing.id, externalId: remoteTrunk.external_id });
             await db.update(voipTrunks)
               .set(trunkData)
               .where(eq(voipTrunks.id, existing.id));
@@ -559,6 +624,10 @@ export async function syncTrunksWithEdgvoip(
 
           result.synced++;
         } catch (error) {
+          logger.error('Trunk sync error', {
+            trunkId: remoteTrunk.external_id,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
           result.failed++;
           result.errors.push({
             trunkId: remoteTrunk.external_id,

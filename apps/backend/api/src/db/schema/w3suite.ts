@@ -6591,8 +6591,8 @@ export const voipTrunks = w3suiteSchema.table("voip_trunks", {
   // API v2: GDPR Configuration (JSONB)
   gdpr: jsonb("gdpr"), // {data_retention_days, recording_consent_required, ...}
   
-  // API v2: Codec preferences
-  codecPreferences: text("codec_preferences").array(), // ['PCMU', 'PCMA', 'G729']
+  // API v2: Codec preferences (stored as JSONB to match database)
+  codecPreferences: jsonb("codec_preferences").$type<string[]>(), // ['PCMU', 'PCMA', 'G729']
   
   // Legacy fields (for backward compatibility)
   host: varchar("host", { length: 255 }),
