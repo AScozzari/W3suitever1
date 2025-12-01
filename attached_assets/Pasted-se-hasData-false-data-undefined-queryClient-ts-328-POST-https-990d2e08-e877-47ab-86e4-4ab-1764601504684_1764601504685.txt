@@ -1,0 +1,61 @@
+se, hasData: false, data: undefined, …}
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/trunks/refresh 500 (Internal Server Error)
+apiRequest @ queryClient.ts:328
+onClick @ PhoneVoIPConfig.tsx:580
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5449Understand this error
+installHook.js:1 [REFRESH] Errore sync trunk da edgvoip: Error: 500: Internal Server Error
+    at apiRequest (queryClient.ts:365:19)
+    at async onClick (PhoneVoIPConfig.tsx:580:38)
+overrideMethod @ installHook.js:1
+onClick @ PhoneVoIPConfig.tsx:594
+await in onClick
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5449Understand this error
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/trunks/refresh 500 (Internal Server Error)
+apiRequest @ queryClient.ts:328
+onClick @ PhoneVoIPConfig.tsx:580
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f4a34e1b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:5449Understand this error
+installHook.js:1 [REFRESH] Errore sync trunk da edgvoip: Error: 500: Internal Server Error
+    at apiRequest (queryClient.ts:365:19)
+    at async onClick (
